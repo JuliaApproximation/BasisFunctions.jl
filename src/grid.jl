@@ -52,7 +52,7 @@ tensorproduct(g::AbstractGrid1d, n) = TensorProductGrid(tuple([g for i=1:n]...))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
-stagedfunction eachindex{G,N,T}(g::TensorProductGrid{G,N,T})
+@generated function eachindex{G,N,T}(g::TensorProductGrid{G,N,T})
     startargs = fill(1, N)
     stopargs = [:(size(g,$i)) for i=1:N]
     :(CartesianRange(CartesianIndex{$N}($(startargs...)), CartesianIndex{$N}($(stopargs...))))
@@ -119,11 +119,11 @@ function getindex!{G}(g::TensorProductGrid{G,4}, x, i1::Int, i2::Int)
 end
 
 
-stagedfunction getindex{G,N}(g::TensorProductGrid{G,N}, index::CartesianIndex{N})
+@generated function getindex{G,N}(g::TensorProductGrid{G,N}, index::CartesianIndex{N})
     :(@nref $N g d->index[d])
 end
 
-stagedfunction getindex!{G,N}(g::TensorProductGrid{G,N}, x, index::CartesianIndex{N})
+@generated function getindex!{G,N}(g::TensorProductGrid{G,N}, x, index::CartesianIndex{N})
     :(@ncall $N getindex! g x d->index[d])
 end
 

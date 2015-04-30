@@ -61,7 +61,7 @@ next(s::AbstractFunctionSet, i::Int) = (s[i], i+1)
 
 eachindex(s::AbstractFunctionSet) = 1:length(s)
 
-stagedfunction eachindex{T,N}(s::AbstractFunctionSet{T,N})
+@generated function eachindex{T,N}(s::AbstractFunctionSet{T,N})
     startargs = fill(1, N)
     stopargs = [:(size(s,$i)) for i=1:N]
     :(CartesianRange(CartesianIndex{$N}($(startargs...)), CartesianIndex{$N}($(stopargs...))))

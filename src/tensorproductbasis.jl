@@ -29,13 +29,13 @@ length(b::TensorProductBasis) = b.ntot
 size(b::TensorProductBasis) = b.n
 size(b::TensorProductBasis, j) = b.n[j]
 
-stagedfunction eachindex{B,G,N,T}(b::TensorProductBasis{B,G,N,T})
+@generated function eachindex{B,G,N,T}(b::TensorProductBasis{B,G,N,T})
     startargs = fill(1, N)
     stopargs = [:(size(b,$i)) for i=1:N]
     :(CartesianRange(CartesianIndex{$N}($(startargs...)), CartesianIndex{$N}($(stopargs...))))
 end
 
-stagedfunction getindex{B,G,N,T}(b::TensorProductBasis{B,G,N,T}, index::CartesianIndex{N})
+@generated function getindex{B,G,N,T}(b::TensorProductBasis{B,G,N,T}, index::CartesianIndex{N})
     :(@nref $N b d->index[d])
 end
 
