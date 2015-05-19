@@ -44,6 +44,14 @@ index_dim(::AbstractFunctionSet) = 1
 index_dim{N,T}(::Type{AbstractFunctionSet{N,T}}) = 1
 index_dim{B <: AbstractFunctionSet}(::Type{B}) = 1
 
+mixed_eltype{T <: Real}(::Type{T}, ::Type{T}) = T
+mixed_eltype{T <: Real}(::Type{T}, ::Type{Complex{T}}) = Complex{T}
+mixed_eltype{T <: Real}(::Type{Complex{T}}, ::Type{T}) = Complex{T}
+mixed_eltype{T <: Real}(::Type{Complex{T}}, ::Type{Complex{T}}) = Complex{T}
+
+complexify{T <: Real}(::Type{T}) = Complex{T}
+complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
+
 
 is_orthogonal(b::AbstractBasis) = False
 is_biorthogonal(b::AbstractBasis) = False

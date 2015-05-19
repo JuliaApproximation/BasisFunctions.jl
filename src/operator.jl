@@ -3,21 +3,13 @@
 
 abstract AbstractOperator{SRC <: AbstractFunctionSet,DEST <: AbstractFunctionSet}
 
-dim(op::AbstractOperator) = dim(src(op))
-dim{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = dim(SRC)
-dim{OP <: AbstractOperator}(::Type{OP}) = dim(super(OP))
-
 numtype(op::AbstractOperator) = numtype(src(op))
 numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
 numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
 eltype(op::AbstractOperator) = mixed_eltype(eltype(src(op)), eltype(dest(op)))
 
-mixed_eltype{T <: Real}(::Type{T}, ::Type{T}) = T
-mixed_eltype{T <: Real}(::Type{T}, ::Type{Complex{T}}) = Complex{T}
-mixed_eltype{T <: Real}(::Type{Complex{T}}, ::Type{T}) = Complex{T}
-mixed_eltype{T <: Real}(::Type{Complex{T}}, ::Type{Complex{T}}) = Complex{T}
-
+# Default implementation of src and dest
 src(op::AbstractOperator) = op.src
 
 dest(op::AbstractOperator) = op.dest
@@ -35,6 +27,7 @@ function apply(op::AbstractOperator, coef_src)
 	coef_dest
 end
 
+# This general definition makes it easier to dispatch on source and destination
 apply!(op::AbstractOperator, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
@@ -63,6 +56,26 @@ function matrix!{T}(op::AbstractOperator, a::Array{T})
 	end
 end
 
+
+# The transpose of an operator
+immutable OperatorTranspose{OP <: AbstractOperator,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	op	::	OP
+
+	OperatorTranspose(op::AbstractOperator{DEST,SRC}) = new(op)
+end
+
+transpose{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorTranspose{typeof(op),SRC,DEST}(op)
+
+operator(op::OperatorTranspose) = op.op
+
+src(op::OperatorTranspose) = dest(operator(op))
+
+dest(op::OperatorTranspose) = src(operator(op))
+
+apply!(op::OperatorTranspose, coef_dest, coef_src) = apply!(op, operator(op), coef_dest, coef_src)
+
+
+
 # A composite operator applies op2 after op1. It preallocates sufficient memory to store intermediate results.
 immutable CompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op1		::	OP1
@@ -88,6 +101,7 @@ end
 apply!(op::CompositeOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, op.scratch)
 
 
+# A DenseOperator stores its matrix representation upon construction.
 immutable DenseOperator{OP <: AbstractOperator,ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op		::	OP
 	matrix	::	Array{ELT,2}

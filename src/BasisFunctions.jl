@@ -7,32 +7,29 @@ import Base: getindex, getindex!, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
+import Base: transpose
+
+# from grid.jl
+export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, TensorProductGrid, AbstractIntervalGrid
+
 # from basis_types.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
+export numtype, natural_grid, left, right, support, call, call!
+
+# from tensorproductbasis.jl
+export TensorProductBasis, tensorproduct
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion
 
-# from tensorproduct.jl
-export TensorProductBasis, tensorproduct
+# from operator.jl
+export AbstractOperator, CompositeOperator, OperatorTranspose, transpose, operator, src, dest
 
-# from grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, TensorProductGrid
-
-export left, right, support
-
-export call, call!
-
-export natural_grid
-
-export numtype
-
-#export transform, transform!, itransform, itransform!, transform_matrix, transform_matrix!, interpolation_matrix, interpolation_matrix!
-
-#export differentiate, differentiate!
+# from timedomain.jl
+export TimeDomain
 
 # from extensions.jl
-export ZeroPadding, Restriction, TimeDomain, AbstractOperator, EquispacedSubGrid, TensorProductGrid, AbstractIntervalGrid
+export ZeroPadding, Restriction
 
 # from fourierbasis.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, FastFourierTransform, InverseFastFourierTransform
@@ -40,16 +37,12 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, FastFour
 # from plots.jl
 export plot
 
+
 using Base.Cartesian
 
 
 typealias True Val{true}
 typealias False Val{false}
-
-
-complexify{T <: Real}(::Type{T}) = Complex{T}
-
-complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 
 
 include("grid.jl")

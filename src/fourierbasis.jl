@@ -101,32 +101,15 @@ immutable InverseFastFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC
 end
 
 
-function apply!{SRC,DEST <: FourierBasis}(op::FastFourierTransform{SRC,DEST}, coef_dest, coef_src)
+function apply!(op::FastFourierTransform, coef_dest, coef_src)
 	n = length(dest(op))
 	coef_dest[:] = coef_src[:]/n
 	fft!(coef_dest)
 end
 
-
-function apply!{SRC,DEST <: FourierBasisNd}(op::FastFourierTransform{SRC,DEST}, coef_dest, coef_src)
-	n = length(dest(op))
-	coef_dest[:] = coef_src[:]/n
-	coef_dest = reshape(coef_dest, size(dest(op)))
-	fft!(coef_dest)
-end
-
-
-function apply!{SRC <: FourierBasis,DEST}(op::InverseFastFourierTransform{SRC,DEST}, coef_dest, coef_src)
+function apply!(op::InverseFastFourierTransform, coef_dest, coef_src)
 	coef_dest[:] = coef_src[:]
-	bfft!(coef_dest) 	# bfft is an unscaled inverse fft, which is what we need here
-end
-
-
-#function apply!{SRC <: FourierBasisNd, DEST}(op::InverseFastFourierTransform{SRC,DEST}, coef_dest, coef_src)
-function apply!{SRC, DEST}(op::InverseFastFourierTransform{SRC,DEST}, coef_dest, coef_src)
-	coef_dest[:] = coef_src[:]
-	coef_dest = reshape(coef_dest, size(src(op)))
-	bfft!(coef_dest)
+	bfft!(coef_dest) # bfft is an unscaled inverse fft, which is what we need here
 end
 
 
