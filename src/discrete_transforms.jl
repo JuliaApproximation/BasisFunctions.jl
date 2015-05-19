@@ -13,7 +13,7 @@ end
 
 DenseInterpolation{SRC,DEST}(src::SRC, dest::DEST) = DenseInterpolation{mixed_eltype(eltype(src(op)), eltype(dest(op))),SRC,DEST}(src, dest)
 
-operator_matrix(op::DenseInterpolation) = op.matrix
+matrix(op::DenseInterpolation) = op.matrix
 
 apply!(op::DenseInterpolation, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 

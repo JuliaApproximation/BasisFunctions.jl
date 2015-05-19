@@ -58,7 +58,6 @@ checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsE
     :(CartesianRange(CartesianIndex{$N}($(startargs...)), CartesianIndex{$N}($(stopargs...))))
 end
 
-# Default dimension of the index is 1
 index_dim{G,N,T}(::TensorProductGrid{G,N,T}) = N
 index_dim{G,N,T}(::Type{TensorProductGrid{G,N,T}}) = N
 index_dim{G <: TensorProductGrid}(::Type{G}) = index_dim(super(G))

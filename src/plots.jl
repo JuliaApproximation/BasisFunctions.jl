@@ -1,8 +1,8 @@
 # plots.jl
 
 function plot(f::SetExpansion)
-    set = function_set(f)
-    grid = plot_grid(set)
+    fset = set(f)
+    grid = plot_grid(fset)
     data = f(grid)
     plot(grid, data)
 end
@@ -22,7 +22,7 @@ end
 gadflyplot{T <: Real}(grid::AbstractGrid1d, data::Array{Complex{T}}) = gadflyplot(grid, real(data))
 
 
-plot(grid::AbstractGrid{2}, data::Array) = pyplot(grid, data)
+plot(grid::AbstractGrid2d, data::Array) = pyplot(grid, data)
 
 function pyplot{T <: Real}(grid::AbstractGrid{2}, data::Array{T})
     Main.PyPlot.surf(range(grid,1), range(grid, 2), data)

@@ -39,13 +39,13 @@ apply!(op::AbstractOperator, coef_dest, coef_src) = apply!(op, dest(op), src(op)
 
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 
-function operator_matrix(op::AbstractOperator)
+function matrix(op::AbstractOperator)
 	a = Array(eltype(op), size(op))
-	operator_matrix!(op, a)
+	matrix!(op, a)
 	a
 end
 
-function operator_matrix!{T}(op::AbstractOperator, a::Array{T})
+function matrix!{T}(op::AbstractOperator, a::Array{T})
 	n = length(src(op))
 	m = length(dest(op))
 
@@ -92,16 +92,16 @@ immutable DenseOperator{OP <: AbstractOperator,ELT,SRC,DEST} <: AbstractOperator
 	op		::	OP
 	matrix	::	Array{ELT,2}
 
-	DenseOperator(op::AbstractOperator{SRC,DEST}) = new(op, operator_matrix(op))
+	DenseOperator(op::AbstractOperator{SRC,DEST}) = new(op, matrix(op))
 end
 
 DenseOperator{SRC,DEST}(op::AbstractOperator{SRC,DEST}) = DenseOperator{typeof(op),eltype(op),SRC,DEST}(op)
 
 apply!(op::DenseOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 
-operator_matrix(op::DenseOperator) = op.matrix
+matrix(op::DenseOperator) = op.matrix
 
-operator_matrix!(op::AbstractOperator, a::Array) = (a[:] = op.matrix)
+matrix!(op::AbstractOperator, a::Array) = (a[:] = op.matrix)
 
 
 # Catch-all for missing implementations

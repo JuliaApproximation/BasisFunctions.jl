@@ -1,5 +1,6 @@
 # expansions.jl
 
+
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
     coef    ::  Array{ELT,ID}
@@ -10,7 +11,6 @@ SetExpansion{S <: AbstractFunctionSet}(s::S) = SetExpansion(s, eltype(s))
 SetExpansion{ELT}(s::AbstractFunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
 
-
 numtype(e::SetExpansion) = numtype(e.set)
 numtype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = numtype(S)
 numtype{E <: SetExpansion}(::Type{E}) = numtype(super(E))
@@ -19,7 +19,7 @@ eltype{S,ELT}(::SetExpansion{S,ELT}) = ELT
 eltype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ELT
 eltype{E <: SetExpansion}(::Type{E}) = eltype(super(E))
 
-dim(::SetExpansion) = dim(e.set)
+dim(e::SetExpansion) = dim(set(e))
 dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = dim(S)
 dim{E <: SetExpansion}(::Type{E}) = dim(super(E))
 
@@ -27,7 +27,9 @@ index_dim{S,ELT,ID}(::SetExpansion{S,ELT,ID}) = ID
 index_dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ID
 index_dim{E <: SetExpansion}(::Type{E}) = index_dim(super(E))
 
-function_set(e::SetExpansion) = e.set
+set(e::SetExpansion) = e.set
+
+coefficients(e::SetExpansion) = coef
 
 length(e::SetExpansion) = length(function_set(e))
 
