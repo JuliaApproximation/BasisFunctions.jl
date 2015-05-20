@@ -50,7 +50,7 @@ right(b::FourierBasis, idx) = b.b
 
 period(b::FourierBasis) = b.b-b.a
 
-natural_grid(b::FourierBasis) = b.grid
+grid(b::FourierBasis) = b.grid
 
 
 function frequency(b::FourierBasisEven, idx::Int)
@@ -88,28 +88,44 @@ function differentiate!(dest::FourierBasisOdd, src::FourierBasisOdd, result, coe
 end
 
 
+abstract DiscreteFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
 
-immutable FastFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
+is_inplace(op::DiscreteFourierTransform) = True()
+
+function apply!(op::DiscreteFourierTransform, dest, src, coef_dest, coef_src)
+	for i in eachindex(coef_src)
+		coef_dest[i] = coef_src[i]
+	end
+	apply!(op, dest, src, coef_dest)
+end
+
+
+immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
+	plan!	::	Function
+
+	FastFourierTransform(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
+FastFourierTransform{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransform{SRC,DEST}(src, dest)
 
-immutable InverseFastFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
+# Note that we choose to use bfft, an unscaled inverse fft.
+immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
+	plan!	::	Function
+
+	InverseFastFourierTransform(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
+InverseFastFourierTransform{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransform{SRC,DEST}(src, dest)
 
-function apply!(op::FastFourierTransform, coef_dest, coef_src)
-	n = length(dest(op))
-	coef_dest[:] = coef_src[:]/n
-	fft!(coef_dest)
-end
+apply!(op::DiscreteFourierTransform, dest, src, coef_srcdest) = op.plan!(coef_srcdest)
 
-function apply!(op::InverseFastFourierTransform, coef_dest, coef_src)
-	coef_dest[:] = coef_src[:]
-	bfft!(coef_dest) # bfft is an unscaled inverse fft, which is what we need here
-end
+## Implementation without fft_plan's:
+# apply!(op::FastFourierTransform, dest, src, coef_srcdest) = fft!(coef_srcdest)
+# apply!(op::InverseFastFourierTransform, dest, src, coef_srcdest) = bfft!(coef_srcdest)
+
 
 

@@ -44,6 +44,7 @@ index_dim(::AbstractFunctionSet) = 1
 index_dim{N,T}(::Type{AbstractFunctionSet{N,T}}) = 1
 index_dim{B <: AbstractFunctionSet}(::Type{B}) = 1
 
+# Could this be replaced by a call to promote?
 mixed_eltype{T <: Real}(::Type{T}, ::Type{T}) = T
 mixed_eltype{T <: Real}(::Type{T}, ::Type{Complex{T}}) = Complex{T}
 mixed_eltype{T <: Real}(::Type{Complex{T}}, ::Type{T}) = Complex{T}
@@ -96,7 +97,7 @@ function checkbounds(s::AbstractFunctionSet, i...)
 end
 
 
-gridtype(b::AbstractBasis1d) = typeof(natural_grid(b))
+gridtype(b::AbstractBasis1d) = typeof(grid(b))
 
 
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))

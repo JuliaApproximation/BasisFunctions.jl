@@ -14,7 +14,7 @@ export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, Per
 
 # from basis_types.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
-export numtype, natural_grid, left, right, support, call, call!
+export numtype, grid, left, right, support, call, call!
 
 # from tensorproductbasis.jl
 export TensorProductBasis, tensorproduct

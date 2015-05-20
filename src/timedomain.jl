@@ -18,5 +18,5 @@ length(b::TimeDomain) = length(b.grid)
 
 size(b::TimeDomain) = size(b.grid)
 
-natural_grid(b::TimeDomain) = b.grid
+grid(b::TimeDomain) = b.grid
 

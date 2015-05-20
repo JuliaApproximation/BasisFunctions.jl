@@ -20,6 +20,8 @@ size(op::AbstractOperator) = (length(dest(op)), length(src(op)))
 
 size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 
+is_inplace(op::AbstractOperator) = False()
+
 
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = Array(eltype(dest(op)), size(dest(op)))
@@ -29,6 +31,9 @@ end
 
 # This general definition makes it easier to dispatch on source and destination
 apply!(op::AbstractOperator, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
+
+# The same for an inplace application
+apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_srcdest)
 
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 

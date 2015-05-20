@@ -41,7 +41,7 @@ getindex(e::SetExpansion, i...) = e.coef[i...]
 
 setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
-natural_grid(e::SetExpansion) = natural_grid(function_set(e))
+grid(e::SetExpansion) = grid(function_set(e))
 
 
 expansion(s::AbstractFunctionSet) = SetExpansion(s)

@@ -35,7 +35,7 @@ has_compact_support{B <: SplineBasis}(::Type{B}) = True
 knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
 
 # The natural grid associated with splines
-natural_grid(b::SplineBasis) = b.grid
+grid(b::SplineBasis) = b.grid
 
 
 # The full space of piecewise polynomials of degree K on n subintervals of [a,b]

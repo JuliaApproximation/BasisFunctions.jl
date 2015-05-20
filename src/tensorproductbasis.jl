@@ -10,7 +10,7 @@ immutable TensorProductBasis{B <: AbstractBasis1d, G, N, T} <: AbstractBasis{N,T
 	ntot	::	Int
 	grid	::	TensorProductGrid{G,N,T}
 
-	TensorProductBasis(b::NTuple) = new(b, map(t -> length(t), b), prod(map(t->length(t), b)), TensorProductGrid(map(t->natural_grid(t),b)) )
+	TensorProductBasis(b::NTuple) = new(b, map(t -> length(t), b), prod(map(t->length(t), b)), TensorProductGrid(map(t->grid(t),b)) )
 end
 
 TensorProductBasis{B <: AbstractBasis1d,N}(b::NTuple{N,B}) = TensorProductBasis{B,gridtype(b[1]),N,numtype(b[1])}(b)
@@ -45,7 +45,7 @@ index_dim{B <: TensorProductBasis}(::Type{B}) = index_dim(super(B))
 
 
 
-natural_grid(b::TensorProductBasis) = b.grid
+grid(b::TensorProductBasis) = b.grid
 
 ind2sub(b::TensorProductBasis, idx::Int) = ind2sub(size(b), idx)
 
