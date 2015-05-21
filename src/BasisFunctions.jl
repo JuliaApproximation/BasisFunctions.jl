@@ -7,7 +7,7 @@ import Base: getindex, getindex!, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
-import Base: transpose
+import Base: ctranspose, transpose
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, TensorProductGrid, AbstractIntervalGrid
@@ -23,7 +23,7 @@ export TensorProductBasis, tensorproduct
 export SetExpansion, TensorProductExpansion
 
 # from operator.jl
-export AbstractOperator, CompositeOperator, OperatorTranspose, transpose, operator, src, dest
+export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest, IdentityOperator
 
 # from timedomain.jl
 export TimeDomain
