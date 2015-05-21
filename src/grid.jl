@@ -102,14 +102,14 @@ function getindex!{G}(g::TensorProductGrid{G,2}, x, i1::Int, i2::Int)
 	nothing
 end
 
-function getindex!{G}(g::TensorProductGrid{G,3}, x, i1::Int, i2::Int)
+function getindex!{G}(g::TensorProductGrid{G,3}, x, i1::Int, i2::Int, i3::Int)
 	x[1] = g.grids[1][i1]
 	x[2] = g.grids[2][i2] 
 	x[3] = g.grids[3][i3] 
 	nothing
 end
 
-function getindex!{G}(g::TensorProductGrid{G,4}, x, i1::Int, i2::Int)
+function getindex!{G}(g::TensorProductGrid{G,4}, x, i1::Int, i2::Int, i3::Int, i4::Int)
 	x[1] = g.grids[1][i1]
 	x[2] = g.grids[2][i2] 
 	x[3] = g.grids[3][i3] 

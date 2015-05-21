@@ -7,11 +7,10 @@ numtype(op::AbstractOperator) = numtype(src(op))
 numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
 numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
-eltype(op::AbstractOperator) = mixed_eltype(eltype(src(op)), eltype(dest(op)))
+eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
 
 # Default implementation of src and dest
 src(op::AbstractOperator) = op.src
-
 dest(op::AbstractOperator) = op.dest
 
 # The size of the operator as a linear map from source to destination.
@@ -29,11 +28,18 @@ function apply(op::AbstractOperator, coef_src)
 	coef_dest
 end
 
-# This general definition makes it easier to dispatch on source and destination
+# This general definition makes it easier to dispatch on source and destination.
+# Operators can choose to specialize with or without the src and dest arguments.
 apply!(op::AbstractOperator, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 # The same for an inplace application
 apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_srcdest)
+
+# Catch-all for missing implementations
+apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", op, " not implemented.")
+
+# Catch-all for missing implementations
+apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
 
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 
@@ -71,14 +77,16 @@ end
 
 transpose{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorTranspose{typeof(op),SRC,DEST}(op)
 
-operator(op::OperatorTranspose) = op.op
+operator(opt::OperatorTranspose) = opt.op
 
-src(op::OperatorTranspose) = dest(operator(op))
+src(opt::OperatorTranspose) = dest(operator(opt))
 
-dest(op::OperatorTranspose) = src(operator(op))
+dest(opt::OperatorTranspose) = src(operator(opt))
 
-apply!(op::OperatorTranspose, coef_dest, coef_src) = apply!(op, operator(op), coef_dest, coef_src)
+apply!(opt::OperatorTranspose, coef_dest, coef_src) = apply!(opt, operator(opt), coef_dest, coef_src)
 
+# Definition to make dispatch on source and destination possible.
+apply!(opt::OperatorTranspose, op::AbstractOperator, coef_dest, coef_src) = apply!(opt, op, dest(opt), src(opt), coef_dest, coef_src)
 
 
 # A composite operator applies op2 after op1. It preallocates sufficient memory to store intermediate results.
@@ -90,20 +98,20 @@ immutable CompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,
 	CompositeOperator(op1::OP1, op2::OP2) = new(op1, op2, Array(T,size(dest(op1))))
 end
 
-CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(dest(op2)),dim(dest(op2)),SRC1,DEST2}(op1,op2)
-
+CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(dest(op1)),dim(dest(op1)),SRC1,DEST2}(op1,op2)
 
 src(op::CompositeOperator) = src(op.op1)
 
 dest(op::CompositeOperator) = dest(op.op2)
 
+eltype(op::CompositeOperator) = promote_type(eltype(op.op1), eltype(op.op2))
 
-function apply!(op::CompositeOperator, coef_dest, coef_src, scratch)
-	apply!(op.op1, scratch, coef_src)
-	apply!(op.op2, coef_dest, scratch)
+(*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator(op1, op2)
+
+function apply!(op::CompositeOperator, coef_dest, coef_src)
+	apply!(op.op1, op.scratch, coef_src)
+	apply!(op.op2, coef_dest, op.scratch)
 end
-
-apply!(op::CompositeOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, op.scratch)
 
 
 # A DenseOperator stores its matrix representation upon construction.
@@ -123,8 +131,27 @@ matrix(op::DenseOperator) = op.matrix
 matrix!(op::AbstractOperator, a::Array) = (a[:] = op.matrix)
 
 
-# Catch-all for missing implementations
-apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation on ", op, " not implemented.")
 
+# The identity operator
+immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+end
+
+is_inplace(op::IdentityOperator) = True()
+
+apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
+
+
+# The identity operator
+immutable ScalingOperator{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	val	::	T
+end
+
+is_inplace(op::ScalingOperator) = True()
+
+function apply!(op::ScalingOperator, dest, src, coef_srcdest)
+	for i in eachindex(coef_srcdest)
+		coef_srcdest[i] *= op.val
+	end
+end
 
 
