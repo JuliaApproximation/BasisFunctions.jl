@@ -23,7 +23,8 @@ export TensorProductBasis, tensorproduct
 export SetExpansion, TensorProductExpansion
 
 # from operator.jl
-export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest, IdentityOperator
+export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
+    IdentityOperator, ScalingOperator, DenseOperator, AffineMap
 
 # from timedomain.jl
 export TimeDomain
@@ -52,6 +53,8 @@ include("basis_types.jl")
 include("tensorproductbasis.jl")
 
 include("expansions.jl")
+
+include("euclidean.jl")
 
 include("operator.jl")
 

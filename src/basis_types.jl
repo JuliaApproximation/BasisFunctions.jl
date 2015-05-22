@@ -30,14 +30,14 @@ numtype{N,T}(::Type{AbstractFunctionSet{N,T}}) = T
 numtype{B <: AbstractFunctionSet}(::Type{B}) = numtype(super(B))
 
 # Function sets are real-valued by default
-isreal(::AbstractFunctionSet) = True
+isreal(::AbstractFunctionSet) = True()
 isreal{N,T}(::Type{AbstractFunctionSet{N,T}}) = True
 isreal{B <: AbstractFunctionSet}(::Type{B}) = True
 
 # Default element type for complex basis functions is Complex{T}
 eltype(b::AbstractFunctionSet) = _eltype(b, isreal(b))
-_eltype(b::AbstractFunctionSet, ::Type{True}) = numtype(b)
-_eltype(b::AbstractFunctionSet, ::Type{False}) = complexify(numtype(b))
+_eltype(b::AbstractFunctionSet, isreal::True) = numtype(b)
+_eltype(b::AbstractFunctionSet, isreal::False) = complexify(numtype(b))
 
 # Default dimension of the index is 1
 index_dim(::AbstractFunctionSet) = 1
@@ -48,8 +48,8 @@ complexify{T <: Real}(::Type{T}) = Complex{T}
 complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 
 
-is_orthogonal(b::AbstractBasis) = False
-is_biorthogonal(b::AbstractBasis) = False
+is_orthogonal(b::AbstractBasis) = False()
+is_biorthogonal(b::AbstractBasis) = False()
 
 
 size(s::AbstractFunctionSet) = (length(s),)

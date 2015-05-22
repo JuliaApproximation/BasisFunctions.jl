@@ -1,7 +1,7 @@
 # operator.jl
 
 
-abstract AbstractOperator{SRC <: AbstractFunctionSet,DEST <: AbstractFunctionSet}
+abstract AbstractOperator{SRC,DEST}
 
 numtype(op::AbstractOperator) = numtype(src(op))
 numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
@@ -23,7 +23,7 @@ is_inplace(op::AbstractOperator) = False()
 
 
 function apply(op::AbstractOperator, coef_src)
-	coef_dest = Array(eltype(dest(op)), size(dest(op)))
+	coef_dest = Array(eltype(op), size(dest(op)))
 	apply!(op, coef_dest, coef_src)
 	coef_dest
 end
@@ -102,6 +102,47 @@ apply!(opt::OperatorTranspose, coef_dest, coef_src) = apply!(opt, operator(opt),
 # Definition to make dispatch on source and destination possible.
 apply!(opt::OperatorTranspose, op::AbstractOperator, coef_dest, coef_src) = apply!(opt, op, dest(opt), src(opt), coef_dest, coef_src)
 
+
+
+# The identity operator
+immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+end
+
+IdentityOperator(src) = IdentityOperator(src, src)
+
+is_inplace(op::IdentityOperator) = True()
+
+apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
+
+
+# The identity operator up to a scaling
+immutable ScalingOperator{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	scalar	::	T
+	src		::	SRC
+	dest	::	DEST
+end
+
+is_inplace(op::ScalingOperator) = True()
+
+scalar(op::ScalingOperator) = op.scalar
+
+(*){T <: Number}(a::T, op::IdentityOperator) = ScalingOperator(a, src(op), dest(op))
+(*){T <: Number}(op::IdentityOperator, a::T) = ScalingOperator(a, src(op), dest(op))
+
+function apply!(op::ScalingOperator, dest, src, coef_srcdest)
+	for i in eachindex(coef_srcdest)
+		coef_srcdest[i] *= op.scalar
+	end
+end
+
+# Extra definition to avoid making two passes over the data
+function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
+	for i in eachindex(coef_src)
+		coef_dest[i] = op.scalar * coef_src[i]
+	end
+end
 
 
 # A composite operator applies op2 after op1. It preallocates sufficient memory to store intermediate results.
@@ -229,7 +270,8 @@ immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,SRC,DE
 	end
 end
 
-OperatorSum{OP1,OP2}(op1::OP1, op2::OP2, val1, val2) = OperatorSum{OP1, OP2, eltype(op1), dim(dest(op1)), src(op1), dest(op1)}(op1, op2, val1, val2)
+OperatorSum{SRC,DEST}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1, val2) =
+	OperatorSum{typeof(op1), typeof(op2), eltype(op1,op2), dim(dest(op1)), SRC, DEST}(op1, op2, promote(val1, val2)...)
 
 src(op::OperatorSum) = src(op.op1)
 
@@ -264,6 +306,13 @@ function apply!(op::OperatorSum, op1, op2, coef_dest, coef_src)
 	end
 end
 
+function apply!(op::OperatorSum, op1::ScalingOperator, op2::ScalingOperator, coef_dest, coef_src)
+	val = op.val1 * scalar(op1) + op.val2 * scalar(op2)
+	for i in eachindex(coef_dest)
+		coef_dest[i] = val * coef_src[i]
+	end
+end
+
 function apply!(op::OperatorSum, op1::ScalingOperator, op2, coef_dest, coef_src)
 	apply!(op2, coef_dest, coef_src)
 
@@ -282,6 +331,21 @@ function apply!(op::OperatorSum, op1, op2::ScalingOperator, coef_dest, coef_src)
 	end
 end
 
+
+(-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), -one(eltype(op2)))
+
+
+immutable AffineMap{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+	matrix	::	Array{T,2}
+end
+
+AffineMap{T <: Number}(matrix::Array{T,2}) = AffineMap(Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)), matrix)
+
+AffineMap{T <: Number}(matrix::Array{Complex{T},2}) = AffineMap(Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)), matrix)
+
+apply!(op::AffineMap, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 
 
 # A DenseOperator stores its matrix representation upon construction.
@@ -302,44 +366,5 @@ matrix!(op::AbstractOperator, a::Array) = (a[:] = op.matrix)
 
 
 
-# The identity operator
-immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-IdentityOperator(src, dest) = IdentityOperator{typeof(src),typeof(dest)}(src, dest)
-
-is_inplace(op::IdentityOperator) = True()
-
-apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
-
-
-# The identity operator up to a scaling
-immutable ScalingOperator{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	scalar	::	T
-	src		::	SRC
-	dest	::	DEST
-end
-
-is_inplace(op::ScalingOperator) = True()
-
-scalar(op::ScalingOperator) = op.scalar
-
-(*){T <: Number}(a::T, op::IdentityOperator) = ScalingOperator(a, src(op), dest(op))
-(*){T <: Number}(op::IdentityOperator, a::T) = ScalingOperator(a, src(op), dest(op))
-
-function apply!(op::ScalingOperator, dest, src, coef_srcdest)
-	for i in eachindex(coef_srcdest)
-		coef_srcdest[i] *= op.scalar
-	end
-end
-
-# Extra definition to avoid making two passes over the data
-function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
-	for i in eachindex(coef_src)
-		coef_dest[i] = op.scalar * coef_src[i]
-	end
-end
 
 

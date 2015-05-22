@@ -18,7 +18,7 @@ typealias FourierBasisNd{EVEN,G,N,T} TensorProductBasis{FourierBasis{EVEN,T},G,N
 
 
 
-isreal(b::FourierBasis) = False
+isreal(b::FourierBasis) = False()
 isreal{B <: FourierBasis}(::Type{B}) = False
 
 iseven{EVEN}(::FourierBasis{EVEN}) = EVEN
