@@ -17,6 +17,8 @@ TensorProductBasis{B <: AbstractBasis1d,N}(b::NTuple{N,B}) = TensorProductBasis{
 
 tensorproduct(b::AbstractBasis1d, n) = TensorProductBasis(tuple([b for i=1:n]...))
 
+name(b::TensorProductBasis) = "tensor product " * name(b.bases[1])
+
 isreal(b::TensorProductBasis) = isreal(b.bases[1])
 isreal{B <: AbstractBasis1d,G,N,T}(::Type{TensorProductBasis{B,G,N,T}}) = isreal(B)
 

@@ -29,7 +29,7 @@ index_dim{E <: SetExpansion}(::Type{E}) = index_dim(super(E))
 
 set(e::SetExpansion) = e.set
 
-coefficients(e::SetExpansion) = coef
+coefficients(e::SetExpansion) = e.coef
 
 length(e::SetExpansion) = length(function_set(e))
 

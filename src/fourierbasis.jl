@@ -16,7 +16,7 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 
 typealias FourierBasisNd{EVEN,G,N,T} TensorProductBasis{FourierBasis{EVEN,T},G,N,T}
 
-
+name(b::FourierBasis) = "Fourier series"
 
 isreal(b::FourierBasis) = False()
 isreal{B <: FourierBasis}(::Type{B}) = False

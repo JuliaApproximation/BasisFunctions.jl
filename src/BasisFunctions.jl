@@ -9,18 +9,21 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose
 
+import Base: show, showcompact
+
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, TensorProductGrid, AbstractIntervalGrid
 
 # from basis_types.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
 export numtype, grid, left, right, support, call, call!
+export name
 
 # from tensorproductbasis.jl
 export TensorProductBasis, tensorproduct
 
 #from expansions.jl
-export SetExpansion, TensorProductExpansion
+export SetExpansion, TensorProductExpansion, coefficients, set
 
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
