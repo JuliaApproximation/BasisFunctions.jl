@@ -9,6 +9,11 @@ numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
 eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
 
+eltype(op1::AbstractOperator, op::AbstractOperator...) = promote_type(eltype(op1), map(eltype, op)...)
+
+eltype(b1::AbstractFunctionSet, b::AbstractFunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
+
+
 # Default implementation of src and dest
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
@@ -157,8 +162,6 @@ immutable CompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,
 		new(op1, op2, zeros(T,size(dest(op1))))
 	end
 end
-
-eltype(op::AbstractOperator...) = promote_type(map(eltype, op)...)
 
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.

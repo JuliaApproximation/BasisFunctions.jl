@@ -11,7 +11,7 @@ immutable DenseInterpolation{ELT,SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST
     DenseInterpolation(src, dest) = new(src, dest, interpolation_matrix(dest, grid(src), ELT))
 end
 
-DenseInterpolation{SRC,DEST}(src::SRC, dest::DEST) = DenseInterpolation{mixed_eltype(eltype(src(op)), eltype(dest(op))),SRC,DEST}(src, dest)
+DenseInterpolation{SRC,DEST}(src::SRC, dest::DEST) = DenseInterpolation{eltype(src,dest),SRC,DEST}(src, dest)
 
 matrix(op::DenseInterpolation) = op.matrix
 

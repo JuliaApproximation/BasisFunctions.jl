@@ -1,5 +1,6 @@
 module BasisFunctions
 
+import ApproxFun
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, checkbounds, range
 
@@ -18,6 +19,7 @@ export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, Per
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
 export numtype, grid, left, right, support, call, call!
 export name
+export transform_operator
 
 # from tensorproductbasis.jl
 export TensorProductBasis, tensorproduct

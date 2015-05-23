@@ -66,9 +66,15 @@ end
 
 mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
 
-call{T <: Number}(b::FourierBasisOdd, idx::Int, x::T) = exp(2 * pi * 1im * mapx(b, x) * frequency(b, idx))
+# One has to be careful here not to match Floats and BigFloats by accident.
+# Hence the conversions to T in the lines below.
+call{T}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx))
 
-call{T,S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) = (idx == length(b)/2+1 ? one(Complex{T}) * cos(2 * pi * mapx(b, x) * frequency(b, idx)) : exp(2 * pi * 1im * mapx(b, x) * frequency(b, idx)))
+call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
+
+call{T}(b::FourierBasisEven{T}, idx::Int, x::T) = (idx == length(b)/2+1 ? one(Complex{T}) * cos(T(2) * pi * mapx(b, x) * frequency(b, idx)) : exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx)))
+
+call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) = call(b, idx, T(x))
 
 
 
@@ -90,42 +96,71 @@ end
 
 abstract DiscreteFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
 
-is_inplace(op::DiscreteFourierTransform) = True()
+abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 
-function apply!(op::DiscreteFourierTransform, dest, src, coef_dest, coef_src)
-	for i in eachindex(coef_src)
-		coef_dest[i] = coef_src[i]
-	end
-	apply!(op, dest, src, coef_dest)
+# These types use FFTW and so they are (currently) limited to Float64.
+# This will improve once the pure-julia implementation of FFT lands (#6193).
+# But, we can also borrow from ApproxFun so let's do that right away
+
+is_inplace(op::DiscreteFourierTransformFFTW) = True()
+
+
+
+immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+	plan!	::	Function
+
+	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
+
+FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformFFTW{SRC,DEST}(src, dest)
+
+# Note that we choose to use bfft, an unscaled inverse fft.
+immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+	plan!	::	Function
+
+	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+end
+
+InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransformFFTW{SRC,DEST}(src, dest)
+
+# One implementation for forward and inverse transform in-place: call the plan
+apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!(coef_srcdest)
 
 
 immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
-
-	FastFourierTransform(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
-FastFourierTransform{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransform{SRC,DEST}(src, dest)
+# Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
+# This allocates memory.
+apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src))
 
-# Note that we choose to use bfft, an unscaled inverse fft.
+
 immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
-
-	InverseFastFourierTransform(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
-InverseFastFourierTransform{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransform{SRC,DEST}(src, dest)
+apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) * length(coef_src))
 
-apply!(op::DiscreteFourierTransform, dest, src, coef_srcdest) = op.plan!(coef_srcdest)
 
-## Implementation without fft_plan's:
-# apply!(op::FastFourierTransform, dest, src, coef_srcdest) = fft!(coef_srcdest)
-# apply!(op::InverseFastFourierTransform, dest, src, coef_srcdest) = bfft!(coef_srcdest)
+
+transform_operator(src::TimeDomain, dest::FourierBasis) = _transform_operator(src, dest, eltype(src,dest))
+
+_transform_operator(src::TimeDomain, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+
+_transform_operator{T <: FloatingPoint}(src::TimeDomain, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
+
+transform_operator(src::FourierBasis, dest::TimeDomain) = _transform_operator(src, dest, eltype(src,dest))
+
+_transform_operator(src::FourierBasis, dest::TimeDomain, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+
+_transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::TimeDomain, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
 
 
