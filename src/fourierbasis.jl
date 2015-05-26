@@ -68,11 +68,11 @@ mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx))
+call{T <: FloatingPoint}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx))
 
 call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
 
-call{T}(b::FourierBasisEven{T}, idx::Int, x::T) = (idx == length(b)/2+1 ? one(Complex{T}) * cos(T(2) * pi * mapx(b, x) * frequency(b, idx)) : exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx)))
+call{T <: FloatingPoint}(b::FourierBasisEven{T}, idx::Int, x::T) = (idx == length(b)/2+1 ? one(Complex{T}) * cos(T(2) * pi * mapx(b, x) * frequency(b, idx)) : exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx)))
 
 call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) = call(b, idx, T(x))
 
