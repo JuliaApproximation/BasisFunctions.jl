@@ -1,6 +1,6 @@
 module BasisFunctions
 
-import ApproxFun
+#import ApproxFun
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, checkbounds, range
 
@@ -13,7 +13,9 @@ import Base: ctranspose, transpose
 import Base: show, showcompact
 
 # from grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, TensorProductGrid, AbstractIntervalGrid
+export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
+        TensorProductGrid, AbstractIntervalGrid
+export dim
 
 # from basis_types.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
@@ -38,7 +40,9 @@ export TimeDomain
 export ZeroPadding, Restriction
 
 # from fourierbasis.jl
-export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, FastFourierTransform, InverseFastFourierTransform
+export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
+    FastFourierTransform, InverseFastFourierTransform,
+    FastFourierTransformFFTW, InverseFastFourierTransformFFTW
 
 # from plots.jl
 export plot

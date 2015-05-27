@@ -156,11 +156,18 @@ _transform_operator(src::TimeDomain, dest::FourierBasis, ::Type{Complex{Float64}
 
 _transform_operator{T <: FloatingPoint}(src::TimeDomain, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
+# Dispatching doesn't work
+#transform_operator(src, dest::FourierBasisNd, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+
+
 transform_operator(src::FourierBasis, dest::TimeDomain) = _transform_operator(src, dest, eltype(src,dest))
 
 _transform_operator(src::FourierBasis, dest::TimeDomain, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 
 _transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::TimeDomain, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
+
+# Dispatching doesn't work
+#transform_operator(src::FourierBasisNd, dest, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 
 

@@ -6,6 +6,11 @@ immutable TimeDomain{G <: AbstractGrid,ELT,N,T} <: AbstractBasis{N,T}
 	TimeDomain(grid::AbstractGrid{N,T}) = new(grid)
 end
 
+typealias TimeDomain1d{G,ELT,T} TimeDomain{G,ELT,1,T}
+
+typealias TimeDomainNd{G,ELT,N,T} TensorProductBasis{TimeDomain1d{G,ELT,T},G,N,T}
+
+
 TimeDomain{N,T}(grid::AbstractGrid{N,T}) = TimeDomain{typeof(grid),T,N,T}(grid)
 
 TimeDomain{N,T,ELT <: Number}(grid::AbstractGrid{N,T}, ::Type{ELT}) = TimeDomain{typeof(grid),ELT,N,T}(grid)
