@@ -14,7 +14,7 @@ import Base: show, showcompact
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid
+        TensorProductGrid, AbstractIntervalGrid, eachelement
 export dim
 
 # from basis_types.jl
