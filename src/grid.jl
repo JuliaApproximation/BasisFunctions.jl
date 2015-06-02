@@ -16,18 +16,6 @@ eltype{N,T}(::AbstractGrid{N,T}) = T
 eltype{N,T}(::Type{AbstractGrid{N,T}}) = T
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(super(G))
 
-
-# iterate over grid points
-start(g::AbstractGrid) = 1
-done(g::AbstractGrid, i::Int) = (length(g) < i)
-next(g::AbstractGrid, i::Int) = (g[i], i+1)
-
-getindex!(g::AbstractGrid1d, x, i::Int) = (x[1] = g[i])
-
-checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
-
-eachindex(g::AbstractGrid) = 1:length(g)
-
 # Default dimension of the index is 1
 index_dim(::AbstractGrid) = 1
 index_dim{N,T}(::Type{AbstractGrid{N,T}}) = 1
@@ -36,6 +24,69 @@ index_dim{G <: AbstractGrid}(::Type{G}) = 1
 size(g::AbstractGrid1d) = (length(g),)
 
 support(g::AbstractGrid) = (left(g),right(g))
+
+
+
+# Getindex allocates memory
+# General implementation for abstract grids: allocate memory and call getindex!
+function getindex{N,T}(g::AbstractGrid{N,T}, idx...)
+	x = Array(T,N)
+	getindex!(g, x, idx...)
+	x
+end
+
+# getindex! is a bit silly in 1D, but provide it anyway because it could be called from general code
+#getindex!(g::AbstractGrid1d, x, i::Int) = (x[1] = g[i])
+
+checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
+
+# Default implementation of index iterator: construct a range
+eachindex(g::AbstractGrid) = 1:length(g)
+
+
+# Default efficient iterator over grid points ('for x in grid')
+# Iterates without allocating memory for each vector x.
+# In the end, an iteration does allocate quite a bit of memory. TODO: fix
+immutable GridIterator{N,T,G <: AbstractGrid,ITER}
+	grid		::	G
+	griditer	::	ITER
+	x			::	Array{T,1}
+end
+
+function GridIterator{N,T}(grid::AbstractGrid{N,T})
+	iter = eachindex(grid)
+	x = zeros(T,N)
+	GridIterator{N,T,typeof(grid),typeof(iter)}(grid, iter, x)
+end
+
+eachelement(grid::AbstractGrid) = GridIterator(grid)
+
+start(iter::GridIterator) = start(iter.griditer)
+
+function next(iter::GridIterator, state)
+	(i,state) = next(iter.griditer, state)
+	getindex!(iter.grid, iter.x, i)
+	(iter.x, state)
+end
+
+function next(iter::GridIterator{1}, state)
+	(i,state) = next(iter.griditer, state)
+	x = getindex(iter.grid, i)
+	(x, state)
+end
+
+
+#function next(grid::AbstractGrid1d, state)
+#	(i,gridstate) = next(state.griditer, state.gridstate[1])
+#	x = getindex(state.grid, i)
+#	state.gridstate[1] = gridstate
+#	(x, state)
+#end
+
+done(iter::GridIterator, state) = done(iter.griditer, state)
+
+
+
 
 
 immutable TensorProductGrid{G <: AbstractGrid1d,N,T} <: AbstractGrid{N,T}
@@ -76,20 +127,18 @@ range(g::TensorProductGrid, j::Int) = range(g.grids[j])
 
 length(g::TensorProductGrid) = g.ntot
 
-ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
+#ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
 
-sub2ind(g::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
-
-
-# Getindex allocates memory
-function getindex{G,N}(g::TensorProductGrid{G,N}, idx...)
-	x = Array(eltype(g),N)
-	getindex!(g, x, idx...)
-	x
-end
+#sub2ind(g::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
 
-getindex!{G,N}(g::TensorProductGrid{G,N}, x, idx::Int) = getindex!(g, x, ind2sub(g, idx)...)
+#getindex!{G,N}(g::TensorProductGrid{G,N}, x, idx::Int) = getindex!(g, x, ind2sub(g, idx)...)
+
+getindex!{G}(g::TensorProductGrid{G,1}, x, idx::CartesianIndex) = getindex!(g, x, idx[1])
+
+getindex!{G}(g::TensorProductGrid{G,2}, x, idx::CartesianIndex) = getindex!(g, x, idx[1], idx[2])
+
+getindex!{G}(g::TensorProductGrid{G,3}, x, idx::CartesianIndex) = getindex!(g, x, idx[1], idx[2], idx[3])
 
 function getindex!{G}(g::TensorProductGrid{G,1}, x, i1::Int)
 	x[1] = g.grids[1][i1]
