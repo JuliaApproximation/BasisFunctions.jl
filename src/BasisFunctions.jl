@@ -15,7 +15,7 @@ import Base: show, showcompact
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement
-export dim
+export dim, left,right
 
 # from basis_types.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
@@ -34,7 +34,7 @@ export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, opera
     IdentityOperator, ScalingOperator, DenseOperator, AffineMap
 
 # from timedomain.jl
-export TimeDomain
+export TimeDomain, TimeDomain1d, TimeDomainNd
 
 # from extensions.jl
 export ZeroPadding, Restriction

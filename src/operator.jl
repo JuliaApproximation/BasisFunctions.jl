@@ -52,8 +52,8 @@ _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(o
 # Provide a general dispatchable definition for in-place operators also
 apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_srcdest)
 
-# Catch-all for missing implementations
-apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", op, " not implemented.")
+## # Catch-all for missing implementations
+## apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", op, " not implemented.")
 
 # Catch-all for missing implementations
 apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
@@ -61,9 +61,9 @@ apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operat
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 
 function matrix(op::AbstractOperator)
-	a = Array(eltype(op), size(op))
-	matrix!(op, a)
-	a
+    a = Array(eltype(op), size(op))
+    matrix!(op, a)
+    a
 end
 
 function matrix!{T}(op::AbstractOperator, a::Array{T})
@@ -80,7 +80,7 @@ function matrix!{T}(op::AbstractOperator, a::Array{T})
 		end
 		r[i] = one(T)
 		apply!(op, reshape(s, size(dest(op))), reshape(r, size(src(op))))
-		a[:,i] = s
+            a[:,i] = s
 	end
 end
 
@@ -139,7 +139,7 @@ scalar(op::ScalingOperator) = op.scalar
 function apply!(op::ScalingOperator, dest, src, coef_srcdest)
 	for i in eachindex(coef_srcdest)
 		coef_srcdest[i] *= op.scalar
-	end
+        end
 end
 
 # Extra definition to avoid making two passes over the data
@@ -159,13 +159,13 @@ immutable CompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,
 	function CompositeOperator(op1::OP1, op2::OP2)
 		@assert size(op1,1) == size(op2,2)
 
-		new(op1, op2, zeros(T,size(dest(op1))))
+		new(op1, op2, zeros(T,size(src(op2))))
 	end
 end
 
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
-CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(dest(op1)),dim(dest(op1)),SRC1,DEST2}(op1,op2)
+CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(dest(op1)),length(size(src(op2))),SRC1,DEST2}(op1,op2)
 
 src(op::CompositeOperator) = src(op.op1)
 
@@ -207,12 +207,12 @@ immutable TripleCompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperato
 		@assert size(op1,1) == size(op2,2)
 		@assert size(op2,1) == size(op3,2)
 
-		new(op1, op2, op3, zeros(T,size(dest(op1))), zeros(T,size(dest(op2))))
+		new(op1, op2, op3, zeros(T,size(src(op2))), zeros(T,size(src(op3))))
 	end
 end
 
 TripleCompositeOperator{SRC1,DEST1,SRC3,DEST3}(op1::AbstractOperator{SRC1,DEST1}, op2, op3::AbstractOperator{SRC3,DEST3}) =
-	TripleCompositeOperator{typeof(op1),typeof(op2),typeof(op3),eltype(op1,op2,op3),dim(dest(op1)),dim(dest(op2)),SRC1,DEST3}(op1, op2, op3)
+	TripleCompositeOperator{typeof(op1),typeof(op2),typeof(op3),eltype(op1,op2,op3),length(size(src(op2))),length(size(src(op3))),SRC1,DEST3}(op1, op2, op3)
 
 src(op::TripleCompositeOperator) = src(op.op1)
 
@@ -223,7 +223,7 @@ eltype(op::TripleCompositeOperator) = eltype(op.op1, op.op2, op.op3)
 apply!(op::TripleCompositeOperator, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
 function _apply!(op::TripleCompositeOperator, op2_inplace::True, op3_inplace::True, coef_dest, coef_src)
-	apply!(op.op1, coef_dest, coef_src)
+	apply!(op.op, coef_dest, coef_src)
 	apply!(op.op2, coef_dest)
 	apply!(op.op3, coef_dest)
 end
@@ -274,7 +274,7 @@ immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,SRC,DE
 end
 
 OperatorSum{SRC,DEST}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1, val2) =
-	OperatorSum{typeof(op1), typeof(op2), eltype(op1,op2), dim(dest(op1)), SRC, DEST}(op1, op2, promote(val1, val2)...)
+	OperatorSum{typeof(op1), typeof(op2), eltype(op1,op2), length(size(dest(op1))), SRC, DEST}(op1, op2, promote(val1, val2)...)
 
 src(op::OperatorSum) = src(op.op1)
 

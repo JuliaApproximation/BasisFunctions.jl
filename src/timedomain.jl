@@ -25,3 +25,7 @@ size(b::TimeDomain) = size(b.grid)
 
 grid(b::TimeDomain) = b.grid
 
+left(b::TimeDomain) = left(b.grid)
+
+right(b::TimeDomain) = right(b.grid)
+
