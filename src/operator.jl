@@ -1,6 +1,9 @@
 # operator.jl
 
 
+# Any linear operator that maps SRC to DEST.
+# Typically, SRC and DEST are of type AbstractFunctionSet, but that is not enforced.
+# The action of the operator is defined by overriding apply!
 abstract AbstractOperator{SRC,DEST}
 
 numtype(op::AbstractOperator) = numtype(src(op))
@@ -35,7 +38,13 @@ end
 
 # This general definition makes it easier to dispatch on source and destination.
 # Operators can choose to specialize with or without the src and dest arguments.
-apply!(op::AbstractOperator, coef_dest, coef_src) = _apply!(op, is_inplace(op), coef_dest, coef_src)
+function apply!(op::AbstractOperator, coef_dest, coef_src)
+	@assert length(coef_dest) == length(dest(op))
+	@assert length(coef_src) == length(src(op))
+
+	# distinguish between operators that are in-place and operators that are not
+	_apply!(op, is_inplace(op), coef_dest, coef_src)
+end
 
 # Operator is in-place, use its in-place operation but don't overwrite coef_src
 function _apply!(op::AbstractOperator, op_inplace::True, coef_dest, coef_src)
@@ -139,10 +148,10 @@ scalar(op::ScalingOperator) = op.scalar
 function apply!(op::ScalingOperator, dest, src, coef_srcdest)
 	for i in eachindex(coef_srcdest)
 		coef_srcdest[i] *= op.scalar
-        end
+    end
 end
 
-# Extra definition to avoid making two passes over the data
+# Extra definition for out-of-place version to avoid making an intermediate copy
 function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
 	for i in eachindex(coef_src)
 		coef_dest[i] = op.scalar * coef_src[i]

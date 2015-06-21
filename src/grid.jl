@@ -12,6 +12,10 @@ dim{N,T}(::AbstractGrid{N,T}) = N
 dim{N,T}(::Type{AbstractGrid{N,T}}) = N
 dim{G <: AbstractGrid}(::Type{G}) = dim(super(G))
 
+numtype{N,T}(::AbstractGrid{N,T}) = T
+numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
+numtype{G <: AbstractGrid}(::Type{G}) = numtype(super(G))
+
 eltype{N,T}(::AbstractGrid{N,T}) = T
 eltype{N,T}(::Type{AbstractGrid{N,T}}) = T
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(super(G))

@@ -1,10 +1,11 @@
 module BasisFunctions
 
-#import ApproxFun
+# We may import ApproxFun to use its implementation of FFT for BigFloat's
+# import ApproxFun
 
-import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, checkbounds, range
+import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range
 
-import Base: getindex, getindex!, setindex!, eltype
+import Base: getindex, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
@@ -17,14 +18,17 @@ export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, Per
         TensorProductGrid, AbstractIntervalGrid, eachelement
 export dim, left,right
 
-# from basis_types.jl
-export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d, SetFunction
+# from functionset.jl
+export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
 export numtype, grid, left, right, support, call, call!
 export name
-export transform_operator
+export transform_operator, differentiation_operator
+
+# from setfunction.jl
+export SetFunction
 
 # from tensorproductbasis.jl
-export TensorProductBasis, tensorproduct
+export TensorProductSet, TensorProductBasis, tensorproduct, idx2frequency, frequency2idx
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set
@@ -37,7 +41,7 @@ export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, opera
 export TimeDomain, TimeDomain1d, TimeDomainNd
 
 # from extensions.jl
-export ZeroPadding, Restriction
+export Extension, Restriction
 
 # from fourierbasis.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
@@ -57,7 +61,9 @@ typealias False Val{false}
 
 include("grid.jl")
 
-include("basis_types.jl")
+include("functionset.jl")
+
+include("setfunction.jl")
 
 include("tensorproductbasis.jl")
 

@@ -52,49 +52,87 @@ period(b::FourierBasis) = b.b-b.a
 
 grid(b::FourierBasis) = b.grid
 
+nhalf(b::FourierBasis) = length(b)>>1
 
-function frequency(b::FourierBasisEven, idx::Int)
-	checkbounds(b, idx)
-	nh = length(b)>>1
-	idx <= nh+1 ? idx-1 : idx - 2*nh - 1
-end
 
-function frequency(b::FourierBasisOdd, idx::Int)
-	nh = (length(b)-1)>>1
-	idx <= nh+1 ? idx-1 : idx - 2*nh - 2
-end
-
+# Map the point x in [a,b] to the corresponding point in [0,1]
 mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
+
+# The map between the index of a basis function and its Fourier frequency
+idx2frequency(b::FourierBasisEven, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
+idx2frequency(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+
+# The inverse map
+frequency2idx(b::FourierBasis, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
+#frequency2idx(b::FourierBasisOdd, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T <: FloatingPoint}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx))
+call{T <: FloatingPoint}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
 
 call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
 
-call{T <: FloatingPoint}(b::FourierBasisEven{T}, idx::Int, x::T) = (idx == length(b)/2+1 ? one(Complex{T}) * cos(T(2) * pi * mapx(b, x) * frequency(b, idx)) : exp(T(2) * pi * 1im * mapx(b, x) * frequency(b, idx)))
+call{T <: FloatingPoint}(b::FourierBasisEven{T}, idx::Int, x::T) =
+	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
+						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
 
 call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) = call(b, idx, T(x))
 
 
-
-function differentiate!(dest::FourierBasisOdd, src::FourierBasisOdd, result, coef, i)
-	@assert i>=0
+function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
 	@assert length(dest)==length(src)
+#	@assert period(dest)==period(src)
+	@assert op.var == 1
 
-	nh = (length(b)-1)>>1
-	p = period(b)
+	nh = nhalf(src)
+	p = period(src)
+	i = order(op)
 
 	for j = 0:nh
-		result[j+1] = (2 * pi * im * j / p)^i * coef[j+1]
+		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
 	end
 	for j = 1:nh
-		result[nh+1+j] = (2 * pi * im * (-nh-1+j) / p)^i * coef[nh+1+j]
+		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
 	end
 end
 
 
-abstract DiscreteFourierTransform{SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
+function apply!(op::Extension, dest::FourierBasisOdd, src::FourierBasisEven, coef_dest, coef_src)
+	@assert length(dest) > length(src)
+
+	nh = nhalf(src)
+
+	for i=0:nh-1
+		coef_dest[i+1] = coef_src[i+1]
+	end
+	for i=1:nh-1
+		coef_dest[end-nh+i+1] = coef_src[nh+1+i]
+	end
+	coef_dest[nh+1] = coef_src[nh+1]/2
+	coef_dest[end-nh+1] = coef_src[nh+1]/2
+	for i = nh+2:length(coef_dest)-nh
+		coef_dest[i] = 0
+	end
+end
+
+function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_dest, coef_src)
+	@assert length(dest) > length(src)
+
+	nh = nhalf(src)
+
+	for i=0:nh
+		coef_dest[i+1] = coef_src[i+1]
+	end
+	for i=1:nh
+		coef_dest[end-nh+i] = coef_src[nh+1+i]
+	end
+	for i = nh+2:length(coef_dest)-nh
+		coef_dest[i] = 0
+	end
+end
+
+
+abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 
 abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
 
@@ -149,7 +187,12 @@ end
 apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) * length(coef_src))
 
 
+# Default differentiation operator
+differentiation_operator(b::FourierBasisOdd) = Differentiation(b, b)
+differentiation_operator(b::FourierBasisEven) = Differentiation(b, FourierBasis(length(b)+1, left(b), right(b)))
 
+
+# For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
 transform_operator(src::TimeDomain, dest::FourierBasis) = _transform_operator(src, dest, eltype(src,dest))
 
 _transform_operator(src::TimeDomain, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
@@ -169,5 +212,6 @@ _transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::TimeDomain, ::T
 
 # Dispatching doesn't work
 #transform_operator(src::FourierBasisNd, dest, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+
 
 

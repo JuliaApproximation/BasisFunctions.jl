@@ -1,9 +1,8 @@
 # discrete_transforms.jl
 
-abstract AbstractDiscreteTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 
-
-immutable DenseInterpolation{ELT,SRC,DEST} <: AbstractDiscreteTransform{SRC,DEST}
+# TODO: merge this with DenseOperator, because the latter is more general
+immutable DenseInterpolation{ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
     matrix  ::  Array{ELT,2}

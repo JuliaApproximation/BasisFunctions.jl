@@ -3,6 +3,61 @@
 using Base.Cartesian
 
 
+# A TensorProductSet is itself a set: the tensor product of SN sets.
+# Parameter S is a tuple of types, representing the SN (possibly different) types of the sets.
+# N is the total dimension of the corresponding space and T the numeric type as usual.
+immutable TensorProductSet{S, SN, N, T} <: AbstractFunctionSet{N,T}
+    sets   ::  S
+
+    TensorProductSet(sets::Tuple) = new(sets)
+end
+
+TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),length(sets),sum(map(dim, sets)), numtype(sets[1])}(sets)
+
+tensorproduct(b::AbstractFunctionSet1d, n) = TensorProductSet(tuple([b for i=1:n]...))
+
+# It would be odd if the first method below was ever called, because SN=1 makes
+# little sense. But perhaps in generic code somewhere...
+name{S}(b::TensorProductSet{S,1}) = "tensor product " * name(b.sets[1])
+name{S}(b::TensorProductSet{S,2}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * ")"
+name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * ")"
+name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
+
+size(b::TensorProductSet) = map(length, b.sets)
+
+size(b::TensorProductSet, j::Int) = length(b.sets[j])
+
+length(b::TensorProductSet) = prod(size(b))
+
+set(b::TensorProductSet, i::Int) = b.sets[i]
+
+@generated function eachindex{S,SN}(b::TensorProductSet{S,SN})
+    startargs = fill(1, SN)
+    stopargs = [:(size(b,$i)) for i=1:SN]
+    :(CartesianRange(CartesianIndex{$SN}($(startargs...)), CartesianIndex{$SN}($(stopargs...))))
+end
+
+@generated function getindex{S,SN}(b::TensorProductSet{S,SN}, index::CartesianIndex{SN})
+    :(@nref $SN b d->index[d])
+end
+
+index_dim{S,SN}(::TensorProductSet{S,SN}) = SN
+index_dim{S,SN}(::Type{TensorProductSet{S,SN}}) = SN
+index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
+
+
+function call{S,SN,N,T}(b::TensorProductSet{S,SN,N,T}, i, x, xt...)
+    z = set(b,1)(i[1], x)
+    for j = 1:length(xt)
+        z = z * set(b,j+1)(i[j], xt[j])
+    end
+end
+
+call{S}(b::TensorProductSet{S,1}, i, x) = set(b,1)(i,x)
+call{S}(b::TensorProductSet{S,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
+call{S}(b::TensorProductSet{S,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
+call{S}(b::TensorProductSet{S,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+
 
 immutable TensorProductBasis{B <: AbstractBasis1d, G, N, T} <: AbstractBasis{N,T}
 	bases	::	NTuple{N,B}
@@ -89,6 +144,7 @@ right(b::TensorProductBasis, idx::Int, dim) = right(b, ind2sub(b,idx), dim)
 right(b::TensorProductBasis, idxt::NTuple, dim) = right(b.bases[dim], idxt[dim])
 
 
+# Code below are remnants from some experiments - todo: move functionality elsewhere and remove
 # waypoints(b::TensorProductBasis, idx::Int, dim) = waypoints(b, ind2sub(b,idx), dim)
 # 
 # waypoints(b::TensorProductBasis, idxt::NTuple, dim) = waypoints(b.bases[dim], idxt[dim])

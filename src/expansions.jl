@@ -4,9 +4,13 @@
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
     coef    ::  Array{ELT,ID}
+
+    SetExpansion(set, coef) = (@assert length(set) == length(coef); new(set,coef))
 end
 
-SetExpansion{S <: AbstractFunctionSet}(s::S) = SetExpansion(s, eltype(s))
+SetExpansion{S <: AbstractFunctionSet,ELT,ID}(set::S, coef::Array{ELT,ID}) = SetExpansion{S,ELT,ID}(set,coef)
+
+SetExpansion(s::AbstractFunctionSet) = SetExpansion(s, eltype(s))
 
 SetExpansion{ELT}(s::AbstractFunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
@@ -31,17 +35,17 @@ set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coef
 
-length(e::SetExpansion) = length(function_set(e))
+length(e::SetExpansion) = length(set(e))
 
-left(e::SetExpansion) = left(function_set(e))
+left(e::SetExpansion) = left(set(e))
 
-right(e::SetExpansion) = right(function_set(e))
+right(e::SetExpansion) = right(set(e))
 
 getindex(e::SetExpansion, i...) = e.coef[i...]
 
 setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
-grid(e::SetExpansion) = grid(function_set(e))
+grid(e::SetExpansion) = grid(set(e))
 
 
 expansion(s::AbstractFunctionSet) = SetExpansion(s)

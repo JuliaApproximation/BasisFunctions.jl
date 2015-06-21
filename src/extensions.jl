@@ -1,23 +1,27 @@
 # extensions.jl
 
-abstract ExtensionOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-
-
-abstract RestrictionOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-
-
-immutable ZeroPadding{SRC,DEST} <: ExtensionOperator{SRC,DEST}
+# The Extension operator is used to extend a basis of a given length to
+# a basis of larger length. The resulting function should be (approximately)
+# the same.
+immutable Extension{SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
 end
 
-function apply!{T}(op::ZeroPadding, dest, src, coef_dest::Array{T}, coef_src::Array{T})
-    @assert length(coef_src) == length(src)
-    @assert length(coef_dest) == length(dest)
+# The Restriction operator is used to reduce a basis to a basis of smaller
+# length. This may entail some loss of accuracy.
+immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+end
 
+
+# Default implementation of an extension uses zero-padding of coef_src to coef_dest
+function apply!{T}(op::Extension, dest, src, coef_dest::Array{T}, coef_src::Array{T})
 	# We do too much work here, since we put all entries of coef_dest to zero.
 	# Fix later.
 	fill!(coef_dest, zero(T))
+
 	# And here we assume the indices of coef_dest and coef_src are the same.
 	# Specialization needed if this is not the case.
 	for i in eachindex(coef_src)
@@ -27,17 +31,8 @@ end
 
 
 
-
-immutable Restriction{SRC,DEST} <: RestrictionOperator{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-
+# Default implementation of a restriction selects coef_dest from the start of coef_src
 function apply!(op::Restriction, dest, src, coef_dest, coef_src)
-	@assert length(coef_src) == length(src)
-	@assert length(coef_dest) == length(dest)
-
 	# Here we assume the indices of coef_dest and coef_src are the same.
 	# Specialization needed if this is not the case.
 	for i in eachindex(coef_dest)
