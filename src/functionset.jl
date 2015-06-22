@@ -59,7 +59,7 @@ size(s::AbstractFunctionSet, j) = j==1?length(s):throw(BoundsError())
 
 # Default set of indices: from 1 to length(s)
 # Default algorithms assume this indexing for the basis functions, and the same
-# indices for the set of coefficients.
+# linear indexing for the set of coefficients.
 eachindex(s::AbstractFunctionSet) = 1:length(s)
 
 # Default iterator over sets of functions: use linear indexing from 1 to length(set)

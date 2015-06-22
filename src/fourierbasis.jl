@@ -132,6 +132,20 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_de
 end
 
 
+function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_dest, coef_src)
+	@assert length(dest) < length(src)
+
+	nh = nhalf(dest)
+	for i=0:nh
+		coef_dest[i+1] = coef_src[i+1]
+	end
+	for i=1:nh
+		coef_dest[nh+1+i] = coef_src[end-nh+i]
+	end
+end
+
+
+
 abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 
 abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -187,9 +201,14 @@ end
 apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) * length(coef_src))
 
 
+
 # Default differentiation operator
 differentiation_operator(b::FourierBasisOdd) = Differentiation(b, b)
-differentiation_operator(b::FourierBasisEven) = Differentiation(b, FourierBasis(length(b)+1, left(b), right(b)))
+
+function differentiation_operator(b::FourierBasisEven)
+	b_odd = fourier_basis_odd_length(length(b)+1, left(b), right(b))
+	differentiation_operator(b_odd) * Extension(b, b_odd)
+end
 
 
 # For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)

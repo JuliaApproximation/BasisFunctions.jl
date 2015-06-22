@@ -55,8 +55,29 @@ export plot
 using Base.Cartesian
 
 
+# Convenience definitions for the implementation of traits
 typealias True Val{true}
 typealias False Val{false}
+
+(&)(::Type{True},  ::Type{True} ) = True
+(&)(::Type{False}, ::Type{True} ) = False
+(&)(::Type{True},  ::Type{False}) = False
+(&)(::Type{False}, ::Type{False}) = False
+
+(&)(::True,  ::True ) = True()
+(&)(::False, ::True ) = False()
+(&)(::True,  ::False) = False()
+(&)(::False, ::False) = False()
+
+(|)(::Type{True},  ::Type{True} ) = True
+(|)(::Type{False}, ::Type{True} ) = True
+(|)(::Type{True},  ::Type{False}) = True
+(|)(::Type{False}, ::Type{False}) = False
+
+(|)(::True,  ::True ) = True()
+(|)(::False, ::True ) = True()
+(|)(::True,  ::False) = True()
+(|)(::False, ::False) = False()
 
 
 include("grid.jl")

@@ -29,6 +29,7 @@ size(b::TensorProductSet, j::Int) = length(b.sets[j])
 
 length(b::TensorProductSet) = prod(size(b))
 
+sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, i::Int) = b.sets[i]
 
 @generated function eachindex{S,SN}(b::TensorProductSet{S,SN})
@@ -41,6 +42,7 @@ end
     :(@nref $SN b d->index[d])
 end
 
+
 index_dim{S,SN}(::TensorProductSet{S,SN}) = SN
 index_dim{S,SN}(::Type{TensorProductSet{S,SN}}) = SN
 index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
@@ -48,15 +50,26 @@ index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
 
 function call{S,SN,N,T}(b::TensorProductSet{S,SN,N,T}, i, x, xt...)
     z = set(b,1)(i[1], x)
-    for j = 1:length(xt)
+    for j = 1:length(i)
         z = z * set(b,j+1)(i[j], xt[j])
     end
+    z
 end
 
 call{S}(b::TensorProductSet{S,1}, i, x) = set(b,1)(i,x)
 call{S}(b::TensorProductSet{S,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
 call{S}(b::TensorProductSet{S,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
 call{S}(b::TensorProductSet{S,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+
+isreal(b::TensorProductSet) = reduce(&, map(isreal, sets(b)))
+isreal{S,SN,N,T}(::Type{TensorProductSet{S,SN,N,T}}) = reduce(&, map(isreal, S))
+
+ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
+sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
+
+# Transform linear indexing into multivariate indices
+getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
+
 
 
 immutable TensorProductBasis{B <: AbstractBasis1d, G, N, T} <: AbstractBasis{N,T}
