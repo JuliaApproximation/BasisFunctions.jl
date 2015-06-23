@@ -136,7 +136,6 @@ Test.with_handler(custom_handler) do
         e2 = SetExpansion(b2, E2*coef)
         e3 = SetExpansion(b3, E3*coef)
         x = T(2//10)
-        y = (x+1)/2
         @test e1(x) ≈ e2(x)
         @test e1(x) ≈ e3(x)
 

@@ -3,18 +3,25 @@
 using Base.Cartesian
 
 
-# A TensorProductSet is itself a set: the tensor product of SN sets.
-# Parameter S is a tuple of types, representing the SN (possibly different) types of the sets.
-# N is the total dimension of the corresponding space and T the numeric type as usual.
-immutable TensorProductSet{S, SN, N, T} <: AbstractFunctionSet{N,T}
+# A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
+# Parameter S is a tuple of types, representing the (possibly different) types of the sets.
+# Parameter SN is a tuple of the dimensions of these types.
+# ID is the length of the tuples S and N.
+# N is the total dimension of the corresponding space and T the numeric type.
+immutable TensorProductSet{S, SN, ID, N, T} <: AbstractFunctionSet{N,T}
     sets   ::  S
 
     TensorProductSet(sets::Tuple) = new(sets)
 end
 
-TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),length(sets),sum(map(dim, sets)), numtype(sets[1])}(sets)
+TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
 
 tensorproduct(b::AbstractFunctionSet1d, n) = TensorProductSet(tuple([b for i=1:n]...))
+
+index_dim{S,SN,ID,N,T}(::TensorProductSet{S,SN,ID,N,T}) = ID
+index_dim{S,SN,ID,N,T}(::Type{TensorProductSet{S,SN,ID,N,T}}) = ID
+index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
+
 
 # It would be odd if the first method below was ever called, because SN=1 makes
 # little sense. But perhaps in generic code somewhere...
@@ -24,45 +31,42 @@ name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x "
 name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
 
 size(b::TensorProductSet) = map(length, b.sets)
-
 size(b::TensorProductSet, j::Int) = length(b.sets[j])
+
+dim{S,SN}(b::TensorProductSet{S,SN}, j::Int) = SN[j]
 
 length(b::TensorProductSet) = prod(size(b))
 
 sets(b::TensorProductSet) = b.sets
-set(b::TensorProductSet, i::Int) = b.sets[i]
+set(b::TensorProductSet, j::Int) = b.sets[j]
 
-@generated function eachindex{S,SN}(b::TensorProductSet{S,SN})
-    startargs = fill(1, SN)
-    stopargs = [:(size(b,$i)) for i=1:SN]
-    :(CartesianRange(CartesianIndex{$SN}($(startargs...)), CartesianIndex{$SN}($(stopargs...))))
+@generated function eachindex{S,SN,ID}(b::TensorProductSet{S,SN,ID})
+    startargs = fill(1, ID)
+    stopargs = [:(size(b,$i)) for i=1:ID]
+    :(CartesianRange(CartesianIndex{$ID}($(startargs...)), CartesianIndex{$ID}($(stopargs...))))
 end
 
-@generated function getindex{S,SN}(b::TensorProductSet{S,SN}, index::CartesianIndex{SN})
-    :(@nref $SN b d->index[d])
+@generated function getindex{S,SN,ID}(b::TensorProductSet{S,SN,ID}, index::CartesianIndex{ID})
+    :(@nref $ID b d->index[d])
 end
 
-
-index_dim{S,SN}(::TensorProductSet{S,SN}) = SN
-index_dim{S,SN}(::Type{TensorProductSet{S,SN}}) = SN
-index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
 
 
 function call{S,SN,N,T}(b::TensorProductSet{S,SN,N,T}, i, x, xt...)
     z = set(b,1)(i[1], x)
-    for j = 1:length(i)
+    for j = 1:length(S)
         z = z * set(b,j+1)(i[j], xt[j])
     end
     z
 end
 
-call{S}(b::TensorProductSet{S,1}, i, x) = set(b,1)(i,x)
-call{S}(b::TensorProductSet{S,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
-call{S}(b::TensorProductSet{S,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
-call{S}(b::TensorProductSet{S,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+call{S,SN}(b::TensorProductSet{S,SN,1}, i, x) = set(b,1)(i,x)
+call{S,SN}(b::TensorProductSet{S,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
+call{S,SN}(b::TensorProductSet{S,SN,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
+call{S,SN}(b::TensorProductSet{S,SN,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
 
 isreal(b::TensorProductSet) = reduce(&, map(isreal, sets(b)))
-isreal{S,SN,N,T}(::Type{TensorProductSet{S,SN,N,T}}) = reduce(&, map(isreal, S))
+isreal{S,SN,ID,N,T}(::Type{TensorProductSet{S,SN,ID,N,T}}) = reduce(&, map(isreal, S))
 
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
