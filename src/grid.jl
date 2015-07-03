@@ -125,7 +125,7 @@ end
 
 TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),map(dim,grids),length(grids),sum(map(dim, grids)),numtype(grids[1])}(grids)
 
-tensorproduct2(g::AbstractGrid, n) = TensorProductGrid(tuple([g for i=1:n]...))
+tensorproduct(g::AbstractGrid, n) = TensorProductGrid([g for i=1:n]...)
 
 index_dim{TG,GN,ID,N,T}(::TensorProductGrid{TG,GN,ID,N,T}) = ID
 index_dim{TG,GN,ID,N,T}(::Type{TensorProductGrid{TG,GN,ID,N,T}}) = ID

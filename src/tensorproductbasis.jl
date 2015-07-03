@@ -16,19 +16,19 @@ end
 
 TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
 
-tensorproduct(b::AbstractFunctionSet1d, n) = TensorProductSet(tuple([b for i=1:n]...))
+tensorproduct(b::AbstractFunctionSet1d, n) = TensorProductSet([b for i=1:n]...)
 
 index_dim{S,SN,ID,N,T}(::TensorProductSet{S,SN,ID,N,T}) = ID
 index_dim{S,SN,ID,N,T}(::Type{TensorProductSet{S,SN,ID,N,T}}) = ID
 index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
 
 
-# It would be odd if the first method below was ever called, because SN=1 makes
-# little sense. But perhaps in generic code somewhere...
-name{S}(b::TensorProductSet{S,1}) = "tensor product " * name(b.sets[1])
-name{S}(b::TensorProductSet{S,2}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * ")"
-name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * ")"
-name{S}(b::TensorProductSet{S,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
+# It would be odd if the first method below was ever called, because ID=1 makes
+# little sense for a tensor product. But perhaps in generic code somewhere...
+name{S,SN}(b::TensorProductSet{S,SN,1}) = "tensor product " * name(b.sets[1])
+name{S,SN}(b::TensorProductSet{S,SN,2}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * ")"
+name{S,SN}(b::TensorProductSet{S,SN,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * ")"
+name{S,SN}(b::TensorProductSet{S,SN,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
 
 size(b::TensorProductSet) = map(length, b.sets)
 size(b::TensorProductSet, j::Int) = length(b.sets[j])
@@ -40,8 +40,18 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 
-grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b)))
+grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
 grid(b::TensorProductSet, j::Int) = grid(set(b,j))
+
+
+left(b::TensorProductSet, dim::Int) = left(set(b,dim))
+left(b::TensorProductSet, idx::Int, dim) = left(b, ind2sub(b,idx), dim)
+left(b::TensorProductSet, idxt::NTuple, dim) = left(b.bases[dim], idxt[dim])
+
+
+right(b::TensorProductSet, dim::Int) = right(set(b, dim))
+right(b::TensorProductSet, idx::Int, dim) = right(b, ind2sub(b,idx), dim)
+right(b::TensorProductSet, idxt::NTuple, dim) = right(set(b,dim), idxt[dim])
 
 
 @generated function eachindex{S,SN,ID}(b::TensorProductSet{S,SN,ID})
@@ -90,12 +100,12 @@ immutable TensorProductBasis{B <: AbstractBasis1d, G, N, T} <: AbstractBasis{N,T
 	ntot	::	Int
 	grid	::	TensorProductGrid{G,N,T}
 
-	TensorProductBasis(b::NTuple) = new(b, map(t -> length(t), b), prod(map(t->length(t), b)), TensorProductGrid(map(t->grid(t),b)) )
+	TensorProductBasis(b::NTuple) = new(b, map(length, b), prod(map(length, b)), TensorProductGrid(map(grid,b)...) )
 end
 
 TensorProductBasis{B <: AbstractBasis1d,N}(b::NTuple{N,B}) = TensorProductBasis{B,gridtype(b[1]),N,numtype(b[1])}(b)
 
-tensorproduct(b::AbstractBasis1d, n) = TensorProductBasis(tuple([b for i=1:n]...))
+#tensorproduct(b::AbstractBasis1d, n) = TensorProductBasis(tuple([b for i=1:n]...))
 
 name(b::TensorProductBasis) = "tensor product " * name(b.bases[1])
 
