@@ -151,7 +151,7 @@ function call{K,T}(b::PeriodicSplineBasis{K,T}, idx, x)
 	idxn = natural_index(b, idx)
 
 	h = stepsize(b)
-	L1 = int(floor((K-1)/2))
+	L1 = (K-1) >> 1
 	L2 = K-L1
 	if idxn <= L1
 		z = spline_eval(SplineDegree{K}, idxn-L1-1, x, b.a, b.b, h) + spline_eval(SplineDegree{K}, idxn-L1-1, x-period(b), b.a, b.b, h)
@@ -168,7 +168,7 @@ function call{K,T <: Number}(e::SetExpansion{PeriodicSplineBasis{K}}, x::T)
 	i = interval(e.set, x)
 	n = length(e.set)
 
-	L1 = int(floor((K-1)/2))
+	L1 = (K-1) >> 1
 	L2 = K-L1
 
 	z = zero(T)

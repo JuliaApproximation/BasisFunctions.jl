@@ -62,10 +62,22 @@ size(s::AbstractFunctionSet, j) = j==1?length(s):throw(BoundsError())
 # linear indexing for the set of coefficients.
 eachindex(s::AbstractFunctionSet) = 1:length(s)
 
-# Default iterator over sets of functions: use linear indexing from 1 to length(set)
-start(s::AbstractFunctionSet) = 1
-done(s::AbstractFunctionSet, i::Int) = (length(s) < i)
-next(s::AbstractFunctionSet, i::Int) = (s[i], i+1)
+# Default iterator over sets of functions: based on underlying index iterator.
+function start(s::AbstractFunctionSet)
+    iter = eachindex(s)
+    (iter, start(iter))
+end
+
+function next(s::AbstractFunctionSet, state)
+    iter = state[1]
+    iter_state = state[2]
+    idx,iter_newstate = next(iter,iter_state)
+    (s[idx], (iter,iter_newstate))
+end
+
+done(s::AbstractFunctionSet, state) = done(state[1], state[2])
+
+
 
 # Provide this implementation which Base does not include anymore
 checkbounds(i::Int, j::Int) = 1 <= j <= i

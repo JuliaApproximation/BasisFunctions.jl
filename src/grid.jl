@@ -1,6 +1,5 @@
 # grid.jl
 
-
 abstract AbstractGrid{N,T}
 
 typealias AbstractGrid1d{T} AbstractGrid{1,T}
@@ -31,7 +30,7 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 
 
-# Getindex allocates memory
+# Getindex allocates memory because it has to return an array (for now).
 # General implementation for abstract grids: allocate memory and call getindex!
 function getindex{N,T}(g::AbstractGrid{N,T}, idx...)
 	x = Array(T,N)
@@ -48,9 +47,38 @@ checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsE
 eachindex(g::AbstractGrid) = 1:length(g)
 
 
-# Default efficient iterator over grid points ('for x in grid')
-# Iterates without allocating memory for each vector x.
-# In the end, an iteration does allocate quite a bit of memory. TODO: fix
+# We provide two ways of iterating over the elements of a grid.
+#
+# First approach:
+#	for x in grid
+#		do stuff...
+#	end
+# This allocates memory for each point in the grid.
+#
+# Second approach:
+#	for x in eachelement(grid)
+#		do stuff...
+#	end
+# This attempts to reuse the memory for x while iterating.
+
+# First approach follows:
+
+function start(g::AbstractGrid)
+	iter = eachindex(g)
+	(iter, start(iter))
+end
+
+function next(g::AbstractGrid, state)
+	iter = state[1]
+	iter_state = state[2]
+	idx,iter_newstate = next(iter,iter_state)
+	(g[idx], (iter,iter_newstate))
+end
+
+done(g::AbstractGrid, state) = done(state[1], state[2])
+
+
+# For the second approach we need a type to store reusable memory for x.
 immutable GridIterator{N,T,G <: AbstractGrid,ITER}
 	grid		::	G
 	griditer	::	ITER
@@ -79,148 +107,89 @@ function next(iter::GridIterator{1}, state)
 	(x, state)
 end
 
-
-#function next(grid::AbstractGrid1d, state)
-#	(i,gridstate) = next(state.griditer, state.gridstate[1])
-#	x = getindex(state.grid, i)
-#	state.gridstate[1] = gridstate
-#	(x, state)
-#end
-
 done(iter::GridIterator, state) = done(iter.griditer, state)
 
 
 
+# A TensorProductGrid represents the tensor product of other grids.
+# Parameter TG is a tuple of (grid) types.
+# Parameter GN is a tuple of the dimensions of each of the grids.
+# Parameter ID is the length of TG and GN (the index dimension).
+# Parametes N and T are the total dimension and numeric type of this grid.
+# Named TensorProductGrid for now to explore in parallel with the existing one. To merge later.
+immutable TensorProductGrid{TG,GN,ID,N,T} <: AbstractGrid{N,T}
+	grids	::	TG
 
-
-immutable TensorProductGrid{G <: AbstractGrid1d,N,T} <: AbstractGrid{N,T}
-	grids	::	NTuple{N,G}
-	n		::	NTuple{N,Int}
-	ntot	::	Int
-
-	TensorProductGrid(grids::NTuple) = new(grids, map(g -> length(g), grids), prod(map(g->length(g), grids)))
+	TensorProductGrid(grids::Tuple) = new(grids)
 end
 
-TensorProductGrid{G <: AbstractGrid1d,N}(grids::NTuple{N,G}) = TensorProductGrid{G,N,eltype(grids[1])}(grids)
+TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),map(dim,grids),length(grids),sum(map(dim, grids)),numtype(grids[1])}(grids)
 
-tensorproduct(g::AbstractGrid1d, n) = TensorProductGrid(tuple([g for i=1:n]...))
+tensorproduct2(g::AbstractGrid, n) = TensorProductGrid(tuple([g for i=1:n]...))
 
-checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
-
-@generated function eachindex{G,N,T}(g::TensorProductGrid{G,N,T})
-    startargs = fill(1, N)
-    stopargs = [:(size(g,$i)) for i=1:N]
-    :(CartesianRange(CartesianIndex{$N}($(startargs...)), CartesianIndex{$N}($(stopargs...))))
-end
-
-index_dim{G,N,T}(::TensorProductGrid{G,N,T}) = N
-index_dim{G,N,T}(::Type{TensorProductGrid{G,N,T}}) = N
+index_dim{TG,GN,ID,N,T}(::TensorProductGrid{TG,GN,ID,N,T}) = ID
+index_dim{TG,GN,ID,N,T}(::Type{TensorProductGrid{TG,GN,ID,N,T}}) = ID
 index_dim{G <: TensorProductGrid}(::Type{G}) = index_dim(super(G))
 
+size(g::TensorProductGrid) = map(length, g.grids)
+size(g::TensorProductGrid, j::Int) = length(g.grids[j])
 
-size(g::TensorProductGrid) = g.n
-size(g::TensorProductGrid, j) = g.n[j]
+dim{TG,GN}(g::TensorProductGrid{TG,GN}, j::Int) = GN[j]
 
-left(g::TensorProductGrid) = map(t -> left(t), g.grids)
+length(g::TensorProductGrid) = prod(size(g))
+
+grids(g::TensorProductGrid) = g.grids
+grid(g::TensorProductGrid, j::Int) = g.grids[j]
+
+left(g::TensorProductGrid) = map(left, g.grids)
 left(g::TensorProductGrid, j) = left(g.grids[j])
 
-right(g::TensorProductGrid) = map(t -> right(t), g.grids)
+right(g::TensorProductGrid) = map(right, g.grids)
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
-range(g::TensorProductGrid, j::Int) = range(g.grids[j])
 
-length(g::TensorProductGrid) = g.ntot
-
-#ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
-
-#sub2ind(g::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
-
-
-#getindex!{G,N}(g::TensorProductGrid{G,N}, x, idx::Int) = getindex!(g, x, ind2sub(g, idx)...)
-
-getindex!{G}(g::TensorProductGrid{G,1}, x, idx::CartesianIndex) = getindex!(g, x, idx[1])
-
-getindex!{G}(g::TensorProductGrid{G,2}, x, idx::CartesianIndex) = getindex!(g, x, idx[1], idx[2])
-
-getindex!{G}(g::TensorProductGrid{G,3}, x, idx::CartesianIndex) = getindex!(g, x, idx[1], idx[2], idx[3])
-
-function getindex!{G}(g::TensorProductGrid{G,1}, x, i1::Int)
-	x[1] = g.grids[1][i1]
-	nothing
+@generated function eachindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID})
+    startargs = fill(1, ID)
+    stopargs = [:(size(g,$i)) for i=1:ID]
+    :(CartesianRange(CartesianIndex{$ID}($(startargs...)), CartesianIndex{$ID}($(stopargs...))))
 end
 
-function getindex!{G}(g::TensorProductGrid{G,2}, x, i1::Int, i2::Int)
-	x[1] = g.grids[1][i1]
-	x[2] = g.grids[2][i2] 
-	nothing
-end
-
-function getindex!{G}(g::TensorProductGrid{G,3}, x, i1::Int, i2::Int, i3::Int)
-	x[1] = g.grids[1][i1]
-	x[2] = g.grids[2][i2] 
-	x[3] = g.grids[3][i3] 
-	nothing
-end
-
-function getindex!{G}(g::TensorProductGrid{G,4}, x, i1::Int, i2::Int, i3::Int, i4::Int)
-	x[1] = g.grids[1][i1]
-	x[2] = g.grids[2][i2] 
-	x[3] = g.grids[3][i3] 
-	x[4] = g.grids[4][i4] 
-	nothing
+@generated function getindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, index::CartesianIndex{ID})
+    :(@nref $ID g d->index[d])
 end
 
 
-@generated function getindex{G,N}(g::TensorProductGrid{G,N}, index::CartesianIndex{N})
-    :(@nref $N g d->index[d])
+function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::Int...)
+    for i = 1:ID
+    	x[i] = grid(g, i)[idx[i]]
+    end
 end
 
-@generated function getindex!{G,N}(g::TensorProductGrid{G,N}, x, index::CartesianIndex{N})
-    :(@ncall $N getindex! g x d->index[d])
+function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::CartesianIndex{ID})
+    for i = 1:ID
+    	x[i] = grid(g, i)[idx[i]]
+    end
 end
 
 
 
+
+
+# An AbstractIntervalGrid is a grid that is defined on an interval, i.e. it is connected.
 abstract AbstractIntervalGrid{T} <: AbstractGrid1d{T}
 
+# Some default implementations for interval grids follow
 
+left(g::AbstractIntervalGrid) = g.a
+
+right(g::AbstractIntervalGrid) = g.b
+
+length(g::AbstractIntervalGrid) = g.n
+
+
+
+# An equispaced grid has equispaced points, and therefore it has a stepsize.
 abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
-
-
-immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
-	n	::	Int
-	a	::	T
-	b	::	T
-	h	::	T
-
-	EquispacedGrid(n, a, b) = new(n, a, b, (b-a)/n)
-end
-
-EquispacedGrid{T}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
-
-
-# A periodic equispaced grid is an equispaced grid that omits the right endpoint.
-immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
-	n	::	Int
-	a	::	T
-	b	::	T
-	h	::	T
-
-	PeriodicEquispacedGrid(n, a, b) = new(n, a, b, (b-a)/n)
-end
-
-PeriodicEquispacedGrid{T}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
-
-
-left(g::AbstractEquispacedGrid) = g.a
-
-right(g::AbstractEquispacedGrid) = g.b
-
-stepsize(g::AbstractEquispacedGrid) = g.h
-
-length(g::EquispacedGrid) = g.n+1
-
-length(g::PeriodicEquispacedGrid) = g.n
 
 range(g::AbstractEquispacedGrid) = range(left(g), stepsize(g), length(g))
 
@@ -229,7 +198,50 @@ function getindex(g::AbstractEquispacedGrid, i)
 	unsafe_getindex(g, i)
 end
 
-unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*g.h
+unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
+
+
+immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
+	n	::	Int
+	a	::	T
+	b	::	T
+	# h	::	T	# a possible optimization is to precompute and store the stepsize
+
+	EquispacedGrid(n, a, b) = new(n, a, b)
+end
+
+# Parameter n is the total number of points in the equispaced grid.
+EquispacedGrid{T <: FloatingPoint}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
+
+# Promote the numeric type of a and b to a floating point type.
+function EquispacedGrid{S <: Number}(n, a::S, b::S)
+	T = promote_type(S, typeof((b-a)/n))
+	EquispacedGrid(n, T(a), T(b))
+end
+
+stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
+
+
+# A periodic equispaced grid is an equispaced grid that omits the right endpoint.
+immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+	n	::	Int
+	a	::	T
+	b	::	T
+
+	PeriodicEquispacedGrid(n, a, b) = new(n, a, b)
+end
+
+# Parameter n is the total number of points in the periodic equispaced grid.
+PeriodicEquispacedGrid{T <: FloatingPoint}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
+
+function PeriodicEquispacedGrid{S <: Number}(n, a::S, b::S)
+	T = promote_type(S, typeof((b-a)/n))
+	PeriodicEquispacedGrid(n, T(a), T(b))
+end
+
+
+stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
+
 
 
 

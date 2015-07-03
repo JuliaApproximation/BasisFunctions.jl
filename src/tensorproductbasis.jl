@@ -6,7 +6,7 @@ using Base.Cartesian
 # A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
 # Parameter S is a tuple of types, representing the (possibly different) types of the sets.
 # Parameter SN is a tuple of the dimensions of these types.
-# ID is the length of the tuples S and N.
+# ID is the length of the tuples S and N (the index dimension).
 # N is the total dimension of the corresponding space and T the numeric type.
 immutable TensorProductSet{S, SN, ID, N, T} <: AbstractFunctionSet{N,T}
     sets   ::  S
@@ -39,6 +39,10 @@ length(b::TensorProductSet) = prod(size(b))
 
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
+
+grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b)))
+grid(b::TensorProductSet, j::Int) = grid(set(b,j))
+
 
 @generated function eachindex{S,SN,ID}(b::TensorProductSet{S,SN,ID})
     startargs = fill(1, ID)
@@ -73,6 +77,10 @@ sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
 
 # Transform linear indexing into multivariate indices
 getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
+
+# but avoid the 1d case.
+getindex{S,SN}(b::TensorProductSet{S,SN,1}, i::Int) = SetFunction(b, i)
+
 
 
 

@@ -41,10 +41,17 @@ function delimit(s::String)
 end
 
 # Approximate equality
-≈(a,b) = ≈(promote(a,b)...)
-≈{T <: FloatingPoint}(a::T,b::T) = (abs(a-b) < 10eps(T))
-≈{T <: FloatingPoint}(a::Complex{T},b::Complex{T}) = (abs(a-b) < 10eps(T))
+approx(a, b, eps) = abs(b-a) < eps
 
+# Strong equality: within 10 times eps
+≃(a,b) = ≃(promote(a,b)...)
+≃{T <: FloatingPoint}(a::T,b::T) = approx(a, b, 10eps(T))
+≃{T <: FloatingPoint}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10eps(T))
+
+# Weaker equality: within 10 times sqrt(eps)
+≈(a,b) = ≈(promote(a,b)...)
+≈{T <: FloatingPoint}(a::T, b::T) = approx(a, b, 10*sqrt(eps(T)))
+≈{T <: FloatingPoint}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10*sqrt(eps(T)))
 
 ##########
 # Testing
@@ -70,7 +77,7 @@ Test.with_handler(custom_handler) do
         x1 = T(2//10)
         x2 = T(3//10)
         x3 = T(4//10)
-        @test bf(x1, x2, x3) ≈ call(a, 3, x1) * call(b, 4, x2) * call(c, 5, x3)
+        @test bf(x1, x2, x3) ≃ call(a, 3, x1) * call(b, 4, x2) * call(c, 5, x3)
 
         # Can you iterate over the product set?
         z = zero(T)
@@ -96,79 +103,86 @@ Test.with_handler(custom_handler) do
         delimit("Fourier series")
 
         ## Even length
-        b = FourierBasis(12, -one(T), one(T))
+        n = 12
+        a = -T(1.2)
+        b = T(3.4)
+        fb = FourierBasis(n, a, b)
+
+        @test left(fb) ≈ a
+        @test right(fb) ≈ b
+
+        @test grid(fb) == PeriodicEquispacedGrid(n, a, b)
+
+        # Take a random point in the domain
+        x = T(a+rand()*(b-a))
+        y = (x-a)/(b-a)
 
         # Is the 0-index basis function the constant 1?
         freq = 0
-        idx = frequency2idx(b, freq)
-        @test b(idx, T(2//10)) ≈ 1
+        idx = frequency2idx(fb, freq)
+        @test fb(idx, x) ≃ 1
 
         # Evaluate in a point in the interior
         freq = 3
-        idx = frequency2idx(b, freq)
-        x = T(2//10)
-        y = (x+1)/2
-        @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+        idx = frequency2idx(fb, freq)
+        @test call(fb, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
 
         # Evaluate the largest frequency, which is a cosine in this case
-        freq = 6
-        idx = frequency2idx(b, freq)
-        x = T(2//10)
-        y = (x+1)/2
-        @test call(b, idx, x) ≈ cos(2*T(pi)*freq*y)
+        freq = n >> 1
+        idx = frequency2idx(fb, freq)
+        @test call(fb, idx, x) ≈ cos(2*T(pi)*freq*y)
 
         # Evaluate an expansion
         coef = T[1.0 2.0 3.0 4.0]
-        e = SetExpansion(FourierBasis(4, -one(T), one(T)), coef)
-        x = T(2//10)
-        y = (x+1)/2
+        e = SetExpansion(FourierBasis(4, a, b), coef)
         @test e(x) ≈ coef[1]*1.0 + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
         # Try an extension
         n = 12
         coef = map(T, rand(n))
-        b1 = FourierBasis(n, -one(T), one(T))
-        b2 = FourierBasis(n+1, -one(T), one(T))
-        b3 = FourierBasis(n+15, -one(T), one(T))
+        b1 = FourierBasis(n, a, b)
+        b2 = FourierBasis(n+1, a, b)
+        b3 = FourierBasis(n+15, a, b)
         E2 = Extension(b1, b2)
         E3 = Extension(b1, b3)
         e1 = SetExpansion(b1, coef)
         e2 = SetExpansion(b2, E2*coef)
         e3 = SetExpansion(b3, E3*coef)
         x = T(2//10)
-        @test e1(x) ≈ e2(x)
-        @test e1(x) ≈ e3(x)
+        @test e1(x) ≃ e2(x)
+        @test e1(x) ≃ e3(x)
+
 
         # Does indexing work as intended?
-        idx = Int(round(rand()*length(b)))
-        bf = b[idx]
+        idx = Int(round(rand()*length(fb)))
+        bf = fb[idx]
         x = T(2//10)
-        @test bf(x) ≈ call(b, idx, x)
+        @test bf(x) ≃ call(fb, idx, x)
 
         # Can you iterate over the whole set?
         z = zero(T)
         x = T(2//10)
         i = 0
-        for f in b
+        for f in fb
             z = z + f(x)
             i = i+1
         end
-        @test i == length(b)
+        @test i == length(fb)
 
         l = 0
-        for i in eachindex(b)
-            f = b[i]
+        for i in eachindex(fb)
+            f = fb[i]
             z = z + f(x)
             l = l+1
         end
-        @test l == length(b)
+        @test l == length(fb)
 
         # Differentiation test
-        coef = map(T, rand(Float64, size(b)))
-        D = differentiation_operator(b)
+        coef = map(T, rand(Float64, size(fb)))
+        D = differentiation_operator(fb)
         coef2 = D*coef
-        e1 = SetExpansion(b, coef)
-        e2 = SetExpansion(FourierBasis(length(b)+1,left(b),right(b)), coef2)
+        e1 = SetExpansion(fb, coef)
+        e2 = SetExpansion(FourierBasis(length(fb)+1,left(fb),right(fb)), coef2)
 
         x = T(2//10)
         delta = sqrt(eps(T))
@@ -182,21 +196,21 @@ Test.with_handler(custom_handler) do
         # Is the 0-index basis function the constant 1?
         freq = 0
         idx = frequency2idx(b, freq)
-        @test call(b, idx, T(2//10)) ≈ 1
+        @test call(b, idx, T(2//10)) ≃ 1
 
         # Evaluate in a point in the interior
         freq = 3
         idx = frequency2idx(b, freq)
         x = T(2//10)
         y = (x+1)/2
-        @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+        @test call(b, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
 
         # Evaluate an expansion
         coef = [1.0 2.0 3.0]
         e = SetExpansion(FourierBasis(3, -one(T), one(T)), coef)
         x = T(2//10)
         y = (x+1)/2
-        @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
+        @test e(x) ≃ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
 
         # Try an extension
         n = 13
@@ -210,8 +224,8 @@ Test.with_handler(custom_handler) do
         e2 = SetExpansion(b2, E2*coef)
         e3 = SetExpansion(b3, E3*coef)
         x = T(2//10)
-        @test e1(x) ≈ e2(x)
-        @test e1(x) ≈ e3(x)
+        @test e1(x) ≃ e2(x)
+        @test e1(x) ≃ e3(x)
 
         # Restriction
         n = 14
@@ -238,6 +252,130 @@ Test.with_handler(custom_handler) do
         x = T(2//10)
         delta = sqrt(eps(T))
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
+
+
+        delimit("Grids and tensor grids")
+
+        ## Equispaced grids
+        len = 120
+        a = -T(1.2)
+        b = T(3.5)
+        g = EquispacedGrid(len, a, b)
+
+        idx = 5
+        @test g[idx] ≃ a + (idx-1) * (b-a)/(len-1)
+        @test g[len] ≃ b
+        @test_throws BoundsError g[len+1] == b
+
+        # Test iterations
+        z = zero(T)
+        i = 0
+        for x in g
+            z = z + x
+            i += 1
+        end
+        @test z ≈ len * (a+b)/2
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for x in eachelement(g)
+            z = z + x
+            i += 1
+        end
+        @test z ≈ len * (a+b)/2
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for idx in eachindex(g)
+            z = z + g[idx]
+            i += 1
+        end
+        @test z ≈ len * (a+b)/2
+        @test i == length(g)
+
+
+        ## Periodic equispaced grids
+        len = 120
+        a = -T(1.2)
+        b = T(3.5)
+        g = PeriodicEquispacedGrid(len, a, b)
+
+        idx = 5
+        @test g[idx] ≃ a + (idx-1) * (b-a)/len
+        @test g[len] ≃ b - stepsize(g)
+        @test_throws BoundsError g[len+1] == b
+
+        z = zero(T)
+        i = 0
+        for x in g
+            z = z + x
+            i += 1
+        end
+        @test z ≈ (len-1)*(a+b)/2 + a
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for x in eachelement(g)
+            z = z + x
+            i += 1
+        end
+        @test z ≈ (len-1)*(a+b)/2 + a
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for idx in eachindex(g)
+            z = z + g[idx]
+            i += 1
+        end
+        @test z ≈ (len-1)*(a+b)/2 + a
+        @test i == length(g)
+
+        ## Tensor product grids
+        len = 120
+        g1 = PeriodicEquispacedGrid(len, -one(T), one(T))
+        g2 = EquispacedGrid(len, -one(T), one(T))
+        g = TensorProductGrid(g1, g2)
+        @test length(g) == length(g1) * length(g2)
+        @test size(g) == (length(g1),length(g2))
+
+        idx1 = 5
+        idx2 = 9
+        x1 = g1[idx1]
+        x2 = g2[idx2]
+        x = g[idx1,idx2]
+        @test x[1] ≃ x1
+        @test x[2] ≃ x2
+
+        z = zero(T)
+        i = 0
+        for x in g
+            z = z + sum(x)
+            i += 1
+        end
+        @test z ≈ -len
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for x in eachelement(g)
+            z = z + sum(x)
+            i += 1
+        end
+        @test z ≈ -len
+        @test i == length(g)
+
+        z = zero(T)
+        i = 0
+        for idx in eachindex(g)
+            z = z + sum(g[idx])
+            i += 1
+        end
+        @test z ≈ -len
+        @test i == length(g)
 
     end # for T in...
 

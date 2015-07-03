@@ -15,7 +15,7 @@ import Base: show, showcompact
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid, eachelement
+        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize
 export dim, left,right
 
 # from functionset.jl
