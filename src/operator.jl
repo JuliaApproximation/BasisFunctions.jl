@@ -36,8 +36,10 @@ function apply(op::AbstractOperator, coef_src)
 	coef_dest
 end
 
+# The function apply(operator,...) by default calls apply(operator, dest, src, ...)
 # This general definition makes it easier to dispatch on source and destination.
 # Operators can choose to specialize with or without the src and dest arguments.
+# In-place operators can be called with a single set of coefficients.
 function apply!(op::AbstractOperator, coef_dest, coef_src)
 	@assert length(coef_dest) == length(dest(op))
 	@assert length(coef_src) == length(src(op))
@@ -54,8 +56,6 @@ function _apply!(op::AbstractOperator, op_inplace::True, coef_dest, coef_src)
 	apply!(op, coef_dest)
 end
 
-# This general definition makes it easier to dispatch on source and destination.
-# Operators can choose to specialize with or without the src and dest arguments.
 _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 # Provide a general dispatchable definition for in-place operators also
@@ -68,6 +68,7 @@ apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_
 apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
 
 (*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
+
 
 function matrix(op::AbstractOperator)
     a = Array(eltype(op), size(op))

@@ -81,8 +81,8 @@ expansion{T,N}(s::TensorProductBasis, coef::Array{T,N}) = TensorProductExpansion
 
 function call{T <: Number}(e::SetExpansion, x::T...)
     z = zero(T)
-    for idx = 1:length(e.set)
-        z = z + e.coef[idx] * call(e.set, idx, x...)
+    for idx in eachindex(set(e))
+        z = z + e.coef[idx] * call(set(e), idx, x...)
     end
     z
 end
