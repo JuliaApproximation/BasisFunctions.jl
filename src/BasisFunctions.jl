@@ -38,7 +38,7 @@ export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, opera
     IdentityOperator, ScalingOperator, DenseOperator, AffineMap
 
 # from timedomain.jl
-export TimeDomain, TimeDomain1d, TimeDomainNd
+export TimeDomain, TimeDomain1d, TimeDomainNd, left, right
 
 # from extensions.jl
 export Extension, Restriction
