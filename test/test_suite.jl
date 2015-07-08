@@ -10,9 +10,9 @@ using Base.Test
 ########
 
 # Keep track of successes, failures and errors
-global failures=0
-global successes=0
-global errors=0
+global failures = 0
+global successes = 0
+global errors = 0
 
 # Custom test handler
 custom_handler(r::Test.Success) = begin println("#\tSucces on $(r.expr)"); global successes+=1;  end
@@ -338,7 +338,7 @@ Test.with_handler(custom_handler) do
         len = 120
         g1 = PeriodicEquispacedGrid(len, -one(T), one(T))
         g2 = EquispacedGrid(len, -one(T), one(T))
-        g = TensorProductGrid(g1, g2)
+        g = g1 ⊗ g2
         @test length(g) == length(g1) * length(g2)
         @test size(g) == (length(g1),length(g2))
 
@@ -376,6 +376,17 @@ Test.with_handler(custom_handler) do
         end
         @test z ≈ -len
         @test i == length(g)
+
+        # Test a tensor of a tensor
+        g3 = g ⊗ g2
+        idx1 = 5
+        idx2 = 7
+        x = g3[idx1,idx2]
+        x1 = g[idx1]
+        x2 = g2[idx2]
+        @test x[1] ≃ x1[1]
+        @test x[2] ≃ x1[2]
+        @test x[3] ≃ x2
 
     end # for T in...
 

@@ -8,8 +8,6 @@ end
 
 typealias TimeDomain1d{G,ELT,T} TimeDomain{G,ELT,1,T}
 
-typealias TimeDomainNd{G,ELT,N,T} TensorProductBasis{TimeDomain1d{G,ELT,T},G,N,T}
-
 
 TimeDomain{N,T}(grid::AbstractGrid{N,T}) = TimeDomain{typeof(grid),T,N,T}(grid)
 

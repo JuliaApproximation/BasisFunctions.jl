@@ -114,10 +114,9 @@ done(iter::GridIterator, state) = done(iter.griditer, state)
 # A TensorProductGrid represents the tensor product of other grids.
 # Parameter TG is a tuple of (grid) types.
 # Parameter GN is a tuple of the dimensions of each of the grids.
-# Parameter ID is the length of TG and GN (the index dimension).
+# Parameter LEN is the length of TG and GN (the index dimension).
 # Parametes N and T are the total dimension and numeric type of this grid.
-# Named TensorProductGrid for now to explore in parallel with the existing one. To merge later.
-immutable TensorProductGrid{TG,GN,ID,N,T} <: AbstractGrid{N,T}
+immutable TensorProductGrid{TG,GN,LEN,N,T} <: AbstractGrid{N,T}
 	grids	::	TG
 
 	TensorProductGrid(grids::Tuple) = new(grids)
@@ -127,8 +126,8 @@ TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),map(dim,grids),len
 
 tensorproduct(g::AbstractGrid, n) = TensorProductGrid([g for i=1:n]...)
 
-index_dim{TG,GN,ID,N,T}(::TensorProductGrid{TG,GN,ID,N,T}) = ID
-index_dim{TG,GN,ID,N,T}(::Type{TensorProductGrid{TG,GN,ID,N,T}}) = ID
+index_dim{TG,GN,LEN,N,T}(::TensorProductGrid{TG,GN,LEN,N,T}) = LEN
+index_dim{TG,GN,LEN,N,T}(::Type{TensorProductGrid{TG,GN,LEN,N,T}}) = LEN
 index_dim{G <: TensorProductGrid}(::Type{G}) = index_dim(super(G))
 
 size(g::TensorProductGrid) = map(length, g.grids)
@@ -148,29 +147,38 @@ right(g::TensorProductGrid) = map(right, g.grids)
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
 
-@generated function eachindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID})
-    startargs = fill(1, ID)
-    stopargs = [:(size(g,$i)) for i=1:ID]
-    :(CartesianRange(CartesianIndex{$ID}($(startargs...)), CartesianIndex{$ID}($(stopargs...))))
+@generated function eachindex{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN})
+    startargs = fill(1, LEN)
+    stopargs = [:(size(g,$i)) for i=1:LEN]
+    :(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
 end
 
-@generated function getindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, index::CartesianIndex{ID})
-    :(@nref $ID g d->index[d])
+@generated function getindex{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, index::CartesianIndex{LEN})
+    :(@nref $LEN g d->index[d])
 end
 
+ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
+sub2ind(G::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
-function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::Int...)
-    for i = 1:ID
-    	x[i] = grid(g, i)[idx[i]]
+getindex!(g::TensorProductGrid, x, idx::Int) = getindex!(g, x, ind2sub(g,idx))
+
+getindex!(g::TensorProductGrid, x, idxt::Int...) = getindex!(g, x, idxt)
+
+function getindex!{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, x, idx::Union(CartesianIndex{LEN},NTuple{LEN,Int}))
+	l = 0
+    for i = 1:LEN
+    	z = grid(g, i)[idx[i]]	# FIX: this allocates memory if GN[i] > 1
+    	for j = 1:GN[i]
+    		l += 1
+    		x[l] = z[j]
+    	end
     end
 end
 
-function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::CartesianIndex{ID})
-    for i = 1:ID
-    	x[i] = grid(g, i)[idx[i]]
-    end
-end
 
+# Use the Latex \otimes operator for constructing a tensor product grid
+⊗(g1::AbstractGrid, g2::AbstractGrid) = TensorProductGrid(g1, g2)
+⊗(g::AbstractGrid...) = TensorProductGrid(g...)
 
 
 

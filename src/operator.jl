@@ -119,6 +119,7 @@ apply!(opt::OperatorTranspose, op::AbstractOperator, coef_dest, coef_src) = appl
 
 
 
+
 # The identity operator
 immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC

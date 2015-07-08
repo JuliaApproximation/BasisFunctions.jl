@@ -27,8 +27,8 @@ export transform_operator, differentiation_operator
 # from setfunction.jl
 export SetFunction
 
-# from tensorproductbasis.jl
-export TensorProductSet, TensorProductBasis, tensorproduct, idx2frequency, frequency2idx
+# from tensorproductset.jl
+export TensorProductSet, tensorproduct, ⊗
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set
@@ -46,7 +46,8 @@ export Extension, Restriction
 # from fourierbasis.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
     FastFourierTransform, InverseFastFourierTransform,
-    FastFourierTransformFFTW, InverseFastFourierTransformFFTW
+    FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
+    frequency2idx, idx2frequency
 
 # from plots.jl
 export plot
@@ -86,7 +87,7 @@ include("functionset.jl")
 
 include("setfunction.jl")
 
-include("tensorproductbasis.jl")
+include("tensorproductset.jl")
 
 include("expansions.jl")
 
