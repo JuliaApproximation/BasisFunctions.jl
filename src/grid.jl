@@ -178,7 +178,7 @@ end
 
 # Use the Latex \otimes operator for constructing a tensor product grid
 ⊗(g1::AbstractGrid, g2::AbstractGrid) = TensorProductGrid(g1, g2)
-⊗(g::AbstractGrid...) = TensorProductGrid(g...)
+⊗(g1::AbstractGrid, g::AbstractGrid...) = TensorProductGrid(g1, g...)
 
 
 
@@ -215,7 +215,7 @@ immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	b	::	T
 	# h	::	T	# a possible optimization is to precompute and store the stepsize
 
-	EquispacedGrid(n, a, b) = new(n, a, b)
+	EquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
 end
 
 # Parameter n is the total number of points in the equispaced grid.
@@ -236,7 +236,7 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	a	::	T
 	b	::	T
 
-	PeriodicEquispacedGrid(n, a, b) = new(n, a, b)
+	PeriodicEquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
 end
 
 # Parameter n is the total number of points in the periodic equispaced grid.
@@ -249,6 +249,64 @@ end
 
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
+
+
+
+immutable ChebyshevIIGrid{T} <: AbstractIntervalGrid{T}
+	n	::	Int
+end
+
+typealias ChebyshevGrid ChebyshevIIGrid
+
+ChebyshevIIGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevIIGrid{T}(n)
+
+
+left{T}(g::ChebyshevIIGrid{T}) = -one(T)
+right{T}(g::ChebyshevIIGrid{T}) = one(T)
+
+function getindex(g::ChebyshevIIGrid, i)
+	checkbounds(g, i)
+	unsafe_getindex(g, i)
+end
+
+unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = cos( (g.n-i) * T(pi) / (g.n-1) )
+
+
+
+
+# Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
+immutable LinearMappedGrid{G <: AbstractGrid1d,T} <: AbstractGrid1d{T}
+	grid	::	G
+	a		::	T
+	b		::	T
+end
+
+left(g::LinearMappedGrid) = g.a
+right(g::LinearMappedGrid) = g.b
+
+grid(g::LinearMappedGrid) = g.grid
+
+for op in (:size,:eachindex)
+	@eval $op(g::LinearMappedGrid) = $op(grid(g))
+end
+
+getindex(g::LinearMappedGrid, idx::Int) = map_linear(getindex(grid(g),idx), left(g), right(g), left(grid(g)), right(grid(g)))
+
+
+rescale(g::AbstractGrid1d, a, b) = LinearMappedGrid(g, a, b)
+
+# Avoid multiple linear mappings
+rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
+
+# Equispaced grids already support rescaling - avoid the construction of a LinearMappedGrid
+rescale(g::EquispacedGrid, a, b) = EquispacedGrid(length(g), a, b)
+rescale(g::PeriodicEquispacedGrid, a, b) = PeriodicEquispacedGrid(length(g), a, b)
+
+# Preserve tensor product structure
+function rescale{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, a::AbstractArray, b::AbstractArray)
+	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:LEN]
+	TensorProductGrid(scaled_grids...)
+end
 
 
 

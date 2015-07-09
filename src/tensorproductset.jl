@@ -16,11 +16,22 @@ end
 
 TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
 
+⊗(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = TensorProductSet(s1, s2)
+⊗(s1::AbstractFunctionSet, s::AbstractFunctionSet...) = TensorProductSet(s1, s...)
+
+
 tensorproduct(b::AbstractFunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
 index_dim{TS,SN,LEN,N,T}(::TensorProductSet{TS,SN,LEN,N,T}) = LEN
 index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
 index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
+
+for op in (:is_basis, :isreal)
+    @eval $op(s::TensorProductSet) = reduce(&, map($op, sets(s)))
+    # line below does not work because you can't map over the tuple TS
+    # @eval $op{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = reduce(&, map($op, TS))
+end
+
 
 
 # It would be odd if the first method below was ever called, because LEN=1 makes
@@ -79,9 +90,6 @@ call{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)
 call{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
 call{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
 
-isreal(b::TensorProductSet) = reduce(&, map(isreal, sets(b)))
-isreal{TS}(::Type{TensorProductSet{TS}}) = reduce(&, map(isreal, TS))
-
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
 
@@ -91,8 +99,5 @@ getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
 # but avoid the 1d case.
 getindex{TS,SN}(b::TensorProductSet{TS,SN,1}, i::Int) = SetFunction(b, i)
 
-
-⊗(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = TensorProductSet(s1, s2)
-⊗(s::AbstractFunctionSet...) = TensorProductSet(s...)
 
 

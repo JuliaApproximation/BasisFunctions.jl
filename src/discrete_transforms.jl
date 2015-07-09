@@ -1,29 +1,28 @@
 # discrete_transforms.jl
 
 
-# TODO: merge this with DenseOperator, because the latter is more general
-immutable DenseInterpolation{ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-    matrix  ::  Array{ELT,2}
-
-    DenseInterpolation(src, dest) = new(src, dest, interpolation_matrix(dest, grid(src), ELT))
+# A function set can implement the apply! method of a suitable TransformOperator for any known transform.
+# Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
+immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+    src     ::  SRC
+    dest    ::  DEST
 end
 
-DenseInterpolation{SRC,DEST}(src::SRC, dest::DEST) = DenseInterpolation{eltype(src,dest),SRC,DEST}(src, dest)
 
-matrix(op::DenseInterpolation) = op.matrix
+## The transform is invariant under a linear map.
+#apply!(op::TransformOperator, src::LinearMappedSet, dest::LinearMappedSet, coef_dest, coef_src) =
+#    apply!(op, set(src), set(dest), coef_dest, coef_src)
 
-apply!(op::DenseInterpolation, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 
 
+# Compute the interpolation matrix of the given basis on the given grid.
 function interpolation_matrix(b::AbstractBasis, g::AbstractGrid, T = eltype(b))
-    A = Array(T, length(g), length(b))
-    interpolation_matrix!(b, g, A)
-    A
+    a = Array(T, length(g), length(b))
+    interpolation_matrix!(b, g, a)
+    a
 end
 
-function interpolation_matrix!{N,T}(b::AbstractBasis{N,T}, g::AbstractGrid{N,T}, a::Array)
+function interpolation_matrix!{N,T}(b::AbstractBasis{N,T}, g::AbstractGrid{N,T}, a::AbstractArray)
 	n = size(a,1)
 	m = size(a,2)
 	@assert n == length(g)
@@ -32,12 +31,34 @@ function interpolation_matrix!{N,T}(b::AbstractBasis{N,T}, g::AbstractGrid{N,T},
     x_i = Array(T,N)
 	for j = 1:m
 		for i = 1:n
-			getindex!(g, x_i, i)
 			a[i,j] = call(b, j, x_i...)
 		end
 	end
 end
 
+
+function interpolation_matrix!{T}(b::AbstractBasis1d{T}, g::AbstractGrid1d{T}, a::AbstractArray)
+    n = size(a,1)
+    m = size(a,2)
+    @assert n == length(g)
+    @assert m == length(b)
+
+    for j = 1:m
+        for i = 1:n
+            a[i,j] = call(b, j, g[i])
+        end
+    end
+end
+
+
+interpolation_operator(b::AbstractBasis) = SolverOperator(grid(b), b, qrfact(interpolation_matrix(b, grid(b))))
+
+# Evaluation works for any set that has a grid(set) associated with it.
+evaluation_operator(s::AbstractFunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
+
+
+# The default approximation for a basis is interpolation
+approximation_operator(b::AbstractBasis) = interpolation_operator(b)
 
 
 

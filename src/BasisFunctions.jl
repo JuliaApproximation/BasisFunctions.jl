@@ -30,15 +30,18 @@ export SetFunction
 # from tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗
 
+# from mappedsets.jl
+export map, imap, map_linear, imap_linear
+
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set
 
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    IdentityOperator, ScalingOperator, DenseOperator, AffineMap
+    IdentityOperator, ScalingOperator, DenseOperator, MatrixOperator
 
-# from timedomain.jl
-export TimeDomain, TimeDomain1d, TimeDomainNd, left, right
+# from discretegridspace.jl
+export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 
 # from extensions.jl
 export Extension, Restriction
@@ -89,6 +92,8 @@ include("setfunction.jl")
 
 include("tensorproductset.jl")
 
+include("mappedsets.jl")
+
 include("expansions.jl")
 
 include("euclidean.jl")
@@ -101,7 +106,7 @@ include("extensions.jl")
 
 include("differentiation.jl")
 
-include("timedomain.jl")
+include("discretegridspace.jl")
 
 include("fourierbasis.jl")
 
