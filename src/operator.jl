@@ -11,9 +11,7 @@ numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
 numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
 eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
-
 eltype(op1::AbstractOperator, op::AbstractOperator...) = promote_type(eltype(op1), map(eltype, op)...)
-
 eltype(b1::AbstractFunctionSet, b::AbstractFunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
 
 
@@ -116,6 +114,7 @@ apply!(opt::OperatorTranspose, coef_dest, coef_src) = apply!(opt, operator(opt),
 
 # Definition to make dispatch on source and destination possible.
 apply!(opt::OperatorTranspose, op::AbstractOperator, coef_dest, coef_src) = apply!(opt, op, dest(opt), src(opt), coef_dest, coef_src)
+
 
 
 
@@ -348,34 +347,47 @@ end
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), -one(eltype(op2)))
 
 
-immutable AffineMap{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+
+# A MatrixOperator is defined by a full matrix
+immutable MatrixOperator{A <: AbstractArray,ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	matrix	::	Array{T,2}
+	matrix	::	A
+
+	function MatrixOperator(src, dest, matrix)
+		@assert size(matrix,1) == length(dest)
+		@assert size(matrix,2) == length(src)
+
+		new(src, dest, matrix)
+	end
 end
 
-AffineMap{T <: Number}(matrix::Array{T,2}) = AffineMap(Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)), matrix)
 
-AffineMap{T <: Number}(matrix::Array{Complex{T},2}) = AffineMap(Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)), matrix)
+MatrixOperator{ELT,SRC,DEST}(src::SRC, dest::DEST, matrix::AbstractArray{ELT,2}) =
+	MatrixOperator{typeof(matrix), ELT, SRC, DEST}(src, dest, matrix)
 
-apply!(op::AffineMap, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
+MatrixOperator{ELT <: Number}(matrix::AbstractArray{ELT}) = MatrixOperator(Rn{ELT}(size(matrix,2)), Rn{ELT}(size(matrix,1)), matrix)
+
+MatrixOperator{ELT <: Number}(matrix::AbstractArray{Complex{ELT}}) = MatrixOperator(Cn{ELT}(size(matrix,2)), Cn{ELT}(size(matrix,1)), matrix)
 
 
-# A DenseOperator stores its matrix representation upon construction.
-immutable DenseOperator{OP <: AbstractOperator,ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	op		::	OP
-	matrix	::	Array{ELT,2}
+apply!(op::MatrixOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 
-	DenseOperator(op::AbstractOperator{SRC,DEST}) = new(op, matrix(op))
+matrix(op::MatrixOperator) = op.matrix
+
+matrix!(op::MatrixOperator, a::Array) = (a[:] = op.matrix)
+
+
+# A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
+# should implement the \ operator.
+# Examples include a QR or SVD factorization, or a dense matrix.
+immutable SolverOperator{Q,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+	solver	::	Q
 end
 
-DenseOperator{SRC,DEST}(op::AbstractOperator{SRC,DEST}) = DenseOperator{typeof(op),eltype(op),SRC,DEST}(op)
-
-apply!(op::DenseOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
-
-matrix(op::DenseOperator) = op.matrix
-
-matrix!(op::AbstractOperator, a::Array) = (a[:] = op.matrix)
+apply!(op::SolverOperator, coef_dest, coef_src) = (coef_dest[:] = op.solver \ coef_src)
 
 
 

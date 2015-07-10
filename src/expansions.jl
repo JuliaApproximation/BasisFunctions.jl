@@ -52,32 +52,7 @@ expansion(s::AbstractFunctionSet) = SetExpansion(s)
 
 expansion(s::AbstractFunctionSet, coef) = SetExpansion(s, coef)
 
-expansion(s::TensorProductBasis) = TensorProductExpansion(s)
 
-expansion{T}(s::TensorProductBasis, coef::Array{T,1}) = TensorProductExpansion(s, reshape(coef, size(s)))
-
-expansion{T,N}(s::TensorProductBasis, coef::Array{T,N}) = TensorProductExpansion(s, coef)
-
-
-#call{T <: Number,S}(e::SetExpansion{S}, x::T, y...) = call_compactsupport(has_compact_support(S), e, x, y...)
-#
-# function call_compactsupport{T <: Number}(::Type{True}, e::SetExpansion, x::T, y...)
-#   z = zero(T)
-#   I = active_indices(e.set, x, y...)
-#   for i = 1:length(I)
-#       idx = I[i]
-#       z = z + e.coef[idx] * call(e.basis, idx, x, y...)
-#   end
-#   z
-#end
-#
-#function call_compactsupport{T <: Number}(::Type{False}, e::SetExpansion, x::T, y...)
-#   z = zero(T)
-#   for idx = 1:length(e.set)
-#       z = z + e.coef[idx] * call(e.set, idx, x, y...)
-#   end
-#   z
-#end
 
 function call{T <: Number}(e::SetExpansion, x::T...)
     z = zero(T)

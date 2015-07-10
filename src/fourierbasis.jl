@@ -14,8 +14,6 @@ end
 typealias FourierBasisEven{T} FourierBasis{true,T}
 typealias FourierBasisOdd{T} FourierBasis{false,T}
 
-typealias FourierBasisNd{EVEN,G,N,T} TensorProductBasis{FourierBasis{EVEN,T},G,N,T}
-
 name(b::FourierBasis) = "Fourier series"
 
 isreal(b::FourierBasis) = False()
@@ -212,25 +210,26 @@ end
 
 
 # For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
-transform_operator(src::TimeDomain, dest::FourierBasis) = _transform_operator(src, dest, eltype(src,dest))
+transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _transform_operator(src, dest, eltype(src,dest))
 
-_transform_operator(src::TimeDomain, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+_transform_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
 
-_transform_operator{T <: FloatingPoint}(src::TimeDomain, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
-
-# Dispatching doesn't work
-#transform_operator(src, dest::FourierBasisNd, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+_transform_operator{T <: FloatingPoint}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
 
-transform_operator(src::FourierBasis, dest::TimeDomain) = _transform_operator(src, dest, eltype(src,dest))
 
-_transform_operator(src::FourierBasis, dest::TimeDomain, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _transform_operator(src, dest, eltype(src,dest))
 
-_transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::TimeDomain, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+_transform_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+
+_transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
 
-# Dispatching doesn't work
-#transform_operator(src::FourierBasisNd, dest, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+# The approximation operator for a Fourier series is the FFT.
+approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
+
+
+
 
 
 

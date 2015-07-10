@@ -48,8 +48,20 @@ complexify{T <: Real}(::Type{T}) = Complex{T}
 complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 
 
+# Is a given set a basis? In general, no, but some sets could turn out to be a basis.
+# Example: a TensorProductSet that consists of a basis in each dimension.
+is_basis(s::AbstractFunctionSet) = False()
+
+# A basis is always a basis.
+is_basis(b::AbstractBasis) = True()
+
 is_orthogonal(b::AbstractBasis) = False()
+is_orthogonal{N,T}(::Type{AbstractFunctionSet{N,T}}) = False
+is_orthogonal{B <: AbstractFunctionSet}(::Type{B}) = False
+
 is_biorthogonal(b::AbstractBasis) = False()
+is_biorthogonal{N,T}(::Type{AbstractFunctionSet{N,T}}) = False
+is_biorthogonal{B <: AbstractFunctionSet}(::Type{B}) = False
 
 
 size(s::AbstractFunctionSet) = (length(s),)
@@ -107,21 +119,17 @@ gridtype(b::AbstractBasis1d) = typeof(grid(b))
 
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
-## Waypoints are points of discontinuity of the basis functions, such that the
-## basis functions are smooth in between two consecutive waypoints.
-#waypoints(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
-#
-#function overlap(b::AbstractBasis1d, idx1, idx2)
-#    support1 = support(b, idx1)
-#    support2 = support(b, idx2)
-#    ~((support1[2] <= support2[1]) || (support1[1] >= support2[2]))
-#end
-#
-#has_compact_support{B <: AbstractBasis1d}(::Type{B}) = False
-
 
 # General vectorized calling method
-call!(b::AbstractBasis1d, idx::Int, result::AbstractArray, x::AbstractArray) = broadcast!(t -> call(b, idx, t), result, x)
+#call!(b::AbstractBasis1d, idx::Int, result::AbstractArray, x::AbstractArray) = broadcast!(t -> call(b, idx, t), result, x)
 
+
+# The approximation_operator function returns an operator that can be used to approximate
+# a function in the function set. The operator maps a grid to a set of coefficients.
+approximation_operator(s::AbstractFunctionSet) = println("Don't know how to approximate a function using a " * name(s))
+
+# The differentation_operator function returns an operator that can be used to differentiate
+# a function in the function set.
+differentiation_operator(s::AbstractFunctionSet) = println("Don't know how to differentiate a function given by a " * name(s))
 
 

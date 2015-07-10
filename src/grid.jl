@@ -114,10 +114,9 @@ done(iter::GridIterator, state) = done(iter.griditer, state)
 # A TensorProductGrid represents the tensor product of other grids.
 # Parameter TG is a tuple of (grid) types.
 # Parameter GN is a tuple of the dimensions of each of the grids.
-# Parameter ID is the length of TG and GN (the index dimension).
+# Parameter LEN is the length of TG and GN (the index dimension).
 # Parametes N and T are the total dimension and numeric type of this grid.
-# Named TensorProductGrid for now to explore in parallel with the existing one. To merge later.
-immutable TensorProductGrid{TG,GN,ID,N,T} <: AbstractGrid{N,T}
+immutable TensorProductGrid{TG,GN,LEN,N,T} <: AbstractGrid{N,T}
 	grids	::	TG
 
 	TensorProductGrid(grids::Tuple) = new(grids)
@@ -127,8 +126,8 @@ TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),map(dim,grids),len
 
 tensorproduct(g::AbstractGrid, n) = TensorProductGrid([g for i=1:n]...)
 
-index_dim{TG,GN,ID,N,T}(::TensorProductGrid{TG,GN,ID,N,T}) = ID
-index_dim{TG,GN,ID,N,T}(::Type{TensorProductGrid{TG,GN,ID,N,T}}) = ID
+index_dim{TG,GN,LEN,N,T}(::TensorProductGrid{TG,GN,LEN,N,T}) = LEN
+index_dim{TG,GN,LEN,N,T}(::Type{TensorProductGrid{TG,GN,LEN,N,T}}) = LEN
 index_dim{G <: TensorProductGrid}(::Type{G}) = index_dim(super(G))
 
 size(g::TensorProductGrid) = map(length, g.grids)
@@ -148,35 +147,38 @@ right(g::TensorProductGrid) = map(right, g.grids)
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
 
-@generated function eachindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID})
-    startargs = fill(1, ID)
-    stopargs = [:(size(g,$i)) for i=1:ID]
-    :(CartesianRange(CartesianIndex{$ID}($(startargs...)), CartesianIndex{$ID}($(stopargs...))))
+@generated function eachindex{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN})
+    startargs = fill(1, LEN)
+    stopargs = [:(size(g,$i)) for i=1:LEN]
+    :(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
 end
 
-@generated function getindex{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, index::CartesianIndex{ID})
-    :(@nref $ID g d->index[d])
+@generated function getindex{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, index::CartesianIndex{LEN})
+    :(@nref $LEN g d->index[d])
 end
 
+ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
+sub2ind(G::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
-function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::Int...)
-    dc=1
-    for i = 1:ID
-        a = grid(g, i)[idx[i]]
-        x[dc:dc+GN[i]-1]=a
-        dc=dc+GN[i]
+getindex!(g::TensorProductGrid, x, idx::Int) = getindex!(g, x, ind2sub(g,idx))
+
+getindex!(g::TensorProductGrid, x, idxt::Int...) = getindex!(g, x, idxt)
+
+function getindex!{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, x, idx::Union(CartesianIndex{LEN},NTuple{LEN,Int}))
+	l = 0
+    for i = 1:LEN
+    	z = grid(g, i)[idx[i]]	# FIX: this allocates memory if GN[i] > 1
+    	for j = 1:GN[i]
+    		l += 1
+    		x[l] = z[j]
+    	end
     end
 end
 
-function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::CartesianIndex{ID})
-    dc=1
-    for i = 1:ID
-        a = grid(g, i)[idx[i]]
-        x[dc:dc+GN[i]-1]=a
-        dc=dc+GN[i]
-    end
-end
 
+# Use the Latex \otimes operator for constructing a tensor product grid
+⊗(g1::AbstractGrid, g2::AbstractGrid) = TensorProductGrid(g1, g2)
+⊗(g1::AbstractGrid, g::AbstractGrid...) = TensorProductGrid(g1, g...)
 
 
 
@@ -213,7 +215,7 @@ immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	b	::	T
 	# h	::	T	# a possible optimization is to precompute and store the stepsize
 
-	EquispacedGrid(n, a, b) = new(n, a, b)
+	EquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
 end
 
 # Parameter n is the total number of points in the equispaced grid.
@@ -234,7 +236,7 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	a	::	T
 	b	::	T
 
-	PeriodicEquispacedGrid(n, a, b) = new(n, a, b)
+	PeriodicEquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
 end
 
 # Parameter n is the total number of points in the periodic equispaced grid.
@@ -247,6 +249,64 @@ end
 
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
+
+
+
+immutable ChebyshevIIGrid{T} <: AbstractIntervalGrid{T}
+	n	::	Int
+end
+
+typealias ChebyshevGrid ChebyshevIIGrid
+
+ChebyshevIIGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevIIGrid{T}(n)
+
+
+left{T}(g::ChebyshevIIGrid{T}) = -one(T)
+right{T}(g::ChebyshevIIGrid{T}) = one(T)
+
+function getindex(g::ChebyshevIIGrid, i)
+	checkbounds(g, i)
+	unsafe_getindex(g, i)
+end
+
+unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = cos( (g.n-i) * T(pi) / (g.n-1) )
+
+
+
+
+# Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
+immutable LinearMappedGrid{G <: AbstractGrid1d,T} <: AbstractGrid1d{T}
+	grid	::	G
+	a		::	T
+	b		::	T
+end
+
+left(g::LinearMappedGrid) = g.a
+right(g::LinearMappedGrid) = g.b
+
+grid(g::LinearMappedGrid) = g.grid
+
+for op in (:size,:eachindex)
+	@eval $op(g::LinearMappedGrid) = $op(grid(g))
+end
+
+getindex(g::LinearMappedGrid, idx::Int) = map_linear(getindex(grid(g),idx), left(g), right(g), left(grid(g)), right(grid(g)))
+
+
+rescale(g::AbstractGrid1d, a, b) = LinearMappedGrid(g, a, b)
+
+# Avoid multiple linear mappings
+rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
+
+# Equispaced grids already support rescaling - avoid the construction of a LinearMappedGrid
+rescale(g::EquispacedGrid, a, b) = EquispacedGrid(length(g), a, b)
+rescale(g::PeriodicEquispacedGrid, a, b) = PeriodicEquispacedGrid(length(g), a, b)
+
+# Preserve tensor product structure
+function rescale{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, a::AbstractArray, b::AbstractArray)
+	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:LEN]
+	TensorProductGrid(scaled_grids...)
+end
 
 
 
