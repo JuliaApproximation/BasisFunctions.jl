@@ -160,14 +160,20 @@ end
 
 
 function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::Int...)
+    dc=1
     for i = 1:ID
-    	x[i] = grid(g, i)[idx[i]]
+        a = grid(g, i)[idx[i]]
+        x[dc:dc+GN[i]-1]=a
+        dc=dc+GN[i]
     end
 end
 
 function getindex!{TG,GN,ID}(g::TensorProductGrid{TG,GN,ID}, x, idx::CartesianIndex{ID})
+    dc=1
     for i = 1:ID
-    	x[i] = grid(g, i)[idx[i]]
+        a = grid(g, i)[idx[i]]
+        x[dc:dc+GN[i]-1]=a
+        dc=dc+GN[i]
     end
 end
 
