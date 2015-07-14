@@ -88,7 +88,7 @@ function matrix!{T}(op::AbstractOperator, a::Array{T})
 		end
 		r[i] = one(T)
 		apply!(op, reshape(s, size(dest(op))), reshape(r, size(src(op))))
-            a[:,i] = s
+        a[:,i] = s
 	end
 end
 
@@ -119,31 +119,35 @@ apply!(opt::OperatorTranspose, op::AbstractOperator, coef_dest, coef_src) = appl
 
 
 # The identity operator
-immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable IdentityOperator{SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
-	dest	::	DEST
 end
 
-IdentityOperator(src) = IdentityOperator(src, src)
+dest(op::IdentityOperator) = src(op)
 
 is_inplace(op::IdentityOperator) = True()
+
+ctranspose(op::IdentityOperator) = op
 
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
 
 # The identity operator up to a scaling
-immutable ScalingOperator{T,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	scalar	::	T
+immutable ScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
-	dest	::	DEST
+	scalar	::	T
 end
+
+dest(op::ScalingOperator) = src(op)
 
 is_inplace(op::ScalingOperator) = True()
 
 scalar(op::ScalingOperator) = op.scalar
 
-(*){T <: Number}(a::T, op::IdentityOperator) = ScalingOperator(a, src(op), dest(op))
-(*){T <: Number}(op::IdentityOperator, a::T) = ScalingOperator(a, src(op), dest(op))
+ctranspose(op::ScalingOperator) = op
+
+(*){T <: Number}(a::T, op::IdentityOperator) = ScalingOperator(src(op), a)
+(*){T <: Number}(op::IdentityOperator, a::T) = ScalingOperator(src(op), a)
 
 function apply!(op::ScalingOperator, dest, src, coef_srcdest)
 	for i in eachindex(coef_srcdest)
@@ -181,6 +185,8 @@ src(op::CompositeOperator) = src(op.op1)
 dest(op::CompositeOperator) = dest(op.op2)
 
 eltype(op::CompositeOperator) = eltype(op.op1, op.op2)
+
+ctranspose(op::CompositeOperator) = CompositeOperator(ctranspose(op.op2), ctranspose(op.op1))
 
 (*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator(op1, op2)
 
@@ -228,6 +234,9 @@ src(op::TripleCompositeOperator) = src(op.op1)
 dest(op::TripleCompositeOperator) = dest(op.op3)
 
 eltype(op::TripleCompositeOperator) = eltype(op.op1, op.op2, op.op3)
+
+ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
+
 
 apply!(op::TripleCompositeOperator, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
@@ -291,6 +300,7 @@ dest(op::OperatorSum) = dest(op.op1)
 
 eltype{OP1,OP2,T}(op::OperatorSum{OP1,OP2,T}) = T
 
+ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), op.val1, op.val2)
 
 apply!(op::OperatorSum, coef_srcdest) = apply!(op, op.op1, op.op2, coef_srcdest)
 
@@ -370,8 +380,20 @@ MatrixOperator{ELT <: Number}(matrix::AbstractArray{ELT}) = MatrixOperator(Rn{EL
 
 MatrixOperator{ELT <: Number}(matrix::AbstractArray{Complex{ELT}}) = MatrixOperator(Cn{ELT}(size(matrix,2)), Cn{ELT}(size(matrix,1)), matrix)
 
+ctranspose(op::MatrixOperator) = MatrixOperator(dest(op), src(op), ctranspose(matrix(op)))
 
+# Old definition: this allocates memory, but it is forgiving when dimensions don't match exactly
+#apply!(op::MatrixOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
+
+# General definition
 apply!(op::MatrixOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
+
+# Definition in terms of A_mul_B
+apply!{T}(op::MatrixOperator, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) = A_mul_B!(coef_dest, op.matrix, coef_src)
+
+# Be forgiving: whenever one of the coefficients is multi-dimensional, reshape to a linear array first.
+apply!{T,N1,N2}(op::MatrixOperator, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) = apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
+
 
 matrix(op::MatrixOperator) = op.matrix
 

@@ -16,7 +16,6 @@ end
 
 TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
 
-⊗(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = TensorProductSet(s1, s2)
 ⊗(s1::AbstractFunctionSet, s::AbstractFunctionSet...) = TensorProductSet(s1, s...)
 
 
@@ -50,6 +49,7 @@ length(b::TensorProductSet) = prod(size(b))
 
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
+set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range])
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
 grid(b::TensorProductSet, j::Int) = grid(set(b,j))

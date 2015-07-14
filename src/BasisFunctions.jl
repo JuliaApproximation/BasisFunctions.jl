@@ -3,6 +3,8 @@ module BasisFunctions
 # We may import ApproxFun to use its implementation of FFT for BigFloat's
 # import ApproxFun
 
+using ArrayViews
+
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range
 
 import Base: getindex, setindex!, eltype
@@ -38,7 +40,10 @@ export SetExpansion, TensorProductExpansion, coefficients, set
 
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    IdentityOperator, ScalingOperator, DenseOperator, MatrixOperator
+    IdentityOperator, ScalingOperator, DenseOperator, MatrixOperator, apply!
+
+# from tensorproductoperator.jl
+export TensorProductOperator
 
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
@@ -99,6 +104,8 @@ include("expansions.jl")
 include("euclidean.jl")
 
 include("operator.jl")
+
+include("tensorproductoperator.jl")
 
 include("discrete_transforms.jl")
 

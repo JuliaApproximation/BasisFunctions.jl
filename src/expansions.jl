@@ -1,6 +1,10 @@
 # expansions.jl
 
-
+# A SetExpansion describes a function using its coefficient expansion in a certain function set.
+# Parameters:
+# - S is the function set.
+# - ELT is the numeric type of the coefficients.
+# - ID is the dimension of the coefficients.
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
     coef    ::  Array{ELT,ID}
@@ -15,17 +19,9 @@ SetExpansion(s::AbstractFunctionSet) = SetExpansion(s, eltype(s))
 SetExpansion{ELT}(s::AbstractFunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
 
-numtype(e::SetExpansion) = numtype(e.set)
-numtype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = numtype(S)
-numtype{E <: SetExpansion}(::Type{E}) = numtype(super(E))
-
 eltype{S,ELT}(::SetExpansion{S,ELT}) = ELT
 eltype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ELT
 eltype{E <: SetExpansion}(::Type{E}) = eltype(super(E))
-
-dim(e::SetExpansion) = dim(set(e))
-dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = dim(S)
-dim{E <: SetExpansion}(::Type{E}) = dim(super(E))
 
 index_dim{S,ELT,ID}(::SetExpansion{S,ELT,ID}) = ID
 index_dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ID
@@ -35,23 +31,20 @@ set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coef
 
-length(e::SetExpansion) = length(set(e))
+# Delegation methods
+for op in (:length, :left, :right, :grid, :numtype, :dim)
+    @eval $op(e::SetExpansion) = $op(set(e))
+end
 
-left(e::SetExpansion) = left(set(e))
-
-right(e::SetExpansion) = right(set(e))
+# Delegation type methods
+for op in (:numtype, :dim)
+    @eval $op{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = $op(S)
+    @eval $op{E <: SetExpansion}(::Type{E}) = $op(super(E))
+end
 
 getindex(e::SetExpansion, i...) = e.coef[i...]
 
 setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
-
-grid(e::SetExpansion) = grid(set(e))
-
-
-expansion(s::AbstractFunctionSet) = SetExpansion(s)
-
-expansion(s::AbstractFunctionSet, coef) = SetExpansion(s, coef)
-
 
 
 function call{T <: Number}(e::SetExpansion, x::T...)
@@ -79,6 +72,12 @@ function call!{N}(e::SetExpansion, result::AbstractArray, g::AbstractGrid{N})
     for i in eachindex(g)
         getindex!(g, x, i)
         result[i] = call(e, x...)
+    end
+end
+
+function call!(e::SetExpansion, result::AbstractArray, g::AbstractGrid1d)
+    for i in eachindex(g)
+        result[i] = call(e, g[i])
     end
 end
 

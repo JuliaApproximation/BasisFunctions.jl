@@ -8,6 +8,14 @@ immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     dest    ::  DEST
 end
 
+# The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
+transform_operator(src, dest) = TransformOperator(src, dest)
+
+# Convenience functions: automatically convert a grid to a DiscreteGridSpace
+transform_operator(src::AbstractGrid, dest::AbstractFunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
+transform_operator(src::AbstractFunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
+
+ctranspose(op::TransformOperator) = TransformOperator(dest(op), src(op))
 
 ## The transform is invariant under a linear map.
 #apply!(op::TransformOperator, src::LinearMappedSet, dest::LinearMappedSet, coef_dest, coef_src) =

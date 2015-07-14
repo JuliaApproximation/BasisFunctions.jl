@@ -225,10 +225,10 @@ _transform_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{F
 _transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
 
-# The approximation operator for a Fourier series is the FFT.
-approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
+# The default approximation operator for a Fourier series is the FFT.
+approximation_operator(b::FourierBasis) = ScalingOperator(b, 1/length(b)) * transform_operator(grid(b), b)
 
-
+evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 
 
 
