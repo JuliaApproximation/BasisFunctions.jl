@@ -99,6 +99,37 @@ Test.with_handler(custom_handler) do
         @test l == length(d)
         @test abs(-0.211 - z) < 0.01
 
+        delimit("Tensor operators")
+
+        m1 = 3
+        n1 = 4
+        m2 = 10
+        n2 = 24
+        A1 = MatrixOperator(map(T,rand(m1,n1)))
+        A2 = MatrixOperator(map(T,rand(m2,n2)))
+#        A = TensorProductOperator(A1, A2)
+
+        # Apply the tensor-product operator
+        b = map(T, rand(n1, n2))
+        c = zeros(T, m1, m2)
+        @test apply!(A, c, b)
+
+        # Apply the operators manually, row by row and then column by column
+        intermediate = zeros(T, m1, n2)
+        dest = zeros(T, m1)
+        for i = 1:n2
+            apply!(A1, dest, b[:,i])
+            intermediate[:,i] = dest
+        end
+        c2 = similar(c)
+        dest = zeros(T, m2)
+        for i = 1:m1
+            apply!(A2, dest, intermediate[i,:])
+            c2[i,:] = dest
+        end
+        @test sum(abs(c-c2)) ≈ 0
+
+
 
         delimit("Fourier series")
 
