@@ -28,21 +28,22 @@ function TensorProductOperator(operators...)
     SRC = typeof(tp_src)
     DEST = typeof(tp_dest)
 
-    scratch = ()
-    for j = 2:ON
-        scratch_size1 = [length(dest(operators[k])) for k=1:j-1]
-        scratch_size2 = [length(src(operators[k])) for k=j:ON]
-        scratch_size = [scratch_size1 scratch_size2]
-        scratch = (scratch..., zeros(ELT, scratch_size...))
-    end
+    # Scratch contains matrices of sufficient size to hold intermediate results
+    # in the application of the tensor product operator.
+    # Example, for ON=3 scratch is a length (ON-1)-tuple of matrices of size:
+    # - [M1,N2,N3]
+    # - [M1,M2,N3]
+    # where operator J maps a set of length Nj to a set of length Mj.
+    scratch_array = [ zeros(ELT, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:ON]...) for j=2:ON]
+    scratch = (scratch_array...)
     SCRATCH = typeof(scratch)
 
-    src_scratch = ()
-    dest_scratch = ()
-    for j = 1:ON
-        src_scratch  = (src_scratch...,  zeros(ELT, length(src(operators[j]))))
-        dest_scratch = (dest_scratch..., zeros(ELT, length(dest(operators[j]))))
-    end
+    # scr_scratch and dest_scratch are tuples of length ON that contain preallocated
+    # storage to hold a vector for source and destination for each operator
+    src_scratch_array = [zeros(ELT, length(src(operators[j]))) for j=1:ON]
+    src_scratch = (src_scratch_array...)
+    dest_scratch_array = [zeros(ELT, length(dest(operators[j]))) for j=1:ON]
+    dest_scratch = (dest_scratch_array...)
     TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}(operators, tp_src, tp_dest, scratch, src_scratch, dest_scratch)
 end
 
@@ -114,4 +115,59 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
 end
 
 
+# TensorProduct with 3 elements
+function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_dest, coef_src)
+    @assert size(dest) == size(coef_dest)
+    @assert size(src)  == size(coef_src)
+
+    M1,N1 = size(op[1])
+    M2,N2 = size(op[2])
+    M3,N3 = size(op[3])
+    # coef_src has size (N1,N2,N3)
+    # coef_dest has size (M1,M2,M3)
+
+    intermediate1 = op.scratch[1]
+    src_j = op.src_scratch[1]
+    dest_j = op.dest_scratch[1]
+    for j = 1:N2
+        for k = 1:N3
+            for i = 1:N1
+                src_j[i] = coef_src[i,j,k]
+            end
+            apply!(op[1], dest_j, src_j)
+            for i = 1:M1
+                intermediate1[i,j,k] = dest_j[i]
+            end
+        end
+    end
+
+    intermediate2 = op.scratch[2]
+    src_j = op.src_scratch[2]
+    dest_j = op.dest_scratch[2]
+    for i = 1:M1
+        for k = 1:N3
+            for j = 1:N2
+                src_j[j] = intermediate1[i,j,k]
+            end
+            apply!(op[2], dest_j, src_j)
+            for j = 1:M2
+                intermediate2[i,j,k] = dest_j[j]
+            end
+        end
+    end
+
+    src_j = op.src_scratch[3]
+    dest_j = op.dest_scratch[3]
+    for i = 1:M1
+        for j = 1:M2
+            for k = 1:N3
+                src_j[k] = intermediate2[i,j,k]
+            end
+            apply!(op[3], dest_j, src_j)
+            for k = 1:M3
+                coef_dest[i,j,k] = dest_j[k]
+            end
+        end
+    end
+end
 
