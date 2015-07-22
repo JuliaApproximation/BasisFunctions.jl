@@ -159,9 +159,9 @@ is_inplace(op::DiscreteFourierTransformFFTW) = True()
 immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
+	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformFFTW{SRC,DEST}(src, dest)
@@ -170,15 +170,15 @@ FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformF
 immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
+	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransformFFTW{SRC,DEST}(src, dest)
 
 # One implementation for forward and inverse transform in-place: call the plan
-apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!(coef_srcdest)
+apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!*coef_srcdest
 
 
 immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
