@@ -18,7 +18,7 @@ import Base: show, showcompact
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize
-export dim, left,right
+export dim, left,right, range
 
 # from functionset.jl
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
@@ -56,7 +56,10 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency
-
+# from chebyshevbasis.jl
+export ChebyshevBasis, 
+    FastChebyshevTransform, InverseFastChebyshevTransform,
+    FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 # from plots.jl
 export plot
 

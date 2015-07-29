@@ -155,7 +155,6 @@ abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,
 is_inplace(op::DiscreteFourierTransformFFTW) = True()
 
 
-
 immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
