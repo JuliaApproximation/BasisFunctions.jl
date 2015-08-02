@@ -75,21 +75,21 @@ function matrix(op::AbstractOperator)
 end
 
 function matrix!{T}(op::AbstractOperator, a::Array{T})
-	n = length(src(op))
-	m = length(dest(op))
-
-	@assert (m,n) == size(a)
-
-	r = zeros(T,n)
-	s = zeros(T,m)
-	for i = 1:n
-		if (i > 1)
-			r[i-1] = zero(T)
-		end
-		r[i] = one(T)
-		apply!(op, reshape(s, size(dest(op))), reshape(r, size(src(op))))
+    n = length(src(op))
+    m = length(dest(op))
+    
+    @assert (m,n) == size(a)
+    
+    r = zeros(T,n)
+    s = zeros(T,m)
+    for i = 1:n
+        if (i > 1)
+            r[i-1] = zero(T)
+        end
+        r[i] = one(T)
+        apply!(op, reshape(s, size(dest(op))), reshape(r, size(src(op))))
         a[:,i] = s
-	end
+    end
 end
 
 

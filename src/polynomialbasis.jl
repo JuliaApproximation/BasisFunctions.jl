@@ -15,27 +15,27 @@ typealias OPS{T} OrthogonalPolynomialBasis{T}
 length(o::OrthogonalPolynomialBasis) = o.n
 
 
-immutable ChebyshevBasis{T} <: OPS{T}
-	n	::	Int
-end
+## immutable ChebyshevBasis{T} <: OPS{T}
+## 	n	::	Int
+## end
 
-ChebyshevBasis{T}(n::Int, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
+## ChebyshevBasis{T}(n::Int, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
-jacobi_alpha{T}(b::ChebyshevBasis{T}) = -one(T)/2
-jacobi_beta{T}(b::ChebyshevBasis{T}) = -one(T)/2
+## jacobi_alpha{T}(b::ChebyshevBasis{T}) = -one(T)/2
+## jacobi_beta{T}(b::ChebyshevBasis{T}) = -one(T)/2
 
-weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
+## weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
 
-call(b::ChebyshevBasis, idx::Int, x) = cos( (idx-1) * acos(x))
+## call(b::ChebyshevBasis, idx::Int, x) = cos( (idx-1) * acos(x))
 
-grid(b::ChebyshevBasis) = ChebyshevIIGrid(length(b))
+## grid(b::ChebyshevBasis) = ChebyshevIIGrid(length(b))
 
-left{T}(b::ChebyshevBasis{T}) = -one(T)
-right{T}(b::ChebyshevBasis{T}) = one(T)
+## left{T}(b::ChebyshevBasis{T}) = -one(T)
+## right{T}(b::ChebyshevBasis{T}) = one(T)
 
-function apply!(op::TransformOperator, src::DiscreteGridSpace{ChebyshevIIGrid}, dest::ChebyshevBasis, coef_dest, coef_src)
-	println(22)
-end
+## function apply!(op::TransformOperator, src::DiscreteGridSpace{ChebyshevIIGrid}, dest::ChebyshevBasis, coef_dest, coef_src)
+## 	println(22)
+## end
 
 
 immutable LegendreBasis{T} <: OPS{T}

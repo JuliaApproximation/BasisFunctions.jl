@@ -120,6 +120,8 @@ include("discretegridspace.jl")
 
 include("fourierbasis.jl")
 
+include("chebyshevbasis.jl")
+
 include("splinebasis.jl")
 
 include("waveletbasis.jl")
