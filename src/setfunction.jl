@@ -14,6 +14,8 @@ end
 # Provide outer constructor
 SetFunction{S <: AbstractFunctionSet,I}(set::S, idx::I) = SetFunction{S,I}(set,idx)
 
+index(f::SetFunction) = f.idx
+
 for op in (:dim, :index_dim, :numtype, :eltype)
     @eval $op(f::SetFunction) = $op(f.set)
     @eval $op{S,ID}(::Type{SetFunction{S,ID}}) = $op(S)

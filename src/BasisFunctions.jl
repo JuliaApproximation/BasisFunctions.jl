@@ -27,7 +27,7 @@ export name
 export transform_operator, differentiation_operator
 
 # from setfunction.jl
-export SetFunction
+export SetFunction, index
 
 # from tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗
