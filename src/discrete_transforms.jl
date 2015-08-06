@@ -9,7 +9,7 @@ immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 # The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
-transform_operator(src, dest) = TransformOperator(src, dest)
+#transform_operator(src, dest) = TransformOperator(src, dest)
 
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
 transform_operator(src::AbstractGrid, dest::AbstractFunctionSet) = transform_operator(DiscreteGridSpace(src), dest)

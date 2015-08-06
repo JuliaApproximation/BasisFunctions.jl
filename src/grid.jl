@@ -271,7 +271,8 @@ function getindex(g::ChebyshevIIGrid, i)
 	unsafe_getindex(g, i)
 end
 
-unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = cos( (g.n-i) * T(pi) / (g.n-1) )
+# The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
+unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = cos((g.n-i+1/2) * T(pi) / (g.n) )
 
 
 
@@ -287,6 +288,8 @@ left(g::LinearMappedGrid) = g.a
 right(g::LinearMappedGrid) = g.b
 
 grid(g::LinearMappedGrid) = g.grid
+
+length(g::LinearMappedGrid) = length(g.grid)
 
 for op in (:size,:eachindex)
 	@eval $op(g::LinearMappedGrid) = $op(grid(g))

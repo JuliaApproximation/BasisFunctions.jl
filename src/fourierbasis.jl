@@ -155,13 +155,12 @@ abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,
 is_inplace(op::DiscreteFourierTransformFFTW) = True()
 
 
-
 immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
+	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformFFTW{SRC,DEST}(src, dest)
@@ -170,15 +169,15 @@ FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformF
 immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
-	plan!	::	Function
+	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src), FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransformFFTW{SRC,DEST}(src, dest)
 
 # One implementation for forward and inverse transform in-place: call the plan
-apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!(coef_srcdest)
+apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!*coef_srcdest
 
 
 immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -209,20 +208,29 @@ function differentiation_operator(b::FourierBasisEven)
 end
 
 
-# For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
-transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _transform_operator(src, dest, eltype(src,dest))
+# For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat).
+# The discrete grid should actually be Periodic and equispaced!
+AnyFourierBasis = Union{FourierBasis, TensorProductSet}
+AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
+transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))
+transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,FourierBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_fourier_operator(src,dest,eltype(src,dest))
+transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,FourierBasis}) = _forward_fourier_operator(src,dest,eltype(src,dest))
 
-_transform_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
 
-_transform_operator{T <: FloatingPoint}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
+transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
+
+_forward_fourier_operator(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+
+_forward_fourier_operator{T <: FloatingPoint}(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
 
 
-transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _transform_operator(src, dest, eltype(src,dest))
+transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _backward_fourier_operator(src, dest, eltype(src,dest))
 
-_transform_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+_backward_fourier_operator(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 
-_transform_operator{T <: FloatingPoint}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+_backward_fourier_operator{T <: FloatingPoint}(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+
 
 
 # The default approximation operator for a Fourier series is the FFT.
