@@ -100,4 +100,6 @@ getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
 getindex{TS,SN}(b::TensorProductSet{TS,SN,1}, i::Int) = SetFunction(b, i)
 
 
+transform_operator(src::TensorProductSet, dest::TensorProductSet) = transform_operator(src, dest, sets(src), sets(dest))
+
 

@@ -212,7 +212,7 @@ end
 # The discrete grid should actually be Periodic and equispaced!
 AnyFourierBasis = Union{FourierBasis, TensorProductSet}
 AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
-transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))
+
 transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,FourierBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_fourier_operator(src,dest,eltype(src,dest))
 transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,FourierBasis}) = _forward_fourier_operator(src,dest,eltype(src,dest))
 

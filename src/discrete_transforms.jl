@@ -70,4 +70,3 @@ approximation_operator(b::AbstractBasis) = interpolation_operator(b)
 
 
 
-

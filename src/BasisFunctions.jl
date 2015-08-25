@@ -5,6 +5,8 @@ module BasisFunctions
 
 using ArrayViews
 
+import Base: +, *, /, ==, |, &, -, \
+
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range
 
 import Base: getindex, setindex!, eltype
@@ -24,7 +26,7 @@ export dim, left,right, range
 export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
 export numtype, grid, left, right, support, call, call!
 export name
-export transform_operator, differentiation_operator
+export transform_operator, differentiation_operator, approximation_operator
 
 # from setfunction.jl
 export SetFunction, index
@@ -48,6 +50,9 @@ export TensorProductOperator
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 
+# from approximation.jl
+export approximate
+
 # from extensions.jl
 export Extension, Restriction
 
@@ -56,12 +61,17 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency
+
 # from chebyshevbasis.jl
 export ChebyshevBasis, 
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
+
 # from plots.jl
 export plot
+
+# from polynomials.jl and friends
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis
 
 
 using Base.Cartesian
@@ -118,15 +128,25 @@ include("differentiation.jl")
 
 include("discretegridspace.jl")
 
-include("fourierbasis.jl")
+include("approximation.jl")
 
-include("chebyshevbasis.jl")
+include("fourierbasis.jl")
 
 include("splinebasis.jl")
 
 include("waveletbasis.jl")
 
 include("polynomialbasis.jl")
+
+include("chebyshevbasis.jl")
+
+include("legendrebasis.jl")
+
+include("jacobibasis.jl")
+
+include("laguerrebasis.jl")
+
+include("hermitebasis.jl")
 
 include("plots.jl")
 
