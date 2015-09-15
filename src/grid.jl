@@ -110,6 +110,8 @@ end
 done(iter::GridIterator, state) = done(iter.griditer, state)
 
 
+collect(grid::AbstractGrid) = [x for x in eachelement(grid)]
+
 
 # A TensorProductGrid represents the tensor product of other grids.
 # Parameter TG is a tuple of (grid) types.

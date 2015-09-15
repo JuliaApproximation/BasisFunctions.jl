@@ -14,6 +14,6 @@ variable(op::Differentiation) = op.var
 order(op::Differentiation) = op.order
 
 # A shortcut routine to compute the derivative of a basis that is closed under differentiation
-differentiate(src::AbstractBasis, coef) = apply(Differentation(src,src), coef)
+differentiate(src::AbstractBasis, coef) = apply(Differentiation(src,src), coef)
 
 

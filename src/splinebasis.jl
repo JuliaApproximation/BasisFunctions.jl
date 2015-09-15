@@ -113,21 +113,24 @@ stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 
 call{K,T}(b::NaturalSplineBasis{K,T}, idx, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
+
 # Periodic splines of degree K
 immutable PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
 	a		::	T
 	b		::	T
 	n		::	Int
-	grid	::	PeriodicEquispacedGrid{T}
 
-	PeriodicSplineBasis(a, b, n) = new(a, b, n, PeriodicEquispacedGrid(n, a, b))
+	PeriodicSplineBasis(a, b, n) = new(a, b, n)
 end
 
+# type-unsafe constructor
 PeriodicSplineBasis{T}(a::T, b::T, n, k) = PeriodicSplineBasis{k,T}(a,b,n)
 
 PeriodicSplineBasis{K,T}(a::T, b::T, n, ::Type{SplineDegree{K}}) = PeriodicSplineBasis{K,T}(a,b,n)
 
 length(b::PeriodicSplineBasis) = b.n
+
+grid(b::PeriodicSplineBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 # Indices of periodic splines naturally range from 0 to n-1
 natural_index(b::PeriodicSplineBasis, idx) = idx-1
@@ -135,9 +138,13 @@ natural_index(b::PeriodicSplineBasis, idx) = idx-1
 # convert back from natural index to general index
 general_index{K}(b::PeriodicSplineBasis{K}, idxn) = idxn+1
 
-stepsize(b::PeriodicSplineBasis) = stepsize(b.grid)
+stepsize(b::PeriodicSplineBasis) = (b.b-b.a)/b.n
 
 period(b::PeriodicSplineBasis) = b.b - b.a
+
+left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * stepsize(b)
+
+right{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - ((K+1) >> 1) + K) * stepsize(b)
 
 
 function call{K,T}(b::PeriodicSplineBasis{K,T}, idx, x)

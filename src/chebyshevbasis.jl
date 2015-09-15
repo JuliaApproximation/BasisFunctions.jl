@@ -1,44 +1,60 @@
 # chebyshevbasis.jl
 
 
-# Fourier basis on the interval [a,b]
-immutable ChebyshevBasis{T <: FloatingPoint} <: AbstractBasis1d{T}
-    n                   ::      Int
+############################################
+# Chebyshev polynomials of the first kind
+############################################
+
+
+# A basis of Chebyshev polynomials of the first kind on the interval [a,b]
+immutable ChebyshevBasis{T <: FloatingPoint} <: OPS{T}
+    n			::	Int
     a 			::	T
     b 			::	T
-    # I don't see why grid is necessary for a basis..
-	# grid		::	PeriodicEquispacedGrid{T}
 end
 
-name(b::ChebyshevBasis) = "Chebyshev series"
+typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
-isreal(b::ChebyshevBasis) = False()
-isreal{B <: ChebyshevBasis}(::Type{B}) = False()
+
+name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
+
+isreal(b::ChebyshevBasis) = True()
+isreal{B <: ChebyshevBasis}(::Type{B}) = True()
 
 	
 ChebyshevBasis{T}(n, a::T = -1.0, b::T = 1.0) = ChebyshevBasis{T}(n, a, b)
 
-length(b::ChebyshevBasis) = b.n
-
 left(b::ChebyshevBasis) = b.a
-
-left(b::ChebyshevBasis, idx) = b.a
+left(b::ChebyshevBasis, idx) = left(b)
 
 right(b::ChebyshevBasis) = b.b
+right(b::ChebyshevBasis, idx) = right(b)
 
-right(b::ChebyshevBasis, idx) = b.b
+grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b), right(b))
 
-grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid(b.n,T),left(b),right(b))
+# The weight function
+weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
+
+# Parameters alpha and beta of the corresponding Jacobi polynomial
+jacobi_alpha{T}(b::ChebyshevBasis{T}) = -one(T)/2
+jacobi_beta{T}(b::ChebyshevBasis{T}) = -one(T)/2
+
+
+# See DLMF, Table 18.9.1
+# http://dlmf.nist.gov/18.9#i
+rec_An(b::ChebyshevBasis, n::Int) = n==0 ? 1 : 2
+
+rec_Bn(b::ChebyshevBasis, n::Int) = 0
+
+rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
-# One has to be careful here not to match Floats and BigFloats by accident.
-# Hence the conversions to T in the lines below.
-call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::T) = idx==1 ? 1/sqrt(2) : cos(one(T)*(idx-1)*acos(-1*mapx(b,x)))
+call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
+call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
 
-call{T, S <: Number}(b::ChebyshevBasis{T}, idx::Int, x::S) = idx==1 ? 1/sqrt(2) : call(b, (idx), T(x))
 
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) > length(src)
@@ -60,6 +76,30 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	end
 end
 
+
+function differentiation_matrix{T}(src::ChebyshevBasis{T})
+	n = length(src)
+	N = n-1
+	D = zeros(T, N+1, N+1)
+	A = zeros(1, N+1)
+	B = zeros(1, N+1)
+	B[N+1] = 2*N
+	D[N,:] = B
+	for k = N-1:-1:1
+		C = A
+		C[k+1] = 2*k
+		D[k,:] = C
+		A = B
+		B = C
+	end
+	D[1,:] = D[1,:]/2
+	D
+end
+
+function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, coef_dest, coef_src)
+	D = differentiation_matrix(src)
+	coef_dest[:] = D*coef_src
+end
 
 
 abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
@@ -114,7 +154,8 @@ end
 
 apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
 
-AnyChebyshevBasis = Union{ChebyshevBasis, TensorProductSet}
+AnyFourierBasis = Union{ChebyshevBasis, TensorProductSet}
+AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
 # Defined in fourierbasis
 #transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))
 transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,ChebyshevBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_chebyshev_operator(src,dest,eltype(src,dest))
@@ -137,6 +178,49 @@ _backward_chebyshev_operator{T <: FloatingPoint}(src::AnyChebyshevBasis, dest::A
 
 
 
+############################################
+# Chebyshev polynomials of the second kind
+############################################
+
+# A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])
+immutable ChebyshevBasisSecondKind{T <: FloatingPoint} <: OPS{T}
+    n			::	Int
+
+    ChebyshevBasisSecondKind(n) = new(n)
+end
+
+ChebyshevBasisSecondKind(n) = ChebyshevBasisSecondKind{Float64}(n)
+
+name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
+
+isreal(b::ChebyshevBasisSecondKind) = True()
+isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True()
+
+
+left{T}(b::ChebyshevBasisSecondKind{T}) = -one(T)
+left{T}(b::ChebyshevBasisSecondKind{T}, idx) = left(b)
+
+right{T}(b::ChebyshevBasisSecondKind{T}) = one(T)
+right{T}(b::ChebyshevBasisSecondKind{T}, idx) = right(b)
+
+grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevIIGrid{T}(b.n)
+
+
+# The weight function
+weight(b::ChebyshevBasisSecondKind, x) = sqrt(1-x^2)
+
+# Parameters alpha and beta of the corresponding Jacobi polynomial
+jacobi_alpha{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
+jacobi_beta{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
+
+
+# See DLMF, Table 18.9.1
+# http://dlmf.nist.gov/18.9#i
+rec_An(b::ChebyshevBasisSecondKind, n::Int) = 2
+
+rec_Bn(b::ChebyshevBasisSecondKind, n::Int) = 0
+
+rec_Cn(b::ChebyshevBasisSecondKind, n::Int) = 1
 
 
 
