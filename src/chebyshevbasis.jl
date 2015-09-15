@@ -38,7 +38,7 @@ mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 # Hence the conversions to T in the lines below.
 call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::T) = idx==1 ? 1/sqrt(2) : cos(one(T)*(idx-1)*acos(-1*mapx(b,x)))
 
-call{T, S <: Number}(b::ChebyshevBasis{T}, idx::Int, x::S) = idx==1 ? 1/sqrt(2) : call(b, (idx-1), T(x))
+call{T, S <: Number}(b::ChebyshevBasis{T}, idx::Int, x::S) = idx==1 ? 1/sqrt(2) : call(b, (idx), T(x))
 
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) > length(src)
@@ -94,7 +94,7 @@ end
 InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest)
 
 # One implementation for forward and inverse transform in-place: call the plan. Added constant to undo the normalisation.
-apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2)*op.plan!*coef_srcdest
+apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
 
 
 immutable FastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
@@ -104,7 +104,7 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src)*sqrt(length(dest))/2)
+apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src)*sqrt(length(dest))/2^(dim(src)))
 
 
 immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
@@ -112,10 +112,9 @@ immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{
 	dest	::	DEST
 end
 
-apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2)
+apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
 
-AnyFourierBasis = Union{ChebyshevBasis, TensorProductSet}
-AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
+AnyChebyshevBasis = Union{ChebyshevBasis, TensorProductSet}
 # Defined in fourierbasis
 #transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))
 transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,ChebyshevBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_chebyshev_operator(src,dest,eltype(src,dest))
@@ -124,17 +123,17 @@ transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTu
 # For the default Chebyshev transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest)
+_forward_chebyshev_operator(src::AnyDiscreteGridSpace, dest::AnyChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest)
 
-_forward_chebyshev_operator{T <: FloatingPoint}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{T}}) = FastChebyshevTransform(src,dest)
+_forward_chebyshev_operator{T <: FloatingPoint}(src::AnyDiscreteGridSpace, dest::AnyChebyshevBasis, ::Type{Complex{T}}) = FastChebyshevTransform(src,dest)
 
 
 
 transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) = _backward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest)
+_backward_chebyshev_operator(src::AnyChebyshevBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest)
 
-_backward_chebyshev_operator{T <: FloatingPoint}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastChebyshevTransform(src, dest)
+_backward_chebyshev_operator{T <: FloatingPoint}(src::AnyChebyshevBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastChebyshevTransform(src, dest)
 
 
 
