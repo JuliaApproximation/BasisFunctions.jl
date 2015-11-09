@@ -4,11 +4,11 @@
 # Fourier basis on the interval [a,b]
 # EVEN is true if the length of the corresponding Fourier series is even.
 immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
+	n			::	Int
 	a 			::	T
 	b 			::	T
-	grid		::	PeriodicEquispacedGrid{T}
 
-	FourierBasis(n, a, b) = (@assert iseven(n)==EVEN; new(a, b, PeriodicEquispacedGrid(n, a, b)))
+	FourierBasis(n, a, b) = (@assert iseven(n)==EVEN; new(n, a, b))
 end
 
 typealias FourierBasisEven{T} FourierBasis{true,T}
@@ -36,7 +36,7 @@ fourier_basis_odd_length{T}(n, a::T = -1.0, b::T = 1.0) = FourierBasis{false,T}(
 
 
 
-length(b::FourierBasis) = length(b.grid)
+length(b::FourierBasis) = b.n
 
 left(b::FourierBasis) = b.a
 
@@ -48,7 +48,7 @@ right(b::FourierBasis, idx) = b.b
 
 period(b::FourierBasis) = b.b-b.a
 
-grid(b::FourierBasis) = b.grid
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 nhalf(b::FourierBasis) = length(b)>>1
 
