@@ -221,7 +221,7 @@ immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
 end
 
 # Parameter n is the total number of points in the equispaced grid.
-EquispacedGrid{T <: FloatingPoint}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
+EquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
 
 # Promote the numeric type of a and b to a floating point type.
 function EquispacedGrid{S <: Number}(n, a::S, b::S)
@@ -242,7 +242,7 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
 end
 
 # Parameter n is the total number of points in the periodic equispaced grid.
-PeriodicEquispacedGrid{T <: FloatingPoint}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
+PeriodicEquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
 
 function PeriodicEquispacedGrid{S <: Number}(n, a::S, b::S)
 	T = promote_type(S, typeof((b-a)/n))

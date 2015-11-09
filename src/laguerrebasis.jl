@@ -1,7 +1,7 @@
 # laguerrebasis.jl
 
 # A Laguerre polynomial basis
-immutable LaguerreBasis{T <: FloatingPoint} <: OPS{T}
+immutable LaguerreBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
     alpha       ::  T
 end

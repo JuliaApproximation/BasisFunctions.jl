@@ -3,7 +3,7 @@
 
 # Fourier basis on the interval [a,b]
 # EVEN is true if the length of the corresponding Fourier series is even.
-immutable FourierBasis{EVEN,T <: FloatingPoint} <: AbstractBasis1d{T}
+immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
 	a 			::	T
 	b 			::	T
 	grid		::	PeriodicEquispacedGrid{T}
@@ -66,11 +66,11 @@ frequency2idx(b::FourierBasis, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T <: FloatingPoint}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
+call{T <: AbstractFloat}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
 
 call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
 
-call{T <: FloatingPoint}(b::FourierBasisEven{T}, idx::Int, x::T) =
+call{T <: AbstractFloat}(b::FourierBasisEven{T}, idx::Int, x::T) =
 	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
 						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
 
@@ -221,7 +221,7 @@ transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _forward_fourie
 
 _forward_fourier_operator(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
 
-_forward_fourier_operator{T <: FloatingPoint}(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
+_forward_fourier_operator{T <: AbstractFloat}(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
 
 
@@ -229,7 +229,7 @@ transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _backward_fouri
 
 _backward_fourier_operator(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 
-_backward_fourier_operator{T <: FloatingPoint}(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+_backward_fourier_operator{T <: AbstractFloat}(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
 
 

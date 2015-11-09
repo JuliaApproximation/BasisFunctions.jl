@@ -1,7 +1,7 @@
 # hermitebasis.jl
 
 # A Hermite polynomial basis
-immutable HermiteBasis{T <: FloatingPoint} <: OPS{T}
+immutable HermiteBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
 
     HermiteBasis(n) = new(n)

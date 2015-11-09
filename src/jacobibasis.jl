@@ -1,7 +1,7 @@
 # jacobibasis.jl
 
 # A Jacobi basis on the interval [a,b]
-immutable JacobiBasis{T <: FloatingPoint} <: OPS{T}
+immutable JacobiBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
     alpha       ::  T
     beta        ::  T
