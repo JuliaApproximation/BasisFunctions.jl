@@ -34,7 +34,7 @@ function message(y, backtrace)
     global errors+=1
 end
 
-function delimit(s::String)
+function delimit(s::AbstractString)
     println("############")
     println("# ",s)
     println("############")
@@ -45,13 +45,13 @@ approx(a, b, eps) = abs(b-a) < eps
 
 # Strong equality: within 10 times eps
 ≃(a,b) = ≃(promote(a,b)...)
-≃{T <: FloatingPoint}(a::T,b::T) = approx(a, b, 10eps(T))
-≃{T <: FloatingPoint}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10eps(T))
+≃{T <: AbstractFloat}(a::T,b::T) = approx(a, b, 10eps(T))
+≃{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10eps(T))
 
 # Weaker equality: within 10 times sqrt(eps)
 ≈(a,b) = ≈(promote(a,b)...)
-≈{T <: FloatingPoint}(a::T, b::T) = approx(a, b, 10*sqrt(eps(T)))
-≈{T <: FloatingPoint}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10*sqrt(eps(T)))
+≈{T <: AbstractFloat}(a::T, b::T) = approx(a, b, 10*sqrt(eps(T)))
+≈{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10*sqrt(eps(T)))
 
 ##########
 # Testing
