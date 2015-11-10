@@ -15,7 +15,7 @@ end
 transform_operator(src::AbstractGrid, dest::AbstractFunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
 transform_operator(src::AbstractFunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
 
-ctranspose(op::TransformOperator) = TransformOperator(dest(op), src(op))
+ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
 ## The transform is invariant under a linear map.
 #apply!(op::TransformOperator, src::LinearMappedSet, dest::LinearMappedSet, coef_dest, coef_src) =

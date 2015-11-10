@@ -154,7 +154,7 @@ end
 
 apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
 
-AnyFourierBasis = Union{ChebyshevBasis, TensorProductSet}
+AnyChebyshevBasis = Union{ChebyshevBasis, TensorProductSet}
 AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
 # Defined in fourierbasis
 #transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))

@@ -130,23 +130,23 @@ include("discretegridspace.jl")
 
 include("approximation.jl")
 
-include("fourierbasis.jl")
+include("bf_fourier.jl")
 
-include("splinebasis.jl")
+include("bf_splines.jl")
 
-include("waveletbasis.jl")
+include("bf_wavelets.jl")
 
-include("polynomialbasis.jl")
+include("bf_polynomials.jl")
 
-include("chebyshevbasis.jl")
+include("poly_chebyshev.jl")
 
-include("legendrebasis.jl")
+include("poly_legendre.jl")
 
-include("jacobibasis.jl")
+include("poly_jacobi.jl")
 
-include("laguerrebasis.jl")
+include("poly_laguerre.jl")
 
-include("hermitebasis.jl")
+include("poly_hermite.jl")
 
 include("plots.jl")
 

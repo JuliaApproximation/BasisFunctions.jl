@@ -3,8 +3,6 @@
 
 abstract PolynomialBasis{T} <: AbstractBasis1d{T}
 
-immutable MonomialBasis{T} <: PolynomialBasis{T}
-end
 
 
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
@@ -12,7 +10,18 @@ abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 typealias OPS{T} OrthogonalPolynomialBasis{T}
 
 
+#######################
+# The monomial basis
+#######################
+
+# A basis of the monomials x^i
+immutable MonomialBasis{T} <: PolynomialBasis{T}
+    n   ::  Int
+end
+
+
 length(o::OrthogonalPolynomialBasis) = o.n
+
 
 
 # Evaluate an orthogonal polynomial using the three term recurrence relation.

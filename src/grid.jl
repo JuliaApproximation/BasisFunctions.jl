@@ -166,7 +166,7 @@ getindex!(g::TensorProductGrid, x, idx::Int) = getindex!(g, x, ind2sub(g,idx))
 
 getindex!(g::TensorProductGrid, x, idxt::Int...) = getindex!(g, x, idxt)
 
-function getindex!{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, x, idx::Union(CartesianIndex{LEN},NTuple{LEN,Int}))
+function getindex!{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, x, idx::Union{CartesianIndex{LEN},NTuple{LEN,Int}})
 	l = 0
     for i = 1:LEN
     	z = grid(g, i)[idx[i]]	# FIX: this allocates memory if GN[i] > 1

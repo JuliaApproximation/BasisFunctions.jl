@@ -74,7 +74,7 @@ function matrix(op::AbstractOperator)
     a
 end
 
-function matrix!{T}(op::AbstractOperator, a::Array{T})
+function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
     n = length(src(op))
     m = length(dest(op))
     
