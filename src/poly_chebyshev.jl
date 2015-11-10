@@ -18,9 +18,6 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
-isreal(b::ChebyshevBasis) = True()
-isreal{B <: ChebyshevBasis}(::Type{B}) = True()
-
 	
 ChebyshevBasis{T}(n, a::T = -1.0, b::T = 1.0) = ChebyshevBasis{T}(n, a, b)
 
@@ -194,7 +191,7 @@ ChebyshevBasisSecondKind(n) = ChebyshevBasisSecondKind{Float64}(n)
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 
 isreal(b::ChebyshevBasisSecondKind) = True()
-isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True()
+isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True
 
 
 left{T}(b::ChebyshevBasisSecondKind{T}) = -one(T)

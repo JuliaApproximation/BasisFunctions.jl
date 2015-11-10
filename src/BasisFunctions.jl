@@ -70,8 +70,8 @@ export ChebyshevBasis,
 # from plots.jl
 export plot
 
-# from polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis
+# from bf_polynomials.jl and friends
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
 
 using Base.Cartesian

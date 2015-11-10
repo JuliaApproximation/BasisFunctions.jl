@@ -17,8 +17,8 @@ isreal{B <: JacobiBasis}(::Type{B}) = True
 left(b::JacobiBasis) = -1
 left(b::JacobiBasis, idx) = -1
 
-right(b::JacobiBasis{T}) = 1
-right(b::JacobiBasis{T}, idx) = 1
+right(b::JacobiBasis) = 1
+right(b::JacobiBasis, idx) = 1
 
 grid{T}(b::JacobiBasis{T}) = JacobiGrid(b.n, jacobi_alpha(b), jacobi_beta(b))
 

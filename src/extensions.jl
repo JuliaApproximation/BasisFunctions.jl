@@ -1,15 +1,15 @@
 # extensions.jl
 
-# The Extension operator is used to extend a basis of a given length to
-# a basis of larger length. The resulting function should be (approximately)
+# The Extension operator is used to extend the representation in a basis of a given length to
+# a representation of larger length. The resulting function should be (approximately)
 # the same.
 immutable Extension{SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
 end
 
-# The Restriction operator is used to reduce a basis to a basis of smaller
-# length. This may entail some loss of accuracy.
+# The Restriction operator is used to reduce a representation in a basis to a 
+# representation of shorter length. This may entail some loss of accuracy.
 immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST

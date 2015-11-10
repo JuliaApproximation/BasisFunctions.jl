@@ -55,6 +55,9 @@ is_basis(s::AbstractFunctionSet) = False()
 # A basis is always a basis.
 is_basis(b::AbstractBasis) = True()
 
+is_frame(s::AbstractFunctionSet) = False()
+is_frame(s::AbstractFrame) = True()
+
 is_orthogonal(b::AbstractBasis) = False()
 is_orthogonal{N,T}(::Type{AbstractFunctionSet{N,T}}) = False
 is_orthogonal{B <: AbstractFunctionSet}(::Type{B}) = False

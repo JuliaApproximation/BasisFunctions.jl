@@ -14,8 +14,8 @@ name(b::LaguerreBasis) = "Laguerre series"
 isreal(b::LaguerreBasis) = True()
 isreal{B <: LaguerreBasis}(::Type{B}) = True
 
-left(b::LaguerreBasis{T}) = 0
-left(b::LaguerreBasis{T}, idx) = left(b)
+left(b::LaguerreBasis) = 0
+left(b::LaguerreBasis, idx) = left(b)
 
 right{T}(b::LaguerreBasis{T}) = inf(T)
 right{T}(b::LaguerreBasis{T}, idx) = right(b)

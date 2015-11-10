@@ -15,17 +15,17 @@ name(b::LegendreBasis) = "Legendre series"
 isreal(b::LegendreBasis) = True()
 isreal{B <: LegendreBasis}(::Type{B}) = True
 
-left{T}(b::LegendreBasis{T}) = -1
-left{T}(b::LegendreBasis{T}, idx) = -1
+left(b::LegendreBasis) = -1
+left(b::LegendreBasis, idx) = -1
 
-right{T}(b::LegendreBasis{T}) = 1
-right{T}(b::LegendreBasis{T}, idx) = 1
+right(b::LegendreBasis) = 1
+right(b::LegendreBasis, idx) = 1
 
-grid{T}(b::LegendreBasis{T}) = LegendreGrid(b.n)
+grid(b::LegendreBasis) = LegendreGrid(b.n)
 
 
-jacobi_alpha(b::LegendreBasis{T}) = 0
-jacobi_beta(b::LegendreBasis{T}) = 0
+jacobi_alpha(b::LegendreBasis) = 0
+jacobi_beta(b::LegendreBasis) = 0
 
 weight{T}(b::LegendreBasis{T}, x) = ones(T,x)
 

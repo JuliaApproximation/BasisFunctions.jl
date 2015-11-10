@@ -10,6 +10,11 @@ abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 typealias OPS{T} OrthogonalPolynomialBasis{T}
 
 
+isreal(ops::PolynomialBasis) = True()
+isreal{O <: PolynomialBasis}(::Type{O}) = True
+
+
+
 #######################
 # The monomial basis
 #######################
