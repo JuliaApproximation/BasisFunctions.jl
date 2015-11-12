@@ -19,28 +19,33 @@
 ############################
 
 
-# An extension operator is an operator that can be used to extend a representation in a set s1 to a
-# larger set s2. The default extension operator is of type Extension with s1 and s2 as source and
-# destination.
 
 immutable Extension{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
 end
 
-# Default extension operator
+"""
+An extension operator is an operator that can be used to extend a representation in a set s1 to a
+representation in a larger set s2. The default extension operator is of type Extension with s1 and
+s2 as source and destination.
+"""
 extension_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = Extension(s1, s2)
 
 
-# A restriction operator does the opposite of what the extension operator does.
-# Loss of accuracy may result from the restriction.
 
 immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
 end
 
-# Default restriction operator
+
+"""
+A restriction operator does the opposite of what the extension operator does: it restricts
+a representation in a set s1 to a representation in a smaller set s2. Loss of accuracy may result
+from the restriction. The default restriction_operator is of type Restriction with sets s1 and 
+s2 as source and destination.
+"""
 restriction_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = Restriction(s1, s2)
 
 
@@ -72,8 +77,10 @@ end
 
 
 
-# The approximation_operator function returns an operator that can be used to approximate
-# a function in the function set. The operator maps a grid to a set of coefficients.
+"""
+The approximation_operator function returns an operator that can be used to approximate
+a function in the function set. This operator maps a grid to a set of coefficients.
+"""
 approximation_operator(s::AbstractFunctionSet) = println("Don't know how to approximate a function using a " * name(s))
 
 
@@ -172,12 +179,16 @@ variable(op::Differentiation) = op.var
 order(op::Differentiation) = op.order
 
 
-# The differentation_operator function returns an operator that can be used to differentiate
-# a function in the function set.
+"""
+The differentation_operator function returns an operator that can be used to differentiate
+a function in the function set.
+"""
 differentiation_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet = s1, var = 1, order = 1) = Differentiation(s1, s2, var, order)
 
 
-# A shortcut routine to compute the derivative of an expansion in a basis that is closed under differentiation
+"""
+A shortcut routine to compute the derivative of an expansion in a basis that is closed under differentiation.
+"""
 differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), coef)
 
 

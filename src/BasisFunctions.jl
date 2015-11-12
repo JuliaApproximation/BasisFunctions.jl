@@ -53,6 +53,9 @@ export extension_operator, restriction_operator, interpolation_operator,
 # from tensorproductoperator.jl
 export TensorProductOperator
 
+# from functional.jl
+export AbstractFunctional
+
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 
@@ -123,6 +126,8 @@ include("euclidean.jl")
 include("operator.jl")
 
 include("tensorproductoperator.jl")
+
+include("functional.jl")
 
 include("generic_operators.jl")
 

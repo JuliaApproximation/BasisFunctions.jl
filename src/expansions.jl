@@ -70,7 +70,7 @@ end
 function call!{N}(e::SetExpansion, result::AbstractArray, g::AbstractGrid{N})
     x = Array(eltype(e), N)
     for i in eachindex(g)
-        getindex!(g, x, i)
+        getindex!(x, g, i)
         result[i] = call(e, x...)
     end
 end
