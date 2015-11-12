@@ -57,13 +57,7 @@ end
 
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-call{T}(b::OPS{T}, idx::Int, x::T) = recurrence_eval(b, idx, x)
-call{T}(b::OPS{T}, idx::Int, x::Complex{T}) = recurrence_eval(b, idx, x)
-
-# Convert argument x of numeric type S to type T
-call{T, S <: Number}(b::OPS{T}, idx::Int, x::S) = call(b, idx, T(s))
-call{T, S <: Number}(b::OPS{T}, idx::Int, x::Complex{S}) = call(b, idx, Complex{T}(x))
-
+call(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 
 # TODO: move to its own file and make more complete
