@@ -15,11 +15,6 @@ numtype{N,T}(::AbstractGrid{N,T}) = T
 numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
 numtype{G <: AbstractGrid}(::Type{G}) = numtype(super(G))
 
-# TODO: What is the eltype of a grid? Remove?
-eltype{N,T}(::AbstractGrid{N,T}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = T
-eltype{G <: AbstractGrid}(::Type{G}) = eltype(super(G))
-
 # Default dimension of the index is 1
 index_dim(::AbstractGrid) = 1
 index_dim{N,T}(::Type{AbstractGrid{N,T}}) = 1
@@ -33,14 +28,15 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 # Getindex allocates memory because it has to return an array (for now).
 # General implementation for abstract grids: allocate memory and call getindex!
+# TODO: check whether we can use FixedSizeVectors. Function getindex! is ugly.
 function getindex{N,T}(g::AbstractGrid{N,T}, idx...)
 	x = Array(T,N)
 	getindex!(x, g, idx...)
 	x
 end
 
-# getindex! is a bit silly in 1D, but provide it anyway because it could be called from general code
-#getindex!(x, g::AbstractGrid1d, i::Int) = (x[1] = g[i])
+# Don't use getindex! on 1d grids.
+getindex!(x, g::AbstractGrid1d, i::Int) = error("getindex! called on 1d grid")
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
@@ -61,6 +57,8 @@ eachindex(g::AbstractGrid) = 1:length(g)
 #		do stuff...
 #	end
 # This attempts to reuse the memory for x while iterating.
+#
+# TODO: check whether we really need the second one. Can we use FixedSizeVectors instead?
 
 # First approach follows:
 
@@ -94,6 +92,9 @@ end
 
 eachelement(grid::AbstractGrid) = GridIterator(grid)
 
+# Revert to case 1 for 1D grids
+eachelement(grid::AbstractGrid1d) = grid
+
 start(iter::GridIterator) = start(iter.griditer)
 
 function next(iter::GridIterator, state)
@@ -114,11 +115,14 @@ done(iter::GridIterator, state) = done(iter.griditer, state)
 collect(grid::AbstractGrid) = [x for x in eachelement(grid)]
 
 
-# A TensorProductGrid represents the tensor product of other grids.
-# Parameter TG is a tuple of (grid) types.
-# Parameter GN is a tuple of the dimensions of each of the grids.
-# Parameter LEN is the length of TG and GN (the index dimension).
-# Parametes N and T are the total dimension and numeric type of this grid.
+
+"""
+A TensorProductGrid represents the tensor product of other grids.
+Parameter TG is a tuple of (grid) types.
+Parameter GN is a tuple of the dimensions of each of the grids.
+Parameter LEN is the length of TG and GN (the index dimension).
+Parametes N and T are the total dimension and numeric type of this grid.
+"""
 immutable TensorProductGrid{TG,GN,LEN,N,T} <: AbstractGrid{N,T}
 	grids	::	TG
 
@@ -199,7 +203,9 @@ length(g::AbstractIntervalGrid) = g.n
 
 
 
-# An equispaced grid has equispaced points, and therefore it has a stepsize.
+"""
+An equispaced grid has equispaced points, and therefore it has a stepsize.
+"""
 abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
 
 range(g::AbstractEquispacedGrid) = range(left(g), stepsize(g), length(g))
