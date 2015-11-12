@@ -99,12 +99,5 @@ getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
 # but avoid the 1d case.
 getindex{TS,SN}(b::TensorProductSet{TS,SN,1}, i::Int) = SetFunction(b, i)
 
-function transform_operator(src::TensorProductSet, dest::TensorProductSet)
-    operators=Array(AbstractOperator,length(sets(src)))
-    for i=1:length(sets(src))
-        operators[i]=transform_operator(set(src,i),set(dest,i))
-    end
-    TensorProductOperator(tuple(operators...))
-end
 
 

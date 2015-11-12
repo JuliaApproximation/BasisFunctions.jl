@@ -1,4 +1,4 @@
-# laguerrebasis.jl
+# poly_laguerre.jl
 
 # A Laguerre polynomial basis
 immutable LaguerreBasis{T <: AbstractFloat} <: OPS{T}
@@ -14,8 +14,8 @@ name(b::LaguerreBasis) = "Laguerre series"
 isreal(b::LaguerreBasis) = True()
 isreal{B <: LaguerreBasis}(::Type{B}) = True
 
-left{T}(b::LaguerreBasis{T}) = zero(T)
-left{T}(b::LaguerreBasis{T}, idx) = left(b)
+left(b::LaguerreBasis) = 0
+left(b::LaguerreBasis, idx) = left(b)
 
 right{T}(b::LaguerreBasis{T}) = inf(T)
 right{T}(b::LaguerreBasis{T}, idx) = right(b)
@@ -30,7 +30,7 @@ weight(b::LaguerreBasis, x) = exp(-x) * x^(b.alpha)
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::LaguerreBasis, n::Int) = -1 / (n+1)
+rec_An{T}(b::LaguerreBasis{T}, n::Int) = -T(1) / T(n+1)
 
 rec_Bn(b::LaguerreBasis, n::Int) = (2*n + b.alpha + 1) / (n+1)
 

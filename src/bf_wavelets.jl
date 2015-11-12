@@ -1,4 +1,4 @@
-# waveletbasis.jl
+# bf_wavelets.jl
 
 abstract WaveletBasis{T} <: AbstractBasis1d{T}
 

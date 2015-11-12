@@ -25,7 +25,12 @@ size(op::AbstractOperator) = (length(dest(op)), length(src(op)))
 
 size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 
-is_inplace(op::AbstractOperator) = False()
+
+"Trait to say whether an operator performs its action in place or not."
+is_inplace(op::AbstractOperator) = is_inplace(op, dest(op), src(op))
+
+# By default an operator is not in place.
+is_inplace(op::AbstractOperator, src, dest) = False()
 
 
 function apply(op::AbstractOperator, coef_src)
@@ -74,7 +79,7 @@ function matrix(op::AbstractOperator)
     a
 end
 
-function matrix!{T}(op::AbstractOperator, a::Array{T})
+function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
     n = length(src(op))
     m = length(dest(op))
     

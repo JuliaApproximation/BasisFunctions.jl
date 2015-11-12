@@ -1,4 +1,4 @@
-# chebyshevbasis.jl
+# poly_chebyshev.jl
 
 
 ############################################
@@ -18,9 +18,6 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
-isreal(b::ChebyshevBasis) = True()
-isreal{B <: ChebyshevBasis}(::Type{B}) = True()
-
 	
 ChebyshevBasis{T}(n, a::T = -1.0, b::T = 1.0) = ChebyshevBasis{T}(n, a, b)
 
@@ -36,8 +33,8 @@ grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b
 weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha{T}(b::ChebyshevBasis{T}) = -one(T)/2
-jacobi_beta{T}(b::ChebyshevBasis{T}) = -one(T)/2
+jacobi_alpha(b::ChebyshevBasis) = -1//2
+jacobi_beta(b::ChebyshevBasis) = -1//2
 
 
 # See DLMF, Table 18.9.1
@@ -56,6 +53,7 @@ call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*aco
 call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
 
 
+# TODO: do we need these two routines below? Are they different from the generic ones?
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) > length(src)
 
@@ -76,7 +74,7 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	end
 end
 
-
+# TODO: this matrix does not take into account a and b -> either remove a and b (in favour of mapped basis) or update this function
 function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	n = length(src)
 	N = n-1
@@ -96,6 +94,8 @@ function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	D
 end
 
+# TODO: update in order to avoid memory allocation in constructing the differentiation_matrix
+# Would be better to write differentiation_matrix in terms of apply! (can be generic), rather than the other way around
 function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, coef_dest, coef_src)
 	D = differentiation_matrix(src)
 	coef_dest[:] = D*coef_src
@@ -155,20 +155,21 @@ end
 apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
 
 
-# For the default Chebyshev transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
+
+# TODO: restrict the grid of grid space here
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest)
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Float64}) = FastChebyshevTransformFFTW(src,dest)
 
-_forward_chebyshev_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{T}}) = FastChebyshevTransform(src,dest)
+_forward_chebyshev_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{T}) = FastChebyshevTransform(src,dest)
 
 
 
 transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) = _backward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest)
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Float64}) = InverseFastChebyshevTransformFFTW(src,dest)
 
-_backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastChebyshevTransform(src, dest)
+_backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
 
 
 
@@ -188,7 +189,7 @@ ChebyshevBasisSecondKind(n) = ChebyshevBasisSecondKind{Float64}(n)
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 
 isreal(b::ChebyshevBasisSecondKind) = True()
-isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True()
+isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True
 
 
 left{T}(b::ChebyshevBasisSecondKind{T}) = -one(T)
@@ -204,8 +205,8 @@ grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevIIGrid{T}(b.n)
 weight(b::ChebyshevBasisSecondKind, x) = sqrt(1-x^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
-jacobi_beta{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
+jacobi_alpha(b::ChebyshevBasisSecondKind) = 1//2
+jacobi_beta(b::ChebyshevBasisSecondKind) = 1//2
 
 
 # See DLMF, Table 18.9.1

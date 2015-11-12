@@ -1,14 +1,14 @@
-# fourierbasis.jl
+# bf_fourier.jl
 
 
 # Fourier basis on the interval [a,b]
 # EVEN is true if the length of the corresponding Fourier series is even.
 immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
+	n			::	Int
 	a 			::	T
 	b 			::	T
-	grid		::	PeriodicEquispacedGrid{T}
 
-	FourierBasis(n, a, b) = (@assert iseven(n)==EVEN; new(a, b, PeriodicEquispacedGrid(n, a, b)))
+	FourierBasis(n, a, b) = (@assert iseven(n)==EVEN; new(n, a, b))
 end
 
 typealias FourierBasisEven{T} FourierBasis{true,T}
@@ -36,7 +36,7 @@ fourier_basis_odd_length{T}(n, a::T = -1.0, b::T = 1.0) = FourierBasis{false,T}(
 
 
 
-length(b::FourierBasis) = length(b.grid)
+length(b::FourierBasis) = b.n
 
 left(b::FourierBasis) = b.a
 
@@ -48,7 +48,7 @@ right(b::FourierBasis, idx) = b.b
 
 period(b::FourierBasis) = b.b-b.a
 
-grid(b::FourierBasis) = b.grid
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 nhalf(b::FourierBasis) = length(b)>>1
 
@@ -143,6 +143,12 @@ function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_
 end
 
 
+function differentiation_operator(b::FourierBasisEven)
+	b_odd = fourier_basis_odd_length(length(b)+1, left(b), right(b))
+	differentiation_operator(b_odd) * extension_operator(b, b_odd)
+end
+
+
 
 abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 
@@ -210,33 +216,14 @@ apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigF
 
 
 
-# Default differentiation operator
-differentiation_operator(b::FourierBasisOdd) = Differentiation(b, b)
-
-function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd_length(length(b)+1, left(b), right(b))
-	differentiation_operator(b_odd) * Extension(b, b_odd)
-end
-
-
-# For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat).
-# The discrete grid should actually be Periodic and equispaced!
-## AnyFourierBasis = Union{FourierBasis, TensorProductSet}
-## AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
-
-## transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,FourierBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_fourier_operator(src,dest,eltype(src,dest))
-## transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,FourierBasis}) = _forward_fourier_operator(src,dest,eltype(src,dest))
-
-
-transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
+transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
 
 _forward_fourier_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
 
 _forward_fourier_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
 
-
-transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _backward_fourier_operator(src, dest, eltype(src,dest))
+transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}) = _backward_fourier_operator(src, dest, eltype(src,dest))
 
 _backward_fourier_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 

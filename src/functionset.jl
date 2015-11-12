@@ -55,6 +55,9 @@ is_basis(s::AbstractFunctionSet) = False()
 # A basis is always a basis.
 is_basis(b::AbstractBasis) = True()
 
+is_frame(s::AbstractFunctionSet) = False()
+is_frame(s::AbstractFrame) = True()
+
 is_orthogonal(b::AbstractBasis) = False()
 is_orthogonal{N,T}(::Type{AbstractFunctionSet{N,T}}) = False
 is_orthogonal{B <: AbstractFunctionSet}(::Type{B}) = False
@@ -114,22 +117,10 @@ function checkbounds(s::AbstractFunctionSet, i...)
 end
 
 
-gridtype(b::AbstractBasis1d) = typeof(grid(b))
-
-
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
 
 # General vectorized calling method
 #call!(b::AbstractBasis1d, idx::Int, result::AbstractArray, x::AbstractArray) = broadcast!(t -> call(b, idx, t), result, x)
-
-
-# The approximation_operator function returns an operator that can be used to approximate
-# a function in the function set. The operator maps a grid to a set of coefficients.
-approximation_operator(s::AbstractFunctionSet) = println("Don't know how to approximate a function using a " * name(s))
-
-# The differentation_operator function returns an operator that can be used to differentiate
-# a function in the function set.
-differentiation_operator(s::AbstractFunctionSet) = println("Don't know how to differentiate a function given by a " * name(s))
 
 

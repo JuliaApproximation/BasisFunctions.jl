@@ -44,8 +44,17 @@ export SetExpansion, TensorProductExpansion, coefficients, set
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
     IdentityOperator, ScalingOperator, DenseOperator, MatrixOperator, apply!
 
+# from generic_operator.jl
+export extension_operator, restriction_operator, interpolation_operator, 
+    approximation_operator, transform_operator, differentiation_operator,
+    evaluation_operator,
+    Extension, Restriction, Differentiation, TransformOperator
+
 # from tensorproductoperator.jl
 export TensorProductOperator
+
+# from functional.jl
+export AbstractFunctional
 
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
@@ -53,8 +62,6 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 # from approximation.jl
 export approximate
 
-# from extensions.jl
-export Extension, Restriction
 
 # from fourierbasis.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
@@ -70,8 +77,8 @@ export ChebyshevBasis,
 # from plots.jl
 export plot
 
-# from polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis
+# from bf_polynomials.jl and friends
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
 
 using Base.Cartesian
@@ -120,33 +127,31 @@ include("operator.jl")
 
 include("tensorproductoperator.jl")
 
-include("discrete_transforms.jl")
+include("functional.jl")
 
-include("extensions.jl")
-
-include("differentiation.jl")
+include("generic_operators.jl")
 
 include("discretegridspace.jl")
 
 include("approximation.jl")
 
-include("fourierbasis.jl")
+include("bf_fourier.jl")
 
-include("splinebasis.jl")
+include("bf_splines.jl")
 
-include("waveletbasis.jl")
+include("bf_wavelets.jl")
 
-include("polynomialbasis.jl")
+include("bf_polynomials.jl")
 
-include("chebyshevbasis.jl")
+include("poly_chebyshev.jl")
 
-include("legendrebasis.jl")
+include("poly_legendre.jl")
 
-include("jacobibasis.jl")
+include("poly_jacobi.jl")
 
-include("laguerrebasis.jl")
+include("poly_laguerre.jl")
 
-include("hermitebasis.jl")
+include("poly_hermite.jl")
 
 include("plots.jl")
 
