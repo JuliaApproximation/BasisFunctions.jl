@@ -1,4 +1,4 @@
-# chebyshevbasis.jl
+# poly_chebyshev.jl
 
 
 ############################################
@@ -33,8 +33,8 @@ grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b
 weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha{T}(b::ChebyshevBasis{T}) = -one(T)/2
-jacobi_beta{T}(b::ChebyshevBasis{T}) = -one(T)/2
+jacobi_alpha(b::ChebyshevBasis) = -1//2
+jacobi_beta(b::ChebyshevBasis) = -1//2
 
 
 # See DLMF, Table 18.9.1
@@ -53,6 +53,7 @@ call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*aco
 call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
 
 
+# TODO: do we need these two routines below? Are they different from the generic ones?
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) > length(src)
 
@@ -73,7 +74,7 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	end
 end
 
-
+# TODO: this matrix does not take into account a and b -> either remove a and b (in favour of mapped basis) or update this function
 function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	n = length(src)
 	N = n-1
@@ -93,6 +94,8 @@ function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	D
 end
 
+# TODO: update in order to avoid memory allocation in constructing the differentiation_matrix
+# Would be better to write differentiation_matrix in terms of apply! (can be generic), rather than the other way around
 function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, coef_dest, coef_src)
 	D = differentiation_matrix(src)
 	coef_dest[:] = D*coef_src
@@ -207,8 +210,8 @@ grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevIIGrid{T}(b.n)
 weight(b::ChebyshevBasisSecondKind, x) = sqrt(1-x^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
-jacobi_beta{T}(b::ChebyshevBasisSecondKind{T}) = one(T)/2
+jacobi_alpha(b::ChebyshevBasisSecondKind) = 1//2
+jacobi_beta(b::ChebyshevBasisSecondKind) = 1//2
 
 
 # See DLMF, Table 18.9.1

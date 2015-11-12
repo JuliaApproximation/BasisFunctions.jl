@@ -1,4 +1,4 @@
-# polynomialbasis.jl
+# bf_polynomials.jl
 
 
 abstract PolynomialBasis{T} <: AbstractBasis1d{T}
@@ -36,8 +36,8 @@ length(o::OrthogonalPolynomialBasis) = o.n
 #
 # with the coefficients implemented by the rec_An, rec_Bn and rec_Cn functions.
 function recurrence_eval{T,S <: Number}(b::OPS{T}, idx::Int, x::S)
-    z0 = one(S)
-    z1 = rec_An(b, 0) * x + rec_Bn(b, 0)
+    z0 = one(T)
+    z1 = rec_An(b, 0) * T(x) + rec_Bn(b, 0)
 
     if idx == 1
         return z0
@@ -67,6 +67,7 @@ call{T, S <: Number}(b::OPS{T}, idx::Int, x::Complex{S}) = call(b, idx, Complex{
 
 
 # TODO: move to its own file and make more complete
+# Or better yet: implement in terms of Jacobi polynomials
 immutable UltrasphericalBasis{T} <: OPS{T}
 	n		::	Int
 	alpha	::	T

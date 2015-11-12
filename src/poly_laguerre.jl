@@ -1,4 +1,4 @@
-# laguerrebasis.jl
+# poly_laguerre.jl
 
 # A Laguerre polynomial basis
 immutable LaguerreBasis{T <: AbstractFloat} <: OPS{T}

@@ -1,4 +1,4 @@
-# splinebasis.jl
+# bf_splines.jl
 
 
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree

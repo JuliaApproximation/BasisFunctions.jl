@@ -1,4 +1,4 @@
-# fourierbasis.jl
+# bf_fourier.jl
 
 
 # Fourier basis on the interval [a,b]
@@ -199,12 +199,9 @@ apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigF
 
 
 
-# Default differentiation operator
-differentiation_operator(b::FourierBasisOdd) = Differentiation(b, b)
-
 function differentiation_operator(b::FourierBasisEven)
 	b_odd = fourier_basis_odd_length(length(b)+1, left(b), right(b))
-	differentiation_operator(b_odd) * Extension(b, b_odd)
+	differentiation_operator(b_odd) * extension_operator(b, b_odd)
 end
 
 

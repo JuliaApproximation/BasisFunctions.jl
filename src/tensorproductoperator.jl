@@ -61,7 +61,7 @@ dest(op::TensorProductOperator, j::Int) = set(op.dest, j)
 
 
 # Element-wise and total size functions
-size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, sets(src(op)))) : prod(map(length, sets(dest(op))))
+size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, sets(dest(op)))) : prod(map(length, sets(src(op))))
 size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
 # Retrieve the operators that make up this tensor product

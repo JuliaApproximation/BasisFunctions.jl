@@ -44,6 +44,12 @@ export SetExpansion, TensorProductExpansion, coefficients, set
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
     IdentityOperator, ScalingOperator, DenseOperator, MatrixOperator, apply!
 
+# from generic_operator.jl
+export extension_operator, restriction_operator, interpolation_operator, 
+    approximation_operator, transform_operator, differentiation_operator,
+    evaluation_operator,
+    Extension, Restriction, Differentiation, TransformOperator
+
 # from tensorproductoperator.jl
 export TensorProductOperator
 
@@ -53,8 +59,6 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 # from approximation.jl
 export approximate
 
-# from extensions.jl
-export Extension, Restriction
 
 # from fourierbasis.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
@@ -120,11 +124,7 @@ include("operator.jl")
 
 include("tensorproductoperator.jl")
 
-include("discrete_transforms.jl")
-
-include("extensions.jl")
-
-include("differentiation.jl")
+include("generic_operators.jl")
 
 include("discretegridspace.jl")
 

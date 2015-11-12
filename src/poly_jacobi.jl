@@ -1,4 +1,4 @@
-# jacobibasis.jl
+# poly_jacobi.jl
 
 # A basis of Jacobi polynomials on the interval [-1,1]
 immutable JacobiBasis{T <: AbstractFloat} <: OPS{T}

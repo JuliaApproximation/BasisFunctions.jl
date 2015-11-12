@@ -1,4 +1,4 @@
-# hermitebasis.jl
+# poly_hermite.jl
 
 # A Hermite polynomial basis
 immutable HermiteBasis{T <: AbstractFloat} <: OPS{T}
