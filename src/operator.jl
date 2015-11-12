@@ -178,7 +178,7 @@ end
 
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
-CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(dest(op1)),length(size(src(op2))),SRC1,DEST2}(op1,op2)
+CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(src(op2),dest(op1)),length(size(src(op2))),SRC1,DEST2}(op1,op2)
 
 src(op::CompositeOperator) = src(op.op1)
 

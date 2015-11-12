@@ -3,7 +3,7 @@
 
 # Fourier basis on the interval [a,b]
 # EVEN is true if the length of the corresponding Fourier series is even.
-immutable FourierBasis{EVEN,T <: FloatingPoint} <: AbstractBasis1d{T}
+immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
 	a 			::	T
 	b 			::	T
 	grid		::	PeriodicEquispacedGrid{T}
@@ -66,11 +66,11 @@ frequency2idx(b::FourierBasis, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T <: FloatingPoint}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
+call{T <: AbstractFloat}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
 
 call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
 
-call{T <: FloatingPoint}(b::FourierBasisEven{T}, idx::Int, x::T) =
+call{T <: AbstractFloat}(b::FourierBasisEven{T}, idx::Int, x::T) =
 	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
 						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
 
@@ -176,8 +176,19 @@ end
 
 InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransformFFTW{SRC,DEST}(src, dest)
 
-# One implementation for forward and inverse transform in-place: call the plan
-apply!(op::DiscreteFourierTransformFFTW, dest, src, coef_srcdest) = op.plan!*coef_srcdest
+function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
+    op.plan!*coef_srcdest
+    for i=1:length(coef_srcdest)
+        coef_srcdest[i]/=sqrt(length(coef_srcdest))
+    end
+end
+
+function apply!(op::InverseFastFourierTransformFFTW, dest, src, coef_srcdest)
+    op.plan!*coef_srcdest
+    for i=1:length(coef_srcdest)
+        coef_srcdest[i]/=sqrt(length(coef_srcdest))
+    end
+end
 
 
 immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -187,7 +198,7 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src))
+apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src)/length(coef_src))
 
 
 immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -195,7 +206,7 @@ immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,
 	dest	::	DEST
 end
 
-apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) * length(coef_src))
+apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
 
 
 
@@ -210,26 +221,26 @@ end
 
 # For the default Fourier transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat).
 # The discrete grid should actually be Periodic and equispaced!
-AnyFourierBasis = Union{FourierBasis, TensorProductSet}
-AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
+## AnyFourierBasis = Union{FourierBasis, TensorProductSet}
+## AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
 
-transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,FourierBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_fourier_operator(src,dest,eltype(src,dest))
-transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,FourierBasis}) = _forward_fourier_operator(src,dest,eltype(src,dest))
+## transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,FourierBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_fourier_operator(src,dest,eltype(src,dest))
+## transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,FourierBasis}) = _forward_fourier_operator(src,dest,eltype(src,dest))
 
 
 transform_operator(src::DiscreteGridSpace, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
 
-_forward_fourier_operator(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+_forward_fourier_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
 
-_forward_fourier_operator{T <: FloatingPoint}(src::AnyDiscreteGridSpace, dest::AnyFourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
+_forward_fourier_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
 
 
 
 transform_operator(src::FourierBasis, dest::DiscreteGridSpace) = _backward_fourier_operator(src, dest, eltype(src,dest))
 
-_backward_fourier_operator(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+_backward_fourier_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
 
-_backward_fourier_operator{T <: FloatingPoint}(src::AnyFourierBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+_backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
 
 
 

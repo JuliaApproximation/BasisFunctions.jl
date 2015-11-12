@@ -37,7 +37,9 @@ end
 # Default implementation of a restriction selects coef_dest from the start of coef_src
 function apply!(op::Restriction, dest, src, coef_dest, coef_src)
 	# Here we assume the indices of coef_dest and coef_src are the same.
-	# Specialization needed if this is not the case.
+    # Specialization needed if this is not the case.
+    println("dest", typeof(coef_dest))
+    println("src", typeof(coef_src))
 	for i in eachindex(coef_dest)
 		coef_dest[i] = coef_src[i]
 	end

@@ -7,7 +7,7 @@
 
 
 # A basis of Chebyshev polynomials of the first kind on the interval [a,b]
-immutable ChebyshevBasis{T <: FloatingPoint} <: OPS{T}
+immutable ChebyshevBasis{T <: AbstractFloat} <: OPS{T}
     n			::	Int
     a 			::	T
     b 			::	T
@@ -52,8 +52,8 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
-call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
-call{T <: FloatingPoint}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
+call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
+call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
 
 
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
@@ -154,27 +154,21 @@ end
 
 apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
 
-AnyFourierBasis = Union{ChebyshevBasis, TensorProductSet}
-AnyDiscreteGridSpace = Union{DiscreteGridSpace, TensorProductSet}
-# Defined in fourierbasis
-#transform_operator(src::TensorProductSet,dest::TensorProductSet) = transform_operator(src,dest,sets(src),sets(dest))
-transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,ChebyshevBasis},destsets::NTuple{N,DiscreteGridSpace}) = _backward_chebyshev_operator(src,dest,eltype(src,dest))
-transform_operator{N}(src::TensorProductSet,dest::TensorProductSet, srcsets::NTuple{N,DiscreteGridSpace},destsets::NTuple{N,ChebyshevBasis}) = _forward_chebyshev_operator(src,dest,eltype(src,dest))
 
 # For the default Chebyshev transform, we have to distinguish (for the time being) between the version for Float64 and other types (like BigFloat)
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_forward_chebyshev_operator(src::AnyDiscreteGridSpace, dest::AnyChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest)
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest)
 
-_forward_chebyshev_operator{T <: FloatingPoint}(src::AnyDiscreteGridSpace, dest::AnyChebyshevBasis, ::Type{Complex{T}}) = FastChebyshevTransform(src,dest)
+_forward_chebyshev_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{T}}) = FastChebyshevTransform(src,dest)
 
 
 
 transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) = _backward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_backward_chebyshev_operator(src::AnyChebyshevBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest)
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest)
 
-_backward_chebyshev_operator{T <: FloatingPoint}(src::AnyChebyshevBasis, dest::AnyDiscreteGridSpace, ::Type{Complex{T}}) = InverseFastChebyshevTransform(src, dest)
+_backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastChebyshevTransform(src, dest)
 
 
 
@@ -183,7 +177,7 @@ _backward_chebyshev_operator{T <: FloatingPoint}(src::AnyChebyshevBasis, dest::A
 ############################################
 
 # A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])
-immutable ChebyshevBasisSecondKind{T <: FloatingPoint} <: OPS{T}
+immutable ChebyshevBasisSecondKind{T <: AbstractFloat} <: OPS{T}
     n			::	Int
 
     ChebyshevBasisSecondKind(n) = new(n)

@@ -1,7 +1,7 @@
 # legendrebasis.jl
 
 # A Legendre basis on the interval [a,b]
-immutable LegendreBasis{T <: FloatingPoint} <: OPS{T}
+immutable LegendreBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
 
     LegendreBasis(n) = new(n)
