@@ -1,7 +1,7 @@
 # approximation.jl
 
 
-rhs(g::AbstractGrid, f::Function) = [f(x...) for x in g]
+rhs{N,T}(g::AbstractGrid{N,T}, f::Function) = T[f(x...) for x in g]
 
 
 function approximate(s::FunctionSet, f::Function)

@@ -79,8 +79,10 @@ end
 
 
 
-# A function set can implement the apply! method of a suitable TransformOperator for any known transform.
-# Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
+"""
+A function set can implement the apply! method of a suitable TransformOperator for any known transform.
+Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
+"""
 immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST

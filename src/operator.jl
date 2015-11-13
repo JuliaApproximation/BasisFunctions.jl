@@ -139,7 +139,9 @@ ctranspose(op::IdentityOperator) = op
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
 
-# The identity operator up to a scaling
+"""
+A ScalingOperator is the identity operator up to a scaling.
+"""
 immutable ScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
 	scalar	::	T
@@ -168,6 +170,29 @@ function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
 		coef_dest[i] = op.scalar * coef_src[i]
 	end
 end
+
+
+"""
+A CoefficientScalingOperator scales a single coefficient.
+"""
+immutable CoefficientScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
+	src		::	SRC
+	index	::	Int
+	scalar	::	T
+end
+
+dest(op::CoefficientScalingOperator) = src(op)
+
+is_inplace(op::CoefficientScalingOperator) = True()
+
+scalar(op::CoefficientScalingOperator) = op.scalar
+
+ctranspose(op::CoefficientScalingOperator) = op
+
+apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[op.index] *= op.scalar
+
+
+
 
 
 # A composite operator applies op2 after op1. It preallocates sufficient memory to store intermediate results.
@@ -248,7 +273,7 @@ ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.
 apply!(op::TripleCompositeOperator, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
 function _apply!(op::TripleCompositeOperator, op2_inplace::True, op3_inplace::True, coef_dest, coef_src)
-	apply!(op.op, coef_dest, coef_src)
+	apply!(op.op1, coef_dest, coef_src)
 	apply!(op.op2, coef_dest)
 	apply!(op.op3, coef_dest)
 end
