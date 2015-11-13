@@ -23,7 +23,7 @@ export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, Per
 export dim, left,right, range
 
 # from functionset.jl
-export AbstractFunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
+export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
 export numtype, grid, left, right, support, call, call!
 export name
 export transform_operator, differentiation_operator, approximation_operator

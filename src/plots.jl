@@ -7,9 +7,9 @@ function plot(f::SetExpansion)
     plot(grid, data)
 end
 
-plot_grid(set::AbstractFunctionSet{1}) = EquispacedGrid(100, left(set), right(set))
+plot_grid(set::FunctionSet{1}) = EquispacedGrid(100, left(set), right(set))
 
-plot_grid{N}(set::AbstractFunctionSet{N}) = TensorProductGrid(tuple([EquispacedGrid(100, left(set,dim), right(set,dim)) for dim = 1:N]...))
+plot_grid{N}(set::FunctionSet{N}) = TensorProductGrid(tuple([EquispacedGrid(100, left(set,dim), right(set,dim)) for dim = 1:N]...))
 
 
 plot(grid::AbstractGrid1d, data::Array) = gadflyplot(grid, data)

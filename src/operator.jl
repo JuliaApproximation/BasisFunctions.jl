@@ -1,9 +1,11 @@
 # operator.jl
 
 
-# Any linear operator that maps SRC to DEST.
-# Typically, SRC and DEST are of type AbstractFunctionSet, but that is not enforced.
-# The action of the operator is defined by overriding apply!
+"""
+AbstractOperator represents any linear operator that maps SRC to DEST.
+Typically, SRC and DEST are of type FunctionSet, but that is not enforced.
+The action of the operator is defined by providing a method for apply!.
+"""
 abstract AbstractOperator{SRC,DEST}
 
 numtype(op::AbstractOperator) = numtype(src(op))
@@ -12,7 +14,7 @@ numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
 eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
 eltype(op1::AbstractOperator, op::AbstractOperator...) = promote_type(eltype(op1), map(eltype, op)...)
-eltype(b1::AbstractFunctionSet, b::AbstractFunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
+eltype(b1::FunctionSet, b::FunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
 
 
 # Default implementation of src and dest

@@ -8,18 +8,18 @@ using Base.Cartesian
 # Parameter SN is a tuple of the dimensions of these types.
 # LEN is the length of the tuples S and N (the index dimension).
 # N is the total dimension of the corresponding space and T the numeric type.
-immutable TensorProductSet{TS, SN, LEN, N, T} <: AbstractFunctionSet{N,T}
+immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
     sets   ::  TS
 
     TensorProductSet(sets::Tuple) = new(sets)
 end
 
-TensorProductSet(sets::AbstractFunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
+TensorProductSet(sets::FunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
 
-⊗(s1::AbstractFunctionSet, s::AbstractFunctionSet...) = TensorProductSet(s1, s...)
+⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
 
-tensorproduct(b::AbstractFunctionSet, n) = TensorProductSet([b for i=1:n]...)
+tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
 index_dim{TS,SN,LEN,N,T}(::TensorProductSet{TS,SN,LEN,N,T}) = LEN
 index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
@@ -76,19 +76,20 @@ end
 end
 
 
+AnyIndex = Union{Int,CartesianIndex,NTuple}
 
-function call{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x, xt...)
+function call{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i::AnyIndex, x, xt...)
     z = set(b,1)(i[1], x)
-    for j = 1:LEN
+    for j = 1:LEN-1
         z = z * set(b,j+1)(i[j], xt[j])
     end
     z
 end
 
-call{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) = set(b,1)(i,x)
-call{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
-call{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
-call{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+call{TS,SN}(b::TensorProductSet{TS,SN,1}, i::AnyIndex, x) = set(b,1)(i,x)
+call{TS,SN}(b::TensorProductSet{TS,SN,2}, i::AnyIndex, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
+call{TS,SN}(b::TensorProductSet{TS,SN,3}, i::AnyIndex, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
+call{TS,SN}(b::TensorProductSet{TS,SN,4}, i::AnyIndex, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
 
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)

@@ -1,6 +1,6 @@
 # euclidean.jl
 
-abstract DiscreteVectorSpace{T} <: AbstractFunctionSet{1,T}
+abstract DiscreteVectorSpace{T} <: FunctionSet{1,T}
 
 length(b::DiscreteVectorSpace) = b.length
 

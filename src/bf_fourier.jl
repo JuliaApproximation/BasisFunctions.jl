@@ -1,8 +1,10 @@
 # bf_fourier.jl
 
 
-# Fourier basis on the interval [a,b]
-# EVEN is true if the length of the corresponding Fourier series is even.
+"""
+A Fourier basis on the interval [a,b].
+EVEN is true if the length of the corresponding Fourier series is even.
+"""
 immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
 	n			::	Int
 	a 			::	T

@@ -1,7 +1,7 @@
 # mappedsets.jl
 
 # An AbstractMappedSet collects all sets that are defined in terms of another set through a mapping.
-abstract AbstractMappedSet{S,N,T} <: AbstractFunctionSet{N,T}
+abstract AbstractMappedSet{S,N,T} <: FunctionSet{N,T}
 
 set(s::AbstractMappedSet) = s.set
 
@@ -19,15 +19,15 @@ end
 
 # A set defined via a linear map.
 # The underlying set S should support left(s) and right(s).
-immutable LinearMappedSet{S <: AbstractFunctionSet1d,T} <: AbstractMappedSet{S,1,T}
+immutable LinearMappedSet{S <: FunctionSet1d,T} <: AbstractMappedSet{S,1,T}
     set     ::  S
     a       ::  T
     b       ::  T
 
-    LinearMappedSet(set::AbstractFunctionSet1d{T}, a::T, b::T) = new(set, a, b)
+    LinearMappedSet(set::FunctionSet1d{T}, a::T, b::T) = new(set, a, b)
 end
 
-LinearMappedSet{T}(s::AbstractFunctionSet1d{T}, a, b) = LinearMappedSet{typeof(s),T}(s, T(a), T(b))
+LinearMappedSet{T}(s::FunctionSet1d{T}, a, b) = LinearMappedSet{typeof(s),T}(s, T(a), T(b))
 
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
@@ -49,7 +49,7 @@ call(s::LinearMappedSet, idx::Int, y) = call(set(s), idx, imapx(s,y))
 grid(s::LinearMappedSet) = LinearMappedGrid(grid(set(s)), left(s), right(s))
 
 
-rescale(s::AbstractFunctionSet1d, a, b) = LinearMappedSet(s, a, b)
+rescale(s::FunctionSet1d, a, b) = LinearMappedSet(s, a, b)
 
 # avoid multiple linear mappings
 rescale(s::LinearMappedSet, a, b) = LinearMappedSet(set(s), a, b)
@@ -61,11 +61,11 @@ function rescale{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}, a::AbstractArray, b:
 end
 
 
-(*){T <: Number}(s::AbstractFunctionSet1d, a::T) = rescale(s, a*left(s), a*right(s))
-(*){T <: Number}(a::T, s::AbstractFunctionSet1d) = s*a
+(*){T <: Number}(s::FunctionSet1d, a::T) = rescale(s, a*left(s), a*right(s))
+(*){T <: Number}(a::T, s::FunctionSet1d) = s*a
 
-(+){T <: Number}(s::AbstractFunctionSet1d, a::T) = rescale(s, a+left(s), a+right(s))
-(+){T <: Number}(a::T, s::AbstractFunctionSet1d) = s+a
+(+){T <: Number}(s::FunctionSet1d, a::T) = rescale(s, a+left(s), a+right(s))
+(+){T <: Number}(a::T, s::FunctionSet1d) = s+a
 
 
 

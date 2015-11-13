@@ -30,7 +30,7 @@ An extension operator is an operator that can be used to extend a representation
 representation in a larger set s2. The default extension operator is of type Extension with s1 and
 s2 as source and destination.
 """
-extension_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = Extension(s1, s2)
+extension_operator(s1::FunctionSet, s2::FunctionSet) = Extension(s1, s2)
 
 
 
@@ -46,7 +46,7 @@ a representation in a set s1 to a representation in a smaller set s2. Loss of ac
 from the restriction. The default restriction_operator is of type Restriction with sets s1 and 
 s2 as source and destination.
 """
-restriction_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet) = Restriction(s1, s2)
+restriction_operator(s1::FunctionSet, s2::FunctionSet) = Restriction(s1, s2)
 
 
 
@@ -77,11 +77,6 @@ end
 
 
 
-"""
-The approximation_operator function returns an operator that can be used to approximate
-a function in the function set. This operator maps a grid to a set of coefficients.
-"""
-approximation_operator(s::AbstractFunctionSet) = println("Don't know how to approximate a function using a " * name(s))
 
 
 # A function set can implement the apply! method of a suitable TransformOperator for any known transform.
@@ -95,8 +90,8 @@ end
 transform_operator(src, dest) = TransformOperator(src, dest)
 
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
-transform_operator(src::AbstractGrid, dest::AbstractFunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
-transform_operator(src::AbstractFunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
+transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
+transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
 
 ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
@@ -109,13 +104,12 @@ ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 # Compute the interpolation matrix of the given basis on the given grid.
 function interpolation_matrix(b::AbstractBasis, g::AbstractGrid, T = eltype(b))
     a = Array(T, length(g), length(b))
-    interpolation_matrix!(b, g, a)
+    interpolation_matrix!(a, b, g)
     a
 end
 
-function interpolation_matrix!{N,T}(b::AbstractBasis{N,T}, g::AbstractGrid{N,T}, a::AbstractArray)
-    n = size(a,1)
-    m = size(a,2)
+function interpolation_matrix!{N,T}(a::AbstractArray, b::AbstractBasis{N,T}, g::AbstractGrid{N,T})
+    n,m = size(a)
     @assert n == length(g)
     @assert m == length(b)
 
@@ -128,9 +122,8 @@ function interpolation_matrix!{N,T}(b::AbstractBasis{N,T}, g::AbstractGrid{N,T},
 end
 
 
-function interpolation_matrix!{T}(b::AbstractBasis1d{T}, g::AbstractGrid1d{T}, a::AbstractArray)
-    n = size(a,1)
-    m = size(a,2)
+function interpolation_matrix!{T}(a::AbstractArray, b::AbstractBasis1d{T}, g::AbstractGrid1d{T})
+    n,m = size(a)
     @assert n == length(g)
     @assert m == length(b)
 
@@ -145,11 +138,15 @@ end
 interpolation_operator(b::AbstractBasis) = SolverOperator(grid(b), b, qrfact(interpolation_matrix(b, grid(b))))
 
 # Evaluation works for any set that has a grid(set) associated with it.
-evaluation_operator(s::AbstractFunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
+evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
 
 
-# The default approximation for a basis is interpolation
+"""
+The approximation_operator function returns an operator that can be used to approximate
+a function in the function set. This operator maps a grid to a set of coefficients.
+"""
 approximation_operator(b::AbstractBasis) = interpolation_operator(b)
+# The default approximation for a basis is interpolation
 
 
 
@@ -159,12 +156,13 @@ approximation_operator(b::AbstractBasis) = interpolation_operator(b)
 # Differentiation
 ####################
 
-# The differentiation operator of a set maps an expansion in the set to an expansion of its derivative.
-# The result of this operation may be an expansion in a different set. A function set can have different
-# differentiation operators, with different result sets.
-# For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
-# or to polynomials up to degree n-1.
-
+"""
+The differentiation operator of a set maps an expansion in the set to an expansion of its derivative.
+The result of this operation may be an expansion in a different set. A function set can have different
+differentiation operators, with different result sets.
+For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
+or to polynomials up to degree n-1.
+"""
 immutable Differentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
@@ -172,7 +170,7 @@ immutable Differentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
     order   ::  Int
 end
 
-Differentiation{SRC <: AbstractFunctionSet, DEST <: AbstractFunctionSet}(src::SRC, dest::DEST = src, var = 1, order = 1) = Differentiation{SRC,DEST}(src, dest, 1, 1)
+Differentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, var = 1, order = 1) = Differentiation{SRC,DEST}(src, dest, 1, 1)
 
 variable(op::Differentiation) = op.var
 
@@ -181,9 +179,9 @@ order(op::Differentiation) = op.order
 
 """
 The differentation_operator function returns an operator that can be used to differentiate
-a function in the function set.
+a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::AbstractFunctionSet, s2::AbstractFunctionSet = s1, var = 1, order = 1) = Differentiation(s1, s2, var, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet = s1, var = 1, order = 1) = Differentiation(s1, s2, var, order)
 
 
 """
