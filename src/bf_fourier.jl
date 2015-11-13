@@ -185,15 +185,15 @@ InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFou
 function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
     for i=1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
+        coef_srcdest[i]/=length(coef_srcdest)
     end
 end
 
 function apply!(op::InverseFastFourierTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    for i=1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
-    end
+    ## for i=1:length(coef_srcdest)
+    ##     coef_srcdest[i]/=sqrt(length(coef_srcdest))
+    ## end
 end
 
 

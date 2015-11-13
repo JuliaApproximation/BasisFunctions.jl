@@ -118,7 +118,7 @@ immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastChebyshevTransformFFTW{SRC,DEST}(src, dest)
@@ -128,13 +128,26 @@ immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransf
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest)
 
 # One implementation for forward and inverse transform in-place: call the plan. Added constant to undo the normalisation.
-apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
+# apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
+function apply!(op::FastChebyshevTransformFFTW, dest, src, coef_srcdest)
+    op.plan!*coef_srcdest
+    for i=1:length(coef_srcdest)
+        coef_srcdest[i]/=length(coef_srcdest)
+    end
+end
+
+function apply!(op::InverseFastChebyshevTransformFFTW, dest, src, coef_srcdest)
+    op.plan!*coef_srcdest
+    ## for i=1:length(coef_srcdest)
+    ##     coef_srcdest[i]/=length(coef_srcdest)
+    ## end
+end
 
 
 immutable FastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
