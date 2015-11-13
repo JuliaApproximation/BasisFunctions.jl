@@ -27,6 +27,7 @@ export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
 export numtype, grid, left, right, support, call, call!
 export name
 export transform_operator, differentiation_operator, approximation_operator
+export complexify
 
 # from setfunction.jl
 export SetFunction, index
@@ -88,6 +89,7 @@ using Base.Cartesian
 typealias True Val{true}
 typealias False Val{false}
 
+(&){T1 <: Bool,T2 <: Bool}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 & T2}
 (&)(::Type{True},  ::Type{True} ) = True
 (&)(::Type{False}, ::Type{True} ) = False
 (&)(::Type{True},  ::Type{False}) = False
