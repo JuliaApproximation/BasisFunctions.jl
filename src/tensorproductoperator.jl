@@ -18,7 +18,7 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     dest_scratch    ::  NTuple{ON,Array{ELT,1}}
     
 end
-function TensorProductOperator(operators)
+function TensorProductOperator(operators...)
         ELT = eltype(operators...)
         TO = typeof(operators)
         ON = length(operators)
