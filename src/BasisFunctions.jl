@@ -89,26 +89,11 @@ using Base.Cartesian
 typealias True Val{true}
 typealias False Val{false}
 
-(&){T1 <: Bool,T2 <: Bool}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 & T2}
-(&)(::Type{True},  ::Type{True} ) = True
-(&)(::Type{False}, ::Type{True} ) = False
-(&)(::Type{True},  ::Type{False}) = False
-(&)(::Type{False}, ::Type{False}) = False
+(&){T1,T2}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 & T2}
+(|){T1,T2}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 | T2}
 
-(&)(::True,  ::True ) = True()
-(&)(::False, ::True ) = False()
-(&)(::True,  ::False) = False()
-(&)(::False, ::False) = False()
-
-(|)(::Type{True},  ::Type{True} ) = True
-(|)(::Type{False}, ::Type{True} ) = True
-(|)(::Type{True},  ::Type{False}) = True
-(|)(::Type{False}, ::Type{False}) = False
-
-(|)(::True,  ::True ) = True()
-(|)(::False, ::True ) = True()
-(|)(::True,  ::False) = True()
-(|)(::False, ::False) = False()
+(&){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 & T2}()
+(|){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 | T2}()
 
 
 include("grid.jl")

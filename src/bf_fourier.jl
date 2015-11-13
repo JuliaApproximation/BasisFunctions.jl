@@ -234,7 +234,7 @@ _backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::Discrete
 
 
 # The default approximation operator for a Fourier series is the FFT.
-approximation_operator(b::FourierBasis) = ScalingOperator(b, 1/length(b)) * transform_operator(grid(b), b)
+approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
 
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 

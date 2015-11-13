@@ -72,7 +72,7 @@ apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_
 # Catch-all for missing implementations
 apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
 
-(*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
+(*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
 
 
 function matrix(op::AbstractOperator)

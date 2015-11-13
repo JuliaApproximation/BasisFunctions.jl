@@ -185,6 +185,9 @@ _backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Typ
 _backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
 
 
+# TODO: This does not seem to work yet.
+#approximation_operator(b::ChebyshevBasis) = transform_operator(grid(b), b)
+
 
 ############################################
 # Chebyshev polynomials of the second kind
