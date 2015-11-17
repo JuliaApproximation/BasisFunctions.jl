@@ -137,8 +137,10 @@ InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastC
 # apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
 function apply!(op::FastChebyshevTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    for i=1:length(coef_srcdest)
-        coef_srcdest[i]/=length(coef_srcdest)
+    for i=1:Integer(round(length(coef_srcdest)/2))
+        temp = coef_srcdest[i]
+        coef_srcdest[i]=coef_srcdest[end-i+1]
+        coef_srcdest[end-i+1]=temp
     end
 end
 
