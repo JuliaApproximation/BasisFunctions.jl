@@ -6,7 +6,9 @@
 ############################################
 
 
-# A basis of Chebyshev polynomials of the first kind on the interval [a,b]
+"""
+A basis of Chebyshev polynomials of the first kind on the interval [a,b].
+"""
 immutable ChebyshevBasis{T <: AbstractFloat} <: OPS{T}
     n			::	Int
     a 			::	T
@@ -186,6 +188,29 @@ _backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Typ
 
 _backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
 
+
+# TODO: experimentally, this composite operator looks like it does the trick, up to an alternating flip.
+# Below let's implement a custom type to do the alternating flip. But this should be fixed.
+#approximation_operator(b::ChebyshevBasis) = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
+
+immutable ChebyshevEvaluation{SRC,DEST,OP} <: AbstractOperator{SRC,DEST}
+    src     ::  SRC
+    dest    ::  DEST
+    op      ::  OP
+end
+
+function apply!(op::ChebyshevEvaluation, dest, src, coef_dest, coef_src)
+    apply!(op.op, coef_dest, coef_src)
+    for i = 1:length(coef_dest)
+        coef_dest[i] = (-1)^(i+1) * coef_dest[i]
+    end
+end
+
+function approximation_operator(b::ChebyshevBasis)
+    g = grid(b)
+    op = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
+    ChebyshevEvaluation(b, g, op)
+end
 
 
 ############################################

@@ -77,7 +77,7 @@ end
 
 
 
-function call{K,T}(b::FullSplineBasis{K,T}, idx, x)
+function call{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 	x < left(b) && throw(BoundsError())
 	x > right(b) && throw(BoundsError())
 	spline_eval(SplineDegree{K}, natural_index(b,idx), x, b.a, b.b, stepsize(b))
@@ -111,7 +111,7 @@ right(b::NaturalSplineBasis, idx) = min(b.b, b.a + (natural_index(b, idx)+1)*b.h
 stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 
 
-call{K,T}(b::NaturalSplineBasis{K,T}, idx, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
+call{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
 # Periodic splines of degree K
@@ -147,7 +147,7 @@ left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * ste
 right{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - ((K+1) >> 1) + K) * stepsize(b)
 
 
-function call{K,T}(b::PeriodicSplineBasis{K,T}, idx, x)
+function call{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 	checkbounds(b, idx)
 	while x < left(b)
 		x = x + period(b)
@@ -171,17 +171,17 @@ function call{K,T}(b::PeriodicSplineBasis{K,T}, idx, x)
 end
 
 
-function call{K,T <: Number}(e::SetExpansion{PeriodicSplineBasis{K}}, x::T)
-	i = interval(e.set, x)
-	n = length(e.set)
+function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
+	i = interval(b, x)
+	n = length(b)
 
 	L1 = (K-1) >> 1
 	L2 = K-L1
 
 	z = zero(T)
 	for idxn = i-L1-1:i+L2
-		idx = general_index(e.set, mod(idxn,n))
-		z = z + e.coef[idx] * call(e.set, idx, x)
+		idx = general_index(b, mod(idxn,n))
+		z = z + coef[idx] * call(b, idx, x)
 	end
 
 	z	

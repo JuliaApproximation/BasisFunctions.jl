@@ -1,8 +1,10 @@
 # bf_fourier.jl
 
 
-# Fourier basis on the interval [a,b]
-# EVEN is true if the length of the corresponding Fourier series is even.
+"""
+A Fourier basis on the interval [a,b].
+EVEN is true if the length of the corresponding Fourier series is even.
+"""
 immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
 	n			::	Int
 	a 			::	T
@@ -232,7 +234,7 @@ _backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::Discrete
 
 
 # The default approximation operator for a Fourier series is the FFT.
-approximation_operator(b::FourierBasis) = ScalingOperator(b, 1/length(b)) * transform_operator(grid(b), b)
+approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
 
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 

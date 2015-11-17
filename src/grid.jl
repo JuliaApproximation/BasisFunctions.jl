@@ -34,7 +34,7 @@ support(g::AbstractGrid) = (left(g),right(g))
 # General implementation for abstract grids: allocate memory and call getindex!
 function getindex{N,T}(g::AbstractGrid{N,T}, idx...)
 	x = Array(T,N)
-	getindex!(g, x, idx...)
+	getindex!(x, g, idx...)
 	x
 end
 
@@ -97,7 +97,7 @@ start(iter::GridIterator) = start(iter.griditer)
 
 function next(iter::GridIterator, state)
 	(i,state) = next(iter.griditer, state)
-	getindex!(iter.grid, iter.x, i)
+	getindex!(iter.x, iter.grid, i)
 	(iter.x, state)
 end
 
@@ -162,11 +162,11 @@ end
 ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
 sub2ind(G::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
-getindex!(g::TensorProductGrid, x, idx::Int) = getindex!(g, x, ind2sub(g,idx))
+getindex!(x, g::TensorProductGrid, idx::Int) = getindex!(x, g, ind2sub(g,idx))
 
-getindex!(g::TensorProductGrid, x, idxt::Int...) = getindex!(g, x, idxt)
+getindex!(x, g::TensorProductGrid, idxt::Int...) = getindex!(x, g, idxt)
 
-function getindex!{TG,GN,LEN}(g::TensorProductGrid{TG,GN,LEN}, x, idx::Union{CartesianIndex{LEN},NTuple{LEN,Int}})
+function getindex!{TG,GN,LEN}(x, g::TensorProductGrid{TG,GN,LEN}, idx::Union{CartesianIndex{LEN},NTuple{LEN,Int}})
 	l = 0
     for i = 1:LEN
     	z = grid(g, i)[idx[i]]	# FIX: this allocates memory if GN[i] > 1

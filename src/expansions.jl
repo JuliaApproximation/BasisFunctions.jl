@@ -1,10 +1,12 @@
 # expansions.jl
 
-# A SetExpansion describes a function using its coefficient expansion in a certain function set.
-# Parameters:
-# - S is the function set.
-# - ELT is the numeric type of the coefficients.
-# - ID is the dimension of the coefficients.
+"""
+A SetExpansion describes a function using its coefficient expansion in a certain function set.
+Parameters:
+- S is the function set.
+- ELT is the numeric type of the coefficients.
+- ID is the dimension of the coefficients.
+"""
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
     coef    ::  Array{ELT,ID}
@@ -12,11 +14,11 @@ immutable SetExpansion{S,ELT,ID}
     SetExpansion(set, coef) = (@assert length(set) == length(coef); new(set,coef))
 end
 
-SetExpansion{S <: AbstractFunctionSet,ELT,ID}(set::S, coef::Array{ELT,ID}) = SetExpansion{S,ELT,ID}(set,coef)
+SetExpansion{S <: FunctionSet,ELT,ID}(set::S, coef::Array{ELT,ID}) = SetExpansion{S,ELT,ID}(set,coef)
 
-SetExpansion(s::AbstractFunctionSet) = SetExpansion(s, eltype(s))
+SetExpansion(s::FunctionSet) = SetExpansion(s, eltype(s))
 
-SetExpansion{ELT}(s::AbstractFunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
+SetExpansion{ELT}(s::FunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
 
 eltype{S,ELT}(::SetExpansion{S,ELT}) = ELT
@@ -47,46 +49,13 @@ getindex(e::SetExpansion, i...) = e.coef[i...]
 setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
 
-function call{T <: Number}(e::SetExpansion, x::T...)
-    z = zero(T)
-    for idx in eachindex(set(e))
-        z = z + e.coef[idx] * call(set(e), idx, x...)
-    end
-    z
-end
+call(e::SetExpansion, x...) = call_expansion(set(e), coefficients(e), x...)
 
-function call{T <: Number}(e::SetExpansion, x::AbstractArray{T})
-    result = similar(x, eltype(e))
-    call!(e, result, x)
-    result
-end
+call!(result, e::SetExpansion, x...) = call_expansion!(result, set(e), coefficients(e), x...)
 
-function call(e::SetExpansion, g::AbstractGrid)
-    result = Array(eltype(e), size(g))
-    call!(e, result, g)
-    result
-end
+differentiate(f::SetExpansion) = SetExpansion(set(f), differentiate(f.set, f.coef))
 
-function call!{N}(e::SetExpansion, result::AbstractArray, g::AbstractGrid{N})
-    x = Array(eltype(e), N)
-    for i in eachindex(g)
-        getindex!(x, g, i)
-        result[i] = call(e, x...)
-    end
-end
-
-function call!(e::SetExpansion, result::AbstractArray, g::AbstractGrid1d)
-    for i in eachindex(g)
-        result[i] = call(e, g[i])
-    end
-end
-
-function call!(e::SetExpansion, result::AbstractArray, x::AbstractArray)
-    @assert size(result) == size(x)
-    for i = 1:length(x)
-        result[i] = call(e, x[i])
-    end
-end
-
+# This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
+ctranspose(f::SetExpansion) = differentiate(f)
 
 

@@ -1,9 +1,11 @@
 # operator.jl
 
 
-# Any linear operator that maps SRC to DEST.
-# Typically, SRC and DEST are of type AbstractFunctionSet, but that is not enforced.
-# The action of the operator is defined by overriding apply!
+"""
+AbstractOperator represents any linear operator that maps SRC to DEST.
+Typically, SRC and DEST are of type FunctionSet, but that is not enforced.
+The action of the operator is defined by providing a method for apply!.
+"""
 abstract AbstractOperator{SRC,DEST}
 
 numtype(op::AbstractOperator) = numtype(src(op))
@@ -12,7 +14,7 @@ numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
 eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
 eltype(op1::AbstractOperator, op::AbstractOperator...) = promote_type(eltype(op1), map(eltype, op)...)
-eltype(b1::AbstractFunctionSet, b::AbstractFunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
+eltype(b1::FunctionSet, b::FunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
 
 
 # Default implementation of src and dest
@@ -70,7 +72,7 @@ apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_
 # Catch-all for missing implementations
 apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
 
-(*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
+(*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
 
 
 function matrix(op::AbstractOperator)
@@ -137,7 +139,9 @@ ctranspose(op::IdentityOperator) = op
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
 
-# The identity operator up to a scaling
+"""
+A ScalingOperator is the identity operator up to a scaling.
+"""
 immutable ScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
 	scalar	::	T
@@ -166,6 +170,29 @@ function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
 		coef_dest[i] = op.scalar * coef_src[i]
 	end
 end
+
+
+"""
+A CoefficientScalingOperator scales a single coefficient.
+"""
+immutable CoefficientScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
+	src		::	SRC
+	index	::	Int
+	scalar	::	T
+end
+
+dest(op::CoefficientScalingOperator) = src(op)
+
+is_inplace(op::CoefficientScalingOperator) = True()
+
+scalar(op::CoefficientScalingOperator) = op.scalar
+
+ctranspose(op::CoefficientScalingOperator) = op
+
+apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[op.index] *= op.scalar
+
+
+
 
 
 # A composite operator applies op2 after op1. It preallocates sufficient memory to store intermediate results.
@@ -246,7 +273,7 @@ ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.
 apply!(op::TripleCompositeOperator, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
 function _apply!(op::TripleCompositeOperator, op2_inplace::True, op3_inplace::True, coef_dest, coef_src)
-	apply!(op.op, coef_dest, coef_src)
+	apply!(op.op1, coef_dest, coef_src)
 	apply!(op.op2, coef_dest)
 	apply!(op.op3, coef_dest)
 end
