@@ -155,7 +155,7 @@ end
 
 function call_expansion(b::FunctionSet, coef, g::AbstractGrid)
     result = Array(eltype(coef), size(g))
-    call!(result, b, coef, g)
+    call_expansion!(result, b, coef, g)
     result
 end
 
@@ -164,7 +164,7 @@ function call_expansion!(result, b::FunctionSet, coef, g::AbstractGrid)
     @assert size(result) == size(g)
 
     for i in eachindex(g)
-        result[i] = call(e, g[i]...)
+        result[i] = call_expansion(b, coef, g[i]...)
     end
 end
 
