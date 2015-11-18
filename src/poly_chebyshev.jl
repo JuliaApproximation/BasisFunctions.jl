@@ -120,7 +120,7 @@ immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastChebyshevTransformFFTW{SRC,DEST}(src, dest)
@@ -130,7 +130,7 @@ immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransf
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest)
@@ -139,11 +139,11 @@ InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastC
 # apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
 function apply!(op::FastChebyshevTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    for i=1:Integer(round(length(coef_srcdest)/2))
-        temp = coef_srcdest[i]
-        coef_srcdest[i]=coef_srcdest[end-i+1]
-        coef_srcdest[end-i+1]=temp
-    end
+    ## for i=1:Integer(round(length(coef_srcdest)/2))
+    ##     temp = coef_srcdest[i]
+    ##     coef_srcdest[i]=coef_srcdest[end-i+1]
+    ##     coef_srcdest[end-i+1]=temp
+    ## end
 end
 
 function apply!(op::InverseFastChebyshevTransformFFTW, dest, src, coef_srcdest)
