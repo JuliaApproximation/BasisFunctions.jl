@@ -1,13 +1,7 @@
 # bf_splines.jl
 
 
-export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-
-export degree, interval
-
-
-immutable SplineDegree{K}
-end
+typealias SplineDegree{K} Val{K}
 
 
 spline_eval(::Type{SplineDegree{0}}, i, x, a, b, h) = (x >= a+i*h) && (x < a + (i+1)*h) ? 1 : 0
@@ -15,7 +9,7 @@ spline_eval(::Type{SplineDegree{0}}, i, x, a, b, h) = (x >= a+i*h) && (x < a + (
 spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) * spline_eval(SplineDegree{K-1}, i, x, a, b, h) + (a+(i+K+1)*h - x)/(K*h) * spline_eval(SplineDegree{K-1}, i+1, x, a, b, h)
 
 
-# Splines of degree K (with equispaced knots)
+# Splines of degree K (with equispaced knots only...)
 abstract SplineBasis{K,T} <: AbstractBasis1d{T}
 
 # The degree of the splines
@@ -26,7 +20,7 @@ left(b::SplineBasis) = b.a
 right(b::SplineBasis) = b.b
 
 # Return the index of the interval between two knots in which x lies, starting from index 0
-interval(b::SplineBasis, x) = int(floor( (x-left(b))/stepsize(b) ))
+interval(b::SplineBasis, x) = round(Int, floor( (x-left(b))/stepsize(b) ))
 
 # All splines have compact support
 has_compact_support{B <: SplineBasis}(::Type{B}) = True
@@ -37,8 +31,14 @@ knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
 # The natural grid associated with splines
 grid(b::SplineBasis) = b.grid
 
+has_grid(b::SplineBasis) = true
 
-# The full space of piecewise polynomials of degree K on n subintervals of [a,b]
+
+
+
+"""
+The full space of piecewise polynomials of degree K on n subintervals of [a,b].
+"""
 immutable FullSplineBasis{K,T} <: SplineBasis{K,T}
 	a		::	T
 	b		::	T
@@ -114,19 +114,26 @@ stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 call{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
-# Periodic splines of degree K
+"""
+Periodic splines of degree K.
+"""
 immutable PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
+	n		::	Int
 	a		::	T
 	b		::	T
-	n		::	Int
 
-	PeriodicSplineBasis(a, b, n) = new(a, b, n)
+	PeriodicSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-# type-unsafe constructor
-PeriodicSplineBasis{T}(a::T, b::T, n, k) = PeriodicSplineBasis{k,T}(a,b,n)
+# Type-unsafe constructor
+PeriodicSplineBasis(n, k::Int, a...) = PeriodicSplineBasis(n, SplineDegree{k}, a...)
 
-PeriodicSplineBasis{K,T}(a::T, b::T, n, ::Type{SplineDegree{K}}) = PeriodicSplineBasis{K,T}(a,b,n)
+# This one is type-safe
+PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, a::T, b::T) = PeriodicSplineBasis{K,T}(n, a, b)
+
+PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = PeriodicSplineBasis{K,T}(n)
+
+instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
 
 length(b::PeriodicSplineBasis) = b.n
 
@@ -141,6 +148,10 @@ general_index{K}(b::PeriodicSplineBasis{K}, idxn) = idxn+1
 stepsize(b::PeriodicSplineBasis) = (b.b-b.a)/b.n
 
 period(b::PeriodicSplineBasis) = b.b - b.a
+
+left(b::PeriodicSplineBasis) = b.a
+
+right(b::PeriodicSplineBasis) = b.b
 
 left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * stepsize(b)
 

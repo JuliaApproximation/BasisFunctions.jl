@@ -1,6 +1,8 @@
 # poly_legendre.jl
 
-# A basis of Legendre polynomials on the interval [-1,1]
+"""
+A basis of Legendre polynomials on the interval [-1,1].
+"""
 immutable LegendreBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
 
@@ -8,7 +10,9 @@ immutable LegendreBasis{T <: AbstractFloat} <: OPS{T}
 end
 
 # Constructor with a default numeric type
-LegendreBasis(n::Int) = LegendreBasis{Float64}(n)
+LegendreBasis{T}(n::Int, ::Type{T} = Float64) = LegendreBasis{T}(n)
+
+instantiate{T}(::Type{LegendreBasis}, n, ::Type{T}) = LegendreBasis{T}(n)
 
 name(b::LegendreBasis) = "Legendre series"
 
@@ -24,8 +28,8 @@ right(b::LegendreBasis, idx) = 1
 grid(b::LegendreBasis) = LegendreGrid(b.n)
 
 
-jacobi_alpha(b::LegendreBasis) = 0
-jacobi_beta(b::LegendreBasis) = 0
+jacobi_α(b::LegendreBasis) = 0
+jacobi_β(b::LegendreBasis) = 0
 
 weight{T}(b::LegendreBasis{T}, x) = ones(T,x)
 

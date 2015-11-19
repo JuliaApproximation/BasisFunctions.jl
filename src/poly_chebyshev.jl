@@ -13,6 +13,8 @@ immutable ChebyshevBasis{T <: AbstractFloat} <: OPS{T}
     n			::	Int
     a 			::	T
     b 			::	T
+
+    ChebyshevBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
 typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
@@ -21,7 +23,12 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 	
-ChebyshevBasis{T}(n, a::T = -1.0, b::T = 1.0) = ChebyshevBasis{T}(n, a, b)
+ChebyshevBasis{T}(n, a::T, b::T) = ChebyshevBasis{T}(n, a, b)
+
+ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
+
+instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
+
 
 left(b::ChebyshevBasis) = b.a
 left(b::ChebyshevBasis, idx) = left(b)
@@ -31,12 +38,14 @@ right(b::ChebyshevBasis, idx) = right(b)
 
 grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b), right(b))
 
+has_grid(b::ChebyshevBasis) = true
+
 # The weight function
 weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha(b::ChebyshevBasis) = -1//2
-jacobi_beta(b::ChebyshevBasis) = -1//2
+jacobi_α(b::ChebyshevBasis) = -1//2
+jacobi_β(b::ChebyshevBasis) = -1//2
 
 
 # See DLMF, Table 18.9.1
@@ -103,6 +112,7 @@ function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevB
 	coef_dest[:] = D*coef_src
 end
 
+has_derivative(b::ChebyshevBasis) = true
 
 abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 

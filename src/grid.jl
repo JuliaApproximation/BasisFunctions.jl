@@ -211,22 +211,23 @@ end
 unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
 
 
+"""
+An equispaced grid with n points on an interval [a,b].
+"""
 immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	n	::	Int
 	a	::	T
 	b	::	T
-	# h	::	T	# a possible optimization is to precompute and store the stepsize
 
-	EquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
+	EquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
-# Parameter n is the total number of points in the equispaced grid.
-EquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
+EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
 
 # Promote the numeric type of a and b to a floating point type.
 function EquispacedGrid{S <: Number}(n, a::S, b::S)
 	T = promote_type(S, typeof((b-a)/n))
-	EquispacedGrid(n, T(a), T(b))
+	EquispacedGrid{T}(n, a, b)
 end
 
 stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)

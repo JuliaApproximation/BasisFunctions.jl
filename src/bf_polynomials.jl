@@ -67,10 +67,10 @@ immutable UltrasphericalBasis{T} <: OPS{T}
 	alpha	::	T
 end
 
-jacobi_alpha(b::UltrasphericalBasis) = b.alpha
-jacobi_beta(b::UltrasphericalBasis) = b.alpha
+jacobi_α(b::UltrasphericalBasis) = b.α
+jacobi_β(b::UltrasphericalBasis) = b.α
 
-weight(b::UltrasphericalBasis, x) = (1-x)^(b.alpha) * (1+x)^(b.alpha)
+weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
 
 
 
