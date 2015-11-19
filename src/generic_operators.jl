@@ -9,6 +9,7 @@
 # - transform_operator
 # - differentiation_operator
 # - evaluation_operator
+# - normalization_operator
 
 # These operators are also defined for TensorProductSet's.
 # TODO: We may have to rethink some of them, perhaps we can remove a few.
@@ -190,8 +191,6 @@ differentiation_operator(s1::FunctionSet, s2::FunctionSet = s1, var = 1, order =
 A shortcut routine to compute the derivative of an expansion in a basis that is closed under differentiation.
 """
 differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), coef)
-
-
 
 
 #####################################

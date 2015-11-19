@@ -50,7 +50,7 @@ export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, opera
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 
     approximation_operator, transform_operator, differentiation_operator,
-    evaluation_operator,
+    evaluation_operator, normalization_operator,
     Extension, Restriction, Differentiation, TransformOperator
 
 # from tensorproductoperator.jl
@@ -83,10 +83,6 @@ export plot
 
 # from bf_polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
-
-# from bf_splines.jl
-export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-export degree, interval
 
 
 using Base.Cartesian

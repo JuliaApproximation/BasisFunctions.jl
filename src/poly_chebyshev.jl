@@ -151,18 +151,10 @@ InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastC
 # apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
 function apply!(op::FastChebyshevTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    ## for i=1:Integer(round(length(coef_srcdest)/2))
-    ##     temp = coef_srcdest[i]
-    ##     coef_srcdest[i]=coef_srcdest[end-i+1]
-    ##     coef_srcdest[end-i+1]=temp
-    ## end
 end
 
 function apply!(op::InverseFastChebyshevTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    ## for i=1:length(coef_srcdest)
-    ##     coef_srcdest[i]/=length(coef_srcdest)
-    ## end
 end
 
 
@@ -224,6 +216,30 @@ function approximation_operator(b::ChebyshevBasis)
     ChebyshevEvaluation(b, g, op)
 end
 
+# L is the length of the transform.
+# For interpolation this is equal to the length of the basis,
+# For FrameFuns this depends on oversampling and extension length.
+function normalization_operator(b::ChebyshevBasis,L::Integer)
+    ChebyshevNormalization(b,L)
+end
+
+immutable ChebyshevNormalization{SRC} <: AbstractOperator{SRC,SRC}
+    src     :: SRC
+    L       :: Integer
+end
+
+function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
+    coef_srcdest[1] = coef_srcdest[1]/sqrt(2)
+    for i = 1:length(coef_srcdest)
+        coef_srcdest[i] = 1/sqrt(op.L/2) * (-1)^(i+1) * coef_srcdest[i]
+    end
+end
+
+dest(op::ChebyshevNormalization) = src(op)
+
+is_inplace(op::ChebyshevNormalization) = True()
+
+ctranspose(op::ChebyshevNormalization) = op
 
 
 

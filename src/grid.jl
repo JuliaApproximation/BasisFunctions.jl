@@ -271,7 +271,7 @@ function getindex(g::ChebyshevIIGrid, i)
 end
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = cos((g.n-i+1/2) * T(pi) / (g.n) )
+unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.n) )
 
 
 
