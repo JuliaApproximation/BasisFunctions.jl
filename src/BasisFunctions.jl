@@ -84,6 +84,10 @@ export plot
 # from bf_polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
+# from bf_splines.jl
+export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
+export degree, interval
+
 
 using Base.Cartesian
 
@@ -146,5 +150,3 @@ include("poly_hermite.jl")
 include("plots.jl")
 
 end # module
-
-

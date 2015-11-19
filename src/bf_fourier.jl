@@ -249,7 +249,7 @@ approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
 
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 
-function normalization_operator(b::FourierBasis,L::Integer)
+function normalization_operator(b::FourierBasis,L::Tuple{Integer})
     op = ScalingOperator(b, 1) 
 end
 

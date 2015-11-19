@@ -219,8 +219,8 @@ end
 # L is the length of the transform.
 # For interpolation this is equal to the length of the basis,
 # For FrameFuns this depends on oversampling and extension length.
-function normalization_operator(b::ChebyshevBasis,L::Integer)
-    ChebyshevNormalization(b,L)
+function normalization_operator(b::ChebyshevBasis,L::Tuple{Integer})
+    ChebyshevNormalization(b,L[1])
 end
 
 immutable ChebyshevNormalization{SRC} <: AbstractOperator{SRC,SRC}
