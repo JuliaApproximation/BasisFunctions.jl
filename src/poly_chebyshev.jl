@@ -29,6 +29,9 @@ ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
+has_grid(b::ChebyshevBasis) = true
+
+has_derivative(b::ChebyshevBasis) = true
 
 left(b::ChebyshevBasis) = b.a
 left(b::ChebyshevBasis, idx) = left(b)
@@ -38,14 +41,13 @@ right(b::ChebyshevBasis, idx) = right(b)
 
 grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b), right(b))
 
-has_grid(b::ChebyshevBasis) = true
-
 # The weight function
-weight(b::ChebyshevBasis, x) = 1/sqrt(1-x^2)
+weight{T}(b::ChebyshevBasis{T}, x) = 1/sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
 jacobi_α(b::ChebyshevBasis) = -1//2
 jacobi_β(b::ChebyshevBasis) = -1//2
+
 
 
 # See DLMF, Table 18.9.1
@@ -68,10 +70,10 @@ call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((i
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) > length(src)
 
-	for i=1:length(src)
+	for i = 1:length(src)
 		coef_dest[i] = coef_src[i]
 	end
-	for i=length(src)+1:length(dest)
+	for i = length(src)+1:length(dest)
 		coef_dest[i] = 0
 	end
 end
@@ -223,18 +225,20 @@ function approximation_operator(b::ChebyshevBasis)
 end
 
 
+
+
 ############################################
 # Chebyshev polynomials of the second kind
 ############################################
 
-# A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])
+"A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
 immutable ChebyshevBasisSecondKind{T <: AbstractFloat} <: OPS{T}
     n			::	Int
-
-    ChebyshevBasisSecondKind(n) = new(n)
 end
 
-ChebyshevBasisSecondKind(n) = ChebyshevBasisSecondKind{Float64}(n)
+ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
+
+instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisSecondKind{T}(n)
 
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 
@@ -252,11 +256,11 @@ grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevIIGrid{T}(b.n)
 
 
 # The weight function
-weight(b::ChebyshevBasisSecondKind, x) = sqrt(1-x^2)
+weight{T}(b::ChebyshevBasisSecondKind{T}, x) = sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_alpha(b::ChebyshevBasisSecondKind) = 1//2
-jacobi_beta(b::ChebyshevBasisSecondKind) = 1//2
+jacobi_α(b::ChebyshevBasisSecondKind) = 1//2
+jacobi_β(b::ChebyshevBasisSecondKind) = 1//2
 
 
 # See DLMF, Table 18.9.1

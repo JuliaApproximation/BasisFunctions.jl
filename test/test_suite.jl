@@ -15,8 +15,8 @@ global successes = 0
 global errors = 0
 
 # Custom test handler
-custom_handler(r::Test.Success) = begin println("#\tSucces on $(r.expr)"); global successes+=1;  end
-custom_handler(r::Test.Failure) = begin println("\"\tFailure on $(r.expr)\""); global failures+=1; end
+custom_handler(r::Test.Success) = begin print_with_color(:green, "#\tSuccess "); println("on $(r.expr)"); global successes+=1;  end
+custom_handler(r::Test.Failure) = begin print_with_color(:red, "\"\tFailure "); println("on $(r.expr)\""); global failures+=1; end
 custom_handler(r::Test.Error) = begin println("\"\t$(typeof(r.err)) in $(r.expr)\""); global errors+=1; end
 #custom_handler(r::Test.Error) = Base.showerror(STDOUT,r);
 
@@ -44,11 +44,13 @@ end
 approx(a, b, eps) = abs(b-a) < eps
 
 # Strong equality: within 10 times eps
+# (symbol is \simeq)
 ≃(a,b) = ≃(promote(a,b)...)
 ≃{T <: AbstractFloat}(a::T,b::T) = approx(a, b, 10eps(T))
 ≃{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10eps(T))
 
 # Weaker equality: within 10 times sqrt(eps)
+# (symbol is \approx)
 ≈(a,b) = ≈(promote(a,b)...)
 ≈{T <: AbstractFloat}(a::T, b::T) = approx(a, b, 10*sqrt(eps(T)))
 ≈{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10*sqrt(eps(T)))
@@ -56,6 +58,77 @@ approx(a, b, eps) = abs(b-a) < eps
 ##########
 # Testing
 ##########
+
+
+function test_generic_interface(basis)
+    delimit("Generic interface for $(name(basis))")
+
+    ELT = eltype(basis)
+    T = numtype(basis)
+    n = length(basis)
+
+    a = left(basis)
+    b = right(basis)
+    if isinf(b)
+        b = T(1)
+    end
+    if isinf(a)
+        a = -T(1)
+    end
+
+    # Test output type of calling function
+    for x in [ (a*1/3 + b*2/3) rationalize(a*2/3 + b*1/3) ]
+        for idx in [1 2 n>>1 n-1 n]
+            z = call(basis, idx, x)
+            @test typeof(z) == ELT
+        end
+    end
+
+    # Test iteration over the set
+    l = 0
+    equality = true
+    for i in eachindex(basis)
+        l += 1
+
+        # Is conversion from logical to native index and back a bijection?
+        idxn = natural_index(basis, i)
+        idx = logical_index(basis, idxn)
+        equality = equality & (idx == i)
+    end
+    @test l == n
+    @test equality
+
+    # Create a random expansion in the basis to test expansion interface
+    coef = Array(ELT, size(basis))
+    for i in eachindex(coef)
+        coef[i] = rand()
+    end
+
+    # Does evaluating an expansion equal the sum of coefficients times basis function calls?
+    e = SetExpansion(basis, coef)
+    @test e(x) ≃ sum([coef[i]*basis(i,x) for i in eachindex(coef)])
+
+    # Verify evaluation on the associated grid
+    if BasisFunctions.has_grid(basis)
+
+        grid1 = grid(basis)
+        @test length(grid1) == length(basis)
+
+        z = e(grid1)
+        @test sum(abs( ELT[ z[i] - e(grid1[i]) for i in eachindex(grid1) ] )) ≈ 0
+    end
+
+    # Test evaluation on a different grid on the support of the basis
+    grid2 = EquispacedGrid(n+3, a, b)
+    z = e(grid2)
+    @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+
+    # Test evaluation on an array
+    x = T[a + rand()*(b-a) for i in 1:10]
+    z = e(x)
+    @test maximum(abs( ELT[ z[i] - e(x[i]) for i in eachindex(x) ] )) ≈ 0
+
+end
 
 
 #####
@@ -137,7 +210,6 @@ end
 #####
 # Fourier series
 #####
-
 function test_fourier_series(T)
     delimit("Fourier series")
 
@@ -172,9 +244,15 @@ function test_fourier_series(T)
     @test call(fb, idx, x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
-    coef = T[1.0 2.0 3.0 4.0]
+    coef = T[1 2 3 4] * (1+im)
     e = SetExpansion(FourierBasis(4, a, b), coef)
-    @test e(x) ≈ coef[1]*1.0 + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
+    @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
+
+    # Check type promotion: evaluate at an integer and at a rational point
+    for i in [0 1]
+        @test typeof(call(fb, i, 0)) == Complex{T}
+        @test typeof(call(fb, i, 1//2)) == Complex{T}
+    end
 
     # Try an extension
     n = 12
@@ -245,11 +323,16 @@ function test_fourier_series(T)
     @test call(b, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
-    coef = [1.0 2.0 3.0]
-    e = SetExpansion(FourierBasis(3, -one(T), one(T)), coef)
+    coef = [one(T)+im 2*one(T)-im 3*one(T)+2im]
+    b = FourierBasis(3, -one(T), one(T))
+    e = SetExpansion(b, coef)
     x = T(2//10)
     y = (x+1)/2
     @test e(x) ≃ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
+    # evaluate on a grid
+    g = grid(b)
+    result = e(g)
+    @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) ≈ 0
 
     # Try an extension
     n = 13
@@ -291,6 +374,8 @@ function test_fourier_series(T)
     x = T(2//10)
     delta = sqrt(eps(T))
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
+
+    # Transforms
 
 end
 
@@ -489,6 +574,20 @@ Test.with_handler(custom_handler) do
 
         println()
         println("T is ", T)
+
+        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis, LaguerreBasis, HermiteBasis,
+            PeriodicSplineBasis, FullSplineBasis)
+        for SET in SETS
+            for n in (8, 11)
+                basis = instantiate(SET, n, T)
+
+                @test length(basis) == n
+                @test numtype(basis) == T
+                @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
+
+                test_generic_interface(basis)
+            end
+        end
 
         test_tensor_sets(T)
 

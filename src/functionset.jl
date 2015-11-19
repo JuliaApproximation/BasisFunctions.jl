@@ -111,12 +111,34 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 "Does the set implement a derivative?"
 has_derivative(b::FunctionSet) = false
 
-"Does the set have an associated grid?"
+"Does the set have an associated interpolation grid?"
 has_grid(b::FunctionSet) = false
 
-# Default set of indices: from 1 to length(s)
+"Does the set have an associated transform?"
+has_transform(b::FunctionSet) = false
+
+"Does the set support extension and restriction operators?"
+has_extension(b::FunctionSet) = false
+
+
+# A FunctionSet has logical indices and natural indices. The logical indices correspond to
+# the a logical ordering of the basis functions. They correspond to the order of the coefficients
+# in an expansion.
+# The natural index may be closer to the mathematical definition. For example, wavelets may
+# have a natural index that corresponds to the combination of scale and position. Or some
+# basis functions may be defined from 0 to n, rather than from 1 to n.
+# By convention, we denote a natural index variable by idxn.
+
+"Compute the natural index corresponding to the given logical index."
+natural_index(b::FunctionSet, idx) = idx
+
+"Compute the logical index corresponding to the given natural index."
+logical_index(b::FunctionSet, idxn) = idxn
+
+# Default set of logical indices: from 1 to length(s)
 # Default algorithms assume this indexing for the basis functions, and the same
 # linear indexing for the set of coefficients.
+# The indices may also have tensor-product structure, for tensor product sets.
 eachindex(s::FunctionSet) = 1:length(s)
 
 # Default iterator over sets of functions: based on underlying index iterator.

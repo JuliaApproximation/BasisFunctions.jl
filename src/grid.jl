@@ -224,9 +224,8 @@ end
 
 EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
 
-# Promote the numeric type of a and b to a floating point type.
-function EquispacedGrid{S <: Number}(n, a::S, b::S)
-	T = promote_type(S, typeof((b-a)/n))
+function EquispacedGrid(n, a, b)
+	T = typeof((b-a)/n)
 	EquispacedGrid{T}(n, a, b)
 end
 
@@ -239,15 +238,14 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	a	::	T
 	b	::	T
 
-	PeriodicEquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
+	PeriodicEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
-# Parameter n is the total number of points in the periodic equispaced grid.
-PeriodicEquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
+PeriodicEquispacedGrid{T}(n, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
 
-function PeriodicEquispacedGrid{S <: Number}(n, a::S, b::S)
-	T = promote_type(S, typeof((b-a)/n))
-	PeriodicEquispacedGrid(n, T(a), T(b))
+function PeriodicEquispacedGrid(n, a, b)
+	T = typeof((b-a)/n)
+	PeriodicEquispacedGrid{T}(n, a, b)
 end
 
 

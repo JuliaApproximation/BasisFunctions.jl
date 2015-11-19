@@ -9,6 +9,8 @@ immutable LegendreBasis{T <: AbstractFloat} <: OPS{T}
     LegendreBasis(n) = new(n)
 end
 
+name(b::LegendreBasis) = "Legendre OPS"
+
 # Constructor with a default numeric type
 LegendreBasis{T}(n::Int, ::Type{T} = Float64) = LegendreBasis{T}(n)
 
@@ -25,7 +27,7 @@ left(b::LegendreBasis, idx) = -1
 right(b::LegendreBasis) = 1
 right(b::LegendreBasis, idx) = 1
 
-grid(b::LegendreBasis) = LegendreGrid(b.n)
+#grid(b::LegendreBasis) = LegendreGrid(b.n)
 
 
 jacobi_α(b::LegendreBasis) = 0

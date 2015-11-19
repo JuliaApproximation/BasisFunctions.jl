@@ -7,6 +7,8 @@ immutable HermiteBasis{T <: AbstractFloat} <: OPS{T}
     HermiteBasis(n) = new(n)
 end
 
+name(b::HermiteBasis) = "Hermite OPS"
+
 # Constructor with a default numeric type
 HermiteBasis{T}(n::Int, ::Type{T} = Float64) = HermiteBasis{T}(n)
 
@@ -23,10 +25,10 @@ left{T}(b::HermiteBasis{T}, idx) = left(b)
 right{T}(b::HermiteBasis{T}) = convert(T, Inf)
 right{T}(b::HermiteBasis{T}, idx) = right(b)
 
-grid{T}(b::HermiteBasis{T}) = HermiteGrid(b.n)
+#grid(b::HermiteBasis) = HermiteGrid(b.n)
 
 
-weight(b::HermiteBasis, x) = exp(-x^2)
+weight{T}(b::HermiteBasis{T}, x) = exp(-T(x)^2)
 
 
 # See DLMF, Table 18.9.1

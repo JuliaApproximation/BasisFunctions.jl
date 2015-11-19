@@ -44,6 +44,12 @@ fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
+# Methods for purposes of testing functionality.
+has_grid(b::FourierBasis) = true
+has_derivative(b::FourierBasis) = true
+has_transform(b::FourierBasis) = true
+has_extension(b::FourierBasis) = true
+
 
 length(b::FourierBasis) = b.n
 
@@ -59,21 +65,22 @@ period(b::FourierBasis) = b.b-b.a
 
 grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
-has_grid(b::FourierBasis) = true
-
 nhalf(b::FourierBasis) = length(b)>>1
 
 
 # Map the point x in [a,b] to the corresponding point in [0,1]
 mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
 
-# The map between the index of a basis function and its Fourier frequency
-idx2frequency(b::FourierBasisEven, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
-idx2frequency(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+# Natural index of an even Fourier basis ranges from -N+1 to N.
+natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
 
-# The inverse map
-frequency2idx(b::FourierBasis, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
-#frequency2idx(b::FourierBasisOdd, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
+# Natural index of an odd Fourier basis ranges from -N to N.
+natural_index(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+
+logical_index(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
+
+idx2frequency(b::FourierBasis, idx::Int) = natural_index(b, idx)
+frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
@@ -100,8 +107,6 @@ function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBa
 		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
 	end
 end
-
-has_derivative(b::FourierBasis) = true
 
 
 function apply!(op::Extension, dest::FourierBasisOdd, src::FourierBasisEven, coef_dest, coef_src)

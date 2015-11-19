@@ -29,6 +29,7 @@ export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate
+export natural_index, logical_index
 
 # from setfunction.jl
 export SetFunction, index
@@ -73,7 +74,7 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     fourier_basis_even, fourier_basis_odd
 
 # from poly_chebyshev.jl
-export ChebyshevBasis, 
+export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 

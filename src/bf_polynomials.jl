@@ -3,6 +3,9 @@
 
 abstract PolynomialBasis{T} <: AbstractBasis1d{T}
 
+# Indices of polynomials naturally start at 0
+natural_index(b::PolynomialBasis, idx) = idx-1
+logical_index(b::PolynomialBasis, idxn) = idxn+1
 
 
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
@@ -58,6 +61,7 @@ end
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
 call(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
+
 
 
 # TODO: move to its own file and make more complete

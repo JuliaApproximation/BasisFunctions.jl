@@ -8,6 +8,8 @@ immutable LaguerreBasis{T <: AbstractFloat} <: OPS{T}
     LaguerreBasis(n, α = zero(T)) = new(n, α)
 end
 
+name(b::LaguerreBasis) = "Laguerre OPS"
+
 LaguerreBasis{T}(n, ::Type{T} = Float64) = LaguerreBasis{T}(n)
 
 LaguerreBasis{T <: AbstractFloat}(n, α::T) = LaguerreBasis{T}(n, α)
@@ -28,12 +30,12 @@ left(b::LaguerreBasis, idx) = left(b)
 right{T}(b::LaguerreBasis{T}) = convert(T, Inf)
 right{T}(b::LaguerreBasis{T}, idx) = right(b)
 
-grid{T}(b::LaguerreBasis{T}) = LaguerreGrid(b.n)
+#grid(b::LaguerreBasis) = LaguerreGrid(b.n)
 
 jacobi_α(b::LaguerreBasis) = b.α
 
 
-weight(b::LaguerreBasis, x) = exp(-x) * x^(b.α)
+weight{T}(b::LaguerreBasis{T}, x) = exp(-T(x)) * T(x)^(b.α)
 
 
 # See DLMF, Table 18.9.1
