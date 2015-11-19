@@ -167,4 +167,3 @@ function call_expansion!(result, b::FunctionSet, coef, g::AbstractGrid)
         result[i] = call_expansion(b, coef, g[i]...)
     end
 end
-

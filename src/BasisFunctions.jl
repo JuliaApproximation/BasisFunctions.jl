@@ -48,7 +48,7 @@ export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, opera
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 
     approximation_operator, transform_operator, differentiation_operator,
-    evaluation_operator,
+    evaluation_operator, normalization_operator,
     Extension, Restriction, Differentiation, TransformOperator
 
 # from tensorproductoperator.jl
@@ -70,7 +70,7 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency
 
-# from chebyshevbasis.jl
+# from poly_chebyshev.jl
 export ChebyshevBasis, 
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
