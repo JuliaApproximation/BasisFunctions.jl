@@ -1,30 +1,34 @@
 # poly_hermite.jl
 
-# A Hermite polynomial basis
+"A Hermite polynomial basis."
 immutable HermiteBasis{T <: AbstractFloat} <: OPS{T}
     n           ::  Int
 
     HermiteBasis(n) = new(n)
 end
 
+name(b::HermiteBasis) = "Hermite OPS"
+
 # Constructor with a default numeric type
-HermiteBasis(n::Int) = HermiteBasis{Float64}(n)
+HermiteBasis{T}(n::Int, ::Type{T} = Float64) = HermiteBasis{T}(n)
+
+instantiate{T}(::Type{HermiteBasis}, n, ::Type{T}) = HermiteBasis{T}(n)
 
 name(b::HermiteBasis) = "Hermite series"
 
 isreal(b::HermiteBasis) = True()
 isreal{B <: HermiteBasis}(::Type{B}) = True
 
-left{T}(b::HermiteBasis{T}) = -inf(T)
+left{T}(b::HermiteBasis{T}) = -convert(T, Inf)
 left{T}(b::HermiteBasis{T}, idx) = left(b)
 
-right{T}(b::HermiteBasis{T}) = inf(T)
+right{T}(b::HermiteBasis{T}) = convert(T, Inf)
 right{T}(b::HermiteBasis{T}, idx) = right(b)
 
-grid{T}(b::HermiteBasis{T}) = HermiteGrid(b.n)
+#grid(b::HermiteBasis) = HermiteGrid(b.n)
 
 
-weight(b::HermiteBasis, x) = exp(-x^2)
+weight{T}(b::HermiteBasis{T}, x) = exp(-T(x)^2)
 
 
 # See DLMF, Table 18.9.1

@@ -1,13 +1,7 @@
 # bf_splines.jl
 
 
-export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-
-export degree, interval
-
-
-immutable SplineDegree{K}
-end
+typealias SplineDegree{K} Val{K}
 
 
 spline_eval(::Type{SplineDegree{0}}, i, x, a, b, h) = (x >= a+i*h) && (x < a + (i+1)*h) ? 1 : 0
@@ -15,60 +9,69 @@ spline_eval(::Type{SplineDegree{0}}, i, x, a, b, h) = (x >= a+i*h) && (x < a + (
 spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) * spline_eval(SplineDegree{K-1}, i, x, a, b, h) + (a+(i+K+1)*h - x)/(K*h) * spline_eval(SplineDegree{K-1}, i+1, x, a, b, h)
 
 
-# Splines of degree K (with equispaced knots)
+# Splines of degree K (with equispaced knots only...)
 abstract SplineBasis{K,T} <: AbstractBasis1d{T}
 
-# The degree of the splines
+"The degree of the splines."
 degree{K}(b::SplineBasis{K}) = K
 
 left(b::SplineBasis) = b.a
 
 right(b::SplineBasis) = b.b
 
-# Return the index of the interval between two knots in which x lies, starting from index 0
-interval(b::SplineBasis, x) = int(floor( (x-left(b))/stepsize(b) ))
+"Return the index of the interval between two knots in which x lies, starting from index 0."
+interval(b::SplineBasis, x) = round(Int, floor( (x-left(b))/stepsize(b) ))
 
 # All splines have compact support
 has_compact_support{B <: SplineBasis}(::Type{B}) = True
 
-# Return the i-th knot of the spline, using natural indices
+"Return the i-th knot of the spline, using natural indices."
 knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
 
-# The natural grid associated with splines
-grid(b::SplineBasis) = b.grid
 
 
-# The full space of piecewise polynomials of degree K on n subintervals of [a,b]
+
+
+"""
+The full space of piecewise polynomials of degree K on n subintervals of [a,b].
+"""
 immutable FullSplineBasis{K,T} <: SplineBasis{K,T}
+	n		::	Int
 	a		::	T
 	b		::	T
-	n		::	Int
-	grid	::	EquispacedGrid{T}	# this grid is not suitable for interpolation
 
-	FullSplineBasis(a, b, n) = new(a, b, n, EquispacedGrid(n, a, b))
+	FullSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-FullSplineBasis{T}(a::T, b::T, n, k) = FullSplineBasis{k,T}(a, b, n)
+name(b::FullSplineBasis) = "Full splines of degree $(degree(b))"
 
-FullSplineBasis{K,T}(a::T, b::T, n, ::Type{SplineDegree{K}}) = FullSplineBasis{K,T}(a, b, n)
+
+FullSplineBasis{K,T}(n, a::T, b::T, ::Type{SplineDegree{K}}) = FullSplineBasis{K,T}(n, a, b)
+
+FullSplineBasis{T}(n, a::T, b::T, k::Int = 3) = FullSplineBasis(n, a, b, SplineDegree{k})
+
+FullSplineBasis{K,T}(n, ::Type{SplineDegree{K}} = SplineDegree{3}, ::Type{T} = Float64) = FullSplineBasis{K,T}(n)
+
+instantiate{T}(::Type{FullSplineBasis}, n, ::Type{T}) = FullSplineBasis{3,T}(n-3)
+
+# Full splines to not have an interpolation grid
+#has_grid(b::FullSplineBasis) = true
 
 length{K}(b::FullSplineBasis{K}) = b.n+K
 
-# Indices of splines naturally range from -K to n-1
-# Functions assuming natural indices take idxn as argument, rather than idx
+# Indices of splines naturally range from -K to n-1.
 natural_index{K}(b::FullSplineBasis{K}, idx) = idx-K-1
+logical_index{K}(b::FullSplineBasis{K}, idxn) = idxn+K+1
 
-# convert back from natural index to general index
-general_index{K}(b::FullSplineBasis{K}, idxn) = idxn+K+1
+left(b::FullSplineBasis, idx) = max(b.a, knot(b, natural_index(b, idx)))
 
-left(b::FullSplineBasis, idx) = max(b.a, knot(b, natural_index(b,idx)))
+right{K}(b::FullSplineBasis{K}, idx) = min(b.b, knot(b, natural_index(b, idx) + K+1))
 
-right{K}(b::FullSplineBasis{K}, idx) = min(b.b, knot(b, natural_index(b,idx)+K+1))
+waypoints{K}(b::FullSplineBasis{K}, idx) = unique([min(max(knot(b, natural_index(b, idx)+i), b.a), b.b) for i = 0:K+1])
 
-waypoints{K}(b::FullSplineBasis{K}, idx) = unique([min(max(knot(b, natural_index(b,idx)+i),b.a),b.b) for i = 0:K+1])
+stepsize(b::FullSplineBasis) = stepsize(grid(b))
 
-stepsize(b::FullSplineBasis) = stepsize(b.grid)
-
+grid(b::FullSplineBasis) = EquispacedGrid(b.n, b.a, b.b)
 
 function active_indices{K}(b::FullSplineBasis{K}, x)
 	i = interval(b, x)
@@ -80,29 +83,39 @@ end
 function call{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 	x < left(b) && throw(BoundsError())
 	x > right(b) && throw(BoundsError())
-	spline_eval(SplineDegree{K}, natural_index(b,idx), x, b.a, b.b, stepsize(b))
+	spline_eval(SplineDegree{K}, natural_index(b, idx), x, b.a, b.b, stepsize(b))
 end
 
 
 # Natural splines of degree K
 immutable NaturalSplineBasis{K,T} <: SplineBasis{K,T}
+	n		::	Int
 	a		::	T
 	b		::	T
-	n		::	Int
-	grid	::	EquispacedGrid{T}
 
-	NaturalSplineBasis(a, b, n) = new(a, b, n, EquispacedGrid(n, a, b))
+	NaturalSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-NaturalSplineBasis{T}(a::T, b::T, n, k) = NaturalSplineBasis{k,T}(a, b, n)
+name(b::NaturalSplineBasis) = "Natural splines of degree $(degree(b))"
 
-NaturalSplineBasis{K,T}(a::T, b::T, n, ::Type{SplineDegree{K}}) = NaturalSplineBasis{K,T}(a, b, n)
+
+NaturalSplineBasis{K,T}(n, a::T, b::T, ::Type{SplineDegree{K}}) = NaturalSplineBasis{K,T}(n, a, b)
+
+NaturalSplineBasis{T}(n, a::T, b::T, k::Int = 3) = NaturalSplineBasis(n, a, b, SplineDegree{k})
+
+NaturalSplineBasis{K,T}(n, ::Type{SplineDegree{K}} = SplineDegree{3}, ::Type{T} = Float64) = NaturalSplineBasis{K,T}(n)
+
+instantiate{T}(::Type{NaturalSplineBasis}, n, ::Type{T}) = NaturalSplineBasis{3,T}(n)
+
+has_grid(b::NaturalSplineBasis) = true
+
 
 
 length(b::NaturalSplineBasis) = b.n+1
 
 # Indices of natural splines naturally range from 0 to n
 natural_index(b::NaturalSplineBasis, idx) = idx-1
+logical_index(b::NaturalSplineBasis, idxn) = idxn+1
 
 left(b::NaturalSplineBasis, idx) = max(b.a, b.a + (natural_index(b, idx)-1)*b.h)
 
@@ -110,23 +123,36 @@ right(b::NaturalSplineBasis, idx) = min(b.b, b.a + (natural_index(b, idx)+1)*b.h
 
 stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 
+grid(b::NaturalSplineBasis) = EquispacedGrid(b.n, b.a, b.b)
 
 call{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
-# Periodic splines of degree K
+"""
+Periodic splines of degree K.
+"""
 immutable PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
+	n		::	Int
 	a		::	T
 	b		::	T
-	n		::	Int
 
-	PeriodicSplineBasis(a, b, n) = new(a, b, n)
+	PeriodicSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-# type-unsafe constructor
-PeriodicSplineBasis{T}(a::T, b::T, n, k) = PeriodicSplineBasis{k,T}(a,b,n)
+name(b::PeriodicSplineBasis) = "Periodic splines of degree $(degree(b))"
 
-PeriodicSplineBasis{K,T}(a::T, b::T, n, ::Type{SplineDegree{K}}) = PeriodicSplineBasis{K,T}(a,b,n)
+# Type-unsafe constructor
+PeriodicSplineBasis(n, k::Int, a...) = PeriodicSplineBasis(n, SplineDegree{k}, a...)
+
+# This one is type-safe
+PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, a::T, b::T) = PeriodicSplineBasis{K,T}(n, a, b)
+
+PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = PeriodicSplineBasis{K,T}(n)
+
+instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
+
+has_grid(b::PeriodicSplineBasis) = true
+
 
 length(b::PeriodicSplineBasis) = b.n
 
@@ -134,13 +160,15 @@ grid(b::PeriodicSplineBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 # Indices of periodic splines naturally range from 0 to n-1
 natural_index(b::PeriodicSplineBasis, idx) = idx-1
-
-# convert back from natural index to general index
-general_index{K}(b::PeriodicSplineBasis{K}, idxn) = idxn+1
+logical_index{K}(b::PeriodicSplineBasis{K}, idxn) = idxn+1
 
 stepsize(b::PeriodicSplineBasis) = (b.b-b.a)/b.n
 
 period(b::PeriodicSplineBasis) = b.b - b.a
+
+left(b::PeriodicSplineBasis) = b.a
+
+right(b::PeriodicSplineBasis) = b.b
 
 left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * stepsize(b)
 
@@ -180,7 +208,7 @@ function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
 
 	z = zero(T)
 	for idxn = i-L1-1:i+L2
-		idx = general_index(b, mod(idxn,n))
+		idx = logical_index(b, mod(idxn,n))
 		z = z + coef[idx] * call(b, idx, x)
 	end
 

@@ -2,12 +2,21 @@
 
 # A basis of Jacobi polynomials on the interval [-1,1]
 immutable JacobiBasis{T <: AbstractFloat} <: OPS{T}
-    n           ::  Int
-    alpha       ::  T
-    beta        ::  T
+    n       ::  Int
+    α       ::  T
+    β       ::  T
+
+    JacobiBasis(n, α = zero(T), β = zero(T)) = new(n, α, β)
 end
 
-JacobiBasis(n::Int) = JacobiBasis(n, 0.0, 0.0)
+name(b::JacobiBasis) = "Jacobi OPS"
+
+
+JacobiBasis{T}(n::Int, ::Type{T}) = JacobiBasis{T}(n)
+
+JacobiBasis{T <: Number}(n::Int, α::T, β::T) = JacobiBasis{T}(n, α, β)
+
+instantiate{T}(::Type{JacobiBasis}, n, ::Type{T}) = JacobiBasis{T}(n)
 
 name(b::JacobiBasis) = "Jacobi OPS"
 
@@ -20,20 +29,20 @@ left(b::JacobiBasis, idx) = -1
 right(b::JacobiBasis) = 1
 right(b::JacobiBasis, idx) = 1
 
-grid{T}(b::JacobiBasis{T}) = JacobiGrid(b.n, jacobi_alpha(b), jacobi_beta(b))
+grid{T}(b::JacobiBasis{T}) = JacobiGrid(b.n, jacobi_α(b), jacobi_β(b))
 
 
-jacobi_alpha{T}(b::JacobiBasis{T}) = b.alpha
-jacobi_beta{T}(b::JacobiBasis{T}) = b.beta
+jacobi_α{T}(b::JacobiBasis{T}) = b.α
+jacobi_β{T}(b::JacobiBasis{T}) = b.β
 
-weight(b::JacobiBasis, x) = (x-1)^b.alpha * (x+1)^b.beta
+weight(b::JacobiBasis, x) = (x-1)^b.α * (x+1)^b.β
 
 
 # See DLMF (18.9.2)
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::JacobiBasis, n::Int) = (2*n + b.alpha + b.beta + 1) * (2*n + b.alpha + b.beta + 2) / (2 * (n+1) * (n + b.alpha + b.beta + 1))
+rec_An(b::JacobiBasis, n::Int) = (2*n + b.α + b.β + 1) * (2*n + b.α + b.β + 2) / (2 * (n+1) * (n + b.α + b.β + 1))
 
-rec_Bn(b::JacobiBasis, n::Int) = (b.alpha^2 - b.beta^2) * (2*n + b.alpha + b.beta + 1) / (2 * (n+1) * (n + b.alpha + b.beta + 1) * (2*n + b.alpha + b.beta))
+rec_Bn(b::JacobiBasis, n::Int) = (b.α^2 - b.β^2) * (2*n + b.α + b.β + 1) / (2 * (n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 
-rec_Cn(b::JacobiBasis, n::Int) = (n + b.alpha) * (n + b.beta) * (2*n + b.alpha + b.beta + 2) / ((n+1) * (n + b.alpha + b.beta + 1) * (2*n + b.alpha + b.beta))
+rec_Cn(b::JacobiBasis, n::Int) = (n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / ((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 

@@ -10,7 +10,7 @@ immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
 	a 			::	T
 	b 			::	T
 
-	FourierBasis(n, a, b) = (@assert iseven(n)==EVEN; new(n, a, b))
+	FourierBasis(n, a = -one(T), b = one(T)) = (@assert iseven(n)==EVEN; new(n, a, b))
 end
 
 typealias FourierBasisEven{T} FourierBasis{true,T}
@@ -28,14 +28,27 @@ isodd{EVEN}(::FourierBasis{EVEN}) = ~EVEN
 isodd{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = ~EVEN
 
 
-FourierBasis{T}(n, a::T = -1.0, b::T = 1.0) = FourierBasis{iseven(n),T}(n, a, b)
+FourierBasis{T}(n, a::T, b::T) = FourierBasis{iseven(n),T}(n, a, b)
 
-# Typesafe method for constructing a Fourier series with even length
-fourier_basis_even_length{T}(n, a::T = -1.0, b::T = 1.0) = FourierBasis{true,T}(n, a, b)
+FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),T}(n)
+
+
+# Typesafe methods for constructing a Fourier series with even length
+fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
+fourier_basis_even{T}(n, a::T, b::T) = FourierBasis{true,T}(n, a, b)
 
 # Typesafe method for constructing a Fourier series with odd length
-fourier_basis_odd_length{T}(n, a::T = -1.0, b::T = 1.0) = FourierBasis{false,T}(n, a, b)
+fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
+fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
+
+instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
+
+# Methods for purposes of testing functionality.
+has_grid(b::FourierBasis) = true
+has_derivative(b::FourierBasis) = true
+has_transform(b::FourierBasis) = true
+has_extension(b::FourierBasis) = true
 
 
 length(b::FourierBasis) = b.n
@@ -58,25 +71,24 @@ nhalf(b::FourierBasis) = length(b)>>1
 # Map the point x in [a,b] to the corresponding point in [0,1]
 mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
 
-# The map between the index of a basis function and its Fourier frequency
-idx2frequency(b::FourierBasisEven, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
-idx2frequency(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+# Natural index of an even Fourier basis ranges from -N+1 to N.
+natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
 
-# The inverse map
-frequency2idx(b::FourierBasis, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
-#frequency2idx(b::FourierBasisOdd, freq::Int) = freq >= 0 ? freq+1 : length(b)-freq+1
+# Natural index of an odd Fourier basis ranges from -N to N.
+natural_index(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+
+logical_index(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
+
+idx2frequency(b::FourierBasis, idx::Int) = natural_index(b, idx)
+frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T <: AbstractFloat}(b::FourierBasisOdd{T}, idx::Int, x::T) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
+call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
 
-call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = call(b, idx, T(x))
-
-call{T <: AbstractFloat}(b::FourierBasisEven{T}, idx::Int, x::T) =
+call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
 						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
-
-call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) = call(b, idx, T(x))
 
 
 function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
@@ -144,9 +156,8 @@ function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_
 	end
 end
 
-
 function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd_length(length(b)+1, left(b), right(b))
+	b_odd = fourier_basis_odd(length(b)+1, left(b), right(b))
 	differentiation_operator(b_odd) * extension_operator(b, b_odd)
 end
 

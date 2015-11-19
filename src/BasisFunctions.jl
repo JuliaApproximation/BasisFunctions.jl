@@ -28,6 +28,8 @@ export numtype, grid, left, right, support, call, call!
 export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
+export instantiate
+export natural_index, logical_index
 
 # from setfunction.jl
 export SetFunction, index
@@ -64,14 +66,15 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 export approximate
 
 
-# from fourierbasis.jl
+# from bf_fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
-    frequency2idx, idx2frequency
+    frequency2idx, idx2frequency,
+    fourier_basis_even, fourier_basis_odd
 
-# from chebyshevbasis.jl
-export ChebyshevBasis, 
+# from poly_chebyshev.jl
+export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
@@ -80,6 +83,10 @@ export plot
 
 # from bf_polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
+
+# from bf_splines.jl
+export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
+export degree, interval
 
 
 using Base.Cartesian

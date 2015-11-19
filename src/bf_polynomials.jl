@@ -3,6 +3,9 @@
 
 abstract PolynomialBasis{T} <: AbstractBasis1d{T}
 
+# Indices of polynomials naturally start at 0
+natural_index(b::PolynomialBasis, idx) = idx-1
+logical_index(b::PolynomialBasis, idxn) = idxn+1
 
 
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
@@ -60,6 +63,7 @@ end
 call(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 
+
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
 immutable UltrasphericalBasis{T} <: OPS{T}
@@ -67,10 +71,10 @@ immutable UltrasphericalBasis{T} <: OPS{T}
 	alpha	::	T
 end
 
-jacobi_alpha(b::UltrasphericalBasis) = b.alpha
-jacobi_beta(b::UltrasphericalBasis) = b.alpha
+jacobi_α(b::UltrasphericalBasis) = b.α
+jacobi_β(b::UltrasphericalBasis) = b.α
 
-weight(b::UltrasphericalBasis, x) = (1-x)^(b.alpha) * (1+x)^(b.alpha)
+weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
 
 
 

@@ -211,22 +211,22 @@ end
 unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
 
 
+"""
+An equispaced grid with n points on an interval [a,b].
+"""
 immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	n	::	Int
 	a	::	T
 	b	::	T
-	# h	::	T	# a possible optimization is to precompute and store the stepsize
 
-	EquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
+	EquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
-# Parameter n is the total number of points in the equispaced grid.
-EquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = EquispacedGrid{T}(n, a, b)
+EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
 
-# Promote the numeric type of a and b to a floating point type.
-function EquispacedGrid{S <: Number}(n, a::S, b::S)
-	T = promote_type(S, typeof((b-a)/n))
-	EquispacedGrid(n, T(a), T(b))
+function EquispacedGrid(n, a, b)
+	T = typeof((b-a)/n)
+	EquispacedGrid{T}(n, a, b)
 end
 
 stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
@@ -238,15 +238,14 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
 	a	::	T
 	b	::	T
 
-	PeriodicEquispacedGrid(n, a, b) = (@assert a < b; new(n, a, b))
+	PeriodicEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
-# Parameter n is the total number of points in the periodic equispaced grid.
-PeriodicEquispacedGrid{T <: AbstractFloat}(n, a::T = -1.0, b::T = 1.0) = PeriodicEquispacedGrid{T}(n, a, b)
+PeriodicEquispacedGrid{T}(n, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
 
-function PeriodicEquispacedGrid{S <: Number}(n, a::S, b::S)
-	T = promote_type(S, typeof((b-a)/n))
-	PeriodicEquispacedGrid(n, T(a), T(b))
+function PeriodicEquispacedGrid(n, a, b)
+	T = typeof((b-a)/n)
+	PeriodicEquispacedGrid{T}(n, a, b)
 end
 
 
