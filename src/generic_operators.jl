@@ -205,8 +205,5 @@ for op in (:extension_operator, :restriction_operator, :approximation_operator,
         TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end
 
-# Don't know how to properly dispatch on the tuple here
-function normalization_operator{TS1,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, Ls::Tuple)
-    TensorProductOperator([normalization_operator(set(s1,i),(Ls[i],)) for i in 1:LEN]...)
-end
+
 

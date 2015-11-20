@@ -216,11 +216,10 @@ function approximation_operator(b::ChebyshevBasis)
     ChebyshevEvaluation(b, g, op)
 end
 
-# L is the length of the transform.
-# For interpolation this is equal to the length of the basis,
-# For FrameFuns this depends on oversampling and extension length.
-function normalization_operator(b::ChebyshevBasis,L::Tuple{Integer})
-    ChebyshevNormalization(b,L[1])
+# src is the basis that was used for the transform
+# dest is the destination basis
+function normalization_operator(src::ChebyshevBasis,dest::ChebyshevBasis)
+    ChebyshevNormalization(dest,length(src))
 end
 
 immutable ChebyshevNormalization{SRC} <: AbstractOperator{SRC,SRC}
