@@ -34,7 +34,6 @@ s2 as source and destination.
 extension_operator(s1::FunctionSet, s2::FunctionSet) = Extension(s1, s2)
 
 
-
 immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
@@ -50,10 +49,15 @@ s2 as source and destination.
 restriction_operator(s1::FunctionSet, s2::FunctionSet) = Restriction(s1, s2)
 
 
+ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
+
+ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
+
+
 
 # Default implementation of an extension uses zero-padding of coef_src to coef_dest
 function apply!(op::Extension, dest, src, coef_dest, coef_src)
-    # We do too much work here, since we put all entries of coef_dest to zero. Fix later.
+    # We do too much work here, since we put all entries of coef_dest to zero.
     fill!(coef_dest, 0)
 
     for i in eachindex(coef_src)

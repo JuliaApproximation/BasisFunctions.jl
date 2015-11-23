@@ -228,6 +228,14 @@ end
 apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
 
 
+ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
+ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))
+
+ctranspose(op::InverseFastFourierTransform) = FastFourierTransform(dest(op), src(op))
+ctranspose(op::InverseFastFourierTransformFFTW) = FastFourierTransformFFTW(dest(op), src(op))
+
+inverse(op::DiscreteFourierTransform) = ctranspose(op)
+
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
 

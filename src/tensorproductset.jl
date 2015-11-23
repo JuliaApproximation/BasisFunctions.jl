@@ -3,11 +3,17 @@
 using Base.Cartesian
 
 
-# A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
-# Parameter TS is a tuple of types, representing the (possibly different) types of the sets.
-# Parameter SN is a tuple of the dimensions of these types.
-# LEN is the length of the tuples S and N (the index dimension).
-# N is the total dimension of the corresponding space and T the numeric type.
+"""
+A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
+
+immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
+
+Parameters:
+- TS is a tuple of types, representing the (possibly different) types of the sets.
+- SN is a tuple of the dimensions of these types.
+- LEN is the length of the tuples S and N (the index dimension).
+- N is the total dimension of the corresponding space and T the numeric type.
+"""
 immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
     sets   ::  TS
 
