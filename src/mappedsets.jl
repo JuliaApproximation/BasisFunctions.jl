@@ -1,6 +1,7 @@
 # mappedsets.jl
 
-# An AbstractMappedSet collects all sets that are defined in terms of another set through a mapping.
+# An AbstractMappedSet collects all sets that are defined in terms of another set through
+# a mapping of the form y = map(x).
 abstract AbstractMappedSet{S,N,T} <: FunctionSet{N,T}
 
 set(s::AbstractMappedSet) = s.set
@@ -16,9 +17,16 @@ for op in (:is_basis, :isreal, :eltype, :index_dim, :is_orthogonal)
     @eval $op{S <: AbstractMappedSet}(::Type{S}) = $op(super(S))
 end
 
+# Delegate feature methods
+for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
+    @eval $op(s::AbstractMappedSet) = $op(set(s))
+end
 
-# A set defined via a linear map.
-# The underlying set S should support left(s) and right(s).
+
+
+"""
+A set defined via a linear map.
+"""
 immutable LinearMappedSet{S <: FunctionSet1d,T} <: AbstractMappedSet{S,1,T}
     set     ::  S
     a       ::  T
@@ -26,6 +34,7 @@ immutable LinearMappedSet{S <: FunctionSet1d,T} <: AbstractMappedSet{S,1,T}
 
     LinearMappedSet(set::FunctionSet1d{T}, a::T, b::T) = new(set, a, b)
 end
+# The underlying set s should support left(s) and right(s).
 
 LinearMappedSet{T}(s::FunctionSet1d{T}, a, b) = LinearMappedSet{typeof(s),T}(s, T(a), T(b))
 
@@ -49,10 +58,15 @@ call(s::LinearMappedSet, idx::Int, y) = call(set(s), idx, imapx(s,y))
 grid(s::LinearMappedSet) = LinearMappedGrid(grid(set(s)), left(s), right(s))
 
 
+"Rescale a function set to an interval [a,b]."
 rescale(s::FunctionSet1d, a, b) = LinearMappedSet(s, a, b)
 
 # avoid multiple linear mappings
 rescale(s::LinearMappedSet, a, b) = LinearMappedSet(set(s), a, b)
+
+grid(s::LinearMappedSet) = rescale(grid(set(s)), s.a, s.b)
+
+
 
 # Preserve tensor product structure
 function rescale{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}, a::AbstractArray, b::AbstractArray)

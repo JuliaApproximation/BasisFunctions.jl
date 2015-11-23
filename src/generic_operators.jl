@@ -184,7 +184,10 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet = s1, var = 1, order = 1) = Differentiation(s1, s2, var, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet = s1, var::Int = 1, order::Int = 1) = Differentiation(s1, s2, var, order)
+
+# With this definition below, the user may specify a single set and a variable, with or without an order
+differentiation_operator(s1::FunctionSet, var::Int, order::Int...) = differentiation_operator(s1, s1, var, order...)
 
 
 """
@@ -199,8 +202,12 @@ differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), c
 
 
 for op in (:extension_operator, :restriction_operator, :approximation_operator, 
-    :interpolation_operator, :evaluation_operator, :differentiation_operator,
-    :transform_operator, :normalization_operator)
+    :differentiation_operator, :normalization_operator)
+    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
+        TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
+end
+
+for op in (:interpolation_operator, :evaluation_operator, :transform_operator, :normalization_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
         TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end

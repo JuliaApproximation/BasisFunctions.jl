@@ -235,7 +235,7 @@ function test_fourier_series(T)
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(fb, freq)
-    @test call(fb, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
+    @test call(fb, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
@@ -243,7 +243,7 @@ function test_fourier_series(T)
     @test call(fb, idx, x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
-    coef = T[1 2 3 4] * (1+im)
+    coef = T[1; 2; 3; 4] * (1+im)
     e = SetExpansion(FourierBasis(4, a, b), coef)
     @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
@@ -322,7 +322,7 @@ function test_fourier_series(T)
     @test call(b, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
-    coef = [one(T)+im 2*one(T)-im 3*one(T)+2im]
+    coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
     b = FourierBasis(3, -one(T), one(T))
     e = SetExpansion(b, coef)
     x = T(2//10)

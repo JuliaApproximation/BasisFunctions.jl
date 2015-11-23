@@ -6,6 +6,7 @@ module BasisFunctions
 using ArrayViews
 
 import Base: +, *, /, ==, |, &, -, \
+import Base: promote_rule, convert
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range
 
@@ -13,7 +14,7 @@ import Base: getindex, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
-import Base: ctranspose, transpose
+import Base: ctranspose, transpose, inv
 
 import Base: show, showcompact
 
@@ -113,13 +114,13 @@ include("tensorproductset.jl")
 
 include("mappedsets.jl")
 
-include("expansions.jl")
-
 include("euclidean.jl")
 
 include("operator.jl")
 
 include("tensorproductoperator.jl")
+
+include("expansions.jl")
 
 include("functional.jl")
 

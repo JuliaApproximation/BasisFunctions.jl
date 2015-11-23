@@ -30,7 +30,6 @@ ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
 has_grid(b::ChebyshevBasis) = true
-
 has_derivative(b::ChebyshevBasis) = true
 
 left(b::ChebyshevBasis) = b.a

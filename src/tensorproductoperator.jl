@@ -1,14 +1,19 @@
 # tensorproductoperator.jl
 
 
-# A TensorProductOperator represents the tensor product of other operators.
-# Parameters:
-# - ELT is the element type of the operator.
-# - TO is a tuple of (operator) types.
-# - ON is the number of elements in TO
-# - SCRATCH is the type of the scratch space allocated at creation of the tensor-product.
-#   It represents a tuple of arrays of ELT, which will hold intermediate calculations.
-# - SRC and DEST are the (tensor product) source and destination of this operator.
+"""
+A TensorProductOperator represents the tensor product of other operators.
+
+immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{SRC,DEST}
+
+Parameters:
+- ELT is the element type of the operator.
+- TO is a tuple of (operator) types.
+- ON is the number of elements in TO
+- SCRATCH is the type of the scratch space allocated at creation of the tensor-product.
+  It represents a tuple of arrays of ELT, which will hold intermediate calculations.
+- SRC and DEST are the (tensor product) source and destination of this operator.
+"""
 immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{SRC,DEST}
     operators       ::  TO
     src             ::  SRC
@@ -18,6 +23,7 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     dest_scratch    ::  NTuple{ON,Array{ELT,1}}
     
 end
+
 function TensorProductOperator(operators...)
         ELT = eltype(operators...)
         TO = typeof(operators)

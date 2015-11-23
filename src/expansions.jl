@@ -11,7 +11,7 @@ immutable SetExpansion{S,ELT,ID}
     set     ::  S
     coef    ::  Array{ELT,ID}
 
-    SetExpansion(set, coef) = (@assert length(set) == length(coef); new(set,coef))
+    SetExpansion(set, coef) = (@assert size(set) == size(coef); new(set,coef))
 end
 
 SetExpansion{S <: FunctionSet,ELT,ID}(set::S, coef::Array{ELT,ID}) = SetExpansion{S,ELT,ID}(set,coef)
@@ -33,12 +33,12 @@ set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coef
 
-# Delegation methods
-for op in (:length, :left, :right, :grid, :numtype, :dim)
+# Delegation of methods
+for op in (:length, :size, :left, :right, :grid, :numtype, :dim)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
-# Delegation type methods
+# Delegation of type methods
 for op in (:numtype, :dim)
     @eval $op{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = $op(S)
     @eval $op{E <: SetExpansion}(::Type{E}) = $op(super(E))
@@ -57,5 +57,52 @@ differentiate(f::SetExpansion) = SetExpansion(set(f), differentiate(f.set, f.coe
 
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
 ctranspose(f::SetExpansion) = differentiate(f)
+
+
+# Delegate generic operators
+for op in (:extension_operator, :restriction_operator, :transform_operator)
+    @eval $op(s1::SetExpansion, s2::SetExpansion) = $op(set(s1), set(s2))
+end
+
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator)
+    @eval $op(s::SetExpansion) = $op(set(s))
+end
+
+differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(set(s1), set(s2), var...)
+differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
+
+
+############################
+# Arithmetic with expansions
+############################
+
+for op in (:+, :-)
+    @eval function ($op){S,ELT1,ELT2,ID}(s1::SetExpansion{S,ELT1,ID}, s2::SetExpansion{S,ELT2,ID})
+            # If the sizes are equal, we can just operate on the coefficients.
+            # If not, we have to extend the smaller set to the size of the larger set.
+            if size(s1) == size(s2)
+                SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
+            elseif length(s1) < s2
+                # Switch the sets, so that s2 is always the smaller one
+                s2,s1 = s1,s2
+                s3 = extension_operator(set(s2), set(s1)) * s2
+                SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
+            end
+    end
+end
+
+function apply(op::AbstractOperator, s::SetExpansion)
+    @assert set(s) == src(op)
+
+    SetExpansion(dest(op), op * coefficients(s))
+end
+
+function apply!(op::AbstractOperator, set_dest::SetExpansion, set_src::SetExpansion)
+    @assert set(set_src) == src(op)
+    @assert set(set_dest) == dest(op)
+
+    apply!(op, coefficients(set_dest), coefficients(set_src))
+end
+
 
 
