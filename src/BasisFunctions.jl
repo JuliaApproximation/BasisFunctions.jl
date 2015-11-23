@@ -16,7 +16,7 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose, inv
 
-import Base: show, showcompact
+import Base: show, showcompact, call
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
@@ -25,12 +25,13 @@ export dim, left,right, range
 
 # from functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
-export numtype, grid, left, right, support, call, call!
+export numtype, grid, left, right, support, call, call!, call_set, call_set!
 export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate
 export natural_index, logical_index
+export is_basis, is_frame
 
 # from setfunction.jl
 export SetFunction, index

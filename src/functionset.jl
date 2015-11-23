@@ -74,12 +74,21 @@ complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 # TensorProdctFrame - TensorProductBasis, or make the Basis property a trait.
 # This is the trait:
 is_basis(s::FunctionSet) = False()
+is_basis(::Type{FunctionSet}) = False
+is_basis{S <: FunctionSet}(::Type{S}) = is_basis(super(S))
+
+is_frame(s::FunctionSet) = False()
+is_frame(::Type{FunctionSet}) = False
+is_frame{S <: FunctionSet}(::Type{S}) = is_frame(super(S))
 
 # A basis is always a basis.
 is_basis(b::AbstractBasis) = True()
+is_basis(::Type{AbstractBasis}) = True
 
-is_frame(s::FunctionSet) = False()
+# And a frame is always a frame.
 is_frame(s::AbstractFrame) = True()
+is_frame(::Type{AbstractFrame}) = True
+
 
 "Trait to indicate whether a basis is orthogonal."
 is_orthogonal(b::AbstractBasis) = False()
@@ -94,7 +103,7 @@ is_biorthogonal{B <: FunctionSet}(::Type{B}) = False
 size(s::FunctionSet) = (length(s),)
 
 "Return the size of the j-th dimension of the set (if applicable)."
-size(s::FunctionSet, j) = j==1?length(s):throw(BoundsError())
+size(s::FunctionSet, j) = j==1 ? length(s) : throw(BoundsError())
 
 
 """

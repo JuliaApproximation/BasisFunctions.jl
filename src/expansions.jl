@@ -44,14 +44,21 @@ for op in (:numtype, :dim)
     @eval $op{E <: SetExpansion}(::Type{E}) = $op(super(E))
 end
 
+has_basis(e::SetExpansion) = is_basis(set(e))
+
+has_frame(e::SetExpansion) = is_frame(set(e))
+
 getindex(e::SetExpansion, i...) = e.coef[i...]
 
 setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
 
-call(e::SetExpansion, x...) = call_expansion(set(e), coefficients(e), x...)
+# This indirect call enables dispatch on the type of the set of the expansion
+call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), x...)
+call_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
 
-call!(result, e::SetExpansion, x...) = call_expansion!(result, set(e), coefficients(e), x...)
+call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), x...)
+call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
 
 differentiate(f::SetExpansion) = SetExpansion(set(f), differentiate(f.set, f.coef))
 
@@ -72,9 +79,9 @@ differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = diff
 differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
 
 
-############################
-# Arithmetic with expansions
-############################
+##############################
+# Arithmetics with expansions
+##############################
 
 for op in (:+, :-)
     @eval function ($op){S,ELT1,ELT2,ID}(s1::SetExpansion{S,ELT1,ID}, s2::SetExpansion{S,ELT2,ID})
