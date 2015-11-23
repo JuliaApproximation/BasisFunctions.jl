@@ -386,21 +386,25 @@ end
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op1			::	OP1
 	op2			::	OP2
-	val1		::	T
-	val2		::	T
-	scratch		::	Array{T,N}
+	val1		::	ELT
+	val2		::	ELT
+	scratch		::	Array{ELT,N}
 
-	function OperatorSum(op1::OP1, op2::OP2, val1::T, val2::T)
+	function OperatorSum(op1::OP1, op2::OP2, val1::ELT, val2::ELT)
+		# We don't enforce that source and destination of op1 and op2 are the same, but at least
+		# their sizes must match.
 		@assert size(op1) == size(op2)
-		new(op1, op2, val1, val2, zeros(T,size(dest(op1))))
+		new(op1, op2, val1, val2, zeros(ELT,size(dest(op1))))
 	end
 end
 
-OperatorSum{SRC,DEST,S1 <: Number, S2 <: Number}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1::S1, val2::S2) =
-	OperatorSum{typeof(op1), typeof(op2), promote_type(S1,S2,eltype(op1),eltype(op2)), index_dim(dest(op1)), SRC, DEST}(op1, op2, val1, val2)
+function OperatorSum{SRC,DEST,S1 <: Number, S2 <: Number}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1::S1, val2::S2)
+	ELT = promote_type(S1, S2, eltype(op1), eltype(op2))
+	OperatorSum{typeof(op1), typeof(op2), ELT, index_dim(dest(op1)), SRC, DEST}(op1, op2, convert(ELT, val1), convert(ELT, val2))
+end
 
 src(op::OperatorSum) = src(op.op1)
 
@@ -412,7 +416,7 @@ ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2)
 
 apply!(op::OperatorSum, dest, src, coef_srcdest) = apply!(op, op.op1, op.op2, coef_srcdest)
 
-function apply!(op::OperatorSum, op1, op2, coef_srcdest)
+function apply!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_srcdest)
 	scratch = op.scratch
 
 	apply!(op1, scratch, coef_srcdest)
@@ -425,7 +429,7 @@ end
 
 apply!(op::OperatorSum, dest, src, coef_dest, coef_src) = apply!(op, op.op1, op.op2, coef_dest, coef_src)
 
-function apply!(op::OperatorSum, op1, op2, coef_dest, coef_src)
+function apply!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_dest, coef_src)
 	scratch = op.scratch
 
 	apply!(op1, scratch, coef_src)
@@ -444,7 +448,7 @@ function apply!(op::OperatorSum, op1::ScalingOperator, op2::ScalingOperator, coe
 	end
 end
 
-function apply!(op::OperatorSum, op1::ScalingOperator, op2, coef_dest, coef_src)
+function apply!(op::OperatorSum, op1::ScalingOperator, op2::AbstractOperator, coef_dest, coef_src)
 	apply!(op2, coef_dest, coef_src)
 
 	val1 = op.val1 * scalar(op1)
@@ -453,7 +457,7 @@ function apply!(op::OperatorSum, op1::ScalingOperator, op2, coef_dest, coef_src)
 	end
 end
 
-function apply!(op::OperatorSum, op1, op2::ScalingOperator, coef_dest, coef_src)
+function apply!(op::OperatorSum, op1::AbstractOperator, op2::ScalingOperator, coef_dest, coef_src)
 	apply!(op1, coef_dest, coef_src)
 
 	val2 = op.val2 * scalar(op2)
@@ -465,7 +469,6 @@ end
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), one(eltype(op2)))
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), -one(eltype(op2)))
-
 
 
 "A MatrixOperator is defined by a full matrix."
