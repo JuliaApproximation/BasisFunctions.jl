@@ -38,7 +38,7 @@ end
 name{TS,SN}(b::TensorProductSet{TS,SN,1}) = "tensor product " * name(b.sets[1])
 name{TS,SN}(b::TensorProductSet{TS,SN,2}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * ")"
 name{TS,SN}(b::TensorProductSet{TS,SN,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * ")"
-name{TS,SN}(b::TensorProductSet{TS,SN,3}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
+name{TS,SN}(b::TensorProductSet{TS,SN,4}) = "tensor product (" * name(b.sets[1]) * " x " * name(b.sets[2]) * " x " * name(b.sets[3]) * " x " * name(b.sets[4]) * ")"
 
 size(b::TensorProductSet) = map(length, b.sets)
 size(b::TensorProductSet, j::Int) = length(b.sets[j])
