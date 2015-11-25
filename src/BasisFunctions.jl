@@ -3,12 +3,13 @@ module BasisFunctions
 # We may import ApproxFun to use its implementation of FFT for BigFloat's
 # import ApproxFun
 
-using ArrayViews
+#using ArrayViews
+using FixedSizeArrays
 
 import Base: +, *, /, ==, |, &, -, \
 import Base: promote_rule, convert
 
-import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range
+import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range, collect
 
 import Base: getindex, setindex!, eltype
 
@@ -16,7 +17,7 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose, inv
 
-import Base: show, showcompact, call
+import Base: show, showcompact, call, convert
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,

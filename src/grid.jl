@@ -1,5 +1,6 @@
 # grid.jl
 
+"AbstractGrid is the supertype of all grids."
 abstract AbstractGrid{N,T}
 
 typealias AbstractGrid1d{T} AbstractGrid{1,T}
@@ -15,8 +16,11 @@ numtype{N,T}(::AbstractGrid{N,T}) = T
 numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
 numtype{G <: AbstractGrid}(::Type{G}) = numtype(super(G))
 
-eltype{N,T}(::AbstractGrid{N,T}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = T
+# The element type of a grid is the type returned by getindex.
+eltype{T}(::AbstractGrid{1,T}) = T
+eltype{N,T}(::AbstractGrid{N,T}) = Vec{N,T}
+eltype{T}(::Type{AbstractGrid{1,T}}) = T
+eltype{N,T}(::Type{AbstractGrid{N,T}}) = Vec{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(super(G))
 
 # Default dimension of the index is 1
@@ -30,39 +34,17 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 
 
-# Getindex allocates memory because it has to return an array (for now).
-# General implementation for abstract grids: allocate memory and call getindex!
-function getindex{N,T}(g::AbstractGrid{N,T}, idx...)
-	x = Array(T,N)
-	getindex!(x, g, idx...)
-	x
-end
-
-# getindex! is a bit silly in 1D, but provide it anyway because it could be called from general code
-#getindex!(g::AbstractGrid1d, x, i::Int) = (x[1] = g[i])
-
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
 # Default implementation of index iterator: construct a range
 eachindex(g::AbstractGrid) = 1:length(g)
 
 
-# We provide two ways of iterating over the elements of a grid.
-#
-# First approach:
+# Grid iteration:
 #	for x in grid
 #		do stuff...
 #	end
-# This allocates memory for each point in the grid.
-#
-# Second approach:
-#	for x in eachelement(grid)
-#		do stuff...
-#	end
-# This attempts to reuse the memory for x while iterating.
-
-# First approach follows:
-
+# Implemented by start, next and done.
 function start(g::AbstractGrid)
 	iter = eachindex(g)
 	(iter, start(iter))
@@ -78,46 +60,19 @@ end
 done(g::AbstractGrid, state) = done(state[1], state[2])
 
 
-# For the second approach we need a type to store reusable memory for x.
-immutable GridIterator{N,T,G <: AbstractGrid,ITER}
-	grid		::	G
-	griditer	::	ITER
-	x			::	Array{T,1}
-end
-
-function GridIterator{N,T}(grid::AbstractGrid{N,T})
-	iter = eachindex(grid)
-	x = zeros(T,N)
-	GridIterator{N,T,typeof(grid),typeof(iter)}(grid, iter, x)
-end
-
-eachelement(grid::AbstractGrid) = GridIterator(grid)
-
-start(iter::GridIterator) = start(iter.griditer)
-
-function next(iter::GridIterator, state)
-	(i,state) = next(iter.griditer, state)
-	getindex!(iter.x, iter.grid, i)
-	(iter.x, state)
-end
-
-function next(iter::GridIterator{1}, state)
-	(i,state) = next(iter.griditer, state)
-	x = getindex(iter.grid, i)
-	(x, state)
-end
-
-done(iter::GridIterator, state) = done(iter.griditer, state)
 
 
-collect(grid::AbstractGrid) = [x for x in eachelement(grid)]
+"""
+A TensorProductGrid represents the tensor product of other grids.
 
+immutable TensorProductGrid{TG,GN,LEN,N,T} <: AbstractGrid{N,T}
 
-# A TensorProductGrid represents the tensor product of other grids.
-# Parameter TG is a tuple of (grid) types.
-# Parameter GN is a tuple of the dimensions of each of the grids.
-# Parameter LEN is the length of TG and GN (the index dimension).
-# Parametes N and T are the total dimension and numeric type of this grid.
+Parameters:
+- Parameter TG is a tuple of (grid) types.
+- Parameter GN is a tuple of the dimensions of each of the grids.
+- Parameter LEN is the length of TG and GN (the index dimension).
+- Parametes N and T are the total dimension and numeric type of this grid.
+"""
 immutable TensorProductGrid{TG,GN,LEN,N,T} <: AbstractGrid{N,T}
 	grids	::	TG
 
@@ -126,7 +81,17 @@ end
 
 TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),map(dim,grids),length(grids),sum(map(dim, grids)),numtype(grids[1])}(grids)
 
+TensorProductGrid(grid1::TensorProductGrid, grid2::TensorProductGrid) = TensorProductGrid(grid1.grids..., grid2.grids...)
+
+TensorProductGrid(grid1::AbstractGrid, grid2::TensorProductGrid) = TensorProductGrid(grid1, grid2.grids...)
+TensorProductGrid(grid1::TensorProductGrid, grid2::AbstractGrid) = TensorProductGrid(grid1.grids..., grid2)
+
 tensorproduct(g::AbstractGrid, n) = TensorProductGrid([g for i=1:n]...)
+
+# Use the Latex \otimes operator for constructing a tensor product grid
+⊗(g1::AbstractGrid, g2::AbstractGrid) = TensorProductGrid(g1, g2)
+⊗(g1::AbstractGrid, g::AbstractGrid...) = TensorProductGrid(g1, g...)
+
 
 index_dim{TG,GN,LEN,N,T}(::TensorProductGrid{TG,GN,LEN,N,T}) = LEN
 index_dim{TG,GN,LEN,N,T}(::Type{TensorProductGrid{TG,GN,LEN,N,T}}) = LEN
@@ -159,28 +124,27 @@ end
     :(@nref $LEN g d->index[d])
 end
 
+# This first set of routines applies when LEN ≠ N
+# TODO: optimize with generated functions to remove all splatting.
+getindex{TG,GN,N,T}(g::TensorProductGrid{TG,GN,1,N,T}, i1::Int) = Vec{N,T}(g.grids[1][i1]...)
+getindex{TG,GN,N,T}(g::TensorProductGrid{TG,GN,2,N,T}, i1::Int, i2) =
+	Vec{N,T}(g.grids[1][i1]..., g.grids[2][i2]...)
+getindex{TG,GN,N,T}(g::TensorProductGrid{TG,GN,3,N,T}, i1::Int, i2, i3) =
+	Vec{N,T}(g.grids[1][i1]..., g.grids[2][i2]..., g.grids[3][i3]...)
+getindex{TG,GN,N,T}(g::TensorProductGrid{TG,GN,4,N,T}, i1::Int, i2, i3, i4) =
+	Vec{N,T}(g.grids[1][i1]..., g.grids[2][i2]..., g.grids[3][i3]..., g.grids[4][i4]...)
+
+# These routines apply when LEN = N
+getindex{TG,GN,T}(g::TensorProductGrid{TG,GN,2,2,T}, i1::Int, i2) =
+	Vec{2,T}(g.grids[1][i1], g.grids[2][i2])
+getindex{TG,GN,T}(g::TensorProductGrid{TG,GN,3,3,T}, i1::Int, i2, i3) =
+	Vec{3,T}(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3])
+getindex{TG,GN,T}(g::TensorProductGrid{TG,GN,4,4,T}, i1::Int, i2, i3, i4) =
+	Vec{4,T}(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3], g.grids[4][i4])
+
 ind2sub(g::TensorProductGrid, idx::Int) = ind2sub(size(g), idx)
 sub2ind(G::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
-getindex!(x, g::TensorProductGrid, idx::Int) = getindex!(x, g, ind2sub(g,idx))
-
-getindex!(x, g::TensorProductGrid, idxt::Int...) = getindex!(x, g, idxt)
-
-function getindex!{TG,GN,LEN}(x, g::TensorProductGrid{TG,GN,LEN}, idx::Union{CartesianIndex{LEN},NTuple{LEN,Int}})
-	l = 0
-    for i = 1:LEN
-    	z = grid(g, i)[idx[i]]	# FIX: this allocates memory if GN[i] > 1
-    	for j = 1:GN[i]
-    		l += 1
-    		x[l] = z[j]
-    	end
-    end
-end
-
-
-# Use the Latex \otimes operator for constructing a tensor product grid
-⊗(g1::AbstractGrid, g2::AbstractGrid) = TensorProductGrid(g1, g2)
-⊗(g1::AbstractGrid, g::AbstractGrid...) = TensorProductGrid(g1, g...)
 
 
 

@@ -195,7 +195,7 @@ support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
 
 function call(b::FunctionSet, grid::AbstractGrid, i::Int)
-    result = zeros(promote_type(eltype(b),eltype(grid)), size(grid))
+    result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
     call!(result, b, grid, i)
 end
 
@@ -230,6 +230,12 @@ Evaluate an expansion given by the set of coefficients `coef` in the point x.
     end
 end
 
+@generated function call_expansion{N,T,S}(b::FunctionSet{N,T}, coef, x::Vec{N,S})
+    xargs = [:(x[$d]) for d = 1:length(x)]
+    quote
+        call_expansion(b, coef, $(xargs...))
+    end
+end
 
 # Vectorized method. Revisit once there is a standard way in Julia to treat
 # vectorized function that is also fast.
@@ -245,28 +251,16 @@ end
 end
 
 function call_expansion(b::FunctionSet, coef, grid::AbstractGrid)
-    T = promote_type(eltype(coef),eltype(grid))
+    T = promote_type(eltype(coef),numtype(grid))
     result = Array(T, size(grid))
     call_expansion!(result, b, coef, grid)
 end
 
 
 
+
 # This function is slow - better to use transforms for special cases if available.
 function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{N})
-    @assert size(result) == size(grid)
-
-    x = zeros(eltype(grid), N)
-    for i in eachindex(grid)
-        getindex!(x, grid, i)
-        result[i] = call_expansion(b, coef, x...)
-    end
-    result
-end
-
-# The 1d version is different because getindex! is not supported.
-# TODO: find a way to get rid of getindex!. FixedSizeArray's?
-function call_expansion!(result, b::FunctionSet1d, coef, grid::AbstractGrid1d)
     @assert size(result) == size(grid)
 
     for i in eachindex(grid)

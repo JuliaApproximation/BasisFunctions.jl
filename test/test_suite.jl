@@ -409,7 +409,7 @@ function test_grids(T)
 
     z = zero(T)
     i = 0
-    for x in eachelement(g)
+    for x in g
         z = z + x
         i += 1
     end
@@ -448,7 +448,7 @@ function test_grids(T)
 
     z = zero(T)
     i = 0
-    for x in eachelement(g)
+    for x in g
         z = z + x
         i += 1
     end
@@ -491,7 +491,7 @@ function test_grids(T)
 
     z = zero(T)
     i = 0
-    for x in eachelement(g)
+    for x in g
         z = z + sum(x)
         i += 1
     end
@@ -511,12 +511,14 @@ function test_grids(T)
     g3 = g ⊗ g2
     idx1 = 5
     idx2 = 7
-    x = g3[idx1,idx2]
-    x1 = g[idx1]
+    idx3 = 4
+    x = g3[idx1,idx2,idx3]
+    x1 = g1[idx1]
     x2 = g2[idx2]
-    @test x[1] ≃ x1[1]
-    @test x[2] ≃ x1[2]
-    @test x[3] ≃ x2
+    x3 = g2[idx3]
+    @test x[1] ≃ x1
+    @test x[2] ≃ x2
+    @test x[3] ≃ x3
 
 end
 

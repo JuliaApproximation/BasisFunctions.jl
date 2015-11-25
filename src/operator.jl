@@ -78,6 +78,8 @@ apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operat
 (*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
 
 
+collect(op::AbstractOperator) = matrix(op)
+
 function matrix(op::AbstractOperator)
     a = Array(eltype(op), size(op))
     matrix!(op, a)
@@ -91,13 +93,15 @@ function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
     @assert (m,n) == size(a)
     
     r = zeros(T,n)
+    r_src = reshape(r, size(src(op)))
     s = zeros(T,m)
+    s_dest = reshape(s, size(dest(op)))
     for i = 1:n
         if (i > 1)
             r[i-1] = zero(T)
         end
         r[i] = one(T)
-        apply!(op, reshape(s, size(dest(op))), reshape(r, size(src(op))))
+        apply!(op, s_dest, r_src)
         a[:,i] = s
     end
 end
