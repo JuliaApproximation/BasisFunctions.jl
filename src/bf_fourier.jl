@@ -217,7 +217,7 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src)/length(coef_src))
+apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src)/sqrt(length(coef_src)))
 
 
 immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -225,8 +225,9 @@ immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,
 	dest	::	DEST
 end
 
-apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
-
+# Why was the below line necessary?
+## apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
+apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = ifft(coef_src)*sqrt(length(coef_src)) )
 
 ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
 ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))

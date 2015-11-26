@@ -24,11 +24,11 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     
 end
 
-function TensorProductOperator(operators...)
-        ELT = eltype(operators...)
+TensorProductOperator(operators...) = TensorProductOperator(eltype(operators...),operators...)
+    
+function TensorProductOperator(ELT::DataType, operators...)
         TO = typeof(operators)
         ON = length(operators)
-
         tp_src = TensorProductSet(map(src, operators)...)
         tp_dest = TensorProductSet(map(dest, operators)...)
         SRC = typeof(tp_src)
@@ -59,7 +59,7 @@ tensorproduct(op::AbstractOperator, n) = TensorProductOperator([op for i=1:n]...
 
 numtype(op::TensorProductOperator) = numtype(operator(op,1))
 
-eltype(op::TensorProductOperator) = eltype(operators(op)...)
+eltype{ELT}(op::TensorProductOperator{ELT}) = ELT
 
 # Element-wise src and dest functions
 src(op::TensorProductOperator, j::Int) = set(op.src, j)
@@ -93,7 +93,6 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
     M2,N2 = size(op[2])
     # coef_src has size (N1,N2)
     # coef_dest has size (M1,M2)
-
     intermediate = op.scratch[1]
     src_j = op.src_scratch[1]
     dest_j = op.dest_scratch[1]

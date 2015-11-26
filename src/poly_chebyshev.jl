@@ -126,25 +126,29 @@ abstract DiscreteChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransform{
 is_inplace(op::DiscreteChebyshevTransformFFTW) = True()
 
 
-immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
+immutable FastChebyshevTransformFFTW{SRC,DEST,ELT} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_dct!(zeros(ELT,size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
-FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastChebyshevTransformFFTW{SRC,DEST}(src, dest)
+FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST, T) = FastChebyshevTransformFFTW{SRC,DEST,T}(src, dest)
 
-immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
+eltype{SRC,DEST,ELT}(f::FastChebyshevTransformFFTW{SRC,DEST,ELT})=ELT
+
+immutable InverseFastChebyshevTransformFFTW{SRC,DEST,ELT} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
 	src		::	SRC
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastChebyshevTransformFFTW(src, dest) = new(src, dest, plan_idct!(zeros(ELT,size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
-InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest)
+InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST, T) = InverseFastChebyshevTransformFFTW{SRC,DEST, T}(src, dest)
+
+eltype{SRC,DEST,ELT}(f::InverseFastChebyshevTransformFFTW{SRC,DEST,ELT})=ELT
 
 # One implementation for forward and inverse transform in-place: call the plan. Added constant to undo the normalisation.
 # apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
@@ -164,7 +168,7 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src)*sqrt(length(dest))/2^(dim(src)))
+apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
 
 
 immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
@@ -172,24 +176,30 @@ immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{
 	dest	::	DEST
 end
 
-apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
+#again, why is this necessary?
+## apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = idct(coef_src) * sqrt(length(dest))/2^(dim(src)))
+apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
 
 
 
 # TODO: restrict the grid of grid space here
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Float64}) = FastChebyshevTransformFFTW(src,dest)
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Float64}) = FastChebyshevTransformFFTW(src,dest, Float64)
 
-_forward_chebyshev_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{T}) = FastChebyshevTransform(src,dest)
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest, Complex{Float64})
+
+_forward_chebyshev_operator{T <: Number}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{T}) = FastChebyshevTransform(src,dest)
 
 
 
 transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) = _backward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Float64}) = InverseFastChebyshevTransformFFTW(src,dest)
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Float64}) = InverseFastChebyshevTransformFFTW(src,dest, Float64)
 
-_backward_chebyshev_operator{T <: AbstractFloat}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest,Complex{Float64})
+
+_backward_chebyshev_operator{T <: Number}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
 
 
 # TODO: experimentally, this composite operator looks like it does the trick, up to an alternating flip.
