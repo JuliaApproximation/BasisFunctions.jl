@@ -6,6 +6,7 @@ module BasisFunctions
 #using ArrayViews
 using FixedSizeArrays
 using Debug
+using ApproxFun
 
 import Base: +, *, /, ==, |, &, -, \
 import Base: promote_rule, convert
