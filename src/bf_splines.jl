@@ -80,7 +80,7 @@ end
 
 
 
-function call{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
+function call_element{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 	x < left(b) && throw(BoundsError())
 	x > right(b) && throw(BoundsError())
 	spline_eval(SplineDegree{K}, natural_index(b, idx), x, b.a, b.b, stepsize(b))
@@ -125,7 +125,7 @@ stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 
 grid(b::NaturalSplineBasis) = EquispacedGrid(b.n, b.a, b.b)
 
-call{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
+call_element{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
 """
@@ -175,7 +175,7 @@ left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * ste
 right{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - ((K+1) >> 1) + K) * stepsize(b)
 
 
-function call{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
+function call_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 	checkbounds(b, idx)
 	while x < left(b)
 		x = x + period(b)

@@ -8,10 +8,13 @@ using FixedSizeArrays
 using Debug
 using ApproxFun
 
-import Base: +, *, /, ==, |, &, -, \
+import Base: +, *, /, ==, |, &, -, \, ^
+
 import Base: promote_rule, convert
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range, collect
+
+import Base: cos, sin, exp, log
 
 import Base: getindex, setindex!, eltype
 
@@ -70,6 +73,9 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 # from approximation.jl
 export approximate
 
+# from augmented_set.jl
+export Cos, Sin, Exp, Log, ExpIOX, PowerFunction
+export ⊕, set, fun
 
 # from bf_fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
@@ -133,6 +139,8 @@ include("generic_operators.jl")
 include("discretegridspace.jl")
 
 include("approximation.jl")
+
+include("augmented_set.jl")
 
 include("bf_fourier.jl")
 

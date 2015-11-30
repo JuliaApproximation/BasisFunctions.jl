@@ -61,8 +61,8 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
-call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
-call{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
+call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
+call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
 
 
 # TODO: do we need these two routines below? Are they different from the generic ones?

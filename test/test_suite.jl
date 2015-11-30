@@ -39,20 +39,6 @@ function delimit(s::AbstractString)
     println("############")
 end
 
-# Approximate equality
-approx(a, b, eps) = abs(b-a) < eps
-
-# Strong equality: within 10 times eps
-# (symbol is \simeq)
-≃(a,b) = ≃(promote(a,b)...)
-≃{T <: AbstractFloat}(a::T,b::T) = approx(a, b, 10eps(T))
-≃{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10eps(T))
-
-# Weaker equality: within 10 times sqrt(eps)
-# (symbol is \approx)
-≈(a,b) = ≈(promote(a,b)...)
-≈{T <: AbstractFloat}(a::T, b::T) = approx(a, b, 10*sqrt(eps(T)))
-≈{T <: AbstractFloat}(a::Complex{T}, b::Complex{T}) = approx(a, b, 10*sqrt(eps(T)))
 
 ##########
 # Testing
@@ -105,7 +91,7 @@ function test_generic_interface(basis)
 
     # Does evaluating an expansion equal the sum of coefficients times basis function calls?
     e = SetExpansion(basis, coef)
-    @test e(x) ≃ sum([coef[i]*basis(i,x) for i in eachindex(coef)])
+    @test e(x) ≈ sum([coef[i]*basis(i,x) for i in eachindex(coef)])
 
     # Verify evaluation on the associated grid
     if BasisFunctions.has_grid(basis)
@@ -121,6 +107,10 @@ function test_generic_interface(basis)
     grid2 = EquispacedGrid(n+3, a, b)
     z = e(grid2)
     @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+
+    idx = length(basis) >> 1
+    z = basis(idx, grid2)
+    @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
 
     # Test evaluation on an array
     x = T[a + rand()*(b-a) for i in 1:10]
@@ -146,7 +136,7 @@ function test_tensor_sets(T)
     x1 = T(2//10)
     x2 = T(3//10)
     x3 = T(4//10)
-    @test bf(x1, x2, x3) ≃ call(a, 3, x1) * call(b, 4, x2) * call(c, 5, x3)
+    @test bf(x1, x2, x3) ≈ call(a, 3, x1) * call(b, 4, x2) * call(c, 5, x3)
 
     # Can you iterate over the product set?
     z = zero(T)
@@ -230,7 +220,7 @@ function test_fourier_series(T)
     # Is the 0-index basis function the constant 1?
     freq = 0
     idx = frequency2idx(fb, freq)
-    @test fb(idx, x) ≃ 1
+    @test fb(idx, x) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
@@ -248,7 +238,7 @@ function test_fourier_series(T)
     @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
     # Check type promotion: evaluate at an integer and at a rational point
-    for i in [0 1]
+    for i in [1 2]
         @test typeof(call(fb, i, 0)) == Complex{T}
         @test typeof(call(fb, i, 1//2)) == Complex{T}
     end
@@ -265,15 +255,15 @@ function test_fourier_series(T)
     e2 = SetExpansion(b2, E2*coef)
     e3 = SetExpansion(b3, E3*coef)
     x = T(2//10)
-    @test e1(x) ≃ e2(x)
-    @test e1(x) ≃ e3(x)
+    @test e1(x) ≈ e2(x)
+    @test e1(x) ≈ e3(x)
 
 
     # Does indexing work as intended?
     idx = Int(round(rand()*length(fb)))
     bf = fb[idx]
     x = T(2//10)
-    @test bf(x) ≃ call(fb, idx, x)
+    @test bf(x) ≈ call(fb, idx, x)
 
     # Can you iterate over the whole set?
     z = zero(T)
@@ -312,14 +302,14 @@ function test_fourier_series(T)
     # Is the 0-index basis function the constant 1?
     freq = 0
     idx = frequency2idx(b, freq)
-    @test call(b, idx, T(2//10)) ≃ 1
+    @test call(b, idx, T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(b, freq)
     x = T(2//10)
     y = (x+1)/2
-    @test call(b, idx, x) ≃ exp(2*T(pi)*1im*freq*y)
+    @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
@@ -327,7 +317,7 @@ function test_fourier_series(T)
     e = SetExpansion(b, coef)
     x = T(2//10)
     y = (x+1)/2
-    @test e(x) ≃ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
+    @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
     g = grid(b)
     result = e(g)
@@ -345,8 +335,8 @@ function test_fourier_series(T)
     e2 = SetExpansion(b2, E2*coef)
     e3 = SetExpansion(b3, E3*coef)
     x = T(2//10)
-    @test e1(x) ≃ e2(x)
-    @test e1(x) ≃ e3(x)
+    @test e1(x) ≈ e2(x)
+    @test e1(x) ≈ e3(x)
 
     # Restriction
     n = 14
@@ -393,8 +383,8 @@ function test_grids(T)
     g = EquispacedGrid(len, a, b)
 
     idx = 5
-    @test g[idx] ≃ a + (idx-1) * (b-a)/(len-1)
-    @test g[len] ≃ b
+    @test g[idx] ≈ a + (idx-1) * (b-a)/(len-1)
+    @test g[len] ≈ b
     @test_throws BoundsError g[len+1] == b
 
     # Test iterations
@@ -433,8 +423,8 @@ function test_grids(T)
     g = PeriodicEquispacedGrid(len, a, b)
 
     idx = 5
-    @test g[idx] ≃ a + (idx-1) * (b-a)/len
-    @test g[len] ≃ b - stepsize(g)
+    @test g[idx] ≈ a + (idx-1) * (b-a)/len
+    @test g[len] ≈ b - stepsize(g)
     @test_throws BoundsError g[len+1] == b
 
     z = zero(T)
@@ -477,8 +467,8 @@ function test_grids(T)
     x1 = g1[idx1]
     x2 = g2[idx2]
     x = g[idx1,idx2]
-    @test x[1] ≃ x1
-    @test x[2] ≃ x2
+    @test x[1] ≈ x1
+    @test x[2] ≈ x2
 
     z = zero(T)
     i = 0
@@ -516,9 +506,9 @@ function test_grids(T)
     x1 = g1[idx1]
     x2 = g2[idx2]
     x3 = g2[idx3]
-    @test x[1] ≃ x1
-    @test x[2] ≃ x2
-    @test x[3] ≃ x3
+    @test x[1] ≈ x1
+    @test x[2] ≈ x2
+    @test x[3] ≈ x3
 
 end
 
@@ -532,7 +522,7 @@ function test_ops(T)
     bc = ChebyshevBasis{T}(12, -T(1), T(1))
 
     x1 = T(4//10)
-    @test bc(4, x1) ≃ cos(3*acos(x1))
+    @test bc(4, x1) ≈ cos(3*acos(x1))
 
 
     delimit("Legendre polynomials")

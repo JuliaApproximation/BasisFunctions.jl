@@ -60,7 +60,7 @@ end
 
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-call(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
+call_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 
 

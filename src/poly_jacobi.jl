@@ -11,7 +11,6 @@ end
 
 name(b::JacobiBasis) = "Jacobi OPS"
 
-
 JacobiBasis{T}(n::Int, ::Type{T}) = JacobiBasis{T}(n)
 
 JacobiBasis{T <: Number}(n::Int, α::T, β::T) = JacobiBasis{T}(n, α, β)
