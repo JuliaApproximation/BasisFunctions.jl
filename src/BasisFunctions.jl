@@ -5,6 +5,7 @@ module BasisFunctions
 
 #using ArrayViews
 using FixedSizeArrays
+using Debug
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
