@@ -16,7 +16,7 @@ before_install:
 script:
   - julia -e 'Pkg.init()'
   - julia -e 'Pkg.clone("https://github.com/SimonDanisch/FixedSizeArrays.jl")'
-  - julia -e 'Pkg.clone("https://github.com/SimonDanisch/ApproxFun.jl")'
+  - julia -e 'Pkg.clone("https://github.com/ApproxFun/ApproxFun.jl")'
   - julia -e 'Pkg.clone("https://github.com/toivoh/Debug.jl")'
   - julia -e 'Pkg.clone(pwd())'
   - julia --code-coverage=user --inline=no test/runtests.jl
