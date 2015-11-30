@@ -84,9 +84,9 @@ frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
+call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
 
-call{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
+call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
 						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
 

@@ -53,7 +53,7 @@ mapx(s::LinearMappedSet, x) = map_linear(x, s.a, s.b, left(set(s)), right(set(s)
 
 imapx(s::LinearMappedSet, y) = imap_linear(y, s.a, s.b, left(set(s)), right(set(s)))
 
-call(s::LinearMappedSet, idx::Int, y) = call(set(s), idx, imapx(s,y))
+call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = LinearMappedGrid(grid(set(s)), left(s), right(s))
 

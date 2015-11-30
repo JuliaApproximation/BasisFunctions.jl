@@ -169,7 +169,7 @@ done(s::FunctionSet, state) = done(state[1], state[2])
 
 # Provide this implementation which Base does not include anymore
 # TODO: hook into the Julia checkbounds system, once such a thing is developed.
-checkbounds(i::Int, j::Int) = 1 <= j <= i
+checkbounds(i::Int, j::Int) = (1 <= j <= i) ? nothing : throw(BoundsError())
 
 checkbounds(s::FunctionSet, i) = checkbounds(length(s), i)
 
@@ -194,23 +194,27 @@ end
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
 
-function call(b::FunctionSet, grid::AbstractGrid, i::Int)
-    result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
-    call!(result, b, grid, i)
+function call(b::FunctionSet, i, x...)
+    checkbounds(b, i)
+    call_element(b, i, x...)
 end
 
-function call!(result, b::FunctionSet, grid::AbstractGrid, i::Int)
+
+# The order of the arguments here should be different: it is more consistent to have i::Int
+# before the grid. But that leads to too many ambiguity warnings...
+function call(b::FunctionSet, i::Int, grid::AbstractGrid)
+    result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
+    call!(result, b, i, grid)
+end
+
+function call!(result, b::FunctionSet, i::Int, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
-    for i in eachindex(grid)
-        result[i] = call(b, i, grid[i]...)
+    for k in eachindex(grid)
+        result[k] = call(b, i, grid[k]...)
     end
     result
 end
-
-call_type{S <: Number}(b::FunctionSet, x::S, y::S...) = promote_type(eltype(b), S)
-call_type{S <: Number}(b::FunctionSet, x::AbstractArray{S}, xs::AbstractArray{S}...) = promote_type(eltype(b), S)
-
 
 # This method to remove an ambiguity warning
 call_expansion(b::FunctionSet, coef) = nothing

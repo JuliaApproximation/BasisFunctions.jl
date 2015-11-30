@@ -1,6 +1,6 @@
 # setfunction.jl
 
-# A SetFunction represents a function from a set: it is the combination of a set and an index of that set.
+"A SetFunction represents a function from a set: it is the combination of a set and an index of that set."
 immutable SetFunction{S <: FunctionSet,I}
     set     ::  S
     idx     ::  I   # The index can be any type, but multi-indices are stored as tuples
