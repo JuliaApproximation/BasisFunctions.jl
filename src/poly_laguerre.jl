@@ -21,9 +21,6 @@ instantiate{T}(::Type{LaguerreBasis}, n, ::Type{T}) = LaguerreBasis{T}(n)
 
 name(b::LaguerreBasis) = "Laguerre series"
 
-isreal(b::LaguerreBasis) = True()
-isreal{B <: LaguerreBasis}(::Type{B}) = True
-
 left(b::LaguerreBasis) = 0
 left(b::LaguerreBasis, idx) = left(b)
 

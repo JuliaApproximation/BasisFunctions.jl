@@ -18,9 +18,6 @@ instantiate{T}(::Type{LegendreBasis}, n, ::Type{T}) = LegendreBasis{T}(n)
 
 name(b::LegendreBasis) = "Legendre series"
 
-isreal(b::LegendreBasis) = True()
-isreal{B <: LegendreBasis}(::Type{B}) = True
-
 left(b::LegendreBasis) = -1
 left(b::LegendreBasis, idx) = -1
 

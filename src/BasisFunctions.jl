@@ -37,7 +37,8 @@ export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate
 export natural_index, logical_index
-export is_basis, is_frame
+export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
+export True, False
 
 # from setfunction.jl
 export SetFunction, index

@@ -15,8 +15,7 @@ immutable Cn{T} <: DiscreteVectorSpace{T}
     length  ::  Int
 end
 
-isreal(::Cn) = False()
-isreal{T}(::Type{Cn{T}}) = False
+isreal{B <: Cn}(::Type{B}) = False
 
 
 

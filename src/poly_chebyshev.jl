@@ -266,9 +266,6 @@ instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisS
 
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 
-isreal(b::ChebyshevBasisSecondKind) = True()
-isreal{B <: ChebyshevBasisSecondKind}(::Type{B}) = True
-
 
 left{T}(b::ChebyshevBasisSecondKind{T}) = -one(T)
 left{T}(b::ChebyshevBasisSecondKind{T}, idx) = left(b)

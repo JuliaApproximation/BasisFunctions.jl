@@ -6,13 +6,13 @@ abstract AbstractMappedSet{S,N,T} <: FunctionSet{N,T}
 
 set(s::AbstractMappedSet) = s.set
 
-# Delegate methods to the underlying set
-for op in (:is_basis, :isreal, :length, :eltype, :index_dim, :is_orthogonal)
+# Delegation of methods
+for op in (:length,)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
-# Delegate methods invoked with a type to the underlying set
-for op in (:is_basis, :isreal, :eltype, :index_dim, :is_orthogonal)
+# Delegation of type methods
+for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
     @eval $op{S,N,T}(::Type{AbstractMappedSet{S,N,T}}) = $op(S)
     @eval $op{S <: AbstractMappedSet}(::Type{S}) = $op(super(S))
 end
@@ -24,19 +24,25 @@ end
 
 
 
+
 """
 A set defined via a linear map.
 """
-immutable LinearMappedSet{S <: FunctionSet1d,T} <: AbstractMappedSet{S,1,T}
+immutable LinearMappedSet{S <: FunctionSet1d,ELT,T} <: AbstractMappedSet{S,1,T}
     set     ::  S
-    a       ::  T
-    b       ::  T
+    a       ::  ELT
+    b       ::  ELT
 
     LinearMappedSet(set::FunctionSet1d{T}, a::T, b::T) = new(set, a, b)
 end
 # The underlying set s should support left(s) and right(s).
 
-LinearMappedSet{T}(s::FunctionSet1d{T}, a, b) = LinearMappedSet{typeof(s),T}(s, T(a), T(b))
+function LinearMappedSet{T,S}(s::FunctionSet1d{T}, a::S, b::S)
+    ELT = promote_type(T,S)
+    LinearMappedSet{typeof(s),ELT,T}(s, a, b)
+end
+
+eltype{S,ELT,T}(::Type{LinearMappedSet{S,ELT,T}}) = ELT
 
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
@@ -55,7 +61,7 @@ imapx(s::LinearMappedSet, y) = imap_linear(y, s.a, s.b, left(set(s)), right(set(
 
 call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
-grid(s::LinearMappedSet) = LinearMappedGrid(grid(set(s)), left(s), right(s))
+grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
 
 "Rescale a function set to an interval [a,b]."
@@ -64,22 +70,18 @@ rescale(s::FunctionSet1d, a, b) = LinearMappedSet(s, a, b)
 # avoid multiple linear mappings
 rescale(s::LinearMappedSet, a, b) = LinearMappedSet(set(s), a, b)
 
-grid(s::LinearMappedSet) = rescale(grid(set(s)), s.a, s.b)
-
 
 
 # Preserve tensor product structure
-function rescale{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}, a::AbstractArray, b::AbstractArray)
-    scaled_sets = [ rescale(set(s,i), a[i], b[i]) for i in 1:LEN]
+function rescale{TS,SN,N}(s::TensorProductSet{TS,SN,N,N}, a::Vec{N}, b::Vec{N})
+    scaled_sets = [ rescale(set(s,i), a[i], b[i]) for i in 1:N]
     TensorProductSet(scaled_sets...)
 end
 
 
-(*){T <: Number}(s::FunctionSet1d, a::T) = rescale(s, a*left(s), a*right(s))
-(*){T <: Number}(a::T, s::FunctionSet1d) = s*a
+(*){T <: Number}(a::T, s::FunctionSet1d) = rescale(s, a*left(s), a*right(s))
 
-(+){T <: Number}(s::FunctionSet1d, a::T) = rescale(s, a+left(s), a+right(s))
-(+){T <: Number}(a::T, s::FunctionSet1d) = s+a
+(+){T <: Number}(a::T, s::FunctionSet1d) = rescale(s, a+left(s), a+right(s))
 
 
 

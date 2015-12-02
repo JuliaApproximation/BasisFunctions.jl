@@ -3,11 +3,17 @@
 using Base.Cartesian
 
 
-# A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
-# Parameter TS is a tuple of types, representing the (possibly different) types of the sets.
-# Parameter SN is a tuple of the dimensions of these types.
-# LEN is the length of the tuples S and N (the index dimension).
-# N is the total dimension of the corresponding space and T the numeric type.
+"""
+A TensorProductSet is itself a set: the tensor product of length(SN) sets with dimension SN[i].
+
+immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
+
+Parameters:
+- TS is a tuple of types, representing the (possibly different) types of the sets.
+- SN is a tuple of the dimensions of these types.
+- LEN is the length of the tuples S and N (the index dimension).
+- N is the total dimension of the corresponding space and T the numeric type.
+"""
 immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
     sets   ::  TS
 
@@ -21,16 +27,25 @@ TensorProductSet(sets::FunctionSet...) = TensorProductSet{typeof(sets),map(dim,s
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
-index_dim{TS,SN,LEN,N,T}(::TensorProductSet{TS,SN,LEN,N,T}) = LEN
 index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
-index_dim{B <: TensorProductSet}(::Type{B}) = index_dim(super(B))
 
-for op in (:is_basis, :isreal)
-    @eval $op(s::TensorProductSet) = reduce(&, map($op, sets(s)))
-    # line below does not work because you can't map over the tuple TS
-    # @eval $op{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = reduce(&, map($op, TS))
+#An efficient way to access elements of a Tuple type using index j
+@generated function tuple_index{T <: Tuple}(::Type{T}, j)
+    :($T.parameters[j])
 end
 
+for op in (:is_basis, :is_frame, :isreal, :is_orthogonal, :is_biorthogonal)
+    @eval $op(s::TensorProductSet) = reduce(&, map($op, sets(s)))
+    
+    # The lines below took some experimenting: you can't index into or map over Tuple types
+    @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,1,N,T}}) = $op(tuple_index(TS,1))
+    @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,2,N,T}}) =
+        $op(tuple_index(TS,1)) & $op(tuple_index(TS,2))
+    @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,3,N,T}}) =
+        $op(tuple_index(TS,1)) & $op(tuple_index(TS,2)) & $op(tuple_index(TS,3))
+    @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,4,N,T}}) =
+        $op(tuple_index(TS,1)) & $op(tuple_index(TS,2)) & $op(tuple_index(TS,3)) & $op(tuple_index(TS,4))
+end
 
 
 # It would be odd if the first method below was ever called, because LEN=1 makes

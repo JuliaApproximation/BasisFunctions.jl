@@ -16,9 +16,6 @@ instantiate{T}(::Type{HermiteBasis}, n, ::Type{T}) = HermiteBasis{T}(n)
 
 name(b::HermiteBasis) = "Hermite series"
 
-isreal(b::HermiteBasis) = True()
-isreal{B <: HermiteBasis}(::Type{B}) = True
-
 left{T}(b::HermiteBasis{T}) = -convert(T, Inf)
 left{T}(b::HermiteBasis{T}, idx) = left(b)
 
