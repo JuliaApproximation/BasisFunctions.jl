@@ -28,7 +28,7 @@ TensorProductOperator(operators...) = TensorProductOperator(eltype(operators...)
     
 function TensorProductOperator(ELT::DataType, operators...)
         TO = typeof(operators)
-        ON = length(operators)
+    ON = length(operators)
         tp_src = TensorProductSet(map(src, operators)...)
         tp_dest = TensorProductSet(map(dest, operators)...)
         SRC = typeof(tp_src)

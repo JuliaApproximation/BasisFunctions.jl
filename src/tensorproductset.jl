@@ -14,9 +14,29 @@ immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
     TensorProductSet(sets::Tuple) = new(sets)
 end
 
-TensorProductSet(sets::FunctionSet...) = TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
+function TensorProductSet(sets::FunctionSet...)
+    sets = flattensets(sets...)
+    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
+end
 
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
+
+# Expand tensorproductsets in a tuple of sets to their individual sets.
+@debug function flattensets(sets::FunctionSet...)
+    flattened=FunctionSet[]
+    for i=1:length(sets)
+        appendsets(flattened,sets[i])
+    end
+    flattened=tuple(flattened...)
+end
+
+appendsets(flattened::Array{FunctionSet,1},f::FunctionSet) = append!(flattened,[f])
+
+function appendsets(flattened::Array{FunctionSet,1},f::TensorProductSet)
+    for j=1:dim(f)
+        append!(flattened,[set(f,j)])
+    end
+end
 
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
@@ -50,6 +70,7 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range])
+sets(b::FunctionSet) = b
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
 grid(b::TensorProductSet, j::Int) = grid(set(b,j))
