@@ -22,7 +22,7 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose, inv
 
-import Base: show, showcompact, call, convert
+import Base: show, showcompact, call, convert, similar
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
