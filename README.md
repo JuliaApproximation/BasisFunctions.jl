@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/daanhb/BasisFunctions.jl.svg?branch=master)](https://travis-ci.org/daanhb/BasisFunctions.jl)
+
 # BasisFunctions.jl
 ===================
 
