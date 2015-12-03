@@ -18,15 +18,6 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 
 name(b::FourierBasis) = "Fourier series"
 
-isreal(b::FourierBasis) = False()
-isreal{B <: FourierBasis}(::Type{B}) = False
-
-iseven{EVEN}(::FourierBasis{EVEN}) = EVEN
-iseven{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = EVEN
-
-isodd{EVEN}(::FourierBasis{EVEN}) = ~EVEN
-isodd{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = ~EVEN
-
 
 FourierBasis{T}(n, a::T, b::T) = FourierBasis{iseven(n),T}(n, a, b)
 
@@ -43,6 +34,23 @@ fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
+
+similar{T}(b::FourierBasisEven{T}, n = length(b)) = fourier_basis_even(n, left(b), right(b))
+similar{T}(b::FourierBasisOdd{T}, n = length(b)) = fourier_basis_odd(n, left(b), right(b))
+
+# Traits
+
+isreal{B <: FourierBasis}(::Type{B}) = False
+
+iseven{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = EVEN
+iseven(b::FourierBasis) = iseven(typeof(b))
+
+isodd{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = ~EVEN
+isodd(b::FourierBasis) = isodd(typeof(b))
+
+is_orthogonal{B <: FourierBasis}(::Type{B}) = True
+is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
+
 
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true

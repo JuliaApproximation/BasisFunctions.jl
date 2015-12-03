@@ -19,9 +19,6 @@ instantiate{T}(::Type{JacobiBasis}, n, ::Type{T}) = JacobiBasis{T}(n)
 
 name(b::JacobiBasis) = "Jacobi OPS"
 
-isreal(b::JacobiBasis) = True()
-isreal{B <: JacobiBasis}(::Type{B}) = True
-
 left(b::JacobiBasis) = -1
 left(b::JacobiBasis, idx) = -1
 

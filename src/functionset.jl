@@ -32,40 +32,59 @@ typealias AbstractFrame1d{T} AbstractFrame{1,T}
 typealias AbstractBasis1d{T} AbstractBasis{1,T}
 
 "The dimension of the set."
-dim{N,T}(::FunctionSet{N,T}) = N
 dim{N,T}(::Type{FunctionSet{N,T}}) = N
 dim{B <: FunctionSet}(::Type{B}) = dim(super(B))
+dim(s::FunctionSet) = dim(typeof(s))
 
 "The numeric type of the set."
-numtype{N,T}(::FunctionSet{N,T}) = T
 numtype{N,T}(::Type{FunctionSet{N,T}}) = T
 numtype{B <: FunctionSet}(::Type{B}) = numtype(super(B))
+numtype(s::FunctionSet) = numtype(typeof(s))
 
 "Trait to indicate whether the functions in the set are real-valued (for real arguments)."
-isreal(::FunctionSet) = True()
 isreal{N,T}(::Type{FunctionSet{N,T}}) = True
 isreal{B <: FunctionSet}(::Type{B}) = True
+isreal(s::FunctionSet) = isreal(typeof(s))()
 
 """
 The eltype of a set is the typical numeric type of expansion coefficients. It is usually
 either T or Complex{T}, where T is the numeric type of the set.
 """
-eltype(b::FunctionSet) = _eltype(b, isreal(b))
-_eltype(b::FunctionSet, isreal::True) = numtype(b)
-_eltype(b::FunctionSet, isreal::False) = complexify(numtype(b))
+eltype{F <: FunctionSet}(::Type{F}) = _eltype(F, isreal(F))
+_eltype{F <: FunctionSet}(::Type{F}, ::Type{True}) = numtype(F)
+_eltype{F <: FunctionSet}(::Type{F}, ::Type{False}) = complexify(numtype(F))
+
+# The following line is in Base
+# eltype(x) = eltype(typeof(x))
+# But the following aren't:
+eltype(x, y) = eltype(typeof(x), typeof(y))
+eltype(x, y, z) = eltype(typeof(x), typeof(y), typeof(z))
+eltype(x, y, z, t) = eltype(typeof(x), typeof(y), typeof(z), typeof(t))
+
+eltype{F1<:Any, F2<:Any}(::Type{F1}, ::Type{F2}) = promote_type(eltype(F1), eltype(F2))
+eltype{F1<:Any, F2<:Any, F3<:Any}(::Type{F1}, ::Type{F2}, ::Type{F3}) =
+    promote_type(eltype(F1), eltype(F2), eltype(F3))
+eltype{F1<:Any, F2<:Any, F3<:Any, F4<:Any}(::Type{F1}, ::Type{F2}, ::Type{F3}, ::Type{F4}) =
+    promote_type(eltype(F1), eltype(F2), eltype(F3), eltype(F4))
+
 
 """
 The dimension of the index of the set. This may in general be different from the dimension
 of the set. For example, Fourier series on a lattice in 2D may be indexed with a single
 index. Wavelets in 1D are usually indexed with two parameters, scale and position.
 """
-index_dim(::FunctionSet) = 1
 index_dim{N,T}(::Type{FunctionSet{N,T}}) = 1
 index_dim{B <: FunctionSet}(::Type{B}) = 1
+index_dim(s::FunctionSet) = index_dim(typeof(s))
 
 "Return a complex type associated with the argument type."
 complexify{T <: Real}(::Type{T}) = Complex{T}
 complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
+# In 0.5 we will be able to use Base.complex(T)
+
+isreal{T <: Real}(::Type{T}) = True
+isreal{T <: Real}(::Type{Complex{T}}) = False
+
 
 
 # Is a given set a basis? In general, no, but some sets could turn out to be a basis.
@@ -73,31 +92,29 @@ complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 # This is a problem that can be solved in two ways: introduce a parallel hierarchy 
 # TensorProdctFrame - TensorProductBasis, or make the Basis property a trait.
 # This is the trait:
-is_basis(s::FunctionSet) = False()
 is_basis(::Type{FunctionSet}) = False
 is_basis{S <: FunctionSet}(::Type{S}) = is_basis(super(S))
+is_basis(s::FunctionSet) = is_basis(typeof(s))()
 
-is_frame(s::FunctionSet) = False()
-is_frame(::Type{FunctionSet}) = False
-is_frame{S <: FunctionSet}(::Type{S}) = is_frame(super(S))
+is_frame(F::Type{FunctionSet}) = False
+is_frame{S <: FunctionSet}(::Type{S}) = is_basis(S)
+is_frame(s::FunctionSet) = is_frame(typeof(s))()
 
 # A basis is always a basis.
-is_basis(b::AbstractBasis) = True()
-is_basis(::Type{AbstractBasis}) = True
+is_basis{B <: AbstractBasis}(::Type{B}) = True
 
 # And a frame is always a frame.
-is_frame(s::AbstractFrame) = True()
-is_frame(::Type{AbstractFrame}) = True
+is_frame{F <: AbstractFrame}(::Type{F}) = True
 
 
 "Trait to indicate whether a basis is orthogonal."
-is_orthogonal(b::AbstractBasis) = False()
 is_orthogonal{N,T}(::Type{FunctionSet{N,T}}) = False
 is_orthogonal{B <: FunctionSet}(::Type{B}) = False
+is_orthogonal(s::FunctionSet) = is_orthogonal(typeof(s))()
 
-is_biorthogonal(b::AbstractBasis) = False()
 is_biorthogonal{N,T}(::Type{FunctionSet{N,T}}) = False
-is_biorthogonal{B <: FunctionSet}(::Type{B}) = False
+is_biorthogonal{B <: FunctionSet}(::Type{B}) = is_orthogonal(B)
+is_biorthogonal(s::FunctionSet) = is_biorthogonal(typeof(s))()
 
 "Return the size of the set."
 size(s::FunctionSet) = (length(s),)
@@ -116,6 +133,9 @@ set type adheres to the generic interface.
 """
 instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
+
+# The following properties are not implemented as traits with types, because they are
+# not intended to be used in a time-critical path of the code.
 
 "Does the set implement a derivative?"
 has_derivative(b::FunctionSet) = false

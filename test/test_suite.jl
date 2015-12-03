@@ -4,6 +4,9 @@ module test_suite
 using BasisFunctions
 using Base.Test
 
+BF = BasisFunctions
+
+
 ########
 # Auxiliary functions
 ########
@@ -45,29 +48,36 @@ end
 ##########
 
 
-function test_generic_interface(basis)
+function test_generic_interface(basis, SET)
     delimit("Generic interface for $(name(basis))")
 
     ELT = eltype(basis)
     T = numtype(basis)
     n = length(basis)
 
-    a = left(basis)
-    b = right(basis)
-    if isinf(b)
-        b = T(1)
+    # Check consistency of traits
+    @test isreal(basis) == isreal(SET)()
+    @test is_orthogonal(basis) == is_orthogonal(SET)()
+    @test is_biorthogonal(basis) == is_biorthogonal(SET)()
+    @test is_basis(basis) == is_basis(SET)()
+    @test is_frame(basis) == is_frame(SET)()
+
+    if is_basis(SET) == True
+        @test is_frame(SET) == True
     end
-    if isinf(a)
-        a = -T(1)
+    if is_orthogonal(SET) == True
+        @test is_biorthogonal(SET) == True
     end
 
-    # Test output type of calling function
-    for x in [ (a*1/3 + b*2/3) rationalize(a*2/3 + b*1/3) ]
-        for idx in [1 2 n>>1 n-1 n]
-            z = call(basis, idx, x)
-            @test typeof(z) == ELT
-        end
+    # Test dimensions
+    @test index_dim(basis) == index_dim(SET)
+    @test index_dim(basis) == length(size(basis))
+    s = size(basis)
+    for i = 1:length(s)
+        @test size(basis, i) == s[i]
     end
+    @test dim(basis) == dim(typeof(basis))
+    @test index_dim(basis) <= dim(basis)
 
     # Test iteration over the set
     l = 0
@@ -86,12 +96,9 @@ function test_generic_interface(basis)
     # Create a random expansion in the basis to test expansion interface
     coef = Array(ELT, size(basis))
     for i in eachindex(coef)
-        coef[i] = rand()
+        coef[i] = one(ELT) * rand()
     end
-
-    # Does evaluating an expansion equal the sum of coefficients times basis function calls?
     e = SetExpansion(basis, coef)
-    @test e(x) ≈ sum([coef[i]*basis(i,x) for i in eachindex(coef)])
 
     # Verify evaluation on the associated grid
     if BasisFunctions.has_grid(basis)
@@ -103,20 +110,50 @@ function test_generic_interface(basis)
         @test sum(abs( ELT[ z[i] - e(grid1[i]) for i in eachindex(grid1) ] )) ≈ 0
     end
 
-    # Test evaluation on a different grid on the support of the basis
-    grid2 = EquispacedGrid(n+3, a, b)
-    z = e(grid2)
-    @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+    if dim(basis) == 1
+        a = left(basis)
+        b = right(basis)
+        if isinf(b)
+            b = T(1)
+        end
+        if isinf(a)
+            a = -T(1)
+        end
 
-    idx = length(basis) >> 1
-    z = basis(idx, grid2)
-    @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+        # Test output type of calling function
+        types_correct = true
+        for x in [ (a*1/3 + b*2/3) rationalize(a*2/3 + b*1/3) ]
+            for idx in [1 2 n>>1 n-1 n]
+                z = call(basis, idx, x)
+                types_correct = types_correct & (typeof(z) == ELT)
+            end
+        end
+        @test types_correct
 
-    # Test evaluation on an array
-    x = T[a + rand()*(b-a) for i in 1:10]
-    z = e(x)
-    @test maximum(abs( ELT[ z[i] - e(x[i]) for i in eachindex(x) ] )) ≈ 0
+        # Does evaluating an expansion equal the sum of coefficients times basis function calls?
+        @test e(x) ≈ sum([coef[i] * basis(i,x) for i in eachindex(coef)])
 
+        # Test evaluation on a different grid on the support of the basis
+        grid2 = EquispacedGrid(n+3, a, b)
+        z = e(grid2)
+        @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+
+        # Test evaluation on a grid of a single basis function
+        idx = length(basis) >> 1
+        z = basis(idx, grid2)
+        @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+
+        # Test evaluation on an array
+        x = T[a + rand()*(b-a) for i in 1:10]
+        z = e(x)
+        @test maximum(abs( ELT[ z[i] - e(x[i]) for i in eachindex(x) ] )) ≈ 0
+
+    end
+
+    # TODO: Test extension
+    # TODO: Test derivatives
+    # TODO: Test transform
+    # TODO: Test interpolation on associated grid
 end
 
 
@@ -202,11 +239,15 @@ end
 function test_fourier_series(T)
     delimit("Fourier series")
 
+    @test isreal(FourierBasis) == False
+
     ## Even length
     n = 12
     a = -T(1.2)
     b = T(3.4)
     fb = FourierBasis(n, a, b)
+
+    @test isreal(fb) == False()
 
     @test left(fb) ≈ a
     @test right(fb) ≈ b
@@ -298,6 +339,8 @@ function test_fourier_series(T)
 
     ## Odd length
     b = FourierBasis(13, -one(T), one(T))
+
+    @test isreal(b) == False()
 
     # Is the 0-index basis function the constant 1?
     freq = 0
@@ -569,6 +612,7 @@ Test.with_handler(custom_handler) do
         SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis, LaguerreBasis, HermiteBasis,
             PeriodicSplineBasis, FullSplineBasis)
         for SET in SETS
+            # Choose an odd and even number of degrees of freedom
             for n in (8, 11)
                 basis = instantiate(SET, n, T)
 
@@ -576,9 +620,12 @@ Test.with_handler(custom_handler) do
                 @test numtype(basis) == T
                 @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
 
-                test_generic_interface(basis)
+                test_generic_interface(basis, SET)
             end
         end
+
+        b = FourierBasis(10) ⊗ ChebyshevBasis(12)
+        test_generic_interface(b, typeof(b))
 
         test_tensor_sets(T)
 

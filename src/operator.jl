@@ -8,13 +8,12 @@ The action of the operator is defined by providing a method for apply!.
 """
 abstract AbstractOperator{SRC,DEST}
 
-numtype(op::AbstractOperator) = numtype(src(op))
+# We inherit the numtype from the source. Numtypes of source and destination should always match.
 numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
 numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
 
-eltype(op::AbstractOperator) = promote_type(eltype(src(op)), eltype(dest(op)))
-eltype(op1::AbstractOperator, op::AbstractOperator...) = promote_type(eltype(op1), map(eltype, op)...)
-eltype(b1::FunctionSet, b::FunctionSet...) = promote_type(eltype(b1), map(eltype, b)...)
+eltype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = promote_type(eltype(SRC),eltype(DEST))
+eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
 
 
 # Default implementation of src and dest
@@ -108,16 +107,17 @@ end
 
 
 "An OperatorTranspose represents the transpose of an operator."
-immutable OperatorTranspose{OP <: AbstractOperator,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorTranspose{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op	::	OP
 
 	OperatorTranspose(op::AbstractOperator{DEST,SRC}) = new(op)
 end
 
-
 ctranspose{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorTranspose{typeof(op),SRC,DEST}(op)
 
 operator(opt::OperatorTranspose) = opt.op
+
+eltype{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = eltype(OP)
 
 # By simply switching src and dest, we implicitly identify the dual of these linear vector spaces
 # with the spaces themselves.
@@ -135,7 +135,7 @@ apply!(opt::OperatorTranspose, dest, src, coef_srcdest) = apply!(opt, operator(o
 
 
 "An OperatorInverse represents the inverse of an operator."
-immutable OperatorInverse{OP <: AbstractOperator,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorInverse{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op	::	OP
 
 	OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
@@ -144,6 +144,8 @@ end
 inverse{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
 
 operator(opinv::OperatorInverse) = opinv.op
+
+eltype{OP,SRC,DEST}(::Type{OperatorInverse{OP,SRC,DEST}}) = eltype(OP)
 
 src(opinv::OperatorInverse) = dest(operator(opinv))
 
@@ -182,14 +184,19 @@ apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 """
 A ScalingOperator is the identity operator up to a scaling.
 """
-immutable ScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
+immutable ScalingOperator{ELT,SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
-	scalar	::	T
+	scalar	::	ELT
+end
+
+function ScalingOperator{S <: Number,SRC}(src::SRC, scalar::S)
+	ELT = promote_type(eltype(SRC), S)
+	ScalingOperator{ELT,SRC}(src, scalar)
 end
 
 dest(op::ScalingOperator) = src(op)
 
-eltype{T}(op::ScalingOperator{T}) = promote_type(eltype(src(op)), T)
+eltype{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}) = ELT
 
 is_inplace(op::ScalingOperator) = True()
 
@@ -197,13 +204,13 @@ scalar(op::ScalingOperator) = op.scalar
 
 ctranspose(op::ScalingOperator) = op
 
-ctranspose{T <: Number}(op::ScalingOperator{Complex{T}}) = ScalingOperator(src(op), conj(scalar(op)))
+ctranspose{T <: Real}(op::ScalingOperator{Complex{T}}) = ScalingOperator(src(op), conj(scalar(op)))
 
 inverse(op::ScalingOperator) = ScalingOperator(src(op), 1/scalar(op))
 
-convert{T,SRC}(::Type{ScalingOperator{T,SRC}}, op::IdentityOperator{SRC}) = ScalingOperator(src(op), T(1))
+convert{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}, op::IdentityOperator{SRC}) = ScalingOperator(src(op), ELT(1))
 
-promote_rule{T,SRC}(::Type{ScalingOperator{T,SRC}}, ::Type{IdentityOperator{SRC}}) = ScalingOperator{T,SRC}
+promote_rule{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}, ::Type{IdentityOperator{SRC}}) = ScalingOperator{ELT,SRC}
 
 for op in (:+, :*, :-, :/)
 	@eval $op(op1::ScalingOperator, op2::ScalingOperator) =
@@ -214,7 +221,7 @@ end
 (*)(op::IdentityOperator, a::Number) = ScalingOperator(src(op), a)
 
 (+){SRC}(op2::IdentityOperator{SRC}, op1::IdentityOperator{SRC}) =
-	convert(ScalingOperator{Int,SRC}, op2) + convert(ScalingOperator{Int,SRC}, op1)
+	convert(ScalingOperator{eltype(SRC),SRC}, op2) + convert(ScalingOperator{eltype(SRC),SRC}, op1)
 
 
 
@@ -235,11 +242,18 @@ end
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
-immutable CoefficientScalingOperator{T,SRC} <: AbstractOperator{SRC,SRC}
+immutable CoefficientScalingOperator{ELT,SRC} <: AbstractOperator{SRC,SRC}
 	src		::	SRC
 	index	::	Int
-	scalar	::	T
+	scalar	::	ELT
 end
+
+function CoefficientScalingOperator{S <: Number, SRC}(src::SRC, index::Int, scalar::S)
+	ELT = promote_type(eltype(SRC), S)
+	CoefficientScalingOperator{ELT,SRC}(src, index, scalar)
+end
+
+eltype{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = ELT
 
 dest(op::CoefficientScalingOperator) = src(op)
 
@@ -255,7 +269,7 @@ ctranspose(op::CoefficientScalingOperator) = op
 
 ctranspose{T <: Number}(op::CoefficientScalingOperator{Complex{T}}) = CoefficientScalingOperator(src(op), index(op), conj(scalar(op)))
 
-inverse{T <: Number}(op::CoefficientScalingOperator{Complex{T}}) = CoefficientScalingOperator(src(op), index(op), 1/scalar(op))
+inverse(op::CoefficientScalingOperator) = CoefficientScalingOperator(src(op), index(op), 1/scalar(op))
 
 apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[op.index] *= op.scalar
 
@@ -267,28 +281,34 @@ apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[o
 A composite operator applies op2 after op1.
 It preallocates sufficient memory to store intermediate results.
 """
-immutable CompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable CompositeOperator{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op1		::	OP1
 	op2		::	OP2
-	scratch	::	Array{T,N}	# For storing the intermediate result after applying op1
+	scratch	::	Array{ELT,N}	# For storing the intermediate result after applying op1
 
-	function CompositeOperator(op1::OP1, op2::OP2)
+	function CompositeOperator(op1::AbstractOperator, op2::AbstractOperator)
 		@assert size(op1,1) == size(op2,2)
 
 		# Possible optimization here would be to avoid allocating memory if the second operator is in-place.
-		new(op1, op2, zeros(T,size(src(op2))))
+		# But even in that case, the user may invoke the operator in a non-in-place way, so let's keep it.
+		new(op1, op2, zeros(ELT,size(src(op2))))
 	end
 end
 
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
-CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2}) = CompositeOperator{typeof(op1),typeof(op2),eltype(op1,op2),length(size(src(op2))),SRC1,DEST2}(op1,op2)
+function CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2})
+	OP1 = typeof(op1)
+	OP2 = typeof(op2)
+	ELT = eltype(OP1,OP2)
+	CompositeOperator{OP1,OP2,ELT,length(size(src(op2))),SRC1,DEST2}(op1,op2)
+end
 
 src(op::CompositeOperator) = src(op.op1)
 
 dest(op::CompositeOperator) = dest(op.op2)
 
-eltype(op::CompositeOperator) = eltype(op.op1, op.op2)
+eltype{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}) = ELT
 
 ctranspose(op::CompositeOperator) = CompositeOperator(ctranspose(op.op2), ctranspose(op.op1))
 
@@ -322,29 +342,37 @@ is_inplace(op::CompositeOperator) = is_inplace(op.op1) & is_inplace(op.op2)
 # Perhaps the parameters are excessive in this and many other types in the code. Do some tests without them later.
 # A TripleCompositeOperator is implemented because it can better exploit in-place operators
 # than a chain of CompositeOperator's.
-immutable TripleCompositeOperator{OP1 <: AbstractOperator,OP2 <: AbstractOperator,OP3 <: AbstractOperator,T,N1,N2,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op1			::	OP1
 	op2			::	OP2
 	op3			::	OP3
-	scratch1	::	Array{T,N1}	# For storing the intermediate result after applying op1
-	scratch2	::	Array{T,N2}	# For storing the intermediate result after applying op2
+	scratch1	::	Array{ELT,N1}	# For storing the intermediate result after applying op1
+	scratch2	::	Array{ELT,N2}	# For storing the intermediate result after applying op2
 
-	function TripleCompositeOperator(op1::OP1, op2::OP2, op3::OP3)
+	function TripleCompositeOperator(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator)
 		@assert size(op1,1) == size(op2,2)
 		@assert size(op2,1) == size(op3,2)
 
-		new(op1, op2, op3, zeros(T,size(src(op2))), zeros(T,size(src(op3))))
+		new(op1, op2, op3, zeros(ELT,size(src(op2))), zeros(ELT,size(src(op3))))
 	end
 end
 
-TripleCompositeOperator{SRC1,DEST1,SRC3,DEST3}(op1::AbstractOperator{SRC1,DEST1}, op2, op3::AbstractOperator{SRC3,DEST3}) =
-	TripleCompositeOperator{typeof(op1),typeof(op2),typeof(op3),eltype(op1,op2,op3),length(size(src(op2))),length(size(src(op3))),SRC1,DEST3}(op1, op2, op3)
+function TripleCompositeOperator{SRC1,DEST1,SRC3,DEST3}(op1::AbstractOperator{SRC1,DEST1}, op2, op3::AbstractOperator{SRC3,DEST3})
+	OP1 = typeof(op1)
+	OP2 = typeof(op2)
+	OP3 = typeof(op3)
+	ELT = eltype(OP1,OP2,OP3)
+	N1 = length(size(src(op2)))
+	N2 = length(size(src(op3)))
+	TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC1,DEST3}(op1, op2, op3)
+end
 
 src(op::TripleCompositeOperator) = src(op.op1)
 
 dest(op::TripleCompositeOperator) = dest(op.op3)
 
-eltype(op::TripleCompositeOperator) = eltype(op.op1, op.op2, op.op3)
+eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = ELT
+
 
 ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
@@ -390,17 +418,19 @@ end
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorSum{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	op1			::	OP1
 	op2			::	OP2
 	val1		::	ELT
 	val2		::	ELT
 	scratch		::	Array{ELT,N}
 
-	function OperatorSum(op1::OP1, op2::OP2, val1::ELT, val2::ELT)
+	function OperatorSum(op1::AbstractOperator, op2::AbstractOperator, val1::ELT, val2::ELT)
 		# We don't enforce that source and destination of op1 and op2 are the same, but at least
 		# their sizes must match.
-		@assert size(op1) == size(op2)
+		@assert size(src(op1)) == size(src(op2))
+		@assert size(dest(op1)) == size(dest(op2))
+		
 		new(op1, op2, val1, val2, zeros(ELT,size(dest(op1))))
 	end
 end
@@ -414,7 +444,7 @@ src(op::OperatorSum) = src(op.op1)
 
 dest(op::OperatorSum) = dest(op.op1)
 
-eltype{OP1,OP2,T}(op::OperatorSum{OP1,OP2,T}) = promote_type(eltype(op.op1), eltype(op.op2), T)
+eltype{OP1,OP2,ELT,N,SRC,DEST}(::Type{OperatorSum{OP1,OP2,ELT,N,SRC,DEST}}) = ELT
 
 ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), conj(op.val1), conj(op.val2))
 
@@ -476,30 +506,32 @@ end
 
 
 "A MatrixOperator is defined by a full matrix."
-immutable MatrixOperator{A <: AbstractArray,ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable MatrixOperator{ARRAY,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	matrix	::	ARRAY
 	src		::	SRC
 	dest	::	DEST
-	matrix	::	A
 
-	function MatrixOperator(src, dest, matrix)
+	function MatrixOperator(matrix::AbstractMatrix, src, dest)
 		@assert size(matrix,1) == length(dest)
 		@assert size(matrix,2) == length(src)
 
-		new(src, dest, matrix)
+		new(matrix, src, dest)
 	end
 end
 
 
-MatrixOperator{ELT,SRC,DEST}(src::SRC, dest::DEST, matrix::AbstractArray{ELT,2}) =
-	MatrixOperator{typeof(matrix), ELT, SRC, DEST}(src, dest, matrix)
+MatrixOperator{ARRAY <: AbstractMatrix,SRC,DEST}(matrix::ARRAY, src::SRC, dest::DEST) =
+	MatrixOperator{ARRAY, SRC, DEST}(matrix, src, dest)
 
-MatrixOperator{ELT <: Number}(matrix::AbstractArray{ELT}) = MatrixOperator(Rn{ELT}(size(matrix,2)), Rn{ELT}(size(matrix,1)), matrix)
+MatrixOperator{T <: Number}(matrix::AbstractMatrix{T}) = MatrixOperator(matrix, Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)))
 
-MatrixOperator{ELT <: Number}(matrix::AbstractArray{Complex{ELT}}) = MatrixOperator(Cn{ELT}(size(matrix,2)), Cn{ELT}(size(matrix,1)), matrix)
+MatrixOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) = MatrixOperator(matrix, Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)))
 
-ctranspose(op::MatrixOperator) = MatrixOperator(dest(op), src(op), ctranspose(matrix(op)))
+eltype{ARRAY,SRC,DEST}(::Type{MatrixOperator{ARRAY,SRC,DEST}}) = eltype(ARRAY)
 
-inverse(op::MatrixOperator) = MatrixOperator(dest(op), src(op), inv(matrix(op)))
+ctranspose(op::MatrixOperator) = MatrixOperator(ctranspose(matrix(op)), dest(op), src(op))
+
+inverse(op::MatrixOperator) = MatrixOperator(inv(matrix(op)), dest(op), src(op))
 
 # General definition
 apply!(op::MatrixOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
@@ -526,8 +558,6 @@ immutable SolverOperator{Q,SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 apply!(op::SolverOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.solver \ coef_src)
-
-
 
 
 

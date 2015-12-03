@@ -13,9 +13,8 @@ abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 typealias OPS{T} OrthogonalPolynomialBasis{T}
 
 
-isreal(ops::PolynomialBasis) = True()
-isreal{O <: PolynomialBasis}(::Type{O}) = True
-
+is_orthogonal{B <: OPS}(::Type{B}) = True
+is_biorthogonal{B <: OPS}(::Type{B}) = True
 
 
 #######################
@@ -39,8 +38,8 @@ length(o::OrthogonalPolynomialBasis) = o.n
 #
 # with the coefficients implemented by the rec_An, rec_Bn and rec_Cn functions.
 function recurrence_eval{T,S <: Number}(b::OPS{T}, idx::Int, x::S)
-    z0 = one(T)
-    z1 = rec_An(b, 0) * T(x) + rec_Bn(b, 0)
+    z0 = one(promote_type(T,S))
+    z1 = rec_An(b, 0) * x + rec_Bn(b, 0)
 
     if idx == 1
         return z0

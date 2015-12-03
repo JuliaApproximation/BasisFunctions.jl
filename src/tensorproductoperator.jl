@@ -26,7 +26,7 @@ end
 
 TensorProductOperator(operators...) = TensorProductOperator(eltype(operators...),operators...)
     
-function TensorProductOperator(ELT::DataType, operators...)
+function TensorProductOperator{ELT}(::Type{ELT}, operators...)
         TO = typeof(operators)
     ON = length(operators)
         tp_src = TensorProductSet(map(src, operators)...)
@@ -57,9 +57,9 @@ tensorproduct(op::AbstractOperator, n) = TensorProductOperator([op for i=1:n]...
 
 ⊗(op::AbstractOperator, ops::AbstractOperator...) = TensorProductOperator(op, ops...)
 
-numtype(op::TensorProductOperator) = numtype(operator(op,1))
+numtype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = numtype(SRC)
 
-eltype{ELT}(op::TensorProductOperator{ELT}) = ELT
+eltype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = ELT
 
 # Element-wise src and dest functions
 src(op::TensorProductOperator, j::Int) = set(op.src, j)

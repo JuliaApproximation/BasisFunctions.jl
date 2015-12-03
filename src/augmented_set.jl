@@ -3,6 +3,8 @@
 "AbstractFunction is the supertype of all functors."
 abstract AbstractFunction
 
+isreal{F <: AbstractFunction}(::Type{F}) = True
+isreal(f::AbstractFunction) = isreal(typeof(f))
 
 "The function x^α"
 immutable PowerFunction <: AbstractFunction
@@ -49,7 +51,7 @@ derivative(f::Sin) = Cos()
 
 
 "A ScaledFunction represents a scalar times a function."
-immutable ScaledFunction{F,T} <: AbstractFunction
+immutable ScaledFunction{F <: AbstractFunction,T} <: AbstractFunction
     f   ::  F
     a   ::  T
 end
@@ -63,6 +65,9 @@ call(f::ScaledFunction, x) = f.a * f.f(x)
 
 derivative(f::ScaledFunction) = f.a * derivative(f.f)
 
+isreal{F,T}(::Type{ScaledFunction{F,T}}) = isreal(F) & isreal(T)
+
+
 
 "A DilatedFunction represents f(a*x) where a is a scalar."
 immutable DilatedFunction{F,T} <: AbstractFunction
@@ -75,6 +80,8 @@ scalar(f::DilatedFunction) = f.a
 call(f::DilatedFunction, x) = f.f(f.a*x)
 
 derivative(f::DilatedFunction) = f.a * DilatedFunction(derivative(f.f), f.a)
+
+isreal{F,T}(::Type{DilatedFunction{F,T}}) = isreal(F) & isreal(T)
 
 
 "A CombinedFunction represents f op g, where op can be any binary operator."
@@ -106,6 +113,9 @@ derivative_op(::CombinedFunction, f, g, ::Base.SubFun) = derivative(f) - derivat
 derivative_op(::CombinedFunction, f, g, ::Base.MulFun) = derivative(f) * g + f * derivative(g)
 
 
+isreal{F,G,OP}(::Type{CombinedFunction{F,G,OP}}) = isreal(F) & isreal(G)
+
+
 "A CompositeFunction represents f(g(x))."
 immutable CompositeFunction{F,G} <: AbstractFunction
     f   ::  F
@@ -117,6 +127,8 @@ end
 call(f::CompositeFunction, x) = f.f(f.g(x))
 
 derivative(f::CompositeFunction) = (derivative(f.f) ∘ f.g) * derivative(f.g)
+
+isreal{F,G}(::Type{CompositeFunction{F,G}}) = isreal(F) & isreal(G)
 
 
 "The identity function"
@@ -151,21 +163,33 @@ log(f::AbstractFunction) = CompositeFunction(Log(), f)
 """
 An AugmentedSet represents some function f(x) times an existing set.
 """
-immutable AugmentedSet{F,S,T} <: FunctionSet{1,T}
+immutable AugmentedSet{S,F,T} <: FunctionSet{1,T}
     set     ::  S
     f       ::  F
 end
 
-set(b::AugmentedSet) = b.set
-fun(b::AugmentedSet) = b.f
+AugmentedSet{T}(s::FunctionSet{1,T}, f::AbstractFunction) = AugmentedSet{typeof(s),typeof(f),T}(s, f)
 
-for op in (:isreal, :index_dim, :size, :each_index, :length)
-    @eval $op(b::AugmentedSet) = $op(b.set)
+set(s::AugmentedSet) = s.set
+fun(s::AugmentedSet) = s.f
+
+# Method delegation
+for op in (:length,)
+    @eval $op(s::AugmentedSet) = $op(s.set)
 end
+
+# Delegation of type methods
+for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+    @eval $op{S,F,T}(::Type{AugmentedSet{S,F,T}}) = $op(S)
+end
+
+isreal{S,F,T}(::Type{AugmentedSet{S,F,T}}) = isreal(S) & isreal(F)
+
 
 call_element(b::AugmentedSet, i, x) = b.f(x) * call(b.set, i, x)
 
-(*){T}(f::AbstractFunction, b::FunctionSet{1,T}) = AugmentedSet{typeof(f),typeof(b),T}(b, f)
+# Only left multiplication will do
+(*){T}(f::AbstractFunction, b::FunctionSet{1,T}) = AugmentedSet(b, f)
 
 
 
@@ -189,11 +213,18 @@ set2(b::ConcatenatedSet) = b.set2
 
 length(b::ConcatenatedSet) = length(b.set1) + length(b.set2)
 
-for op in (:isreal, :has_derivative)
+# Method delegation
+for op in (:has_derivative,)
     @eval $op(b::ConcatenatedSet) = $op(b.set1) & $op(b.set2)
 end
 
-eltype(b::ConcatenatedSet) = promote_type(eltype(b.set1), eltype(b.set2))
+# Delegation of type methods
+for op in (:isreal,)
+    @eval $op{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = $op(S1) & $op(S2)
+end
+
+
+eltype{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = promote_type(eltype(S1), eltype(S2))
 
 call_element(b::ConcatenatedSet, i, x) = i <= length(b.set1) ? call(b.set1, i, x) : call(b.set2, i-length(b.set1), x)
 

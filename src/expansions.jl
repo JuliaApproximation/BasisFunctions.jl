@@ -21,32 +21,32 @@ SetExpansion(s::FunctionSet) = SetExpansion(s, eltype(s))
 SetExpansion{ELT}(s::FunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
 
-eltype{S,ELT}(::SetExpansion{S,ELT}) = ELT
 eltype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ELT
-eltype{E <: SetExpansion}(::Type{E}) = eltype(super(E))
 
-index_dim{S,ELT,ID}(::SetExpansion{S,ELT,ID}) = ID
 index_dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ID
-index_dim{E <: SetExpansion}(::Type{E}) = index_dim(super(E))
+index_dim(s::SetExpansion) = index_dim(typeof(s))
 
 set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coef
 
 # Delegation of methods
-for op in (:length, :size, :left, :right, :grid, :numtype, :dim)
+for op in (:length, :size, :left, :right, :grid, :dim, :numtype, :index_dim)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
 # Delegation of type methods
 for op in (:numtype, :dim)
     @eval $op{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = $op(S)
-    @eval $op{E <: SetExpansion}(::Type{E}) = $op(super(E))
 end
 
-has_basis(e::SetExpansion) = is_basis(set(e))
 
-has_frame(e::SetExpansion) = is_frame(set(e))
+
+has_basis{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_basis(S)
+has_basis(e::SetExpansion) = has_basis(typeof(e))
+
+has_frame{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_frame(S)
+has_frame(e::SetExpansion) = has_frame(typeof(e))
 
 getindex(e::SetExpansion, i...) = e.coef[i...]
 
