@@ -3,7 +3,7 @@
 """
 A basis of Legendre polynomials on the interval [-1,1].
 """
-immutable LegendreBasis{T <: AbstractFloat} <: OPS{T}
+immutable LegendreBasis{T} <: OPS{T}
     n           ::  Int
 
     LegendreBasis(n) = new(n)

@@ -29,8 +29,12 @@ ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
+similar{T}(b::ChebyshevBasis{T}, n = length(b)) = ChebyshevBasis(n, left(b), right(b))
+
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
+has_transform(b::ChebyshevBasis) = true
+has_extension(b::ChebyshevBasis) = true
 
 left(b::ChebyshevBasis) = b.a
 left(b::ChebyshevBasis, idx) = left(b)
@@ -113,7 +117,6 @@ function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevB
 	coef_dest[:] = D*coef_src
 end
 
-has_derivative(b::ChebyshevBasis) = true
 
 abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 
@@ -181,6 +184,13 @@ end
 apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
 
 
+ctranspose(op::FastChebyshevTransform) = InverseFastChebyshevTransform(dest(op), src(op))
+ctranspose(op::FastChebyshevTransformFFTW) = InverseFastChebyshevTransformFFTW(dest(op), src(op))
+
+ctranspose(op::InverseFastChebyshevTransform) = FastChebyshevTransform(dest(op), src(op))
+ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(dest(op), src(op))
+
+inv(op::DiscreteChebyshevTransform) = ctranspose(op)
 
 # TODO: restrict the grid of grid space here
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))

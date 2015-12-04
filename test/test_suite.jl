@@ -94,14 +94,36 @@ function test_generic_interface(basis, SET)
     @test equality
 
     # Create a random expansion in the basis to test expansion interface
-    coef = Array(ELT, size(basis))
-    for i in eachindex(coef)
-        coef[i] = one(ELT) * rand()
+    e = random_expansion(basis)
+    coef = coefficients(e)
+
+    # Try to find an interval within the support of the basis
+    a = left(basis)
+    b = right(basis)
+
+    # Avoid infinities for some bases on the real line
+    if dim(basis) == 1
+        if isinf(a)
+            a = -T(1)
+        end
+        if isinf(b)
+            b = T(1)
+        end
     end
-    e = SetExpansion(basis, coef)
+
+    # Does evaluating an expansion equal the sum of coefficients times basis function calls?
+    x = 0.3 * a + 0.7 * b
+    @test e(x) ≈ sum([coef[i] * basis(i,x) for i in eachindex(coef)])
+
+    # Test evaluation on an array
+    ARRAY_TYPE = typeof(one(T) * a)
+    x_array = ARRAY_TYPE[a + rand()*(b-a) for i in 1:10]
+    z = e(x_array)
+    @test maximum(abs( ELT[ z[i] - e(x_array[i]) for i in eachindex(x_array) ] )) ≈ 0
+
 
     # Verify evaluation on the associated grid
-    if BasisFunctions.has_grid(basis)
+    if BF.has_grid(basis)
 
         grid1 = grid(basis)
         @test length(grid1) == length(basis)
@@ -111,15 +133,6 @@ function test_generic_interface(basis, SET)
     end
 
     if dim(basis) == 1
-        a = left(basis)
-        b = right(basis)
-        if isinf(b)
-            b = T(1)
-        end
-        if isinf(a)
-            a = -T(1)
-        end
-
         # Test output type of calling function
         types_correct = true
         for x in [ (a*1/3 + b*2/3) rationalize(a*2/3 + b*1/3) ]
@@ -130,11 +143,8 @@ function test_generic_interface(basis, SET)
         end
         @test types_correct
 
-        # Does evaluating an expansion equal the sum of coefficients times basis function calls?
-        @test e(x) ≈ sum([coef[i] * basis(i,x) for i in eachindex(coef)])
-
         # Test evaluation on a different grid on the support of the basis
-        grid2 = EquispacedGrid(n+3, a, b)
+        grid2 = EquispacedGrid(n+3, T(a), T(b))
         z = e(grid2)
         @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
 
@@ -143,16 +153,42 @@ function test_generic_interface(basis, SET)
         z = basis(idx, grid2)
         @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
 
-        # Test evaluation on an array
-        x = T[a + rand()*(b-a) for i in 1:10]
-        z = e(x)
-        @test maximum(abs( ELT[ z[i] - e(x[i]) for i in eachindex(x) ] )) ≈ 0
-
     end
 
-    # TODO: Test extension
+    if BF.has_extension(basis)
+        n2 = extension_size(basis)
+        basis2 = similar(basis, n2)
+        E = extension_operator(basis, basis2)
+        e1 = random_expansion(basis)
+        e2 = E * e1        
+        x1 = 1/2 * (left(basis) + right(basis))
+        @test e1(x1) ≈ e2(x1)
+        x2 = 0.3 * left(basis) + 0.7 * right(basis)
+        @test e1(x2) ≈ e2(x2)
+
+        R = restriction_operator(basis2, basis)
+        e3 = R * e2
+        @test e2(x1) ≈ e3(x1)
+        @test e2(x2) ≈ e3(x2)
+    end
     # TODO: Test derivatives
     # TODO: Test transform
+    if BF.has_transform(basis)
+        # Check whether it is unitary
+        g = grid(basis)
+        t = transform_operator(g, basis)
+        it = transform_operator(basis, g)
+        A = matrix(t)
+        @test cond(A) ≈ 1
+        AI = matrix(it)
+        @test cond(AI) ≈ 1
+
+#       TODO: test accuracy of combination of transform_operator and normalization_operator
+#        b = one(ELT) * rand(size(basis))
+#        c = t * b
+#        d = it * c
+#        @test sumabs(d-b) ≈ 0
+    end
     # TODO: Test interpolation on associated grid
 end
 

@@ -47,6 +47,8 @@ end
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
+## Traits
+
 index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
 
 #An efficient way to access elements of a Tuple type using index j
@@ -67,6 +69,15 @@ for op in (:is_basis, :is_frame, :isreal, :is_orthogonal, :is_biorthogonal)
         $op(tuple_index(TS,1)) & $op(tuple_index(TS,2)) & $op(tuple_index(TS,3)) & $op(tuple_index(TS,4))
 end
 
+## Feature methods
+#for op in (:has_grid, :has_derivative, :has_transform, :has_extension)
+for op in (:has_grid, :has_derivative, :has_extension,)
+    @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
+end
+
+similar(b::TensorProductSet, n) = TensorProductSet(map(similar, sets(b), n)...)
+
+extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
 # It would be odd if the first method below was ever called, because LEN=1 makes
 # little sense for a tensor product. But perhaps in generic code somewhere...
@@ -85,20 +96,20 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range])
-sets(b::FunctionSet) = b
+nbsets(b::TensorProductSet) = length(sets(b))
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
 grid(b::TensorProductSet, j::Int) = grid(set(b,j))
 
+left(b::TensorProductSet) = Vec([left(set(b,j)) for j=1:nbsets(b)])
+left(b::TensorProductSet, j::Int) = left(set(b,j))
+left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
+left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
-left(b::TensorProductSet, dim::Int) = left(set(b,dim))
-left(b::TensorProductSet, idx::Int, dim) = left(b, ind2sub(b,idx), dim)
-left(b::TensorProductSet, idxt::NTuple, dim) = left(b.bases[dim], idxt[dim])
-
-
-right(b::TensorProductSet, dim::Int) = right(set(b, dim))
-right(b::TensorProductSet, idx::Int, dim) = right(b, ind2sub(b,udx), dim)
-right(b::TensorProductSet, idxt::NTuple, dim) = right(set(b,dim), idxt[dim])
+right(b::TensorProductSet) = Vec([right(set(b,j)) for j=1:nbsets(b)])
+right(b::TensorProductSet, j::Int) = right(set(b,j))
+right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
+right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
 
 
 @generated function eachindex{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN})
@@ -111,6 +122,8 @@ end
     :(@nref $LEN b d->index[d])
 end
 
+
+checkbounds(b::TensorProductSet, i::Int) = checkbounds(b, ind2sub(b, i))
 
 function checkbounds{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i)
     for k in 1:LEN
@@ -125,6 +138,10 @@ function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x, xt...)
     end
     z
 end
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i::Int, x, y) = call_element(b, ind2sub(b, i), x, y)
+call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i::Int, x, y, z) = call_element(b, ind2sub(b, i), x, y, z)
+call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i::Int, x, y, z, t) = call_element(b, ind2sub(b, i), x, y, z, t)
 
 call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) = set(b,1)(i,x)
 call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)

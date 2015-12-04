@@ -134,6 +134,9 @@ set type adheres to the generic interface.
 instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
 
+similar(b::FunctionSet) = similar(b, length(b))
+
+
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.
 
@@ -213,6 +216,7 @@ end
 "Return the support of the idx-th basis function."
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
+call{N}(b::FunctionSet{N}, i, x::Vec{N}) = call(b, i, x...)
 
 function call(b::FunctionSet, i, x...)
     checkbounds(b, i)
@@ -261,6 +265,11 @@ end
     end
 end
 
+function call_expansion{V <: Vec}(b::FunctionSet, coef, xs::AbstractArray{V})
+    result = Array(eltype(coef), size(xs))
+    call_expansion!(result, b, coef, xs)
+end
+
 # Vectorized method. Revisit once there is a standard way in Julia to treat
 # vectorized function that is also fast.
 # @generated to avoid splatting overhead (even though the function is vectorized,
@@ -274,9 +283,9 @@ end
     end
 end
 
-function call_expansion(b::FunctionSet, coef, grid::AbstractGrid)
-    T = promote_type(eltype(coef),numtype(grid))
-    result = Array(T, size(grid))
+function call_expansion{N,T}(b::FunctionSet{N,T}, coef, grid::AbstractGrid{N,T})
+    ELT = promote_type(eltype(coef), T)
+    result = Array(ELT, size(grid))
     call_expansion!(result, b, coef, grid)
 end
 
@@ -284,11 +293,20 @@ end
 
 
 # This function is slow - better to use transforms for special cases if available.
-function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{N})
+function call_expansion!{N,T}(result, b::FunctionSet{N,T}, coef, grid::AbstractGrid{N,T})
     @assert size(result) == size(grid)
 
     for i in eachindex(grid)
         result[i] = call_expansion(b, coef, grid[i])
+    end
+    result
+end
+
+function call_expansion!{VEC <: Vec}(result, b::FunctionSet, coef, xs::AbstractArray{VEC})
+    @assert size(result) == size(xs)
+
+    for i in eachindex(xs)
+        result[i] = call_expansion(b, coef, xs[i]...)
     end
     result
 end

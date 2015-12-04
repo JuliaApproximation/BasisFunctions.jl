@@ -20,8 +20,6 @@ eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
 
-inv(op::AbstractOperator) = inverse(op)
-
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
 size(op::AbstractOperator) = (length(dest(op)), length(src(op)))
@@ -141,7 +139,7 @@ immutable OperatorInverse{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
 end
 
-inverse{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
+inv{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
 
 operator(opinv::OperatorInverse) = opinv.op
 
@@ -171,7 +169,7 @@ is_inplace(op::IdentityOperator) = True()
 
 ctranspose(op::IdentityOperator) = op
 
-inverse(op::IdentityOperator) = op
+inv(op::IdentityOperator) = op
 
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
@@ -206,7 +204,7 @@ ctranspose(op::ScalingOperator) = op
 
 ctranspose{T <: Real}(op::ScalingOperator{Complex{T}}) = ScalingOperator(src(op), conj(scalar(op)))
 
-inverse(op::ScalingOperator) = ScalingOperator(src(op), 1/scalar(op))
+inv(op::ScalingOperator) = ScalingOperator(src(op), 1/scalar(op))
 
 convert{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}, op::IdentityOperator{SRC}) = ScalingOperator(src(op), ELT(1))
 
@@ -269,7 +267,7 @@ ctranspose(op::CoefficientScalingOperator) = op
 
 ctranspose{T <: Number}(op::CoefficientScalingOperator{Complex{T}}) = CoefficientScalingOperator(src(op), index(op), conj(scalar(op)))
 
-inverse(op::CoefficientScalingOperator) = CoefficientScalingOperator(src(op), index(op), 1/scalar(op))
+inv(op::CoefficientScalingOperator) = CoefficientScalingOperator(src(op), index(op), 1/scalar(op))
 
 apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[op.index] *= op.scalar
 
@@ -312,7 +310,7 @@ eltype{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}
 
 ctranspose(op::CompositeOperator) = CompositeOperator(ctranspose(op.op2), ctranspose(op.op1))
 
-inverse(op::CompositeOperator) = CompositeOperator(inverse(op.op2), inverse(op.op1))
+inv(op::CompositeOperator) = CompositeOperator(inv(op.op2), inv(op.op1))
 
 (*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator(op1, op2)
 
@@ -376,7 +374,7 @@ eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP
 
 ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
-inverse(op::TripleCompositeOperator) = TripleCompositeOperator(inverse(op.op3), inverse(op.op2), inverse(op.op1))
+inv(op::TripleCompositeOperator) = TripleCompositeOperator(inv(op.op3), inv(op.op2), inv(op.op1))
 
 apply!(op::TripleCompositeOperator, dest, src, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
@@ -531,7 +529,7 @@ eltype{ARRAY,SRC,DEST}(::Type{MatrixOperator{ARRAY,SRC,DEST}}) = eltype(ARRAY)
 
 ctranspose(op::MatrixOperator) = MatrixOperator(ctranspose(matrix(op)), dest(op), src(op))
 
-inverse(op::MatrixOperator) = MatrixOperator(inv(matrix(op)), dest(op), src(op))
+inv(op::MatrixOperator) = MatrixOperator(inv(matrix(op)), dest(op), src(op))
 
 # General definition
 apply!(op::MatrixOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)

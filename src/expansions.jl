@@ -41,7 +41,6 @@ for op in (:numtype, :dim)
 end
 
 
-
 has_basis{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_basis(S)
 has_basis(e::SetExpansion) = has_basis(typeof(e))
 
@@ -80,6 +79,12 @@ end
 differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(set(s1), set(s2), var...)
 differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
 
+double_one{T <: Real}(::Type{T}) = one(T)
+double_one{T <: Real}(::Type{Complex{T}}) = one(T) + im*one(T)
+
+# Just generate Float64 random values and convert to the type of s
+"Generate an expansion with random coefficients."
+random_expansion(s::FunctionSet) = SetExpansion(s, double_one(eltype(s)) * rand(size(s)))
 
 ##############################
 # Arithmetics with expansions
@@ -100,10 +105,12 @@ for op in (:+, :-)
     end
 end
 
-function apply(op::AbstractOperator, s::SetExpansion)
-    @assert set(s) == src(op)
+(*)(op::AbstractOperator, e::SetExpansion) = apply(op, e)
 
-    SetExpansion(dest(op), op * coefficients(s))
+function apply(op::AbstractOperator, e::SetExpansion)
+    @assert set(e) == src(op)
+
+    SetExpansion(dest(op), op * coefficients(e))
 end
 
 function apply!(op::AbstractOperator, set_dest::SetExpansion, set_src::SetExpansion)

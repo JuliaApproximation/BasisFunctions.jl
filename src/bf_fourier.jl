@@ -5,7 +5,7 @@
 A Fourier basis on the interval [a,b].
 EVEN is true if the length of the corresponding Fourier series is even.
 """
-immutable FourierBasis{EVEN,T <: AbstractFloat} <: AbstractBasis1d{T}
+immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
 	n			::	Int
 	a 			::	T
 	b 			::	T
@@ -35,8 +35,8 @@ fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-similar{T}(b::FourierBasisEven{T}, n = length(b)) = fourier_basis_even(n, left(b), right(b))
-similar{T}(b::FourierBasisOdd{T}, n = length(b)) = fourier_basis_odd(n, left(b), right(b))
+similar{T}(b::FourierBasisEven{T}, n) = fourier_basis_even(n, left(b), right(b))
+similar{T}(b::FourierBasisOdd{T}, n) = fourier_basis_odd(n, left(b), right(b))
 
 # Traits
 
@@ -116,8 +116,10 @@ function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBa
 	end
 end
 
+extension_size(b::FourierBasisEven) = 2*length(b)
+extension_size(b::FourierBasisOdd) = 2*length(b)+1
 
-function apply!(op::Extension, dest::FourierBasisOdd, src::FourierBasisEven, coef_dest, coef_src)
+function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_dest, coef_src)
 	@assert length(dest) > length(src)
 
 	nh = nhalf(src)
@@ -162,6 +164,19 @@ function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_
 	for i=1:nh
 		coef_dest[nh+1+i] = coef_src[end-nh+i]
 	end
+end
+
+function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef_dest, coef_src)
+	@assert length(dest) < length(src)
+
+	nh = nhalf(dest)
+	for i=0:nh-1
+		coef_dest[i+1] = coef_src[i+1]
+	end
+	for i=1:nh-1
+		coef_dest[nh+1+i] = coef_src[end-nh+i+1]
+	end
+	coef_dest[nh+1] = coef_src[nh+1] + coef_src[end-nh+1]
 end
 
 function differentiation_operator(b::FourierBasisEven)

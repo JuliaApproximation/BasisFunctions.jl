@@ -33,6 +33,11 @@ s2 as source and destination.
 """
 extension_operator(s1::FunctionSet, s2::FunctionSet) = Extension(s1, s2)
 
+"""
+Return a suitable length to extend to, for example one such that the corresponding grids are nested
+and function evaluations can be shared. The default is twice the length of the current set.
+"""
+extension_size(s::FunctionSet) = 2*length(s)
 
 immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC

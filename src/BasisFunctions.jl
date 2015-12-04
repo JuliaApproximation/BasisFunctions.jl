@@ -24,6 +24,9 @@ import Base: ctranspose, transpose, inv
 
 import Base: show, showcompact, call, convert, similar
 
+
+## Exports
+
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize
@@ -44,23 +47,25 @@ export True, False
 export SetFunction, index
 
 # from tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗
+export TensorProductSet, tensorproduct, ⊗, sets
 
 # from mappedsets.jl
 export map, imap, map_linear, imap_linear
 
 #from expansions.jl
-export SetExpansion, TensorProductExpansion, coefficients, set
+export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion
 
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
     IdentityOperator, ScalingOperator, CoefficientScalingOperator, DenseOperator, MatrixOperator, apply!
+export matrix, inv
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 
     approximation_operator, transform_operator, differentiation_operator,
     evaluation_operator, normalization_operator,
-    Extension, Restriction, Differentiation, TransformOperator
+    Extension, Restriction, Differentiation, TransformOperator,
+    extension_size
 
 # from tensorproductoperator.jl
 export TensorProductOperator
