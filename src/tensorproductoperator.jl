@@ -24,9 +24,9 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     
 end
 
-TensorProductOperator(operators...) = TensorProductOperator(eltype(operators...),operators...)
+TensorProductOperator(operators...) = TensorProductOperator(eltype(map(eltype,operators)...),operators...)
     
-function TensorProductOperator{ELT}(::Type{ELT}, operators...)
+    function TensorProductOperator{ELT}(::Type{ELT}, operators...)
         TO = typeof(operators)
     ON = length(operators)
         tp_src = TensorProductSet(map(src, operators)...)
