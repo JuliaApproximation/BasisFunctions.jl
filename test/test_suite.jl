@@ -1,8 +1,10 @@
 # test_suite.jl
 module test_suite
 
-using BasisFunctions
 using Base.Test
+
+using BasisFunctions
+using FixedSizeArrays
 
 BF = BasisFunctions
 
@@ -48,12 +50,71 @@ end
 ##########
 
 
+# Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
+function point_in_domain{T}(basis::FunctionSet{1,T}, scalar)
+    # Try to find an interval within the support of the basis
+    a = left(basis)
+    b = right(basis)
+
+    # Avoid infinities for some bases on the real line
+    if isinf(a)
+        a = -T(1)
+    end
+    if isinf(b)
+        b = T(1)
+    end
+    x = scalar * a + (1-scalar) * b
+end
+
+
+# Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
+function point_in_domain{N,T}(basis::FunctionSet{N,T}, scalar)
+    # Try to find an interval within the support of the basis
+    a = left(basis)
+    b = right(basis)
+
+    # Avoid infinities for some bases on the real line
+    a = Vector(a)
+    b = Vector(b)
+    for i in 1:N
+        if isinf(a[i])
+            a[i] = -T(1)
+        end
+        if isinf(b[i])
+            b[i] = T(1)
+        end
+    end
+    a = Vec{N,T}(a)
+    b = Vec{N,T}(a)
+    x = scalar * a + (1-scalar) * b
+end
+
+
+function random_point_in_domain{N,T}(basis::FunctionSet{N,T})
+    w = one(T) * rand()
+    point_in_domain(basis, w)
+end
+
+function fixed_point_in_domain{N,T}(basis::FunctionSet{N,T})
+    w = 1/sqrt(T(2))
+    point_in_domain(basis, w)
+end
+
+random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
+
+Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) for x_i in x])
+
+Base.rationalize{N}(x::Vec{N,BigFloat}) = Vec{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
+
+
 function test_generic_interface(basis, SET)
     delimit("Generic interface for $(name(basis))")
 
     ELT = eltype(basis)
     T = numtype(basis)
     n = length(basis)
+
+    @test typeof(basis) <: SET
 
     # Check consistency of traits
     @test isreal(basis) == isreal(SET)()
@@ -69,7 +130,7 @@ function test_generic_interface(basis, SET)
         @test is_biorthogonal(SET) == True
     end
 
-    # Test dimensions
+    ## Test dimensions
     @test index_dim(basis) == index_dim(SET)
     @test index_dim(basis) == length(size(basis))
     s = size(basis)
@@ -79,7 +140,7 @@ function test_generic_interface(basis, SET)
     @test dim(basis) == dim(typeof(basis))
     @test index_dim(basis) <= dim(basis)
 
-    # Test iteration over the set
+    ## Test iteration over the set
     l = 0
     equality = true
     for i in eachindex(basis)
@@ -93,36 +154,30 @@ function test_generic_interface(basis, SET)
     @test l == n
     @test equality
 
+    ## Does indexing work as intended?
+    idx = random_index(basis)
+    bf = basis[idx]
+    @test functionset(bf) == basis
+
+    x = fixed_point_in_domain(basis)
+    @test bf(x) ≈ call(basis, idx, x)
+
     # Create a random expansion in the basis to test expansion interface
     e = random_expansion(basis)
     coef = coefficients(e)
 
-    # Try to find an interval within the support of the basis
-    a = left(basis)
-    b = right(basis)
-
-    # Avoid infinities for some bases on the real line
-    if dim(basis) == 1
-        if isinf(a)
-            a = -T(1)
-        end
-        if isinf(b)
-            b = T(1)
-        end
-    end
-
-    # Does evaluating an expansion equal the sum of coefficients times basis function calls?
-    x = 0.3 * a + 0.7 * b
+    ## Does evaluating an expansion equal the sum of coefficients times basis function calls?
+    x = fixed_point_in_domain(basis)
     @test e(x) ≈ sum([coef[i] * basis(i,x) for i in eachindex(coef)])
 
-    # Test evaluation on an array
-    ARRAY_TYPE = typeof(one(T) * a)
-    x_array = ARRAY_TYPE[a + rand()*(b-a) for i in 1:10]
+    ## Test evaluation on an array
+    ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
+    x_array = ARRAY_TYPE[random_point_in_domain(basis) for i in 1:10]
     z = e(x_array)
     @test maximum(abs( ELT[ z[i] - e(x_array[i]) for i in eachindex(x_array) ] )) ≈ 0
 
 
-    # Verify evaluation on the associated grid
+    ## Verify evaluation on the associated grid
     if BF.has_grid(basis)
 
         grid1 = grid(basis)
@@ -132,29 +187,41 @@ function test_generic_interface(basis, SET)
         @test sum(abs( ELT[ z[i] - e(grid1[i]) for i in eachindex(grid1) ] )) ≈ 0
     end
 
-    if dim(basis) == 1
-        # Test output type of calling function
-        types_correct = true
-        for x in [ (a*1/3 + b*2/3) rationalize(a*2/3 + b*1/3) ]
-            for idx in [1 2 n>>1 n-1 n]
-                z = call(basis, idx, x)
-                types_correct = types_correct & (typeof(z) == ELT)
-            end
+    ## Test output type of calling function
+    types_correct = true
+    for x in [ fixed_point_in_domain(basis) rationalize(point_in_domain(basis, 0.5)) ]
+        for idx in [1 2 n>>1 n-1 n]
+            z = call(basis, idx, x)
+            types_correct = types_correct & (typeof(z) == ELT)
         end
-        @test types_correct
+    end
+    @test types_correct
+
+    if dim(basis) == 1
 
         # Test evaluation on a different grid on the support of the basis
+        a = left(basis)
+        b = right(basis)
+
+        if isinf(a)
+            a = -T(1)
+        end
+        if isinf(b)
+            b = T(1)
+        end
+
         grid2 = EquispacedGrid(n+3, T(a), T(b))
         z = e(grid2)
         @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
 
         # Test evaluation on a grid of a single basis function
-        idx = length(basis) >> 1
+        idx = random_index(basis)
         z = basis(idx, grid2)
         @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
 
     end
 
+    ## Test extensions
     if BF.has_extension(basis)
         n2 = extension_size(basis)
         basis2 = similar(basis, n2)
@@ -171,17 +238,41 @@ function test_generic_interface(basis, SET)
         @test e2(x1) ≈ e3(x1)
         @test e2(x2) ≈ e3(x2)
     end
-    # TODO: Test derivatives
-    # TODO: Test transform
+    
+    ## Test derivatives
+    if BF.has_derivative(basis)
+        D = differentiation_operator(basis)
+        @test basis == src(D)
+        diff_dest = dest(D)
+
+        coef1 = random_expansion(basis)
+        coef2 = D*coef
+        e1 = SetExpansion(basis, coef)
+        e2 = SetExpansion(diff_dest, coef2)
+
+        x = fixed_point_in_domain(basis)
+        delta = sqrt(eps(T))
+        @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
+    end
+    
+    ## Test associated transform
     if BF.has_transform(basis)
         # Check whether it is unitary
         g = grid(basis)
         t = transform_operator(g, basis)
         it = transform_operator(basis, g)
         A = matrix(t)
-        @test cond(A) ≈ 1
+        if T == Float64
+            @test cond(A) ≈ 1
+        else
+            println("Skipping conditioning test for BigFloat")
+        end
         AI = matrix(it)
-        @test cond(AI) ≈ 1
+        if T == Float64
+            @test cond(AI) ≈ 1
+        else
+            println("Skipping conditioning test for BigFloat")
+        end
 
 #       TODO: test accuracy of combination of transform_operator and normalization_operator
 #        b = one(ELT) * rand(size(basis))
@@ -335,30 +426,6 @@ function test_fourier_series(T)
     @test e1(x) ≈ e2(x)
     @test e1(x) ≈ e3(x)
 
-
-    # Does indexing work as intended?
-    idx = Int(round(rand()*length(fb)))
-    bf = fb[idx]
-    x = T(2//10)
-    @test bf(x) ≈ call(fb, idx, x)
-
-    # Can you iterate over the whole set?
-    z = zero(T)
-    x = T(2//10)
-    i = 0
-    for f in fb
-        z = z + f(x)
-        i = i+1
-    end
-    @test i == length(fb)
-
-    l = 0
-    for i in eachindex(fb)
-        f = fb[i]
-        z = z + f(x)
-        l = l+1
-    end
-    @test l == length(fb)
 
     # Differentiation test
     coef = map(T, rand(Float64, size(fb)))

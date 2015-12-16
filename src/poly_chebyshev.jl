@@ -9,7 +9,7 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval [a,b].
 """
-immutable ChebyshevBasis{T <: AbstractFloat} <: OPS{T}
+immutable ChebyshevBasis{T} <: OPS{T}
     n			::	Int
     a 			::	T
     b 			::	T
@@ -29,7 +29,7 @@ ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
-similar{T}(b::ChebyshevBasis{T}, n = length(b)) = ChebyshevBasis(n, left(b), right(b))
+similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n, left(b), right(b))
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -65,9 +65,8 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
+#call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = -1 <= x <= 1 ? cos((idx-1)*acos(mapx(b,x))) : recurrence_eval(b, idx, mapx(b,x))
 call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
-call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::Complex{T}) = cos((idx-1)*acos(mapx(b,x)))
-
 
 # TODO: do we need these two routines below? Are they different from the generic ones?
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)

@@ -44,7 +44,7 @@ export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
 export True, False
 
 # from setfunction.jl
-export SetFunction, index
+export SetFunction, index, functionset
 
 # from tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, sets
@@ -71,7 +71,7 @@ export extension_operator, restriction_operator, interpolation_operator,
 export TensorProductOperator
 
 # from functional.jl
-export AbstractFunctional
+export AbstractFunctional, EvaluationFunctional, row
 
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
@@ -79,8 +79,10 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 # from approximation.jl
 export approximate
 
+# from functors.jl
+export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
+
 # from augmented_set.jl
-export Cos, Sin, Exp, Log, ExpIOX, PowerFunction
 export ⊕, set, fun
 
 # from bf_fourier.jl
@@ -145,6 +147,8 @@ include("generic_operators.jl")
 include("discretegridspace.jl")
 
 include("approximation.jl")
+
+include("functors.jl")
 
 include("augmented_set.jl")
 

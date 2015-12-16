@@ -5,6 +5,8 @@
 AbstractOperator represents any linear operator that maps SRC to DEST.
 Typically, SRC and DEST are of type FunctionSet, but that is not enforced.
 The action of the operator is defined by providing a method for apply!.
+
+The dimension of an operator are like a matrix: (length(dest),length(src)).
 """
 abstract AbstractOperator{SRC,DEST}
 

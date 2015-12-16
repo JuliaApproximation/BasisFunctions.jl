@@ -114,40 +114,34 @@ ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
 
 # Compute the interpolation matrix of the given basis on the given grid.
-function interpolation_matrix(b::AbstractBasis, g::AbstractGrid, T = eltype(b))
-    a = Array(T, length(g), length(b))
-    interpolation_matrix!(a, b, g)
+function interpolation_matrix(s::FunctionSet, g::AbstractGrid)
+    T = promote_type(eltype(s), eltype(g))
+    a = Array(T, length(g), length(s))
+    interpolation_matrix!(a, s, g)
+end
+
+function interpolation_matrix(s::FunctionSet, xs::AbstractVector{AbstractVector})
+    T = promote_type(eltype(s), eltype(xs))
+    a = Array(T, length(xs), length(s))
+    interpolation_matrix!(a, s, xs)
+end
+
+function interpolation_matrix!(a::AbstractMatrix, s::FunctionSet, g)
+    n,m = size(a)
+    @assert n == length(g)
+    @assert m == length(s)
+
+    for j = 1:m
+        for i = 1:n
+            a[i,j] = call(s, j, g[i])
+        end
+    end
     a
 end
 
-function interpolation_matrix!{N,T}(a::AbstractArray, b::AbstractBasis{N,T}, g::AbstractGrid{N,T})
-    n,m = size(a)
-    @assert n == length(g)
-    @assert m == length(b)
-
-    x_i = Array(T,N)
-    for j = 1:m
-        for i = 1:n
-            a[i,j] = call(b, j, x_i...)
-        end
-    end
-end
 
 
-function interpolation_matrix!{T}(a::AbstractArray, b::AbstractBasis1d{T}, g::AbstractGrid1d{T})
-    n,m = size(a)
-    @assert n == length(g)
-    @assert m == length(b)
-
-    for j = 1:m
-        for i = 1:n
-            a[i,j] = call(b, j, g[i])
-        end
-    end
-end
-
-
-interpolation_operator(b::AbstractBasis) = SolverOperator(grid(b), b, qrfact(interpolation_matrix(b, grid(b))))
+interpolation_operator(s::FunctionSet) = SolverOperator(grid(s), s, qrfact(interpolation_matrix(s, grid(s))))
 
 # Evaluation works for any set that has a grid(set) associated with it.
 evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))

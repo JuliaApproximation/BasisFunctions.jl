@@ -71,7 +71,7 @@ end
 
 ## Feature methods
 #for op in (:has_grid, :has_derivative, :has_transform, :has_extension)
-for op in (:has_grid, :has_derivative, :has_extension,)
+for op in (:has_grid, :has_extension,)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 

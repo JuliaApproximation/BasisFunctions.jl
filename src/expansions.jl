@@ -96,9 +96,10 @@ for op in (:+, :-)
             # If not, we have to extend the smaller set to the size of the larger set.
             if size(s1) == size(s2)
                 SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
-            elseif length(s1) < s2
-                # Switch the sets, so that s2 is always the smaller one
-                s2,s1 = s1,s2
+            elseif length(s1) < length(s2)
+                s3 = extension_operator(set(s1), set(s2)) * s1
+                SetExpansion(set(s1), $op(coefficients(s3), coefficients(s2)))
+            else
                 s3 = extension_operator(set(s2), set(s1)) * s2
                 SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
             end

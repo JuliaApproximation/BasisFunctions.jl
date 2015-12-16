@@ -216,16 +216,19 @@ end
 "Return the support of the idx-th basis function."
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
 
+# This is a candidate for generated functions to avoid the splatting
+call{N}(b::FunctionSet{N}, i, x::AbstractVector) = call(b, i, x...)
+
+# This too is a candidate for generated functions to avoid the splatting
 call{N}(b::FunctionSet{N}, i, x::Vec{N}) = call(b, i, x...)
 
-function call(b::FunctionSet, i, x...)
-    checkbounds(b, i)
-    call_element(b, i, x...)
+# Here is another candidate for generated functions to avoid the splatting
+function call(s::FunctionSet, i, x...)
+    checkbounds(s, i)
+    call_element(s, i, x...)
 end
 
-
-# The order of the arguments here should be different: it is more consistent to have i::Int
-# before the grid. But that leads to too many ambiguity warnings...
+# Evaluate on a grid
 function call(b::FunctionSet, i::Int, grid::AbstractGrid)
     result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
     call!(result, b, i, grid)

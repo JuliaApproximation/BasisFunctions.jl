@@ -24,21 +24,21 @@ end
 
 functionset(f::SetFunction) = f.set
 
-call{T <: Number}(f::SetFunction, x::T...) = call(f.set, f.idx, x...)
+# TODO: avoid splatting
+call(f::SetFunction, x...) = call(f.set, f.idx, x...)
 
-# TODO: find out how to optimize the general call so these aren't necessary
-call{S <: FunctionSet{1}, T <: Number}(f::SetFunction{S}, x::T) = call(f.set, f.idx, x)
-call{S <: FunctionSet{2}, T <: Number}(f::SetFunction{S}, x::T, y) = call(f.set, f.idx, x, y)
-call{S <: FunctionSet{3}, T <: Number}(f::SetFunction{S}, x::T, y, z) = call(f.set, f.idx, x, y, z)
-call{S <: FunctionSet{4}, T <: Number}(f::SetFunction{S}, x::T, y, z, t) = call(f.set, f.idx, x, y, z, t)
+# For now...
+# These will match with anything.
+call{S <: FunctionSet{1}}(f::SetFunction{S}, x) = call(f.set, f.idx, x)
+call{S <: FunctionSet{2}}(f::SetFunction{S}, x, y) = call(f.set, f.idx, x, y)
+call{S <: FunctionSet{3}}(f::SetFunction{S}, x, y, z) = call(f.set, f.idx, x, y, z)
+call{S <: FunctionSet{4}}(f::SetFunction{S}, x, y, z, t) = call(f.set, f.idx, x, y, z, t)
 
 
 left(f::SetFunction) = left(f.set, f.idx)
 right(f::SetFunction) = right(f.set, f.idx)
 
-call(f::SetFunction, grid::AbstractGrid) = call(set(f), grid, index(f))
-
-call!(result, f::SetFunction, grid::AbstractGrid) = call!(result, set(f), grid, index(f))
+call!(result, f::SetFunction, grid::AbstractGrid) = call!(result, set(f), index(f), grid)
 
 
 getindex(s::FunctionSet, idx) = SetFunction(s, idx)
