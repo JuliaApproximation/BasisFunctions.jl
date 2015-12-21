@@ -1,6 +1,8 @@
 # discretegridspace.jl
 
-# A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
+"""
+A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
+"""
 immutable DiscreteGridSpace{G,ELT,N,T} <: AbstractBasis{N,T}
 	grid		::	G
 
@@ -15,7 +17,6 @@ DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}) = DiscreteGridSpace{typeof(grid)
 DiscreteGridSpace{N,T,ELT <: Number}(grid::AbstractGrid{N,T}, ::Type{ELT}) = DiscreteGridSpace{typeof(grid),ELT,N,T}(grid)
 
 eltype{G,ELT,N,T}(::Type{DiscreteGridSpace{G,ELT,N,T}}) = ELT
-eltype{B <: DiscreteGridSpace}(::Type{B}) = eltype(super(B))
 
 grid(b::DiscreteGridSpace) = b.grid
 

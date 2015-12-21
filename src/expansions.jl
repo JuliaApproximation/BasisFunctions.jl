@@ -98,7 +98,7 @@ for op in (:+, :-)
                 SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
             elseif length(s1) < length(s2)
                 s3 = extension_operator(set(s1), set(s2)) * s1
-                SetExpansion(set(s1), $op(coefficients(s3), coefficients(s2)))
+                SetExpansion(set(s2), $op(coefficients(s3), coefficients(s2)))
             else
                 s3 = extension_operator(set(s2), set(s1)) * s2
                 SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
