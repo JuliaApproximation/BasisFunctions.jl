@@ -31,10 +31,8 @@ size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 +(op1::AbstractOperator, op2::AbstractOperator) = +(promote(op1,op2)...)
 
 "Trait to indicate whether or not an operator performs its action in place."
-is_inplace(op::AbstractOperator) = is_inplace(op, dest(op), src(op))
-
-# By default an operator is not in place.
-is_inplace(op::AbstractOperator, dest, src) = False()
+is_inplace{OP <: AbstractOperator}(::Type{OP}) = False
+is_inplace(op::AbstractOperator) = is_inplace(typeof(op))()
 
 
 function apply(op::AbstractOperator, coef_src)
@@ -125,7 +123,7 @@ src(opt::OperatorTranspose) = dest(operator(opt))
 
 dest(opt::OperatorTranspose) = src(operator(opt))
 
-is_inplace(opt::OperatorTranspose) = is_inplace(operator(opt))
+is_inplace{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = is_inplace(OP)
 
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
 apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) = apply!(opt, operator(opt), dest, src, coef_dest, coef_src)
@@ -157,27 +155,32 @@ apply!(opinv::OperatorInverse, dest, src, coef_dest, coef_src) = apply!(opinv, o
 apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator(opt), dest, src, coef_srcdest)
 
 
+abstract AbstractDiagonalOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+
+"A diagonal operator."
+immutable DiagonalOperator{SRC,DEST} <: AbstractDiagonalOperator{SRC,DEST}
+end
+
 
 "The identity operator"
-immutable IdentityOperator{SRC} <: AbstractOperator{SRC,SRC}
+immutable IdentityOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
 	src		::	SRC
+	dest	::	DEST
 end
-# Perhaps an IdentityOperator should have a different source and destination?
-# Same for a ScalingOperator
 
-dest(op::IdentityOperator) = src(op)
+IdentityOperator(src::FunctionSet) = IdentityOperator(src, src)
 
-is_inplace(op::IdentityOperator) = True()
+is_inplace{SRC,DEST}(::Type{IdentityOperator{SRC,DEST}}) = True
 
-ctranspose(op::IdentityOperator) = op
+ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
-inv(op::IdentityOperator) = op
+inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
 # The identity operator is, well, the identity
-(*)(op2::IdentityOperator, op1::IdentityOperator) = op2
-(*)(op2::AbstractOperator, op1::IdentityOperator) = op1
+(*)(op2::IdentityOperator, op1::IdentityOperator) = IdentityOperator(src(op1), dest(op2))
+(*)(op2::AbstractOperator, op1::IdentityOperator) = op2
 (*)(op2::IdentityOperator, op1::AbstractOperator) = op1
 
 
@@ -198,7 +201,7 @@ dest(op::ScalingOperator) = src(op)
 
 eltype{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}) = ELT
 
-is_inplace(op::ScalingOperator) = True()
+is_inplace{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}) = True
 
 scalar(op::ScalingOperator) = op.scalar
 
@@ -261,7 +264,7 @@ index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
-is_inplace(op::CoefficientScalingOperator) = True()
+is_inplace{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = True
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
@@ -275,6 +278,30 @@ apply!(op::CoefficientScalingOperator, dest, src, coef_srcdest) = coef_srcdest[o
 
 
 
+"""
+A WrappedOperator has a source and destination, as well as an embedded operator with its own
+source and destination. The coefficients of the source of the WrappedOperator are passed on
+unaltered as coefficients of the source of the embedded operator. The resulting coefficients
+of the embedded destination are returned as coefficients of the wrapping destination.
+"""
+immutable WrappedOperator{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+
+	op		::	OP
+end
+
+operator(op::WrappedOperator) = op.op
+
+is_inplace{OP,SRC,DEST}(::Type{WrappedOperator{OP,SRC,DEST}}) = is_inplace(OP)
+
+apply!(op::WrappedOperator, dest, src, coef_srcdest) = apply!(op.op, coef_srcdest)
+
+apply!(op::WrappedOperator, dest, src, coef_dest, coef_src) = apply!(op.op, coef_dest, coef_src)
+
+inv(op::WrappedOperator) = WrappedOperator(dest(op), src(op), inv(op.op))
+
+ctranspose(op::WrappedOperator) = WrappedOperator(dest(op), src(op), ctranspose(op.op))
 
 
 """
@@ -336,7 +363,7 @@ function apply!(op::CompositeOperator, dest, src, coef_srcdest)
 	apply!(op.op2, coef_srcdest)
 end
 
-is_inplace(op::CompositeOperator) = is_inplace(op.op1) & is_inplace(op.op2)
+is_inplace{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2)
 
 
 # Perhaps the parameters are excessive in this and many other types in the code. Do some tests without them later.
@@ -373,6 +400,7 @@ dest(op::TripleCompositeOperator) = dest(op.op3)
 
 eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = ELT
 
+is_inplace{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
 
 ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
