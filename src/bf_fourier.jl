@@ -194,7 +194,7 @@ abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,
 # This will improve once the pure-julia implementation of FFT lands (#6193).
 # But, we can also borrow from ApproxFun so let's do that right away
 
-is_inplace(op::DiscreteFourierTransformFFTW) = True()
+is_inplace{O <: DiscreteFourierTransformFFTW}(::Type{O}) = True
 
 
 immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}

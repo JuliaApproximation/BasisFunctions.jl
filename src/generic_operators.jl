@@ -61,22 +61,36 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 
 
 # Default implementation of an extension uses zero-padding of coef_src to coef_dest
-function apply!(op::Extension, dest, src, coef_dest, coef_src)
-    # We do too much work here, since we put all entries of coef_dest to zero.
-    fill!(coef_dest, 0)
-
-    for i in eachindex(coef_src)
-        coef_dest[i] = coef_src[i]
-    end
-end
+# This routine is a bit dangerous, because it applies by default but it is not always correct.
+#function apply!(op::Extension, dest, src, coef_dest, coef_src)
+#    # We do too much work here, since we put all entries of coef_dest to zero.
+#    fill!(coef_dest, 0)
+#
+#    for i in eachindex(coef_src)
+#        coef_dest[i] = coef_src[i]
+#    end
+#end
 
 
 
 # Default implementation of a restriction selects coef_dest from the start of coef_src
-function apply!(op::Restriction, dest, src, coef_dest, coef_src)
-    for i in eachindex(coef_dest)
-        coef_dest[i] = coef_src[i]
-    end
+# This routine is a bit dangerous, because it applies by default but it is not always correct.
+#function apply!(op::Restriction, dest, src, coef_dest, coef_src)
+#    for i in eachindex(coef_dest)
+#        coef_dest[i] = coef_src[i]
+#    end
+#end
+
+
+
+#################
+# Normalization
+#################
+
+
+immutable NormalizationOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+    src     ::  SRC
+    dest    ::  DEST
 end
 
 
@@ -84,9 +98,6 @@ end
 #################
 # Approximation
 #################
-
-
-
 
 
 """

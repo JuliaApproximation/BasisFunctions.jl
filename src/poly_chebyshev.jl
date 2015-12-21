@@ -125,7 +125,7 @@ abstract DiscreteChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransform{
 # This will improve once the pure-julia implementation of FFT lands (#6193).
 # But, we can also borrow from ApproxFun so let's do that right away
 
-is_inplace(op::DiscreteChebyshevTransformFFTW) = True()
+is_inplace{O <: DiscreteChebyshevTransformFFTW}(::Type{O}) = True
 
 
 immutable FastChebyshevTransformFFTW{SRC,DEST,ELT} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
@@ -138,7 +138,7 @@ end
 
 FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST, T) = FastChebyshevTransformFFTW{SRC,DEST,T}(src, dest)
 
-eltype{SRC,DEST,ELT}(f::FastChebyshevTransformFFTW{SRC,DEST,ELT})=ELT
+eltype{SRC,DEST,ELT}(::Type{FastChebyshevTransformFFTW{SRC,DEST,ELT}}) = ELT
 
 immutable InverseFastChebyshevTransformFFTW{SRC,DEST,ELT} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
 	src		::	SRC
@@ -150,7 +150,7 @@ end
 
 InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST, T) = InverseFastChebyshevTransformFFTW{SRC,DEST, T}(src, dest)
 
-eltype{SRC,DEST,ELT}(f::InverseFastChebyshevTransformFFTW{SRC,DEST,ELT})=ELT
+eltype{SRC,DEST,ELT}(::Type{InverseFastChebyshevTransformFFTW{SRC,DEST,ELT}}) = ELT
 
 # One implementation for forward and inverse transform in-place: call the plan. Added constant to undo the normalisation.
 # apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest) = sqrt(length(dest)/2^(dim(src)))*op.plan!*coef_srcdest
@@ -265,7 +265,7 @@ ctranspose(op::ChebyshevNormalization) = op
 ############################################
 
 "A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
-immutable ChebyshevBasisSecondKind{T <: AbstractFloat} <: OPS{T}
+immutable ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
 
