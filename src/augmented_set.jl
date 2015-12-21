@@ -149,7 +149,7 @@ extension_operator(s1::ConcatenatedSet, s2::ConcatenatedSet) =
 # This may give some errors, because the src and dest of the extension operator are not the augmented
 # sets, but the underlying sets.
 extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}) =
-    extension_operator(set(s1), set(s2))
+    WrappedOperator(s1, s2, extension_operator(set(s1), set(s2)))
 
 differentiation_operator(s::AugmentedSet, s2, var, order) = AugmentedSetDifferentiation(s)
 
