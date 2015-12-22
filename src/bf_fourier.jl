@@ -276,15 +276,10 @@ _backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::Discrete
 
 
 
-# The default approximation operator for a Fourier series is the FFT.
-approximation_operator(b::FourierBasis) = transform_operator(grid(b), b)
-
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 
-# src is the basis that was used for the transform
-# dest is the destination basis
-function normalization_operator(src::FourierBasis,dest::FourierBasis)
-    op = ScalingOperator(dest, 1/sqrt(convert(eltype(src,dest),length(src)))) 
+function transform_normalization_operator{ELT}(src::FourierBasis, ::Type{ELT} = eltype(src))
+	L = length(src) 
+    ScalingOperator(src, 1/sqrt(ELT(L)))
 end
-
 

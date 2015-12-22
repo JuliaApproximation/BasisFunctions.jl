@@ -34,6 +34,10 @@ size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 is_inplace{OP <: AbstractOperator}(::Type{OP}) = False
 is_inplace(op::AbstractOperator) = is_inplace(typeof(op))()
 
+"Trait to indicate whether or not an operator is diagonal."
+is_diagonal{OP <: AbstractOperator}(::Type{OP}) = False
+is_diagonal(op::AbstractOperator) = is_diagonal(typeof(op))()
+
 
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = Array(promote_type(eltype(op),eltype(coef_src)), size(dest(op)))
@@ -125,6 +129,8 @@ dest(opt::OperatorTranspose) = src(operator(opt))
 
 is_inplace{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = is_inplace(OP)
 
+is_diagonal{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = is_diagonal(OP)
+
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
 apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) = apply!(opt, operator(opt), dest, src, coef_dest, coef_src)
 
@@ -149,17 +155,14 @@ src(opinv::OperatorInverse) = dest(operator(opinv))
 
 dest(opinv::OperatorInverse) = src(operator(opinv))
 
+is_diagonal{OP,SRC,DEST}(::Type{OperatorInverse{OP,SRC,DEST}}) = is_diagonal(OP)
+
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
 apply!(opinv::OperatorInverse, dest, src, coef_dest, coef_src) = apply!(opinv, operator(opt), dest, src, coef_dest, coef_src)
 
 apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator(opt), dest, src, coef_srcdest)
 
 
-abstract AbstractDiagonalOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-
-"A diagonal operator."
-immutable DiagonalOperator{SRC,DEST} <: AbstractDiagonalOperator{SRC,DEST}
-end
 
 
 "The identity operator"
@@ -170,11 +173,13 @@ end
 
 IdentityOperator(src::FunctionSet) = IdentityOperator(src, src)
 
-is_inplace{SRC,DEST}(::Type{IdentityOperator{SRC,DEST}}) = True
+is_inplace{OP <: IdentityOperator}(::Type{OP}) = True
 
-ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+is_diagonal{OP <: IdentityOperator}(::Type{OP}) = True
 
 inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+
+ctranspose(op::IdentityOperator) = inv(op)
 
 apply!(op::IdentityOperator, dest, src, coef_srcdest) = nothing
 
@@ -201,7 +206,9 @@ dest(op::ScalingOperator) = src(op)
 
 eltype{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}) = ELT
 
-is_inplace{ELT,SRC}(::Type{ScalingOperator{ELT,SRC}}) = True
+is_inplace{OP <: ScalingOperator}(::Type{OP}) = True
+
+is_diagonal{OP <: ScalingOperator}(::Type{OP}) = True
 
 scalar(op::ScalingOperator) = op.scalar
 
@@ -242,6 +249,41 @@ function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
 end
 
 
+
+"A diagonal operator."
+immutable DiagonalOperator{ELT,SRC,DEST} <: AbstractOperator{SRC,DEST}
+	src		::	SRC
+	dest	::	DEST
+	diagonal::	Array{ELT,1}
+end
+
+diagonal(op::DiagonalOperator) = op.diagonal
+
+is_inplace{OP <: DiagonalOperator}(::Type{OP}) = True
+
+is_diagonal{OP <: DiagonalOperator}(::Type{OP}) = True
+
+inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), op.diagonal.^(-1))
+
+ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), diagonal(op))
+
+ctranspose{T <: Number}(op::DiagonalOperator{Complex{T}}) = DiagonalOperator(dest(op), src(op), conj(diagonal(op)))
+
+function apply!(op::DiagonalOperator, dest, src, coef_srcdest)
+	for i in eachindex(coef_srcdest)
+		coef_srcdest[i] *= op.diagonal[i]
+	end
+end
+
+# Extra definition for out-of-place version to avoid making an intermediate copy
+function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
+	for i in eachindex(coef_src)
+		coef_dest[i] = op.scalar * coef_src[i]
+	end
+end
+
+
+
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
@@ -264,9 +306,9 @@ index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
-is_inplace{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = True
+is_inplace{OP <: CoefficientScalingOperator}(::Type{OP}) = True
 
-scalar(op::CoefficientScalingOperator) = op.scalar
+is_diagonal{OP <: CoefficientScalingOperator}(::Type{OP}) = True
 
 ctranspose(op::CoefficientScalingOperator) = op
 
@@ -294,6 +336,8 @@ end
 operator(op::WrappedOperator) = op.op
 
 is_inplace{OP,SRC,DEST}(::Type{WrappedOperator{OP,SRC,DEST}}) = is_inplace(OP)
+
+is_diagonal{OP,SRC,DEST}(::Type{WrappedOperator{OP,SRC,DEST}}) = is_diagonal(OP)
 
 apply!(op::WrappedOperator, dest, src, coef_srcdest) = apply!(op.op, coef_srcdest)
 
@@ -365,6 +409,8 @@ end
 
 is_inplace{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2)
 
+is_diagonal{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}) = is_diagonal(OP1) & is_diagonal(OP2)
+
 
 # Perhaps the parameters are excessive in this and many other types in the code. Do some tests without them later.
 # A TripleCompositeOperator is implemented because it can better exploit in-place operators
@@ -401,6 +447,8 @@ dest(op::TripleCompositeOperator) = dest(op.op3)
 eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = ELT
 
 is_inplace{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
+
+is_diagonal{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3)
 
 ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
@@ -476,6 +524,10 @@ eltype{OP1,OP2,ELT,N,SRC,DEST}(::Type{OperatorSum{OP1,OP2,ELT,N,SRC,DEST}}) = EL
 
 ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), conj(op.val1), conj(op.val2))
 
+
+is_diagonal{OP1,OP2,ELT,N,SRC,DEST}(::Type{OperatorSum{OP1,OP2,ELT,N,SRC,DEST}}) = is_diagonal(OP1) & is_diagonal(OP2)
+
+
 apply!(op::OperatorSum, dest, src, coef_srcdest) = apply!(op, op.op1, op.op2, coef_srcdest)
 
 function apply!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_srcdest)
@@ -531,6 +583,7 @@ end
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), one(eltype(op2)))
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), -one(eltype(op2)))
+
 
 
 "A MatrixOperator is defined by a full matrix."

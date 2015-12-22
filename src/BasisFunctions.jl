@@ -6,7 +6,7 @@ module BasisFunctions
 #using ArrayViews
 using FixedSizeArrays
 using Debug
-using ApproxFun
+#using ApproxFun
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
@@ -47,7 +47,7 @@ export True, False
 export SetFunction, index, functionset
 
 # from tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗, sets
+export TensorProductSet, tensorproduct, ⊗, sets, tp_length
 
 # from mappedsets.jl
 export map, imap, map_linear, imap_linear
@@ -65,7 +65,7 @@ export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     evaluation_operator, normalization_operator,
     Extension, Restriction, Differentiation, TransformOperator,
-    extension_size
+    extension_size, transform_normalization_operator
 
 # from tensorproductoperator.jl
 export TensorProductOperator
@@ -81,6 +81,9 @@ export approximate
 
 # from functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
+
+# from normalized_set.jl
+export NormalizedSet, normalize
 
 # from augmented_set.jl
 export ⊕, set, fun

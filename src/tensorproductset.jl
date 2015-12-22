@@ -28,19 +28,19 @@ end
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
 # Expand tensorproductsets in a tuple of sets to their individual sets.
-@debug function flattensets(sets::FunctionSet...)
-    flattened=FunctionSet[]
-    for i=1:length(sets)
-        appendsets(flattened,sets[i])
+function flattensets(sets::FunctionSet...)
+    flattened = FunctionSet[]
+    for i = 1:length(sets)
+        appendsets(flattened, sets[i])
     end
-    flattened=tuple(flattened...)
+    flattened = tuple(flattened...)
 end
 
-appendsets(flattened::Array{FunctionSet,1},f::FunctionSet) = append!(flattened,[f])
+appendsets(flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [f])
 
-function appendsets(flattened::Array{FunctionSet,1},f::TensorProductSet)
-    for j=1:dim(f)
-        append!(flattened,[set(f,j)])
+function appendsets(flattened::Array{FunctionSet,1}, f::TensorProductSet)
+    for j = 1:tp_length(f)
+        append!(flattened, [set(f,j)])
     end
 end
 
@@ -96,17 +96,17 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range])
-nbsets(b::TensorProductSet) = length(sets(b))
+tp_length(b::TensorProductSet) = length(sets(b))
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
 grid(b::TensorProductSet, j::Int) = grid(set(b,j))
 
-left(b::TensorProductSet) = Vec([left(set(b,j)) for j=1:nbsets(b)])
+left(b::TensorProductSet) = Vec([left(set(b,j)) for j=1:tp_length(b)])
 left(b::TensorProductSet, j::Int) = left(set(b,j))
 left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
 left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
-right(b::TensorProductSet) = Vec([right(set(b,j)) for j=1:nbsets(b)])
+right(b::TensorProductSet) = Vec([right(set(b,j)) for j=1:tp_length(b)])
 right(b::TensorProductSet, j::Int) = right(set(b,j))
 right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
 right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])

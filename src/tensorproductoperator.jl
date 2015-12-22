@@ -24,33 +24,52 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     
 end
 
-TensorProductOperator(operators...) = TensorProductOperator(eltype(map(eltype,operators)...),operators...)
-    
-    function TensorProductOperator{ELT}(::Type{ELT}, operators...)
-        TO = typeof(operators)
+TensorProductOperator(operators...) = TensorProductOperator(eltype(map(eltype,operators)...), operators...)
+
+# Expand tensorproductoperators in a tuple of operators to their individual operators.
+function flattenops(ops::AbstractOperator...)
+    flattened = AbstractOperator[]
+    for i = 1:length(ops)
+        appendops(flattened, ops[i])
+    end
+    flattened = tuple(flattened...)
+end
+
+appendops(flattened::Array{AbstractOperator,1}, f::AbstractOperator) = append!(flattened, [f])
+
+function appendops(flattened::Array{AbstractOperator,1}, f::TensorProductOperator)
+    for j = 1:tp_length(f)
+        append!(flattened, [operator(f, j)])
+    end
+end
+
+
+function TensorProductOperator{ELT}(::Type{ELT}, ops...)
+    operators = flattenops(ops...)
+    TO = typeof(operators)
     ON = length(operators)
-        tp_src = TensorProductSet(map(src, operators)...)
-        tp_dest = TensorProductSet(map(dest, operators)...)
-        SRC = typeof(tp_src)
-        DEST = typeof(tp_dest)
+    tp_src = TensorProductSet(map(src, operators)...)
+    tp_dest = TensorProductSet(map(dest, operators)...)
+    SRC = typeof(tp_src)
+    DEST = typeof(tp_dest)
 
-        # Scratch contains matrices of sufficient size to hold intermediate results
-        # in the application of the tensor product operator.
-        # Example, for ON=3 scratch is a length (ON-1)-tuple of matrices of size:
-        # - [M1,N2,N3]
-        # - [M1,M2,N3]
-        # where operator J maps a set of length Nj to a set of length Mj.
-        scratch_array = [ zeros(ELT, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:ON]...) for j=2:ON]
-        scratch = (scratch_array...)
-        SCRATCH = typeof(scratch)
+    # Scratch contains matrices of sufficient size to hold intermediate results
+    # in the application of the tensor product operator.
+    # Example, for ON=3 scratch is a length (ON-1)-tuple of matrices of size:
+    # - [M1,N2,N3]
+    # - [M1,M2,N3]
+    # where operator J maps a set of length Nj to a set of length Mj.
+    scratch_array = [ zeros(ELT, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:ON]...) for j=2:ON]
+    scratch = (scratch_array...)
+    SCRATCH = typeof(scratch)
 
-        # scr_scratch and dest_scratch are tuples of length ON that contain preallocated
-        # storage to hold a vector for source and destination for each operator
-        src_scratch_array = [zeros(ELT, length(src(operators[j]))) for j=1:ON]
-        src_scratch = (src_scratch_array...)
-        dest_scratch_array = [zeros(ELT, length(dest(operators[j]))) for j=1:ON]
-        dest_scratch = (dest_scratch_array...)
-        TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}(operators, tp_src, tp_dest, scratch, src_scratch, dest_scratch)
+    # scr_scratch and dest_scratch are tuples of length ON that contain preallocated
+    # storage to hold a vector for source and destination for each operator
+    src_scratch_array = [zeros(ELT, length(src(operators[j]))) for j=1:ON]
+    src_scratch = (src_scratch_array...)
+    dest_scratch_array = [zeros(ELT, length(dest(operators[j]))) for j=1:ON]
+    dest_scratch = (dest_scratch_array...)
+    TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}(operators, tp_src, tp_dest, scratch, src_scratch, dest_scratch)
 end
 
 tensorproduct(op::AbstractOperator, n) = TensorProductOperator([op for i=1:n]...)
@@ -69,6 +88,8 @@ dest(op::TensorProductOperator, j::Int) = set(op.dest, j)
 # Element-wise and total size functions
 size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, sets(dest(op)))) : prod(map(length, sets(src(op))))
 size(op::TensorProductOperator) = (size(op,1), size(op,2))
+
+tp_length{ELT,TO,ON,SCRATCH,SRC,DEST}(op::TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}) = ON
 
 # Retrieve the operators that make up this tensor product
 operators(op::TensorProductOperator) = op.operators

@@ -65,7 +65,7 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
-#call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = -1 <= x <= 1 ? cos((idx-1)*acos(mapx(b,x))) : recurrence_eval(b, idx, mapx(b,x))
+
 call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
 
 # TODO: do we need these two routines below? Are they different from the generic ones?
@@ -122,8 +122,7 @@ abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
 abstract DiscreteChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
 
 # These types use FFTW and so they are (currently) limited to Float64.
-# This will improve once the pure-julia implementation of FFT lands (#6193).
-# But, we can also borrow from ApproxFun so let's do that right away
+# This may improve once the pure-julia implementation of FFT lands (#6193).
 
 is_inplace{O <: DiscreteChebyshevTransformFFTW}(::Type{O}) = True
 
@@ -215,46 +214,48 @@ _backward_chebyshev_operator{T <: Number}(src::ChebyshevBasis, dest::DiscreteGri
 # Below let's implement a custom type to do the alternating flip. But this should be fixed.
 #approximation_operator(b::ChebyshevBasis) = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
 
-immutable ChebyshevEvaluation{SRC,DEST,OP} <: AbstractOperator{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
-    op      ::  OP
-end
+# immutable ChebyshevEvaluation{SRC,DEST,OP} <: AbstractOperator{SRC,DEST}
+#     src     ::  SRC
+#     dest    ::  DEST
+#     op      ::  OP
+# end
 
-function apply!(op::ChebyshevEvaluation, dest, src, coef_dest, coef_src)
-    apply!(op.op, coef_dest, coef_src)
-    for i = 1:length(coef_dest)
-        coef_dest[i] = (-1)^(i+1) * coef_dest[i]
-    end
-end
+# function apply!(op::ChebyshevEvaluation, dest, src, coef_dest, coef_src)
+#     apply!(op.op, coef_dest, coef_src)
+#     for i = 1:length(coef_dest)
+#         coef_dest[i] = (-1)^(i+1) * coef_dest[i]
+#     end
+# end
 
-function approximation_operator(b::ChebyshevBasis)
-    g = grid(b)
-    op = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
-    ChebyshevEvaluation(b, g, op)
-end
+# function approximation_operator(b::ChebyshevBasis)
+#     g = grid(b)
+#     op = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
+#     ChebyshevEvaluation(b, g, op)
+# end
 
-# src is the basis that was used for the transform
-# dest is the destination basis
-function normalization_operator(src::ChebyshevBasis,dest::ChebyshevBasis)
-    ChebyshevNormalization(dest,length(src))
-end
-
-immutable ChebyshevNormalization{SRC} <: AbstractOperator{SRC,SRC}
+immutable ChebyshevNormalization{ELT,SRC} <: AbstractOperator{SRC,SRC}
     src     :: SRC
-    L       :: Integer
 end
+
+eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
+
+transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T) = ChebyshevNormalization{ELT,typeof(src)}(src)
 
 function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
-    coef_srcdest[1] = coef_srcdest[1]/sqrt(2)
-    for i = 1:length(coef_srcdest)
-        coef_srcdest[i] = 1/sqrt(op.L/2) * (-1)^(i+1) * coef_srcdest[i]
+	L = length(op.src)
+	T = numtype(src)
+	s = 1/sqrt(T(L)/2)
+    coef_srcdest[1] /= sqrt(T(2))
+    for i in eachindex(coef_srcdest)
+        coef_srcdest[i] *= (-1)^(i+1) * s
     end
 end
 
 dest(op::ChebyshevNormalization) = src(op)
 
-is_inplace(op::ChebyshevNormalization) = True()
+is_inplace{OP <: ChebyshevNormalization}(::Type{OP}) = True
+
+is_diagonal{OP <: ChebyshevNormalization}(::Type{OP}) = True
 
 ctranspose(op::ChebyshevNormalization) = op
 

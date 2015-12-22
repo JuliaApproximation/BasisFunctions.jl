@@ -511,9 +511,25 @@ function test_fourier_series(T)
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
 
     # Transforms
-
+    b1 = FourierBasis(161, T)
+    A = approximation_operator(b1)
+    f = x -> 1/(2+cos(pi*x))
+    e = approximate(b1, f)
+    x0 = T(1//2)
+    @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 end
 
+# Chebyshev polynomials
+function test_chebyshev(T)
+    delimit("Chebyshev expansions")
+
+    b1 = ChebyshevBasis(160, T)
+    A = approximation_operator(b1)
+    f = exp
+    e = approximate(b1, exp)
+    x0 = T(1//2)
+    @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
+end
 
 #####
 # Grids
@@ -735,6 +751,8 @@ Test.with_handler(custom_handler) do
         test_tensor_operators(T)
 
         test_fourier_series(T)
+
+        test_chebyshev(T)
 
         test_grids(T)
 

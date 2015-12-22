@@ -1,7 +1,7 @@
 # generic_operators.jl
 
 
-# In this file we define default implementations for the following generic functions:
+# In this file we define the interface for the following generic functions:
 # - extension_operator
 # - restriction_operator
 # - interpolation_operator
@@ -10,9 +10,9 @@
 # - differentiation_operator
 # - evaluation_operator
 # - normalization_operator
+# - transform_normalization_operator
 
 # These operators are also defined for TensorProductSet's.
-# TODO: We may have to rethink some of them, perhaps we can remove a few.
 
 
 ############################
@@ -60,28 +60,6 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 
 
 
-# Default implementation of an extension uses zero-padding of coef_src to coef_dest
-# This routine is a bit dangerous, because it applies by default but it is not always correct.
-#function apply!(op::Extension, dest, src, coef_dest, coef_src)
-#    # We do too much work here, since we put all entries of coef_dest to zero.
-#    fill!(coef_dest, 0)
-#
-#    for i in eachindex(coef_src)
-#        coef_dest[i] = coef_src[i]
-#    end
-#end
-
-
-
-# Default implementation of a restriction selects coef_dest from the start of coef_src
-# This routine is a bit dangerous, because it applies by default but it is not always correct.
-#function apply!(op::Restriction, dest, src, coef_dest, coef_src)
-#    for i in eachindex(coef_dest)
-#        coef_dest[i] = coef_src[i]
-#    end
-#end
-
-
 
 #################
 # Normalization
@@ -92,6 +70,13 @@ immutable NormalizationOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
 end
+
+normalization_operator(src::FunctionSet) = NormalizationOperator(src, normalize(src))
+
+is_inplace{O <: NormalizationOperator}(::Type{O}) = True
+
+is_diagonal{O <: NormalizationOperator}(::Type{O}) = True
+
 
 
 
@@ -152,7 +137,13 @@ end
 
 
 
-interpolation_operator(s::FunctionSet) = SolverOperator(grid(s), s, qrfact(interpolation_matrix(s, grid(s))))
+function interpolation_operator(s::FunctionSet)
+    if has_transform(s)
+        transform_normalization_operator(s) * transform_operator(grid(s), s)
+    else
+        SolverOperator(grid(s), s, qrfact(interpolation_matrix(s, grid(s))))
+    end
+end
 
 # Evaluation works for any set that has a grid(set) associated with it.
 evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
@@ -162,7 +153,7 @@ evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_m
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(b::AbstractBasis) = interpolation_operator(b)
+approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # The default approximation for a basis is interpolation
 
 
@@ -214,32 +205,39 @@ differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), c
 # Operators for tensor product sets
 #####################################
 
+# TODO: add differentiation operator
 
-for op in (:extension_operator, :restriction_operator, :approximation_operator, 
-    :differentiation_operator, :normalization_operator)
+for op in (:extension_operator, :restriction_operator, :transform_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
         TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end
 
-for op in (:interpolation_operator, :evaluation_operator, :transform_operator, :normalization_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
-        TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
+    :normalization_operator, :transform_normalization_operator)
+    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}) = 
+        TensorProductOperator([$op(set(s,i)) for i in 1:LEN]...)
 end
 
 
-# These are not very elegant.
-for op in (:extension_operator, :restriction_operator, :approximation_operator, 
+# These are not very elegant. We need a fix for it.
+for op in (:extension_operator, :restriction_operator, :transform_operator, 
     :differentiation_operator, :normalization_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN},ELT::DataType) = 
         TensorProductOperator(ELT,[$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end
 
-for op in (:interpolation_operator, :evaluation_operator, :transform_operator, :normalization_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, ELT::DataType) = 
-        TensorProductOperator(ELT,[$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
+    :normalization_operator, :transform_normalization_operator)
+    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}, ELT::DataType) = 
+        TensorProductOperator(ELT,[$op(set(s,i)) for i in 1:LEN]...)
 end
 
-for op in (:interpolation_operator, :evaluation_operator, :transform_operator, :normalization_operator)
+for op in (:extension_operator, :restriction_operator, :transform_operator)
     @eval $op{N,T}(s1::FunctionSet{N,T}, s2::FunctionSet{N,T}, ELT::DataType) = 
         $op(s1,s2) 
+end
+
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
+    :normalization_operator)
+    @eval $op{N,T}(s::FunctionSet{N,T}, ELT::DataType) = $op(s)
 end
