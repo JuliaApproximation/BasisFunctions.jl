@@ -1,7 +1,7 @@
 module BasisFunctions
 
 # We may import ApproxFun to use its implementation of FFT for BigFloat's
-# import ApproxFun
+using ApproxFun
 
 #using ArrayViews
 using FixedSizeArrays
@@ -23,6 +23,8 @@ import Base: isreal, iseven, isodd
 import Base: ctranspose, transpose, inv
 
 import Base: show, showcompact, call, convert, similar
+
+import Base: dct, idct
 
 
 ## Exports

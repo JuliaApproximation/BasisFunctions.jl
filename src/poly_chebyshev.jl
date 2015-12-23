@@ -66,7 +66,7 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
 
-call_element{T <: AbstractFloat}(b::ChebyshevBasis{T}, idx::Int, x::T) = cos((idx-1)*acos(mapx(b,x)))
+call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(mapx(b,x)))
 
 # TODO: do we need these two routines below? Are they different from the generic ones?
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
@@ -84,7 +84,7 @@ end
 function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
 	@assert length(dest) < length(src)
 
-	for i=1:length(dest)
+	for i = 1:length(dest)
 		coef_dest[i] = coef_src[i]
 	end
 end
@@ -169,6 +169,29 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
+# We have to implement dct in terms of fft, which allocates more memory.
+function dct(a::AbstractArray{Complex{BigFloat}})
+	N = big(length(a))
+    c = fft([a; flipdim(a,1)])
+    d = c[1:N] .* exp(-im*big(pi)*(0:N-1)/(2*N))
+    d[1] = d[1] / sqrt(big(2))
+    d / sqrt(2*N)
+end
+
+dct(a::AbstractArray{BigFloat}) = real(dct(a+0im))
+
+function idct(a::AbstractArray{Complex{BigFloat}})
+    N = big(length(a))
+    b = a * sqrt(2*N)
+    b[1] = b[1] * sqrt(big(2))
+    b = b .* exp(im*big(pi)*(0:N-1)/(2*N))
+    b = [b; 0; conj(flipdim(b[2:end],1))]
+    c = ifft(b)
+    c[1:N]
+end
+
+idct(a::AbstractArray{BigFloat}) = real(idct(a+0im))
+
 apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
 
 
@@ -191,47 +214,33 @@ ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(d
 inv(op::DiscreteChebyshevTransform) = ctranspose(op)
 
 # TODO: restrict the grid of grid space here
-transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) = _forward_chebyshev_operator(src, dest, eltype(src,dest))
+transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) =
+	_forward_chebyshev_operator(src, dest, eltype(src,dest))
 
-_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Float64}) = FastChebyshevTransformFFTW(src,dest, Float64)
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Float64}) =
+	FastChebyshevTransformFFTW(src,dest, Float64)
 
-_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) = FastChebyshevTransformFFTW(src,dest, Complex{Float64})
+_forward_chebyshev_operator(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{Complex{Float64}}) =
+	FastChebyshevTransformFFTW(src,dest, Complex{Float64})
 
-_forward_chebyshev_operator{T <: Number}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{T}) = FastChebyshevTransform(src,dest)
-
-
-
-transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) = _backward_chebyshev_operator(src, dest, eltype(src,dest))
-
-_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Float64}) = InverseFastChebyshevTransformFFTW(src,dest, Float64)
-
-_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastChebyshevTransformFFTW(src,dest,Complex{Float64})
-
-_backward_chebyshev_operator{T <: Number}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) = InverseFastChebyshevTransform(src, dest)
+_forward_chebyshev_operator{T <: Number}(src::DiscreteGridSpace, dest::ChebyshevBasis, ::Type{T}) =
+	FastChebyshevTransform(src,dest)
 
 
-# TODO: experimentally, this composite operator looks like it does the trick, up to an alternating flip.
-# Below let's implement a custom type to do the alternating flip. But this should be fixed.
-#approximation_operator(b::ChebyshevBasis) = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
 
-# immutable ChebyshevEvaluation{SRC,DEST,OP} <: AbstractOperator{SRC,DEST}
-#     src     ::  SRC
-#     dest    ::  DEST
-#     op      ::  OP
-# end
+transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) =
+	_backward_chebyshev_operator(src, dest, eltype(src,dest))
 
-# function apply!(op::ChebyshevEvaluation, dest, src, coef_dest, coef_src)
-#     apply!(op.op, coef_dest, coef_src)
-#     for i = 1:length(coef_dest)
-#         coef_dest[i] = (-1)^(i+1) * coef_dest[i]
-#     end
-# end
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Float64}) =
+	InverseFastChebyshevTransformFFTW(src,dest, Float64)
 
-# function approximation_operator(b::ChebyshevBasis)
-#     g = grid(b)
-#     op = CoefficientScalingOperator(b, 1, 1/sqrt(2)) * ScalingOperator(b, 1/sqrt(length(b)/2)) * transform_operator(b, grid(b))
-#     ChebyshevEvaluation(b, g, op)
-# end
+_backward_chebyshev_operator(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) =
+	InverseFastChebyshevTransformFFTW(src,dest,Complex{Float64})
+
+_backward_chebyshev_operator{T <: Number}(src::ChebyshevBasis, dest::DiscreteGridSpace, ::Type{T}) =
+	InverseFastChebyshevTransform(src, dest)
+
+
 
 immutable ChebyshevNormalization{ELT,SRC} <: AbstractOperator{SRC,SRC}
     src     :: SRC
@@ -239,7 +248,8 @@ end
 
 eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
 
-transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T) = ChebyshevNormalization{ELT,typeof(src)}(src)
+transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T) =
+	ChebyshevNormalization{ELT,typeof(src)}(src)
 
 function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
 	L = length(op.src)

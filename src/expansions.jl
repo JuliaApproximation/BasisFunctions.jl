@@ -56,7 +56,7 @@ setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), x...)
 call_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
 
-call(e::SetExpansion, x::Vec{2,Float64}) = call_expansion(set(e), coefficients(e), x[1], x[2])
+call(e::SetExpansion, x::Vec{2}) = call_expansion(set(e), coefficients(e), x[1], x[2])
 
 call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), x...)
 call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
@@ -85,6 +85,9 @@ double_one{T <: Real}(::Type{Complex{T}}) = one(T) + im*one(T)
 # Just generate Float64 random values and convert to the type of s
 "Generate an expansion with random coefficients."
 random_expansion(s::FunctionSet) = SetExpansion(s, double_one(eltype(s)) * rand(size(s)))
+
+
+
 
 ##############################
 # Arithmetics with expansions
@@ -119,6 +122,16 @@ function apply!(op::AbstractOperator, set_dest::SetExpansion, set_src::SetExpans
     @assert set(set_dest) == dest(op)
 
     apply!(op, coefficients(set_dest), coefficients(set_src))
+end
+
+
+
+
+show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
+
+function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
+    println(io, "A ", dim(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
+    println(io, "Basis: ", name(fs))
 end
 
 

@@ -240,7 +240,8 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src))))
+apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] =
+	fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src))))
 
 
 immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -250,7 +251,8 @@ end
 
 # Why was the below line necessary?
 ## apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
-apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = ifft(coef_src)*sqrt(convert(eltype(coef_src),length(coef_src))) )
+apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src) =
+	coef_dest[:] = ifft(coef_src) * sqrt(convert(eltype(coef_src),length(coef_src)))
 
 ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
 ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))
@@ -261,18 +263,24 @@ ctranspose(op::InverseFastFourierTransformFFTW) = FastFourierTransformFFTW(dest(
 inverse(op::DiscreteFourierTransform) = ctranspose(op)
 
 
-transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis) = _forward_fourier_operator(src, dest, eltype(src,dest))
+transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis) =
+	_forward_fourier_operator(src, dest, eltype(src,dest))
 
-_forward_fourier_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) = FastFourierTransformFFTW(src,dest)
+_forward_fourier_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) =
+	FastFourierTransformFFTW(src,dest)
 
-_forward_fourier_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) = FastFourierTransform(src,dest)
+_forward_fourier_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) =
+	FastFourierTransform(src,dest)
 
 
-transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}) = _backward_fourier_operator(src, dest, eltype(src,dest))
+transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}) =
+	_backward_fourier_operator(src, dest, eltype(src,dest))
 
-_backward_fourier_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) = InverseFastFourierTransformFFTW(src,dest)
+_backward_fourier_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) =
+	InverseFastFourierTransformFFTW(src,dest)
 
-_backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) = InverseFastFourierTransform(src, dest)
+_backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) =
+	InverseFastFourierTransform(src, dest)
 
 
 

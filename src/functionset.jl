@@ -261,7 +261,7 @@ Evaluate an expansion given by the set of coefficients `coef` in the point x.
     end
 end
 
-@generated function call_expansion{N,T,S}(b::FunctionSet{N,T}, coef, x::Vec{N,S})
+@generated function call_expansion{N,T}(b::FunctionSet{N,T}, coef, x::Vec{N})
     xargs = [:(x[$d]) for d = 1:length(x)]
     quote
         call_expansion(b, coef, $(xargs...))
