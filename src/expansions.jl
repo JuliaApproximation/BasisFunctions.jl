@@ -31,13 +31,14 @@ set(e::SetExpansion) = e.set
 coefficients(e::SetExpansion) = e.coef
 
 # Delegation of methods
-for op in (:length, :size, :left, :right, :grid, :dim, :numtype, :index_dim)
+for op in (:length, :size, :left, :right, :grid, :index_dim)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
 # Delegation of type methods
 for op in (:numtype, :dim)
     @eval $op{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = $op(S)
+    @eval $op(s::SetExpansion) = $op(typeof(s))
 end
 
 
@@ -88,6 +89,14 @@ random_expansion(s::FunctionSet) = SetExpansion(s, double_one(eltype(s)) * rand(
 
 
 
+show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
+
+function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
+    println(io, "A ", dim(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
+    println(io, "Basis: ", name(fs))
+end
+
+
 
 ##############################
 # Arithmetics with expansions
@@ -111,6 +120,9 @@ end
 
 (*)(op::AbstractOperator, e::SetExpansion) = apply(op, e)
 
+(*)(a::Number, e::SetExpansion) = SetExpansion(set(e), a*coefficients(e))
+(*)(e::SetExpansion, a::Number) = a*e
+
 function apply(op::AbstractOperator, e::SetExpansion)
     @assert set(e) == src(op)
 
@@ -126,13 +138,6 @@ end
 
 
 
-
-show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
-
-function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
-    println(io, "A ", dim(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
-    println(io, "Basis: ", name(fs))
-end
 
 
 
