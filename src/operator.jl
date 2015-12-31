@@ -68,7 +68,11 @@ end
 _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 # Provide a general dispatchable definition for in-place operators also
-apply!(op::AbstractOperator, coef_srcdest) = apply!(op, dest(op), src(op), coef_srcdest)
+function apply!(op::AbstractOperator, coef_srcdest)
+	@assert size(dest(op)) == size(src(op))
+	
+	apply!(op, dest(op), src(op), coef_srcdest)
+end
 
 # Catch-all for missing implementations
 apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", op, " not implemented.")

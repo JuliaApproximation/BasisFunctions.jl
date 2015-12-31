@@ -105,6 +105,7 @@ ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, op
 # The one-element tensorproduct is particularly simple:
 apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,1}, dest, src, coef_dest, coef_src) = apply!(operator(op,1), coef_dest, coef_src)
 
+
 # TensorProduct with 2 elements
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_dest, coef_src)
     @assert size(dest) == size(coef_dest)
@@ -139,6 +140,39 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
         end
     end
 end
+
+# In-place variant
+function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_srcdest)
+    # There are cases where coef_srcdest is a linearized vector instead of a matrix.
+    coef = reshape(coef_srcdest, size(dest))
+
+    M1,N1 = size(op[1])
+    M2,N2 = size(op[2])
+
+    # coef_srcdest has size (N1,N2) = (M1,M2)
+    src_j = op.src_scratch[1]
+    for j = 1:N2
+        for i = 1:N1
+            src_j[i] = coef[i,j]
+        end
+        apply!(op[1], src_j)
+        for i = 1:M1
+            coef[i,j] = src_j[i]
+        end
+    end
+
+    src_j = op.src_scratch[2]
+    for j = 1:M1
+        for i = 1:N2
+            src_j[i] = coef[j,i]
+        end
+        apply!(op[2], src_j)
+        for i = 1:M2
+            coef[j,i] = src_j[i]
+        end
+    end
+end
+
 
 
 # TensorProduct with 3 elements
@@ -192,6 +226,57 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_des
             apply!(op[3], dest_j, src_j)
             for k = 1:M3
                 coef_dest[i,j,k] = dest_j[k]
+            end
+        end
+    end
+end
+
+# In-place variant
+function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_srcdest)
+
+    # There are cases where coef_srcdest is a large linearized vector rather than a tensor
+    coef = reshape(coef_srcdest, size(dest))
+
+    M1,N1 = size(op[1])
+    M2,N2 = size(op[2])
+    M3,N3 = size(op[3])
+    # coef_srcdest has size (N1,N2,N3) = (M1,M2,M3)
+
+    src_j = op.src_scratch[1]
+    for j = 1:N2
+        for k = 1:N3
+            for i = 1:N1
+                src_j[i] = coef[i,j,k]
+            end
+            apply!(op[1], src_j)
+            for i = 1:M1
+                coef[i,j,k] = src_j[i]
+            end
+        end
+    end
+
+    src_j = op.src_scratch[2]
+    for i = 1:M1
+        for k = 1:N3
+            for j = 1:N2
+                src_j[j] = coef[i,j,k]
+            end
+            apply!(op[2], src_j)
+            for j = 1:M2
+                coef[i,j,k] = src_j[j]
+            end
+        end
+    end
+
+    src_j = op.src_scratch[3]
+    for i = 1:M1
+        for j = 1:M2
+            for k = 1:N3
+                src_j[k] = coef[i,j,k]
+            end
+            apply!(op[3], src_j)
+            for k = 1:M3
+                coef[i,j,k] = src_j[k]
             end
         end
     end
