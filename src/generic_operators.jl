@@ -145,6 +145,13 @@ function interpolation_operator(s::FunctionSet)
     end
 end
 
+function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f)
+    A = interpolation_matrix(s, xs)
+    B = [f(x...) for x in xs]
+    SetExpansion(s, A\B)
+end
+
+
 # Evaluation works for any set that has a grid(set) associated with it.
 evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
 
@@ -156,6 +163,12 @@ a function in the function set. This operator maps a grid to a set of coefficien
 approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # The default approximation for a basis is interpolation
 
+
+sample{N,T}(g::AbstractGrid{N,T}, f::Function, ELT = T) = ELT[f(x...) for x in g]
+
+(*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(op))
+
+approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
 
 
 

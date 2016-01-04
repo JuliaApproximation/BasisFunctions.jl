@@ -136,6 +136,8 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
 similar(b::FunctionSet) = similar(b, length(b))
 
+similar(b::FunctionSet, n::Int) = similar(b, numtype(b), n)
+
 
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.

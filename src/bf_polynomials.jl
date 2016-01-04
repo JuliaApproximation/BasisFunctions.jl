@@ -16,6 +16,8 @@ typealias OPS{T} OrthogonalPolynomialBasis{T}
 is_orthogonal{B <: OPS}(::Type{B}) = True
 is_biorthogonal{B <: OPS}(::Type{B}) = True
 
+approx_length(b::OPS, n::Int) = n
+
 
 #######################
 # The monomial basis

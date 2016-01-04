@@ -12,9 +12,9 @@ end
 typealias DiscreteGridSpace1d{G,ELT,T} DiscreteGridSpace{G,ELT,1,T}
 
 
-DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}) = DiscreteGridSpace{typeof(grid),T,N,T}(grid)
+DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typeof(grid),ELT,N,T}(grid)
 
-DiscreteGridSpace{N,T,ELT <: Number}(grid::AbstractGrid{N,T}, ::Type{ELT}) = DiscreteGridSpace{typeof(grid),ELT,N,T}(grid)
+DiscreteGridSpace(tpg::TensorProductGrid, ELT) = TensorProductSet( [ DiscreteGridSpace(grid(tpg, j), ELT) for j in 1:tp_length(tpg)]...)
 
 eltype{G,ELT,N,T}(::Type{DiscreteGridSpace{G,ELT,N,T}}) = ELT
 

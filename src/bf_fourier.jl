@@ -35,8 +35,8 @@ fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-similar{T}(b::FourierBasisEven{T}, n) = fourier_basis_even(n, left(b), right(b))
-similar{T}(b::FourierBasisOdd{T}, n) = fourier_basis_odd(n, left(b), right(b))
+similar(b::FourierBasisEven, T, n::Int) = FourierBasis{true,T}(n, left(b), right(b))
+similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{false,T}(n, left(b), right(b))
 
 # Traits
 
@@ -118,6 +118,10 @@ end
 
 extension_size(b::FourierBasisEven) = 2*length(b)
 extension_size(b::FourierBasisOdd) = 2*length(b)+1
+
+approx_length(b::FourierBasisEven, n::Int) = iseven(n) ? n : n+1
+approx_length(b::FourierBasisOdd, n::Int) = isodd(n) ? n : n+1
+
 
 function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_dest, coef_src)
 	@assert length(dest) > length(src)

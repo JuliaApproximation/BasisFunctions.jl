@@ -44,6 +44,7 @@ export instantiate
 export natural_index, logical_index
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
 export True, False
+export approx_length, extension_size
 
 # from setfunction.jl
 export SetFunction, index, functionset

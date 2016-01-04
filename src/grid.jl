@@ -93,6 +93,8 @@ tensorproduct(g::AbstractGrid, n) = TensorProductGrid([g for i=1:n]...)
 
 index_dim{TG,GN,LEN,N,T}(::Type{TensorProductGrid{TG,GN,LEN,N,T}}) = LEN
 
+tp_length{TG,GN,LEN,N,T}(g::TensorProductGrid{TG,GN,LEN,N,T}) = LEN
+
 size(g::TensorProductGrid) = map(length, g.grids)
 size(g::TensorProductGrid, j::Int) = length(g.grids[j])
 

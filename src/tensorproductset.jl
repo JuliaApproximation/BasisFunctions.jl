@@ -47,6 +47,8 @@ end
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
+dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}, j::Int) = SN[j]
+
 ## Traits
 
 index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
@@ -75,9 +77,16 @@ for op in (:has_grid, :has_extension,)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 
+extension_size(b::TensorProductSet) = map(extension_size, sets(b))
+
 similar(b::TensorProductSet, n) = TensorProductSet(map(similar, sets(b), n)...)
 
-extension_size(b::TensorProductSet) = map(extension_size, sets(b))
+function approx_length(b::TensorProductSet, n::Int)
+    # Rough approximation: distribute n among all dimensions evenly, rounded upwards
+    N = dim(b)
+    m = ceil(Int, n^(1/N))
+    tuple([approx_length(set(b, j), m^dim(b, j)) for j in 1:tp_length(b)]...)
+end
 
 # It would be odd if the first method below was ever called, because LEN=1 makes
 # little sense for a tensor product. But perhaps in generic code somewhere...

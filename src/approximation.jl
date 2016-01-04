@@ -1,14 +1,12 @@
 # approximation.jl
 
 
-rhs{N,T}(g::AbstractGrid{N,T}, f::Function) = T[f(x...) for x in g]
 
+sample{N,T}(g::AbstractGrid{N,T}, f::Function, ELT = T) = ELT[f(x...) for x in g]
 
-function approximate(s::FunctionSet, f::Function)
-    A = approximation_operator(s)
-    B = rhs(grid(s), f)
-    SetExpansion(s, A*B)
-end
+(*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(op))
+
+approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
 
 
 function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f)
@@ -16,3 +14,6 @@ function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f
     B = [f(x...) for x in xs]
     SetExpansion(s, A\B)
 end
+
+
+
