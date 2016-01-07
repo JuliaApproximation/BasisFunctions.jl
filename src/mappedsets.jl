@@ -7,8 +7,8 @@ abstract AbstractMappedSet{S,N,T} <: FunctionSet{N,T}
 set(s::AbstractMappedSet) = s.set
 
 # Delegation of methods
-for op in (:length,)
-    @eval $op(s::AbstractMappedSet) = $op(set(s))
+for op in (:length, :approx_length)
+    @eval $op(s::AbstractMappedSet, args...) = $op(set(s),args...)
 end
 
 # Delegation of type methods
@@ -28,21 +28,21 @@ end
 """
 A set defined via a linear map.
 """
-immutable LinearMappedSet{S <: FunctionSet1d,ELT,T} <: AbstractMappedSet{S,1,T}
+immutable LinearMappedSet{S <: FunctionSet1d,T} <: AbstractMappedSet{S,1,T}
     set     ::  S
-    a       ::  ELT
-    b       ::  ELT
+    a       ::  T
+    b       ::  T
 
-    LinearMappedSet(set::FunctionSet1d{T}, a::T, b::T) = new(set, a, b)
+    LinearMappedSet(set::FunctionSet1d, a::T, b::T) = new(set, a, b)
 end
 # The underlying set s should support left(s) and right(s).
 
 function LinearMappedSet{T,S}(s::FunctionSet1d{T}, a::S, b::S)
-    ELT = promote_type(T,S)
-    LinearMappedSet{typeof(s),ELT,T}(s, a, b)
+    # ELT = promote_type(T,S)
+    LinearMappedSet{typeof(s),S}(s, a, b)
 end
 
-eltype{S,ELT,T}(::Type{LinearMappedSet{S,ELT,T}}) = ELT
+eltype{S,T}(::Type{LinearMappedSet{S,T}}) = promote_type(eltype(S),T)
 
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
@@ -63,6 +63,7 @@ call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
+similar(s::LinearMappedSet, args...) = rescale(similar(set(s),args...),left(s),right(s))
 
 "Rescale a function set to an interval [a,b]."
 rescale(s::FunctionSet1d, a, b) = LinearMappedSet(s, a, b)
@@ -84,6 +85,28 @@ end
 (+){T <: Number}(a::T, s::FunctionSet1d) = rescale(s, a+left(s), a+right(s))
 
 
+# Standard Implementation
 
+for op in (:extension_operator, :restriction_operator, :transform_operator,
+           :differentiation_operator, :normalization_operator)
+    @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet) = WrappedOperator(s1,s2,$op(set(s1),set(s2)))
+end
+
+for op in (:extension_operator, :restriction_operator, :transform_operator,
+           :differentiation_operator, :normalization_operator)
+    @eval $op(s1::AbstractMappedSet, s2::FunctionSet) = WrappedOperator(s1,s2,$op(set(s1),s2))
+end
+
+for op in (:extension_operator, :restriction_operator, :transform_operator,
+           :differentiation_operator, :normalization_operator)
+    @eval $op(s1::FunctionSet, s2::AbstractMappedSet) = WrappedOperator(s1,s2,$op(s1,set(s2)))
+end
+
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
+    :normalization_operator, :transform_normalization_operator)
+    @eval $op(s1::AbstractMappedSet) = WrappedOperator(s1,s1,$op(set(s1)))
+end
+
+transform_normalization_operator(s1::AbstractMappedSet, ELT) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1),ELT))
 
 

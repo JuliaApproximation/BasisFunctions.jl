@@ -53,7 +53,7 @@ export SetFunction, index, functionset
 export TensorProductSet, tensorproduct, ⊗, sets, tp_length
 
 # from mappedsets.jl
-export map, imap, map_linear, imap_linear
+export map, imap, map_linear, imap_linear, rescale
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion
