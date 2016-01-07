@@ -107,6 +107,6 @@ for op in (:interpolation_operator, :evaluation_operator, :approximation_operato
     @eval $op(s1::AbstractMappedSet) = WrappedOperator(s1,s1,$op(set(s1)))
 end
 
-transform_normalization_operator(s1::AbstractMappedSet, ELT) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1),ELT))
+transform_normalization_operator(s1::AbstractMappedSet) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1)))
 
 

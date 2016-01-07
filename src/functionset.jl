@@ -37,7 +37,7 @@ dim{B <: FunctionSet}(::Type{B}) = dim(super(B))
 dim(s::FunctionSet) = dim(typeof(s))
 
 "The numeric type of the set."
-numtype{N,T}(::Type{FunctionSet{N,T}}) = T
+numtype{N,T}(::Type{FunctionSet{N,T}}) = realify(T)
 numtype{B <: FunctionSet}(::Type{B}) = numtype(super(B))
 numtype(s::FunctionSet) = numtype(typeof(s))
 
@@ -47,12 +47,11 @@ isreal{B <: FunctionSet}(::Type{B}) = True
 isreal(s::FunctionSet) = isreal(typeof(s))()
 
 """
-The eltype of a set is the typical numeric type of expansion coefficients. It is usually
-either T or Complex{T}, where T is the numeric type of the set.
+The eltype of a set is the typical numeric type of expansion coefficients. It is 
+either NumT or Complex{NumT}, where NumT is the numeric type of the set.
 """
-eltype{F <: FunctionSet}(::Type{F}) = _eltype(F, isreal(F))
-_eltype{F <: FunctionSet}(::Type{F}, ::Type{True}) = numtype(F)
-_eltype{F <: FunctionSet}(::Type{F}, ::Type{False}) = complexify(numtype(F))
+eltype{N,T}(::Type{FunctionSet{N,T}}) = T
+eltype{B <: FunctionSet}(::Type{B}) = eltype(super(B))
 
 # The following line is in Base
 # eltype(x) = eltype(typeof(x))
@@ -81,6 +80,8 @@ index_dim(s::FunctionSet) = index_dim(typeof(s))
 complexify{T <: Real}(::Type{T}) = Complex{T}
 complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 # In 0.5 we will be able to use Base.complex(T)
+realify{T <: Real}(::Type{T}) = T
+realify{T <: Real}(::Type{Complex{T}}) = T
 
 isreal{T <: Real}(::Type{T}) = True
 isreal{T <: Real}(::Type{Complex{T}}) = False
@@ -136,7 +137,7 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
 similar(b::FunctionSet) = similar(b, length(b))
 
-similar(b::FunctionSet, n::Int) = similar(b, numtype(b), n)
+similar(b::FunctionSet, n::Int) = similar(b, eltype(b), n)
 
 
 # The following properties are not implemented as traits with types, because they are
