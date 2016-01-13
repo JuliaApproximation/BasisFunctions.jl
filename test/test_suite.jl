@@ -51,11 +51,12 @@ end
 
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
-function point_in_domain{T}(basis::FunctionSet{1,T}, scalar)
+function point_in_domain(basis::FunctionSet{1}, scalar)
     # Try to find an interval within the support of the basis
     a = left(basis)
     b = right(basis)
 
+    T = numtype(basis)
     # Avoid infinities for some bases on the real line
     if isinf(a)
         a = -T(1)
@@ -68,11 +69,12 @@ end
 
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
-function point_in_domain{N,T}(basis::FunctionSet{N,T}, scalar)
+function point_in_domain{N}(basis::FunctionSet{N}, scalar)
     # Try to find an interval within the support of the basis
     a = left(basis)
     b = right(basis)
 
+    T = numtype(basis)
     # Avoid infinities for some bases on the real line
     a = Vector(a)
     b = Vector(b)
@@ -365,15 +367,14 @@ end
 #####
 function test_fourier_series(T)
     delimit("Fourier series")
-
+    
     @test isreal(FourierBasis) == False
 
     ## Even length
     n = 12
     a = -T(1.2)
     b = T(3.4)
-    fb = FourierBasis(n, a, b)
-
+    fb = rescale(FourierBasis(n,T), a, b)
     @test isreal(fb) == False()
 
     @test left(fb) ≈ a
@@ -387,22 +388,22 @@ function test_fourier_series(T)
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(fb, freq)
+    idx = frequency2idx(set(fb), freq)
     @test fb(idx, x) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(fb, freq)
+    idx = frequency2idx(set(fb), freq)
     @test call(fb, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
-    idx = frequency2idx(fb, freq)
+    idx = frequency2idx(set(fb), freq)
     @test call(fb, idx, x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
     coef = T[1; 2; 3; 4] * (1+im)
-    e = SetExpansion(FourierBasis(4, a, b), coef)
+    e = SetExpansion(rescale(FourierBasis(4,T), a, b), coef)
     @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
     # Check type promotion: evaluate at an integer and at a rational point
@@ -413,12 +414,13 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 12
-    coef = map(T, rand(n))
-    b1 = FourierBasis(n, a, b)
-    b2 = FourierBasis(n+1, a, b)
-    b3 = FourierBasis(n+15, a, b)
-    E2 = Extension(b1, b2)
-    E3 = Extension(b1, b3)
+    # This line used to say T, however we don't allow real coefficients for Fourier bases.
+    coef = map(complexify(T), rand(n))
+    b1 = rescale(FourierBasis(n,T), a, b)
+    b2 = rescale(FourierBasis(n+1,T), a, b)
+    b3 = rescale(FourierBasis(n+15,T), a, b)
+    E2 = extension_operator(b1, b2)
+    E3 = extension_operator(b1, b3)
     e1 = SetExpansion(b1, coef)
     e2 = SetExpansion(b2, E2*coef)
     e3 = SetExpansion(b3, E3*coef)
@@ -428,12 +430,13 @@ function test_fourier_series(T)
 
 
     # Differentiation test
-    coef = map(T, rand(Float64, size(fb)))
+    coef = map(complexify(T), rand(Float64, size(fb)))
     D = differentiation_operator(fb)
     coef2 = D*coef
     e1 = SetExpansion(fb, coef)
-    e2 = SetExpansion(FourierBasis(length(fb)+1,left(fb),right(fb)), coef2)
+    e2 = SetExpansion(rescale(FourierBasis(length(fb)+1,T),left(fb),right(fb)), coef2)
 
+    
     x = T(2//10)
     delta = sqrt(eps(T))
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 100delta
@@ -441,25 +444,25 @@ function test_fourier_series(T)
 
 
     ## Odd length
-    b = FourierBasis(13, -one(T), one(T))
+    b = rescale(FourierBasis(13,T), -one(T), one(T))
 
     @test isreal(b) == False()
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(b, freq)
+    idx = frequency2idx(set(b), freq)
     @test call(b, idx, T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(b, freq)
+    idx = frequency2idx(set(b), freq)
     x = T(2//10)
     y = (x+1)/2
     @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    b = FourierBasis(3, -one(T), one(T))
+    b = rescale(FourierBasis(3,T), -one(T), one(T))
     e = SetExpansion(b, coef)
     x = T(2//10)
     y = (x+1)/2
@@ -471,10 +474,10 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 13
-    coef = map(T, rand(n))
-    b1 = FourierBasis(n, -one(T), one(T))
-    b2 = FourierBasis(n+1, -one(T), one(T))
-    b3 = FourierBasis(n+15, -one(T), one(T))
+    coef = map(complexify(T), rand(n))
+    b1 = FourierBasis(n, T)
+    b2 = FourierBasis(n+1, T)
+    b3 = FourierBasis(n+15, T)
     E2 = Extension(b1, b2)
     E3 = Extension(b1, b3)
     e1 = SetExpansion(b1, coef)
@@ -486,12 +489,12 @@ function test_fourier_series(T)
 
     # Restriction
     n = 14
-    b1 = FourierBasis(n, -one(T), one(T))
-    b2 = FourierBasis(n-1, -one(T), one(T))
-    b3 = FourierBasis(n-5, -one(T), one(T))
+    b1 = FourierBasis(n, T)
+    b2 = FourierBasis(n-1, T)
+    b3 = FourierBasis(n-5, T)
     E1 = Restriction(b1, b2)    # source has even length
     E2 = Restriction(b2, b3)    # source has odd length
-    coef1 = map(T, rand(length(b1)))
+    coef1 = map(complexify(T), rand(length(b1)))
     coef2 = E1*coef1
     coef3 = E2*coef2
     @test reduce(&, [ coef2[i+1] == coef1[i+1] for i=0:BasisFunctions.nhalf(b2) ] )
@@ -500,7 +503,7 @@ function test_fourier_series(T)
     @test reduce(&, [ coef3[end-i+1] == coef2[end-i+1] for i=1:BasisFunctions.nhalf(b3) ] )
 
     # Differentiation test
-    coef = map(T, rand(Float64, size(b)))
+    coef = map(complexify(T), rand(Float64, size(b)))
     D = differentiation_operator(b)
     coef2 = D*coef
     e1 = SetExpansion(b, coef)
@@ -681,7 +684,7 @@ end
 function test_ops(T)
     delimit("Chebyshev polynomials")
 
-    bc = ChebyshevBasis{T}(12, -T(1), T(1))
+    bc = ChebyshevBasis(12, T)
 
     x1 = T(4//10)
     @test bc(4, x1) ≈ cos(3*acos(x1))

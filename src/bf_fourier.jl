@@ -16,7 +16,8 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 
 name(b::FourierBasis) = "Fourier series"
 
-FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),T}(n)
+# The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
+FourierBasis{T}(n, ::Type{T} = Complex{Float64}) = FourierBasis{iseven(n),complexify(T)}(n)
 
 
 # Typesafe methods for constructing a Fourier series with even length
@@ -88,7 +89,7 @@ frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(mapx(b, x) * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
 call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
-	(idx == nhalf(b)+1	? mapx(b, x) * cos(2 * T(pi) * idx2frequency(b,idx))
+	(idx == nhalf(b)+1	?  cos(mapx(b, x) * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(mapx(b, x) * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
 
@@ -177,7 +178,7 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 end
 
 function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd(length(b)+1, left(b), right(b))
+	b_odd = fourier_basis_odd(length(b)+1, eltype(b))
 	differentiation_operator(b_odd) * extension_operator(b, b_odd)
 end
 

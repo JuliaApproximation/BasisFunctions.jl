@@ -21,17 +21,17 @@ immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
 end
 
 function TensorProductSet(sets::FunctionSet...)
-    sets = flattensets(sets...)
-    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),numtype(sets[1])}(sets)
+    ELT = eltype(map(eltype,sets)...)
+    sets = initializesets(ELT,sets...)
+    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),eltype(sets[1])}(sets)
 end
-
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
 # Expand tensorproductsets in a tuple of sets to their individual sets.
-function flattensets(sets::FunctionSet...)
+function initializesets(ELT,sets::FunctionSet...)
     flattened = FunctionSet[]
     for i = 1:length(sets)
-        appendsets(flattened, sets[i])
+        appendsets(flattened, similar(sets[i],ELT,length(sets[i])))
     end
     flattened = tuple(flattened...)
 end

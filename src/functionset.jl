@@ -37,7 +37,7 @@ dim{B <: FunctionSet}(::Type{B}) = dim(super(B))
 dim(s::FunctionSet) = dim(typeof(s))
 
 "The numeric type of the set."
-numtype{N,T}(::Type{FunctionSet{N,T}}) = realify(T)
+numtype{N,T}(::Type{FunctionSet{N,T}}) = real(T)
 numtype{B <: FunctionSet}(::Type{B}) = numtype(super(B))
 numtype(s::FunctionSet) = numtype(typeof(s))
 
@@ -80,9 +80,6 @@ index_dim(s::FunctionSet) = index_dim(typeof(s))
 complexify{T <: Real}(::Type{T}) = Complex{T}
 complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 # In 0.5 we will be able to use Base.complex(T)
-realify{T <: Real}(::Type{T}) = T
-realify{T <: Real}(::Type{Complex{T}}) = T
-
 isreal{T <: Real}(::Type{T}) = True
 isreal{T <: Real}(::Type{Complex{T}}) = False
 
@@ -289,8 +286,12 @@ end
     end
 end
 
-function call_expansion{N,T}(b::FunctionSet{N,T}, coef, grid::AbstractGrid{N,T})
-    ELT = promote_type(eltype(coef), T)
+# It's probably best to include some checks
+# - eltype(coef) is promotable to ELT
+# - grid and b have the same numtype
+
+function call_expansion{N,ELT,T}(b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
+    ARRAY_TYPE = promote_type(T,eltype(coef))
     result = Array(ELT, size(grid))
     call_expansion!(result, b, coef, grid)
 end
@@ -299,7 +300,7 @@ end
 
 
 # This function is slow - better to use transforms for special cases if available.
-function call_expansion!{N,T}(result, b::FunctionSet{N,T}, coef, grid::AbstractGrid{N,T})
+function call_expansion!{N,ELT,T}(result, b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
     @assert size(result) == size(grid)
 
     for i in eachindex(grid)

@@ -104,7 +104,7 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
 # from plots.jl
-export plot
+export plot, plot_expansion, plot_samples, plot_error
 
 # from bf_polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis

@@ -7,6 +7,14 @@ Typically, SRC and DEST are of type FunctionSet, but that is not enforced.
 The action of the operator is defined by providing a method for apply!.
 
 The dimension of an operator are like a matrix: (length(dest),length(src)).
+
+SRC and DEST should at least implement
+-length
+-size
+-numtype
+-eltype
+
+Eltype should be equal for SRC and DEST. 
 """
 abstract AbstractOperator{SRC,DEST}
 
@@ -52,7 +60,9 @@ end
 function apply!(op::AbstractOperator, coef_dest, coef_src)
 	@assert length(coef_dest) == length(dest(op))
 	@assert length(coef_src) == length(src(op))
-
+        @assert eltype(op) == eltype(coef_dest)
+        @assert eltype(op) == eltype(coef_src)
+    
 	# distinguish between operators that are in-place and operators that are not
 	_apply!(op, is_inplace(op), coef_dest, coef_src)
 end
@@ -202,7 +212,9 @@ immutable ScalingOperator{ELT,SRC} <: AbstractOperator{SRC,SRC}
 end
 
 function ScalingOperator{S <: Number,SRC}(src::SRC, scalar::S)
-	ELT = promote_type(eltype(SRC), S)
+        # Make sure the scalar type is promotable to the SRC type
+        @assert promote_type(eltype(SRC),S) == eltype(SRC)
+        ELT = S
 	ScalingOperator{ELT,SRC}(src, scalar)
 end
 
@@ -298,8 +310,10 @@ immutable CoefficientScalingOperator{ELT,SRC} <: AbstractOperator{SRC,SRC}
 end
 
 function CoefficientScalingOperator{S <: Number, SRC}(src::SRC, index::Int, scalar::S)
-	ELT = promote_type(eltype(SRC), S)
-	CoefficientScalingOperator{ELT,SRC}(src, index, scalar)
+        # Make sure the scalar type is promotable to the SRC type
+        @assert promote_type(eltype(SRC),S) == eltype(SRC)
+        ELT = S
+        CoefficientScalingOperator{ELT,SRC}(src, index, scalar)
 end
 
 eltype{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = ELT
@@ -373,6 +387,7 @@ end
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
 function CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2})
+        @assert DEST1 == SRC2
 	OP1 = typeof(op1)
 	OP2 = typeof(op2)
 	ELT = eltype(OP1,OP2)
@@ -516,8 +531,11 @@ immutable OperatorSum{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 function OperatorSum{SRC,DEST,S1 <: Number, S2 <: Number}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1::S1, val2::S2)
-	ELT = promote_type(S1, S2, eltype(op1), eltype(op2))
-	OperatorSum{typeof(op1), typeof(op2), ELT, index_dim(dest(op1)), SRC, DEST}(op1, op2, convert(ELT, val1), convert(ELT, val2))
+    @assert eltype(op1) == eltype(op2)
+    ELT = promote_type(eltype(op1), eltype(op2))
+    # make sure that the type of the values matches that of SRC and DEST
+    @assert promote_type(S1, S2, eltype(op1), eltype(op2)) == ELT
+    OperatorSum{typeof(op1), typeof(op2), ELT, index_dim(dest(op1)), SRC, DEST}(op1, op2, convert(ELT, val1), convert(ELT, val2))
 end
 
 src(op::OperatorSum) = src(op.op1)
