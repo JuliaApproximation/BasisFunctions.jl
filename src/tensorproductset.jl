@@ -22,8 +22,9 @@ end
 
 function TensorProductSet(sets::FunctionSet...)
     ELT = eltype(map(eltype,sets)...)
+    
     sets = initializesets(ELT,sets...)
-    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),eltype(sets[1])}(sets)
+    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),ELT}(sets)
 end
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
@@ -31,16 +32,16 @@ end
 function initializesets(ELT,sets::FunctionSet...)
     flattened = FunctionSet[]
     for i = 1:length(sets)
-        appendsets(flattened, similar(sets[i],ELT,length(sets[i])))
+        appendsets(ELT,flattened, sets[i])
     end
     flattened = tuple(flattened...)
 end
 
-appendsets(flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [f])
+appendsets(ELT,flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [similar(f,ELT,length(f))])
 
-function appendsets(flattened::Array{FunctionSet,1}, f::TensorProductSet)
+function appendsets(ELT,flattened::Array{FunctionSet,1}, f::TensorProductSet)
     for j = 1:tp_length(f)
-        append!(flattened, [set(f,j)])
+        append!(flattened, [similar(set(f,j),ELT,length(set(f,j)))])
     end
 end
 
