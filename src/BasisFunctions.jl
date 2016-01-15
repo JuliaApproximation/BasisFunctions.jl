@@ -89,7 +89,7 @@ export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 export NormalizedSet, normalize
 
 # from augmented_set.jl
-export ⊕, set, fun
+export ⊕, set, fun, derivative, IdentityFunction
 
 # from bf_fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
