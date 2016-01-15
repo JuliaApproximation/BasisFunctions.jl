@@ -7,10 +7,8 @@ EVEN is true if the length of the corresponding Fourier series is even.
 """
 immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
 	n			::	Int
-	a 			::	T
-	b 			::	T
 
-	FourierBasis(n, a = -one(T), b = one(T)) = (@assert iseven(n)==EVEN; new(n, a, b))
+	FourierBasis(n) = (@assert iseven(n)==EVEN; new(n))
 end
 
 typealias FourierBasisEven{T} FourierBasis{true,T}
@@ -18,25 +16,21 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 
 name(b::FourierBasis) = "Fourier series"
 
-
-FourierBasis{T}(n, a::T, b::T) = FourierBasis{iseven(n),T}(n, a, b)
-
-FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),T}(n)
+# The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
+FourierBasis{T}(n, ::Type{T} = Complex{Float64}) = FourierBasis{iseven(n),complexify(T)}(n)
 
 
 # Typesafe methods for constructing a Fourier series with even length
 fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
-fourier_basis_even{T}(n, a::T, b::T) = FourierBasis{true,T}(n, a, b)
 
 # Typesafe method for constructing a Fourier series with odd length
 fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
-fourier_basis_odd{T}(n, a::T, b::T) = FourierBasis{false,T}(n, a, b)
 
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-similar(b::FourierBasisEven, T, n::Int) = FourierBasis{true,T}(n, left(b), right(b))
-similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{false,T}(n, left(b), right(b))
+similar(b::FourierBasisEven, T, n::Int) = FourierBasis{true,T}(n)
+similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{false,T}(n)
 
 # Traits
 
@@ -61,23 +55,23 @@ has_extension(b::FourierBasis) = true
 
 length(b::FourierBasis) = b.n
 
-left(b::FourierBasis) = b.a
+left(b::FourierBasis) = -1
 
-left(b::FourierBasis, idx) = b.a
+left(b::FourierBasis, idx) = -1
 
-right(b::FourierBasis) = b.b
+right(b::FourierBasis) = 1
 
-right(b::FourierBasis, idx) = b.b
+right(b::FourierBasis, idx) = 1
 
-period(b::FourierBasis) = b.b-b.a
+period(b::FourierBasis) = 2
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, numtype(b))
 
 nhalf(b::FourierBasis) = length(b)>>1
 
 
 # Map the point x in [a,b] to the corresponding point in [0,1]
-mapx(b::FourierBasis, x) = (x-b.a)/(b.b-b.a)
+mapx(b::FourierBasis, x) = (x+1.0)/(2.0)
 
 # Natural index of an even Fourier basis ranges from -N+1 to N.
 natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
@@ -92,11 +86,11 @@ frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b, idx))
+call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(mapx(b, x) * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
 call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
-	(idx == nhalf(b)+1	? one(Complex{T}) * cos(2 * T(pi) * mapx(b, x) * idx2frequency(b,idx))
-						: exp(2 * T(pi) * 1im * mapx(b, x) * idx2frequency(b,idx)))
+	(idx == nhalf(b)+1	?  cos(mapx(b, x) * 2 * T(pi) * idx2frequency(b,idx))
+						: exp(mapx(b, x) * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
 
 function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
@@ -184,7 +178,7 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 end
 
 function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd(length(b)+1, left(b), right(b))
+	b_odd = fourier_basis_odd(length(b)+1, eltype(b))
 	differentiation_operator(b_odd) * extension_operator(b, b_odd)
 end
 
@@ -290,8 +284,9 @@ _backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::Discrete
 
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 
-function transform_normalization_operator{ELT}(src::FourierBasis, ::Type{ELT} = eltype(src))
-	L = length(src) 
+function transform_normalization_operator(src::FourierBasis)
+    L = length(src)
+    ELT = eltype(src)
     ScalingOperator(src, 1/sqrt(ELT(L)))
 end
 

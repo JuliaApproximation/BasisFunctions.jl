@@ -6,7 +6,7 @@ A DiscreteGridSpace is a discrete basis that can represent a sampled function on
 immutable DiscreteGridSpace{G,ELT,N,T} <: AbstractBasis{N,T}
 	grid		::	G
 
-	DiscreteGridSpace(grid::AbstractGrid{N,T}) = new(grid)
+	DiscreteGridSpace(grid::AbstractGrid{N}) = new(grid)
 end
 
 typealias DiscreteGridSpace1d{G,ELT,T} DiscreteGridSpace{G,ELT,1,T}
@@ -27,3 +27,4 @@ end
 
 rescale(s::DiscreteGridSpace, a, b) = DiscreteGridSpace(rescale(grid(s)))
 
+similar{G,ELT,N,T}(s::DiscreteGridSpace{G,ELT,N,T}, ELTnew, n) = DiscreteGridSpace{G,ELT,N,ELTnew}(grid(s))

@@ -11,10 +11,8 @@ A basis of Chebyshev polynomials of the first kind on the interval [a,b].
 """
 immutable ChebyshevBasis{T} <: OPS{T}
     n			::	Int
-    a 			::	T
-    b 			::	T
 
-    ChebyshevBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
+    ChebyshevBasis(n) = new(n)
 end
 
 typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
@@ -23,26 +21,24 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 	
-ChebyshevBasis{T}(n, a::T, b::T) = ChebyshevBasis{T}(n, a, b)
-
 ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
-similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n, left(b), right(b))
-
+similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n)
+similar{T}(b::ChebyshevBasis, ::Type{T}, n) = ChebyshevBasis{T}(n)
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_transform(b::ChebyshevBasis) = true
 has_extension(b::ChebyshevBasis) = true
 
-left(b::ChebyshevBasis) = b.a
+left(b::ChebyshevBasis) = -1
 left(b::ChebyshevBasis, idx) = left(b)
 
-right(b::ChebyshevBasis) = b.b
+right(b::ChebyshevBasis) = 1
 right(b::ChebyshevBasis, idx) = right(b)
 
-grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid{T}(b.n), left(b), right(b))
+grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid(b.n,numtype(b)), left(b), right(b))
 
 # The weight function
 weight{T}(b::ChebyshevBasis{T}, x) = 1/sqrt(1-T(x)^2)
@@ -63,10 +59,8 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
 # Map the point x in [a,b] to the corresponding point in [-1,1]
-mapx(b::ChebyshevBasis, x) = (x-b.a)/(b.b-b.a)*2-1
 
-
-call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(mapx(b,x)))
+call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
 
 # TODO: do we need these two routines below? Are they different from the generic ones?
 function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)

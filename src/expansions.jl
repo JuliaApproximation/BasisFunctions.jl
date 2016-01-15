@@ -84,9 +84,9 @@ double_one{T <: Real}(::Type{T}) = one(T)
 double_one{T <: Real}(::Type{Complex{T}}) = one(T) + im*one(T)
 
 # Just generate Float64 random values and convert to the type of s
+# This does not work as intended, one(Bigfloat)*rand() gives a Float64 Array
 "Generate an expansion with random coefficients."
-random_expansion(s::FunctionSet) = SetExpansion(s, double_one(eltype(s)) * rand(size(s)))
-
+random_expansion{N,ELT}(s::FunctionSet{N,ELT}) = SetExpansion(s, double_one(ELT) * convert(Array{ELT,length(size(s))},rand(size(s))))
 
 
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))

@@ -231,26 +231,3 @@ for op in (:interpolation_operator, :evaluation_operator, :approximation_operato
         TensorProductOperator([$op(set(s,i)) for i in 1:LEN]...)
 end
 
-
-# These are not very elegant. We need a fix for it.
-for op in (:extension_operator, :restriction_operator, :transform_operator, 
-    :differentiation_operator, :normalization_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN},ELT::DataType) = 
-        TensorProductOperator(ELT,[$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
-end
-
-for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
-    :normalization_operator, :transform_normalization_operator)
-    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}, ELT::DataType) = 
-        TensorProductOperator(ELT,[$op(set(s,i)) for i in 1:LEN]...)
-end
-
-for op in (:extension_operator, :restriction_operator, :transform_operator)
-    @eval $op{N,T}(s1::FunctionSet{N,T}, s2::FunctionSet{N,T}, ELT::DataType) = 
-        $op(s1,s2) 
-end
-
-for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
-    :normalization_operator)
-    @eval $op{N,T}(s::FunctionSet{N,T}, ELT::DataType) = $op(s)
-end

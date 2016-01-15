@@ -53,7 +53,7 @@ export SetFunction, index, functionset
 export TensorProductSet, tensorproduct, ⊗, sets, tp_length
 
 # from mappedsets.jl
-export map, imap, map_linear, imap_linear
+export map, imap, map_linear, imap_linear, rescale
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion
@@ -104,7 +104,7 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
 # from plots.jl
-export plot
+export plot, plot_expansion, plot_samples, plot_error
 
 # from bf_polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
