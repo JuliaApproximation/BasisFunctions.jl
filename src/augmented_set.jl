@@ -15,7 +15,7 @@ set(s::AugmentedSet) = s.set
 fun(s::AugmentedSet) = s.f
 
 # Method delegation
-for op in (:length,)
+for op in (:length, :left, :right)
     @eval $op(s::AugmentedSet) = $op(s.set)
 end
 
@@ -57,6 +57,10 @@ length(b::ConcatenatedSet) = length(b.set1) + length(b.set2)
 # Method delegation
 for op in (:has_derivative,)
     @eval $op(b::ConcatenatedSet) = $op(b.set1) & $op(b.set2)
+end
+
+for op in (:left, :right)
+    @eval $op(b::ConcatenatedSet) = $op(b.set1)
 end
 
 # Delegation of type methods
