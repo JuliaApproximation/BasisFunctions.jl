@@ -99,7 +99,14 @@ getindex(op::TensorProductOperator, j::Int) = operator(op, j)
 
 ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, operators(op)))
 
+function is_inplace{ELT,TO,ON,SCRATCH, SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}})
+    is_inplace(TO)
+end
 
+is_inplace{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_inplace(OP1) 
+is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2}}) = is_inplace(OP1) & is_inplace(OP2)
+is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2,OP3}}) = is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
+    
 # It is much easier to implement different versions specific to the dimension
 # of the tensor-product, than to provide an N-dimensional implementation...
 # The one-element tensorproduct is particularly simple:
@@ -108,8 +115,8 @@ apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,1}, dest, src, coef_dest, coef_s
 
 # TensorProduct with 2 elements
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_dest, coef_src)
-    @assert size(dest) == size(coef_dest)
-    @assert size(src)  == size(coef_src)
+    ## @assert size(dest) == size(coef_dest)
+    ## @assert size(src)  == size(coef_src)
 
     M1,N1 = size(op[1])
     M2,N2 = size(op[2])

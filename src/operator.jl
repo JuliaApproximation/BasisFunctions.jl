@@ -58,10 +58,10 @@ end
 # Operators can choose to specialize with or without the src and dest arguments.
 # In-place operators can be called with a single set of coefficients.
 function apply!(op::AbstractOperator, coef_dest, coef_src)
-	@assert length(coef_dest) == length(dest(op))
-	@assert length(coef_src) == length(src(op))
-        @assert eltype(op) == eltype(coef_dest)
-        @assert eltype(op) == eltype(coef_src)
+	## @assert length(coef_dest) == length(dest(op))
+	## @assert length(coef_src) == length(src(op))
+        ## @assert eltype(op) == eltype(coef_dest)
+        ## @assert eltype(op) == eltype(coef_src)
     
 	# distinguish between operators that are in-place and operators that are not
 	_apply!(op, is_inplace(op), coef_dest, coef_src)
@@ -79,7 +79,7 @@ _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(o
 
 # Provide a general dispatchable definition for in-place operators also
 function apply!(op::AbstractOperator, coef_srcdest)
-	@assert size(dest(op)) == size(src(op))
+	## @assert size(dest(op)) == size(src(op))
 	
 	apply!(op, dest(op), src(op), coef_srcdest)
 end
@@ -387,7 +387,7 @@ end
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
 function CompositeOperator{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2})
-        @assert DEST1 == SRC2
+        #@assert DEST1 == SRC2
 	OP1 = typeof(op1)
 	OP2 = typeof(op2)
 	ELT = eltype(OP1,OP2)
@@ -494,9 +494,9 @@ function _apply!(op::TripleCompositeOperator, op2_inplace::False, op3_inplace::T
 end
 
 function _apply!(op::TripleCompositeOperator, op2_inplace::False, op3_inplace::False, coef_dest, coef_src)
-	apply!(op.op1, op.scratch1, coef_src)
-	apply!(op.op2, op.scratch2, op.scratch1)
-	apply!(op.op3, coef_dest, op.scratch2)
+    apply!(op.op1, op.scratch1, coef_src)
+    apply!(op.op2, op.scratch2, op.scratch1)
+    apply!(op.op3, coef_dest, op.scratch2)
 end
 
 

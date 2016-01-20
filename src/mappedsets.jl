@@ -50,9 +50,9 @@ eltype{S,T}(::Type{LinearMappedSet{S,T}}) = promote_type(eltype(S),T)
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
 
-name(s::LinearMappedSet) = name(set(s)) * ", mapped to [" * left(s) * "," * right(s) * "]"
+name(s::LinearMappedSet) = name(set(s)) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
-# Map the point x in [c,d] to a point in [a,b]
+# Ma the point x in [c,d] to a point in [a,b]
 map_linear(x, a, b, c, d) = a + (x-c)/(d-c) * (b-a)
 
 # Map the point y in [a,b] to a point in [c,d]

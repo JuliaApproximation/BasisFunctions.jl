@@ -118,7 +118,7 @@ approx_length(b::FourierBasisOdd, n::Int) = isodd(n) ? n : n+1
 
 
 function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_dest, coef_src)
-	@assert length(dest) > length(src)
+	## @assert length(dest) > length(src)
 
 	nh = nhalf(src)
 
@@ -136,7 +136,7 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_d
 end
 
 function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_dest, coef_src)
-	@assert length(dest) > length(src)
+	## @assert length(dest) > length(src)
 
 	nh = nhalf(src)
 
@@ -153,7 +153,7 @@ end
 
 
 function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_dest, coef_src)
-	@assert length(dest) < length(src)
+	## @assert length(dest) < length(src)
 
 	nh = nhalf(dest)
 	for i=0:nh
@@ -165,7 +165,7 @@ function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_
 end
 
 function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef_dest, coef_src)
-	@assert length(dest) < length(src)
+	## @assert length(dest) < length(src)
 
 	nh = nhalf(dest)
 	for i=0:nh-1
