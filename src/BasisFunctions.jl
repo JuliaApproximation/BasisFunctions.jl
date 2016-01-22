@@ -30,7 +30,7 @@ import Base: dct, idct
 ## Exports
 
 # from grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
+export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize
 export dim, left,right, range
 

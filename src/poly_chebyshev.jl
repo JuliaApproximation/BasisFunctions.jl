@@ -38,7 +38,7 @@ left(b::ChebyshevBasis, idx) = left(b)
 right(b::ChebyshevBasis) = 1
 right(b::ChebyshevBasis, idx) = right(b)
 
-grid{T}(b::ChebyshevBasis{T}) = LinearMappedGrid(ChebyshevIIGrid(b.n,numtype(b)), left(b), right(b))
+grid{T}(b::ChebyshevBasis{T}) = ChebyshevIIGrid(b.n,numtype(b))
 
 # The weight function
 weight{T}(b::ChebyshevBasis{T}, x) = 1/sqrt(1-T(x)^2)

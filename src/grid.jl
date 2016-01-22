@@ -236,8 +236,6 @@ end
 unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.n) )
 
 
-
-
 # Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
 immutable LinearMappedGrid{G <: AbstractGrid1d,T} <: AbstractGrid1d{T}
 	grid	::	G
