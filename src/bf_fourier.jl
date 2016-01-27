@@ -18,8 +18,9 @@ name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
 FourierBasis{T}(n, ::Type{T} = Complex{Float64}) = FourierBasis{iseven(n),complexify(T)}(n)
-
-
+# convenience methods
+FourierBasis{T}(n, a::T, b::T) = rescale(FourierBasis(n,complexify(T)),a,b)
+FourierBasis{T,S}(n, a::T, b::T, ::Type{S}) = rescale(FourierBasis(n,S),a,b)
 # Typesafe methods for constructing a Fourier series with even length
 fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
 

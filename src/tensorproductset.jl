@@ -28,6 +28,10 @@ function TensorProductSet(sets::FunctionSet...)
 end
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
+# Disallow TensorProductSets of only one dimension.
+function TensorProductSet(set::FunctionSet)
+    set
+end
 # Expand tensorproductsets in a tuple of sets to their individual sets.
 function initializesets(ELT,sets::FunctionSet...)
     flattened = FunctionSet[]
@@ -105,7 +109,7 @@ length(b::TensorProductSet) = prod(size(b))
 
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
-set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range])
+set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range]...)
 tp_length(b::TensorProductSet) = length(sets(b))
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
