@@ -101,6 +101,7 @@ transform_operator(src, dest) = TransformOperator(src, dest)
 transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
 transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
 
+
 ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
 ## The transform is invariant under a linear map.
@@ -155,6 +156,18 @@ end
 # Evaluation works for any set that has a grid(set) associated with it.
 evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
 
+# Evaluate s in grid d
+function evaluation_operator(s::FunctionSet, d::DiscreteGridSpace)
+    if has_transform(s,d)
+        if length(s)==length(d)
+            transform_operator(s,d) * inv(transform_normalization_operator(s))
+        else
+            slarge = similar(s,length(d))
+            transform_operator(slarge,d) * inv(transform_normalization_operator(slarge)) * extension_operator(s,slarge)
+        end
+    end
+    return MatrixOperator(interpolation_matrix(s, grid(d)))
+end
 
 """
 The approximation_operator function returns an operator that can be used to approximate
@@ -220,7 +233,7 @@ differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), c
 
 # TODO: add differentiation operator
 
-for op in (:extension_operator, :restriction_operator, :transform_operator)
+for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
         TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end

@@ -148,9 +148,9 @@ include("expansions.jl")
 
 include("functional.jl")
 
-include("generic_operators.jl")
-
 include("discretegridspace.jl")
+
+include("generic_operators.jl")
 
 include("approximation.jl")
 

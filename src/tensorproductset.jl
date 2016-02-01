@@ -84,7 +84,7 @@ end
 
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
-similar(b::TensorProductSet, n) = TensorProductSet(map(similar, sets(b), n)...)
+similar(b::TensorProductSet, ELT, n) = TensorProductSet(map((b,n)->similar(b,ELT,n), sets(b), n)...)
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards

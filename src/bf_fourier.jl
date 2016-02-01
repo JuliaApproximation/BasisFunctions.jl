@@ -30,8 +30,8 @@ fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-similar(b::FourierBasisEven, T, n::Int) = FourierBasis{true,T}(n)
-similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{false,T}(n)
+similar(b::FourierBasisEven, T, n::Int) = FourierBasis{iseven(n),T}(n)
+similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{iseven(n),T}(n)
 
 # Traits
 
@@ -50,7 +50,7 @@ is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true
 has_derivative(b::FourierBasis) = true
-has_transform(b::FourierBasis) = true
+has_transform{G <: PeriodicEquispacedGrid}(b::FourierBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::FourierBasis) = true
 
 

@@ -32,7 +32,7 @@ similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n)
 similar{T}(b::ChebyshevBasis, ::Type{T}, n) = ChebyshevBasis{T}(n)
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
-has_transform(b::ChebyshevBasis) = true
+has_transform{G <: ChebyshevIIGrid}(b::ChebyshevBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::ChebyshevBasis) = true
 
 left(b::ChebyshevBasis) = -1
@@ -246,16 +246,13 @@ end
 eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
 
 transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T) =
-	ChebyshevNormalization{ELT,typeof(src)}(src)
+	ScalingOperator(src,1/sqrt(T(length(src)/2)))*CoefficientScalingOperator(src,1,1/sqrt(T(2)))*UnevenSignFlipOperator(src)
 
 function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
 	L = length(op.src)
 	T = numtype(src)
 	s = 1/sqrt(T(L)/2)
     coef_srcdest[1] /= sqrt(T(2))
-    for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= (-1)^(i+1) * s
-    end
 end
 
 dest(op::ChebyshevNormalization) = src(op)
