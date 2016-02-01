@@ -52,7 +52,7 @@ end
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
-dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}, j::Int) = SN[j]
+dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = sum(SN)
 
 ## Traits
 
