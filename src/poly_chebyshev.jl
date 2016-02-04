@@ -86,11 +86,10 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	end
 end
 
-# TODO: this matrix does not take into account a and b -> either remove a and b (in favour of mapped basis) or update this function
 function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	n = length(src)
 	N = n-1
-	D = zeros(T, N+1, N+1)
+	D = zeros(Int, N+1, N+1)
 	A = zeros(1, N+1)
 	B = zeros(1, N+1)
 	B[N+1] = 2*N
@@ -106,11 +105,34 @@ function differentiation_matrix{T}(src::ChebyshevBasis{T})
 	D
 end
 
-# TODO: update in order to avoid memory allocation in constructing the differentiation_matrix
-# Would be better to write differentiation_matrix in terms of apply! (can be generic), rather than the other way around
-function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, coef_dest, coef_src)
-	D = differentiation_matrix(src)
-	coef_dest[:] = D*coef_src
+function differentiation_operator{T}(src::ChebyshevBasis{T}, dest::ChebyshevBasis{T}, var::Int, order::Int)
+    if length(src)==length(dest)
+        MatrixOperator(differentiation_matrix(src)^order, src, src)
+    else
+       restriction_operator(src,dest)* MatrixOperator(differentiation_matrix(src)^order, src, src)
+    end
+end
+
+# The assumption here is that the src is at least 1 smaller then the dest to accomodate the increase in polynomial degree.
+# Otherwise (if there are no trailing zero coefficients) the antiderivative will not be correct.
+function antidifferentiation_matrix{T}(dest::ChebyshevBasis{T})
+    n = length(dest)
+    N = n-1
+    D = zeros(T, n, n)
+    D[2,1] = 1
+    for i = 2:N,
+        D[i,i+1] = -1/(2*(i-1))
+        D[i+1,i] = 1/(2*(i))
+    end
+    D
+end
+
+function antidifferentiation_operator{T}(src::ChebyshevBasis{T}, dest::ChebyshevBasis{T}, var::Int, order::Int)
+    if length(src)==length(dest)
+        MatrixOperator(antidifferentiation_matrix(dest)^order, dest, dest)
+    else
+        MatrixOperator(antidifferentiation_matrix(dest)^order, dest, dest)*extension_operator(src,dest)
+    end
 end
 
 

@@ -215,17 +215,22 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet = s1, var::Int = 1, order::Int = 1) = Differentiation(s1, s2, var, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet, var::Int = 1, order::Int = 1) = Differentiation(s1, s2, var, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
-differentiation_operator(s1::FunctionSet, var::Int, order::Int...) = differentiation_operator(s1, s1, var, order...)
+differentiation_operator(s1::FunctionSet, var::Int, order::Int = 1) = differentiation_operator(s1, derivative_space(s1, order), var, order)
 
 
+# The default antidifferentiation implementation is differentiation with a negative order (such as for Fourier)
+# If the destination contains a DC coefficient, it is zero by default.
 """
-A shortcut routine to compute the derivative of an expansion in a basis that is closed under differentiation.
+The antidifferentiation_operator function returns an operator that can be used to find the antiderivative
+of a function in the function set, with the result an expansion in a second set
 """
-differentiate(src::AbstractBasis, coef) = apply(differentiation_operator(src), coef)
+antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, var::Int = 1, order::Int = 1) = differentiation_operator(s1, s2, var, -1*order)
 
+# With this definition below, the user may specify a single set and a variable, with or without an order
+antidifferentiation_operator(s1::FunctionSet, var::Int, order::Int = 1) = antidifferentiation_operator(s1, antiderivative_space(s1, order), var, order)
 
 #####################################
 # Operators for tensor product sets
@@ -239,8 +244,33 @@ for op in (:extension_operator, :restriction_operator, :transform_operator, :eva
 end
 
 for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
-    :normalization_operator, :transform_normalization_operator)
+           :normalization_operator, :transform_normalization_operator)
     @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}) = 
         TensorProductOperator([$op(set(s,i)) for i in 1:LEN]...)
 end
 
+for op in (:differentiation_operator, :antidifferentiation_operator)
+    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, var::NTuple{LEN,Int}, order::NTuple{LEN,Int}) =
+        TensorProductOperator([$op(set(s1,i),set(s2,i),var[i],order[i]) for i in 1:LEN]...)
+end
+
+# Overly complicated routines to select a single variable and order from a tensorproductset.
+for op in (:differentiation_operator, :antidifferentiation_operator)
+    @eval function $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, var::Int, order::Int)
+        operators = map(i->$op(set(s1,i),set(s2,i),1,0),1:LEN)
+        setindex = minimum(find(cumsum([SN...]).>(var-1)))
+        varadjusted = var-cumsum([0; SN...])[setindex]
+        operators[setindex] = $op(set(s1,setindex),set(s2,setindex),varadjusted,order)
+        TensorProductOperator(operators...)
+    end
+end
+
+for op in (:differentiation_operator, :antidifferentiation_operator)
+    @eval function $op{TS1,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, var::Int, order::Int)
+        operators = AbstractOperator[IdentityOperator(set(s1,i)) for i in 1:LEN]
+        setindex = minimum(find(cumsum([SN...]).>(var-1)))
+        varadjusted = var-cumsum([0; SN...])[setindex]
+        operators[setindex] = $op(set(s1,setindex),varadjusted,order)
+        TensorProductOperator(operators...)
+    end
+end

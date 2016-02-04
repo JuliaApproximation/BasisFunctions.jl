@@ -153,6 +153,10 @@ has_transform(b::FunctionSet, d) = false
 "Does the set support extension and restriction operators?"
 has_extension(b::FunctionSet) = false
 
+# A functionset has spaces associated with derivatives or antiderivatives of a certain order.
+# The default is that the function set is closed under derivation/antiderivation
+derivative_space(b::FunctionSet, order::Int) = b
+antiderivative_space(b::FunctionSet, order::Int) = b
 
 # A FunctionSet has logical indices and natural indices. The logical indices correspond to
 # the a logical ordering of the basis functions. They correspond to the order of the coefficients

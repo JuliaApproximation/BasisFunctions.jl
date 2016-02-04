@@ -103,7 +103,8 @@ function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBa
 	p = period(src)
 	i = order(op)
 
-	for j = 0:nh
+        result[1] = 0
+	for j = 1:nh
 		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
 	end
 	for j = 1:nh
@@ -177,12 +178,16 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 	end
 	coef_dest[nh+1] = coef_src[nh+1] + coef_src[end-nh+1]
 end
-
-function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd(length(b)+1, eltype(b))
-	differentiation_operator(b_odd) * extension_operator(b, b_odd)
+# We extend the even basis both for derivation and antiderivation, regardless of order
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op(b::FourierBasisEven, order::Int) = fourier_basis_odd(length(b)+1,eltype(b))
 end
 
+for op in (:differentiation_operator, :antidifferentiation_operator)
+    @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, var::Int, order::Int)
+        $op(b_odd, var, order) * extension_operator(b, b_odd)
+    end
+end
 
 
 abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}

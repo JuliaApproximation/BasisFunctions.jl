@@ -41,7 +41,6 @@ for op in (:numtype, :dim)
     @eval $op(s::SetExpansion) = $op(typeof(s))
 end
 
-
 has_basis{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_basis(S)
 has_basis(e::SetExpansion) = has_basis(typeof(e))
 
@@ -62,11 +61,30 @@ call(e::SetExpansion, x::Vec{2}) = call_expansion(set(e), coefficients(e), x[1],
 call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), x...)
 call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
 
-differentiate(f::SetExpansion) = SetExpansion(set(f), differentiate(f.set, f.coef))
+function differentiate(f::SetExpansion, var=1, order=1)
+    op = differentiation_operator(f.set, var, order)
+    SetExpansion(dest(op), apply(op,f.coef))
+end
 
+function antidifferentiate(f::SetExpansion, var=1, order=1)
+    op = antidifferentiation_operator(f.set, var, order)
+    SetExpansion(dest(op), apply(op,f.coef))
+end
+
+
+# Shorthands for partial derivatives
+∂x(f::SetExpansion) = differentiate(f, 1, 1)
+∂y(f::SetExpansion) = differentiate(f, 2, 1)
+∂z(f::SetExpansion) = differentiate(f, 3, 1)
+# Shorthands for partial integrals
+∫∂x(f::SetExpansion) = antidifferentiate(f, 1, 1)
+∫∂y(f::SetExpansion) = antidifferentiate(f, 2, 1)
+∫∂z(f::SetExpansion) = antidifferentiate(f, 3, 1)
+# To be implemented: Laplacian (needs multiplying functions)
+## Δ(f::SetExpansion)
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
 ctranspose(f::SetExpansion) = differentiate(f)
-
+∫(f::SetExpansion) = antidifferentiate(f)
 
 # Delegate generic operators
 for op in (:extension_operator, :restriction_operator, :transform_operator)
