@@ -50,6 +50,8 @@ is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true
 has_derivative(b::FourierBasis) = true
+# Until adapted for DC coefficient
+has_antiderivative(b::FourierBasis) = false
 has_transform{G <: PeriodicEquispacedGrid}(b::FourierBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::FourierBasis) = true
 
@@ -97,11 +99,26 @@ call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
 	@assert length(dest)==length(src)
 #	@assert period(dest)==period(src)
-	@assert op.var == 1
 
 	nh = nhalf(src)
 	p = period(src)
 	i = order(op)
+
+	for j = 0:nh
+		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
+	end
+	for j = 1:nh
+		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
+	end
+end
+
+function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
+	@assert length(dest)==length(src)
+#	@assert period(dest)==period(src)
+
+	nh = nhalf(src)
+	p = period(src)
+	i = -1*order(op)
 
         result[1] = 0
 	for j = 1:nh
@@ -184,8 +201,8 @@ for op in (:derivative_space, :antiderivative_space)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, var::Int, order::Int)
-        $op(b_odd, var, order) * extension_operator(b, b_odd)
+    @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, order::Int)
+        $op(b_odd, order) * extension_operator(b, b_odd)
     end
 end
 

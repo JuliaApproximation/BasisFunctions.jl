@@ -143,6 +143,9 @@ similar(b::FunctionSet, n) = similar(b, eltype(b), n)
 "Does the set implement a derivative?"
 has_derivative(b::FunctionSet) = false
 
+"Does the set implement an antiderivative?"
+has_antiderivative(b::FunctionSet) = false
+
 "Does the set have an associated interpolation grid?"
 has_grid(b::FunctionSet) = false
 
@@ -155,8 +158,8 @@ has_extension(b::FunctionSet) = false
 
 # A functionset has spaces associated with derivatives or antiderivatives of a certain order.
 # The default is that the function set is closed under derivation/antiderivation
-derivative_space(b::FunctionSet, order::Int) = b
-antiderivative_space(b::FunctionSet, order::Int) = b
+derivative_space(b::FunctionSet, order) = b
+antiderivative_space(b::FunctionSet, order) = b
 
 # A FunctionSet has logical indices and natural indices. The logical indices correspond to
 # the a logical ordering of the basis functions. They correspond to the order of the coefficients

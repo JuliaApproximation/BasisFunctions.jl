@@ -82,6 +82,10 @@ for op in (:has_grid, :has_extension,)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N}) = TensorProductSet(map(i->$op(set(s,i),order[i]),1:N)...)
+end
+
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
 similar(b::TensorProductSet, ELT, n) = TensorProductSet(map((b,n)->similar(b,ELT,n), sets(b), n)...)

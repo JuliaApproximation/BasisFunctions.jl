@@ -32,6 +32,7 @@ similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n)
 similar{T}(b::ChebyshevBasis, ::Type{T}, n) = ChebyshevBasis{T}(n)
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
+has_antiderivative(b::ChebyshevBasis) = true
 has_transform{G <: ChebyshevIIGrid}(b::ChebyshevBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::ChebyshevBasis) = true
 
@@ -86,53 +87,56 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	end
 end
 
-function differentiation_matrix{T}(src::ChebyshevBasis{T})
-	n = length(src)
-	N = n-1
-	D = zeros(Int, N+1, N+1)
-	A = zeros(1, N+1)
-	B = zeros(1, N+1)
-	B[N+1] = 2*N
-	D[N,:] = B
-	for k = N-1:-1:1
-		C = A
-		C[k+1] = 2*k
-		D[k,:] = C
-		A = B
-		B = C
-	end
-	D[1,:] = D[1,:]/2
-	D
+function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
+    #	@assert period(dest)==period(src)
+    n = length(src)
+    tempc = coef[:]
+    tempr = coef[:]
+    for o = 1:order(op)
+        tempr = zeros(T,n)
+        # 'even' summation
+        s = 0
+        for i=(n-1):-2:2
+            s = s+2*i*tempc[i+1]
+            tempr[i] = s
+        end
+        # 'uneven' summation
+        s = 0
+        for i=(n-2):-2:2
+            s = s+2*i*tempc[i+1]
+            tempr[i] = s
+        end
+        # first row
+        s = 0
+        for i=2:2:n
+            s = s+(i-1)*tempc[i]
+        end
+        tempr[1]=s
+        tempc = tempr
+    end
+    result[1:n-order(op)]=tempr[1:n-order(op)]
 end
 
-function differentiation_operator{T}(src::ChebyshevBasis{T}, dest::ChebyshevBasis{T}, var::Int, order::Int)
-    if length(src)==length(dest)
-        MatrixOperator(differentiation_matrix(src)^order, src, src)
-    else
-       restriction_operator(src,dest)* MatrixOperator(differentiation_matrix(src)^order, src, src)
+function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
+    #	@assert period(dest)==period(src)
+    tempc = zeros(T,length(result))
+    tempc[1:length(src)] = coef[1:length(src)]
+    tempr = zeros(T,length(result))
+    tempr[1:length(src)] = coef[1:length(src)]
+    for o = 1:order(op)
+        n = length(src)+o
+        tempr = zeros(T,n)
+        tempr[2]+=tempc[1]
+        tempr[3]=tempc[2]/4
+        tempr[1]+=tempc[2]/4
+        for i = 3:n-1
+            tempr[i-1]-=tempc[i]/(2*(i-2))
+            tempr[i+1]+=tempc[i]/(2*(i))
+            tempr[1]+=real(-1im^i)*tempc[i]*(2*i-2)/(2*i*(i-2))
+        end
+        tempc = tempr
     end
-end
-
-# The assumption here is that the src is at least 1 smaller then the dest to accomodate the increase in polynomial degree.
-# Otherwise (if there are no trailing zero coefficients) the antiderivative will not be correct.
-function antidifferentiation_matrix{T}(dest::ChebyshevBasis{T})
-    n = length(dest)
-    N = n-1
-    D = zeros(T, n, n)
-    D[2,1] = 1
-    for i = 2:N,
-        D[i,i+1] = -1/(2*(i-1))
-        D[i+1,i] = 1/(2*(i))
-    end
-    D
-end
-
-function antidifferentiation_operator{T}(src::ChebyshevBasis{T}, dest::ChebyshevBasis{T}, var::Int, order::Int)
-    if length(src)==length(dest)
-        MatrixOperator(antidifferentiation_matrix(dest)^order, dest, dest)
-    else
-        MatrixOperator(antidifferentiation_matrix(dest)^order, dest, dest)*extension_operator(src,dest)
-    end
+    result[:]=tempr[:]
 end
 
 

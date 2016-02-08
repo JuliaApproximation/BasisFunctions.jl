@@ -61,13 +61,13 @@ call(e::SetExpansion, x::Vec{2}) = call_expansion(set(e), coefficients(e), x[1],
 call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), x...)
 call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
 
-function differentiate(f::SetExpansion, var=1, order=1)
-    op = differentiation_operator(f.set, var, order)
+function differentiate(f::SetExpansion, order=1)
+    op = differentiation_operator(f.set, order)
     SetExpansion(dest(op), apply(op,f.coef))
 end
 
-function antidifferentiate(f::SetExpansion, var=1, order=1)
-    op = antidifferentiation_operator(f.set, var, order)
+function antidifferentiate(f::SetExpansion, order=1)
+    op = antidifferentiation_operator(f.set, order)
     SetExpansion(dest(op), apply(op,f.coef))
 end
 
@@ -80,6 +80,11 @@ end
 ∫∂x(f::SetExpansion) = antidifferentiate(f, 1, 1)
 ∫∂y(f::SetExpansion) = antidifferentiate(f, 2, 1)
 ∫∂z(f::SetExpansion) = antidifferentiate(f, 3, 1)
+# little helper function
+ei(dim,i, coef) = tuple((coef*eye(Int,dim)[:,i])...)
+# we allow the differentiation of one specific variable through the var argument
+differentiate(f::SetExpansion, var, order) = differentiate(f, ei(dim(f), var, order))
+antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(dim(f), var, order))
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::SetExpansion)
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.

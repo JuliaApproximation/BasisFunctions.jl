@@ -56,7 +56,7 @@ export TensorProductSet, tensorproduct, ⊗, sets, tp_length
 export map, imap, map_linear, imap_linear, rescale
 
 #from expansions.jl
-export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
+export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,

@@ -258,6 +258,22 @@ function test_generic_interface(basis, SET)
         delta = sqrt(eps(T))
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
     end
+    ## Test antiderivatives
+    if BF.has_antiderivative(basis)
+        D = antidifferentiation_operator(basis)
+        @test basis == src(D)
+        diff_dest = dest(D)
+
+        coef1 = random_expansion(basis)
+        coef2 = D*coef
+        e1 = SetExpansion(basis, coef)
+        e2 = SetExpansion(diff_dest, coef2)
+
+        x = fixed_point_in_domain(basis)
+        delta = sqrt(eps(T))
+        
+        @test abs( (e2(x+delta)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 150delta
+    end
     
     ## Test associated transform
     if BF.has_transform(basis)
