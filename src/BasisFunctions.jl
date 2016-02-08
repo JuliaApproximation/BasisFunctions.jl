@@ -31,7 +31,7 @@ import Base: dct, idct
 
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize
+        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid
 export dim, left,right, range
 
 # from functionset.jl
@@ -68,7 +68,7 @@ export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     evaluation_operator, normalization_operator,
     Extension, Restriction, Differentiation, TransformOperator,
-    extension_size, transform_normalization_operator
+    extension_size, transform_normalization_operator, interpolation_matrix
 
 # from tensorproductoperator.jl
 export TensorProductOperator
