@@ -155,7 +155,7 @@ extension_operator(s1::ConcatenatedSet, s2::ConcatenatedSet) =
 extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}) =
     WrappedOperator(s1, s2, extension_operator(set(s1), set(s2)))
 
-differentiation_operator(s::AugmentedSet, s2, var, order) = AugmentedSetDifferentiation(s)
+differentiation_operator(s::AugmentedSet, var::Int, order::Int) = AugmentedSetDifferentiation(s)
 
 
 "The AugmentedSetDifferentiation enables differentiation of an AugmentedSet of the

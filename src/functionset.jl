@@ -134,7 +134,7 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
 similar(b::FunctionSet) = similar(b, length(b))
 
-similar(b::FunctionSet, n::Int) = similar(b, eltype(b), n)
+similar(b::FunctionSet, n) = similar(b, eltype(b), n)
 
 
 # The following properties are not implemented as traits with types, because they are
@@ -143,15 +143,23 @@ similar(b::FunctionSet, n::Int) = similar(b, eltype(b), n)
 "Does the set implement a derivative?"
 has_derivative(b::FunctionSet) = false
 
+"Does the set implement an antiderivative?"
+has_antiderivative(b::FunctionSet) = false
+
 "Does the set have an associated interpolation grid?"
 has_grid(b::FunctionSet) = false
 
-"Does the set have an associated transform?"
-has_transform(b::FunctionSet) = false
+"Does the set have a transform associated with some grid (space)?"
+has_transform(b::FunctionSet) = has_grid(b) && has_transform(b,DiscreteGridSpace(grid(b)))
+has_transform(b::FunctionSet, d) = false
 
 "Does the set support extension and restriction operators?"
 has_extension(b::FunctionSet) = false
 
+# A functionset has spaces associated with derivatives or antiderivatives of a certain order.
+# The default is that the function set is closed under derivation/antiderivation
+derivative_space(b::FunctionSet, order) = b
+antiderivative_space(b::FunctionSet, order) = b
 
 # A FunctionSet has logical indices and natural indices. The logical indices correspond to
 # the a logical ordering of the basis functions. They correspond to the order of the coefficients
@@ -302,11 +310,8 @@ end
 # This function is slow - better to use transforms for special cases if available.
 function call_expansion!{N,ELT,T}(result, b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
     @assert size(result) == size(grid)
-
-    for i in eachindex(grid)
-        result[i] = call_expansion(b, coef, grid[i])
-    end
-    result
+    E = evaluation_operator(b,DiscreteGridSpace(grid))
+    result = E*coef
 end
 
 function call_expansion!{VEC <: Vec}(result, b::FunctionSet, coef, xs::AbstractArray{VEC})

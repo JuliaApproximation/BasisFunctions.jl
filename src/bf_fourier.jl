@@ -30,8 +30,8 @@ fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-similar(b::FourierBasisEven, T, n::Int) = FourierBasis{true,T}(n)
-similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{false,T}(n)
+similar(b::FourierBasisEven, T, n::Int) = FourierBasis{iseven(n),T}(n)
+similar(b::FourierBasisOdd, T, n::Int) = FourierBasis{iseven(n),T}(n)
 
 # Traits
 
@@ -50,7 +50,9 @@ is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true
 has_derivative(b::FourierBasis) = true
-has_transform(b::FourierBasis) = true
+# Until adapted for DC coefficient
+has_antiderivative(b::FourierBasis) = false
+has_transform{G <: PeriodicEquispacedGrid}(b::FourierBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::FourierBasis) = true
 
 
@@ -97,13 +99,29 @@ call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
 	@assert length(dest)==length(src)
 #	@assert period(dest)==period(src)
-	@assert op.var == 1
 
 	nh = nhalf(src)
 	p = period(src)
 	i = order(op)
 
 	for j = 0:nh
+		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
+	end
+	for j = 1:nh
+		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
+	end
+end
+
+function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
+	@assert length(dest)==length(src)
+#	@assert period(dest)==period(src)
+
+	nh = nhalf(src)
+	p = period(src)
+	i = -1*order(op)
+
+        result[1] = 0
+	for j = 1:nh
 		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
 	end
 	for j = 1:nh
@@ -177,12 +195,16 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 	end
 	coef_dest[nh+1] = coef_src[nh+1] + coef_src[end-nh+1]
 end
-
-function differentiation_operator(b::FourierBasisEven)
-	b_odd = fourier_basis_odd(length(b)+1, eltype(b))
-	differentiation_operator(b_odd) * extension_operator(b, b_odd)
+# We extend the even basis both for derivation and antiderivation, regardless of order
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op(b::FourierBasisEven, order::Int) = fourier_basis_odd(length(b)+1,eltype(b))
 end
 
+for op in (:differentiation_operator, :antidifferentiation_operator)
+    @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, order::Int)
+        $op(b_odd, order) * extension_operator(b, b_odd)
+    end
+end
 
 
 abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}

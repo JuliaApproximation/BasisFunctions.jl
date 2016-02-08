@@ -664,3 +664,19 @@ apply!(op::SolverOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.
 
 
 
+immutable UnevenSignFlipOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+    src :: SRC
+    dest :: DEST
+end
+
+UnevenSignFlipOperator{SRC}(src::SRC) = UnevenSignFlipOperator{SRC,SRC}(src,src)
+
+is_inplace{OP <: UnevenSignFlipOperator}(::Type{OP}) = True
+
+inv(op::UnevenSignFlipOperator) = op
+function apply!(op::UnevenSignFlipOperator, dest, src, coef_srcdest)
+    for i in eachindex(coef_srcdest)
+        coef_srcdest[i] *= (-1)^(i+1) 
+    end
+end
+

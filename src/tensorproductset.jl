@@ -52,7 +52,7 @@ end
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
-dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}, j::Int) = SN[j]
+dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = sum(SN)
 
 ## Traits
 
@@ -82,9 +82,13 @@ for op in (:has_grid, :has_extension,)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N}) = TensorProductSet(map(i->$op(set(s,i),order[i]),1:N)...)
+end
+
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
-similar(b::TensorProductSet, n) = TensorProductSet(map(similar, sets(b), n)...)
+similar(b::TensorProductSet, ELT, n) = TensorProductSet(map((b,n)->similar(b,ELT,n), sets(b), n)...)
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards

@@ -5,7 +5,7 @@ using Base.Test
 
 using BasisFunctions
 using FixedSizeArrays
-
+using Debug
 BF = BasisFunctions
 
 
@@ -176,7 +176,7 @@ function test_generic_interface(basis, SET)
     ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
     x_array = ARRAY_TYPE[random_point_in_domain(basis) for i in 1:10]
     z = e(x_array)
-    @test maximum(abs( ELT[ z[i] - e(x_array[i]) for i in eachindex(x_array) ] )) ≈ 0
+    @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
 
     ## Verify evaluation on the associated grid
@@ -186,10 +186,12 @@ function test_generic_interface(basis, SET)
         @test length(grid1) == length(basis)
 
         z = e(grid1)
-        @test sum(abs( ELT[ z[i] - e(grid1[i]) for i in eachindex(grid1) ] )) ≈ 0
+        E = evaluation_operator(set(e),DiscreteGridSpace(grid(set(e))))
+        @test z[:] ≈ ELT[ e(grid1[i]) for i in eachindex(grid1) ]
     end
 
     ## Test output type of calling function
+
     types_correct = true
     for x in [ fixed_point_in_domain(basis) rationalize(point_in_domain(basis, 0.5)) ]
         for idx in [1 2 n>>1 n-1 n]
@@ -214,12 +216,12 @@ function test_generic_interface(basis, SET)
 
         grid2 = EquispacedGrid(n+3, T(a), T(b))
         z = e(grid2)
-        @test maximum(abs( ELT[ z[i] - e(grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+        @test z ≈ ELT[ e(grid2[i]) for i in eachindex(grid2) ]
 
         # Test evaluation on a grid of a single basis function
         idx = random_index(basis)
         z = basis(idx, grid2)
-        @test sum(abs( ELT[ z[i] - basis(idx, grid2[i]) for i in eachindex(grid2) ] )) ≈ 0
+        @test  z ≈ ELT[ basis(idx, grid2[i]) for i in eachindex(grid2) ]
 
     end
 
@@ -255,6 +257,22 @@ function test_generic_interface(basis, SET)
         x = fixed_point_in_domain(basis)
         delta = sqrt(eps(T))
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
+    end
+    ## Test antiderivatives
+    if BF.has_antiderivative(basis)
+        D = antidifferentiation_operator(basis)
+        @test basis == src(D)
+        diff_dest = dest(D)
+
+        coef1 = random_expansion(basis)
+        coef2 = D*coef
+        e1 = SetExpansion(basis, coef)
+        e2 = SetExpansion(diff_dest, coef2)
+
+        x = fixed_point_in_domain(basis)
+        delta = sqrt(eps(T))
+        
+        @test abs( (e2(x+delta)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 150delta
     end
     
     ## Test associated transform

@@ -18,6 +18,8 @@ is_biorthogonal{B <: OPS}(::Type{B}) = True
 
 approx_length(b::OPS, n::Int) = n
 
+derivative_space(b::OPS, order::Int) = similar(b, b.n-order)
+antiderivative_space(b::OPS, order::Int) = similar(b,b.n+order)
 
 #######################
 # The monomial basis

@@ -111,14 +111,24 @@ for op in (:interpolation_operator, :evaluation_operator, :approximation_operato
 end
 
 transform_normalization_operator(s1::AbstractMappedSet) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1)))
-function differentiation_operator(s1::AbstractMappedSet)
-    D = differentiation_operator(s1.set)
-    S = ScalingOperator(dest(D),convert(eltype(s1),(right(s1.set)-left(s1.set))/(s1.b-s1.a)))
+
+function differentiation_operator(s1::AbstractMappedSet, s2::AbstractMappedSet, order)
+    D = differentiation_operator(s1.set, s2.set, order)
+    S = ScalingOperator(dest(D),convert(eltype(s1),((right(s1.set)-left(s1.set))/(s1.b-s1.a)))^order)
     WrappedOperator(rescale(src(D),s1.a,s1.b),rescale(dest(D),s1.a,s1.b),S*D)
 end
 
+function antidifferentiation_operator(s1::AbstractMappedSet, s2::AbstractMappedSet, order)
+    D = antidifferentiation_operator(s1.set, s2.set, order)
+    S = ScalingOperator(dest(D),convert(eltype(s1),(s1.b-s1.a)/(right(s1.set)-left(s1.set)))^order)
+    WrappedOperator(rescale(src(D),s1.a,s1.b),rescale(dest(D),s1.a,s1.b),S*D)
+end
 # The above definition does not work, super(S) goes straight up to FunctionSet
 # Delegation of type methods
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
     @eval $op{S,T,ELT}(::Type{LinearMappedSet{S,T,ELT}}) = $op(S)
+end
+
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op(s1::AbstractMappedSet,order::Int) = rescale($op(set(s1),order),left(s1), right(s1))
 end
