@@ -312,11 +312,11 @@ end
 function CoefficientScalingOperator{S <: Number, SRC}(src::SRC, index::Int, scalar::S)
         # Make sure the scalar type is promotable to the SRC type
         @assert promote_type(eltype(SRC),S) == eltype(SRC)
-        ELT = S
+        ELT = eltype(SRC)
         CoefficientScalingOperator{ELT,SRC}(src, index, scalar)
 end
 
-eltype{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = ELT
+eltype{ELT,SRC}(::Type{CoefficientScalingOperator{ELT,SRC}}) = eltype(SRC)
 
 dest(op::CoefficientScalingOperator) = src(op)
 
@@ -679,4 +679,26 @@ function apply!(op::UnevenSignFlipOperator, dest, src, coef_srcdest)
         coef_srcdest[i] *= (-1)^(i+1) 
     end
 end
+
+
+immutable IdxnScalingOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+    src   :: SRC
+    dest  :: DEST
+    order :: Int
+    scale :: Function
+end
+
+IdxnScalingOperator{SRC}(src::SRC,scale::Function) = IdxnScalingOperator(src,src,1,scale)
+
+is_inplace{OP <: IdxnScalingOperator}(::Type{OP}) = True
+
+function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
+    for i in eachindex(coef_srcdest)
+        coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(op.src,i)))^op.order
+    end
+end
+
+inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*-1, op.scale)
+
+        
 

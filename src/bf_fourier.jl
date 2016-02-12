@@ -308,8 +308,8 @@ _backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::Discrete
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 
 function transform_normalization_operator(src::FourierBasis)
-    L = length(src)
-    ELT = eltype(src)
-    ScalingOperator(src, 1/sqrt(ELT(L)))
+	L = length(src)
+	ELT = eltype(src)
+	ScalingOperator(src, 1/sqrt(ELT(L)))
 end
 
