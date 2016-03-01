@@ -69,10 +69,16 @@ grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 similar(s::LinearMappedSet, args...) = rescale(similar(set(s),args...),left(s),right(s))
 
 "Rescale a function set to an interval [a,b]."
-rescale(s::FunctionSet1d, a, b) = LinearMappedSet(s, a, b)
+function rescale(s::FunctionSet1d, a, b)
+    if abs(a-left(s)) < 10eps(numtype(s)) && abs(b-right(s)) < 10eps(numtype(s))
+        s
+    else
+        LinearMappedSet(s, a, b)
+    end
+end
 
 # avoid multiple linear mappings
-rescale(s::LinearMappedSet, a, b) = LinearMappedSet(set(s), a, b)
+rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
 
 
 

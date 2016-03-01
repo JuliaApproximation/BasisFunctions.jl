@@ -98,7 +98,6 @@ collect(op::AbstractOperator) = matrix(op)
 function matrix(op::AbstractOperator)
     a = Array(eltype(op), size(op))
     matrix!(op, a)
-    a
 end
 
 function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
@@ -107,19 +106,24 @@ function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
     
     @assert (m,n) == size(a)
     
-    r = zeros(T,n)
-    r_src = reshape(r, size(src(op)))
-    s = zeros(T,m)
-    s_dest = reshape(s, size(dest(op)))
-    for i = 1:n
-        if (i > 1)
-            r[i-1] = zero(T)
-        end
-        r[i] = one(T)
-        apply!(op, s_dest, r_src)
-        a[:,i] = s
-    end
+    r = zeros(T, size(src(op)))
+    s = zeros(T, size(dest(op)))
+    matrix_fill!(op, a, r, s)
 end
+
+function matrix_fill!(op::AbstractOperator, a, r, s)
+    for i = 1:length(r)
+        if (i > 1)
+            r[i-1] = 0
+        end
+        r[i] = 1
+        apply!(op, s, r)
+        for j = 1:length(s)
+            a[j,i] = s[j]
+        end
+    end
+    a
+end    
 
 
 "An OperatorTranspose represents the transpose of an operator."

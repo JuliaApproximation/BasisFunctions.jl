@@ -137,6 +137,7 @@ function apply!(op::ConcatenatedOperator, dest::ConcatenatedSet, src::Concatenat
     for i in 1:L2
         coef_dest[L1+i] = coef_dest2[i]
     end
+    coef_dest
 end
 
 
@@ -215,6 +216,7 @@ function apply!(op::AugmentedSetDifferentiation, dest::ConcatenatedSet, src, coe
     for i in 1:L2
         coef_dest[L1+i] = coef_dest2[i]
     end
+    coef_dest
 end
 
 

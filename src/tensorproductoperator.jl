@@ -146,6 +146,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
             coef_dest[j,i] = dest_j[i]
         end
     end
+    coef_dest
 end
 
 # In-place variant
@@ -178,6 +179,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_src
             coef[j,i] = src_j[i]
         end
     end
+    coef_srcdest
 end
 
 
@@ -236,6 +238,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_des
             end
         end
     end
+    coef_dest
 end
 
 # In-place variant
@@ -287,5 +290,6 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_src
             end
         end
     end
+    coef_srcdest
 end
 

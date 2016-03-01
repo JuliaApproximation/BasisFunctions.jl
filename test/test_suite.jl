@@ -255,7 +255,7 @@ function test_generic_interface(basis, SET)
         e2 = SetExpansion(diff_dest, coef2)
 
         x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))
+        delta = sqrt(eps(T))/10
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
     end
     ## Test antiderivatives
@@ -377,7 +377,7 @@ function test_tensor_operators(T)
         apply!(A2, dest, intermediate[i,:])
         c2[i,:] = dest
     end
-    @test sum(abs(c-c2)) ≈ 0
+    @test sum(abs(c-c2)) + 1 ≈ 1
 end
 
 #####
@@ -432,7 +432,6 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 12
-    # This line used to say T, however we don't allow real coefficients for Fourier bases.
     coef = map(complexify(T), rand(n))
     b1 = rescale(FourierBasis(n,T), a, b)
     b2 = rescale(FourierBasis(n+1,T), a, b)
@@ -462,33 +461,34 @@ function test_fourier_series(T)
 
 
     ## Odd length
-    b = rescale(FourierBasis(13,T), -one(T), one(T))
+    fbo = rescale(FourierBasis(13,T), a, b)
 
-    @test isreal(b) == False()
+    @test isreal(fbo) == False()
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(set(b), freq)
-    @test call(b, idx, T(2//10)) ≈ 1
+    idx = frequency2idx(set(fbo), freq)
+    @test call(fbo, idx, T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(set(b), freq)
+    idx = frequency2idx(set(fbo), freq)
     x = T(2//10)
-    y = (x+1)/2
-    @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    y = (x-a)/(b-a)
+    @test call(fbo, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    b = rescale(FourierBasis(3,T), -one(T), one(T))
-    e = SetExpansion(b, coef)
+    e = SetExpansion(FourierBasis(3, a, b), coef)
     x = T(2//10)
-    y = (x+1)/2
+    y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
-    g = grid(b)
+    g = grid(set(e))
     result = e(g)
-    @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) ≈ 0
+    # Don't compare to zero with isapprox because the default absolute tolerance is zero.
+    # So: add 1 and compare to 1
+    @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) + 1 ≈ 1
 
     # Try an extension
     n = 13
@@ -521,11 +521,11 @@ function test_fourier_series(T)
     @test reduce(&, [ coef3[end-i+1] == coef2[end-i+1] for i=1:BasisFunctions.nhalf(b3) ] )
 
     # Differentiation test
-    coef = map(complexify(T), rand(Float64, size(b)))
-    D = differentiation_operator(b)
+    coef = map(complexify(T), rand(Float64, size(fbo)))
+    D = differentiation_operator(fbo)
     coef2 = D*coef
-    e1 = SetExpansion(b, coef)
-    e2 = SetExpansion(b, coef2)
+    e1 = SetExpansion(fbo, coef)
+    e2 = SetExpansion(fbo, coef2)
 
     x = T(2//10)
     delta = sqrt(eps(T))

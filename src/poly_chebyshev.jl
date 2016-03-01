@@ -76,6 +76,7 @@ function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_d
 	for i = length(src)+1:length(dest)
 		coef_dest[i] = 0
 	end
+    coef_dest
 end
 
 
@@ -85,6 +86,7 @@ function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef
 	for i = 1:length(dest)
 		coef_dest[i] = coef_src[i]
 	end
+    coef_dest
 end
 
 function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
@@ -114,7 +116,8 @@ function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevB
         tempr[1]=s
         tempc = tempr
     end
-    result[1:n-order(op)]=tempr[1:n-order(op)]
+    result[1:n-order(op)] = tempr[1:n-order(op)]
+    result
 end
 
 function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
@@ -137,6 +140,7 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
         tempc = tempr
     end
     result[:]=tempr[:]
+    result
 end
 
 

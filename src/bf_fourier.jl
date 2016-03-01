@@ -1,6 +1,7 @@
 # bf_fourier.jl
 
 
+
 """
 A Fourier basis on the interval [a,b].
 EVEN is true if the length of the corresponding Fourier series is even.
@@ -18,9 +19,15 @@ name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
 FourierBasis{T}(n, ::Type{T} = Complex{Float64}) = FourierBasis{iseven(n),complexify(T)}(n)
+
 # convenience methods
-FourierBasis{T}(n, a::T, b::T) = rescale(FourierBasis(n,complexify(T)),a,b)
-FourierBasis{T,S}(n, a::T, b::T, ::Type{S}) = rescale(FourierBasis(n,S),a,b)
+FourierBasis(n, a::Number, b::Number) = FourierBasis(n, float(a), float(b))
+
+FourierBasis{S<:AbstractFloat,T<:AbstractFloat}(n, a::S, b::T) =
+	rescale( FourierBasis(n, complexify(promote_type(S,T))), a, b)
+
+FourierBasis{S}(n, a::Number, b::Number, ::Type{S}) = rescale(FourierBasis(n, S), a, b)
+
 # Typesafe methods for constructing a Fourier series with even length
 fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
 
@@ -110,6 +117,7 @@ function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBa
 	for j = 1:nh
 		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
 	end
+	result
 end
 
 function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
@@ -127,6 +135,7 @@ function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::Fouri
 	for j = 1:nh
 		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
 	end
+	result
 end
 
 extension_size(b::FourierBasisEven) = 2*length(b)
@@ -152,6 +161,7 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_d
 	for i = nh+2:length(coef_dest)-nh
 		coef_dest[i] = 0
 	end
+	coef_dest
 end
 
 function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_dest, coef_src)
@@ -168,6 +178,7 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_de
 	for i = nh+2:length(coef_dest)-nh
 		coef_dest[i] = 0
 	end
+	coef_dest
 end
 
 
@@ -175,26 +186,29 @@ function apply!(op::Restriction, dest::FourierBasisOdd, src::FourierBasis, coef_
 	## @assert length(dest) < length(src)
 
 	nh = nhalf(dest)
-	for i=0:nh
+	for i = 0:nh
 		coef_dest[i+1] = coef_src[i+1]
 	end
-	for i=1:nh
+	for i = 1:nh
 		coef_dest[nh+1+i] = coef_src[end-nh+i]
 	end
+	coef_dest
 end
 
 function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef_dest, coef_src)
 	## @assert length(dest) < length(src)
 
 	nh = nhalf(dest)
-	for i=0:nh-1
+	for i = 0:nh-1
 		coef_dest[i+1] = coef_src[i+1]
 	end
-	for i=1:nh-1
+	for i = 1:nh-1
 		coef_dest[nh+1+i] = coef_src[end-nh+i+1]
 	end
 	coef_dest[nh+1] = coef_src[nh+1] + coef_src[end-nh+1]
+	coef_dest
 end
+
 # We extend the even basis both for derivation and antiderivation, regardless of order
 for op in (:derivative_space, :antiderivative_space)
     @eval $op(b::FourierBasisEven, order::Int) = fourier_basis_odd(length(b)+1,eltype(b))
@@ -241,16 +255,18 @@ InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFou
 
 function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    for i=1:length(coef_srcdest)
+    for i = 1:length(coef_srcdest)
         coef_srcdest[i]/=sqrt(length(coef_srcdest))
     end
+    coef_srcdest
 end
 
 function apply!(op::InverseFastFourierTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
-    for i=1:length(coef_srcdest)
+    for i = 1:length(coef_srcdest)
         coef_srcdest[i]/=sqrt(length(coef_srcdest))
     end
+    coef_srcdest
 end
 
 
@@ -261,8 +277,10 @@ end
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] =
-	fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src))))
+function apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src)
+	coef_dest[:] = fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src)))
+	coef_dest
+end
 
 
 immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
@@ -272,8 +290,10 @@ end
 
 # Why was the below line necessary?
 ## apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
-apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src) =
+function apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src)
 	coef_dest[:] = ifft(coef_src) * sqrt(convert(eltype(coef_src),length(coef_src)))
+	coef_dest
+end
 
 ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
 ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))
