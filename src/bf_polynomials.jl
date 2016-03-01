@@ -21,6 +21,34 @@ approx_length(b::OPS, n::Int) = n
 derivative_space(b::OPS, order::Int) = similar(b, b.n-order)
 antiderivative_space(b::OPS, order::Int) = similar(b,b.n+order)
 
+length(o::OrthogonalPolynomialBasis) = o.n
+
+
+function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
+    @assert length(dest) > length(src)
+
+    for i = 1:length(src)
+        coef_dest[i] = coef_src[i]
+    end
+    for i = length(src)+1:length(dest)
+        coef_dest[i] = 0
+    end
+    coef_dest
+end
+
+
+function apply!{B <: OPS}(op::Restriction, dest::B, src::B, coef_dest, coef_src)
+    @assert length(dest) < length(src)
+
+    for i = 1:length(dest)
+        coef_dest[i] = coef_src[i]
+    end
+    coef_dest
+end
+
+has_extension(b::OPS) = true
+
+
 #######################
 # The monomial basis
 #######################
@@ -30,8 +58,6 @@ immutable MonomialBasis{T} <: PolynomialBasis{T}
     n   ::  Int
 end
 
-
-length(o::OrthogonalPolynomialBasis) = o.n
 
 
 

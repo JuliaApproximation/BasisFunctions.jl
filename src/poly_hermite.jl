@@ -14,6 +14,8 @@ HermiteBasis{T}(n::Int, ::Type{T} = Float64) = HermiteBasis{T}(n)
 
 instantiate{T}(::Type{HermiteBasis}, n, ::Type{T}) = HermiteBasis{T}(n)
 
+similar(b::HermiteBasis, T, n) = HermiteBasis{T}(n)
+
 name(b::HermiteBasis) = "Hermite series"
 
 left{T}(b::HermiteBasis{T}) = -convert(T, Inf)

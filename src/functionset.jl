@@ -124,10 +124,10 @@ size(s::FunctionSet, j) = j==1 ? length(s) : throw(BoundsError())
 """
 The instantiate function takes a set type, size and numeric type as argument, and
 returns an instance of the type with the given size and numeric type and using
-default values for other parameters. This means the type is usually abstract.
+default values for other parameters. This means the given type is usually abstract,
+since it is given without parameters.
 
-This function is mainly used to create instances suitable for testing whether the
-set type adheres to the generic interface.
+This function is mainly used to create instances for testing purposes.
 """
 instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
@@ -150,7 +150,7 @@ has_antiderivative(b::FunctionSet) = false
 has_grid(b::FunctionSet) = false
 
 "Does the set have a transform associated with some grid (space)?"
-has_transform(b::FunctionSet) = has_grid(b) && has_transform(b,DiscreteGridSpace(grid(b)))
+has_transform(b::FunctionSet) = has_grid(b) && has_transform(b, DiscreteGridSpace(grid(b)))
 has_transform(b::FunctionSet, d) = false
 
 "Does the set support extension and restriction operators?"

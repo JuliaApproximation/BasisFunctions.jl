@@ -87,6 +87,7 @@ function call_element{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 end
 
 
+
 # Natural splines of degree K
 immutable NaturalSplineBasis{K,T} <: SplineBasis{K,T}
 	n		::	Int

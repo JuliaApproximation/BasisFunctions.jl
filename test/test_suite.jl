@@ -69,26 +69,25 @@ end
 
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
-function point_in_domain{N}(basis::FunctionSet{N}, scalar)
+function point_in_domain(basis::FunctionSet, scalar)
     # Try to find an interval within the support of the basis
     a = left(basis)
     b = right(basis)
 
-    T = numtype(basis)
     # Avoid infinities for some bases on the real line
-    a = Vector(a)
-    b = Vector(b)
-    for i in 1:N
-        if isinf(a[i])
-            a[i] = -T(1)
+    va = Vector(a)
+    vb = Vector(b)
+    for i in 1:length(va)
+        if isinf(va[i])
+            va[i] = -1
         end
-        if isinf(b[i])
-            b[i] = T(1)
+        if isinf(vb[i])
+            vb[i] = 1
         end
     end
-    a = Vec{N,T}(a)
-    b = Vec{N,T}(a)
-    x = scalar * a + (1-scalar) * b
+    pa = Vec(va...)
+    pb = Vec(va...)
+    x = scalar * pa + (1-scalar) * pb
 end
 
 
@@ -101,6 +100,19 @@ function fixed_point_in_domain{N,T}(basis::FunctionSet{N,T})
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end
+
+function suitable_interpolation_grid(basis::FunctionSet)
+    if BF.has_grid(basis)
+        grid(basis)
+    else
+        EquispacedGrid(length(basis), point_in_domain(basis, 1), point_in_domain(basis, 0))
+    end
+end
+
+suitable_interpolation_grid(basis::TensorProductSet) =
+    TensorProductGrid(map(suitable_interpolation_grid, sets(basis))...)
+
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), -10, 10)
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
@@ -232,9 +244,9 @@ function test_generic_interface(basis, SET)
         E = extension_operator(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1        
-        x1 = 1/2 * (left(basis) + right(basis))
+        x1 = point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
-        x2 = 0.3 * left(basis) + 0.7 * right(basis)
+        x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
         R = restriction_operator(basis2, basis)
@@ -255,9 +267,10 @@ function test_generic_interface(basis, SET)
         e2 = SetExpansion(diff_dest, coef2)
 
         x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))/10
+        delta = sqrt(eps(T))
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
     end
+
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
         D = antidifferentiation_operator(basis)
@@ -294,13 +307,37 @@ function test_generic_interface(basis, SET)
             println("Skipping conditioning test for BigFloat")
         end
 
-#       TODO: test accuracy of combination of transform_operator and normalization_operator
-#        b = one(ELT) * rand(size(basis))
-#        c = t * b
-#        d = it * c
-#        @test sumabs(d-b) ≈ 0
+        # Verify the normalization operator and its inverse
+        n = transform_normalization_operator(basis)
+        # - try interpolation using transform+normalization
+        x = zeros(ELT, size(basis))
+        for i in eachindex(x)
+            x[i] = rand()
+        end
+        e = SetExpansion(basis, n*t*x)
+        @test maximum(abs(e(g)-x)) < sqrt(eps(T))
+        # - verify the inverse of the normalization
+        ni = inv(n)
+        @test maximum(abs(x - ni*n*x)) < sqrt(eps(T))
+        @test maximum(abs(x - n*ni*x)) < sqrt(eps(T))
     end
-    # TODO: Test interpolation on associated grid
+
+    ## Test interpolation operator on a suitable interpolation grid
+    g = suitable_interpolation_grid(basis)
+    I = interpolation_operator(basis, g)
+    x = zeros(ELT, size(basis))
+    for i in eachindex(x)
+        x[i] = rand()
+    end
+    e = SetExpansion(basis, I*x)
+    @test maximum(abs(e(g)-x)) < 100sqrt(eps(T))
+
+    ## Test evaluation operator
+    g = suitable_interpolation_grid(basis)
+    E = evaluation_operator(basis, g)
+    e = random_expansion(basis)
+    y = E*e
+    @test maximum([abs(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
 end
 
 
@@ -749,8 +786,8 @@ Test.with_handler(custom_handler) do
         println()
         println("T is ", T)
 
-        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis, LaguerreBasis, HermiteBasis,
-            PeriodicSplineBasis, FullSplineBasis)
+        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+                LaguerreBasis, HermiteBasis, PeriodicSplineBasis)
         for SET in SETS
             # Choose an odd and even number of degrees of freedom
             for n in (8, 11)

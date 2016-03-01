@@ -65,8 +65,8 @@ export matrix, inv
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 
-approximation_operator, transform_operator, differentiation_operator,
-antidifferentiation_operator,
+    approximation_operator, transform_operator, differentiation_operator,
+    antidifferentiation_operator, approximate,
     evaluation_operator, normalization_operator,
     Extension, Restriction, Differentiation, TransformOperator,
     extension_size, transform_normalization_operator, interpolation_matrix
@@ -79,9 +79,6 @@ export AbstractFunctional, EvaluationFunctional, row
 
 # from discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
-
-# from approximation.jl
-export approximate
 
 # from functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
@@ -152,8 +149,6 @@ include("functional.jl")
 include("discretegridspace.jl")
 
 include("generic_operators.jl")
-
-include("approximation.jl")
 
 include("functors.jl")
 

@@ -30,11 +30,12 @@ ChebyshevBasis{T,S}(n, a::T, b::T, ::Type{S}) = rescale(ChebyshevBasis(n,S),a,b)
 
 similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n)
 similar{T}(b::ChebyshevBasis, ::Type{T}, n) = ChebyshevBasis{T}(n)
+
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 has_transform{G <: ChebyshevIIGrid}(b::ChebyshevBasis, d::DiscreteGridSpace{G}) = true
-has_extension(b::ChebyshevBasis) = true
+
 
 left(b::ChebyshevBasis) = -1
 left(b::ChebyshevBasis, idx) = left(b)
@@ -65,29 +66,6 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # Map the point x in [a,b] to the corresponding point in [-1,1]
 
 call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
-
-# TODO: do we need these two routines below? Are they different from the generic ones?
-function apply!(op::Extension, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
-	@assert length(dest) > length(src)
-
-	for i = 1:length(src)
-		coef_dest[i] = coef_src[i]
-	end
-	for i = length(src)+1:length(dest)
-		coef_dest[i] = 0
-	end
-    coef_dest
-end
-
-
-function apply!(op::Restriction, dest::ChebyshevBasis, src::ChebyshevBasis, coef_dest, coef_src)
-	@assert length(dest) < length(src)
-
-	for i = 1:length(dest)
-		coef_dest[i] = coef_src[i]
-	end
-    coef_dest
-end
 
 function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
     #	@assert period(dest)==period(src)
@@ -307,6 +285,8 @@ end
 ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisSecondKind{T}(n)
+
+similar{T}(b::ChebyshevBasisSecondKind, ::Type{T}, n) = ChebyshevBasisSecondKind{T}(n)
 
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 

@@ -2,10 +2,11 @@
 
 """
 A SetExpansion describes a function using its coefficient expansion in a certain function set.
+
 Parameters:
 - S is the function set.
 - ELT is the numeric type of the coefficients.
-- ID is the dimension of the coefficients.
+- ID is the dimension of the coefficient matrix.
 """
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
@@ -85,8 +86,10 @@ ei(dim,i, coef) = tuple((coef*eye(Int,dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
 differentiate(f::SetExpansion, var, order) = differentiate(f, ei(dim(f), var, order))
 antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(dim(f), var, order))
+
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::SetExpansion)
+
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
 ctranspose(f::SetExpansion) = differentiate(f)
 ∫(f::SetExpansion) = antidifferentiate(f)

@@ -150,10 +150,10 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_d
 
 	nh = nhalf(src)
 
-	for i=0:nh-1
+	for i = 0:nh-1
 		coef_dest[i+1] = coef_src[i+1]
 	end
-	for i=1:nh-1
+	for i = 1:nh-1
 		coef_dest[end-nh+i+1] = coef_src[nh+1+i]
 	end
 	coef_dest[nh+1] = coef_src[nh+1]/2
@@ -169,10 +169,10 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasisOdd, coef_de
 
 	nh = nhalf(src)
 
-	for i=0:nh
+	for i = 0:nh
 		coef_dest[i+1] = coef_src[i+1]
 	end
-	for i=1:nh
+	for i = 1:nh
 		coef_dest[end-nh+i] = coef_src[nh+1+i]
 	end
 	for i = nh+2:length(coef_dest)-nh

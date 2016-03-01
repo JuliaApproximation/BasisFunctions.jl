@@ -16,6 +16,8 @@ LegendreBasis{T}(n::Int, ::Type{T} = Float64) = LegendreBasis{T}(n)
 
 instantiate{T}(::Type{LegendreBasis}, n, ::Type{T}) = LegendreBasis{T}(n)
 
+similar(b::LegendreBasis, T, n) = LegendreBasis{T}(n)
+
 name(b::LegendreBasis) = "Legendre series"
 
 left(b::LegendreBasis) = -1

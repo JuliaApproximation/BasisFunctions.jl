@@ -1,4 +1,4 @@
-# tensorproductbasis.jl
+# tensorproductset.jl
 
 using Base.Cartesian
 
@@ -78,7 +78,7 @@ end
 
 ## Feature methods
 #for op in (:has_grid, :has_derivative, :has_transform, :has_extension)
-for op in (:has_grid, :has_extension,)
+for op in (:has_grid, :has_extension, :has_transform, :has_extension)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 

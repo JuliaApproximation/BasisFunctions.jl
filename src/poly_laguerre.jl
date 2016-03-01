@@ -1,7 +1,7 @@
 # poly_laguerre.jl
 
 "A Laguerre polynomial basis"
-immutable LaguerreBasis{T <: AbstractFloat} <: OPS{T}
+immutable LaguerreBasis{T} <: OPS{T}
     n       ::  Int
     α       ::  T
 
@@ -18,6 +18,7 @@ LaguerreBasis{T <: AbstractFloat}(n, α::T) = LaguerreBasis{T}(n, α)
 
 instantiate{T}(::Type{LaguerreBasis}, n, ::Type{T}) = LaguerreBasis{T}(n)
 
+similar(b::LaguerreBasis, T, n) = LaguerreBasis{T}(n, b.α)
 
 name(b::LaguerreBasis) = "Laguerre series"
 
@@ -33,6 +34,7 @@ jacobi_α(b::LaguerreBasis) = b.α
 
 
 weight{T}(b::LaguerreBasis{T}, x) = exp(-T(x)) * T(x)^(b.α)
+
 
 
 # See DLMF, Table 18.9.1

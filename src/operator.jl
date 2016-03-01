@@ -8,13 +8,13 @@ The action of the operator is defined by providing a method for apply!.
 
 The dimension of an operator are like a matrix: (length(dest),length(src)).
 
-SRC and DEST should at least implement
--length
--size
--numtype
--eltype
+SRC and DEST should at least implement the following:
+- length
+- size
+- numtype
+- eltype
 
-Eltype should be equal for SRC and DEST. 
+The element type (eltype) should be equal for SRC and DEST.
 """
 abstract AbstractOperator{SRC,DEST}
 
@@ -176,9 +176,9 @@ dest(opinv::OperatorInverse) = src(operator(opinv))
 is_diagonal{OP,SRC,DEST}(::Type{OperatorInverse{OP,SRC,DEST}}) = is_diagonal(OP)
 
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
-apply!(opinv::OperatorInverse, dest, src, coef_dest, coef_src) = apply!(opinv, operator(opt), dest, src, coef_dest, coef_src)
+apply!(opinv::OperatorInverse, dest, src, coef_dest, coef_src) = apply!(opinv, operator(opinv), dest, src, coef_dest, coef_src)
 
-apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator(opt), dest, src, coef_srcdest)
+apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator(opinv), dest, src, coef_srcdest)
 
 
 
@@ -678,9 +678,11 @@ UnevenSignFlipOperator{SRC}(src::SRC) = UnevenSignFlipOperator{SRC,SRC}(src,src)
 is_inplace{OP <: UnevenSignFlipOperator}(::Type{OP}) = True
 
 inv(op::UnevenSignFlipOperator) = op
+
 function apply!(op::UnevenSignFlipOperator, dest, src, coef_srcdest)
     for i in eachindex(coef_srcdest)
         coef_srcdest[i] *= (-1)^(i+1) 
     end
+    coef_srcdest
 end
 

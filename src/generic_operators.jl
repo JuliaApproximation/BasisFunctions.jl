@@ -2,15 +2,22 @@
 
 
 # In this file we define the interface for the following generic functions:
+#
+# Extension and restriction:
 # - extension_operator
 # - restriction_operator
+#
+# Approximation:
 # - interpolation_operator
 # - approximation_operator
-# - transform_operator
-# - differentiation_operator
 # - evaluation_operator
-# - normalization_operator
+# - transform_operator
 # - transform_normalization_operator
+# - normalization_operator
+#
+# Calculus:
+# - differentiation_operator
+# - antidifferentation_operator
 
 # These operators are also defined for TensorProductSet's.
 
@@ -80,13 +87,14 @@ is_diagonal{O <: NormalizationOperator}(::Type{O}) = True
 
 
 
-#################
-# Approximation
-#################
+#################################################################
+# Approximation: transformation, interpolation and evaluation
+#################################################################
 
 
 """
-A function set can implement the apply! method of a suitable TransformOperator for any known transform.
+A function set can implement the apply! method of a suitable TransformOperator for any known
+unitary transform.
 Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
 """
 immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
@@ -101,12 +109,10 @@ transform_operator(src, dest) = TransformOperator(src, dest)
 transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
 transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
 
-
 ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
-## The transform is invariant under a linear map.
-#apply!(op::TransformOperator, src::LinearMappedSet, dest::LinearMappedSet, coef_dest, coef_src) =
-#    apply!(op, set(src), set(dest), coef_dest, coef_src)
+# Assume transform is unitary
+inv(op::TransformOperator) = ctranspose(op)
 
 
 
@@ -138,13 +144,20 @@ end
 
 
 
-function interpolation_operator(s::FunctionSet)
-    if has_transform(s)
-        transform_normalization_operator(s) * transform_operator(grid(s), s)
+interpolation_operator(s::FunctionSet) = interpolation_operator(s, grid(s))
+
+interpolation_operator(s::FunctionSet, g::AbstractGrid) =
+    interpolation_operator(s, DiscreteGridSpace(g))
+
+# Interpolate s in the grid of dgs
+function interpolation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
+    if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
+        transform_normalization_operator(s) * transform_operator(dgs, s)
     else
-        SolverOperator(grid(s), s, qrfact(interpolation_matrix(s, grid(s))))
+        SolverOperator(dgs, s, qrfact(interpolation_matrix(s, grid(dgs))))
     end
 end
+
 
 function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f)
     A = interpolation_matrix(s, xs)
@@ -153,20 +166,22 @@ function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f
 end
 
 
-# Evaluation works for any set that has a grid(set) associated with it.
-evaluation_operator(s::FunctionSet) = MatrixOperator(s, grid(s), interpolation_matrix(s, grid(s)))
+evaluation_operator(s::FunctionSet) = evaluation_operator(s, grid(s))
 
-# Evaluate s in grid d
-function evaluation_operator(s::FunctionSet, d::DiscreteGridSpace)
-    if has_transform(s,d)
-        if length(s)==length(d)
-            transform_operator(s,d) * inv(transform_normalization_operator(s))
+evaluation_operator(s::FunctionSet, g::AbstractGrid) = evaluation_operator(s, DiscreteGridSpace(g))
+
+# Evaluate s in the grid of dgs
+function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
+    if has_transform(s, dgs)
+        if length(s) == length(dgs)
+            transform_operator(s, dgs) * inv(transform_normalization_operator(s))
         else
-            slarge = similar(s,length(d))
-            transform_operator(slarge,d) * inv(transform_normalization_operator(slarge)) * extension_operator(s,slarge)
+            slarge = similar(s, length(dgs))
+            evaluation_operator(slarge, dgs) * extension_operator(s, slarge)
         end
+    else
+        MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
     end
-    return MatrixOperator(interpolation_matrix(s, grid(d)))
 end
 
 """
@@ -177,9 +192,9 @@ approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # The default approximation for a basis is interpolation
 
 
-sample{N,T}(g::AbstractGrid{N,T}, f::Function, ELT = T) = ELT[f(x...) for x in g]
+sample(dgs::DiscreteGridSpace, f::Function) = eltype(dgs)[f(x...) for x in grid(dgs)]
 
-(*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(op))
+(*){G <: DiscreteGridSpace}(op::AbstractOperator{G}, f::Function) = op * sample(src(op), f)
 
 approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
 
@@ -203,7 +218,8 @@ immutable Differentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
     order   ::  Int
 end
 
-Differentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) = Differentiation{SRC,DEST}(src, dest, 1, 1)
+Differentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
+    Differentiation{SRC,DEST}(src, dest, 1, 1)
 
 
 order(op::Differentiation) = op.order
@@ -217,12 +233,12 @@ differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1) = Differen
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
 differentiation_operator(s1::FunctionSet, order = 1) = differentiation_operator(s1, derivative_space(s1, order), order)
+
+
 """
-The antidifferentiation operator of a set maps an expansion in the set to an expansion of its antiderivative.
-The result of this operation may be an expansion in a different set. A function set can have different
-antidifferentiation operators, with different result sets.
-For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
-or to polynomials up to degree n_1.
+The antidifferentiation operator of a set maps an expansion in the set to an expansion of its
+antiderivative. The result of this operation may be an expansion in a different set. A function set
+can have different antidifferentiation operators, with different result sets.
 """
 immutable AntiDifferentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
@@ -230,34 +246,40 @@ immutable AntiDifferentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
     order   ::  Int
 end
 
-AntiDifferentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) = AntiDifferentiation{SRC,DEST}(src, dest, 1)
+AntiDifferentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
+    AntiDifferentiation{SRC,DEST}(src, dest, 1)
 
 order(op::AntiDifferentiation) = op.order
 
 # The default antidifferentiation implementation is differentiation with a negative order (such as for Fourier)
 # If the destination contains a DC coefficient, it is zero by default.
+
 """
 The antidifferentiation_operator function returns an operator that can be used to find the antiderivative
-of a function in the function set, with the result an expansion in a second set
+of a function in the function set, with the result an expansion in a second set.
 """
-antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1) = AntiDifferentiation(s1, s2, order)
+antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1) =
+    AntiDifferentiation(s1, s2, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
-antidifferentiation_operator(s1::FunctionSet, order = 1) = antidifferentiation_operator(s1, antiderivative_space(s1, order), order)
+antidifferentiation_operator(s1::FunctionSet, order = 1) =
+    antidifferentiation_operator(s1, antiderivative_space(s1, order), order)
+
+
+
 
 #####################################
 # Operators for tensor product sets
 #####################################
 
-# TODO: add differentiation operator
 
-for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator)
+for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
+            :interpolation_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
         TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
 end
 
-for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
-           :normalization_operator, :transform_normalization_operator)
+for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
     @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}) = 
         TensorProductOperator([$op(set(s,i)) for i in 1:LEN]...)
 end

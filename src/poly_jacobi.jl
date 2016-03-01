@@ -17,6 +17,8 @@ JacobiBasis{T <: Number}(n::Int, α::T, β::T) = JacobiBasis{T}(n, α, β)
 
 instantiate{T}(::Type{JacobiBasis}, n, ::Type{T}) = JacobiBasis{T}(n)
 
+similar(b::JacobiBasis, T, n) = JacobiBasis{T}(n, b.α, b.β)
+
 name(b::JacobiBasis) = "Jacobi OPS"
 
 left(b::JacobiBasis) = -1
