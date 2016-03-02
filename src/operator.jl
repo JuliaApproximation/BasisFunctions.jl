@@ -334,7 +334,8 @@ is_diagonal{OP <: CoefficientScalingOperator}(::Type{OP}) = True
 
 ctranspose(op::CoefficientScalingOperator) = op
 
-ctranspose{T <: Number}(op::CoefficientScalingOperator{Complex{T}}) = CoefficientScalingOperator(src(op), index(op), conj(scalar(op)))
+ctranspose{T <: Number}(op::CoefficientScalingOperator{Complex{T}}) =
+    CoefficientScalingOperator(src(op), index(op), conj(scalar(op)))
 
 inv(op::CoefficientScalingOperator) = CoefficientScalingOperator(src(op), index(op), 1/scalar(op))
 
@@ -424,11 +425,24 @@ function _apply!(op::CompositeOperator, op2_inplace::False, coef_dest, coef_src)
 end
 
 
-# If it is called in-place, assuming all operators support in-place operations.
-function apply!(op::CompositeOperator, dest, src, coef_srcdest)
-	apply!(op.op1, coef_srcdest)
-	apply!(op.op2, coef_srcdest)
+# In-place operation: the problem is we can not simply assume that all operators are in-place, even if it is
+# assured that the final result can be overwritten in coef_srcdest. Depending on the in-place-ness of the 
+# intermediate operators we have to resort to using scratch space.
+apply!(op::CompositeOperator, dest, src, coef_srcdest) =
+    _apply_inplace!(op, is_inplace(op.op1), is_inplace(op.op2), coef_srcdest)
+
+# In-place if all operators are in-place
+function _apply_inplace!(op::CompositeOperator, op1_inplace::True, op2_inplace::True, coef_srcdest)
+    apply!(op.op1, coef_srcdest)
+    apply!(op.op2, coef_srcdest)
 end
+
+# Is either one of the operator is not in-place, we have to use scratch space.
+function _apply_inplace!(op::CompositeOperator, op1_inplace, op2_inplace, coef_srcdest)
+    apply!(op.op1, op.scratch, coef_srcdest)
+    apply!(op.op2, coef_srcdest, op.scratch)
+end
+
 
 is_inplace{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator{OP1,OP2,ELT,N,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2)
 
@@ -469,15 +483,18 @@ dest(op::TripleCompositeOperator) = dest(op.op3)
 
 eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = ELT
 
-is_inplace{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
+is_inplace{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) =
+    is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
 
-is_diagonal{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3)
+is_diagonal{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{TripleCompositeOperator{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) =
+    is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3)
 
 ctranspose(op::TripleCompositeOperator) = TripleCompositeOperator(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
 inv(op::TripleCompositeOperator) = TripleCompositeOperator(inv(op.op3), inv(op.op2), inv(op.op1))
 
-apply!(op::TripleCompositeOperator, dest, src, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
+apply!(op::TripleCompositeOperator, dest, src, coef_dest, coef_src) =
+    _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
 function _apply!(op::TripleCompositeOperator, op2_inplace::True, op3_inplace::True, coef_dest, coef_src)
 	apply!(op.op1, coef_dest, coef_src)
@@ -504,11 +521,29 @@ function _apply!(op::TripleCompositeOperator, op2_inplace::False, op3_inplace::F
 end
 
 
-# If it is called in-place, assuming all operators support in-place operations.
-function apply!(op::TripleCompositeOperator, dest, src, coef_srcdest)
-	apply!(op.op1, coef_srcdest)
-	apply!(op.op2, coef_srcdest)
-	apply!(op.op3, coef_srcdest)
+# In-place operation: the problem is we can not simply assume that all operators are in-place, even if it is
+# assured that the final result can be overwritten in coef_srcdest. Depending on the in-place-ness of the 
+# intermediate operators we have to resort to using scratch space.
+apply!(op::TripleCompositeOperator, dest, src, coef_srcdest) =
+    _apply_inplace!(op, is_inplace(op.op1), is_inplace(op.op2), is_inplace(op.op3), coef_srcdest)
+
+# If operator 1 is not in place, we can simply call the non-inplace version with coef_srcdest as src and dest.
+_apply_inplace!(op::TripleCompositeOperator, op1_inplace::False, op2_inplace, op3_inplace, coef_srcdest) =
+    _apply!(op, op2_inplace, op3_inplace, coef_srcdest, coef_srcdest)
+
+# If operator 1 is in place, we have to do things ourselves.
+# If either one of op2 or op3 is not in-place, we use scratch space
+function _apply_inplace!(op::TripleCompositeOperator, op1_inplace::True, op2_inplace, op3_inplace, coef_srcdest)
+    apply!(op.op1, coef_srcdest)
+    apply!(op.op2, op.scratch2, coef_srcdest)
+    apply!(op.op1, coef_srcdest, op.scratch2)
+end
+
+# We can avoid using scratch2 only when all operators are in-place
+function _apply_inplace!(op::TripleCompositeOperator, op1_inplace::True, op2_inplace::True, op3_inplace::True, coef_srcdest)
+    apply!(op.op1, coef_srcdest)
+    apply!(op.op2, coef_srcdest)
+    apply!(op.op3, coef_srcdest)
 end
 
 
@@ -535,7 +570,7 @@ immutable OperatorSum{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 function OperatorSum{SRC,DEST,S1 <: Number, S2 <: Number}(op1::AbstractOperator{SRC,DEST}, op2::AbstractOperator, val1::S1, val2::S2)
-    @assert eltype(op1) == eltype(op2)
+#    @assert eltype(op1) == eltype(op2)
     ELT = promote_type(eltype(op1), eltype(op2))
     # make sure that the type of the values matches that of SRC and DEST
     @assert promote_type(S1, S2, eltype(op1), eltype(op2)) == ELT
@@ -632,7 +667,8 @@ MatrixOperator{ARRAY <: AbstractMatrix,SRC,DEST}(matrix::ARRAY, src::SRC, dest::
 
 MatrixOperator{T <: Number}(matrix::AbstractMatrix{T}) = MatrixOperator(matrix, Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)))
 
-MatrixOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) = MatrixOperator(matrix, Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)))
+MatrixOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) =
+    MatrixOperator(matrix, Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)))
 
 eltype{ARRAY,SRC,DEST}(::Type{MatrixOperator{ARRAY,SRC,DEST}}) = eltype(ARRAY)
 
@@ -644,10 +680,12 @@ inv(op::MatrixOperator) = MatrixOperator(inv(matrix(op)), dest(op), src(op))
 apply!(op::MatrixOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
 
 # Definition in terms of A_mul_B
-apply!{T}(op::MatrixOperator, dest, src, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) = A_mul_B!(coef_dest, op.matrix, coef_src)
+apply!{T}(op::MatrixOperator, dest, src, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) =
+    A_mul_B!(coef_dest, op.matrix, coef_src)
 
 # Be forgiving: whenever one of the coefficients is multi-dimensional, reshape to a linear array first.
-apply!{T,N1,N2}(op::MatrixOperator, dest, src, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) = apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
+apply!{T,N1,N2}(op::MatrixOperator, dest, src, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) =
+    apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
 matrix(op::MatrixOperator) = op.matrix

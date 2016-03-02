@@ -26,12 +26,12 @@ function TensorProductSet(sets::FunctionSet...)
     sets = initializesets(ELT,sets...)
     TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),ELT}(sets)
 end
+
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
 # Disallow TensorProductSets of only one dimension.
-function TensorProductSet(set::FunctionSet)
-    set
-end
+TensorProductSet(set::FunctionSet) = set
+
 # Expand tensorproductsets in a tuple of sets to their individual sets.
 function initializesets(ELT,sets::FunctionSet...)
     flattened = FunctionSet[]
@@ -52,7 +52,7 @@ end
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
-dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = sum(SN)
+dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = N
 
 ## Traits
 
@@ -114,6 +114,7 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range]...)
+
 tp_length(b::TensorProductSet) = length(sets(b))
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)

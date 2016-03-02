@@ -36,7 +36,10 @@ immutable LinearMappedSet{S <: FunctionSet1d,T,ELT} <: AbstractMappedSet{S,1,ELT
     a       ::  T
     b       ::  T
 
-    LinearMappedSet(set::FunctionSet1d, a::T, b::T) = new(set, a, b)
+    function LinearMappedSet(set::FunctionSet1d, a::T, b::T)
+#        @assert promote_type(T,ELT) == ELT
+        new(set, a, b)
+    end
 end
 # The underlying set s should support left(s) and right(s).
 
