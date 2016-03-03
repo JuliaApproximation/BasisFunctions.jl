@@ -80,7 +80,7 @@ grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, numtype(b))
 nhalf(b::FourierBasis) = length(b)>>1
 
 
-# Map the point x in [a,b] to the corresponding point in [0,1]
+# Map the point x in [-1,1] to the corresponding point in [0,1]
 mapx(b::FourierBasis, x) = (x+1.0)/(2.0)
 
 # Natural index of an even Fourier basis ranges from -N+1 to N.
@@ -237,7 +237,11 @@ immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	FastFourierTransformFFTW(src, dest) = new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastFourierTransformFFTW(src, dest) =
+#		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.ESTIMATE))
+#		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.PATIENT))
+		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.MEASURE))
+#		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastFourierTransformFFTW{SRC,DEST}(src, dest)
@@ -248,7 +252,11 @@ immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformF
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
-	InverseFastFourierTransformFFTW(src, dest) = new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastFourierTransformFFTW(src, dest) =
+#		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.ESTIMATE))
+#		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.PATIENT))
+		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.MEASURE))
+#		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
 
 InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastFourierTransformFFTW{SRC,DEST}(src, dest)
@@ -305,25 +313,36 @@ inverse(op::DiscreteFourierTransform) = ctranspose(op)
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis) =
-	_forward_fourier_operator(src, dest, eltype(src,dest))
+	_forward_fourier_operator(src, dest, eltype(src, dest))
 
-_forward_fourier_operator(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{Float64}}) =
+_forward_fourier_operator(src, dest, ::Type{Complex{Float64}}) =
 	FastFourierTransformFFTW(src,dest)
 
-_forward_fourier_operator{T <: AbstractFloat}(src::DiscreteGridSpace, dest::FourierBasis, ::Type{Complex{T}}) =
+_forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}) =
 	FastFourierTransform(src,dest)
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}) =
-	_backward_fourier_operator(src, dest, eltype(src,dest))
+	_backward_fourier_operator(src, dest, eltype(src, dest))
 
-_backward_fourier_operator(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{Float64}}) =
+_backward_fourier_operator(src, dest, ::Type{Complex{Float64}}) =
 	InverseFastFourierTransformFFTW(src,dest)
 
-_backward_fourier_operator{T <: AbstractFloat}(src::FourierBasis, dest::DiscreteGridSpace, ::Type{Complex{T}}) =
+_backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}) =
 	InverseFastFourierTransform(src, dest)
 
+# Catch 2D and 3D fft's automatically
+transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest, src_set1::DiscreteGridSpace{G}, src_set2::DiscreteGridSpace{G}, dest_set1::FourierBasis, dest_set2::FourierBasis) =
+	_forward_fourier_operator(src, dest, eltype(src, dest))
 
+transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest, src_set1::FourierBasis, src_set2::FourierBasis, dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}) =
+	_backward_fourier_operator(src, dest, eltype(src, dest))
+
+transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest, src_set1::DiscreteGridSpace{G}, src_set2::DiscreteGridSpace{G}, src_set3::DiscreteGridSpace{G}, dest_set1::FourierBasis, dest_set2::FourierBasis, dest_set3::FourierBasis) =
+	_forward_fourier_operator(src, dest, eltype(src, dest))
+
+transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest, src_set1::FourierBasis, src_set2::FourierBasis, src_set3::FourierBasis, dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}, dest_set3::DiscreteGridSpace{G}) =
+	_backward_fourier_operator(src, dest, eltype(src, dest))
 
 evaluation_operator(b::FourierBasis) = transform_operator(b, grid(b))
 

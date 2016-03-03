@@ -268,7 +268,8 @@ end
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_srcdest)
 
     # There are cases where coef_srcdest is a large linearized vector rather than a tensor
-    coef = reshape(coef_srcdest, size(dest))
+    # TODO: remove the reshape as for the 2-element tensor product operator
+#    coef = reshape(coef_srcdest, size(dest))
 
     M1,N1 = size(op[1])
     M2,N2 = size(op[2])
@@ -279,11 +280,11 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_src
     for j = 1:N2
         for k = 1:N3
             for i = 1:N1
-                src_j[i] = coef[i,j,k]
+                src_j[i] = coef_srcdest[i,j,k]
             end
             apply!(op[1], src_j)
             for i = 1:M1
-                coef[i,j,k] = src_j[i]
+                coef_srcdest[i,j,k] = src_j[i]
             end
         end
     end
@@ -292,11 +293,11 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_src
     for i = 1:M1
         for k = 1:N3
             for j = 1:N2
-                src_j[j] = coef[i,j,k]
+                src_j[j] = coef_srcdest[i,j,k]
             end
             apply!(op[2], src_j)
             for j = 1:M2
-                coef[i,j,k] = src_j[j]
+                coef_srcdest[i,j,k] = src_j[j]
             end
         end
     end
@@ -305,11 +306,11 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_src
     for i = 1:M1
         for j = 1:M2
             for k = 1:N3
-                src_j[k] = coef[i,j,k]
+                src_j[k] = coef_srcdest[i,j,k]
             end
             apply!(op[3], src_j)
             for k = 1:M3
-                coef[i,j,k] = src_j[k]
+                coef_srcdest[i,j,k] = src_j[k]
             end
         end
     end

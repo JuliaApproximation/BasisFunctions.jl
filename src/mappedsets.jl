@@ -119,6 +119,20 @@ for op in (:interpolation_operator, :evaluation_operator, :approximation_operato
     @eval $op(s1::AbstractMappedSet) = WrappedOperator(s1,s1,$op(set(s1)))
 end
 
+# Undo set mappings in a TensorProductSet
+unmapset(s::FunctionSet) = s
+unmapset(s::AbstractMappedSet) = set(s)
+unmapset(s::TensorProductSet) = TensorProductSet(map(unmapset, sets(s))...)
+
+transform_operator_tensor(s1, s2, src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet) =
+    WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2), set(src_set1), set(src_set2), set(dest_set1), set(dest_set2)))
+
+transform_operator_tensor(s1, s2, src_set1, src_set2, dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet) =
+    WrappedOperator(s1, s2, transform_operator_tensor(s1, unmapset(s2), src_set1, src_set2, set(dest_set1), set(dest_set2)))
+
+transform_operator_tensor(s1, s2, src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, dest_set1, dest_set2) =
+    WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2))
+
 transform_normalization_operator(s1::AbstractMappedSet) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1)))
 
 function differentiation_operator(s1::AbstractMappedSet, s2::AbstractMappedSet, order)

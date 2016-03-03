@@ -272,6 +272,20 @@ antidifferentiation_operator(s1::FunctionSet, order = 1) =
 # Operators for tensor product sets
 #####################################
 
+# We make a special case for transform operators, so that they can be intercepted in case a multidimensional
+# transform is available for a specific basis.
+transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}) =
+    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s2, 1), set(s2, 2))
+
+transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}) =
+    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s1, 3), set(s2, 1), set(s2, 2), set(s2, 3))
+
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2) =
+    TensorProductOperator(transform_operator(s1_set1, s2_set1), transform_operator(s1_set2, s2_set2))
+
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3) =
+    TensorProductOperator(transform_operator(s1_set1, s2_set1), transform_operator(s1_set2, s2_set2),
+        transform_operator(s1_set3, s2_set3))
 
 for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
             :interpolation_operator)
