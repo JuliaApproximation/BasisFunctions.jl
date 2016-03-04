@@ -144,6 +144,11 @@ function test_generic_interface(basis, SET)
         @test is_biorthogonal(SET) == True
     end
 
+    # Test type promotion
+    ELT2 = widen(ELT)
+    basis2 = promote_eltype(basis, ELT2)
+    @test eltype(basis2) == ELT2
+
     ## Test dimensions
     @test index_dim(basis) == index_dim(SET)
     @test index_dim(basis) == length(size(basis))
@@ -198,7 +203,7 @@ function test_generic_interface(basis, SET)
         @test length(grid1) == length(basis)
 
         z = e(grid1)
-        E = evaluation_operator(set(e),DiscreteGridSpace(grid(set(e))))
+        E = evaluation_operator(set(e), DiscreteGridSpace(grid(set(e)), ELT) )
         @test z[:] ≈ ELT[ e(grid1[i]) for i in eachindex(grid1) ]
     end
 
@@ -240,7 +245,7 @@ function test_generic_interface(basis, SET)
     ## Test extensions
     if BF.has_extension(basis)
         n2 = extension_size(basis)
-        basis2 = similar(basis, n2)
+        basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1        

@@ -131,10 +131,16 @@ This function is mainly used to create instances for testing purposes.
 """
 instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
+"Promote the element type of the function set."
+# This definition catches cases where nothing needs to be done with diagonal dispatch
+# All sets should implement their own promotion rules.
+promote_eltype{N,T}(b::FunctionSet{N,T}, ::Type{T}) = b
 
-similar(b::FunctionSet) = similar(b, length(b))
+resize(b::FunctionSet, n) = similar(b, eltype(b), n)
 
-similar(b::FunctionSet, n) = similar(b, eltype(b), n)
+# similar returns a similar basis of a given size and numeric type
+# It can be implemented in terms of resize and promote_eltype.
+similar{T}(b::FunctionSet, ::Type{T}, n) = resize(promote_eltype(b, T), n)
 
 
 # The following properties are not implemented as traits with types, because they are
@@ -297,20 +303,18 @@ end
 # It's probably best to include some checks
 # - eltype(coef) is promotable to ELT
 # - grid and b have the same numtype
-
-function call_expansion{N,ELT,T}(b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
-    ARRAY_TYPE = promote_type(T,eltype(coef))
+function call_expansion{N}(b::FunctionSet{N}, coef, grid::AbstractGrid{N})
+    ELT = promote_type(eltype(b), eltype(coef))
     result = Array(ELT, size(grid))
     call_expansion!(result, b, coef, grid)
 end
 
 
 
-
-# This function is slow - better to use transforms for special cases if available.
-function call_expansion!{N,ELT,T}(result, b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
+function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{N})
     @assert size(result) == size(grid)
-    E = evaluation_operator(b,DiscreteGridSpace(grid))
+    ELT = promote_type(eltype(b), eltype(coef))
+    E = evaluation_operator(b, DiscreteGridSpace(grid, ELT))
     result = E*coef
 end
 

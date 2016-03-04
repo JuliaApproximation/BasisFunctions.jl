@@ -31,13 +31,12 @@ end
 """
 A set defined via a linear map.
 """
-immutable LinearMappedSet{S <: FunctionSet1d,T,ELT} <: AbstractMappedSet{S,1,ELT}
+immutable LinearMappedSet{S,T,ELT} <: AbstractMappedSet{S,1,ELT}
     set     ::  S
     a       ::  T
     b       ::  T
 
-    function LinearMappedSet(set::FunctionSet1d, a::T, b::T)
-#        @assert promote_type(T,ELT) == ELT
+    function LinearMappedSet(set::FunctionSet1d{ELT}, a::T, b::T)
         new(set, a, b)
     end
 end
@@ -48,7 +47,13 @@ function LinearMappedSet{T,S}(s::FunctionSet1d{T}, a::S, b::S)
     LinearMappedSet{typeof(s),S,eltype(s)}(s, a, b)
 end
 
-eltype{S,T}(::Type{LinearMappedSet{S,T}}) = promote_type(eltype(S),T)
+set(s::LinearMappedSet) = s.set
+
+promote_eltype{S,T,ELT,ELT2}(b::LinearMappedSet{S,T,ELT}, ::Type{ELT2}) =
+    LinearMappedSet(promote_eltype(b.set, ELT2), b.a, b.b)
+
+resize(s::LinearMappedSet, n) = LinearMappedSet(resize(set(s), n), s.a, s.b)
+
 
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
@@ -68,8 +73,6 @@ imapx(s::LinearMappedSet, y) = imap_linear(y, s.a, s.b, left(set(s)), right(set(
 call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
-
-similar(s::LinearMappedSet, args...) = rescale(similar(set(s),args...),left(s),right(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)

@@ -23,7 +23,7 @@ end
 function TensorProductSet(sets::FunctionSet...)
     ELT = eltype(map(eltype,sets)...)
     
-    sets = initializesets(ELT,sets...)
+    sets = initializesets(ELT, sets...)
     TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),ELT}(sets)
 end
 
@@ -33,19 +33,19 @@ end
 TensorProductSet(set::FunctionSet) = set
 
 # Expand tensorproductsets in a tuple of sets to their individual sets.
-function initializesets(ELT,sets::FunctionSet...)
+function initializesets(ELT, sets::FunctionSet...)
     flattened = FunctionSet[]
     for i = 1:length(sets)
-        appendsets(ELT,flattened, sets[i])
+        appendsets(ELT, flattened, sets[i])
     end
     flattened = tuple(flattened...)
 end
 
-appendsets(ELT,flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [similar(f,ELT,length(f))])
+appendsets(ELT, flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [promote_eltype(f,ELT)])
 
-function appendsets(ELT,flattened::Array{FunctionSet,1}, f::TensorProductSet)
+function appendsets(ELT, flattened::Array{FunctionSet,1}, f::TensorProductSet)
     for j = 1:tp_length(f)
-        append!(flattened, [similar(set(f,j),ELT,length(set(f,j)))])
+        append!(flattened, [promote_eltype(set(f,j), ELT)])
     end
 end
 
@@ -88,7 +88,10 @@ end
 
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
-similar(b::TensorProductSet, ELT, n) = TensorProductSet(map((b,n)->similar(b,ELT,n), sets(b), n)...)
+promote_eltype{TS,SN,LEN,N,T,S}(b::TensorProductSet{TS,SN,LEN,N,T}, ::Type{S}) =
+    TensorProductSet(map(i -> promote_eltype(i,S), b.sets)...)
+
+resize(b::TensorProductSet, n) = TensorProductSet(map( (b_i,n_i)->resize(b_i, n_i), sets(b), n)...)
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards

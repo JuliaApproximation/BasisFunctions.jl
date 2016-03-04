@@ -25,11 +25,13 @@ ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 # convenience methods
-ChebyshevBasis{T}(n, a::T, b::T) = rescale(ChebyshevBasis(n,T),a,b)
-ChebyshevBasis{T,S}(n, a::T, b::T, ::Type{S}) = rescale(ChebyshevBasis(n,S),a,b)
+ChebyshevBasis{T}(n, a::T, b::T) = rescale( ChebyshevBasis(n,T), a, b )
+ChebyshevBasis{T,S}(n, a::T, b::T, ::Type{S}) = rescale( ChebyshevBasis(n,S), a, b )
 
-similar{T}(b::ChebyshevBasis{T}, n) = ChebyshevBasis{T}(n)
-similar{T}(b::ChebyshevBasis, ::Type{T}, n) = ChebyshevBasis{T}(n)
+promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{promote_type(T,S)}(b.n)
+
+resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
+
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -286,7 +288,9 @@ ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T
 
 instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisSecondKind{T}(n)
 
-similar{T}(b::ChebyshevBasisSecondKind, ::Type{T}, n) = ChebyshevBasisSecondKind{T}(n)
+promote_eltype{T,S}(b::ChebyshevBasisSecondKind{T}, ::Type{S}) = ChebyshevBasisSecondKind{promote_type(T,S)}(b.n)
+
+resize(b::ChebyshevBasisSecondKind, n) = ChebyshevBasisSecondKind(n, eltype(b))
 
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 

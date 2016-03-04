@@ -57,7 +57,15 @@ end
 
 done(g::AbstractGrid, state) = done(state[1], state[2])
 
+"Sample the function f on the given grid."
+sample(g::AbstractGrid, f::Function, ELT = eltype(g)) = sample!(zeros(ELT, size(g)), g, f)
 
+function sample!(result, g::AbstractGrid, f::Function)
+	for i in eachindex(g)
+		result[i] = f(g[i]...)
+	end
+	result
+end
 
 
 """

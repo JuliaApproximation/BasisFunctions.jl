@@ -1,10 +1,8 @@
 # poly_hermite.jl
 
 "A Hermite polynomial basis."
-immutable HermiteBasis{T <: AbstractFloat} <: OPS{T}
+immutable HermiteBasis{T} <: OPS{T}
     n           ::  Int
-
-    HermiteBasis(n) = new(n)
 end
 
 name(b::HermiteBasis) = "Hermite OPS"
@@ -14,7 +12,10 @@ HermiteBasis{T}(n::Int, ::Type{T} = Float64) = HermiteBasis{T}(n)
 
 instantiate{T}(::Type{HermiteBasis}, n, ::Type{T}) = HermiteBasis{T}(n)
 
-similar(b::HermiteBasis, T, n) = HermiteBasis{T}(n)
+promote_eltype{T,S}(b::HermiteBasis{T}, ::Type{S}) = HermiteBasis{promote_type(T,S)}(b.n)
+
+resize(b::HermiteBasis, n) = HermiteBasis(n, eltype(b))
+
 
 name(b::HermiteBasis) = "Hermite series"
 

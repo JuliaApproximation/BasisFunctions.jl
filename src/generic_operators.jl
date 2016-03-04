@@ -176,7 +176,7 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
         if length(s) == length(dgs)
             transform_operator(s, dgs) * inv(transform_normalization_operator(s))
         else
-            slarge = similar(s, length(dgs))
+            slarge = resize(s, length(dgs))
             evaluation_operator(slarge, dgs) * extension_operator(s, slarge)
         end
     else
@@ -192,9 +192,13 @@ approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # The default approximation for a basis is interpolation
 
 
-sample(dgs::DiscreteGridSpace, f::Function) = eltype(dgs)[f(x...) for x in grid(dgs)]
+sample(s::FunctionSet, f::Function) = sample(grid(s), f, eltype(s))
 
-(*){G <: DiscreteGridSpace}(op::AbstractOperator{G}, f::Function) = op * sample(src(op), f)
+sample!(result, s::FunctionSet, f::Function) = sample!(result, grid(s), f)
+
+# Automatically sample a function if an operator is applied to it
+(*)(op::AbstractOperator, f::Function) = op * sample(src(op), f)
+
 
 approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
 
@@ -294,8 +298,8 @@ for op in (:extension_operator, :restriction_operator, :transform_operator, :eva
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
-    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}) = 
-        TensorProductOperator([$op(set(s,i)) for i in 1:LEN]...)
+    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; args...) = 
+        TensorProductOperator([$op(set(s,i); args...) for i in 1:LEN]...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)

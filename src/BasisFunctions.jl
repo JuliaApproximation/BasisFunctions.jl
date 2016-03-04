@@ -32,7 +32,7 @@ import Base: dct, idct
 # from grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid
-export dim, left,right, range
+export dim, left, right, range, sample
 
 # from functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
@@ -40,7 +40,7 @@ export numtype, grid, left, right, support, call, call!, call_set, call_set!
 export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
-export instantiate
+export instantiate, promote_eltype, resize
 export natural_index, logical_index
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
 export True, False
@@ -61,7 +61,7 @@ export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion
 # from operator.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
     IdentityOperator, ScalingOperator, CoefficientScalingOperator, DenseOperator, MatrixOperator, WrappedOperator, apply!
-export matrix, inv
+export matrix, matrix!, inv
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 

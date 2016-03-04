@@ -18,8 +18,8 @@ is_biorthogonal{B <: OPS}(::Type{B}) = True
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_space(b::OPS, order::Int) = similar(b, b.n-order)
-antiderivative_space(b::OPS, order::Int) = similar(b,b.n+order)
+derivative_space(b::OPS, order::Int) = resize(b, b.n-order)
+antiderivative_space(b::OPS, order::Int) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
