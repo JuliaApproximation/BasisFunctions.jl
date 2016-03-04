@@ -18,15 +18,9 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
-FourierBasis{T}(n, ::Type{T} = Complex{Float64}) = FourierBasis{iseven(n),complexify(T)}(n)
+FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complexify(float(T))}(n)
 
-# convenience methods
-FourierBasis(n, a::Number, b::Number) = FourierBasis(n, float(a), float(b))
-
-FourierBasis{S<:AbstractFloat,T<:AbstractFloat}(n, a::S, b::T) =
-	rescale( FourierBasis(n, complexify(promote_type(S,T))), a, b)
-
-FourierBasis{S}(n, a::Number, b::Number, ::Type{S}) = rescale(FourierBasis(n, S), a, b)
+FourierBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale(FourierBasis(n, T), a, b)
 
 # Typesafe methods for constructing a Fourier series with even length
 fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
@@ -240,8 +234,6 @@ immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC
 	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
 	FastFourierTransformFFTW(src, dest) =
-#		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.ESTIMATE))
-#		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.PATIENT))
 		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.MEASURE))
 #		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
@@ -255,8 +247,6 @@ immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformF
 	plan!	::	Base.DFT.FFTW.cFFTWPlan
 
 	InverseFastFourierTransformFFTW(src, dest) =
-#		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.ESTIMATE))
-#		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.PATIENT))
 		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.MEASURE))
 #		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
 end
@@ -318,17 +308,17 @@ transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest:
 	_forward_fourier_operator(src, dest, eltype(src, dest))
 
 _forward_fourier_operator(src, dest, ::Type{Complex{Float64}}) =
-	FastFourierTransformFFTW(src,dest)
+	FastFourierTransformFFTW(src, dest)
 
 _forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}) =
-	FastFourierTransform(src,dest)
+	FastFourierTransform(src, dest)
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}) =
 	_backward_fourier_operator(src, dest, eltype(src, dest))
 
 _backward_fourier_operator(src, dest, ::Type{Complex{Float64}}) =
-	InverseFastFourierTransformFFTW(src,dest)
+	InverseFastFourierTransformFFTW(src, dest)
 
 _backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}) =
 	InverseFastFourierTransform(src, dest)

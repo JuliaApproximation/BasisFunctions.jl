@@ -68,7 +68,7 @@ export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     antidifferentiation_operator, approximate,
     evaluation_operator, normalization_operator,
-    Extension, Restriction, Differentiation, TransformOperator,
+    Extension, Restriction, extend, Differentiation, TransformOperator,
     extension_size, transform_normalization_operator, interpolation_matrix
 
 # from tensorproductoperator.jl
@@ -124,6 +124,13 @@ typealias False Val{false}
 
 (&){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 & T2}()
 (|){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 | T2}()
+
+"Return a complex type associated with the argument type."
+complexify{T <: Real}(::Type{T}) = Complex{T}
+complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
+# In 0.5 we will be able to use Base.complex(T)
+isreal{T <: Real}(::Type{T}) = True
+isreal{T <: Real}(::Type{Complex{T}}) = False
 
 
 include("grid.jl")

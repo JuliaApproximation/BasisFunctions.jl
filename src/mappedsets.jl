@@ -54,6 +54,7 @@ promote_eltype{S,T,ELT,ELT2}(b::LinearMappedSet{S,T,ELT}, ::Type{ELT2}) =
 
 resize(s::LinearMappedSet, n) = LinearMappedSet(resize(set(s), n), s.a, s.b)
 
+extension_size(s::LinearMappedSet) = extension_size(set(s))
 
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
@@ -76,7 +77,8 @@ grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)
-    if abs(a-left(s)) < 10eps(numtype(s)) && abs(b-right(s)) < 10eps(numtype(s))
+    T = numtype(s)
+    if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
         s
     else
         LinearMappedSet(s, a, b)
@@ -135,6 +137,27 @@ transform_operator_tensor(s1, s2, src_set1, src_set2, dest_set1::AbstractMappedS
 
 transform_operator_tensor(s1, s2, src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, dest_set1, dest_set2) =
     WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2))
+
+transform_operator_tensor(s1, s2,
+    src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, src_set3::AbstractMappedSet,
+    dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet, dest_set3::AbstractMappedSet) =
+        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            set(src_set1), set(src_set2), set(src_set3),
+            set(dest_set1), set(dest_set2), set(dest_set3)))
+
+transform_operator_tensor(s1, s2,
+    src_set1, src_set2, src_set3,
+    dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet, dest_set3::AbstractMappedSet) =
+        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            src_set1, src_set2, src_set3,
+            set(dest_set1), set(dest_set2), set(dest_set3)))
+
+transform_operator_tensor(s1, s2,
+    src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, src_set3::AbstractMappedSet,
+    dest_set1, dest_set2, dest_set3) =
+        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            set(src_set1), set(src_set2), set(src_set3),
+            dest_set1, dest_set2, dest_set3))
 
 transform_normalization_operator(s1::AbstractMappedSet) = WrappedOperator(s1,s1,transform_normalization_operator(set(s1)))
 

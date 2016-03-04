@@ -132,33 +132,32 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
     dest1 = reshape(op.dest_scratch[1], size(BasisFunctions.dest(op.operators[1])))
     dest2 = reshape(op.dest_scratch[2], size(BasisFunctions.dest(op.operators[2])))
     apply_reshaped!(op, reshape(coef_dest, size(dest)), reshape(coef_src, size(src)),
-        src1, src2, dest1, dest2)
+        src1, src2, dest1, dest2, op.scratch[1], op[1], op[2])
 end
 
 # Same for in-place variant
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_srcdest)
     src1 = reshape(op.src_scratch[1], size(BasisFunctions.src(op, 1)))
     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op.operators[2])))
-    apply_inplace_reshaped!(op, reshape(coef_srcdest, size(dest)), src1, src2)
+    apply_inplace_reshaped!(op, reshape(coef_srcdest, size(dest)), src1, src2, op[1], op[2])
 end
 
 
 # TensorProduct with 2 elements
 function apply_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest, coef_src,
-    src1, src2, dest1, dest2)
+    src1, src2, dest1, dest2, intermediate, op1, op2)
     ## @assert size(dest) == size(coef_dest)
     ## @assert size(src)  == size(coef_src)
 
-    M1,N1 = size(op[1])
-    M2,N2 = size(op[2])
+    M1,N1 = size(op1)
+    M2,N2 = size(op2)
     # coef_src has size (N1,N2)
     # coef_dest has size (M1,M2)
-    intermediate = op.scratch[1]
     for j = 1:N2
         for i = 1:N1
             src1[i] = coef_src[i,j]
         end
-        apply!(op[1], dest1, src1)
+        apply!(op1, dest1, src1)
         for i = 1:M1
             intermediate[i,j] = dest1[i]
         end
@@ -168,7 +167,7 @@ function apply_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest,
         for i = 1:N2
             src2[i] = intermediate[j,i]
         end
-        apply!(op[2], dest2, src2)
+        apply!(op2, dest2, src2)
         for i = 1:M2
             coef_dest[j,i] = dest2[i]
         end
@@ -177,17 +176,17 @@ function apply_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest,
 end
 
 # In-place variant
-function apply_inplace_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef, src1, src2)
+function apply_inplace_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef, src1, src2, op1, op2)
     # There are cases where coef_srcdest is a linearized vector instead of a matrix.
-    M1,N1 = size(op[1])
-    M2,N2 = size(op[2])
+    M1,N1 = size(op1)
+    M2,N2 = size(op2)
 
-    # coef_srcdest has size (N1,N2) = (M1,M2)
+    # coef has size (N1,N2) = (M1,M2)
     for j = 1:N2
         for i = 1:N1
             src1[i] = coef[i,j]
         end
-        apply!(op[1], src1)
+        apply!(op1, src1)
         for i = 1:M1
             coef[i,j] = src1[i]
         end
@@ -197,7 +196,7 @@ function apply_inplace_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, co
         for i = 1:N2
             src2[i] = coef[j,i]
         end
-        apply!(op[2], src2)
+        apply!(op2, src2)
         for i = 1:M2
             coef[j,i] = src2[i]
         end

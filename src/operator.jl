@@ -60,8 +60,8 @@ end
 function apply!(op::AbstractOperator, coef_dest, coef_src)
 	## @assert length(coef_dest) == length(dest(op))
 	## @assert length(coef_src) == length(src(op))
-        ## @assert eltype(op) == eltype(coef_dest)
-        ## @assert eltype(op) == eltype(coef_src)
+    ## @assert eltype(op) == eltype(coef_dest)
+    ## @assert eltype(op) == eltype(coef_src)
     
 	# distinguish between operators that are in-place and operators that are not
 	_apply!(op, is_inplace(op), coef_dest, coef_src)
@@ -80,7 +80,6 @@ _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(o
 # Provide a general dispatchable definition for in-place operators also
 function apply!(op::AbstractOperator, coef_srcdest)
 	## @assert size(dest(op)) == size(src(op))
-	
 	apply!(op, dest(op), src(op), coef_srcdest)
 end
 

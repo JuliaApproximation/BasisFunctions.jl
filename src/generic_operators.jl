@@ -46,6 +46,10 @@ and function evaluations can be shared. The default is twice the length of the c
 """
 extension_size(s::FunctionSet) = 2*length(s)
 
+extension_size(s::TensorProductSet) = map(extension_size, sets(s))
+
+extend(s::FunctionSet) = resize(s, extension_size(s))
+
 immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src     ::  SRC
     dest    ::  DEST
@@ -60,6 +64,11 @@ s2 as source and destination.
 """
 restriction_operator(s1::FunctionSet, s2::FunctionSet) = Restriction(s1, s2)
 
+"""
+Return a suitable length to restrict to, for example one such that the corresponding grids are nested
+and function evaluations can be shared. The default is half the length of the current set.
+"""
+restriction_size(s::FunctionSet) = length(s)>>1
 
 ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
 
@@ -106,8 +115,8 @@ end
 transform_operator(src, dest) = TransformOperator(src, dest)
 
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
-transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src), dest)
-transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest))
+transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src, eltype(dest)), dest)
+transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest, eltype(src)))
 
 ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
@@ -147,7 +156,7 @@ end
 interpolation_operator(s::FunctionSet) = interpolation_operator(s, grid(s))
 
 interpolation_operator(s::FunctionSet, g::AbstractGrid) =
-    interpolation_operator(s, DiscreteGridSpace(g))
+    interpolation_operator(s, DiscreteGridSpace(g, eltype(s)))
 
 # Interpolate s in the grid of dgs
 function interpolation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
@@ -168,7 +177,7 @@ end
 
 evaluation_operator(s::FunctionSet) = evaluation_operator(s, grid(s))
 
-evaluation_operator(s::FunctionSet, g::AbstractGrid) = evaluation_operator(s, DiscreteGridSpace(g))
+evaluation_operator(s::FunctionSet, g::AbstractGrid) = evaluation_operator(s, DiscreteGridSpace(g, eltype(s)))
 
 # Evaluate s in the grid of dgs
 function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
@@ -192,13 +201,9 @@ approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # The default approximation for a basis is interpolation
 
 
-sample(s::FunctionSet, f::Function) = sample(grid(s), f, eltype(s))
-
-sample!(result, s::FunctionSet, f::Function) = sample!(result, grid(s), f)
-
-# Automatically sample a function if an operator is applied to it
-(*)(op::AbstractOperator, f::Function) = op * sample(src(op), f)
-
+# Automatically sample a function if an operator is applied to it with a 
+# source that has a grid
+(*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
 
 approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
 

@@ -10,11 +10,11 @@ typealias AbstractGrid4d{T} AbstractGrid{4,T}
 
 dim{N,T}(::Type{AbstractGrid{N,T}}) = N
 dim{G <: AbstractGrid}(::Type{G}) = dim(super(G))
-dim(g::AbstractGrid) = dim(typeof(g))
+dim{N,T}(g::AbstractGrid{N,T}) = N
 
 numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
 numtype{G <: AbstractGrid}(::Type{G}) = numtype(super(G))
-numtype(g::AbstractGrid) = numtype(typeof(g))
+numtype{N,T}(g::AbstractGrid{N,T}) = T
 
 # The element type of a grid is the type returned by getindex.
 eltype{T}(::Type{AbstractGrid{1,T}}) = T
@@ -58,14 +58,19 @@ end
 done(g::AbstractGrid, state) = done(state[1], state[2])
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f::Function, ELT = eltype(g)) = sample!(zeros(ELT, size(g)), g, f)
+sample(g::AbstractGrid, f::Function, ELT) = sample!(zeros(ELT, size(g)), g, f)
 
-function sample!(result, g::AbstractGrid, f::Function)
-	for i in eachindex(g)
-		result[i] = f(g[i]...)
+@generated function sample!(result, g::AbstractGrid, f::Function)
+	xargs = [:(x[$d]) for d = 1:dim(g)]
+	quote
+		for i in eachindex(g)
+			x = g[i]
+			result[i] = f($(xargs...))
+		end
+		result
 	end
-	result
 end
+
 
 
 """
@@ -113,10 +118,10 @@ length(g::TensorProductGrid) = prod(size(g))
 grids(g::TensorProductGrid) = g.grids
 grid(g::TensorProductGrid, j::Int) = g.grids[j]
 
-left(g::TensorProductGrid) = map(left, g.grids)
+left(g::TensorProductGrid) = Vec(map(left, g.grids)...)
 left(g::TensorProductGrid, j) = left(g.grids[j])
 
-right(g::TensorProductGrid) = map(right, g.grids)
+right(g::TensorProductGrid) = Vec(map(right, g.grids)...)
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
 
@@ -245,11 +250,15 @@ unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.
 
 
 # Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
-immutable LinearMappedGrid{G <: AbstractGrid1d,T} <: AbstractGrid1d{T}
+immutable LinearMappedGrid{G,T} <: AbstractGrid1d{T}
 	grid	::	G
 	a		::	T
 	b		::	T
+
+	LinearMappedGrid(grid::AbstractGrid1d{T}, a, b) = new(grid, a, b)
 end
+
+LinearMappedGrid{T}(g::AbstractGrid1d{T}, a, b) = LinearMappedGrid{typeof(g),T}(g, a, b)
 
 left(g::LinearMappedGrid) = g.a
 right(g::LinearMappedGrid) = g.b
