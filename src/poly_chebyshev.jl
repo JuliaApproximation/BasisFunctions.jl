@@ -23,7 +23,7 @@ name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 	
 ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
-ChebyshevBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( ChebyshevBasis(n,float(T)), a, b )
+ChebyshevBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( ChebyshevBasis(n,floatify(T)), a, b)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 

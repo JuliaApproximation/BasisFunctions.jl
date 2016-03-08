@@ -14,7 +14,7 @@ end
 # Delegation of type methods
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
     @eval $op{S,N,T}(::Type{AbstractMappedSet{S,N,T}}) = $op(S)
-    @eval $op{S <: AbstractMappedSet}(::Type{S}) = $op(super(S))
+#    @eval $op{S <: AbstractMappedSet}(::Type{S}) = $op(super(S))
 end
 
 
@@ -81,7 +81,7 @@ function rescale(s::FunctionSet1d, a, b)
     if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
         s
     else
-        LinearMappedSet(s, a, b)
+        LinearMappedSet(s, promote(a,b)...)
     end
 end
 

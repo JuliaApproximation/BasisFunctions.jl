@@ -18,7 +18,7 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
-FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complexify(float(T))}(n)
+FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complexify(floatify(T))}(n)
 
 FourierBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale(FourierBasis(n, T), a, b)
 
@@ -94,6 +94,7 @@ frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 # Hence the conversions to T in the lines below.
 call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(mapx(b, x) * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
+# Note that the function below is typesafe because T(pi) converts pi to a complex number, hence the cosine returns a complex number
 call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	?  cos(mapx(b, x) * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(mapx(b, x) * 2 * T(pi) * 1im * idx2frequency(b,idx)))

@@ -153,10 +153,10 @@ function checkbounds{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i)
     end
 end
 
-function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x, xt...)
-    z = set(b,1)(i[1], x)
-    for j = 1:LEN-1
-        z = z * set(b,j+1)(i[j], xt[j])
+function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x...)
+    z = set(b,1)(i[1], x[1])
+    for j = 2:LEN
+        z = z * set(b,j)(i[j], x[j])
     end
     z
 end
@@ -165,10 +165,18 @@ call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i::Int, x, y) = call_element(b
 call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i::Int, x, y, z) = call_element(b, ind2sub(b, i), x, y, z)
 call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i::Int, x, y, z, t) = call_element(b, ind2sub(b, i), x, y, z, t)
 
-call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) = set(b,1)(i,x)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) =
+    call_element(set(b,1), i, x)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z) * call_element(set(b,4), i[4], t)
+
 
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)

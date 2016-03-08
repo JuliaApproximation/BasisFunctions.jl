@@ -76,12 +76,6 @@ index_dim{N,T}(::Type{FunctionSet{N,T}}) = 1
 index_dim{B <: FunctionSet}(::Type{B}) = 1
 index_dim(s::FunctionSet) = index_dim(typeof(s))
 
-"Return a complex type associated with the argument type."
-complexify{T <: Real}(::Type{T}) = Complex{T}
-complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
-# In 0.5 we will be able to use Base.complex(T)
-isreal{T <: Real}(::Type{T}) = True
-isreal{T <: Real}(::Type{Complex{T}}) = False
 
 
 

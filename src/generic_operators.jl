@@ -38,7 +38,7 @@ An extension operator is an operator that can be used to extend a representation
 representation in a larger set s2. The default extension operator is of type Extension with s1 and
 s2 as source and destination.
 """
-extension_operator(s1::FunctionSet, s2::FunctionSet) = Extension(s1, s2)
+extension_operator(s1::FunctionSet, s2::FunctionSet; args...) = Extension(s1, s2)
 
 """
 Return a suitable length to extend to, for example one such that the corresponding grids are nested
@@ -62,7 +62,7 @@ a representation in a set s1 to a representation in a smaller set s2. Loss of ac
 from the restriction. The default restriction_operator is of type Restriction with sets s1 and 
 s2 as source and destination.
 """
-restriction_operator(s1::FunctionSet, s2::FunctionSet) = Restriction(s1, s2)
+restriction_operator(s1::FunctionSet, s2::FunctionSet; args...) = Restriction(s1, s2)
 
 """
 Return a suitable length to restrict to, for example one such that the corresponding grids are nested
@@ -87,7 +87,7 @@ immutable NormalizationOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     dest    ::  DEST
 end
 
-normalization_operator(src::FunctionSet) = NormalizationOperator(src, normalize(src))
+normalization_operator(src::FunctionSet; args...) = NormalizationOperator(src, normalize(src))
 
 is_inplace{O <: NormalizationOperator}(::Type{O}) = True
 
@@ -112,11 +112,13 @@ immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 # The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
-transform_operator(src, dest) = TransformOperator(src, dest)
+transform_operator(src, dest; args...) = TransformOperator(src, dest)
 
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
-transform_operator(src::AbstractGrid, dest::FunctionSet) = transform_operator(DiscreteGridSpace(src, eltype(dest)), dest)
-transform_operator(src::FunctionSet, dest::AbstractGrid) = transform_operator(src, DiscreteGridSpace(dest, eltype(src)))
+transform_operator(src::AbstractGrid, dest::FunctionSet; args...) =
+    transform_operator(DiscreteGridSpace(src, eltype(dest)), dest; args...)
+transform_operator(src::FunctionSet, dest::AbstractGrid; args...) =
+    transform_operator(src, DiscreteGridSpace(dest, eltype(src)); args...)
 
 ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 
@@ -153,15 +155,15 @@ end
 
 
 
-interpolation_operator(s::FunctionSet) = interpolation_operator(s, grid(s))
+interpolation_operator(s::FunctionSet; args...) = interpolation_operator(s, grid(s); args...)
 
-interpolation_operator(s::FunctionSet, g::AbstractGrid) =
-    interpolation_operator(s, DiscreteGridSpace(g, eltype(s)))
+interpolation_operator(s::FunctionSet, g::AbstractGrid; args...) =
+    interpolation_operator(s, DiscreteGridSpace(g, eltype(s)); args...)
 
 # Interpolate s in the grid of dgs
-function interpolation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
+function interpolation_operator(s::FunctionSet, dgs::DiscreteGridSpace; args...)
     if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
-        transform_normalization_operator(s) * transform_operator(dgs, s)
+        transform_normalization_operator(s; args...) * transform_operator(dgs, s; args...)
     else
         SolverOperator(dgs, s, qrfact(interpolation_matrix(s, grid(dgs))))
     end
@@ -175,18 +177,18 @@ function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f
 end
 
 
-evaluation_operator(s::FunctionSet) = evaluation_operator(s, grid(s))
+evaluation_operator(s::FunctionSet; args...) = evaluation_operator(s, grid(s); args...)
 
-evaluation_operator(s::FunctionSet, g::AbstractGrid) = evaluation_operator(s, DiscreteGridSpace(g, eltype(s)))
+evaluation_operator(s::FunctionSet, g::AbstractGrid; args...) = evaluation_operator(s, DiscreteGridSpace(g, eltype(s)); args...)
 
 # Evaluate s in the grid of dgs
-function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace)
+function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; args...)
     if has_transform(s, dgs)
         if length(s) == length(dgs)
-            transform_operator(s, dgs) * inv(transform_normalization_operator(s))
+            transform_operator(s, dgs; args...) * inv(transform_normalization_operator(s; args...))
         else
             slarge = resize(s, length(dgs))
-            evaluation_operator(slarge, dgs) * extension_operator(s, slarge)
+            evaluation_operator(slarge, dgs; args...) * extension_operator(s, slarge; args...)
         end
     else
         MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
@@ -197,7 +199,7 @@ end
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(b::FunctionSet) = interpolation_operator(b)
+approximation_operator(b::FunctionSet; args...) = interpolation_operator(b; args...)
 # The default approximation for a basis is interpolation
 
 
@@ -205,7 +207,7 @@ approximation_operator(b::FunctionSet) = interpolation_operator(b)
 # source that has a grid
 (*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
 
-approximate(s::FunctionSet, f::Function) = SetExpansion(s, approximation_operator(s) * f)
+approximate(s::FunctionSet, f::Function; args...) = SetExpansion(s, approximation_operator(s; args...) * f)
 
 
 
@@ -238,10 +240,11 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1) = Differentiation(s1, s2, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; args...) = Differentiation(s1, s2, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
-differentiation_operator(s1::FunctionSet, order = 1) = differentiation_operator(s1, derivative_space(s1, order), order)
+differentiation_operator(s1::FunctionSet, order = 1; args...) =
+    differentiation_operator(s1, derivative_space(s1, order), order; args...)
 
 
 """
@@ -267,11 +270,11 @@ order(op::AntiDifferentiation) = op.order
 The antidifferentiation_operator function returns an operator that can be used to find the antiderivative
 of a function in the function set, with the result an expansion in a second set.
 """
-antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1) =
+antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; args...) =
     AntiDifferentiation(s1, s2, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
-antidifferentiation_operator(s1::FunctionSet, order = 1) =
+antidifferentiation_operator(s1::FunctionSet, order = 1; args...) =
     antidifferentiation_operator(s1, antiderivative_space(s1, order), order)
 
 
@@ -283,23 +286,23 @@ antidifferentiation_operator(s1::FunctionSet, order = 1) =
 
 # We make a special case for transform operators, so that they can be intercepted in case a multidimensional
 # transform is available for a specific basis.
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s2, 1), set(s2, 2))
+transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}; args...) =
+    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s2, 1), set(s2, 2); args...)
 
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s1, 3), set(s2, 1), set(s2, 2), set(s2, 3))
+transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}; args...) =
+    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s1, 3), set(s2, 1), set(s2, 2), set(s2, 3); args...)
 
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2) =
-    TensorProductOperator(transform_operator(s1_set1, s2_set1), transform_operator(s1_set2, s2_set2))
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2; args...) =
+    TensorProductOperator(transform_operator(s1_set1, s2_set1), transform_operator(s1_set2, s2_set2); args...)
 
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3) =
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3; args...) =
     TensorProductOperator(transform_operator(s1_set1, s2_set1), transform_operator(s1_set2, s2_set2),
-        transform_operator(s1_set3, s2_set3))
+        transform_operator(s1_set3, s2_set3); args...)
 
 for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
             :interpolation_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}) = 
-        TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...)
+    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; args...) = 
+        TensorProductOperator([$op(set(s1,i),set(s2, i)) for i in 1:LEN]...; args...)
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)

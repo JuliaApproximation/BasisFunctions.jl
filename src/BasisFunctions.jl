@@ -3,10 +3,9 @@ module BasisFunctions
 # We may import ApproxFun to use its implementation of FFT for BigFloat's
 using ApproxFun
 
-#using ArrayViews
+using ArrayViews
 using FixedSizeArrays
 using Debug
-#using ApproxFun
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
@@ -33,6 +32,9 @@ import Base: dct, idct
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid
 export dim, left, right, range, sample
+
+# from dimop.jl
+export DimensionOperator, dim_operator
 
 # from functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
@@ -132,8 +134,16 @@ complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
 isreal{T <: Real}(::Type{T}) = True
 isreal{T <: Real}(::Type{Complex{T}}) = False
 
+# Starting with julia 0.4.3 we can just do float(T)
+floatify{T <: AbstractFloat}(::Type{T}) = T
+floatify(::Type{Int}) = Float64
+floatify(::Type{BigInt}) = BigFloat
+floatify{T}(::Type{Complex{T}}) = Complex{floatify(T)}
+floatify{T}(::Type{Rational{T}}) = floatify(T)
 
 include("grid.jl")
+
+#include("slices.jl")
 
 include("functionset.jl")
 
@@ -146,6 +156,8 @@ include("mappedsets.jl")
 include("euclidean.jl")
 
 include("operator.jl")
+
+#include("dimop.jl")
 
 include("tensorproductoperator.jl")
 

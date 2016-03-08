@@ -21,8 +21,8 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
     scratch         ::  SCRATCH
     src_scratch     ::  NTuple{ON,Array{ELT,1}}
     dest_scratch    ::  NTuple{ON,Array{ELT,1}}
-    
 end
+# TODO: try to remove some of the type parameters.
 
 TensorProductOperator(operators::AbstractOperator...) = TensorProductOperator(eltype(map(eltype,operators)...), operators...)
 
@@ -126,6 +126,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,1}, dest, src, coef_des
 end
 
 # Reshape the scratch space first to the right size
+# TODO: get rid of this by making scr_scratch the right size from the start
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_dest, coef_src)
     src1 = reshape(op.src_scratch[1], size(BasisFunctions.src(op, 1)))
     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op.operators[2])))
@@ -141,7 +142,6 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_src
     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op.operators[2])))
     apply_inplace_reshaped!(op, reshape(coef_srcdest, size(dest)), src1, src2, op[1], op[2])
 end
-
 
 # TensorProduct with 2 elements
 function apply_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest, coef_src,
