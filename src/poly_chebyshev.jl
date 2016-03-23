@@ -138,12 +138,12 @@ immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	FastChebyshevTransformFFTW(src, dest) =
-        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = FFTW.MEASURE))
-#        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	FastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = fftwflags))
 end
 
-FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = FastChebyshevTransformFFTW{SRC,DEST}(src, dest)
+FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
+    FastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
 
 
 immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
@@ -151,12 +151,12 @@ immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransf
 	dest	::	DEST
 	plan!	::	Base.DFT.FFTW.DCTPlan
 
-	InverseFastChebyshevTransformFFTW(src, dest) =
-        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), 1:dim(src); flags = FFTW.MEASURE))
-#        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), 1:dim(src); flags= FFTW.ESTIMATE|FFTW.MEASURE|FFTW.PATIENT))
+	InverseFastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), 1:dim(src); flags = fftwflags))
 end
 
-InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST) = InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest)
+InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
+    InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
 
 
 function apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest)
@@ -214,42 +214,50 @@ ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(d
 inv(op::DiscreteChebyshevTransform) = ctranspose(op)
 
 # TODO: restrict the grid of grid space here
-transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis) =
-	_forward_chebyshev_operator(src, dest, eltype(src,dest))
+transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; options...) =
+	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
-_forward_chebyshev_operator(src, dest, ::Union{Type{Float64},Type{Complex{Float64}}}) =
-	FastChebyshevTransformFFTW(src, dest)
+_forward_chebyshev_operator(src, dest, ::Union{Type{Float64},Type{Complex{Float64}}}; options...) =
+	FastChebyshevTransformFFTW(src, dest; options...)
 
-_forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}) =
+_forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 	FastChebyshevTransform(src, dest)
 
 
 
-transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace) =
-	_backward_chebyshev_operator(src, dest, eltype(src,dest))
+transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace; options...) =
+	_backward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
-_backward_chebyshev_operator(src, dest, ::Type{Float64}) =
-	InverseFastChebyshevTransformFFTW(src, dest)
+_backward_chebyshev_operator(src, dest, ::Type{Float64}; options...) =
+	InverseFastChebyshevTransformFFTW(src, dest; options...)
 
-_backward_chebyshev_operator(src, dest, ::Type{Complex{Float64}}) =
-	InverseFastChebyshevTransformFFTW(src, dest)
+_backward_chebyshev_operator(src, dest, ::Type{Complex{Float64}}; options...) =
+	InverseFastChebyshevTransformFFTW(src, dest; options...)
 
-_backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}) =
+_backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 	InverseFastChebyshevTransform(src, dest)
 
 
 # Catch 2D and 3D fft's automatically
-transform_operator_tensor(src, dest, src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace, dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis) =
-    _forward_chebyshev_operator(src, dest, eltype(src, dest))
+transform_operator_tensor(src, dest,
+    src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace,
+    dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis; options...) =
+        _forward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
-transform_operator_tensor(src, dest, src_set1::ChebyshevBasis, src_set2::ChebyshevBasis, dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace) =
-    _backward_chebyshev_operator(src, dest, eltype(src, dest))
+transform_operator_tensor(src, dest,
+    src_set1::ChebyshevBasis, src_set2::ChebyshevBasis,
+    dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace; options...) =
+        _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
-transform_operator_tensor(src, dest, src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace, src_set3::DiscreteGridSpace, dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis, dest_set3::ChebyshevBasis) =
-    _forward_chebyshev_operator(src, dest, eltype(src, dest))
+transform_operator_tensor(src, dest,
+    src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace, src_set3::DiscreteGridSpace,
+    dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis, dest_set3::ChebyshevBasis; options...) =
+        _forward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
-transform_operator_tensor(src, dest, src_set1::ChebyshevBasis, src_set2::ChebyshevBasis, src_set3::ChebyshevBasis, dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace, dest_set3::DiscreteGridSpace) =
-    _backward_chebyshev_operator(src, dest, eltype(src, dest))
+transform_operator_tensor(src, dest,
+    src_set1::ChebyshevBasis, src_set2::ChebyshevBasis, src_set3::ChebyshevBasis,
+    dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace, dest_set3::DiscreteGridSpace; options...) =
+        _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 
 immutable ChebyshevNormalization{ELT,SRC} <: AbstractOperator{SRC,SRC}
@@ -258,8 +266,8 @@ end
 
 eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
 
-transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T) =
-	ScalingOperator(src,1/sqrt(T(length(src)/2)))*CoefficientScalingOperator(src,1,1/sqrt(T(2)))*UnevenSignFlipOperator(src)
+transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T; options...) =
+	ScalingOperator(src,1/sqrt(T(length(src)/2))) * CoefficientScalingOperator(src,1,1/sqrt(T(2))) * UnevenSignFlipOperator(src)
 
 function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
 	L = length(op.src)

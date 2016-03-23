@@ -1,4 +1,4 @@
-#augmented_set.jl
+# augmented_set.jl
 
 
 """
@@ -13,6 +13,8 @@ AugmentedSet{T}(s::FunctionSet{1,T}, f::AbstractFunction) = AugmentedSet{typeof(
 
 set(s::AugmentedSet) = s.set
 fun(s::AugmentedSet) = s.f
+
+resize(s::AugmentedSet, n) = AugmentedSet(resize(set(s), n), fun(s))
 
 # Method delegation
 for op in (:length, :left, :right)
@@ -31,7 +33,6 @@ call_element(b::AugmentedSet, i, x) = b.f(x) * call(b.set, i, x)
 
 # Only left multiplication will do
 (*){T}(f::AbstractFunction, b::FunctionSet{1,T}) = AugmentedSet(b, f)
-
 
 
 "A ConcatenatedSet represents the direct sum of two one-dimensional sets."
@@ -53,6 +54,7 @@ set2(b::ConcatenatedSet) = b.set2
 
 length(b::ConcatenatedSet) = length(b.set1) + length(b.set2)
 
+resize(s::ConcatenatedSet, n) = ConcatenatedSet(resize(set1(s), n-(n>>1)), resize(set2(s), n>>1))
 
 # Method delegation
 for op in (:has_derivative,)
@@ -140,23 +142,22 @@ function apply!(op::ConcatenatedOperator, dest::ConcatenatedSet, src::Concatenat
     coef_dest
 end
 
+derivative_set(s::ConcatenatedSet, order) =
+    ConcatenatedSet(derivative_set(set1(s), order), derivative_set(set2(s), order))
 
-function differentiation_operator(s1::ConcatenatedSet, s2::ConcatenatedSet, var, order)
-    op1 = differentiation_operator(set1(s1), set1(s2), var, order)
-    op2 = differentiation_operator(set2(s1), set2(s2), var, order)
+function differentiation_operator(s1::ConcatenatedSet, s2::ConcatenatedSet, order; options...)
+    op1 = differentiation_operator(set1(s1), set1(s2), order; options...)
+    op2 = differentiation_operator(set2(s1), set2(s2), order; options...)
     op1 ⊕ op2
 end
 
-extension_operator(s1::ConcatenatedSet, s2::ConcatenatedSet) =
-    extension_operator(set1(s1), set1(s2)) ⊕ extension_operator(set2(s1), set2(s2))
+extension_operator(s1::ConcatenatedSet, s2::ConcatenatedSet; options...) =
+    extension_operator(set1(s1), set1(s2); options...) ⊕ extension_operator(set2(s1), set2(s2); options...)
 
 
-# This may give some errors, because the src and dest of the extension operator are not the augmented
-# sets, but the underlying sets.
-extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}) =
-    WrappedOperator(s1, s2, extension_operator(set(s1), set(s2)))
+extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}; options...) =
+    WrappedOperator(s1, s2, extension_operator(set(s1), set(s2); options...))
 
-differentiation_operator(s::AugmentedSet, var::Int, order::Int) = AugmentedSetDifferentiation(s)
 
 
 "The AugmentedSetDifferentiation enables differentiation of an AugmentedSet of the
@@ -180,19 +181,26 @@ immutable AugmentedSetDifferentiation{D,T,SRC,DEST} <: AbstractOperator{SRC,DEST
     end
 end
 
-AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op::D, src::SRC, dest::DEST, ::Type{T}) = AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op, src, dest)
+AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op::D, src::SRC, dest::DEST, ::Type{T}) =
+    AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op, src, dest)
 
-function AugmentedSetDifferentiation(src_set::AugmentedSet)
-    f = fun(src_set)
+function derivative_set(src::AugmentedSet, order)
+    @assert order == 1
+
+    s = set(src)
+    f = fun(src)
     f_prime = derivative(f)
-    s = set(src_set)
+    s_prime = derivative_set(s)
+    (f_prime * s) ⊕ (f * s_prime)
+end
+
+function AugmentedSetDifferentiation(src::AugmentedSet)
+    s = set(src)
     D_op = differentiation_operator(s)
-    s_prime = dest(D_op)
-    dest_set = (f_prime * s) ⊕ (f * s_prime)
+    dest = derivative_set(src)
+    T = eltype(dest)
 
-    T = eltype(dest_set)
-
-    AugmentedSetDifferentiation(D_op, src_set, dest_set, T)
+    AugmentedSetDifferentiation(D_op, src, dest, T)
 end
 
 
@@ -220,6 +228,13 @@ function apply!(op::AugmentedSetDifferentiation, dest::ConcatenatedSet, src, coe
 end
 
 
+# Assume order = 1...
+function differentiation_operator(s1::AugmentedSet, s2::FunctionSet, order; options...)
+    @assert order == 1
+    result = AugmentedSetDifferentiation(s1)
+    @assert dest(result) == s2
+    result
+end
 
 
 "An OperatedSet represents a set that is acted on by an operator (for example differentiation)."

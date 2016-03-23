@@ -69,6 +69,6 @@ function apply_dim!(dimop::DimensionOperator{3}, op::AbstractOperator, dim, dest
     end
 end
 
-dim_operator(src, dest, op::AbstractOperator, dim; viewtype = 1, args...) = DimensionOperator(src, dest, op, dim, view)
+dim_operator(src, dest, op::AbstractOperator, dim; viewtype = 1, options...) = DimensionOperator(src, dest, op, dim, view)
 
 

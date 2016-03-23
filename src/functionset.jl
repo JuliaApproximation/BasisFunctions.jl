@@ -130,7 +130,6 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 # All sets should implement their own promotion rules.
 promote_eltype{N,T}(b::FunctionSet{N,T}, ::Type{T}) = b
 
-resize(b::FunctionSet, n) = similar(b, eltype(b), n)
 
 # similar returns a similar basis of a given size and numeric type
 # It can be implemented in terms of resize and promote_eltype.
@@ -158,8 +157,8 @@ has_extension(b::FunctionSet) = false
 
 # A functionset has spaces associated with derivatives or antiderivatives of a certain order.
 # The default is that the function set is closed under derivation/antiderivation
-derivative_space(b::FunctionSet, order) = b
-antiderivative_space(b::FunctionSet, order) = b
+derivative_set(b::FunctionSet, order = 1) = b
+antiderivative_set(b::FunctionSet, order = 1) = b
 
 # A FunctionSet has logical indices and natural indices. The logical indices correspond to
 # the a logical ordering of the basis functions. They correspond to the order of the coefficients

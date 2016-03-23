@@ -77,13 +77,13 @@ for op in (:is_basis, :is_frame, :isreal, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-#for op in (:has_grid, :has_derivative, :has_transform, :has_extension)
 for op in (:has_grid, :has_extension, :has_transform, :has_extension)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 
-for op in (:derivative_space, :antiderivative_space)
-    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N}) = TensorProductSet(map(i->$op(set(s,i),order[i]),1:N)...)
+for op in (:derivative_set, :antiderivative_set)
+    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N} = tuple(ones(N)...); options...) =
+        TensorProductSet( map( i -> $op(set(s,i), order[i]; options...), 1:N)... )
 end
 
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
