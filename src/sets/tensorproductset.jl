@@ -1,4 +1,4 @@
-# tensorproductbasis.jl
+# tensorproductset.jl
 
 using Base.Cartesian
 
@@ -23,36 +23,36 @@ end
 function TensorProductSet(sets::FunctionSet...)
     ELT = eltype(map(eltype,sets)...)
     
-    sets = initializesets(ELT,sets...)
+    sets = initializesets(ELT, sets...)
     TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),ELT}(sets)
 end
+
 ⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
 
 # Disallow TensorProductSets of only one dimension.
-function TensorProductSet(set::FunctionSet)
-    set
-end
+TensorProductSet(set::FunctionSet) = set
+
 # Expand tensorproductsets in a tuple of sets to their individual sets.
-function initializesets(ELT,sets::FunctionSet...)
+function initializesets(ELT, sets::FunctionSet...)
     flattened = FunctionSet[]
     for i = 1:length(sets)
-        appendsets(ELT,flattened, sets[i])
+        appendsets(ELT, flattened, sets[i])
     end
     flattened = tuple(flattened...)
 end
 
-appendsets(ELT,flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [similar(f,ELT,length(f))])
+appendsets(ELT, flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [promote_eltype(f,ELT)])
 
-function appendsets(ELT,flattened::Array{FunctionSet,1}, f::TensorProductSet)
+function appendsets(ELT, flattened::Array{FunctionSet,1}, f::TensorProductSet)
     for j = 1:tp_length(f)
-        append!(flattened, [similar(set(f,j),ELT,length(set(f,j)))])
+        append!(flattened, [promote_eltype(set(f,j), ELT)])
     end
 end
 
 
 tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
-dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = sum(SN)
+dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = N
 
 ## Traits
 
@@ -77,18 +77,21 @@ for op in (:is_basis, :is_frame, :isreal, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-#for op in (:has_grid, :has_derivative, :has_transform, :has_extension)
-for op in (:has_grid, :has_extension,)
+for op in (:has_grid, :has_extension, :has_transform, :has_extension)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
 end
 
-for op in (:derivative_space, :antiderivative_space)
-    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N}) = TensorProductSet(map(i->$op(set(s,i),order[i]),1:N)...)
+for op in (:derivative_set, :antiderivative_set)
+    @eval $op{TS,SN,LEN,N}(s::TensorProductSet{TS,SN,LEN,N}, order::NTuple{N} = tuple(ones(N)...); options...) =
+        TensorProductSet( map( i -> $op(set(s,i), order[i]; options...), 1:N)... )
 end
 
 extension_size(b::TensorProductSet) = map(extension_size, sets(b))
 
-similar(b::TensorProductSet, ELT, n) = TensorProductSet(map((b,n)->similar(b,ELT,n), sets(b), n)...)
+promote_eltype{TS,SN,LEN,N,T,S}(b::TensorProductSet{TS,SN,LEN,N,T}, ::Type{S}) =
+    TensorProductSet(map(i -> promote_eltype(i,S), b.sets)...)
+
+resize(b::TensorProductSet, n) = TensorProductSet(map( (b_i,n_i)->resize(b_i, n_i), sets(b), n)...)
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
@@ -114,6 +117,7 @@ length(b::TensorProductSet) = prod(size(b))
 sets(b::TensorProductSet) = b.sets
 set(b::TensorProductSet, j::Int) = b.sets[j]
 set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range]...)
+
 tp_length(b::TensorProductSet) = length(sets(b))
 
 grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
@@ -149,10 +153,10 @@ function checkbounds{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i)
     end
 end
 
-function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x, xt...)
-    z = set(b,1)(i[1], x)
-    for j = 1:LEN-1
-        z = z * set(b,j+1)(i[j], xt[j])
+function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x...)
+    z = set(b,1)(i[1], x[1])
+    for j = 2:LEN
+        z = z * set(b,j)(i[j], x[j])
     end
     z
 end
@@ -161,10 +165,18 @@ call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i::Int, x, y) = call_element(b
 call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i::Int, x, y, z) = call_element(b, ind2sub(b, i), x, y, z)
 call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i::Int, x, y, z, t) = call_element(b, ind2sub(b, i), x, y, z, t)
 
-call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) = set(b,1)(i,x)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) = set(b,1)(i[1],x) * set(b,2)(i[2], y)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) = set(b,1)(i[1],x) * set(b,2)(i[2], y) * set(b,3)(i[3], z)
-call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) = set(b,1)(i[1],x) * set(b,2)(i[2],y) * set(b,3)(i[3], z) * set(b,4)(i[4], t)
+call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) =
+    call_element(set(b,1), i, x)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z)
+
+call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) =
+    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z) * call_element(set(b,4), i[4], t)
+
 
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)

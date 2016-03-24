@@ -76,12 +76,6 @@ index_dim{N,T}(::Type{FunctionSet{N,T}}) = 1
 index_dim{B <: FunctionSet}(::Type{B}) = 1
 index_dim(s::FunctionSet) = index_dim(typeof(s))
 
-"Return a complex type associated with the argument type."
-complexify{T <: Real}(::Type{T}) = Complex{T}
-complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
-# In 0.5 we will be able to use Base.complex(T)
-isreal{T <: Real}(::Type{T}) = True
-isreal{T <: Real}(::Type{Complex{T}}) = False
 
 
 
@@ -124,17 +118,22 @@ size(s::FunctionSet, j) = j==1 ? length(s) : throw(BoundsError())
 """
 The instantiate function takes a set type, size and numeric type as argument, and
 returns an instance of the type with the given size and numeric type and using
-default values for other parameters. This means the type is usually abstract.
+default values for other parameters. This means the given type is usually abstract,
+since it is given without parameters.
 
-This function is mainly used to create instances suitable for testing whether the
-set type adheres to the generic interface.
+This function is mainly used to create instances for testing purposes.
 """
 instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 
+"Promote the element type of the function set."
+# This definition catches cases where nothing needs to be done with diagonal dispatch
+# All sets should implement their own promotion rules.
+promote_eltype{N,T}(b::FunctionSet{N,T}, ::Type{T}) = b
 
-similar(b::FunctionSet) = similar(b, length(b))
 
-similar(b::FunctionSet, n) = similar(b, eltype(b), n)
+# similar returns a similar basis of a given size and numeric type
+# It can be implemented in terms of resize and promote_eltype.
+similar{T}(b::FunctionSet, ::Type{T}, n) = resize(promote_eltype(b, T), n)
 
 
 # The following properties are not implemented as traits with types, because they are
@@ -150,7 +149,7 @@ has_antiderivative(b::FunctionSet) = false
 has_grid(b::FunctionSet) = false
 
 "Does the set have a transform associated with some grid (space)?"
-has_transform(b::FunctionSet) = has_grid(b) && has_transform(b,DiscreteGridSpace(grid(b)))
+has_transform(b::FunctionSet) = has_grid(b) && has_transform(b, DiscreteGridSpace(grid(b)))
 has_transform(b::FunctionSet, d) = false
 
 "Does the set support extension and restriction operators?"
@@ -158,22 +157,33 @@ has_extension(b::FunctionSet) = false
 
 # A functionset has spaces associated with derivatives or antiderivatives of a certain order.
 # The default is that the function set is closed under derivation/antiderivation
-derivative_space(b::FunctionSet, order) = b
-antiderivative_space(b::FunctionSet, order) = b
+derivative_set(b::FunctionSet, order = 1) = b
+antiderivative_set(b::FunctionSet, order = 1) = b
 
 # A FunctionSet has logical indices and natural indices. The logical indices correspond to
-# the a logical ordering of the basis functions. They correspond to the order of the coefficients
-# in an expansion.
+# the ordering of the coefficients in an expansion. Each set must support integers from 1 to length(s)
+# as logical index. However, it is free to support more.
 # The natural index may be closer to the mathematical definition. For example, wavelets may
 # have a natural index that corresponds to the combination of scale and position. Or some
-# basis functions may be defined from 0 to n, rather than from 1 to n.
+# basis functions may commonly be defined from 0 to n-1, rather than from 1 to n.
 # By convention, we denote a natural index variable by idxn.
-
 "Compute the natural index corresponding to the given logical index."
 natural_index(b::FunctionSet, idx) = idx
 
 "Compute the logical index corresponding to the given natural index."
 logical_index(b::FunctionSet, idxn) = idxn
+
+# Similarly, sets have a natural size and a logical size. However, there is not necessarily a
+# bijection between the two. You can always convert a natural size to a logical size, but the other
+# direction can be done in general only approximately.
+# For example, a 2D tensor product set can only support sizes of the form n1 * n2. Its natural size may be
+# (n1,n2) and its logical size n1*n2, but not any integer n maps to a natural size tuple.
+# By convention, we denote a natural size variable by size_n.
+"Compute the natural size best corresponding to the given logical size."
+approximate_natural_size(b::FunctionSet, size_l) = size_l
+
+"Compute the logical size corresponding to the given natural size."
+logical_size(b::FunctionSet, size_n) = size_n
 
 # Default set of logical indices: from 1 to length(s)
 # Default algorithms assume this indexing for the basis functions, and the same
@@ -297,20 +307,18 @@ end
 # It's probably best to include some checks
 # - eltype(coef) is promotable to ELT
 # - grid and b have the same numtype
-
-function call_expansion{N,ELT,T}(b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
-    ARRAY_TYPE = promote_type(T,eltype(coef))
+function call_expansion{N}(b::FunctionSet{N}, coef, grid::AbstractGrid{N})
+    ELT = promote_type(eltype(b), eltype(coef))
     result = Array(ELT, size(grid))
     call_expansion!(result, b, coef, grid)
 end
 
 
 
-
-# This function is slow - better to use transforms for special cases if available.
-function call_expansion!{N,ELT,T}(result, b::FunctionSet{N,ELT}, coef, grid::AbstractGrid{N,T})
+function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{N})
     @assert size(result) == size(grid)
-    E = evaluation_operator(b,DiscreteGridSpace(grid))
+    ELT = promote_type(eltype(b), eltype(coef))
+    E = evaluation_operator(b, DiscreteGridSpace(grid, ELT))
     result = E*coef
 end
 

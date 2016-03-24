@@ -1,12 +1,10 @@
-# poly_legendre.jl
+# legendre.jl
 
 """
 A basis of Legendre polynomials on the interval [-1,1].
 """
 immutable LegendreBasis{T} <: OPS{T}
     n           ::  Int
-
-    LegendreBasis(n) = new(n)
 end
 
 name(b::LegendreBasis) = "Legendre OPS"
@@ -15,6 +13,11 @@ name(b::LegendreBasis) = "Legendre OPS"
 LegendreBasis{T}(n::Int, ::Type{T} = Float64) = LegendreBasis{T}(n)
 
 instantiate{T}(::Type{LegendreBasis}, n, ::Type{T}) = LegendreBasis{T}(n)
+
+promote_eltype{T,S}(b::LegendreBasis{T}, ::Type{S}) = LegendreBasis{promote_type(T,S)}(b.n)
+
+resize(b::LegendreBasis, n) = LegendreBasis(n, eltype(b))
+
 
 name(b::LegendreBasis) = "Legendre series"
 

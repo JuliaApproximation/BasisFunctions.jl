@@ -69,26 +69,25 @@ end
 
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
-function point_in_domain{N}(basis::FunctionSet{N}, scalar)
+function point_in_domain(basis::FunctionSet, scalar)
     # Try to find an interval within the support of the basis
     a = left(basis)
     b = right(basis)
 
-    T = numtype(basis)
     # Avoid infinities for some bases on the real line
-    a = Vector(a)
-    b = Vector(b)
-    for i in 1:N
-        if isinf(a[i])
-            a[i] = -T(1)
+    va = Vector(a)
+    vb = Vector(b)
+    for i in 1:length(va)
+        if isinf(va[i])
+            va[i] = -1
         end
-        if isinf(b[i])
-            b[i] = T(1)
+        if isinf(vb[i])
+            vb[i] = 1
         end
     end
-    a = Vec{N,T}(a)
-    b = Vec{N,T}(a)
-    x = scalar * a + (1-scalar) * b
+    pa = Vec(va...)
+    pb = Vec(va...)
+    x = scalar * pa + (1-scalar) * pb
 end
 
 
@@ -102,6 +101,21 @@ function fixed_point_in_domain{N,T}(basis::FunctionSet{N,T})
     point_in_domain(basis, w)
 end
 
+function suitable_interpolation_grid(basis::FunctionSet)
+    if BF.has_grid(basis)
+        grid(basis)
+    else
+        EquispacedGrid(length(basis), point_in_domain(basis, 1), point_in_domain(basis, 0))
+    end
+end
+
+suitable_interpolation_grid(basis::TensorProductSet) =
+    TensorProductGrid(map(suitable_interpolation_grid, sets(basis))...)
+
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), -10, 10)
+
+suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
+
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
 Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) for x_i in x])
@@ -109,7 +123,7 @@ Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) 
 Base.rationalize{N}(x::Vec{N,BigFloat}) = Vec{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
 
 
-function test_generic_interface(basis, SET)
+function test_generic_set_interface(basis, SET = typeof(basis))
     delimit("Generic interface for $(name(basis))")
 
     ELT = eltype(basis)
@@ -131,6 +145,11 @@ function test_generic_interface(basis, SET)
     if is_orthogonal(SET) == True
         @test is_biorthogonal(SET) == True
     end
+
+    # Test type promotion
+    ELT2 = widen(ELT)
+    basis2 = promote_eltype(basis, ELT2)
+    @test eltype(basis2) == ELT2
 
     ## Test dimensions
     @test index_dim(basis) == index_dim(SET)
@@ -186,7 +205,7 @@ function test_generic_interface(basis, SET)
         @test length(grid1) == length(basis)
 
         z = e(grid1)
-        E = evaluation_operator(set(e),DiscreteGridSpace(grid(set(e))))
+        E = evaluation_operator(set(e), DiscreteGridSpace(grid(set(e)), ELT) )
         @test z[:] ≈ ELT[ e(grid1[i]) for i in eachindex(grid1) ]
     end
 
@@ -228,13 +247,13 @@ function test_generic_interface(basis, SET)
     ## Test extensions
     if BF.has_extension(basis)
         n2 = extension_size(basis)
-        basis2 = similar(basis, n2)
+        basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1        
-        x1 = 1/2 * (left(basis) + right(basis))
+        x1 = point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
-        x2 = 0.3 * left(basis) + 0.7 * right(basis)
+        x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
         R = restriction_operator(basis2, basis)
@@ -258,6 +277,7 @@ function test_generic_interface(basis, SET)
         delta = sqrt(eps(T))
         @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
     end
+
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
         D = antidifferentiation_operator(basis)
@@ -294,13 +314,39 @@ function test_generic_interface(basis, SET)
             println("Skipping conditioning test for BigFloat")
         end
 
-#       TODO: test accuracy of combination of transform_operator and normalization_operator
-#        b = one(ELT) * rand(size(basis))
-#        c = t * b
-#        d = it * c
-#        @test sumabs(d-b) ≈ 0
+        # Verify the normalization operator and its inverse
+        n = transform_normalization_operator(basis)
+        # - try interpolation using transform+normalization
+        x = zeros(ELT, size(basis))
+        for i in eachindex(x)
+            x[i] = rand()
+        end
+        e = SetExpansion(basis, n*t*x)
+        @test maximum(abs(e(g)-x)) < sqrt(eps(T))
+        # - verify the inverse of the normalization
+        ni = inv(n)
+        @test maximum(abs(x - ni*n*x)) < sqrt(eps(T))
+        @test maximum(abs(x - n*ni*x)) < sqrt(eps(T))
     end
-    # TODO: Test interpolation on associated grid
+
+    ## Test interpolation operator on a suitable interpolation grid
+    if is_basis(basis) == True()
+        g = suitable_interpolation_grid(basis)
+        I = interpolation_operator(basis, g)
+        x = zeros(ELT, size(basis))
+        for i in eachindex(x)
+            x[i] = rand()
+        end
+        e = SetExpansion(basis, I*x)
+        @test maximum(abs(e(g)-x)) < 100sqrt(eps(T))
+    end
+
+    ## Test evaluation operator
+    g = suitable_interpolation_grid(basis)
+    E = evaluation_operator(basis, g)
+    e = random_expansion(basis)
+    y = E*e
+    @test maximum([abs(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
 end
 
 
@@ -377,7 +423,7 @@ function test_tensor_operators(T)
         apply!(A2, dest, intermediate[i,:])
         c2[i,:] = dest
     end
-    @test sum(abs(c-c2)) ≈ 0
+    @test sum(abs(c-c2)) + 1 ≈ 1
 end
 
 #####
@@ -432,7 +478,6 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 12
-    # This line used to say T, however we don't allow real coefficients for Fourier bases.
     coef = map(complexify(T), rand(n))
     b1 = rescale(FourierBasis(n,T), a, b)
     b2 = rescale(FourierBasis(n+1,T), a, b)
@@ -462,33 +507,34 @@ function test_fourier_series(T)
 
 
     ## Odd length
-    b = rescale(FourierBasis(13,T), -one(T), one(T))
+    fbo = rescale(FourierBasis(13,T), a, b)
 
-    @test isreal(b) == False()
+    @test isreal(fbo) == False()
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(set(b), freq)
-    @test call(b, idx, T(2//10)) ≈ 1
+    idx = frequency2idx(set(fbo), freq)
+    @test call(fbo, idx, T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(set(b), freq)
+    idx = frequency2idx(set(fbo), freq)
     x = T(2//10)
-    y = (x+1)/2
-    @test call(b, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    y = (x-a)/(b-a)
+    @test call(fbo, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    b = rescale(FourierBasis(3,T), -one(T), one(T))
-    e = SetExpansion(b, coef)
+    e = SetExpansion(FourierBasis(3, a, b), coef)
     x = T(2//10)
-    y = (x+1)/2
+    y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
-    g = grid(b)
+    g = grid(set(e))
     result = e(g)
-    @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) ≈ 0
+    # Don't compare to zero with isapprox because the default absolute tolerance is zero.
+    # So: add 1 and compare to 1
+    @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) + 1 ≈ 1
 
     # Try an extension
     n = 13
@@ -521,11 +567,11 @@ function test_fourier_series(T)
     @test reduce(&, [ coef3[end-i+1] == coef2[end-i+1] for i=1:BasisFunctions.nhalf(b3) ] )
 
     # Differentiation test
-    coef = map(complexify(T), rand(Float64, size(b)))
-    D = differentiation_operator(b)
+    coef = map(complexify(T), rand(Float64, size(fbo)))
+    D = differentiation_operator(fbo)
     coef2 = D*coef
-    e1 = SetExpansion(b, coef)
-    e2 = SetExpansion(b, coef2)
+    e1 = SetExpansion(fbo, coef)
+    e2 = SetExpansion(fbo, coef2)
 
     x = T(2//10)
     delta = sqrt(eps(T))
@@ -741,6 +787,25 @@ function test_ops(T)
 end
 
 
+function test_derived_sets(T)
+    b1 = FourierBasis(11, T)
+    b2 = ChebyshevBasis(12, T)
+
+    delimit("Linear mapped sets")
+    test_generic_set_interface(rescale(b1, -1, 2))
+
+    delimit("Concatenated sets")
+    test_generic_set_interface(b1 ⊕ b2)
+
+    delimit("Operated sets")
+    test_generic_set_interface(OperatedSet(differentiation_operator(b1)))
+
+    delimit("Augmented sets")
+    test_generic_set_interface(BF.Cos() * b1)
+end
+
+
+
 Test.with_handler(custom_handler) do
 
 
@@ -749,8 +814,10 @@ Test.with_handler(custom_handler) do
         println()
         println("T is ", T)
 
-        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis, LaguerreBasis, HermiteBasis,
-            PeriodicSplineBasis, FullSplineBasis)
+        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+#        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+#                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
         for SET in SETS
             # Choose an odd and even number of degrees of freedom
             for n in (8, 11)
@@ -760,12 +827,12 @@ Test.with_handler(custom_handler) do
                 @test numtype(basis) == T
                 @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
 
-                test_generic_interface(basis, SET)
+                test_generic_set_interface(basis, SET)
             end
         end
 
         b = FourierBasis(10) ⊗ ChebyshevBasis(12)
-        test_generic_interface(b, typeof(b))
+        test_generic_set_interface(b, typeof(b))
 
         test_tensor_sets(T)
 
@@ -778,6 +845,8 @@ Test.with_handler(custom_handler) do
         test_grids(T)
 
         test_ops(T)
+
+        test_derived_sets(T)
 
     end # for T in...
 

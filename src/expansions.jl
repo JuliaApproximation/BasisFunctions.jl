@@ -2,10 +2,11 @@
 
 """
 A SetExpansion describes a function using its coefficient expansion in a certain function set.
+
 Parameters:
 - S is the function set.
 - ELT is the numeric type of the coefficients.
-- ID is the dimension of the coefficients.
+- ID is the dimension of the coefficient matrix.
 """
 immutable SetExpansion{S,ELT,ID}
     set     ::  S
@@ -53,12 +54,12 @@ setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
-call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), x...)
+call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), promote(x...)...)
 call_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
 
 call(e::SetExpansion, x::Vec{2}) = call_expansion(set(e), coefficients(e), x[1], x[2])
 
-call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), x...)
+call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), promote(x...)...)
 call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
 
 function differentiate(f::SetExpansion, order=1)
@@ -85,8 +86,10 @@ ei(dim,i, coef) = tuple((coef*eye(Int,dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
 differentiate(f::SetExpansion, var, order) = differentiate(f, ei(dim(f), var, order))
 antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(dim(f), var, order))
+
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::SetExpansion)
+
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
 ctranspose(f::SetExpansion) = differentiate(f)
 ∫(f::SetExpansion) = antidifferentiate(f)

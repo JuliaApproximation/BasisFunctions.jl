@@ -87,6 +87,7 @@ function call_element{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 end
 
 
+
 # Natural splines of degree K
 immutable NaturalSplineBasis{K,T} <: SplineBasis{K,T}
 	n		::	Int
@@ -151,6 +152,8 @@ PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = Peri
 
 instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
 
+promote_eltype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,promote_type(T,S)}(b.n, b.a, b.b)
+
 has_grid(b::PeriodicSplineBasis) = true
 
 
@@ -174,6 +177,7 @@ left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * ste
 
 right{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - ((K+1) >> 1) + K) * stepsize(b)
 
+rescale{K,T}(s::PeriodicSplineBasis{K,T}, a, b) = PeriodicSplineBasis{K,T}(s.n, a, b)
 
 function call_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 	checkbounds(b, idx)
