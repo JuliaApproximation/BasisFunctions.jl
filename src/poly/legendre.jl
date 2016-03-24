@@ -1,4 +1,4 @@
-# poly_legendre.jl
+# legendre.jl
 
 """
 A basis of Legendre polynomials on the interval [-1,1].

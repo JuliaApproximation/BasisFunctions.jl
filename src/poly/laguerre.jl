@@ -1,4 +1,4 @@
-# poly_laguerre.jl
+# laguerre.jl
 
 "A Laguerre polynomial basis"
 immutable LaguerreBasis{S,T} <: OPS{T}

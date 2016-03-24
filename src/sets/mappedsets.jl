@@ -75,6 +75,7 @@ call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
+
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)
     T = numtype(s)
@@ -170,13 +171,15 @@ transform_normalization_operator(s1::AbstractMappedSet; options...) =
 
 function differentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
     D = differentiation_operator(s1.set, s2.set, order; options...)
-    S = ScalingOperator(dest(D),convert(eltype(s1),((right(s1.set)-left(s1.set))/(s1.b-s1.a)))^order)
+    T = promote_type(eltype(s1), typeof(s1.a))
+    S = ScalingOperator(dest(D), (T(right(s1.set)-left(s1.set))/T(s1.b-s1.a))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
 end
 
 function antidifferentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
     D = antidifferentiation_operator(s1.set, s2.set, order; options...)
-    S = ScalingOperator(dest(D),convert(eltype(s1),(s1.b-s1.a)/(right(s1.set)-left(s1.set)))^order)
+    T = promote_type(eltype(s1), typeof(s1.a))
+    S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
 end
 # The above definition does not work, super(S) goes straight up to FunctionSet

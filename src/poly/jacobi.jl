@@ -1,4 +1,4 @@
-# poly_jacobi.jl
+# jacobi.jl
 
 # A basis of Jacobi polynomials on the interval [-1,1]
 immutable JacobiBasis{S,T} <: OPS{T}

@@ -160,95 +160,6 @@ sub2ind(G::TensorProductGrid, idx...) = sub2ind(size(g), idx...)
 
 
 
-# An AbstractIntervalGrid is a grid that is defined on an interval, i.e. it is connected.
-abstract AbstractIntervalGrid{T} <: AbstractGrid1d{T}
-
-# Some default implementations for interval grids follow
-
-left(g::AbstractIntervalGrid) = g.a
-
-right(g::AbstractIntervalGrid) = g.b
-
-length(g::AbstractIntervalGrid) = g.n
-
-
-
-# An equispaced grid has equispaced points, and therefore it has a stepsize.
-abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
-
-range(g::AbstractEquispacedGrid) = range(left(g), stepsize(g), length(g))
-
-function getindex(g::AbstractEquispacedGrid, i)
-	checkbounds(g, i)
-	unsafe_getindex(g, i)
-end
-
-unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
-
-
-"""
-An equispaced grid with n points on an interval [a,b].
-"""
-immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
-	n	::	Int
-	a	::	T
-	b	::	T
-
-	EquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
-end
-
-EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
-
-function EquispacedGrid(n, a, b)
-	T = typeof((b-a)/n)
-	EquispacedGrid{T}(n, a, b)
-end
-
-stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
-
-
-# A periodic equispaced grid is an equispaced grid that omits the right endpoint.
-immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
-	n	::	Int
-	a	::	T
-	b	::	T
-
-	PeriodicEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
-end
-
-PeriodicEquispacedGrid{T}(n, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
-
-function PeriodicEquispacedGrid(n, a, b)
-	T = typeof((b-a)/n)
-	PeriodicEquispacedGrid{T}(n, a, b)
-end
-
-
-stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
-
-
-
-immutable ChebyshevIIGrid{T} <: AbstractIntervalGrid{T}
-	n	::	Int
-end
-
-typealias ChebyshevGrid ChebyshevIIGrid
-
-ChebyshevIIGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevIIGrid{T}(n)
-
-
-left{T}(g::ChebyshevIIGrid{T}) = -one(T)
-right{T}(g::ChebyshevIIGrid{T}) = one(T)
-
-function getindex(g::ChebyshevIIGrid, i)
-	checkbounds(g, i)
-	unsafe_getindex(g, i)
-end
-
-# The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.n) )
-
-
 # Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
 immutable LinearMappedGrid{G,T} <: AbstractGrid1d{T}
 	grid	::	G
@@ -279,14 +190,14 @@ rescale(g::AbstractGrid1d, a, b) = LinearMappedGrid(g, a, b)
 # Avoid multiple linear mappings
 rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
 
-# Equispaced grids already support rescaling - avoid the construction of a LinearMappedGrid
-rescale(g::EquispacedGrid, a, b) = EquispacedGrid(length(g), a, b)
-rescale(g::PeriodicEquispacedGrid, a, b) = PeriodicEquispacedGrid(length(g), a, b)
 
 # Preserve tensor product structure
 function rescale{TG,GN,N}(g::TensorProductGrid{TG,GN,N,N}, a::Vec{N}, b::Vec{N})
 	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:N]
 	TensorProductGrid(scaled_grids...)
 end
+
+
+include("intervalgrids.jl")
 
 

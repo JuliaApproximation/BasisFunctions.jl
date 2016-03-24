@@ -1,9 +1,8 @@
-# bf_fourier.jl
-
+# fourier.jl
 
 
 """
-A Fourier basis on the interval [a,b].
+A Fourier basis on the interval [-1,1].
 EVEN is true if the length of the corresponding Fourier series is even.
 """
 immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
@@ -63,11 +62,11 @@ length(b::FourierBasis) = b.n
 
 left(b::FourierBasis) = -1
 
-left(b::FourierBasis, idx) = -1
+left(b::FourierBasis, idx) = left(b)
 
 right(b::FourierBasis) = 1
 
-right(b::FourierBasis, idx) = 1
+right(b::FourierBasis, idx) = right(b)
 
 period(b::FourierBasis) = 2
 
@@ -77,7 +76,7 @@ nhalf(b::FourierBasis) = length(b)>>1
 
 
 # Map the point x in [-1,1] to the corresponding point in [0,1]
-mapx(b::FourierBasis, x) = (x+1.0)/(2.0)
+mapx(b::FourierBasis, x) = (x+1)/2
 
 # Natural index of an even Fourier basis ranges from -N+1 to N.
 natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1

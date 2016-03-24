@@ -114,6 +114,8 @@ suitable_interpolation_grid(basis::TensorProductSet) =
 
 suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), -10, 10)
 
+suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
+
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
 Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) for x_i in x])
@@ -121,7 +123,7 @@ Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) 
 Base.rationalize{N}(x::Vec{N,BigFloat}) = Vec{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
 
 
-function test_generic_interface(basis, SET)
+function test_generic_set_interface(basis, SET = typeof(basis))
     delimit("Generic interface for $(name(basis))")
 
     ELT = eltype(basis)
@@ -328,14 +330,16 @@ function test_generic_interface(basis, SET)
     end
 
     ## Test interpolation operator on a suitable interpolation grid
-    g = suitable_interpolation_grid(basis)
-    I = interpolation_operator(basis, g)
-    x = zeros(ELT, size(basis))
-    for i in eachindex(x)
-        x[i] = rand()
+    if is_basis(basis) == True()
+        g = suitable_interpolation_grid(basis)
+        I = interpolation_operator(basis, g)
+        x = zeros(ELT, size(basis))
+        for i in eachindex(x)
+            x[i] = rand()
+        end
+        e = SetExpansion(basis, I*x)
+        @test maximum(abs(e(g)-x)) < 100sqrt(eps(T))
     end
-    e = SetExpansion(basis, I*x)
-    @test maximum(abs(e(g)-x)) < 100sqrt(eps(T))
 
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
@@ -783,6 +787,25 @@ function test_ops(T)
 end
 
 
+function test_derived_sets(T)
+    b1 = FourierBasis(11, T)
+    b2 = ChebyshevBasis(12, T)
+
+    delimit("Linear mapped sets")
+    test_generic_set_interface(rescale(b1, -1, 2))
+
+    delimit("Concatenated sets")
+    test_generic_set_interface(b1 ⊕ b2)
+
+    delimit("Operated sets")
+    test_generic_set_interface(OperatedSet(differentiation_operator(b1)))
+
+    delimit("Augmented sets")
+    test_generic_set_interface(BF.Cos() * b1)
+end
+
+
+
 Test.with_handler(custom_handler) do
 
 
@@ -792,7 +815,9 @@ Test.with_handler(custom_handler) do
         println("T is ", T)
 
         SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-                LaguerreBasis, HermiteBasis, PeriodicSplineBasis)
+                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+#        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+#                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
         for SET in SETS
             # Choose an odd and even number of degrees of freedom
             for n in (8, 11)
@@ -802,12 +827,12 @@ Test.with_handler(custom_handler) do
                 @test numtype(basis) == T
                 @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
 
-                test_generic_interface(basis, SET)
+                test_generic_set_interface(basis, SET)
             end
         end
 
         b = FourierBasis(10) ⊗ ChebyshevBasis(12)
-        test_generic_interface(b, typeof(b))
+        test_generic_set_interface(b, typeof(b))
 
         test_tensor_sets(T)
 
@@ -820,6 +845,8 @@ Test.with_handler(custom_handler) do
         test_grids(T)
 
         test_ops(T)
+
+        test_derived_sets(T)
 
     end # for T in...
 

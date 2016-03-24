@@ -1,4 +1,4 @@
-# poly_chebyshev.jl
+# chebyshev.jl
 
 
 ############################################
@@ -7,7 +7,7 @@
 
 
 """
-A basis of Chebyshev polynomials of the first kind on the interval [a,b].
+A basis of Chebyshev polynomials of the first kind on the interval [-1,1].
 """
 immutable ChebyshevBasis{T} <: OPS{T}
     n			::	Int

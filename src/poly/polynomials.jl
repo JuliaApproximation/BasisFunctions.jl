@@ -1,4 +1,4 @@
-# bf_polynomials.jl
+# polynomials.jl
 
 
 abstract PolynomialBasis{T} <: AbstractBasis1d{T}
