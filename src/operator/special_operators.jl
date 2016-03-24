@@ -247,7 +247,7 @@ end
 apply!(op::SolverOperator, dest, src, coef_dest, coef_src) = (coef_dest[:] = op.solver \ coef_src)
 
 
-
+# An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
 immutable UnevenSignFlipOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     src :: SRC
     dest :: DEST
@@ -265,6 +265,28 @@ function apply!(op::UnevenSignFlipOperator, dest, src, coef_srcdest)
     end
     coef_srcdest
 end
+
+# An index scaling operator, used to generate weights for the polynomial scaling algorithm.
+immutable IdxnScalingOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+    src   :: SRC
+    dest  :: DEST
+    order :: Int
+    scale :: Function
+end
+
+IdxnScalingOperator{SRC}(src::SRC,scale::Function) = IdxnScalingOperator(src,src,1,scale)
+
+is_inplace{OP <: IdxnScalingOperator}(::Type{OP}) = True
+
+function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
+    for i in eachindex(coef_srcdest)
+        coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(op.src,i)))^op.order
+    end
+end
+
+inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*-1, op.scale)
+
+        
 
 
 
