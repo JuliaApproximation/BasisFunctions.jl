@@ -51,7 +51,7 @@ is_basis{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_basis(S1, S2)
 _concat_is_basis(S1,S2) = False
 
 is_frame{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_frame(S1, S2)
-_concat_is_frame(S1,S2) = False
+_concat_is_frame(S1,S2) = True
 
 is_orthogonal{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_orthogonal(S1, S2)
 _concat_is_orthogonal(S1,S2) = False
@@ -148,5 +148,9 @@ extension_operator(s1::ConcatenatedSet, s2::ConcatenatedSet; options...) =
 
 restriction_operator(s1::ConcatenatedSet, s2::ConcatenatedSet; options...) =
     restriction_operator(set1(s1), set1(s2); options...) ⊕ restriction_operator(set2(s1), set2(s2); options...)
+
+
+
+
 
 
