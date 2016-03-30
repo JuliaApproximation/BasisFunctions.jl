@@ -186,9 +186,15 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
     if has_transform(s, dgs)
         if length(s) == length(dgs)
             transform_operator(s, dgs; options...) * inv(transform_normalization_operator(s; options...))
-        else
+        elseif length(s)<length(dgs)
             slarge = resize(s, length(dgs))
             evaluation_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
+        else
+            # This might be faster implemented by:
+            #   - finding an integer n so that nlength(dgs)>length(s)
+            #   - resorting to the above evaluation + extension
+            #   - subsampling by factor n
+            MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
         end
     else
         MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)

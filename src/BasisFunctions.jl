@@ -60,11 +60,13 @@ export map, imap, map_linear, imap_linear, rescale
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
-# from operator/operator.jl
+# from operator/operators.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    IdentityOperator, ScalingOperator, CoefficientScalingOperator, DenseOperator, MatrixOperator, WrappedOperator, apply!
-export matrix, inv
+    DenseOperator,  apply!
+    export matrix, inv
 
+# from operator/special_operators.jl
+export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator, 
     approximation_operator, transform_operator, differentiation_operator,
