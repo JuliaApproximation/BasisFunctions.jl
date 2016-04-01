@@ -274,8 +274,10 @@ immutable IdxnScalingOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
     scale :: Function
 end
 
-IdxnScalingOperator{SRC}(src::SRC,scale::Function) = IdxnScalingOperator(src,src,1,scale)
+IdxnScalingOperator{SRC}(src::SRC; scale = default_scaling_function) = IdxnScalingOperator(src,src,1,scale)
 
+default_scaling_function(i) = 10.0^-4+(abs(i))+abs(i)^2+abs(i)^3
+default_scaling_function(i,j) = 1+(abs(i)^2+abs(j)^2)
 is_inplace{OP <: IdxnScalingOperator}(::Type{OP}) = True
 
 function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
@@ -284,6 +286,12 @@ function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     end
 end
 
+function apply!{TS,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TS,SN,LEN,2}, src, coef_srcdest)
+    for i in eachindex(coef_srcdest)
+        indices = ind2sub(size(dest),i)
+        coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(TS[1],indices[1])),convert(eltype(src),natural_index(TS[2],indices[2])))^op.order
+    end
+end
 inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*-1, op.scale)
 
         
