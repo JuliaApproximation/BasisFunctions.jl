@@ -19,7 +19,7 @@ import Base: getindex, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
-import Base: ctranspose, transpose, inv
+import Base: ctranspose, transpose, inv, hcat, vcat
 
 import Base: show, showcompact, call, convert, similar
 

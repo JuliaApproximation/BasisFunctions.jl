@@ -177,7 +177,7 @@ function HorizontalConcatenatedOperator(op1::AbstractOperator, op2::AbstractOper
     @assert dest(op1) == dest(op2)
     op_src = ConcatenatedSet(src(op1), src(op2))
     T = promote_type(eltype(op1), eltype(op2))
-    ConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(op_src), typeof(dest(op1))}(op1, op2, op_src, dest(op1))
+    HorizontalConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(op_src), typeof(dest(op1))}(op1, op2, op_src, dest(op1))
 end
 
 
@@ -239,7 +239,7 @@ function VerticalConcatenatedOperator(op1::AbstractOperator, op2::AbstractOperat
     @assert src(op1) == src(op2)
     op_dest = ConcatenatedSet(dest(op1), dest(op2))
     T = promote_type(eltype(op1), eltype(op2))
-    ConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(src(op1)), typeof(op_dest)}(op1, op2, src(op1), op_dest)
+    VerticalConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(src(op1)), typeof(op_dest)}(op1, op2, src(op1), op_dest)
 end
 
 
