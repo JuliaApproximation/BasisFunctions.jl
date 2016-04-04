@@ -129,7 +129,7 @@ inv(op::TransformOperator) = ctranspose(op)
 
 # Compute the interpolation matrix of the given basis on the given grid.
 function interpolation_matrix(s::FunctionSet, g::AbstractGrid)
-    T = promote_type(eltype(s), eltype(g))
+    T = promote_type(eltype(s), numtype(g))
     a = Array(T, length(g), length(s))
     interpolation_matrix!(a, s, g)
 end
