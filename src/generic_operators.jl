@@ -10,6 +10,7 @@
 # Approximation:
 # - interpolation_operator
 # - approximation_operator
+# - leastsquares_operator
 # - evaluation_operator
 # - transform_operator
 # - transform_normalization_operator
@@ -126,55 +127,81 @@ ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
 inv(op::TransformOperator) = ctranspose(op)
 
 
+## Interpolation and least squares
 
-# Compute the interpolation matrix of the given basis on the given grid.
-function interpolation_matrix(s::FunctionSet, g::AbstractGrid)
-    T = promote_type(eltype(s), numtype(g))
-    a = Array(T, length(g), length(s))
-    interpolation_matrix!(a, s, g)
+# Compute the interpolation matrix of the given basis on the given set of points (a grid or any iterable set of points)
+function evaluation_matrix(set::FunctionSet, pts)
+    T = promote_type(eltype(set), numtype(pts))
+    a = Array(T, length(pts), length(set))
+    evaluation_matrix!(a, set, pts)
 end
 
-function interpolation_matrix(s::FunctionSet, xs::AbstractVector)
-    T = promote_type(eltype(s), eltype(xs))
-    a = Array(T, length(xs), length(s))
-    interpolation_matrix!(a, s, xs)
-end
+function evaluation_matrix!(a::AbstractMatrix, set::FunctionSet, pts)
+    @assert size(a,1) == length(pts)
+    @assert size(a,2) == length(set)
 
-function interpolation_matrix!(a::AbstractMatrix, s::FunctionSet, g)
-    n,m = size(a)
-    @assert n == length(g)
-    @assert m == length(s)
-
-    for j = 1:m
-        for i = 1:n
-            a[i,j] = call(s, j, g[i])
-        end
+    for (j,ϕ) in enumerate(set), (i,x) in enumerate(pts)
+        a[i,j] = ϕ(x)
     end
     a
 end
 
+function interpolation_matrix(set::FunctionSet, pts)
+    @assert length(set) == length(pts)
+    evaluation_matrix(set, pts)
+end
+
+function leastsquares_matrix(set::FunctionSet, pts)
+    @assert length(set) <= length(pts)
+    evaluation_matrix(set, pts)
+end
 
 
-interpolation_operator(s::FunctionSet; options...) = interpolation_operator(s, grid(s); options...)
+interpolation_operator(set::FunctionSet; options...) = interpolation_operator(set, grid(set); options...)
 
-interpolation_operator(s::FunctionSet, g::AbstractGrid; options...) =
-    interpolation_operator(s, DiscreteGridSpace(g, eltype(s)); options...)
+interpolation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
+    interpolation_operator(set, DiscreteGridSpace(grid, eltype(set)); options...)
 
-# Interpolate s in the grid of dgs
-function interpolation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
-    if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
-        transform_normalization_operator(s; options...) * transform_operator(dgs, s; options...)
+# Interpolate set in the grid of dgs
+function interpolation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
+    if has_grid(set) && grid(set) == grid(dgs) && has_transform(set, dgs)
+        transform_normalization_operator(set; options...) * transform_operator(dgs, set; options...)
     else
-        SolverOperator(dgs, s, qrfact(interpolation_matrix(s, grid(dgs))))
+        SolverOperator(dgs, set, qrfact(evaluation_matrix(set, grid(dgs))))
     end
 end
 
 
-function interpolate{N}(s::FunctionSet{N}, xs::AbstractVector{AbstractVector}, f)
-    A = interpolation_matrix(s, xs)
-    B = [f(x...) for x in xs]
-    SetExpansion(s, A\B)
+function interpolate(set::FunctionSet, pts, f)
+    A = evaluation_matrix(set, pts)
+    B = eltype(A)[f(x...) for x in pts]
+    SetExpansion(set, A\B)
 end
+
+function leastsquares_operator(set::FunctionSet; samplingfactor = 2, options...)
+    if has_grid(set)
+        set2 = resize(set, samplingfactor*length(set))
+        ls_grid = grid(set2)
+    else
+        ls_grid = EquispacedGrid(samplingfactor*length(set), left(set), right(set))
+    end
+    leastsquares_operator(set, ls_grid; options...)
+end
+
+leastsquares_operator(set::FunctionSet, grid::AbstractGrid; options...) =
+    leastsquares_operator(set, DiscreteGridSpace(grid, eltype(set)); options...)
+
+function leastsquares_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
+    if has_grid(set)
+        larger_set = resize(set, length(dgs))
+        if grid(larger_set) == grid(dgs) && has_transform(larger_set, dgs)
+            R = restriction_operator(larger_set, set; options...)
+            return R * transform_normalization_operator(larger_set; options...) * transform_operator(dgs, larger_set; options...)
+        end
+    end
+    SolverOperator(dgs, set, qrfact(evaluation_matrix(set, grid(dgs))))
+end
+
 
 
 evaluation_operator(s::FunctionSet; options...) = evaluation_operator(s, grid(s); options...)
@@ -197,7 +224,7 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
             MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
         end
     else
-        MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
+        MatrixOperator(evaluation_matrix(s, grid(dgs)), s, dgs)
     end
 end
 
@@ -205,8 +232,12 @@ end
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(b::FunctionSet; options...) = interpolation_operator(b; options...)
-# The default approximation for a basis is interpolation
+approximation_operator(b::FunctionSet; options...) = _approximation_operator(b, is_basis(b); options...)
+
+# The default approximation for a basis is interpolation, for other sets it is least squares.
+_approximation_operator(b, isbasis::True; options...) = interpolation_operator(b; options...)
+_approximation_operator(b, isbasis::False; options...) = leastsquares_operator(b; options...)
+
 
 
 # Automatically sample a function if an operator is applied to it with a 
@@ -306,7 +337,7 @@ transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s
         transform_operator(s1_set3, s2_set3; options...))
 
 for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
-            :interpolation_operator)
+            :interpolation_operator, :leastsquares_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) = 
         TensorProductOperator([$op(set(s1,i),set(s2, i); options...) for i in 1:LEN]...)
 end

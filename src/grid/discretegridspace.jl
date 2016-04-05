@@ -14,6 +14,8 @@ typealias DiscreteGridSpace1d{G,ELT} DiscreteGridSpace{G,ELT,1}
 
 DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typeof(grid),N,ELT}(grid)
 
+DiscreteGridSpace(set::FunctionSet) = DiscreteGridSpace(grid(set), eltype(set))
+
 DiscreteGridSpace(tpg::TensorProductGrid, ELT = numtype(tpg)) =
     TensorProductSet( [ DiscreteGridSpace(grid(tpg, j), ELT) for j in 1:tp_length(tpg)]...)
 
