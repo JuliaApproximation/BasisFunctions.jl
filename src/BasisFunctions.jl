@@ -189,6 +189,7 @@ include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")
 
+include("fourier/fouriertransforms.jl")
 include("fourier/fourier.jl")
 include("fourier/cosineseries.jl")
 include("fourier/sineseries.jl")

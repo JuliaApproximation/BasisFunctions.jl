@@ -2,6 +2,10 @@
 
 using BasisFunctions.Slices
 
+const VIEW_COPY = 1
+const VIEW_SUB = 2
+const VIEW_VIEW = 3
+
 # Parameter VIEW determines the view type:
 # 1: make a copy
 # 2: use sub
@@ -22,7 +26,7 @@ immutable DimensionOperator{VIEW,SRC,DEST} <: AbstractOperator{SRC,DEST}
     end
 end
 
-DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype = 1) =
+DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype = VIEW_COPY) =
     DimensionOperator{viewtype,typeof(src),typeof(dest)}(src, dest, op, dim)
 
 function apply!(op::DimensionOperator, set_dest, set_src, coef_dest, coef_src)
@@ -69,6 +73,6 @@ function apply_dim!(dimop::DimensionOperator{3}, op::AbstractOperator, dim, dest
     end
 end
 
-dim_operator(src, dest, op::AbstractOperator, dim; viewtype = 1, options...) = DimensionOperator(src, dest, op, dim, view)
+dim_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_COPY, options...) = DimensionOperator(src, dest, op, dim, view)
 
 

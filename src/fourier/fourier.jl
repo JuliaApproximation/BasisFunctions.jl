@@ -1,6 +1,5 @@
 # fourier.jl
 
-
 """
 A Fourier basis on the interval [-1,1].
 EVEN is true if the length of the corresponding Fourier series is even.
@@ -217,90 +216,6 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
 end
 
 
-abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
-
-abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
-
-# These types use FFTW and so they are (currently) limited to Float64.
-# This will improve once the pure-julia implementation of FFT lands (#6193).
-# But, we can also borrow from ApproxFun so let's do that right away
-
-is_inplace{O <: DiscreteFourierTransformFFTW}(::Type{O}) = True
-
-
-immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-	plan!	::	Base.DFT.FFTW.cFFTWPlan
-
-	FastFourierTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-		new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = fftwflags))
-end
-
-FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) = FastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
-
-# Note that we choose to use bfft, an unscaled inverse fft.
-immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-	plan!	::	Base.DFT.FFTW.cFFTWPlan
-
-	InverseFastFourierTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-		new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = fftwflags))
-end
-
-InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-	InverseFastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
-
-function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
-    op.plan!*coef_srcdest
-    for i = 1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
-    end
-    coef_srcdest
-end
-
-function apply!(op::InverseFastFourierTransformFFTW, dest, src, coef_srcdest)
-    op.plan!*coef_srcdest
-    for i = 1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
-    end
-    coef_srcdest
-end
-
-
-immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-# Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
-# This allocates memory.
-function apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src)
-	coef_dest[:] = fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src)))
-	coef_dest
-end
-
-
-immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-# Why was the below line necessary?
-## apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
-function apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src)
-	coef_dest[:] = ifft(coef_src) * sqrt(convert(eltype(coef_src),length(coef_src)))
-	coef_dest
-end
-
-ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
-ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))
-
-ctranspose(op::InverseFastFourierTransform) = FastFourierTransform(dest(op), src(op))
-ctranspose(op::InverseFastFourierTransformFFTW) = FastFourierTransformFFTW(dest(op), src(op))
-
-inverse(op::DiscreteFourierTransform) = ctranspose(op)
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...) =
@@ -343,11 +258,9 @@ transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
 	dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}, dest_set3::DiscreteGridSpace{G}; options...) =
 		_backward_fourier_operator(src, dest, eltype(src, dest); options...)
 
-evaluation_operator(b::FourierBasis; options...) = transform_operator(b, grid(b); options...)
 
 function transform_normalization_operator(src::FourierBasis; options...)
     L = length(src)
     ELT = eltype(src)
     ScalingOperator(src, 1/sqrt(ELT(L)))
 end
-

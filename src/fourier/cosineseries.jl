@@ -47,7 +47,7 @@ right(b::CosineSeries, idx) = right(b)
 
 period(b::CosineSeries, idx) = 2
 
-grid{T}(b::CosineSeries{T}) = EquispacedGrid(b.n, T(0), T(1))
+grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(numtype(b)), one(numtype(b)))
 
 
 natural_index(b::CosineSeries, idx) = idx-1

@@ -58,6 +58,7 @@ end
 # Operators can choose to specialize with or without the src and dest arguments.
 # In-place operators can be called with a single set of coefficients.
 function apply!(op::AbstractOperator, coef_dest, coef_src)
+    # These assertions prevent a lot of inlining:
 	## @assert length(coef_dest) == length(dest(op))
 	## @assert length(coef_src) == length(src(op))
     ## @assert eltype(op) == eltype(coef_dest)

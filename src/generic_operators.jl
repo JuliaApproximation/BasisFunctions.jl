@@ -60,7 +60,7 @@ end
 """
 A restriction operator does the opposite of what the extension operator does: it restricts
 a representation in a set s1 to a representation in a smaller set s2. Loss of accuracy may result
-from the restriction. The default restriction_operator is of type Restriction with sets s1 and 
+from the restriction. The default restriction_operator is of type Restriction with sets s1 and
 s2 as source and destination.
 """
 restriction_operator(s1::FunctionSet, s2::FunctionSet; options...) = Restriction(s1, s2)
@@ -240,7 +240,7 @@ _approximation_operator(b, isbasis::False; options...) = leastsquares_operator(b
 
 
 
-# Automatically sample a function if an operator is applied to it with a 
+# Automatically sample a function if an operator is applied to it with a
 # source that has a grid
 (*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
 
@@ -338,12 +338,12 @@ transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s
 
 for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
             :interpolation_operator, :leastsquares_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) = 
+    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) =
         TensorProductOperator([$op(set(s1,i),set(s2, i); options...) for i in 1:LEN]...)
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
-    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; options...) = 
+    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; options...) =
         TensorProductOperator([$op(set(s,i); options...) for i in 1:LEN]...)
 end
 

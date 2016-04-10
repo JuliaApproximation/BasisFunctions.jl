@@ -30,5 +30,4 @@ for op in (:length, :size, :left, :right)
 end
 
 
-rescale(s::DiscreteGridSpace, a, b) = DiscreteGridSpace(rescale(grid(s)))
-
+rescale(s::DiscreteGridSpace, a, b) = DiscreteGridSpace(rescale(grid(s), a, b))
