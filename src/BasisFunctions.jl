@@ -62,8 +62,8 @@ export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion
 
 # from operator/operators.jl
 export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    DenseOperator,  apply!
-    export matrix, inv
+    DenseOperator,  apply!, is_inplace, is_diagonal
+    export matrix, diagonal, inv
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator

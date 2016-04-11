@@ -67,6 +67,10 @@ end
 
 (*)(a::Number, op::IdentityOperator) = ScalingOperator(src(op), a)
 (*)(op::IdentityOperator, a::Number) = ScalingOperator(src(op), a)
+# Universal scaling of operators
+(*)(a::Number, op::AbstractOperator) = ScalingOperator(src(op), a)*op
+(*)(op::AbstractOperator, a::Number) = op*ScalingOperator(src(op), a)
+
 
 (+){SRC}(op2::IdentityOperator{SRC}, op1::IdentityOperator{SRC}) =
     convert(ScalingOperator{eltype(SRC),SRC}, op2) + convert(ScalingOperator{eltype(SRC),SRC}, op1)
@@ -97,11 +101,23 @@ end
 
 diagonal(op::DiagonalOperator) = op.diagonal
 
+DiagonalOperator{ELT,SRC,DEST,N}(src::SRC,dest::DEST,diagonal :: Array{ELT,N}) = DiagonalOperator(src,dest,diagonal[:])
 is_inplace{OP <: DiagonalOperator}(::Type{OP}) = True
 
 is_diagonal{OP <: DiagonalOperator}(::Type{OP}) = True
 
-inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), op.diagonal.^(-1))
+function inv(op::AbstractOperator, is_diagonal::True)
+    # check for zero elements.
+    if length(find(diagonal(op).==0))==0
+        DiagonalOperator(dest(op), src(op), diagonal(op).^(-1))
+    else
+        d = diagonal(op)
+        d[find(d.==0)] = Inf
+        DiagonalOperator(dest(op), src(op), d.^(-1))
+    end
+end
+# Any is_diagonal operator can be inverted into a diagonal operator
+
 
 ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), diagonal(op))
 
@@ -119,6 +135,11 @@ function apply!(op::ScalingOperator, dest, src, coef_dest, coef_src)
         coef_dest[i] = op.scalar * coef_src[i]
     end
 end
+# Calculus with DiagonalOperators is calculus on the diagonals
+(+){ELT,SRC,DEST}(op1::DiagonalOperator{ELT,SRC,DEST}, op2::DiagonalOperator{ELT,SRC,DEST}) = DiagonalOperator(SRC,DEST,diagonal(op1)+diagonal(op2))
+(-){ELT,SRC,DEST}(op1::DiagonalOperator{ELT,SRC,DEST}, op2::DiagonalOperator{ELT,SRC,DEST}) = DiagonalOperator(SRC,DEST,diagonal(op1)-diagonal(op2))
+(*)(a::Number, op::DiagonalOperator) = DiagonalOperator(src(op),dest(op),a*diagonal(op))
+(*)(op::AbstractOperator, a::Number) = DiagonalOperator(src(op),dest(op),a*diagonal(op))
 
 
 
@@ -279,7 +300,9 @@ IdxnScalingOperator{SRC}(src::SRC; scale = default_scaling_function) = IdxnScali
 default_scaling_function(i) = 10.0^-4+(abs(i))+abs(i)^2+abs(i)^3
 default_scaling_function(i,j) = 1+(abs(i)^2+abs(j)^2)
 is_inplace{OP <: IdxnScalingOperator}(::Type{OP}) = True
+is_diagonal{OP <: IdxnScalingOperator}(::Type{OP}) = True
 
+ctranspose(op::IdxnScalingOperator) = IdxnScalingOperator(dest(op),src(op),op.order,op.scale)
 function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     for i in eachindex(coef_srcdest)
         coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(op.src,i)))^op.order
@@ -292,9 +315,8 @@ function apply!{TS,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TS,SN
         coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(TS[1],indices[1])),convert(eltype(src),natural_index(TS[2],indices[2])))^op.order
     end
 end
-inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*-1, op.scale)
 
-        
+
 
 
 

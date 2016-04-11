@@ -106,6 +106,7 @@ ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, op
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, operators(op))...)
 
+
 is_inplace{ELT,TO,ON,SCRATCH, SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = is_inplace(TO)
 
 is_inplace{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_inplace(OP1) 
@@ -115,6 +116,17 @@ is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOper
     is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
 is_inplace{OP1,OP2,OP3,OP4}(TO::Type{Tuple{OP1,OP2,OP3,OP4}}) =
     is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3) & is_inplace(OP4)
+
+
+is_diagonal{ELT,TO,ON,SCRATCH, SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = is_diagonal(TO)
+
+is_diagonal{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_diagonal(OP1) 
+is_diagonal{OP1 <: AbstractOperator, OP2 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2}}) =
+    is_diagonal(OP1) & is_diagonal(OP2)
+is_diagonal{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2,OP3}}) =
+    is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3)
+is_diagonal{OP1,OP2,OP3,OP4}(TO::Type{Tuple{OP1,OP2,OP3,OP4}}) =
+    is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3) & is_diagonal(OP4)
 
    
 # It is much easier to implement different versions specific to the dimension

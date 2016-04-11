@@ -46,7 +46,6 @@ is_inplace(op::AbstractOperator) = is_inplace(typeof(op))()
 is_diagonal{OP <: AbstractOperator}(::Type{OP}) = False
 is_diagonal(op::AbstractOperator) = is_diagonal(typeof(op))()
 
-
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = Array(promote_type(eltype(op),eltype(coef_src)), size(dest(op)))
 	apply!(op, coef_dest, coef_src)
@@ -124,6 +123,16 @@ function matrix_fill!(op::AbstractOperator, a, r, s)
     a
 end    
 
+diagonal(op::AbstractOperator) = diagonal(op, is_diagonal(op))
+diagonal(op::AbstractOperator, is_diagonal::False) = diag(matrix(op))
+function diagonal(op::AbstractOperator, is_diagonal::True)
+    diagonal =ones(eltype(op),size(src(op))) 
+    apply!(op,diagonal)
+    diagonal
+end
+
+inv(op::AbstractOperator) = inv(op, is_diagonal(op))
+
 
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
@@ -162,7 +171,7 @@ immutable OperatorInverse{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
 	OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
 end
 
-inv{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
+inv{SRC,DEST}(op::AbstractOperator{DEST,SRC},is_diagonal::False) = OperatorInverse{typeof(op),SRC,DEST}(op)
 
 operator(opinv::OperatorInverse) = opinv.op
 

@@ -169,15 +169,15 @@ transform_operator_tensor(s1, s2,
 transform_normalization_operator(s1::AbstractMappedSet; options...) =
     WrappedOperator(s1, s1, transform_normalization_operator(set(s1); options...) )
 
-function differentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
-    D = differentiation_operator(s1.set, s2.set, order; options...)
+function differentiation_operator(s1::LinearMappedSet, order::Int; options...)
+    D = differentiation_operator(s1.set, order; options...)
     T = promote_type(eltype(s1), typeof(s1.a))
     S = ScalingOperator(dest(D), (T(right(s1.set)-left(s1.set))/T(s1.b-s1.a))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
 end
 
-function antidifferentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
-    D = antidifferentiation_operator(s1.set, s2.set, order; options...)
+function antidifferentiation_operator(s1::LinearMappedSet, order::Int; options...)
+    D = antidifferentiation_operator(s1.set, order; options...)
     T = promote_type(eltype(s1), typeof(s1.a))
     S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
