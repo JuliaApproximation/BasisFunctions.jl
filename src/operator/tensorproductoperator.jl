@@ -27,7 +27,7 @@ end
 # Generic functions for composite types:
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
-composite_length(op::TensorProductOperator) = length(elements(op))
+composite_length{ELT,TO,ON}(op::TensorProductOperator{ELT,TO,ON}) = ON
 
 function TensorProductOperator(operators...)
     ELT = promote_type(map(eltype, operators)...)
