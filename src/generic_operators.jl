@@ -321,55 +321,37 @@ antidifferentiation_operator(s1::FunctionSet, order = 1; options...) =
 # Operators for tensor product sets
 #####################################
 
+
+
 # We make a special case for transform operators, so that they can be intercepted in case a multidimensional
 # transform is available for a specific basis.
 transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}; options...) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s2, 1), set(s2, 2); options...)
+    transform_operator_tensor(s1, s2, element(s1, 1), element(s1, 2), element(s2, 1), element(s2, 2); options...)
 
 transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}; options...) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s1, 3), set(s2, 1), set(s2, 2), set(s2, 3); options...)
+    transform_operator_tensor(s1, s2, element(s1, 1), element(s1, 2), element(s1, 3), element(s2, 1), element(s2, 2), element(s2, 3); options...)
 
 transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2; options...) =
-    TensorProductOperator(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...))
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...); options...)
 
 transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3; options...) =
-    TensorProductOperator(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...),
-        transform_operator(s1_set3, s2_set3; options...))
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...),
+        transform_operator(s1_set3, s2_set3; options...); options...)
 
 for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
             :interpolation_operator, :leastsquares_operator)
     @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) =
-        TensorProductOperator([$op(set(s1,i),set(s2, i); options...) for i in 1:LEN]...)
+        tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:LEN]...)
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
     @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; options...) =
-        TensorProductOperator([$op(set(s,i); options...) for i in 1:LEN]...)
+        tensorproduct([$op(element(s,i); options...) for i in 1:LEN]...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
     @eval function $op{TS1,TS2, SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, order::NTuple{LEN}; options...)
-        TensorProductOperator([$op(set(s1,i), set(s2,i), order[i]; options...) for i in 1:LEN]...)
+        tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:LEN]...)
     end
 end
-
-## # Overly complicated routines to select a single variable and order from a tensorproductset.
-## for op in (:differentiation_operator, :antidifferentiation_operator)
-##     @eval function $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, var::Int, order::Int)
-##         operators = map(i->$op(set(s1,i),set(s2,i),1,0),1:LEN)
-##         setindex = minimum(find(cumsum([SN...]).>(var-1)))
-##         varadjusted = var-cumsum([0; SN...])[setindex]
-##         operators[setindex] = $op(set(s1,setindex),set(s2,setindex),varadjusted,order)
-##         TensorProductOperator(operators...)
-##     end
-## end
-
-## for op in (:differentiation_operator, :antidifferentiation_operator)
-##     @eval function $op{TS1,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, var::Int, order::Int)
-##         operators = AbstractOperator[IdentityOperator(set(s1,i)) for i in 1:LEN]
-##         setindex = minimum(find(cumsum([SN...]).>(var-1)))
-##         varadjusted = var-cumsum([0; SN...])[setindex]
-##         operators[setindex] = $op(set(s1,setindex),varadjusted,order)
-##         TensorProductOperator(operators...)
-##     end
-## end

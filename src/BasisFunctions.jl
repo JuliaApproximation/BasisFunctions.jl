@@ -34,7 +34,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEqu
 export dim, left, right, range, sample
 
 # from operator/dimop.jl
-export DimensionOperator, dim_operator
+export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
@@ -61,19 +61,23 @@ export map, imap, map_linear, imap_linear, rescale
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
 # from operator/operators.jl
-export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    DenseOperator,  apply!
-    export matrix, inv
+export AbstractOperator, ctranspose, operator, src, dest, apply!
+export matrix
+
+# from operator/composite_operator.jl
+export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+
 # from generic_operator.jl
-export extension_operator, restriction_operator, interpolation_operator, 
+export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     antidifferentiation_operator, approximate,
     evaluation_operator, normalization_operator,
     Extension, Restriction, extend, Differentiation, TransformOperator,
-    extension_size, transform_normalization_operator, interpolation_matrix
+    extension_size, transform_normalization_operator, interpolation_matrix,
+    tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -99,8 +103,11 @@ export set1, set2, ConcatenatedSet
 # from sets/operated_set.jl
 export OperatedSet
 
+# from sets/euclidean.jl"
+export Cn, Rn
+
 # from fourier/fourier.jl
-export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
+export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
@@ -170,7 +177,7 @@ include("sets/euclidean.jl")
 
 include("operator/operator.jl")
 
-#include("dimop.jl")
+include("operator/dimop.jl")
 
 include("operator/tensorproductoperator.jl")
 
@@ -181,6 +188,8 @@ include("functional/functional.jl")
 include("grid/discretegridspace.jl")
 
 include("generic_operators.jl")
+
+include("tensorproducts.jl")
 
 include("util/functors.jl")
 

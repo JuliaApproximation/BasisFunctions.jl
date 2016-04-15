@@ -250,7 +250,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
         e1 = random_expansion(basis)
-        e2 = E * e1        
+        e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
         x2 = point_in_domain(basis, 0.3)
@@ -261,7 +261,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         @test e2(x1) ≈ e3(x1)
         @test e2(x2) ≈ e3(x2)
     end
-    
+
     ## Test derivatives
     if BF.has_derivative(basis)
         D = differentiation_operator(basis)
@@ -291,10 +291,10 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
         x = fixed_point_in_domain(basis)
         delta = sqrt(eps(T))
-        
+
         @test abs( (e2(x+delta)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 150delta
     end
-    
+
     ## Test associated transform
     if BF.has_transform(basis)
         # Check whether it is unitary
@@ -431,7 +431,7 @@ end
 #####
 function test_fourier_series(T)
     delimit("Fourier series")
-    
+
     @test isreal(FourierBasis) == False
 
     ## Even length
@@ -499,7 +499,7 @@ function test_fourier_series(T)
     e1 = SetExpansion(fb, coef)
     e2 = SetExpansion(rescale(FourierBasis(length(fb)+1,T),left(fb),right(fb)), coef2)
 
-    
+
     x = T(2//10)
     delta = sqrt(eps(T))
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 100delta
@@ -859,4 +859,3 @@ println("Failure rate:\t$failures/$(successes+failures+errors)")
 println("Error rate:\t$errors/$(successes+failures+errors)")
 
 end # module
-
