@@ -20,37 +20,28 @@ immutable TensorProductSet{TS, SN, LEN, N, T} <: FunctionSet{N,T}
     TensorProductSet(sets::Tuple) = new(sets)
 end
 
+# Generic functions for composite types:
+elements(set::TensorProductSet) = set.sets
+element(set::TensorProductSet, j::Int) = set.sets[j]
+element(b::TensorProductSet, range::Range) = tensorproduct(b.sets[range]...)
+composite_length(b::TensorProductSet) = length(elements(b))
+
+# The functions below are depecrated
+sets(b::TensorProductSet) = b.sets
+set(b::TensorProductSet, j::Int) = b.sets[j]
+set(b::TensorProductSet, range::Range) = tensorproduct(b.sets[range]...)
+
+function TensorProductSet(set::FunctionSet)
+    warning("This is not okay. A one element tensor product function set.")
+    set
+end
+
 function TensorProductSet(sets::FunctionSet...)
-    ELT = eltype(map(eltype,sets)...)
-    
-    sets = initializesets(ELT, sets...)
-    TensorProductSet{typeof(sets),map(dim,sets),length(sets),sum(map(dim, sets)),ELT}(sets)
+    ELT = promote_type(map(eltype,sets)...)
+    psets = map( s -> promote_eltype(s, ELT), sets)
+    TensorProductSet{typeof(psets),map(dim,psets),length(psets),sum(map(dim, psets)),ELT}(psets)
 end
 
-⊗(s1::FunctionSet, s::FunctionSet...) = TensorProductSet(s1, s...)
-
-# Disallow TensorProductSets of only one dimension.
-TensorProductSet(set::FunctionSet) = set
-
-# Expand tensorproductsets in a tuple of sets to their individual sets.
-function initializesets(ELT, sets::FunctionSet...)
-    flattened = FunctionSet[]
-    for i = 1:length(sets)
-        appendsets(ELT, flattened, sets[i])
-    end
-    flattened = tuple(flattened...)
-end
-
-appendsets(ELT, flattened::Array{FunctionSet,1}, f::FunctionSet) = append!(flattened, [promote_eltype(f,ELT)])
-
-function appendsets(ELT, flattened::Array{FunctionSet,1}, f::TensorProductSet)
-    for j = 1:tp_length(f)
-        append!(flattened, [promote_eltype(set(f,j), ELT)])
-    end
-end
-
-
-tensorproduct(b::FunctionSet, n) = TensorProductSet([b for i=1:n]...)
 
 dim{TS,SN,LEN,N,T}(s::TensorProductSet{TS,SN,LEN,N,T}) = N
 
@@ -64,8 +55,8 @@ index_dim{TS,SN,LEN,N,T}(::Type{TensorProductSet{TS,SN,LEN,N,T}}) = LEN
 end
 
 for op in (:is_basis, :is_frame, :isreal, :is_orthogonal, :is_biorthogonal)
-    @eval $op(s::TensorProductSet) = reduce(&, map($op, sets(s)))
-    
+    @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
+
     # The lines below took some experimenting: you can't index into or map over Tuple types
     @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,1,N,T}}) = $op(tuple_index(TS,1))
     @eval $op{TS,SN,N,T}(::Type{TensorProductSet{TS,SN,2,N,T}}) =
@@ -78,7 +69,7 @@ end
 
 ## Feature methods
 for op in (:has_grid, :has_extension, :has_transform, :has_extension)
-    @eval $op(b::TensorProductSet) = reduce(&, map($op, sets(b)))
+    @eval $op(b::TensorProductSet) = reduce(&, map($op, elements(b)))
 end
 
 for op in (:derivative_set, :antiderivative_set)
@@ -86,18 +77,18 @@ for op in (:derivative_set, :antiderivative_set)
         TensorProductSet( map( i -> $op(set(s,i), order[i]; options...), 1:N)... )
 end
 
-extension_size(b::TensorProductSet) = map(extension_size, sets(b))
+extension_size(b::TensorProductSet) = map(extension_size, elements(b))
 
 promote_eltype{TS,SN,LEN,N,T,S}(b::TensorProductSet{TS,SN,LEN,N,T}, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), b.sets)...)
 
-resize(b::TensorProductSet, n) = TensorProductSet(map( (b_i,n_i)->resize(b_i, n_i), sets(b), n)...)
+resize(b::TensorProductSet, n) = TensorProductSet(map( (b_i,n_i)->resize(b_i, n_i), elements(b), n)...)
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
     N = dim(b)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(set(b, j), m^dim(b, j)) for j in 1:tp_length(b)]...)
+    tuple([approx_length(element(b, j), m^dim(b, j)) for j in 1:composite_length(b)]...)
 end
 
 # It would be odd if the first method below was ever called, because LEN=1 makes
@@ -114,22 +105,17 @@ dim{TS,SN}(b::TensorProductSet{TS,SN}, j::Int) = SN[j]
 
 length(b::TensorProductSet) = prod(size(b))
 
-sets(b::TensorProductSet) = b.sets
-set(b::TensorProductSet, j::Int) = b.sets[j]
-set(b::TensorProductSet, range::Range) = TensorProductSet(b.sets[range]...)
 
-tp_length(b::TensorProductSet) = length(sets(b))
+grid(b::TensorProductSet) = tensorproduct(map(grid, elements(b))...)
+grid(b::TensorProductSet, j::Int) = grid(element(b,j))
 
-grid(b::TensorProductSet) = TensorProductGrid(map(grid, sets(b))...)
-grid(b::TensorProductSet, j::Int) = grid(set(b,j))
-
-left(b::TensorProductSet) = Vec([left(set(b,j)) for j=1:tp_length(b)])
-left(b::TensorProductSet, j::Int) = left(set(b,j))
+left(b::TensorProductSet) = Vec([left(element(b,j)) for j=1:composite_length(b)])
+left(b::TensorProductSet, j::Int) = left(element(b,j))
 left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
 left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
-right(b::TensorProductSet) = Vec([right(set(b,j)) for j=1:tp_length(b)])
-right(b::TensorProductSet, j::Int) = right(set(b,j))
+right(b::TensorProductSet) = Vec([right(element(b,j)) for j=1:composite_length(b)])
+right(b::TensorProductSet, j::Int) = right(element(b,j))
 right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
 right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
 
@@ -149,14 +135,14 @@ checkbounds(b::TensorProductSet, i::Int) = checkbounds(b, ind2sub(b, i))
 
 function checkbounds{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i)
     for k in 1:LEN
-        checkbounds(set(b, k), i[k])
+        checkbounds(element(b, k), i[k])
     end
 end
 
 function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x...)
-    z = set(b,1)(i[1], x[1])
+    z = element(b,1)(i[1], x[1])
     for j = 2:LEN
-        z = z * set(b,j)(i[j], x[j])
+        z = z * element(b,j)(i[j], x[j])
     end
     z
 end
@@ -166,16 +152,16 @@ call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i::Int, x, y, z) = call_elemen
 call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i::Int, x, y, z, t) = call_element(b, ind2sub(b, i), x, y, z, t)
 
 call_element{TS,SN}(b::TensorProductSet{TS,SN,1}, i, x) =
-    call_element(set(b,1), i, x)
+    call_element(element(b,1), i, x)
 
 call_element{TS,SN}(b::TensorProductSet{TS,SN,2}, i, x, y) =
-    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y)
+    call_element(element(b,1), i[1], x) * call_element(element(b,2), i[2], y)
 
 call_element{TS,SN}(b::TensorProductSet{TS,SN,3}, i, x, y, z) =
-    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z)
+    call_element(element(b,1), i[1], x) * call_element(element(b,2), i[2], y) * call_element(element(b,3), i[3], z)
 
 call_element{TS,SN}(b::TensorProductSet{TS,SN,4}, i, x, y, z, t) =
-    call_element(set(b,1), i[1], x) * call_element(set(b,2), i[2], y) * call_element(set(b,3), i[3], z) * call_element(set(b,4), i[4], t)
+    call_element(element(b,1), i[1], x) * call_element(element(b,2), i[2], y) * call_element(element(b,3), i[3], z) * call_element(element(b,4), i[4], t)
 
 
 ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
@@ -186,6 +172,3 @@ getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
 
 # but avoid the 1d case.
 getindex{TS,SN}(b::TensorProductSet{TS,SN,1}, i::Int) = SetFunction(b, i)
-
-
-

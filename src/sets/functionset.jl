@@ -47,7 +47,7 @@ isreal{B <: FunctionSet}(::Type{B}) = True
 isreal(s::FunctionSet) = isreal(typeof(s))()
 
 """
-The eltype of a set is the typical numeric type of expansion coefficients. It is 
+The eltype of a set is the typical numeric type of expansion coefficients. It is
 either NumT or Complex{NumT}, where NumT is the numeric type of the set.
 """
 eltype{N,T}(::Type{FunctionSet{N,T}}) = T
@@ -81,7 +81,7 @@ index_dim(s::FunctionSet) = index_dim(typeof(s))
 
 # Is a given set a basis? In general, no, but some sets could turn out to be a basis.
 # Example: a TensorProductSet that consists of a basis in each dimension.
-# This is a problem that can be solved in two ways: introduce a parallel hierarchy 
+# This is a problem that can be solved in two ways: introduce a parallel hierarchy
 # TensorProdctFrame - TensorProductBasis, or make the Basis property a trait.
 # This is the trait:
 is_basis(::Type{FunctionSet}) = False
@@ -319,7 +319,7 @@ function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{
     @assert size(result) == size(grid)
     ELT = promote_type(eltype(b), eltype(coef))
     E = evaluation_operator(b, DiscreteGridSpace(grid, ELT))
-    result = E*coef
+    apply!(E, result, coef)
 end
 
 function call_expansion!{VEC <: Vec}(result, b::FunctionSet, coef, xs::AbstractArray{VEC})
@@ -345,4 +345,3 @@ end
         result
     end
 end
-

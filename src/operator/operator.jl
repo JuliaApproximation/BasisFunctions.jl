@@ -48,9 +48,9 @@ is_diagonal(op::AbstractOperator) = is_diagonal(typeof(op))()
 
 
 function apply(op::AbstractOperator, coef_src)
-	coef_dest = Array(promote_type(eltype(op),eltype(coef_src)), size(dest(op)))
-	apply!(op, coef_dest, coef_src)
-	coef_dest
+		coef_dest = Array(promote_type(eltype(op),eltype(coef_src)), size(dest(op)))
+		apply!(op, coef_dest, coef_src)
+		coef_dest
 end
 
 # The function apply(operator,...) by default calls apply(operator, dest, src, ...)
@@ -59,33 +59,33 @@ end
 # In-place operators can be called with a single set of coefficients.
 function apply!(op::AbstractOperator, coef_dest, coef_src)
     # These assertions prevent a lot of inlining:
-	## @assert length(coef_dest) == length(dest(op))
-	## @assert length(coef_src) == length(src(op))
+		## @assert length(coef_dest) == length(dest(op))
+		## @assert length(coef_src) == length(src(op))
     ## @assert eltype(op) == eltype(coef_dest)
     ## @assert eltype(op) == eltype(coef_src)
-    
-	# distinguish between operators that are in-place and operators that are not
-	_apply!(op, is_inplace(op), coef_dest, coef_src)
+
+		# distinguish between operators that are in-place and operators that are not
+		_apply!(op, is_inplace(op), coef_dest, coef_src)
 end
 
 # Operator is in-place, use its in-place operation but don't overwrite coef_src
 function _apply!(op::AbstractOperator, op_inplace::True, coef_dest, coef_src)
-	for i in eachindex(coef_src)
-		coef_dest[i] = coef_src[i]
-	end
-	apply!(op, coef_dest)
+		for i in eachindex(coef_src)
+				coef_dest[i] = coef_src[i]
+		end
+		apply!(op, coef_dest)
 end
 
 _apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 # Provide a general dispatchable definition for in-place operators also
 function apply!(op::AbstractOperator, coef_srcdest)
-	## @assert size(dest(op)) == size(src(op))
-	apply!(op, dest(op), src(op), coef_srcdest)
+		## @assert size(dest(op)) == size(src(op))
+		apply!(op, dest(op), src(op), coef_srcdest)
 end
 
 # Catch-all for missing implementations
-apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", op, " not implemented.")
+apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 
 # Catch-all for missing implementations
 apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
@@ -103,9 +103,9 @@ end
 function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
     n = length(src(op))
     m = length(dest(op))
-    
+
     @assert (m,n) == size(a)
-    
+
     r = zeros(T, size(src(op)))
     s = zeros(T, size(dest(op)))
     matrix_fill!(op, a, r, s)
@@ -123,14 +123,14 @@ function matrix_fill!(op::AbstractOperator, a, r, s)
         end
     end
     a
-end    
+end
 
 
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	op	::	OP
+		op	::	OP
 
-	OperatorTranspose(op::AbstractOperator{DEST,SRC}) = new(op)
+		OperatorTranspose(op::AbstractOperator{DEST,SRC}) = new(op)
 end
 
 ctranspose{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorTranspose{typeof(op),SRC,DEST}(op)
@@ -158,9 +158,9 @@ apply!(opt::OperatorTranspose, dest, src, coef_srcdest) = apply!(opt, operator(o
 
 "An OperatorInverse represents the inverse of an operator."
 immutable OperatorInverse{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
-	op	::	OP
+		op	::	OP
 
-	OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
+		OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
 end
 
 inv{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
@@ -185,4 +185,3 @@ apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator
 include("composite_operator.jl")
 
 include("special_operators.jl")
-

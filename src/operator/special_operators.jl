@@ -261,7 +261,7 @@ inv(op::UnevenSignFlipOperator) = op
 
 function apply!(op::UnevenSignFlipOperator, dest, src, coef_srcdest)
     for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= (-1)^(i+1) 
+        coef_srcdest[i] *= (-1)^(i+1)
     end
     coef_srcdest
 end
@@ -294,7 +294,7 @@ function apply!{TS,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TS,SN
 end
 inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*-1, op.scale)
 
-        
+
 
 
 
@@ -311,7 +311,7 @@ immutable OperatorSum{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
         # their sizes must match.
         @assert size(src(op1)) == size(src(op2))
         @assert size(dest(op1)) == size(dest(op2))
-        
+
         new(op1, op2, val1, val2, zeros(ELT,size(dest(op1))))
     end
 end
@@ -391,6 +391,3 @@ end
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), one(eltype(op2)))
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, one(eltype(op1)), -one(eltype(op2)))
-
-
-

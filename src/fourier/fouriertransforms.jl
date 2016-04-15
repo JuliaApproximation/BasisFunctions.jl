@@ -20,11 +20,14 @@ immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC
     dest    ::  DEST
     plan!   ::  Base.DFT.FFTW.cFFTWPlan
 
-    FastFourierTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = fftwflags))
+    FastFourierTransformFFTW(src, dest, dims = 1:dim(dest); fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), dims; flags = fftwflags))
 end
 
 FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) = FastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
+
+dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::FastFourierTransformFFTW, dim; options...) =
+    FastFourierTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
 
 # Note that we choose to use bfft, an unscaled inverse fft.
 immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
@@ -32,12 +35,15 @@ immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformF
     dest    ::  DEST
     plan!   ::  Base.DFT.FFTW.cFFTWPlan
 
-    InverseFastFourierTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), 1:dim(src); flags = fftwflags))
+    InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), dims; flags = fftwflags))
 end
 
 InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
     InverseFastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
+
+dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::InverseFastFourierTransformFFTW, dim; options...) =
+    InverseFastFourierTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
 
 function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
@@ -113,12 +119,15 @@ immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW
     dest    ::  DEST
     plan!   ::  Base.DFT.FFTW.DCTPlan
 
-    FastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = fftwflags))
+    FastChebyshevTransformFFTW(src, dest, dims = 1:dim(dest); fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), dims; flags = fftwflags))
 end
 
 FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
     FastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
+
+dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::FastChebyshevTransformFFTW, dim; options...) =
+    FastChebyshevTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
 
 
 immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
@@ -126,13 +135,15 @@ immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransf
     dest    ::  DEST
     plan!   ::  Base.DFT.FFTW.DCTPlan
 
-    InverseFastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), 1:dim(src); flags = fftwflags))
+    InverseFastChebyshevTransformFFTW(src, dest, dims = 1:dim(src); fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), dims; flags = fftwflags))
 end
 
 InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
     InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
 
+dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::InverseFastChebyshevTransformFFTW, dim; options...) =
+    InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
 
 function apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest)
     op.plan!*coef_srcdest
@@ -187,7 +198,3 @@ ctranspose(op::InverseFastChebyshevTransform) = FastChebyshevTransform(dest(op),
 ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(dest(op), src(op))
 
 inv(op::DiscreteChebyshevTransform) = ctranspose(op)
-
-
-
-

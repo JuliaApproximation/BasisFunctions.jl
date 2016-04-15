@@ -24,36 +24,17 @@ immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{
 end
 # TODO: try to remove some of the type parameters.
 
-TensorProductOperator(operators::AbstractOperator...) = TensorProductOperator(eltype(map(eltype,operators)...), operators...)
+# Generic functions for composite types:
+elements(op::TensorProductOperator) = op.operators
+element(op::TensorProductOperator, j::Int) = op.operators[j]
+composite_length(op::TensorProductOperator) = length(elements(op))
 
-# Disallow TensorProductOperators of only one operator
-TensorProductOperator(op::AbstractOperator) = op
-
-
-# Expand tensorproductoperators in a tuple of operators to their individual operators.
-function flattenops(ops::AbstractOperator...)
-    flattened = AbstractOperator[]
-    for i = 1:length(ops)
-        appendops(flattened, ops[i])
-    end
-    flattened = tuple(flattened...)
-end
-
-appendops(flattened::Array{AbstractOperator,1}, f::AbstractOperator) = append!(flattened, [f])
-
-function appendops(flattened::Array{AbstractOperator,1}, f::TensorProductOperator)
-    for j = 1:tp_length(f)
-        append!(flattened, [operator(f, j)])
-    end
-end
-
-
-function TensorProductOperator{ELT}(::Type{ELT}, ops...)
-    operators = flattenops(ops...)
+function TensorProductOperator(operators...)
+    ELT = promote_type(map(eltype, operators)...)
     TO = typeof(operators)
     ON = length(operators)
-    tp_src = TensorProductSet(map(src, operators)...)
-    tp_dest = TensorProductSet(map(dest, operators)...)
+    tp_src = tensorproduct(map(src, operators)...)
+    tp_dest = tensorproduct(map(dest, operators)...)
     SRC = typeof(tp_src)
     DEST = typeof(tp_dest)
 
@@ -77,38 +58,29 @@ function TensorProductOperator{ELT}(::Type{ELT}, ops...)
 end
 
 
-tensorproduct(op::AbstractOperator, n) = TensorProductOperator([op for i=1:n]...)
-
-⊗(op::AbstractOperator, ops::AbstractOperator...) = TensorProductOperator(op, ops...)
-
 numtype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = numtype(SRC)
 
 eltype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = ELT
 
 # Element-wise src and dest functions
-src(op::TensorProductOperator, j::Int) = src(operator(op,j))
-dest(op::TensorProductOperator, j::Int) = dest(operator(op,j))
+src(op::TensorProductOperator, j::Int) = src(element(op,j))
+dest(op::TensorProductOperator, j::Int) = dest(element(op,j))
 
 
 # Element-wise and total size functions
 size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, sets(dest(op)))) : prod(map(length, sets(src(op))))
 size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
-tp_length{ELT,TO,ON,SCRATCH,SRC,DEST}(op::TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}) = ON
 
-# Retrieve the operators that make up this tensor product
-operators(op::TensorProductOperator) = op.operators
-operator(op::TensorProductOperator, j::Int) = op.operators[j]
+getindex(op::TensorProductOperator, j::Int) = element(op, j)
 
-getindex(op::TensorProductOperator, j::Int) = operator(op, j)
+ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, elements(op))...)
 
-ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, operators(op))...)
-
-inv(op::TensorProductOperator) = TensorProductOperator(map(inv, operators(op))...)
+inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
 is_inplace{ELT,TO,ON,SCRATCH, SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = is_inplace(TO)
 
-is_inplace{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_inplace(OP1) 
+is_inplace{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_inplace(OP1)
 is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2}}) =
     is_inplace(OP1) & is_inplace(OP2)
 is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2,OP3}}) =
@@ -116,13 +88,13 @@ is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOper
 is_inplace{OP1,OP2,OP3,OP4}(TO::Type{Tuple{OP1,OP2,OP3,OP4}}) =
     is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3) & is_inplace(OP4)
 
-   
+
 # It is much easier to implement different versions specific to the dimension
 # of the tensor-product, than to provide an N-dimensional implementation...
 # The one-element tensorproduct is particularly simple:
 function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,1}, dest, src, coef_dest, coef_src)
     println("One-element TensorProductOperators should not exist!")
-    apply!(operator(op,1), coef_dest, coef_src)
+    apply!(element(op,1), coef_dest, coef_src)
 end
 
 # Reshape the scratch space first to the right size
@@ -315,4 +287,3 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_src
     end
     coef_srcdest
 end
-

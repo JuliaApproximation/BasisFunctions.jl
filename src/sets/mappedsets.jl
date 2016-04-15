@@ -94,7 +94,7 @@ rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
 # Preserve tensor product structure
 function rescale{TS,SN,N}(s::TensorProductSet{TS,SN,N,N}, a::Vec{N}, b::Vec{N})
     scaled_sets = [ rescale(set(s,i), a[i], b[i]) for i in 1:N]
-    TensorProductSet(scaled_sets...)
+    tensorproduct(scaled_sets...)
 end
 
 
@@ -128,7 +128,7 @@ end
 # Undo set mappings in a TensorProductSet
 unmapset(s::FunctionSet) = s
 unmapset(s::AbstractMappedSet) = set(s)
-unmapset(s::TensorProductSet) = TensorProductSet(map(unmapset, sets(s))...)
+unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
 
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet,

@@ -17,7 +17,7 @@ DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typ
 DiscreteGridSpace(set::FunctionSet) = DiscreteGridSpace(grid(set), eltype(set))
 
 DiscreteGridSpace(tpg::TensorProductGrid, ELT = numtype(tpg)) =
-    TensorProductSet( [ DiscreteGridSpace(grid(tpg, j), ELT) for j in 1:tp_length(tpg)]...)
+    tensorproduct( [ DiscreteGridSpace(element(tpg, j), ELT) for j in 1:composite_length(tpg)]...)
 
 promote_eltype{G,N,T,S}(s::DiscreteGridSpace{G,N,T}, ::Type{S}) = DiscreteGridSpace(s.grid, promote_type(T,S))
 

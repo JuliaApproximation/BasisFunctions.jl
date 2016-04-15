@@ -26,11 +26,16 @@ immutable DimensionOperator{VIEW,SRC,DEST} <: AbstractOperator{SRC,DEST}
     end
 end
 
-DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype = VIEW_COPY) =
+DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype) =
     DimensionOperator{viewtype,typeof(src),typeof(dest)}(src, dest, op, dim)
 
+# Generic function to create a DimensionOperator
+# This function can be intercepted for operators that have a more efficient implementation.
+dimension_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_COPY, options...) =
+    DimensionOperator(src, dest, op, dim, viewtype)
+
 function apply!(op::DimensionOperator, set_dest, set_src, coef_dest, coef_src)
-    apply_dim!(op, op.op, op.dim, dest(op.op), src(op.op), coef_dest, coef_src)
+    apply_dim!(op, op.op, op.dim, coef_dest, coef_src)
 end
 
 
@@ -46,33 +51,39 @@ function copy!(a::AbstractArray, slice::Slices.SliceIndex, b::AbstractVector)
     end
 end
 
-function apply_dim!(dimop::DimensionOperator{1}, op::AbstractOperator, dim, dest, src, coef_dest, coef_src,
+function apply_dim!(dimop::DimensionOperator{1}, op::AbstractOperator, dim, coef_dest, coef_src,
     scratch_dest = dimop.scratch_dest,
     scratch_src = dimop.scratch_src)
 
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
         copy!(scratch_src, coef_src, s_slice)
-        apply!(op, dest, src, scratch_dest, scratch_src)
+        apply!(op, scratch_dest, scratch_src)
         copy!(coef_dest, d_slice, scratch_dest)
     end
 end
 
-function apply_dim!(dimop::DimensionOperator{2}, op::AbstractOperator, dim, dest, src, coef_dest, coef_src)
+function apply_dim!(dimop::DimensionOperator{2}, op::AbstractOperator, dim, coef_dest, coef_src)
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
         src_view = sub(coef_src, s_slice)
         dest_view = sub(coef_dest, d_slice)
-        apply!(op, dest, src, dest_view, src_view)
+        apply!(op, dest_view, src_view)
     end
 end
 
-function apply_dim!(dimop::DimensionOperator{3}, op::AbstractOperator, dim, dest, src, coef_dest, coef_src)
+function apply_dim!(dimop::DimensionOperator{3}, op::AbstractOperator, dim, coef_dest, coef_src)
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
         src_view = view(coef_src, s_slice)
         dest_view = view(coef_dest, d_slice)
-        apply!(op, dest, src, dest_view, src_view)
+        apply!(op, dest_view, src_view)
     end
 end
 
-dim_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_COPY, options...) = DimensionOperator(src, dest, op, dim, view)
 
+"Replace the j-th set of a tensor product set with a different one."
+replace(tpset::TensorProductSet, j, s) = tensorproduct([set(tpset, i) for i in 1:j-1]..., s, [set(tpset, i) for i in j+1:composite_length(tpset)]...)
 
+inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, set(dest(op), op.dim)),
+    replace(dest(op), op.dim, set(src(op), op.dim)), inv(op.op), op.dim, VIEW)
+
+ctranspose{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, set(dest(op), op.dim)),
+    replace(dest(op), op.dim, set(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)
