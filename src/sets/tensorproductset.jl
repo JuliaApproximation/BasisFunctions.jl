@@ -24,7 +24,7 @@ end
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
 element(b::TensorProductSet, range::Range) = tensorproduct(b.sets[range]...)
-composite_length(b::TensorProductSet) = length(elements(b))
+composite_length{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}) = LEN
 
 # The functions below are depecrated
 sets(b::TensorProductSet) = b.sets
