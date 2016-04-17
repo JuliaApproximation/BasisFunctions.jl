@@ -154,16 +154,3 @@ function apply(op::AbstractOperator, e::SetExpansion)
 
     SetExpansion(dest(op), op * coefficients(e))
 end
-
-function apply!(op::AbstractOperator, set_dest::SetExpansion, set_src::SetExpansion)
-    @assert set(set_src) == src(op)
-    @assert set(set_dest) == dest(op)
-
-    apply!(op, coefficients(set_dest), coefficients(set_src))
-end
-
-
-
-
-
-

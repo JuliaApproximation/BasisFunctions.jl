@@ -20,7 +20,7 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
-	
+
 ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 ChebyshevBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( ChebyshevBasis(n,floatify(T)), a, b)
@@ -170,30 +170,31 @@ transform_operator_tensor(src, dest,
         _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 
-immutable ChebyshevNormalization{ELT,SRC} <: AbstractOperator{SRC,SRC}
-    src     :: SRC
+function transform_normalization_operator(src::ChebyshevBasis; options...)
+    ELT = eltype(src)
+    scaling = ScalingOperator(src, 1/sqrt(ELT(length(src)/2)))
+    coefscaling = CoefficientScalingOperator(src, 1, 1/sqrt(ELT(2)))
+    flip = UnevenSignFlipOperator(src)
+	scaling * coefscaling * flip
 end
 
-eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
 
-transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T; options...) =
-	ScalingOperator(src,1/sqrt(T(length(src)/2))) * CoefficientScalingOperator(src,1,1/sqrt(T(2))) * UnevenSignFlipOperator(src)
-
-function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
-	L = length(op.src)
-	T = numtype(src)
-	s = 1/sqrt(T(L)/2)
-    coef_srcdest[1] /= sqrt(T(2))
-end
-
-dest(op::ChebyshevNormalization) = src(op)
-
-is_inplace{OP <: ChebyshevNormalization}(::Type{OP}) = True
-
-is_diagonal{OP <: ChebyshevNormalization}(::Type{OP}) = True
-
-ctranspose(op::ChebyshevNormalization) = op
-
+# immutable ChebyshevNormalization{ELT} <: AbstractOperator{ELT}
+#     src     :: FunctionSet
+# end
+#
+# ChebyshevNormalization(src::FunctionSet) = ChebyshevNormalization{eltype(src)}(src)
+#
+# dest(op::ChebyshevNormalization) = src(op)
+#
+#
+# function apply_inplace!{ELT}(op::ChebyshevNormalization{ELT}, coef_srcdest)
+# 	L = length(op.src)
+# 	T = numtype(src)
+# 	s = 1/sqrt(ELT(length(coef_srcdest))/2)
+#     coef_srcdest[1] /= sqrt(T(2))
+# end
+#
 
 
 ############################################
@@ -240,6 +241,3 @@ rec_An(b::ChebyshevBasisSecondKind, n::Int) = 2
 rec_Bn(b::ChebyshevBasisSecondKind, n::Int) = 0
 
 rec_Cn(b::ChebyshevBasisSecondKind, n::Int) = 1
-
-
-

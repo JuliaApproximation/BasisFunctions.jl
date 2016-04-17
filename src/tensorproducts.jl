@@ -41,23 +41,23 @@ end
 
 
 
-# function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
-#     if dim(src(op1)) == 1 && dim(src(op2)) == 1
-#         d1 = dimension_operator(src(op1) ⊗ src(op2), dest(op1) ⊗ src(op2), op1, 1)
-#         d2 = dimension_operator(dest(op1) ⊗ src(op2), dest(op1) ⊗ dest(op2), op2, 2)
-#         compose(d1,d2)
-#     else
-#         TensorProductOperator(op1, op2)
-#     end
-# end
-#
-# function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator; options...)
-#     if dim(src(op1)) == 1 && dim(src(op2)) == 1 && dim(src(op3)) == 1
-#         d1 = dimension_operator(src(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ src(op2) ⊗ src(op3), op1, 1; options...)
-#         d2 = dimension_operator(dest(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ src(op3), op2, 2; options...)
-#         d3 = dimension_operator(dest(op1) ⊗ dest(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ dest(op3), op3, 3; options...)
-#         compose(d1,d2,d3)
-#     else
-#         TensorProductOperator(op1, op2, op3)
-#     end
-# end
+function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
+    if dim(src(op1)) == 1 && dim(src(op2)) == 1
+        d1 = dimension_operator(src(op1) ⊗ src(op2), dest(op1) ⊗ src(op2), op1, 1)
+        d2 = dimension_operator(dest(op1) ⊗ src(op2), dest(op1) ⊗ dest(op2), op2, 2)
+        compose(d1,d2)
+    else
+        TensorProductOperator(op1, op2)
+    end
+end
+
+function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator; options...)
+    if dim(src(op1)) == 1 && dim(src(op2)) == 1 && dim(src(op3)) == 1
+        d1 = dimension_operator(src(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ src(op2) ⊗ src(op3), op1, 1; options...)
+        d2 = dimension_operator(dest(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ src(op3), op2, 2; options...)
+        d3 = dimension_operator(dest(op1) ⊗ dest(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ dest(op3), op3, 3; options...)
+        compose(d1,d2,d3)
+    else
+        TensorProductOperator(op1, op2, op3)
+    end
+end

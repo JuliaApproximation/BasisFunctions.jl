@@ -6,18 +6,20 @@ const VIEW_COPY = 1
 const VIEW_SUB = 2
 const VIEW_VIEW = 3
 
+const VIEW_DEFAULT = VIEW_COPY
+
 # Parameter VIEW determines the view type:
 # 1: make a copy
 # 2: use sub
 # 3: use ArrayViews.view
 # The first is the default.
-immutable DimensionOperator{VIEW,SRC,DEST} <: AbstractOperator{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
-    op      ::  AbstractOperator
-    dim     ::  Int
-    scratch_src     ::  AbstractArray
-    scratch_dest    ::  AbstractArray
+immutable DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
+    src             ::  FunctionSet
+    dest            ::  FunctionSet
+    op              ::  AbstractOperator{ELT}
+    dim             ::  Int
+    scratch_src     ::  AbstractArray{ELT}
+    scratch_dest    ::  AbstractArray{ELT}
 
     function DimensionOperator(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int)
         scratch_src = zeros(eltype(op), size(src(op)))
@@ -27,14 +29,14 @@ immutable DimensionOperator{VIEW,SRC,DEST} <: AbstractOperator{SRC,DEST}
 end
 
 DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype) =
-    DimensionOperator{viewtype,typeof(src),typeof(dest)}(src, dest, op, dim)
+    DimensionOperator{viewtype,eltype(op)}(src, dest, op, dim)
 
 # Generic function to create a DimensionOperator
 # This function can be intercepted for operators that have a more efficient implementation.
-dimension_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_COPY, options...) =
+dimension_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_DEFAULT, options...) =
     DimensionOperator(src, dest, op, dim, viewtype)
 
-function apply!(op::DimensionOperator, set_dest, set_src, coef_dest, coef_src)
+function apply!(op::DimensionOperator, coef_dest, coef_src)
     apply_dim!(op, op.op, op.dim, coef_dest, coef_src)
 end
 

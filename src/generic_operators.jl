@@ -29,10 +29,13 @@
 
 
 
-immutable Extension{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+Extension(src::FunctionSet, dest::FunctionSet) =
+    Extension{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 """
 An extension operator is an operator that can be used to extend a representation in a set s1 to a
@@ -51,10 +54,13 @@ extension_size(s::TensorProductSet) = map(extension_size, sets(s))
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
 
-immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+Restriction(src::FunctionSet, dest::FunctionSet) =
+    Restriction{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 
 """
@@ -83,16 +89,19 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 #################
 
 
-immutable NormalizationOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
-end
-
-normalization_operator(src::FunctionSet; options...) = NormalizationOperator(src, normalize(src))
-
-is_inplace{O <: NormalizationOperator}(::Type{O}) = True
-
-is_diagonal{O <: NormalizationOperator}(::Type{O}) = True
+# TODO: make complete. Should normalization simply be a diagonal operator?
+# immutable NormalizationOperator{SRC,DEST,ELT} <: AbstractOperator{ELT}
+#     src     ::  SRC
+#     dest    ::  DEST
+# end
+#
+# function normalization_operator(src::FunctionSet; options...)
+#     dest = normalize(src)
+#     ELT = promote_type(eltype(src),eltype(dest))
+#     NormalizationOperator{typeof(src),typeof(dest),ELT}(src, dest)
+# end
+#
+# is_inplace(::NormalizationOperator) = true
 
 
 
@@ -107,10 +116,13 @@ A function set can implement the apply! method of a suitable TransformOperator f
 unitary transform.
 Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
 """
-immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable TransformOperator{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+TransformOperator(src::FunctionSet, dest::FunctionSet) =
+    TransformOperator{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 # The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
 transform_operator(src, dest; options...) = TransformOperator(src, dest)
@@ -221,10 +233,10 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
             #   - finding an integer n so that nlength(dgs)>length(s)
             #   - resorting to the above evaluation + extension
             #   - subsampling by factor n
-            MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
+            MatrixOperator(s, dgs, interpolation_matrix(s, grid(dgs)))
         end
     else
-        MatrixOperator(evaluation_matrix(s, grid(dgs)), s, dgs)
+        MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
     end
 end
 
@@ -260,14 +272,14 @@ differentiation operators, with different result sets.
 For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
 or to polynomials up to degree n-1.
 """
-immutable Differentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Differentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-Differentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
-    Differentiation{SRC,DEST}(src, dest, 1, 1)
+Differentiation(src::FunctionSet, dest::FunctionSet, order) =
+    Differentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 
 order(op::Differentiation) = op.order
@@ -277,7 +289,8 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) = Differentiation(s1, s2, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) =
+    Differentiation(s1, s2, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
 differentiation_operator(s1::FunctionSet, order = 1; options...) =
@@ -289,14 +302,14 @@ The antidifferentiation operator of a set maps an expansion in the set to an exp
 antiderivative. The result of this operation may be an expansion in a different set. A function set
 can have different antidifferentiation operators, with different result sets.
 """
-immutable AntiDifferentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable AntiDifferentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-AntiDifferentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
-    AntiDifferentiation{SRC,DEST}(src, dest, 1)
+AntiDifferentiation(src::FunctionSet, dest::FunctionSet, order) =
+    AntiDifferentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 order(op::AntiDifferentiation) = op.order
 

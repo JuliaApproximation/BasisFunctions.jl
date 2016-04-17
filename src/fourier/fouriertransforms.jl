@@ -4,86 +4,94 @@
 # Separate definitions are used for Float64 and BigFloat type (for the time being).
 
 
-abstract DiscreteFourierTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
+abstract DiscreteFourierTransform{ELT} <: AbstractOperator{ELT}
 
-abstract DiscreteFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
+abstract DiscreteFourierTransformFFTW{ELT} <: DiscreteFourierTransform{ELT}
 
 # These types use FFTW and so they are (currently) limited to Float64.
 # This will improve once the pure-julia implementation of FFT lands (#6193).
 # But, we can also borrow from ApproxFun so let's do that right away
 
-is_inplace{O <: DiscreteFourierTransformFFTW}(::Type{O}) = True
+is_inplace(::DiscreteFourierTransformFFTW) = true
 
 
-immutable FastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable FastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
     plan!   ::  Base.DFT.FFTW.cFFTWPlan
 
-    FastFourierTransformFFTW(src, dest, dims = 1:dim(dest); fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_fft!(zeros(eltype(dest),size(dest)), dims; flags = fftwflags))
+    FastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_fft!(zeros(ELT,size(dest)), dims; flags = fftwflags))
 end
 
-FastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) = FastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
+FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet, dims = 1:dim(dest); options...) =
+    FastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
-dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::FastFourierTransformFFTW, dim; options...) =
-    FastFourierTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
+dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastFourierTransformFFTW, dim; options...) =
+    FastFourierTransformFFTW(src, dest, dim:dim; options...)
 
 # Note that we choose to use bfft, an unscaled inverse fft.
-immutable InverseFastFourierTransformFFTW{SRC,DEST} <: DiscreteFourierTransformFFTW{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable InverseFastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
     plan!   ::  Base.DFT.FFTW.cFFTWPlan
 
-    InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_bfft!(zeros(eltype(src),size(src)), dims; flags = fftwflags))
+    InverseFastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_bfft!(zeros(ELT,size(src)), dims; flags = fftwflags))
 end
 
-InverseFastFourierTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-    InverseFastFourierTransformFFTW{SRC,DEST}(src, dest; options...)
+InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); options...) =
+    InverseFastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
-dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::InverseFastFourierTransformFFTW, dim; options...) =
-    InverseFastFourierTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
+dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastFourierTransformFFTW, dim; options...) =
+    InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
-function apply!(op::FastFourierTransformFFTW, dest, src, coef_srcdest)
+function apply_inplace!(op::FastFourierTransformFFTW, coef_srcdest)
     op.plan!*coef_srcdest
-    for i = 1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
+    l = sqrt(length(coef_srcdest))
+    for i in eachindex(coef_srcdest)
+        coef_srcdest[i] /= l
     end
     coef_srcdest
 end
 
-function apply!(op::InverseFastFourierTransformFFTW, dest, src, coef_srcdest)
+function apply_inplace!(op::InverseFastFourierTransformFFTW, coef_srcdest)
     op.plan!*coef_srcdest
+    l = sqrt(length(coef_srcdest))
     for i = 1:length(coef_srcdest)
-        coef_srcdest[i]/=sqrt(length(coef_srcdest))
+        coef_srcdest[i] /= l
     end
     coef_srcdest
 end
 
 
-immutable FastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable FastFourierTransform{ELT} <: DiscreteFourierTransform{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 end
+
+FastFourierTransform(src, dest) = FastFourierTransform{op_eltype(src,dest)}(src,dest)
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
-function apply!(op::FastFourierTransform, dest, src, coef_dest, coef_src)
-    coef_dest[:] = fft(coef_src)/sqrt(convert(eltype(coef_src),length(coef_src)))
+function apply!{ELT}(op::FastFourierTransform{ELT}, coef_dest, coef_src)
+    l = sqrt(ELT(length(coef_src)))
+    coef_dest[:] = fft(coef_src) / l
     coef_dest
 end
 
 
-immutable InverseFastFourierTransform{SRC,DEST} <: DiscreteFourierTransform{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable InverseFastFourierTransform{ELT} <: DiscreteFourierTransform{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 end
 
-# Why was the below line necessary?
-## apply!(op::InverseFastFourierTransform, dest, src, coef_dest::Array{Complex{BigFloat}}, coef_src::Array{Complex{BigFloat}}) = (coef_dest[:] = ifft(coef_src) )
-function apply!(op::InverseFastFourierTransform, dest, src, coef_dest, coef_src)
-    coef_dest[:] = ifft(coef_src) * sqrt(convert(eltype(coef_src),length(coef_src)))
+InverseFastFourierTransform(src, dest) =
+    InverseFastFourierTransform{op_eltype(src,dest)}(src,dest)
+
+function apply!{ELT}(op::InverseFastFourierTransform{ELT}, coef_dest, coef_src)
+    l = sqrt(ELT(length(coef_src)))
+    coef_dest[:] = ifft(coef_src) * l
     coef_dest
 end
 
@@ -104,56 +112,58 @@ inv(op::DiscreteFourierTransform) = ctranspose(op)
 # See Strang's paper for the different versions:
 # http://www-math.mit.edu/~gs/papers/dct.pdf
 
-abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
+abstract DiscreteChebyshevTransform{ELT} <: AbstractOperator{ELT}
 
-abstract DiscreteChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
+abstract DiscreteChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransform{ELT}
 
 # These types use FFTW and so they are (currently) limited to Float64.
 # This may improve once the pure-julia implementation of FFT lands (#6193).
 
-is_inplace{O <: DiscreteChebyshevTransformFFTW}(::Type{O}) = True
+is_inplace(::DiscreteChebyshevTransformFFTW) = true
 
 
-immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable FastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFFTW{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
     plan!   ::  Base.DFT.FFTW.DCTPlan
 
-    FastChebyshevTransformFFTW(src, dest, dims = 1:dim(dest); fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), dims; flags = fftwflags))
+    FastChebyshevTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_dct!(zeros(ELT,size(dest)), dims; flags = fftwflags))
 end
 
-FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-    FastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
+FastChebyshevTransformFFTW(src, dest, dims = 1:dim(dest); options...) =
+    FastChebyshevTransformFFTW{op_eltype(src, dest)}(src, dest, dims; options...)
 
-dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::FastChebyshevTransformFFTW, dim; options...) =
-    FastChebyshevTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
+dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastChebyshevTransformFFTW, dim; options...) =
+    FastChebyshevTransformFFTW(src, dest, dim:dim; options...)
 
 
-immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable InverseFastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFFTW{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
     plan!   ::  Base.DFT.FFTW.DCTPlan
 
-    InverseFastChebyshevTransformFFTW(src, dest, dims = 1:dim(src); fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), dims; flags = fftwflags))
+    InverseFastChebyshevTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
+        new(src, dest, plan_idct!(zeros(ELT,size(src)), dims; flags = fftwflags))
 end
 
-InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-    InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
+InverseFastChebyshevTransformFFTW(src, dest, dims = 1:dim(src); options...) =
+    InverseFastChebyshevTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
-dimension_operator{SRC,DEST}(src::SRC, dest::DEST, op::InverseFastChebyshevTransformFFTW, dim; options...) =
-    InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest, dim:dim; options...)
+dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastChebyshevTransformFFTW, dim; options...) =
+    InverseFastChebyshevTransformFFTW(src, dest, dim:dim; options...)
 
-function apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest)
+function apply_inplace!(op::DiscreteChebyshevTransformFFTW, coef_srcdest)
     op.plan!*coef_srcdest
 end
 
 
-immutable FastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable FastChebyshevTransform{ELT} <: DiscreteChebyshevTransform{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 end
+
+FastChebyshevTransform(src, dest) = FastChebyshevTransform{op_eltype(src,dest)}(src,dest)
 
 # Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
 # This allocates memory.
@@ -180,15 +190,17 @@ end
 
 idct(a::AbstractArray{BigFloat}) = real(idct(a+0im))
 
-apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
+apply!(op::FastChebyshevTransform, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
 
 
-immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
+immutable InverseFastChebyshevTransform{ELT} <: DiscreteChebyshevTransform{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 end
 
-apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
+InverseFastChebyshevTransform(src, dest) = InverseFastChebyshevTransform{op_eltype(src,dest)}(src,dest)
+
+apply!(op::InverseFastChebyshevTransform, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
 
 
 ctranspose(op::FastChebyshevTransform) = InverseFastChebyshevTransform(dest(op), src(op))

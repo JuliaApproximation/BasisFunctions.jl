@@ -46,27 +46,27 @@ extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}; opti
 
 "The AugmentedSetDifferentiation enables differentiation of an AugmentedSet of the
 form f × S to a ConcatenatedSet of the form f' × S ⊕ f × S'."
-immutable AugmentedSetDifferentiation{D,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable AugmentedSetDifferentiation{D,ELT} <: AbstractOperator{ELT}
     # The differentiation operator of the underlying set
     D_op    ::  D
 
-    src     ::  SRC
-    dest    ::  DEST
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 
     # Reserve scratch space for storing coefficients of the concatenated sets in dest
-    scratch_dest1   ::  Array{T,1}
-    scratch_dest2   ::  Array{T,1}
+    scratch_dest1   ::  Array{ELT,1}
+    scratch_dest2   ::  Array{ELT,1}
 
     function AugmentedSetDifferentiation(D_op, src, dest::ConcatenatedSet)
-        scratch_dest1 = Array(T, length(set1(dest)))
-        scratch_dest2 = Array(T, length(set2(dest)))
+        scratch_dest1 = Array(ELT, length(set1(dest)))
+        scratch_dest2 = Array(ELT, length(set2(dest)))
 
         new(D_op, src, dest, scratch_dest1, scratch_dest2)
     end
 end
 
-AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op::D, src::SRC, dest::DEST, ::Type{T}) =
-    AugmentedSetDifferentiation{D,T,SRC,DEST}(D_op, src, dest)
+AugmentedSetDifferentiation(diff_op::AbstractOperator, src::FunctionSet, dest::FunctionSet) =
+    AugmentedSetDifferentiation{typeof(diff_op),op_eltype(src,dest)}(D_op, src, dest)
 
 function derivative_set(src::AugmentedSet, order)
     @assert order == 1
@@ -79,16 +79,12 @@ function derivative_set(src::AugmentedSet, order)
 end
 
 function AugmentedSetDifferentiation(src::AugmentedSet)
-    s = set(src)
-    D_op = differentiation_operator(s)
-    dest = derivative_set(src)
-    T = eltype(dest)
-
-    AugmentedSetDifferentiation(D_op, src, dest, T)
+    diff_op = differentiation_operator(set(src))
+    AugmentedSetDifferentiation(diff_op, src, derivative_set(src))
 end
 
 
-function apply!(op::AugmentedSetDifferentiation, dest::ConcatenatedSet, src, coef_dest, coef_src)
+function apply!(op::AugmentedSetDifferentiation, coef_dest, coef_src)
     coef_dest1 = op.scratch_dest1
     coef_dest2 = op.scratch_dest2
 
@@ -119,5 +115,3 @@ function differentiation_operator(s1::AugmentedSet, s2::FunctionSet, order; opti
     @assert dest(result) == s2
     result
 end
-
-

@@ -14,7 +14,7 @@ Parameters:
   It represents a tuple of arrays of ELT, which will hold intermediate calculations.
 - SRC and DEST are the (tensor product) source and destination of this operator.
 """
-immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST} <: AbstractOperator{ELT}
     operators       ::  TO
     src             ::  SRC
     dest            ::  DEST
@@ -58,10 +58,6 @@ function TensorProductOperator(operators...)
 end
 
 
-numtype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = numtype(SRC)
-
-eltype{ELT,TO,ON,SCRATCH,SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = ELT
-
 # Element-wise src and dest functions
 src(op::TensorProductOperator, j::Int) = src(element(op,j))
 dest(op::TensorProductOperator, j::Int) = dest(element(op,j))
@@ -78,15 +74,8 @@ ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, el
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
-is_inplace{ELT,TO,ON,SCRATCH, SRC,DEST}(::Type{TensorProductOperator{ELT,TO,ON,SCRATCH,SRC,DEST}}) = is_inplace(TO)
-
-is_inplace{OP1 <: AbstractOperator}(TO::Type{Tuple{OP1}}) = is_inplace(OP1)
-is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2}}) =
-    is_inplace(OP1) & is_inplace(OP2)
-is_inplace{OP1 <: AbstractOperator, OP2 <: AbstractOperator, OP3 <: AbstractOperator}(TO::Type{Tuple{OP1,OP2,OP3}}) =
-    is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
-is_inplace{OP1,OP2,OP3,OP4}(TO::Type{Tuple{OP1,OP2,OP3,OP4}}) =
-    is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3) & is_inplace(OP4)
+is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
+is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
 
 
 # It is much easier to implement different versions specific to the dimension
@@ -109,7 +98,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_des
 end
 
 # Same for in-place variant
-function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_srcdest)
+function apply_inplace!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, dest, src, coef_srcdest)
     src1 = reshape(op.src_scratch[1], size(BasisFunctions.src(op, 1)))
     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op.operators[2])))
     apply_inplace_reshaped!(op, reshape(coef_srcdest, size(dest)), src1, src2, op[1], op[2])
@@ -236,7 +225,7 @@ function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_des
 end
 
 # In-place variant
-function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_srcdest)
+function apply_inplace!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, dest, src, coef_srcdest)
 
     # There are cases where coef_srcdest is a large linearized vector rather than a tensor
     # TODO: remove the reshape as for the 2-element tensor product operator

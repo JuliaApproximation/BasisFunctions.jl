@@ -2,29 +2,26 @@
 
 
 """
-AbstractOperator represents any linear operator that maps SRC to DEST.
-Typically, SRC and DEST are of type FunctionSet, but that is not enforced.
+AbstractOperator represents any linear operator that maps coefficients of
+a source set to coefficients of a destination set. Typically, source and
+destination are of type FunctionSet.
 The action of the operator is defined by providing a method for apply!.
 
 The dimension of an operator are like a matrix: (length(dest),length(src)).
 
-SRC and DEST should at least implement the following:
+Source and destination should at least implement the following:
 - length
 - size
-- numtype
 - eltype
 
-The element type (eltype) should be equal for SRC and DEST.
+The element type (eltype) should be equal for src and dest.
 """
-abstract AbstractOperator{SRC,DEST}
+abstract AbstractOperator{ELT}
 
-# We inherit the numtype from the source. Numtypes of source and destination should always match.
-numtype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = numtype(SRC)
-numtype{OP <: AbstractOperator}(::Type{OP}) = numtype(super(OP))
-
-eltype{SRC,DEST}(::Type{AbstractOperator{SRC,DEST}}) = promote_type(eltype(SRC),eltype(DEST))
+eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
 eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
 
+op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype(dest))
 
 # Default implementation of src and dest
 src(op::AbstractOperator) = op.src
@@ -36,59 +33,60 @@ size(op::AbstractOperator) = (length(dest(op)), length(src(op)))
 
 size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 
-+(op1::AbstractOperator, op2::AbstractOperator) = +(promote(op1,op2)...)
+#+(op1::AbstractOperator, op2::AbstractOperator) = +(promote(op1,op2)...)
 
-"Trait to indicate whether or not an operator performs its action in place."
-is_inplace{OP <: AbstractOperator}(::Type{OP}) = False
-is_inplace(op::AbstractOperator) = is_inplace(typeof(op))()
+"Is the action of the operator in-place?"
+is_inplace(op::AbstractOperator) = false
 
-"Trait to indicate whether or not an operator is diagonal."
-is_diagonal{OP <: AbstractOperator}(::Type{OP}) = False
-is_diagonal(op::AbstractOperator) = is_diagonal(typeof(op))()
+"Is the operator diagonal?"
+is_diagonal(op::AbstractOperator) = false
 
 
 function apply(op::AbstractOperator, coef_src)
-		coef_dest = Array(promote_type(eltype(op),eltype(coef_src)), size(dest(op)))
+		coef_dest = Array(eltype(op), size(dest(op)))
 		apply!(op, coef_dest, coef_src)
 		coef_dest
 end
 
-# The function apply(operator,...) by default calls apply(operator, dest, src, ...)
-# This general definition makes it easier to dispatch on source and destination.
-# Operators can choose to specialize with or without the src and dest arguments.
-# In-place operators can be called with a single set of coefficients.
+# Catch applications of an operator, and do:
+# - call inline implementation of operator if available
+# - call apply!(op, dest(op), src(op), coef_dest, coef_src), which can be
+#   implemented by operators whose action depends on src and/or dest.
 function apply!(op::AbstractOperator, coef_dest, coef_src)
-    # These assertions prevent a lot of inlining:
-		## @assert length(coef_dest) == length(dest(op))
-		## @assert length(coef_src) == length(src(op))
-    ## @assert eltype(op) == eltype(coef_dest)
-    ## @assert eltype(op) == eltype(coef_src)
-
-		# distinguish between operators that are in-place and operators that are not
-		_apply!(op, is_inplace(op), coef_dest, coef_src)
+	if is_inplace(op)
+		copy!(coef_dest, coef_src)
+		apply_inplace!(op, coef_dest)
+	else
+		apply!(op, dest(op), src(op), coef_dest, coef_src)
+	end
+	# We expect each operator to return coef_dest, but we repeat here to make
+	# sure our method is type-stable.
+	coef_dest
 end
-
-# Operator is in-place, use its in-place operation but don't overwrite coef_src
-function _apply!(op::AbstractOperator, op_inplace::True, coef_dest, coef_src)
-		for i in eachindex(coef_src)
-				coef_dest[i] = coef_src[i]
-		end
-		apply!(op, coef_dest)
-end
-
-_apply!(op::AbstractOperator, op_inplace::False, coef_dest, coef_src) = apply!(op, dest(op), src(op), coef_dest, coef_src)
 
 # Provide a general dispatchable definition for in-place operators also
 function apply!(op::AbstractOperator, coef_srcdest)
-		## @assert size(dest(op)) == size(src(op))
-		apply!(op, dest(op), src(op), coef_srcdest)
+		apply_inplace!(op, coef_srcdest)
+		coef_srcdest
+end
+
+function apply_inplace!(op::AbstractOperator, coef_srcdest)
+		apply_inplace!(op, dest(op), src(op), coef_srcdest)
+		coef_srcdest
+end
+
+
+# Catch-all for missing implementations
+function apply!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+	println("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
+	throw(InexactError())
 end
 
 # Catch-all for missing implementations
-apply!(op::AbstractOperator, dest, src, coef_dest, coef_src) = println("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
-
-# Catch-all for missing implementations
-apply!(op::AbstractOperator, dest, src, coef_srcdest) = println("In-place operation of ", op, " not implemented.")
+function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+	println("In-place operation of ", typeof(op), " not implemented.")
+	throw(InexactError())
+end
 
 (*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
 
@@ -127,17 +125,18 @@ end
 
 
 "An OperatorTranspose represents the transpose of an operator."
-immutable OperatorTranspose{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
 		op	::	OP
 
-		OperatorTranspose(op::AbstractOperator{DEST,SRC}) = new(op)
+		OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
 end
 
-ctranspose{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorTranspose{typeof(op),SRC,DEST}(op)
+OperatorTranspose(op::AbstractOperator) =
+	OperatorTranspose{typeof(op),eltype(op)}(op)
+
+ctranspose(op::AbstractOperator) = OperatorTranspose(op)
 
 operator(opt::OperatorTranspose) = opt.op
-
-eltype{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = eltype(OP)
 
 # By simply switching src and dest, we implicitly identify the dual of these linear vector spaces
 # with the spaces themselves.
@@ -145,40 +144,47 @@ src(opt::OperatorTranspose) = dest(operator(opt))
 
 dest(opt::OperatorTranspose) = src(operator(opt))
 
-is_inplace{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = is_inplace(OP)
-
-is_diagonal{OP,SRC,DEST}(::Type{OperatorTranspose{OP,SRC,DEST}}) = is_diagonal(OP)
+for property in [:is_inplace, :is_diagonal]
+	@eval $property(opt::OperatorTranspose) = $property(operator(opt))
+end
 
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
-apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) = apply!(opt, operator(opt), dest, src, coef_dest, coef_src)
+apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) =
+	apply_transpose!(operator(opt), src, dest, coef_dest, coef_src)
 
-apply!(opt::OperatorTranspose, dest, src, coef_srcdest) = apply!(opt, operator(opt), dest, src, coef_srcdest)
+apply_inplace!(opt::OperatorTranspose, dest, src, coef_srcdest) =
+	apply_transpose_inplace!(operator(opt), src, dest, coef_srcdest)
 
 
 
 "An OperatorInverse represents the inverse of an operator."
-immutable OperatorInverse{OP,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable OperatorInverse{OP,ELT} <: AbstractOperator{ELT}
 		op	::	OP
 
-		OperatorInverse(op::AbstractOperator{DEST,SRC}) = new(op)
+		OperatorInverse(op::AbstractOperator{ELT}) = new(op)
 end
 
-inv{SRC,DEST}(op::AbstractOperator{DEST,SRC}) = OperatorInverse{typeof(op),SRC,DEST}(op)
+OperatorInverse(op::AbstractOperator) =
+	OperatorInverse{typeof(op),eltype(op)}(op)
 
-operator(opinv::OperatorInverse) = opinv.op
+inv(op::AbstractOperator) = OperatorInverse(op)
 
-eltype{OP,SRC,DEST}(::Type{OperatorInverse{OP,SRC,DEST}}) = eltype(OP)
+operator(op::OperatorInverse) = op.op
 
-src(opinv::OperatorInverse) = dest(operator(opinv))
+src(op::OperatorInverse) = dest(operator(op))
 
-dest(opinv::OperatorInverse) = src(operator(opinv))
+dest(op::OperatorInverse) = src(operator(op))
 
-is_diagonal{OP,SRC,DEST}(::Type{OperatorInverse{OP,SRC,DEST}}) = is_diagonal(OP)
+for property in [:is_inplace, :is_diagonal]
+	@eval $property(op::OperatorInverse) = $property(operator(op))
+end
 
 # Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
-apply!(opinv::OperatorInverse, dest, src, coef_dest, coef_src) = apply!(opinv, operator(opinv), dest, src, coef_dest, coef_src)
+apply!(op::OperatorInverse, dest, src, coef_dest, coef_src) =
+	apply_inv!(operator(op), src, dest, coef_dest, coef_src)
 
-apply!(opinv::OperatorInverse, dest, src, coef_srcdest) = apply!(opinv, operator(opinv), dest, src, coef_srcdest)
+apply!(op::OperatorInverse, dest, src, coef_srcdest) =
+	apply_inv_inplace!(operator(op), src, dest, coef_srcdest)
 
 
 

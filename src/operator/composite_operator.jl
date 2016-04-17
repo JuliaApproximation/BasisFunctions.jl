@@ -4,73 +4,97 @@
 A composite operator consists of a sequence of operators that are applied
 consecutively.
 """
-immutable CompositeOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
     "The list of operators"
-    ops     ::  Vector{AbstractOperator}
+    operators
     "Scratch space for the result of each operator, except the last one"
     scratch
     "The number of operators"
     L       ::  Int
 
-    CompositeOperator(ops, scratch) = new(ops, scratch, length(ops))
+    CompositeOperator(operators, scratch) = new(operators, scratch, length(operators))
 end
 
 # Generic functions for composite types:
-elements(op::CompositeOperator) = op.ops
-element(op::CompositeOperator, j::Int) = op.ops[j]
+elements(op::CompositeOperator) = op.operators
+element(op::CompositeOperator, j::Int) = op.operators[j]
 composite_length(op::CompositeOperator) = op.L
 
-src(op::CompositeOperator, j::Int = 1) = src(op.ops[j])
-dest(op::CompositeOperator, j::Int = op.L) = dest(op.ops[j])
+src(op::CompositeOperator, j::Int = 1) = src(op.operators[j])
+dest(op::CompositeOperator, j::Int = op.L) = dest(op.operators[j])
+
+is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
+is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
+
 
 function CompositeOperator(operators::AbstractOperator...)
-    ELT = promote_type(map(eltype, operators)...)
-    SRC = typeof(src(operators[1]))
-    DEST = typeof(src(operators[end]))
     L = length(operators)
-    scratch = tuple([zeros(ELT, size(dest(operators[j]))) for j in 1:L-1]...)
-    CompositeOperator{SRC,DEST}([operators...], scratch)
+    # Check operator compatibility
+    for i in 1:length(operators)-1
+        @assert size(dest(operators[i])) == size(src(operators[i+1]))
+    end
+
+    ELT = promote_type(map(eltype, operators)...)
+    # We are going to reserve scratch space, but only for operators that are not
+    # in-place. We do reserve scratch space for the first operator, even if it
+    # is in-place, because we may want to call the composite operator out of place.
+    # In that case we need a place to store the result of the first operator.
+    scratch_array = Any[zeros(ELT, size(dest(operators[1])))]
+    for m = 2:L
+        if ~is_inplace(operators[m])
+            push!(scratch_array, zeros(ELT, size(dest(operators[m]))))
+        end
+    end
+    scratch = tuple(scratch_array...)
+    CompositeOperator{ELT}(operators, scratch)
 end
 
-apply!(op::CompositeOperator, dest, src, coef_srcdest) =
-    apply_composite!(op, op.ops, coef_srcdest)
+apply_inplace!(op::CompositeOperator, coef_srcdest) =
+    apply_inplace_composite!(op, op.operators, coef_srcdest)
 
-apply!(op::CompositeOperator, dest, src, coef_dest, coef_src) =
-    apply_composite!(op, op.ops, op.scratch, coef_dest, coef_src)
+apply!(op::CompositeOperator, coef_dest, coef_src) =
+    apply_composite!(op, op.operators, op.scratch, coef_dest, coef_src)
 
 
-# TODO: provide more efficient implementation that exploits inplaceness
 function apply_composite!(op::CompositeOperator, operators, scratch, coef_dest, coef_src)
     L = composite_length(op)
     apply!(operators[1], scratch[1], coef_src)
+    l = 1
     for i in 2:L-1
-        apply!(operators[i], scratch[i], scratch[i-1])
+        if is_inplace(operators[i])
+            apply!(operators[i], scratch[l])
+        else
+            apply!(operators[i], scratch[l+1], scratch[l])
+            l += 1
+        end
     end
-    apply!(operators[L], coef_dest, scratch[L-1])
+    # We loose a little bit of efficiency if the last operator was in-place
+    apply!(operators[L], coef_dest, scratch[l])
 end
 
-# TODO: remove the assumption that all intermediate operators are in-place
-function apply_composite!(op::CompositeOperator, operators, coef_srcdest)
+function apply_inplace_composite!(op::CompositeOperator, operators, coef_srcdest)
     for operator in operators
         apply!(operator, coef_srcdest)
     end
 end
 
-inv(op::CompositeOperator) = CompositeOperator(map(inv, op.ops)...)
+inv(op::CompositeOperator) = CompositeOperator(map(inv, op.operators)...)
 
-ctranspose(op::CompositeOperator) = CompositeOperator(map(ctranspose, op.ops)...)
+ctranspose(op::CompositeOperator) = CompositeOperator(map(ctranspose, op.operators)...)
 
 compose() = nothing
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
-(*)(op2::AbstractOperator, op1::AbstractOperator) = compose(op1, op2)
-(*)(op3::AbstractOperator, op2::AbstractOperator, op1::AbstractOperator) = compose(op1, op2, op3)
-(*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
+# (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
+
+(*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator2(op1, op2)
+(*)(op3::AbstractOperator, op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator3(op1, op2, op3)
+
 
 """
 A composite operator of exactly two operators.
 """
-immutable CompositeOperator2{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable CompositeOperator2{OP1,OP2,ELT,N} <: AbstractOperator{ELT}
     op1     ::  OP1
     op2     ::  OP2
     scratch ::  Array{ELT,N}    # For storing the intermediate result after applying op1
@@ -85,65 +109,61 @@ immutable CompositeOperator2{OP1,OP2,ELT,N,SRC,DEST} <: AbstractOperator{SRC,DES
 end
 
 # We could ask that DEST1 == SRC2 but that might be too strict. As long as the operators are compatible things are fine.
-function CompositeOperator2{SRC1,DEST1,SRC2,DEST2}(op1::AbstractOperator{SRC1,DEST1}, op2::AbstractOperator{SRC2,DEST2})
+function CompositeOperator2(op1::AbstractOperator, op2::AbstractOperator)
         #@assert DEST1 == SRC2
     OP1 = typeof(op1)
     OP2 = typeof(op2)
-    ELT = eltype(OP1,OP2)
-    CompositeOperator2{OP1,OP2,ELT,length(size(src(op2))),SRC1,DEST2}(op1,op2)
+    ELT = promote_type(eltype(op1), eltype(op2))
+    N = index_dim(src(op2))
+    CompositeOperator2{OP1,OP2,ELT,N}(op1,op2)
 end
 
 src(op::CompositeOperator2) = src(op.op1)
 
 dest(op::CompositeOperator2) = dest(op.op2)
 
-eltype{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator2{OP1,OP2,ELT,N,SRC,DEST}}) = ELT
-
 ctranspose(op::CompositeOperator2) = CompositeOperator2(ctranspose(op.op2), ctranspose(op.op1))
 
 inv(op::CompositeOperator2) = CompositeOperator2(inv(op.op2), inv(op.op1))
 
+is_inplace(op::CompositeOperator2) = is_inplace(op.op1) & is_inplace(op.op2)
+is_diagonal(op::CompositeOperator2) = is_diagonal(op.op1) & is_diagonal(op.op2)
 
-apply!(op::CompositeOperator2, dest, src, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), coef_dest, coef_src)
+
+apply!(op::CompositeOperator2, coef_dest, coef_src) = _apply!(op, is_inplace(op.op2), coef_dest, coef_src)
 
 
-function _apply!(op::CompositeOperator2, op2_inplace::True, coef_dest, coef_src)
-    apply!(op.op1, coef_dest, coef_src)
-    apply!(op.op2, coef_dest)
-end
-
-function _apply!(op::CompositeOperator2, op2_inplace::False, coef_dest, coef_src)
-    apply!(op.op1, op.scratch, coef_src)
-    apply!(op.op2, coef_dest, op.scratch)
+function _apply!(op::CompositeOperator2, op2_inplace::Bool, coef_dest, coef_src)
+    if op2_inplace
+        apply!(op.op1, coef_dest, coef_src)
+        apply!(op.op2, coef_dest)
+    else
+        apply!(op.op1, op.scratch, coef_src)
+        apply!(op.op2, coef_dest, op.scratch)
+    end
 end
 
 
 # In-place operation: the problem is we can not simply assume that all operators are in-place, even if it is
 # assured that the final result can be overwritten in coef_srcdest. Depending on the in-place-ness of the
 # intermediate operators we have to resort to using scratch space.
-apply!(op::CompositeOperator2, dest, src, coef_srcdest) =
+apply_inplace!(op::CompositeOperator2, coef_srcdest) =
     _apply_inplace!(op, is_inplace(op.op1), is_inplace(op.op2), coef_srcdest)
 
 # In-place if all operators are in-place
-function _apply_inplace!(op::CompositeOperator2, op1_inplace::True, op2_inplace::True, coef_srcdest)
-    apply!(op.op1, coef_srcdest)
-    apply!(op.op2, coef_srcdest)
+function _apply_inplace!(op::CompositeOperator2, op1_inplace::Bool, op2_inplace::Bool, coef_srcdest)
+    if op1_inplace && op2_inplace
+        apply!(op.op1, coef_srcdest)
+        apply!(op.op2, coef_srcdest)
+    else
+        apply!(op.op1, op.scratch, coef_srcdest)
+        apply!(op.op2, coef_srcdest, op.scratch)
+    end
 end
-
-# Is either one of the operator is not in-place, we have to use scratch space.
-function _apply_inplace!(op::CompositeOperator2, op1_inplace, op2_inplace, coef_srcdest)
-    apply!(op.op1, op.scratch, coef_srcdest)
-    apply!(op.op2, coef_srcdest, op.scratch)
-end
-
-
-is_inplace{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator2{OP1,OP2,ELT,N,SRC,DEST}}) = is_inplace(OP1) & is_inplace(OP2)
-
-is_diagonal{OP1,OP2,ELT,N,SRC,DEST}(::Type{CompositeOperator2{OP1,OP2,ELT,N,SRC,DEST}}) = is_diagonal(OP1) & is_diagonal(OP2)
 
 
 "A composite operator with exactly three operators."
-immutable CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2} <: AbstractOperator{ELT}
     op1         ::  OP1
     op2         ::  OP2
     op3         ::  OP3
@@ -158,81 +178,80 @@ immutable CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST} <: AbstractOperator
     end
 end
 
-function CompositeOperator3{SRC1,DEST1,SRC3,DEST3}(op1::AbstractOperator{SRC1,DEST1}, op2, op3::AbstractOperator{SRC3,DEST3})
+function CompositeOperator3(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator)
     OP1 = typeof(op1)
     OP2 = typeof(op2)
     OP3 = typeof(op3)
     ELT = eltype(OP1,OP2,OP3)
     N1 = length(size(src(op2)))
     N2 = length(size(src(op3)))
-    CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC1,DEST3}(op1, op2, op3)
+    CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2}(op1, op2, op3)
 end
 
 src(op::CompositeOperator3) = src(op.op1)
 
 dest(op::CompositeOperator3) = dest(op.op3)
 
-eltype{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) = ELT
 
-is_inplace{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) =
-    is_inplace(OP1) & is_inplace(OP2) & is_inplace(OP3)
-
-is_diagonal{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}(::Type{CompositeOperator3{OP1,OP2,OP3,ELT,N1,N2,SRC,DEST}}) =
-    is_diagonal(OP1) & is_diagonal(OP2) & is_diagonal(OP3)
+is_inplace(op::CompositeOperator3) = is_inplace(op.op1) & is_inplace(op.op2) & is_inplace(op.op3)
+is_diagonal(op::CompositeOperator3) = is_diagonal(op.op1) & is_diagonal(op.op2) & is_diagonal(op.op3)
 
 ctranspose(op::CompositeOperator3) = CompositeOperator3(ctranspose(op.op3), ctranspose(op.op2), ctranspose(op.op1))
 
 inv(op::CompositeOperator3) = CompositeOperator3(inv(op.op3), inv(op.op2), inv(op.op1))
 
-apply!(op::CompositeOperator3, dest, src, coef_dest, coef_src) =
+apply!(op::CompositeOperator3, coef_dest, coef_src) =
     _apply!(op, is_inplace(op.op2), is_inplace(op.op3), coef_dest, coef_src)
 
-function _apply!(op::CompositeOperator3, op2_inplace::True, op3_inplace::True, coef_dest, coef_src)
-    apply!(op.op1, coef_dest, coef_src)
-    apply!(op.op2, coef_dest)
-    apply!(op.op3, coef_dest)
-end
-
-function _apply!(op::CompositeOperator3, op2_inplace::True, op3_inplace::False, coef_dest, coef_src)
-    apply!(op.op1, op.scratch2, coef_src)
-    apply!(op.op2, op.scratch2)
-    apply!(op.op3, coef_dest, op.scratch2)
-end
-
-function _apply!(op::CompositeOperator3, op2_inplace::False, op3_inplace::True, coef_dest, coef_src)
-    apply!(op.op1, op.scratch1, coef_src)
-    apply!(op.op2, coef_dest, op.scratch1)
-    apply!(op.op3, coef_dest)
-end
-
-function _apply!(op::CompositeOperator3, op2_inplace::False, op3_inplace::False, coef_dest, coef_src)
-    apply!(op.op1, op.scratch1, coef_src)
-    apply!(op.op2, op.scratch2, op.scratch1)
-    apply!(op.op3, coef_dest, op.scratch2)
+function _apply!(op::CompositeOperator3, op2_inplace::Bool, op3_inplace::Bool, coef_dest, coef_src)
+    if op2_inplace && op3_inplace
+        apply!(op.op1, coef_dest, coef_src)
+        apply_inplace!(op.op2, coef_dest)
+        apply_inplace!(op.op3, coef_dest)
+    elseif op2_inplace && ~op3_inplace
+        apply!(op.op1, op.scratch2, coef_src)
+        apply_inplace!(op.op2, op.scratch2)
+        apply!(op.op3, coef_dest, op.scratch2)
+    elseif ~op2_inplace && op3_inplace
+        apply!(op.op1, op.scratch1, coef_src)
+        apply!(op.op2, coef_dest, op.scratch1)
+        apply_inplace!(op.op3, coef_dest)
+    else
+        apply!(op.op1, op.scratch1, coef_src)
+        apply!(op.op2, op.scratch2, op.scratch1)
+        apply!(op.op3, coef_dest, op.scratch2)
+    end
+    coef_dest
 end
 
 
-# In-place operation: the problem is we can not simply assume that all operators are in-place, even if it is
-# assured that the final result can be overwritten in coef_srcdest. Depending on the in-place-ness of the
-# intermediate operators we have to resort to using scratch space.
-apply!(op::CompositeOperator3, dest, src, coef_srcdest) =
-    _apply_inplace!(op, is_inplace(op.op1), is_inplace(op.op2), is_inplace(op.op3), coef_srcdest)
-
-# If operator 1 is not in place, we can simply call the non-inplace version with coef_srcdest as src and dest.
-_apply_inplace!(op::CompositeOperator3, op1_inplace::False, op2_inplace, op3_inplace, coef_srcdest) =
-    _apply!(op, op2_inplace, op3_inplace, coef_srcdest, coef_srcdest)
-
-# If operator 1 is in place, we have to do things ourselves.
-# If either one of op2 or op3 is not in-place, we use scratch space
-function _apply_inplace!(op::CompositeOperator3, op1_inplace::True, op2_inplace, op3_inplace, coef_srcdest)
-    apply!(op.op1, coef_srcdest)
-    apply!(op.op2, op.scratch2, coef_srcdest)
-    apply!(op.op1, coef_srcdest, op.scratch2)
-end
-
-# We can avoid using scratch2 only when all operators are in-place
-function _apply_inplace!(op::CompositeOperator3, op1_inplace::True, op2_inplace::True, op3_inplace::True, coef_srcdest)
+function apply_inplace!(op::CompositeOperator3, coef_srcdest)
     apply!(op.op1, coef_srcdest)
     apply!(op.op2, coef_srcdest)
     apply!(op.op3, coef_srcdest)
 end
+
+# # In-place operation: the problem is we can not simply assume that all operators are in-place, even if it is
+# # assured that the final result can be overwritten in coef_srcdest. Depending on the in-place-ness of the
+# # intermediate operators we have to resort to using scratch space.
+# apply_inplace!(op::CompositeOperator3, coef_srcdest) =
+#     _apply_inplace!(op, is_inplace(op.op1), is_inplace(op.op2), is_inplace(op.op3), coef_srcdest)
+#
+# # If operator 1 is not in place, we can simply call the non-inplace version with coef_srcdest as src and dest.
+# _apply_inplace!(op::CompositeOperator3, op1_inplace::False, op2_inplace, op3_inplace, coef_srcdest) =
+#     _apply!(op, op2_inplace, op3_inplace, coef_srcdest, coef_srcdest)
+#
+# # If operator 1 is in place, we have to do things ourselves.
+# # If either one of op2 or op3 is not in-place, we use scratch space
+# function _apply_inplace!(op::CompositeOperator3, op1_inplace::True, op2_inplace, op3_inplace, coef_srcdest)
+#     apply!(op.op1, coef_srcdest)
+#     apply!(op.op2, op.scratch2, coef_srcdest)
+#     apply!(op.op1, coef_srcdest, op.scratch2)
+# end
+#
+# # We can avoid using scratch2 only when all operators are in-place
+# function _apply_inplace!(op::CompositeOperator3, op1_inplace::True, op2_inplace::True, op3_inplace::True, coef_srcdest)
+#     apply!(op.op1, coef_srcdest)
+#     apply!(op.op2, coef_srcdest)
+#     apply!(op.op3, coef_srcdest)
+# end
