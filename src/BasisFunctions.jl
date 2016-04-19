@@ -52,7 +52,7 @@ export approx_length, extension_size
 export SetFunction, index, functionset
 
 # from sets/tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗, sets, tp_length
+export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 
 # from sets/mappedsets.jl
 export map, imap, map_linear, imap_linear, rescale

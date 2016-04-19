@@ -39,25 +39,25 @@ for op in (:left, :right)
     @eval $op(b::ConcatenatedSet) = $op(b.set1)
 end
 
-## Traits
+## Properties
 
 for op in (:isreal,)
-    @eval $op{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = $op(S1) & $op(S2)
+    @eval $op(s::ConcatenatedSet) = $op(set1(s)) && $op(set2(s))
 end
 
 # The following traits we can not decide in general. We call a _concat_trait function that can be
 # defined by the user for specific combinations of sets.
-is_basis{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_basis(S1, S2)
-_concat_is_basis(S1,S2) = False
+is_basis(s::ConcatenatedSet) = _concat_is_basis(set1(s), set2(s))
+_concat_is_basis(s1,s2) = false
 
-is_frame{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_frame(S1, S2)
-_concat_is_frame(S1,S2) = True
+is_frame(s::ConcatenatedSet) = _concat_is_frame(set1(s), set2(s))
+_concat_is_frame(S1,S2) = true
 
-is_orthogonal{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_orthogonal(S1, S2)
-_concat_is_orthogonal(S1,S2) = False
+is_orthogonal(s::ConcatenatedSet) = _concat_is_orthogonal(set1(s), set2(s))
+_concat_is_orthogonal(S1,S2) = false
 
-is_biorthogonal{S1,S2,T}(::Type{ConcatenatedSet{S1,S2,T}}) = _concat_is_biorthogonal(S1, S2)
-_concat_is_biorthogonal(S1,S2) = False
+is_biorthogonal(s::ConcatenatedSet) = _concat_is_biorthogonal(set1(s), set2(s))
+_concat_is_biorthogonal(S1,S2) = false
 
 
 call_element(b::ConcatenatedSet, i, x) = i <= length(b.set1) ? call(b.set1, i, x) : call(b.set2, i-length(b.set1), x)

@@ -62,20 +62,12 @@ function call_element(s::OperatedSet, i, x)
     call_expansion(dest(s), s.scratch_dest, x)
 end
 
-## Traits
-# This can be improved once operators also support isreal etcetera.
+## Properties
 
-for op in (:isreal,)
-    @eval $op{S1,S2,OP,T}(::Type{OperatedSet{S1,S2,OP,T}}) = $op(S1) & $op(S2)
+isreal(op::OperatedSet) = isreal(op)
+
+for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+    @eval $op(op::OperatedSet) = false
 end
 
-is_basis{S1,S2,OP,T}(::Type{OperatedSet{S1,S2,OP,T}}) = False
-is_frame{S1,S2,OP,T}(::Type{OperatedSet{S1,S2,OP,T}}) = False
-is_orthogonal{S1,S2,OP,T}(::Type{OperatedSet{S1,S2,OP,T}}) = False
-is_biorthogonal{S1,S2,OP,T}(::Type{OperatedSet{S1,S2,OP,T}}) = False
-
-
-
 derivative(s::FunctionSet; options...) = OperatedSet(differentiation_operator(s; options...))
-
-

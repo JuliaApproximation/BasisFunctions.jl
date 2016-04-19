@@ -16,12 +16,19 @@ is_inplace(::DiscreteFourierTransformFFTW) = true
 
 
 immutable FastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-    plan!   ::  Base.DFT.FFTW.cFFTWPlan
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+    plan!       ::  Base.DFT.FFTW.cFFTWPlan
+    scalefactor ::  ELT
 
-    FastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_fft!(zeros(ELT,size(dest)), dims; flags = fftwflags))
+    function FastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...)
+        scalefactor = one(ELT)
+        for dim in dims
+            scalefactor *= size(dest,dim)
+        end
+        scalefactor = 1/sqrt(scalefactor)
+        new(src, dest, plan_fft!(zeros(ELT,size(dest)), dims; flags = fftwflags), scalefactor)
+    end
 end
 
 FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet, dims = 1:dim(dest); options...) =
@@ -32,12 +39,19 @@ dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastFourierTransform
 
 # Note that we choose to use bfft, an unscaled inverse fft.
 immutable InverseFastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-    plan!   ::  Base.DFT.FFTW.cFFTWPlan
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+    plan!       ::  Base.DFT.FFTW.cFFTWPlan
+    scalefactor ::  ELT
 
-    InverseFastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_bfft!(zeros(ELT,size(src)), dims; flags = fftwflags))
+    function InverseFastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...)
+        scalefactor = one(ELT)
+        for dim in dims
+            scalefactor *= size(dest,dim)
+        end
+        scalefactor = 1/sqrt(scalefactor)
+        new(src, dest, plan_bfft!(zeros(ELT,size(src)), dims; flags = fftwflags), scalefactor)
+    end
 end
 
 InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); options...) =
@@ -46,20 +60,10 @@ InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); options...) =
 dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastFourierTransformFFTW, dim; options...) =
     InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
-function apply_inplace!(op::FastFourierTransformFFTW, coef_srcdest)
+function apply_inplace!(op::DiscreteFourierTransformFFTW, coef_srcdest)
     op.plan!*coef_srcdest
-    l = sqrt(length(coef_srcdest))
     for i in eachindex(coef_srcdest)
-        coef_srcdest[i] /= l
-    end
-    coef_srcdest
-end
-
-function apply_inplace!(op::InverseFastFourierTransformFFTW, coef_srcdest)
-    op.plan!*coef_srcdest
-    l = sqrt(length(coef_srcdest))
-    for i = 1:length(coef_srcdest)
-        coef_srcdest[i] /= l
+        coef_srcdest[i] *= op.scalefactor
     end
     coef_srcdest
 end

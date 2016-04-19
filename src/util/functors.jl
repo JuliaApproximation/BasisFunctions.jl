@@ -3,8 +3,7 @@
 "AbstractFunction is the supertype of all functors."
 abstract AbstractFunction
 
-isreal{F <: AbstractFunction}(::Type{F}) = True
-isreal(f::AbstractFunction) = isreal(typeof(f))
+isreal(f::AbstractFunction) = true
 
 "The function x^α"
 immutable PowerFunction <: AbstractFunction
@@ -78,7 +77,7 @@ name(f::ScaledFunction, arg = "x") = "$(f.a) * " * name(f.f, arg)
 
 derivative(f::ScaledFunction) = f.a * derivative(f.f)
 
-isreal{F,T}(::Type{ScaledFunction{F,T}}) = isreal(F) & isreal(T)
+isreal(f::ScaledFunction) = isreal(f.f) && isreal(f.a)
 
 
 
@@ -96,7 +95,7 @@ name(f::DilatedFunction, arg = "x") = name(f.f, "$(f.a) * " * arg)
 
 derivative(f::DilatedFunction) = f.a * DilatedFunction(derivative(f.f), f.a)
 
-isreal{F,T}(::Type{DilatedFunction{F,T}}) = isreal(F) & isreal(T)
+isreal(f::DilatedFunction) = isreal(f.f) && isreal(f.a)
 
 
 "A CombinedFunction represents f op g, where op can be any binary operator."
@@ -132,8 +131,7 @@ derivative_op(::CombinedFunction, f, g, ::Base.SubFun) = derivative(f) - derivat
 # The chain rule
 derivative_op(::CombinedFunction, f, g, ::Base.MulFun) = derivative(f) * g + f * derivative(g)
 
-
-isreal{F,G,OP}(::Type{CombinedFunction{F,G,OP}}) = isreal(F) & isreal(G)
+isreal(f::CombinedFunction) = isreal(f.f) && isreal(f.g)
 
 
 "A CompositeFunction represents f(g(x))."
@@ -150,7 +148,7 @@ name(f::CompositeFunction, arg = "x") = name(f.f, name(f.g, arg))
 
 derivative(f::CompositeFunction) = (derivative(f.f) ∘ f.g) * derivative(f.g)
 
-isreal{F,G}(::Type{CompositeFunction{F,G}}) = isreal(F) & isreal(G)
+isreal(f::CompositeFunction) = isreal(f.f) && isreal(f.g)
 
 
 "The identity function"
@@ -183,4 +181,3 @@ cos(f::AbstractFunction) = CompositeFunction(Cos(), f)
 sin(f::AbstractFunction) = CompositeFunction(Sin(), f)
 exp(f::AbstractFunction) = CompositeFunction(Exp(), f)
 log(f::AbstractFunction) = CompositeFunction(Log(), f)
-

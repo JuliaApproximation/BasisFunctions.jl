@@ -9,19 +9,15 @@ immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
     operators
     "Scratch space for the result of each operator, except the last one"
     scratch
-    "The number of operators"
-    L       ::  Int
-
-    CompositeOperator(operators, scratch) = new(operators, scratch, length(operators))
 end
 
 # Generic functions for composite types:
 elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
-composite_length(op::CompositeOperator) = op.L
+composite_length(op::CompositeOperator) = length(op.operators)
 
 src(op::CompositeOperator, j::Int = 1) = src(op.operators[j])
-dest(op::CompositeOperator, j::Int = op.L) = dest(op.operators[j])
+dest(op::CompositeOperator, j::Int = composite_length(op)) = dest(op.operators[j])
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
@@ -40,29 +36,29 @@ function CompositeOperator(operators::AbstractOperator...)
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
     scratch_array = Any[zeros(ELT, size(dest(operators[1])))]
-    for m = 2:L
+    for m = 2:L-1
         if ~is_inplace(operators[m])
             push!(scratch_array, zeros(ELT, size(dest(operators[m]))))
         end
     end
     scratch = tuple(scratch_array...)
-    CompositeOperator{ELT}(operators, scratch)
+    CompositeOperator{ELT}(operators, scratch_array)
 end
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
-    apply_inplace_composite!(op, op.operators, coef_srcdest)
+    apply_inplace_composite!(op, coef_srcdest, op.operators)
 
 apply!(op::CompositeOperator, coef_dest, coef_src) =
-    apply_composite!(op, op.operators, op.scratch, coef_dest, coef_src)
+    apply_composite!(op, coef_dest, coef_src, op.operators, op.scratch)
 
 
-function apply_composite!(op::CompositeOperator, operators, scratch, coef_dest, coef_src)
-    L = composite_length(op)
+function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators, scratch)
+    L = length(operators)
     apply!(operators[1], scratch[1], coef_src)
     l = 1
     for i in 2:L-1
         if is_inplace(operators[i])
-            apply!(operators[i], scratch[l])
+            apply_inplace!(operators[i], scratch[l])
         else
             apply!(operators[i], scratch[l+1], scratch[l])
             l += 1
@@ -70,12 +66,58 @@ function apply_composite!(op::CompositeOperator, operators, scratch, coef_dest, 
     end
     # We loose a little bit of efficiency if the last operator was in-place
     apply!(operators[L], coef_dest, scratch[l])
+    # Return coef_dest even though the last apply! should also do that, to
+    # help type-inference continue afterwards
+    coef_dest
 end
 
-function apply_inplace_composite!(op::CompositeOperator, operators, coef_srcdest)
+# function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{2}, scratch)
+#     if is_inplace(operators[2])
+#         apply!(operators[1], coef_dest, coef_src)
+#         apply!(operators[2], coef_dest)
+#     else
+#         apply!(operators[1], scratch[1], coef_src)
+#         apply!(operators[2], coef_dest, scratch[1])
+#     end
+#     coef_dest
+# end
+#
+# function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{3}, scratch)
+#     ip2 = is_inplace(operators[2])
+#     ip3 = is_inplace(operators[3])
+#     if ip2
+#         if ip3
+#             # 2 and 3 are in-place
+#             apply!(operators[1], coef_dest, coef_src)
+#             apply!(operators[2], coef_dest)
+#             apply!(operators[3], coef_dest)
+#         else
+#             # 2 is in place, 3 is not
+#             apply!(operators[1], scratch[1], coef_src)
+#             apply!(operators[2], scratch[1])
+#             apply!(operators[3], coef_dest, scratch[1])
+#         end
+#     else
+#         if ip3
+#             # 2 is not in place, but 3 is
+#             apply!(operators[1], scratch[1], coef_src)
+#             apply!(operators[2], coef_dest, scratch[1])
+#             apply!(operators[3], coef_dest)
+#         else
+#             # noone is in place
+#             apply!(operators[1], scratch[1], coef_src)
+#             apply!(operators[2], scratch[2], scratch[1])
+#             apply!(operators[3], coef_dest, scratch[2])
+#         end
+#     end
+#     coef_dest
+# end
+
+function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators)
     for operator in operators
         apply!(operator, coef_srcdest)
     end
+    coef_srcdest
 end
 
 inv(op::CompositeOperator) = CompositeOperator(map(inv, op.operators)...)
@@ -85,10 +127,10 @@ ctranspose(op::CompositeOperator) = CompositeOperator(map(ctranspose, op.operato
 compose() = nothing
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
-# (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
+(*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
 
-(*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator2(op1, op2)
-(*)(op3::AbstractOperator, op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator3(op1, op2, op3)
+# (*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator2(op1, op2)
+# (*)(op3::AbstractOperator, op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator3(op1, op2, op3)
 
 
 """
@@ -141,6 +183,7 @@ function _apply!(op::CompositeOperator2, op2_inplace::Bool, coef_dest, coef_src)
         apply!(op.op1, op.scratch, coef_src)
         apply!(op.op2, coef_dest, op.scratch)
     end
+    coef_dest
 end
 
 
@@ -159,6 +202,7 @@ function _apply_inplace!(op::CompositeOperator2, op1_inplace::Bool, op2_inplace:
         apply!(op.op1, op.scratch, coef_srcdest)
         apply!(op.op2, coef_srcdest, op.scratch)
     end
+    coef_srcdest
 end
 
 

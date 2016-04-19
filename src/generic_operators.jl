@@ -50,7 +50,7 @@ and function evaluations can be shared. The default is twice the length of the c
 """
 extension_size(s::FunctionSet) = 2*length(s)
 
-extension_size(s::TensorProductSet) = map(extension_size, sets(s))
+extension_size(s::TensorProductSet) = map(extension_size, elements(s))
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
 
@@ -244,11 +244,13 @@ end
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(b::FunctionSet; options...) = _approximation_operator(b, is_basis(b); options...)
-
-# The default approximation for a basis is interpolation, for other sets it is least squares.
-_approximation_operator(b, isbasis::True; options...) = interpolation_operator(b; options...)
-_approximation_operator(b, isbasis::False; options...) = leastsquares_operator(b; options...)
+function approximation_operator(b::FunctionSet; options...)
+    if is_basis(b)
+        interpolation_operator(b; options...)
+    else
+        leastsquares_operator(b; options...)
+    end
+end
 
 
 
@@ -338,33 +340,39 @@ antidifferentiation_operator(s1::FunctionSet, order = 1; options...) =
 
 # We make a special case for transform operators, so that they can be intercepted in case a multidimensional
 # transform is available for a specific basis.
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}; options...) =
-    transform_operator_tensor(s1, s2, element(s1, 1), element(s1, 2), element(s2, 1), element(s2, 2); options...)
-
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}; options...) =
-    transform_operator_tensor(s1, s2, element(s1, 1), element(s1, 2), element(s1, 3), element(s2, 1), element(s2, 2), element(s2, 3); options...)
+transform_operator(s1::TensorProductSet, s2::TensorProductSet; options...) =
+    transform_operator_tensor(s1, s2, elements(s1)..., elements(s2)...; options...)
 
 transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2; options...) =
     tensorproduct(transform_operator(s1_set1, s2_set1; options...),
-        transform_operator(s1_set2, s2_set2; options...); options...)
+        transform_operator(s1_set2, s2_set2; options...))
 
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3; options...) =
-    tensorproduct(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...),
-        transform_operator(s1_set3, s2_set3; options...); options...)
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3,
+                                  s2_set1, s2_set2, s2_set3; options...) =
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...),
+        transform_operator(s1_set3, s2_set3; options...))
 
-for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s1_set4,
+                                  s2_set1, s2_set2, s2_set3, s2_set4; options...) =
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...),
+        transform_operator(s1_set3, s2_set3; options...),
+        transform_operator(s1_set4, s2_set4; options...))
+
+for op in (:extension_operator, :restriction_operator, :evaluation_operator,
             :interpolation_operator, :leastsquares_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) =
-        tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:LEN]...)
+    @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
+        tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:composite_length(s1)]...)
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
-    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; options...) =
-        tensorproduct([$op(element(s,i); options...) for i in 1:LEN]...)
+    @eval $op(s::TensorProductSet; options...) =
+        tensorproduct([$op(element(s,i); options...) for i in 1:composite_length(s)]...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval function $op{TS1,TS2, SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, order::NTuple{LEN}; options...)
-        tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:LEN]...)
+    @eval function $op(s1::TensorProductSet, s2::TensorProductSet, order::NTuple; options...)
+        tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:composite_length(s1)]...)
     end
 end

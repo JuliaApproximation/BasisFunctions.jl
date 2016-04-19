@@ -11,6 +11,8 @@ end
 
 LinearMappedGrid{T}(g::AbstractGrid1d{T}, a, b) = LinearMappedGrid{typeof(g),T}(g, a, b)
 
+index_dim{G,T}(::Type{LinearMappedGrid{G,T}}) = index_dim(G)
+
 left(g::LinearMappedGrid) = g.a
 right(g::LinearMappedGrid) = g.b
 
@@ -32,7 +34,7 @@ rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
 
 
 # Preserve tensor product structure
-function rescale{TG,GN,N}(g::TensorProductGrid{TG,GN,N,N}, a::Vec{N}, b::Vec{N})
+function rescale{N}(g::TensorProductGrid, a::Vec{N}, b::Vec{N})
 	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:N]
 	TensorProductGrid(scaled_grids...)
 end

@@ -32,19 +32,13 @@ typealias AbstractFrame1d{T} AbstractFrame{1,T}
 typealias AbstractBasis1d{T} AbstractBasis{1,T}
 
 "The dimension of the set."
-dim{N,T}(::Type{FunctionSet{N,T}}) = N
-dim{B <: FunctionSet}(::Type{B}) = dim(super(B))
-dim(s::FunctionSet) = dim(typeof(s))
+dim{N}(s::FunctionSet{N}) = N
 
-"The numeric type of the set."
-numtype{N,T}(::Type{FunctionSet{N,T}}) = real(T)
-numtype{B <: FunctionSet}(::Type{B}) = numtype(super(B))
-numtype(s::FunctionSet) = numtype(typeof(s))
+"The numeric type of the set is like the eltype of the set, but it is always real."
+numtype(s::FunctionSet) = real(eltype(s))
 
-"Trait to indicate whether the functions in the set are real-valued (for real arguments)."
-isreal{N,T}(::Type{FunctionSet{N,T}}) = True
-isreal{B <: FunctionSet}(::Type{B}) = True
-isreal(s::FunctionSet) = isreal(typeof(s))()
+"Property to indicate whether the functions in the set are real-valued (for real arguments)."
+isreal(s::FunctionSet) = isreal(one(eltype(s)))
 
 """
 The eltype of a set is the typical numeric type of expansion coefficients. It is
@@ -53,19 +47,11 @@ either NumT or Complex{NumT}, where NumT is the numeric type of the set.
 eltype{N,T}(::Type{FunctionSet{N,T}}) = T
 eltype{B <: FunctionSet}(::Type{B}) = eltype(super(B))
 
-# The following line is in Base
-# eltype(x) = eltype(typeof(x))
-# But the following aren't:
-eltype(x, y) = eltype(typeof(x), typeof(y))
-eltype(x, y, z) = eltype(typeof(x), typeof(y), typeof(z))
-eltype(x, y, z, t) = eltype(typeof(x), typeof(y), typeof(z), typeof(t))
-
-eltype{F1<:Any, F2<:Any}(::Type{F1}, ::Type{F2}) = promote_type(eltype(F1), eltype(F2))
-eltype{F1<:Any, F2<:Any, F3<:Any}(::Type{F1}, ::Type{F2}, ::Type{F3}) =
-    promote_type(eltype(F1), eltype(F2), eltype(F3))
-eltype{F1<:Any, F2<:Any, F3<:Any, F4<:Any}(::Type{F1}, ::Type{F2}, ::Type{F3}, ::Type{F4}) =
-    promote_type(eltype(F1), eltype(F2), eltype(F3), eltype(F4))
-
+# Convenience methods
+eltype(x, y) = promote_type(eltype(x), eltype(y))
+eltype(x, y, z) = promote_type(eltype(x), eltype(y), eltype(z))
+eltype(x, y, z, t) = promote_type(eltype(x), eltype(y), eltype(z), eltype(t))
+eltype(x...) = promote_eltype(map(eltype, x)...)
 
 """
 The dimension of the index of the set. This may in general be different from the dimension
@@ -79,34 +65,28 @@ index_dim(s::FunctionSet) = index_dim(typeof(s))
 
 
 
-# Is a given set a basis? In general, no, but some sets could turn out to be a basis.
-# Example: a TensorProductSet that consists of a basis in each dimension.
-# This is a problem that can be solved in two ways: introduce a parallel hierarchy
-# TensorProdctFrame - TensorProductBasis, or make the Basis property a trait.
-# This is the trait:
-is_basis(::Type{FunctionSet}) = False
-is_basis{S <: FunctionSet}(::Type{S}) = is_basis(super(S))
-is_basis(s::FunctionSet) = is_basis(typeof(s))()
+# Is a given set a basis? In general, it is not. But it could be, even if Its
+# type does not derive from AbstractBasis. For example, a TensorProductSet of
+# different bases is a basis, but TensorProductSet does not inherit from
+# AbstractBasis.
+# Hence, we need a property for it:
+is_basis(s::FunctionSet) = false
 
-is_frame(F::Type{FunctionSet}) = False
-is_frame{S <: FunctionSet}(::Type{S}) = is_basis(S)
-is_frame(s::FunctionSet) = is_frame(typeof(s))()
+# Any basis is a frame
+is_frame(s::FunctionSet) = is_basis(s)
 
 # A basis is always a basis.
-is_basis{B <: AbstractBasis}(::Type{B}) = True
+is_basis(s::AbstractBasis) = true
 
 # And a frame is always a frame.
-is_frame{F <: AbstractFrame}(::Type{F}) = True
+is_frame(s::AbstractFrame) = true
 
 
-"Trait to indicate whether a basis is orthogonal."
-is_orthogonal{N,T}(::Type{FunctionSet{N,T}}) = False
-is_orthogonal{B <: FunctionSet}(::Type{B}) = False
-is_orthogonal(s::FunctionSet) = is_orthogonal(typeof(s))()
+"Property to indicate whether a basis is orthogonal."
+is_orthogonal(s::FunctionSet) = false
 
-is_biorthogonal{N,T}(::Type{FunctionSet{N,T}}) = False
-is_biorthogonal{B <: FunctionSet}(::Type{B}) = is_orthogonal(B)
-is_biorthogonal(s::FunctionSet) = is_biorthogonal(typeof(s))()
+"Property to indicate whether a basis is biorthogonal (or a Riesz basis)."
+is_biorthogonal(s::FunctionSet) = is_orthogonal(s)
 
 "Return the size of the set."
 size(s::FunctionSet) = (length(s),)
@@ -223,6 +203,13 @@ function checkbounds(s::FunctionSet, i1, i2, i3)
     checkbounds(size(s,1),i1)
     checkbounds(size(s,2),i2)
     checkbounds(size(s,3),i3)
+end
+
+function checkbounds(s::FunctionSet, i1, i2, i3, i4)
+    checkbounds(size(s,1),i1)
+    checkbounds(size(s,2),i2)
+    checkbounds(size(s,3),i3)
+    checkbounds(size(s,4),i4)
 end
 
 function checkbounds(s::FunctionSet, i...)

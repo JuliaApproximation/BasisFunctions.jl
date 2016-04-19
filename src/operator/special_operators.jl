@@ -53,6 +53,7 @@ function apply_inplace!(op::ScalingOperator, coef_srcdest)
     for i in eachindex(coef_srcdest)
         coef_srcdest[i] *= op.scalar
     end
+    coef_srcdest
 end
 
 # Extra definition for out-of-place version to avoid making an intermediate copy
@@ -60,6 +61,7 @@ function apply!(op::ScalingOperator, coef_dest, coef_src)
     for i in eachindex(coef_src)
         coef_dest[i] = op.scalar * coef_src[i]
     end
+    coef_dest
 end
 
 convert{ELT}(::Type{ScalingOperator{ELT}}, op::IdentityOperator{ELT}) =
@@ -102,6 +104,7 @@ function apply_inplace!(op::DiagonalOperator, coef_srcdest)
     for i in 1:length(coef_srcdest)
         coef_srcdest[i] *= op.diagonal[i]
     end
+    coef_srcdest
 end
 
 # Extra definition for out-of-place version to avoid making an intermediate copy
@@ -109,6 +112,7 @@ function apply!(op::DiagonalOperator, coef_dest, coef_src)
     for i in 1:length(coef_dest)
         coef_dest[i] = op.diagonal[i] * coef_src[i]
     end
+    coef_dest
 end
 
 promote_rule{ELT}(::Type{DiagonalOperator{ELT}}, ::Type{IdentityOperator{ELT}}) = DiagonalOperator{ELT}
@@ -234,7 +238,10 @@ MatrixOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) =
 ctranspose(op::MatrixOperator) = MatrixOperator(dest(op), src(op), ctranspose(matrix(op)))
 
 # General definition
-apply!(op::MatrixOperator, coef_dest, coef_src) = (coef_dest[:] = op.matrix * coef_src)
+function apply!(op::MatrixOperator, coef_dest, coef_src)
+    coef_dest[:] = op.matrix * coef_src
+    coef_dest
+end
 
 # Definition in terms of A_mul_B
 apply!{T}(op::MatrixOperator, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) =
@@ -265,7 +272,10 @@ function SolverOperator(src::FunctionSet, dest::FunctionSet, solver)
 end
 
 # TODO: does this allocate memory? Are there (operator-specific) ways to avoid that?
-apply!(op::SolverOperator, coef_dest, coef_src) = (coef_dest[:] = op.solver \ coef_src)
+function apply!(op::SolverOperator, coef_dest, coef_src)
+    coef_dest[:] = op.solver \ coef_src
+    coef_dest
+end
 
 inv(op::MatrixOperator) = SolverOperator(dest(op), src(op), qr(matrix(op)))
 
@@ -320,14 +330,16 @@ function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     for i in eachindex(coef_srcdest)
         coef_srcdest[i] *= op.scale(ELT(natural_index(op.src,i)))^op.order
     end
+    coef_srcdest
 end
 
-function apply!{TS,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TS,SN,LEN,2}, src, coef_srcdest)
+function apply!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet{Tuple{TS1,TS2}}, src, coef_srcdest)
     ELT = eltype(op)
     for i in eachindex(coef_srcdest)
         indices = ind2sub(size(dest),i)
-        coef_srcdest[i]*=op.scale(ELT(natural_index(TS[1],indices[1])),ELT(natural_index(TS[2],indices[2])))^op.order
+        coef_srcdest[i]*=op.scale(ELT(natural_index(TS1,indices[1])),ELT(natural_index(TS2,indices[2])))^op.order
     end
+    coef_srcdest
 end
 
 inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*(-1), op.scale)
@@ -394,6 +406,7 @@ function apply_sum!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperato
     for i in eachindex(coef_dest)
         coef_dest[i] = op.val1 * scratch[i] + op.val2 * coef_dest[i]
     end
+    coef_dest
 end
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, 1)

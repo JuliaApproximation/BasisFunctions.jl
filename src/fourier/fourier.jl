@@ -34,18 +34,14 @@ promote_eltype{EVEN,T,S}(b::FourierBasis{EVEN,T}, ::Type{S}) = FourierBasis{EVEN
 resize(b::FourierBasis, n) = FourierBasis(n, eltype(b))
 
 
-# Traits
+# Properties
 
-isreal{B <: FourierBasis}(::Type{B}) = False
+isreal(b::FourierBasis) = false
 
-iseven{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = EVEN
-iseven(b::FourierBasis) = iseven(typeof(b))
+iseven{EVEN}(b::FourierBasis{EVEN}) = EVEN
+isodd(b::FourierBasis) = ~iseven(b)
 
-isodd{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = ~EVEN
-isodd(b::FourierBasis) = isodd(typeof(b))
-
-is_orthogonal{B <: FourierBasis}(::Type{B}) = True
-is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
+is_orthogonal(b::FourierBasis) = true
 
 
 # Methods for purposes of testing functionality.

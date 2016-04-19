@@ -25,12 +25,12 @@ for op in (:length, :left, :right)
     @eval $op(s::AugmentedSet) = $op(s.set)
 end
 
-# Delegation of type methods
+# Delegation of properties
 for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
-    @eval $op{S,F,T}(::Type{AugmentedSet{S,F,T}}) = $op(S)
+    @eval $op(s::AugmentedSet) = $op(set(s))
 end
 
-isreal{S,F,T}(::Type{AugmentedSet{S,F,T}}) = isreal(S) & isreal(F)
+isreal(s::AugmentedSet) = isreal(set(s)) && isreal(fun(s))
 
 
 call_element(b::AugmentedSet, i, x) = b.f(x) * call(b.set, i, x)

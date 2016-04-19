@@ -21,6 +21,8 @@ abstract AbstractOperator{ELT}
 eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
 eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
 
+isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
+
 op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype(dest))
 
 # Default implementation of src and dest
