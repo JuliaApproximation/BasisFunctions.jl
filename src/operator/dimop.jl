@@ -38,17 +38,18 @@ is_inplace(op::DimensionOperator) = is_inplace(op.op)
 dimension_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_DEFAULT, options...) =
     DimensionOperator(src, dest, op, dim, viewtype)
 
+
 function apply_inplace!(op::DimensionOperator, coef_srcdest)
     apply_dim_inplace!(op, coef_srcdest, op.op, op.dim)
 end
 
 function apply_dim_inplace!(dimop::DimensionOperator, coef_srcdest, op, dim,
-    scratch_dest = dimop.scratch_dest,
     scratch_src = dimop.scratch_src)
 
     for slice in Slices.eachslice(coef_srcdest, dim)
         copy!(scratch_src, coef_srcdest, slice)
         apply!(op, scratch_src)
+        copy!(coef_srcdest, slice, scratch_src)
     end
     coef_srcdest
 end

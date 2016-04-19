@@ -65,7 +65,7 @@ index_dim(s::FunctionSet) = index_dim(typeof(s))
 
 
 
-# Is a given set a basis? In general, it is not. But it could be, even if Its
+# Is a given set a basis? In general, it is not. But it could be, even if its
 # type does not derive from AbstractBasis. For example, a TensorProductSet of
 # different bases is a basis, but TensorProductSet does not inherit from
 # AbstractBasis.

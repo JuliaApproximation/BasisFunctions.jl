@@ -178,11 +178,6 @@ function antidifferentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, 
     S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
 end
-# The above definition does not work, super(S) goes straight up to FunctionSet
-# Delegation of type methods
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
-    @eval $op{S,T,ELT}(::Type{LinearMappedSet{S,T,ELT}}) = $op(S)
-end
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op(s1::LinearMappedSet, order::Int; options...) = rescale( $op(set(s1), order; options...), left(s1), right(s1) )

@@ -39,6 +39,9 @@ function append_flattened!{T}(::Type{T}, flattened::Vector, element)
     append!(flattened, [element])
 end
 
+# The routines below seem to fail in Julia 0.4.5. The compiler goes in an
+# infinite loop in apply_composite! Should be fixed in 0.5. See #10340:
+# https://github.com/JuliaLang/julia/issues/10340
 
 
 # function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)

@@ -8,6 +8,7 @@ immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
     "The list of operators"
     operators
     "Scratch space for the result of each operator, except the last one"
+    # We don't need it for the last one, because the final result goes to coef_dest
     scratch
 end
 
@@ -42,7 +43,8 @@ function CompositeOperator(operators::AbstractOperator...)
         end
     end
     scratch = tuple(scratch_array...)
-    CompositeOperator{ELT}(operators, scratch_array)
+    # CompositeOperator{ELT}([operators...], scratch_array)
+    CompositeOperator{ELT}(operators, scratch)
 end
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
@@ -56,6 +58,7 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
     L = length(operators)
     apply!(operators[1], scratch[1], coef_src)
     l = 1
+    m = 2
     for i in 2:L-1
         if is_inplace(operators[i])
             apply_inplace!(operators[i], scratch[l])
@@ -63,6 +66,7 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
             apply!(operators[i], scratch[l+1], scratch[l])
             l += 1
         end
+        m += 1
     end
     # We loose a little bit of efficiency if the last operator was in-place
     apply!(operators[L], coef_dest, scratch[l])
@@ -71,6 +75,7 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
     coef_dest
 end
 
+# Below is the ideal scenario for lengths 2 and 3, written explicitly.
 # function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{2}, scratch)
 #     if is_inplace(operators[2])
 #         apply!(operators[1], coef_dest, coef_src)
@@ -129,6 +134,9 @@ compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator,
 
 (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
 
+
+# This is the old way, which takes way more compilation time because everything
+# is typed and composition of many operators is nested:
 # (*)(op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator2(op1, op2)
 # (*)(op3::AbstractOperator, op2::AbstractOperator, op1::AbstractOperator) = CompositeOperator3(op1, op2, op3)
 
