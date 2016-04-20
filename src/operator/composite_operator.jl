@@ -58,7 +58,6 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
     L = length(operators)
     apply!(operators[1], scratch[1], coef_src)
     l = 1
-    m = 2
     for i in 2:L-1
         if is_inplace(operators[i])
             apply_inplace!(operators[i], scratch[l])
@@ -66,7 +65,6 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
             apply!(operators[i], scratch[l+1], scratch[l])
             l += 1
         end
-        m += 1
     end
     # We loose a little bit of efficiency if the last operator was in-place
     apply!(operators[L], coef_dest, scratch[l])
