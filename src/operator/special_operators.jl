@@ -309,7 +309,8 @@ function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     end
 end
 
-function apply!{TS,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TS,SN,LEN,2}, src, coef_srcdest)
+function apply!{TSf,SN,LEN}(op::IdxnScalingOperator, dest::TensorProductSet{TSf,SN,LEN,2}, src, coef_srcdest)
+    TS = sets(dest)
     for i in eachindex(coef_srcdest)
         indices = ind2sub(size(dest),i)
         coef_srcdest[i]*=op.scale(convert(eltype(src),natural_index(TS[1],indices[1])),convert(eltype(src),natural_index(TS[2],indices[2])))^op.order

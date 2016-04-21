@@ -150,8 +150,8 @@ restriction_operator(s1::ConcatenatedSet, s2::ConcatenatedSet; options...) =
     restriction_operator(set1(s1), set1(s2); options...) ⊕ restriction_operator(set2(s1), set2(s2); options...)
 
 
-"A HorizontalConcatenatedOperator maps a ConcatenatedSet to a common destination set."
-immutable HorizontalConcatenatedOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+"A HCatOperator maps a ConcatenatedSet to a common destination set."
+immutable HCatOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
     op1     ::  OP1
     op2     ::  OP2
     src     ::  SRC
@@ -164,7 +164,7 @@ immutable HorizontalConcatenatedOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator
     scratch_src2    ::  Array{T,1}
     scratch_dest2   ::  Array{T,1}
 
-    function HorizontalConcatenatedOperator(op1, op2, src_set, dest_set)
+    function HCatOperator(op1, op2, src_set, dest_set)
         scratch_src1  = Array(T, length(src(op1)))
         scratch_dest1 = Array(T, length(dest(op1)))
         scratch_src2  = Array(T, length(src(op2)))
@@ -173,18 +173,18 @@ immutable HorizontalConcatenatedOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator
     end
 end
 
-function HorizontalConcatenatedOperator(op1::AbstractOperator, op2::AbstractOperator)
+function HCatOperator(op1::AbstractOperator, op2::AbstractOperator)
     @assert dest(op1) == dest(op2)
     op_src = ConcatenatedSet(src(op1), src(op2))
     T = promote_type(eltype(op1), eltype(op2))
-    HorizontalConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(op_src), typeof(dest(op1))}(op1, op2, op_src, dest(op1))
+    HCatOperator{typeof(op1), typeof(op2), T, typeof(op_src), typeof(dest(op1))}(op1, op2, op_src, dest(op1))
 end
 
 
-hcat(op1::AbstractOperator, op2::AbstractOperator) = HorizontalConcatenatedOperator(op1, op2)
-ctranspose(op::HorizontalConcatenatedOperator) = VerticalConcatenatedOperator(ctranspose(op.op1),ctranspose(op.op2))
+hcat(op1::AbstractOperator, op2::AbstractOperator) = HCatOperator(op1, op2)
+ctranspose(op::HCatOperator) = VCatOperator(ctranspose(op.op1),ctranspose(op.op2))
 
-function apply!(op::HorizontalConcatenatedOperator, dest::FunctionSet, src::ConcatenatedSet, coef_dest, coef_src)
+function apply!(op::HCatOperator, dest::FunctionSet, src::ConcatenatedSet, coef_dest, coef_src)
     coef_src1 = op.scratch_src1
     coef_src2 = op.scratch_src2
     coef_dest1 = op.scratch_dest1
@@ -212,8 +212,8 @@ function apply!(op::HorizontalConcatenatedOperator, dest::FunctionSet, src::Conc
 end
 
 
-"A VerticalConcatenatedOperator an operator that maps a set to a ConcatenedSet"
-immutable VerticalConcatenatedOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+"A VCatOperator an operator that maps a set to a ConcatenedSet"
+immutable VCatOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
     op1     ::  OP1
     op2     ::  OP2
     src     ::  SRC
@@ -221,34 +221,28 @@ immutable VerticalConcatenatedOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{S
 
     # Reserve scratch space for copying source and destination of both operators to an array
     # of the right size, for use when applying the concatenated operator in terms of op1 and op2.
-    scratch_src1    ::  Array{T,1}
     scratch_dest1   ::  Array{T,1}
-    scratch_src2    ::  Array{T,1}
     scratch_dest2   ::  Array{T,1}
 
-    function VerticalConcatenatedOperator(op1, op2, src_set, dest_set)
-        scratch_src1  = Array(T, length(src(op1)))
+    function VCatOperator(op1, op2, src_set, dest_set)
         scratch_dest1 = Array(T, length(dest(op1)))
-        scratch_src2  = Array(T, length(src(op2)))
         scratch_dest2 = Array(T, length(dest(op2)))
-        new(op1, op2, src_set, dest_set, scratch_src1, scratch_dest1, scratch_src2, scratch_dest2)
+        new(op1, op2, src_set, dest_set, scratch_dest1, scratch_dest2)
     end
 end
 
-function VerticalConcatenatedOperator(op1::AbstractOperator, op2::AbstractOperator)
+function VCatOperator(op1::AbstractOperator, op2::AbstractOperator)
     @assert src(op1) == src(op2)
     op_dest = ConcatenatedSet(dest(op1), dest(op2))
     T = promote_type(eltype(op1), eltype(op2))
-    VerticalConcatenatedOperator{typeof(op1), typeof(op2), T, typeof(src(op1)), typeof(op_dest)}(op1, op2, src(op1), op_dest)
+    VCatOperator{typeof(op1), typeof(op2), T, typeof(src(op1)), typeof(op_dest)}(op1, op2, src(op1), op_dest)
 end
 
 
-vcat(op1::AbstractOperator, op2::AbstractOperator) = VerticalConcatenatedOperator(op1, op2)
-ctranspose(op::VerticalConcatenatedOperator) = HorizontalConcatenatedOperator(ctranspose(op.op1),ctranspose(op.op2))
+vcat(op1::AbstractOperator, op2::AbstractOperator) = VCatOperator(op1, op2)
+ctranspose(op::VCatOperator) = HCatOperator(ctranspose(op.op1),ctranspose(op.op2))
 
-function apply!(op::VerticalConcatenatedOperator, dest::ConcatenatedSet, src::FunctionSet, coef_dest, coef_src)
-    coef_src1 = op.scratch_src1
-    coef_src2 = op.scratch_src2
+function apply!(op::VCatOperator, dest::ConcatenatedSet, src::FunctionSet, coef_dest, coef_src)
     coef_dest1 = op.scratch_dest1
     coef_dest2 = op.scratch_dest2
 
