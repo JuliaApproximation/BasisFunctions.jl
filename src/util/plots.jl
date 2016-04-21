@@ -53,11 +53,11 @@ function plot_image{S <: FunctionSet{2}}(s::SetExpansion{S};n=300, vmin=0, vmax=
     plot_image(data, Tgrid, vmin, vmax)
 end
 
-function plot_image{T,TG,GN,ID}(data::AbstractArray{T,2},grid::TensorProductGrid{TG,GN,ID,2}, vmin, vmax)
+function plot_image{T,TG}(data::AbstractArray{T,2},grid::TensorProductGrid{TG,2}, vmin, vmax)
     X = convert(Array{Float64},real(apply((x,y)->x,Complex{Float64},Tgrid)))
     Y = convert(Array{Float64},real(apply((x,y)->y,Complex{Float64},Tgrid)))
     Main.PyPlot.pcolormesh(X,Y,data,vmin=vmin, vmax=vmax, shading = "gouraud")
-    
+
     Main.PyPlot.axis("scaled")
     Main.PyPlot.xlim([left(Tgrid)[1], right(Tgrid)[1]])
     Main.PyPlot.ylim([left(Tgrid)[2], right(Tgrid)[2]])
@@ -93,7 +93,7 @@ function plot_grid(grid::AbstractGrid3d)
     Main.PyPlot.axis("equal")
 end
 
-function plot_grid{TG,GN,ID}(grid::TensorProductGrid{TG,GN,ID,2})
+function plot_grid{TG}(grid::TensorProductGrid{TG,2})
     dom = Cube(left(grid),right(grid))
     Mgrid = MaskedGrid(grid,dom)
     plot_grid(Mgrid)

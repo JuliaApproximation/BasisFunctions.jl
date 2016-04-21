@@ -34,7 +34,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEqu
 export dim, left, right, range, sample
 
 # from operator/dimop.jl
-export DimensionOperator, dim_operator
+export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
@@ -52,7 +52,7 @@ export approx_length, extension_size
 export SetFunction, index, functionset
 
 # from sets/tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗, sets, tp_length
+export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 
 # from sets/mappedsets.jl
 export map, imap, map_linear, imap_linear, rescale
@@ -61,19 +61,23 @@ export map, imap, map_linear, imap_linear, rescale
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
 # from operator/operators.jl
-export AbstractOperator, CompositeOperator, OperatorTranspose, ctranspose, operator, src, dest,
-    DenseOperator,  apply!, is_inplace, is_diagonal
-    export matrix, diagonal, inv
+export AbstractOperator, ctranspose, operator, src, dest, apply!
+export matrix
+
+# from operator/composite_operator.jl
+export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+
 # from generic_operator.jl
-export extension_operator, restriction_operator, interpolation_operator, 
+export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     antidifferentiation_operator, approximate,
     evaluation_operator, normalization_operator,
     Extension, Restriction, extend, Differentiation, TransformOperator,
-    extension_size, transform_normalization_operator, interpolation_matrix
+    extension_size, transform_normalization_operator, interpolation_matrix,
+    tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -99,8 +103,11 @@ export set1, set2, ConcatenatedSet
 # from sets/operated_set.jl
 export OperatedSet
 
+# from sets/euclidean.jl"
+export Cn, Rn
+
 # from fourier/fourier.jl
-export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd, 
+export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
@@ -129,29 +136,7 @@ export degree, interval
 using Base.Cartesian
 
 
-# Convenience definitions for the implementation of traits
-typealias True Val{true}
-typealias False Val{false}
-
-(&){T1,T2}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 & T2}
-(|){T1,T2}(::Type{Val{T1}}, ::Type{Val{T2}}) = Val{T1 | T2}
-
-(&){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 & T2}()
-(|){T1,T2}(::Val{T1}, ::Val{T2}) = Val{T1 | T2}()
-
-"Return a complex type associated with the argument type."
-complexify{T <: Real}(::Type{T}) = Complex{T}
-complexify{T <: Real}(::Type{Complex{T}}) = Complex{T}
-# In 0.5 we will be able to use Base.complex(T)
-isreal{T <: Real}(::Type{T}) = True
-isreal{T <: Real}(::Type{Complex{T}}) = False
-
-# Starting with julia 0.4.3 we can just do float(T)
-floatify{T <: AbstractFloat}(::Type{T}) = T
-floatify(::Type{Int}) = Float64
-floatify(::Type{BigInt}) = BigFloat
-floatify{T}(::Type{Complex{T}}) = Complex{floatify(T)}
-floatify{T}(::Type{Rational{T}}) = floatify(T)
+include("util/common.jl")
 
 
 include("grid/grid.jl")
@@ -170,7 +155,7 @@ include("sets/euclidean.jl")
 
 include("operator/operator.jl")
 
-#include("dimop.jl")
+include("operator/dimop.jl")
 
 include("operator/tensorproductoperator.jl")
 
@@ -182,6 +167,8 @@ include("grid/discretegridspace.jl")
 
 include("generic_operators.jl")
 
+include("tensorproducts.jl")
+
 include("util/functors.jl")
 
 include("sets/concatenated_set.jl")
@@ -189,6 +176,7 @@ include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")
 
+include("fourier/fouriertransforms.jl")
 include("fourier/fourier.jl")
 include("fourier/cosineseries.jl")
 include("fourier/sineseries.jl")

@@ -13,8 +13,7 @@ abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 typealias OPS{T} OrthogonalPolynomialBasis{T}
 
 
-is_orthogonal{B <: OPS}(::Type{B}) = True
-is_biorthogonal{B <: OPS}(::Type{B}) = True
+is_orthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
@@ -104,8 +103,3 @@ jacobi_α(b::UltrasphericalBasis) = b.α
 jacobi_β(b::UltrasphericalBasis) = b.α
 
 weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
-
-
-
-
-

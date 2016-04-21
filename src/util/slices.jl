@@ -58,7 +58,7 @@ end
 function remaining_size(siz::NTuple{2,Int}, dim)
     if dim == 1
         tuple(siz[2])
-    elseif dim ==2 
+    elseif dim ==2
         tuple(siz[1])
     else
         throw(BoundsError())
@@ -68,7 +68,7 @@ end
 function remaining_size(siz::NTuple{3,Int}, dim)
     if dim == 1
         tuple(siz[2], siz[3])
-    elseif dim ==2 
+    elseif dim ==2
         tuple(siz[1], siz[3])
     elseif dim == 3
         tuple(siz[1], siz[2])
@@ -227,5 +227,3 @@ view(a::AbstractArray, sidx::SliceIndexLinear) =
     view(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)
 
 end # module
-
-

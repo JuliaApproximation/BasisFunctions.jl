@@ -45,4 +45,3 @@ getindex(s::FunctionSet, idx) = SetFunction(s, idx)
 
 # Multiple indices are stored as a tuple
 getindex(s::FunctionSet, idx...) = SetFunction(s, idx)
-

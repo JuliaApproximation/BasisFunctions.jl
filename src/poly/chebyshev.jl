@@ -20,7 +20,7 @@ typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
-	
+
 ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
 
 ChebyshevBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( ChebyshevBasis(n,floatify(T)), a, b)
@@ -123,96 +123,6 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
 end
 
 
-abstract DiscreteChebyshevTransform{SRC,DEST} <: AbstractOperator{SRC,DEST}
-
-abstract DiscreteChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
-
-# These types use FFTW and so they are (currently) limited to Float64.
-# This may improve once the pure-julia implementation of FFT lands (#6193).
-
-is_inplace{O <: DiscreteChebyshevTransformFFTW}(::Type{O}) = True
-
-
-immutable FastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-	plan!	::	Base.DFT.FFTW.DCTPlan
-
-	FastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_dct!(zeros(eltype(dest),size(dest)), 1:dim(dest); flags = fftwflags))
-end
-
-FastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-    FastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
-
-
-immutable InverseFastChebyshevTransformFFTW{SRC,DEST} <: DiscreteChebyshevTransformFFTW{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-	plan!	::	Base.DFT.FFTW.DCTPlan
-
-	InverseFastChebyshevTransformFFTW(src, dest; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_idct!(zeros(eltype(dest),size(src)), 1:dim(src); flags = fftwflags))
-end
-
-InverseFastChebyshevTransformFFTW{SRC,DEST}(src::SRC, dest::DEST; options...) =
-    InverseFastChebyshevTransformFFTW{SRC,DEST}(src, dest; options...)
-
-
-function apply!(op::DiscreteChebyshevTransformFFTW, dest, src, coef_srcdest)
-    op.plan!*coef_srcdest
-end
-
-
-immutable FastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-# Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
-# This allocates memory.
-# We have to implement dct in terms of fft, which allocates more memory.
-function dct(a::AbstractArray{Complex{BigFloat}})
-	N = big(length(a))
-    c = fft([a; flipdim(a,1)])
-    d = c[1:N] .* exp(-im*big(pi)*(0:N-1)/(2*N))
-    d[1] = d[1] / sqrt(big(2))
-    d / sqrt(2*N)
-end
-
-dct(a::AbstractArray{BigFloat}) = real(dct(a+0im))
-
-function idct(a::AbstractArray{Complex{BigFloat}})
-    N = big(length(a))
-    b = a * sqrt(2*N)
-    b[1] = b[1] * sqrt(big(2))
-    b = b .* exp(im*big(pi)*(0:N-1)/(2*N))
-    b = [b; 0; conj(flipdim(b[2:end],1))]
-    c = ifft(b)
-    c[1:N]
-end
-
-idct(a::AbstractArray{BigFloat}) = real(idct(a+0im))
-
-apply!(op::FastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
-
-
-immutable InverseFastChebyshevTransform{SRC,DEST} <: DiscreteChebyshevTransform{SRC,DEST}
-	src		::	SRC
-	dest	::	DEST
-end
-
-apply!(op::InverseFastChebyshevTransform, dest, src, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
-
-
-ctranspose(op::FastChebyshevTransform) = InverseFastChebyshevTransform(dest(op), src(op))
-ctranspose(op::FastChebyshevTransformFFTW) = InverseFastChebyshevTransformFFTW(dest(op), src(op))
-
-ctranspose(op::InverseFastChebyshevTransform) = FastChebyshevTransform(dest(op), src(op))
-ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(dest(op), src(op))
-
-inv(op::DiscreteChebyshevTransform) = ctranspose(op)
-
 # TODO: restrict the grid of grid space here
 transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; options...) =
 	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
@@ -260,30 +170,31 @@ transform_operator_tensor(src, dest,
         _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 
-immutable ChebyshevNormalization{ELT,SRC} <: AbstractOperator{SRC,SRC}
-    src     :: SRC
+function transform_normalization_operator(src::ChebyshevBasis; options...)
+    ELT = eltype(src)
+    scaling = ScalingOperator(src, 1/sqrt(ELT(length(src)/2)))
+    coefscaling = CoefficientScalingOperator(src, 1, 1/sqrt(ELT(2)))
+    flip = UnevenSignFlipOperator(src)
+	scaling * coefscaling * flip
 end
 
-eltype{ELT,SRC}(::Type{ChebyshevNormalization{ELT,SRC}}) = ELT
 
-transform_normalization_operator{T,ELT}(src::ChebyshevBasis{T}, ::Type{ELT} = T; options...) =
-	ScalingOperator(src,1/sqrt(T(length(src)/2))) * CoefficientScalingOperator(src,1,1/sqrt(T(2))) * UnevenSignFlipOperator(src)
-
-function apply!(op::ChebyshevNormalization, dest, src, coef_srcdest)
-	L = length(op.src)
-	T = numtype(src)
-	s = 1/sqrt(T(L)/2)
-    coef_srcdest[1] /= sqrt(T(2))
-end
-
-dest(op::ChebyshevNormalization) = src(op)
-
-is_inplace{OP <: ChebyshevNormalization}(::Type{OP}) = True
-
-is_diagonal{OP <: ChebyshevNormalization}(::Type{OP}) = True
-
-ctranspose(op::ChebyshevNormalization) = op
-
+# immutable ChebyshevNormalization{ELT} <: AbstractOperator{ELT}
+#     src     :: FunctionSet
+# end
+#
+# ChebyshevNormalization(src::FunctionSet) = ChebyshevNormalization{eltype(src)}(src)
+#
+# dest(op::ChebyshevNormalization) = src(op)
+#
+#
+# function apply_inplace!{ELT}(op::ChebyshevNormalization{ELT}, coef_srcdest)
+# 	L = length(op.src)
+# 	T = numtype(src)
+# 	s = 1/sqrt(ELT(length(coef_srcdest))/2)
+#     coef_srcdest[1] /= sqrt(T(2))
+# end
+#
 
 
 ############################################
@@ -330,6 +241,3 @@ rec_An(b::ChebyshevBasisSecondKind, n::Int) = 2
 rec_Bn(b::ChebyshevBasisSecondKind, n::Int) = 0
 
 rec_Cn(b::ChebyshevBasisSecondKind, n::Int) = 1
-
-
-

@@ -14,7 +14,7 @@ immutable Cn{T} <: DiscreteVectorSpace{T}
     n   ::  Int
 end
 
-isreal{B <: Cn}(::Type{B}) = False
+isreal(c::Cn) = false
 
 promote_eltype{T,S}(b::Rn{T}, ::Type{S}) = Rn{promote_type(T,S)}(b.n)
 promote_eltype{T,S}(b::Cn{T}, ::Type{S}) = Cn{promote_type(T,S)}(b.n)

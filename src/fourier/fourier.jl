@@ -1,6 +1,5 @@
 # fourier.jl
 
-
 """
 A Fourier basis on the interval [-1,1].
 EVEN is true if the length of the corresponding Fourier series is even.
@@ -35,18 +34,14 @@ promote_eltype{EVEN,T,S}(b::FourierBasis{EVEN,T}, ::Type{S}) = FourierBasis{EVEN
 resize(b::FourierBasis, n) = FourierBasis(n, eltype(b))
 
 
-# Traits
+# Properties
 
-isreal{B <: FourierBasis}(::Type{B}) = False
+isreal(b::FourierBasis) = false
 
-iseven{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = EVEN
-iseven(b::FourierBasis) = iseven(typeof(b))
+iseven{EVEN}(b::FourierBasis{EVEN}) = EVEN
+isodd(b::FourierBasis) = ~iseven(b)
 
-isodd{EVEN,T}(::Type{FourierBasis{EVEN,T}}) = ~EVEN
-isodd(b::FourierBasis) = isodd(typeof(b))
-
-is_orthogonal{B <: FourierBasis}(::Type{B}) = True
-is_biorthogonal{B <: FourierBasis}(::Type{B}) = True
+is_orthogonal(b::FourierBasis) = true
 
 
 # Methods for purposes of testing functionality.
@@ -346,11 +341,9 @@ transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
 	dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}, dest_set3::DiscreteGridSpace{G}; options...) =
 		_backward_fourier_operator(src, dest, eltype(src, dest); options...)
 
-evaluation_operator(b::FourierBasis; options...) = transform_operator(b, grid(b); options...)
 
 function transform_normalization_operator(src::FourierBasis; options...)
     L = length(src)
     ELT = eltype(src)
     ScalingOperator(src, 1/sqrt(ELT(L)))
 end
-

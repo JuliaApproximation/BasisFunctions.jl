@@ -11,14 +11,10 @@ for op in (:length, :approx_length)
     @eval $op(s::AbstractMappedSet, options...) = $op(set(s),options...)
 end
 
-# Delegation of type methods
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
-    @eval $op{S,N,T}(::Type{AbstractMappedSet{S,N,T}}) = $op(S)
-#    @eval $op{S <: AbstractMappedSet}(::Type{S}) = $op(super(S))
+# Delegation of property methods
+for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+    @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
-
-
-
 
 # Delegate feature methods
 for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
@@ -92,9 +88,9 @@ rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
 
 
 # Preserve tensor product structure
-function rescale{TS,SN,N}(s::TensorProductSet{TS,SN,N,N}, a::Vec{N}, b::Vec{N})
+function rescale{N}(s::TensorProductSet, a::Vec{N}, b::Vec{N})
     scaled_sets = [ rescale(set(s,i), a[i], b[i]) for i in 1:N]
-    TensorProductSet(scaled_sets...)
+    tensorproduct(scaled_sets...)
 end
 
 
@@ -128,7 +124,7 @@ end
 # Undo set mappings in a TensorProductSet
 unmapset(s::FunctionSet) = s
 unmapset(s::AbstractMappedSet) = set(s)
-unmapset(s::TensorProductSet) = TensorProductSet(map(unmapset, sets(s))...)
+unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
 
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet,
@@ -181,11 +177,6 @@ function antidifferentiation_operator(s1::LinearMappedSet, order::Int; options..
     T = promote_type(eltype(s1), typeof(s1.a))
     S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
-end
-# The above definition does not work, super(S) goes straight up to FunctionSet
-# Delegation of type methods
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :index_dim, :eltype)
-    @eval $op{S,T,ELT}(::Type{LinearMappedSet{S,T,ELT}}) = $op(S)
 end
 
 for op in (:derivative_set, :antiderivative_set)

@@ -29,10 +29,13 @@
 
 
 
-immutable Extension{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+Extension(src::FunctionSet, dest::FunctionSet) =
+    Extension{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 """
 An extension operator is an operator that can be used to extend a representation in a set s1 to a
@@ -47,20 +50,23 @@ and function evaluations can be shared. The default is twice the length of the c
 """
 extension_size(s::FunctionSet) = 2*length(s)
 
-extension_size(s::TensorProductSet) = map(extension_size, sets(s))
+extension_size(s::TensorProductSet) = map(extension_size, elements(s))
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
 
-immutable Restriction{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+Restriction(src::FunctionSet, dest::FunctionSet) =
+    Restriction{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 
 """
 A restriction operator does the opposite of what the extension operator does: it restricts
 a representation in a set s1 to a representation in a smaller set s2. Loss of accuracy may result
-from the restriction. The default restriction_operator is of type Restriction with sets s1 and 
+from the restriction. The default restriction_operator is of type Restriction with sets s1 and
 s2 as source and destination.
 """
 restriction_operator(s1::FunctionSet, s2::FunctionSet; options...) = Restriction(s1, s2)
@@ -83,16 +89,19 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 #################
 
 
-immutable NormalizationOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
-    src     ::  SRC
-    dest    ::  DEST
-end
-
-normalization_operator(src::FunctionSet; options...) = NormalizationOperator(src, normalize(src))
-
-is_inplace{O <: NormalizationOperator}(::Type{O}) = True
-
-is_diagonal{O <: NormalizationOperator}(::Type{O}) = True
+# TODO: make complete. Should normalization simply be a diagonal operator?
+# immutable NormalizationOperator{SRC,DEST,ELT} <: AbstractOperator{ELT}
+#     src     ::  SRC
+#     dest    ::  DEST
+# end
+#
+# function normalization_operator(src::FunctionSet; options...)
+#     dest = normalize(src)
+#     ELT = promote_type(eltype(src),eltype(dest))
+#     NormalizationOperator{typeof(src),typeof(dest),ELT}(src, dest)
+# end
+#
+# is_inplace(::NormalizationOperator) = true
 
 
 
@@ -107,10 +116,13 @@ A function set can implement the apply! method of a suitable TransformOperator f
 unitary transform.
 Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
 """
-immutable TransformOperator{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable TransformOperator{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
+
+TransformOperator(src::FunctionSet, dest::FunctionSet) =
+    TransformOperator{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 # The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
 transform_operator(src, dest; options...) = TransformOperator(src, dest)
@@ -221,10 +233,10 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
             #   - finding an integer n so that nlength(dgs)>length(s)
             #   - resorting to the above evaluation + extension
             #   - subsampling by factor n
-            MatrixOperator(interpolation_matrix(s, grid(dgs)), s, dgs)
+            MatrixOperator(s, dgs, interpolation_matrix(s, grid(dgs)))
         end
     else
-        MatrixOperator(evaluation_matrix(s, grid(dgs)), s, dgs)
+        MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
     end
 end
 
@@ -232,15 +244,17 @@ end
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(b::FunctionSet; options...) = _approximation_operator(b, is_basis(b); options...)
+function approximation_operator(b::FunctionSet; options...)
+    if is_basis(b)
+        interpolation_operator(b; options...)
+    else
+        leastsquares_operator(b; options...)
+    end
+end
 
-# The default approximation for a basis is interpolation, for other sets it is least squares.
-_approximation_operator(b, isbasis::True; options...) = interpolation_operator(b; options...)
-_approximation_operator(b, isbasis::False; options...) = leastsquares_operator(b; options...)
 
 
-
-# Automatically sample a function if an operator is applied to it with a 
+# Automatically sample a function if an operator is applied to it with a
 # source that has a grid
 (*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
 
@@ -260,14 +274,14 @@ differentiation operators, with different result sets.
 For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
 or to polynomials up to degree n-1.
 """
-immutable Differentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable Differentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-Differentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
-    Differentiation{SRC,DEST}(src, dest, 1, 1)
+Differentiation(src::FunctionSet, dest::FunctionSet, order) =
+    Differentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 
 order(op::Differentiation) = op.order
@@ -277,7 +291,8 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) = Differentiation(s1, s2, order)
+differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) =
+    Differentiation(s1, s2, order)
 
 # With this definition below, the user may specify a single set and a variable, with or without an order
 differentiation_operator(s1::FunctionSet, order = 1; options...) =
@@ -289,14 +304,14 @@ The antidifferentiation operator of a set maps an expansion in the set to an exp
 antiderivative. The result of this operation may be an expansion in a different set. A function set
 can have different antidifferentiation operators, with different result sets.
 """
-immutable AntiDifferentiation{SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable AntiDifferentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-AntiDifferentiation{SRC <: FunctionSet, DEST <: FunctionSet}(src::SRC, dest::DEST = src, order = 1) =
-    AntiDifferentiation{SRC,DEST}(src, dest, 1)
+AntiDifferentiation(src::FunctionSet, dest::FunctionSet, order) =
+    AntiDifferentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 order(op::AntiDifferentiation) = op.order
 
@@ -321,55 +336,43 @@ antidifferentiation_operator(s1::FunctionSet, order = 1; options...) =
 # Operators for tensor product sets
 #####################################
 
+
+
 # We make a special case for transform operators, so that they can be intercepted in case a multidimensional
 # transform is available for a specific basis.
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,2}, s2::TensorProductSet{TS2,SN,2}; options...) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s2, 1), set(s2, 2); options...)
-
-transform_operator{TS1,TS2,SN}(s1::TensorProductSet{TS1,SN,3}, s2::TensorProductSet{TS2,SN,3}; options...) =
-    transform_operator_tensor(s1, s2, set(s1, 1), set(s1, 2), set(s1, 3), set(s2, 1), set(s2, 2), set(s2, 3); options...)
+transform_operator(s1::TensorProductSet, s2::TensorProductSet; options...) =
+    transform_operator_tensor(s1, s2, elements(s1)..., elements(s2)...; options...)
 
 transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2; options...) =
-    TensorProductOperator(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...))
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...))
 
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s2_set1, s2_set2, s2_set3; options...) =
-    TensorProductOperator(transform_operator(s1_set1, s2_set1; options...), transform_operator(s1_set2, s2_set2; options...),
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3,
+                                  s2_set1, s2_set2, s2_set3; options...) =
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...),
         transform_operator(s1_set3, s2_set3; options...))
 
-for op in (:extension_operator, :restriction_operator, :transform_operator, :evaluation_operator,
+transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s1_set4,
+                                  s2_set1, s2_set2, s2_set3, s2_set4; options...) =
+    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
+        transform_operator(s1_set2, s2_set2; options...),
+        transform_operator(s1_set3, s2_set3; options...),
+        transform_operator(s1_set4, s2_set4; options...))
+
+for op in (:extension_operator, :restriction_operator, :evaluation_operator,
             :interpolation_operator, :leastsquares_operator)
-    @eval $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}; options...) = 
-        TensorProductOperator([$op(set(s1,i),set(s2, i); options...) for i in 1:LEN]...)
+    @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
+        tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:composite_length(s1)]...)
 end
 
 for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
-    @eval $op{TS,SN,LEN}(s::TensorProductSet{TS,SN,LEN}; options...) = 
-        TensorProductOperator([$op(set(s,i); options...) for i in 1:LEN]...)
+    @eval $op(s::TensorProductSet; options...) =
+        tensorproduct([$op(element(s,i); options...) for i in 1:composite_length(s)]...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval function $op{TS1,TS2, SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, order::NTuple{LEN}; options...)
-        TensorProductOperator([$op(set(s1,i), set(s2,i), order[i]; options...) for i in 1:LEN]...)
+    @eval function $op(s1::TensorProductSet, s2::TensorProductSet, order::NTuple; options...)
+        tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:composite_length(s1)]...)
     end
 end
-
-## # Overly complicated routines to select a single variable and order from a tensorproductset.
-## for op in (:differentiation_operator, :antidifferentiation_operator)
-##     @eval function $op{TS1,TS2,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, s2::TensorProductSet{TS2,SN,LEN}, var::Int, order::Int)
-##         operators = map(i->$op(set(s1,i),set(s2,i),1,0),1:LEN)
-##         setindex = minimum(find(cumsum([SN...]).>(var-1)))
-##         varadjusted = var-cumsum([0; SN...])[setindex]
-##         operators[setindex] = $op(set(s1,setindex),set(s2,setindex),varadjusted,order)
-##         TensorProductOperator(operators...)
-##     end
-## end
-
-## for op in (:differentiation_operator, :antidifferentiation_operator)
-##     @eval function $op{TS1,SN,LEN}(s1::TensorProductSet{TS1,SN,LEN}, var::Int, order::Int)
-##         operators = AbstractOperator[IdentityOperator(set(s1,i)) for i in 1:LEN]
-##         setindex = minimum(find(cumsum([SN...]).>(var-1)))
-##         varadjusted = var-cumsum([0; SN...])[setindex]
-##         operators[setindex] = $op(set(s1,setindex),varadjusted,order)
-##         TensorProductOperator(operators...)
-##     end
-## end

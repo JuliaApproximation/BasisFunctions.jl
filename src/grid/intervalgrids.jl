@@ -12,7 +12,7 @@ right(g::AbstractIntervalGrid) = g.b
 
 length(g::AbstractIntervalGrid) = g.n
 
-
+index_dim{G <: AbstractIntervalGrid}(::Type{G}) = 1
 
 # An equispaced grid has equispaced points, and therefore it has a stepsize.
 abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
@@ -69,6 +69,28 @@ stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 rescale{T}(g::PeriodicEquispacedGrid{T}, a, b) = PeriodicEquispacedGrid(length(g), a, b, T)
 
 
+# A MidpointEquispaced grid is an equispaced grid with grid points in the centers of the equispaced
+# subintervals. In other words, this is a DCT-II grid.
+immutable MidpointEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+    n   ::  Int
+    a   ::  T
+    b   ::  T
+
+    MidpointEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
+end
+
+MidpointEquispacedGrid{T}(n, ::Type{T} = Float64) = MidpointEquispacedGrid{T}(n)
+
+MidpointEquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = MidpointEquispacedGrid{T}(n, a, b)
+
+unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsize(g)
+
+stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
+
+rescale{T}(g::MidpointEquispacedGrid{T}, a, b) = MidpointEquispacedGrid(length(g), a, b, T)
+
+
+
 immutable ChebyshevIIGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
@@ -88,5 +110,3 @@ end
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.n) )
-
-

@@ -36,17 +36,13 @@ for op in (:length, :size, :left, :right, :grid, :index_dim)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
-# Delegation of type methods
+# Delegation of property methods
 for op in (:numtype, :dim)
-    @eval $op{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = $op(S)
-    @eval $op(s::SetExpansion) = $op(typeof(s))
+    @eval $op(s::SetExpansion) = $op(set(s))
 end
 
-has_basis{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_basis(S)
-has_basis(e::SetExpansion) = has_basis(typeof(e))
-
-has_frame{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = is_frame(S)
-has_frame(e::SetExpansion) = has_frame(typeof(e))
+has_basis(e::SetExpansion) = is_basis(set(e))
+has_frame(e::SetExpansion) = is_frame(set(e))
 
 getindex(e::SetExpansion, i...) = e.coef[i...]
 
@@ -56,8 +52,6 @@ setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 # This indirect call enables dispatch on the type of the set of the expansion
 call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), promote(x...)...)
 call_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
-
-call(e::SetExpansion, x::Vec{2}) = call_expansion(set(e), coefficients(e), x[1], x[2])
 
 call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), promote(x...)...)
 call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
@@ -154,16 +148,3 @@ function apply(op::AbstractOperator, e::SetExpansion)
 
     SetExpansion(dest(op), op * coefficients(e))
 end
-
-function apply!(op::AbstractOperator, set_dest::SetExpansion, set_src::SetExpansion)
-    @assert set(set_src) == src(op)
-    @assert set(set_dest) == dest(op)
-
-    apply!(op, coefficients(set_dest), coefficients(set_src))
-end
-
-
-
-
-
-
