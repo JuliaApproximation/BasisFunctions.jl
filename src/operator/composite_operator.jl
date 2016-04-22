@@ -1,7 +1,7 @@
 # composite_operator.jl
 
 """
-A composite operator consists of a sequence of operators that are applied
+ operator consists of a sequence of operators that are applied
 consecutively.
 """
 immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
@@ -123,9 +123,9 @@ function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators
     coef_srcdest
 end
 
-inv(op::CompositeOperator) = CompositeOperator(map(inv, op.operators)...)
+inv(op::CompositeOperator) = CompositeOperator([inv(op.operators[i]) for i in length(op.operators):-1:1]...)
 
-ctranspose(op::CompositeOperator) = CompositeOperator(map(ctranspose, op.operators)...)
+ctranspose(op::CompositeOperator) = CompositeOperator([ctranspose(op.operators[i]) for i in length(op.operators):-1:1]...)
 
 compose() = nothing
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)

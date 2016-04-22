@@ -68,7 +68,7 @@ export matrix
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,

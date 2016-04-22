@@ -124,17 +124,6 @@ function matrix_fill!(op::AbstractOperator, a, r, s)
     a
 end
 
-diagonal(op::AbstractOperator) = diagonal(op, is_diagonal(op))
-diagonal(op::AbstractOperator, is_diagonal::False) = diag(matrix(op))
-function diagonal(op::AbstractOperator, is_diagonal::True)
-    diagonal =ones(eltype(op),size(src(op))) 
-    apply!(op,diagonal)
-    diagonal
-end
-
-inv(op::AbstractOperator) = inv(op, is_diagonal(op))
-
-
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
 		op	::	OP

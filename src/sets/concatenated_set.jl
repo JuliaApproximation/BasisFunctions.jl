@@ -73,16 +73,16 @@ immutable ConcatenatedOperator{OP1,OP2,ELT} <: AbstractOperator{ELT}
 
     # Reserve scratch space for copying source and destination of both operators to an array
     # of the right size, for use when applying the concatenated operator in terms of op1 and op2.
-    scratch_src1    ::  Array{ELT,1}
-    scratch_dest1   ::  Array{ELT,1}
-    scratch_src2    ::  Array{ELT,1}
-    scratch_dest2   ::  Array{ELT,1}
+    scratch_src1    ::  Array{ELT}
+    scratch_dest1   ::  Array{ELT}
+    scratch_src2    ::  Array{ELT}
+    scratch_dest2   ::  Array{ELT}
 
     function ConcatenatedOperator(op1, op2, src_set, dest_set)
-        scratch_src1  = Array(ELT, length(src(op1)))
-        scratch_dest1 = Array(ELT, length(dest(op1)))
-        scratch_src2  = Array(ELT, length(src(op2)))
-        scratch_dest2 = Array(ELT, length(dest(op2)))
+        scratch_src1  = Array(ELT, size(src(op1)))
+        scratch_dest1 = Array(ELT, size(dest(op1)))
+        scratch_src2  = Array(ELT, size(src(op2)))
+        scratch_dest2 = Array(ELT, size(dest(op2)))
         new(op1, op2, src_set, dest_set, scratch_src1, scratch_dest1, scratch_src2, scratch_dest2)
     end
 end
@@ -152,24 +152,24 @@ restriction_operator(s1::ConcatenatedSet, s2::ConcatenatedSet; options...) =
 
 
 "A HCatOperator maps a ConcatenatedSet to a common destination set."
-immutable HCatOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable HCatOperator{OP1,OP2,ELT} <: AbstractOperator{ELT}
     op1     ::  OP1
     op2     ::  OP2
-    src     ::  SRC
-    dest    ::  DEST
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 
     # Reserve scratch space for copying source and destination of both operators to an array
     # of the right size, for use when applying the concatenated operator in terms of op1 and op2.
-    scratch_src1    ::  Array{T,1}
-    scratch_dest1   ::  Array{T,1}
-    scratch_src2    ::  Array{T,1}
-    scratch_dest2   ::  Array{T,1}
+    scratch_src1    ::  Array{ELT}
+    scratch_dest1   ::  Array{ELT}
+    scratch_src2    ::  Array{ELT}
+    scratch_dest2   ::  Array{ELT}
 
     function HCatOperator(op1, op2, src_set, dest_set)
-        scratch_src1  = Array(T, length(src(op1)))
-        scratch_dest1 = Array(T, length(dest(op1)))
-        scratch_src2  = Array(T, length(src(op2)))
-        scratch_dest2 = Array(T, length(dest(op2)))
+        scratch_src1  = Array(ELT, size(src(op1)))
+        scratch_dest1 = Array(ELT, size(dest(op1)))
+        scratch_src2  = Array(ELT, size(src(op2)))
+        scratch_dest2 = Array(ELT, size(dest(op2)))
         new(op1, op2, src_set, dest_set, scratch_src1, scratch_dest1, scratch_src2, scratch_dest2)
     end
 end
@@ -177,8 +177,8 @@ end
 function HCatOperator(op1::AbstractOperator, op2::AbstractOperator)
     @assert dest(op1) == dest(op2)
     op_src = ConcatenatedSet(src(op1), src(op2))
-    T = promote_type(eltype(op1), eltype(op2))
-    HCatOperator{typeof(op1), typeof(op2), T, typeof(op_src), typeof(dest(op1))}(op1, op2, op_src, dest(op1))
+    ELT = promote_type(eltype(op1), eltype(op2))
+    HCatOperator{typeof(op1), typeof(op2), ELT}(op1, op2, op_src, dest(op1))
 end
 
 
@@ -192,8 +192,8 @@ function apply!(op::HCatOperator, dest::FunctionSet, src::ConcatenatedSet, coef_
     coef_dest2 = op.scratch_dest2
 
     # First copy the long vector coef_src and coef_dest to the vectors of the right size of the individual operators
-    L1 = length(set1(src))
-    L2 = length(set2(src))
+    L1 = length(coef_src1)
+    L2 = length(coef_src2)
     for i in 1:L1
         coef_src1[i] = coef_src[i]
     end
@@ -214,20 +214,20 @@ end
 
 
 "A VCatOperator an operator that maps a set to a ConcatenedSet"
-immutable VCatOperator{OP1,OP2,T,SRC,DEST} <: AbstractOperator{SRC,DEST}
+immutable VCatOperator{OP1,OP2,ELT} <: AbstractOperator{ELT}
     op1     ::  OP1
     op2     ::  OP2
-    src     ::  SRC
-    dest    ::  DEST
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
 
     # Reserve scratch space for copying source and destination of both operators to an array
     # of the right size, for use when applying the concatenated operator in terms of op1 and op2.
-    scratch_dest1   ::  Array{T,1}
-    scratch_dest2   ::  Array{T,1}
+    scratch_dest1   ::  Array{ELT}
+    scratch_dest2   ::  Array{ELT}
 
     function VCatOperator(op1, op2, src_set, dest_set)
-        scratch_dest1 = Array(T, length(dest(op1)))
-        scratch_dest2 = Array(T, length(dest(op2)))
+        scratch_dest1 = Array(ELT, size(dest(op1)))
+        scratch_dest2 = Array(ELT, size(dest(op2)))
         new(op1, op2, src_set, dest_set, scratch_dest1, scratch_dest2)
     end
 end
@@ -235,8 +235,8 @@ end
 function VCatOperator(op1::AbstractOperator, op2::AbstractOperator)
     @assert src(op1) == src(op2)
     op_dest = ConcatenatedSet(dest(op1), dest(op2))
-    T = promote_type(eltype(op1), eltype(op2))
-    VCatOperator{typeof(op1), typeof(op2), T, typeof(src(op1)), typeof(op_dest)}(op1, op2, src(op1), op_dest)
+    ELT = promote_type(eltype(op1), eltype(op2))
+    VCatOperator{typeof(op1), typeof(op2), ELT}(op1, op2, src(op1), op_dest)
 end
 
 
@@ -252,8 +252,8 @@ function apply!(op::VCatOperator, dest::ConcatenatedSet, src::FunctionSet, coef_
     apply!(op.op2, coef_dest2, coef_src)
 
     # Finally, copy the results back into coef_dest
-    L1 = length(set1(dest))
-    L2 = length(set2(dest))
+    L1 = length(coef_dest1)
+    L2 = length(coef_dest2)
     for i in 1:L1
         coef_dest[i] = coef_dest1[i]
     end
