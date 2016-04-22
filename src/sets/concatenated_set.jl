@@ -1,23 +1,25 @@
 # concatenated_set.jl
 
-"A ConcatenatedSet represents the direct sum of two one-dimensional sets."
-immutable ConcatenatedSet{S1,S2,T} <: FunctionSet{1,T}
-    set1    ::  S1
-    set2    ::  S2
-
-    ConcatenatedSet(s1::FunctionSet{1,T}, s2::FunctionSet{1,T}) = new(s1,s2)
+"A ConcatenatedSet represents the concatenation of two one-dimensional sets."
+immutable ConcatenatedSet{T} <: FunctionSet{1,T}
+    set1    ::  FunctionSet{1,T}
+    set2    ::  FunctionSet{1,T}
 end
 
-ConcatenatedSet{T}(s1::FunctionSet{1,T}, s2::FunctionSet{1,T}, ::Type{T}) = ConcatenatedSet{typeof(s1),typeof(s2),T}(s1, s2)
+ConcatenatedSet{T}(set1::FunctionSet{1,T}, set2::FunctionSet{1,T}) =
+    ConcatenatedSet{T}(set1,set2)
 
-ConcatenatedSet{T1,T2,S}(s1::FunctionSet{1,T1}, s2::FunctionSet{1,T2}, ::Type{S} = promote_type(T1,T2)) =
-    ConcatenatedSet(promote_eltype(s1,S), promote_eltype(s2,S))
+ConcatenatedSet{T1,T2}(set1::FunctionSet{1,T1}, set2::FunctionSet{1,T2}) =
+    ConcatenatedSet(promote(set1,set2)...)
 
 ⊕(s1::FunctionSet, s2::FunctionSet) = ConcatenatedSet(s1, s2)
 
-name(s::ConcatenatedSet) = "The concatenation of " * name(s.set1) * " and " * name(s.set2)
+elements(set::ConcatenatedSet) = (set1(s), set2(s))
 
 set(b::ConcatenatedSet, i::Int) = i==1 ? b.set1 : b.set2
+
+
+name(s::ConcatenatedSet) = "The concatenation of " * name(set1(s)) * " and " * name(set2(s))
 
 set1(b::ConcatenatedSet) = b.set1
 set2(b::ConcatenatedSet) = b.set2
@@ -28,16 +30,17 @@ resize(s::ConcatenatedSet, n::Int) = ConcatenatedSet(resize(set1(s), n-(n>>1)), 
 
 resize(s::ConcatenatedSet, n::NTuple{2,Int}) = ConcatenatedSet(resize(set1(s), n[1]), resize(set2(s), n[2]))
 
-promote_eltype{S1,S2,T,S}(s::ConcatenatedSet{S1,S2,T}, ::Type{S}) = ConcatenatedSet(s.set1, s.set2, S)
+promote_eltype{T,S}(s::ConcatenatedSet{T}, ::Type{S}) =
+    ConcatenatedSet(promote_eltype(set1(s), S), promote_eltype(set2(s), S))
 
 # Method delegation
-for op in (:has_derivative, :has_extension)
-    @eval $op(b::ConcatenatedSet) = $op(b.set1) & $op(b.set2)
+for op in (:has_derivative, :has_antiderivative, :has_extension)
+    @eval $op(b::ConcatenatedSet) = $op(b.set1) && $op(b.set2)
 end
 
-for op in (:left, :right)
-    @eval $op(b::ConcatenatedSet) = $op(b.set1)
-end
+left(set::ConcatenatedSet) = min(left(set1(set)), left(set2(set)))
+
+right(set::ConcatenatedSet) = max(right(set1(set)), right(set2(set)))
 
 ## Properties
 
@@ -68,8 +71,8 @@ call_element(b::ConcatenatedSet, i, x) = i <= length(b.set1) ? call(b.set1, i, x
 immutable ConcatenatedOperator{OP1,OP2,ELT} <: AbstractOperator{ELT}
     op1     ::  OP1
     op2     ::  OP2
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    src     ::  ConcatenatedSet
+    dest    ::  ConcatenatedSet
 
     # Reserve scratch space for copying source and destination of both operators to an array
     # of the right size, for use when applying the concatenated operator in terms of op1 and op2.

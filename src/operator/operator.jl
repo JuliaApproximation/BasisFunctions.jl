@@ -18,6 +18,7 @@ The element type (eltype) should be equal for src and dest.
 """
 abstract AbstractOperator{ELT}
 
+eltype{ELT}(::AbstractOperator{ELT}) = ELT
 eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
 eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
 
@@ -91,6 +92,41 @@ function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
 end
 
 (*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
+
+"""
+Apply an operator multiple times, to each column of the given argument.
+"""
+function apply_multiple(op::AbstractOperator, matrix_src)
+	ELT = eltype(op)
+	matrix_dest = zeros(ELT, size(op,1), size(matrix_src)[2:end]...)
+	coef_src = zeros(ELT, size(src(op)))
+	coef_dest = zeros(ELT, size(dest(op)))
+	apply_multiple!(op, matrix_dest, matrix_src, coef_dest, coef_src)
+end
+
+function apply_multiple!(op::AbstractOperator, matrix_dest, matrix_src,
+	coef_dest = zeros(eltype(matrix_dest), size(dest(op))),
+	coef_src  = zeros(eltype(matrix_src), size(src(op))))
+
+	# Make sure the first dimensions of the matrices agree with the dimensions
+	# of the operator
+	@assert size(matrix_dest, 1) == size(op,1)
+	@assert size(matrix_src, 1) == size(op,2)
+	# and that the remaining dimensions agree with each other
+	for i in 2:ndims(matrix_dest)
+		@assert size(matrix_src,i) == size(matrix_dest,i)
+	end
+	for i in 1:size(matrix_src,2)
+		for j in eachindex(coef_src)
+			coef_src[j] = matrix_src[j,i]
+		end
+		apply!(op, coef_dest, coef_src)
+		for j in eachindex(coef_dest)
+			matrix_dest[j,i] = coef_dest[j]
+		end
+	end
+	matrix_dest
+end
 
 
 collect(op::AbstractOperator) = matrix(op)

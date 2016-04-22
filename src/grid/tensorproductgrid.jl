@@ -25,12 +25,12 @@ function TensorProductGrid(grid::AbstractGrid)
 	grid
 end
 
-TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),sum(map(dim, grids)),numtype(grids[1])}(grids)
+TensorProductGrid(grids...) = TensorProductGrid{typeof(grids),sum(map(ndims, grids)),numtype(grids[1])}(grids)
 
 size(g::TensorProductGrid) = map(length, g.grids)
 size(g::TensorProductGrid, j::Int) = length(g.grids[j])
 
-dim(g::TensorProductGrid, j::Int) = dim(element(g,j))
+ndims(g::TensorProductGrid, j::Int) = ndims(element(g,j))
 
 index_dim{TG,N,T}(::Type{TensorProductGrid{TG,N,T}}) = tuple_length(TG)
 

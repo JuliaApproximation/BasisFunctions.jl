@@ -31,7 +31,7 @@ immutable FastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
     end
 end
 
-FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet, dims = 1:dim(dest); options...) =
+FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet, dims = 1:ndims(dest); options...) =
     FastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
 dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastFourierTransformFFTW, dim; options...) =
@@ -54,7 +54,7 @@ immutable InverseFastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{E
     end
 end
 
-InverseFastFourierTransformFFTW(src, dest, dims = 1:dim(src); options...) =
+InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); options...) =
     InverseFastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
 dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastFourierTransformFFTW, dim; options...) =
@@ -135,7 +135,7 @@ immutable FastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFFTW{ELT}
         new(src, dest, plan_dct!(zeros(ELT,size(dest)), dims; flags = fftwflags))
 end
 
-FastChebyshevTransformFFTW(src, dest, dims = 1:dim(dest); options...) =
+FastChebyshevTransformFFTW(src, dest, dims = 1:ndims(dest); options...) =
     FastChebyshevTransformFFTW{op_eltype(src, dest)}(src, dest, dims; options...)
 
 dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastChebyshevTransformFFTW, dim; options...) =
@@ -151,7 +151,7 @@ immutable InverseFastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFF
         new(src, dest, plan_idct!(zeros(ELT,size(src)), dims; flags = fftwflags))
 end
 
-InverseFastChebyshevTransformFFTW(src, dest, dims = 1:dim(src); options...) =
+InverseFastChebyshevTransformFFTW(src, dest, dims = 1:ndims(src); options...) =
     InverseFastChebyshevTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
 
 dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastChebyshevTransformFFTW, dim; options...) =

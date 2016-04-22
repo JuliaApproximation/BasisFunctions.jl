@@ -16,7 +16,7 @@ SetFunction{S <: FunctionSet,I}(set::S, idx::I) = SetFunction{S,I}(set,idx)
 
 index(f::SetFunction) = f.idx
 
-for op in (:dim, :index_dim, :numtype, :eltype)
+for op in (:ndims, :index_dim, :numtype, :eltype)
     @eval $op(f::SetFunction) = $op(f.set)
     @eval $op{S,ID}(::Type{SetFunction{S,ID}}) = $op(S)
     @eval $op{F <: SetFunction}(::Type{F}) = $op(super(F))

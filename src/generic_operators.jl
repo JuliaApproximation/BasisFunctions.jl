@@ -240,6 +240,8 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
     end
 end
 
+default_approximation_operator = leastsquares_operator
+
 """
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
@@ -248,7 +250,7 @@ function approximation_operator(b::FunctionSet; options...)
     if is_basis(b)
         interpolation_operator(b; options...)
     else
-        leastsquares_operator(b; options...)
+        default_approximation_operator(b; options...)
     end
 end
 

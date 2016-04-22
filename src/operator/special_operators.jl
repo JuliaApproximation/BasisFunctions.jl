@@ -89,7 +89,10 @@ immutable DiagonalOperator{ELT} <: AbstractOperator{ELT}
     diagonal    ::  Vector{ELT}
 end
 
-DiagonalOperator(src::FunctionSet, diagonal::Vector) = DiagonalOperator(src, src, diagonal)
+DiagonalOperator{T <: Real}(diagonal::AbstractVector{T}) = DiagonalOperator(Rn{T}(length(diagonal)), diagonal)
+DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(Cn{T}(length(diagonal)), diagonal)
+
+DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
 
 diagonal(op::DiagonalOperator) = op.diagonal
 
@@ -114,6 +117,8 @@ function apply!(op::DiagonalOperator, coef_dest, coef_src)
     end
     coef_dest
 end
+
+matrix(op::DiagonalOperator) = diagm(diagonal(op))
 
 promote_rule{ELT}(::Type{DiagonalOperator{ELT}}, ::Type{IdentityOperator{ELT}}) = DiagonalOperator{ELT}
 promote_rule{ELT}(::Type{DiagonalOperator{ELT}}, ::Type{ScalingOperator{ELT}}) = DiagonalOperator{ELT}

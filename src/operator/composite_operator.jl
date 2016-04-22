@@ -123,9 +123,9 @@ function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators
     coef_srcdest
 end
 
-inv(op::CompositeOperator) = CompositeOperator(map(inv, op.operators)...)
+inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
 
-ctranspose(op::CompositeOperator) = CompositeOperator(map(ctranspose, op.operators)...)
+ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
 
 compose() = nothing
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)

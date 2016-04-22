@@ -28,7 +28,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     for i = 1:length(s)
         @test size(basis, i) == s[i]
     end
-    @test index_dim(basis) <= dim(basis)
+    @test index_dim(basis) <= ndims(basis)
 
     ## Test iteration over the set
     l = 0
@@ -91,7 +91,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     end
     @test types_correct
 
-    if dim(basis) == 1
+    if ndims(basis) == 1
 
         # Test evaluation on a different grid on the support of the basis
         a = left(basis)

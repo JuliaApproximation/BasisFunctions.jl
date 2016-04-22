@@ -32,7 +32,9 @@ typealias AbstractFrame1d{T} AbstractFrame{1,T}
 typealias AbstractBasis1d{T} AbstractBasis{1,T}
 
 "The dimension of the set."
-dim{N}(s::FunctionSet{N}) = N
+ndims{N,T}(::FunctionSet{N,T}) = N
+ndims{N,T}(::Type{FunctionSet{N,T}}) = N
+ndims{S <: FunctionSet}(::Type{S}) = ndims(super(S))
 
 "The numeric type of the set is like the eltype of the set, but it is always real."
 numtype(s::FunctionSet) = real(eltype(s))
@@ -110,11 +112,30 @@ instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
 # All sets should implement their own promotion rules.
 promote_eltype{N,T}(b::FunctionSet{N,T}, ::Type{T}) = b
 
+promote{N,T}(set1::FunctionSet{N,T}, set2::FunctionSet{N,T}) = (set1,set2)
+
+function promote{N,T1,T2}(set1::FunctionSet{N,T1}, set2::FunctionSet{N,T2})
+    T = promote_type(T1,T2)
+    (promote_eltype(set1,T), promote_eltype(set2,T))
+end
 
 # similar returns a similar basis of a given size and numeric type
 # It can be implemented in terms of resize and promote_eltype.
 similar{T}(b::FunctionSet, ::Type{T}, n) = resize(promote_eltype(b, T), n)
 
+"""
+Convert the set of coefficients in the native format of the set to a linear list.
+The order of the coefficients in this list is determined by the order of the
+elements in the set.
+The operation may be done in place, in order to avoid memory allocation.
+"""
+# By default, we do nothing
+linearize(set::FunctionSet, coef_src) = coef_src
+
+"""
+Convert a linear set of coefficients back to a size that is native to the set.
+"""
+delinearize(set::FunctionSet, linearcoef) = linearcoef
 
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.

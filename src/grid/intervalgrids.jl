@@ -19,11 +19,6 @@ abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
 
 range(g::AbstractEquispacedGrid) = range(left(g), stepsize(g), length(g))
 
-function getindex(g::AbstractEquispacedGrid, i)
-    checkbounds(g, i)
-    unsafe_getindex(g, i)
-end
-
 unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
 
 
@@ -103,10 +98,5 @@ ChebyshevIIGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevIIGrid{T}(n)
 left{T}(g::ChebyshevIIGrid{T}) = -one(T)
 right{T}(g::ChebyshevIIGrid{T}) = one(T)
 
-function getindex(g::ChebyshevIIGrid, i)
-    checkbounds(g, i)
-    unsafe_getindex(g, i)
-end
-
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1.0)*cos((i-1/2) * T(pi) / (g.n) )
+unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1)*cos((i-1/2) * T(pi) / (g.n) )

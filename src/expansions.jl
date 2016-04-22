@@ -37,7 +37,7 @@ for op in (:length, :size, :left, :right, :grid, :index_dim)
 end
 
 # Delegation of property methods
-for op in (:numtype, :dim)
+for op in (:numtype, :ndims)
     @eval $op(s::SetExpansion) = $op(set(s))
 end
 
@@ -78,8 +78,8 @@ end
 # little helper function
 ei(dim,i, coef) = tuple((coef*eye(Int,dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
-differentiate(f::SetExpansion, var, order) = differentiate(f, ei(dim(f), var, order))
-antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(dim(f), var, order))
+differentiate(f::SetExpansion, var, order) = differentiate(f, ei(ndims(f), var, order))
+antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(ndims(f), var, order))
 
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::SetExpansion)
@@ -112,7 +112,7 @@ random_expansion{N,ELT}(s::FunctionSet{N,ELT}) = SetExpansion(s, double_one(ELT)
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
 
 function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
-    println(io, "A ", dim(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
+    println(io, "A ", ndims(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
     println(io, "Basis: ", name(fs))
 end
 

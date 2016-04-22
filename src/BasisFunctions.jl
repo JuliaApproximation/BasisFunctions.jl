@@ -9,9 +9,10 @@ using Debug
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
-import Base: promote_rule, convert
+import Base: promote, promote_rule, convert
 
-import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex, range, collect
+import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
+        range, collect
 
 import Base: cos, sin, exp, log
 
@@ -19,7 +20,7 @@ import Base: getindex, setindex!, eltype
 
 import Base: isreal, iseven, isodd
 
-import Base: ctranspose, transpose, inv, hcat, vcat
+import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 
 import Base: show, showcompact, call, convert, similar
 
@@ -47,6 +48,8 @@ export natural_index, logical_index, natural_size, logical_size
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
 export True, False
 export approx_length, extension_size
+export has_transform, has_extension, has_derivative, has_antiderivative
+export linearize, delinearize
 
 # from sets/setfunction.jl
 export SetFunction, index, functionset
@@ -61,14 +64,16 @@ export map, imap, map_linear, imap_linear, rescale
 export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
 # from operator/operators.jl
-export AbstractOperator, ctranspose, operator, src, dest, apply!
+export AbstractOperator, ctranspose, operator, src, dest, apply!,
+        apply, apply_multiple
 export matrix
 
 # from operator/composite_operator.jl
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator,
+        CoefficientScalingOperator, MatrixOperator, WrappedOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,

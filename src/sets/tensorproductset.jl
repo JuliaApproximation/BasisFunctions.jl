@@ -30,11 +30,14 @@ end
 function TensorProductSet(sets::FunctionSet...)
     ELT = promote_type(map(eltype,sets)...)
     psets = map( s -> promote_eltype(s, ELT), sets)
-    TensorProductSet{typeof(psets),sum(map(dim, psets)),ELT}(psets)
+    TensorProductSet{typeof(psets),sum(map(ndims, psets)),ELT}(psets)
 end
 
-dim(b::TensorProductSet, j::Int) = dim(element(b, j))
+ndims(b::TensorProductSet, j::Int) = ndims(element(b, j))
 
+linearize(b::TensorProductSet, coef) = reshape(coef, length(b))
+
+delinearize(b::TensorProductSet, coef) = reshape(coef, size(b))
 
 ## Properties
 
@@ -63,9 +66,9 @@ resize(b::TensorProductSet, n) = TensorProductSet(map( (b_i,n_i)->resize(b_i, n_
 
 function approx_length(b::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
-    N = dim(b)
+    N = ndims(b)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(element(b, j), m^dim(b, j)) for j in 1:composite_length(b)]...)
+    tuple([approx_length(element(b, j), m^ndims(b, j)) for j in 1:composite_length(b)]...)
 end
 
 # It would be odd if the first method below was ever called, because LEN=1 makes
