@@ -263,3 +263,31 @@ function transform_normalization_operator(src::FourierBasis; options...)
     ELT = eltype(src)
     ScalingOperator(src, 1/sqrt(ELT(L)))
 end
+
+is_compatible(s1::FourierBasis, s2::FourierBasis) = true
+# Multiplication of Fourier Series
+function (*)(src1::FourierBasisOdd, src2::FourierBasisEven, coef_src1, coef_src2)
+    dsrc2 = resize(src2,length(src2)+1)
+    (*)(src1,dsrc2,coef_src1,extension_operator(src2,dsrc2)*coef_src2)
+end
+
+function (*)(src1::FourierBasisEven, src2::FourierBasisOdd, coef_src1, coef_src2)
+    dsrc1 = resize(src1,length(src1)+1)
+    (*)(dsrc1,src2,extension_operator(src1,dsrc1)*coef_src1,coef_src2)
+end
+
+function (*)(src1::FourierBasisEven, src2::FourierBasisEven, coef_src1, coef_src2)
+    dsrc1 = resize(src1,length(src1)+1)
+    dsrc2 = resize(src2,length(src2)+1)
+    (*)(dsrc1,dsrc2,extension_operator(src1,dsrc1)*coef_src1,extension_operator(src2,dsrc2)*coef_src2)
+end
+
+function (*)(src1::FourierBasisOdd, src2::FourierBasisOdd, coef_src1, coef_src2)
+    dest = FourierBasis(length(src1)+length(src2)-1,eltype(src1,src2))
+    coef_src1 = [coef_src1[(nhalf(src1))+2:end]; coef_src1[1:nhalf(src1)+1]]
+    coef_src2 = [coef_src2[(nhalf(src2))+2:end]; coef_src2[1:nhalf(src2)+1]]
+    coef_dest = conv(coef_src1,coef_src2)
+    coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
+    (dest,coef_dest)
+end
+    

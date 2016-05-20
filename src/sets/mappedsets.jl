@@ -71,6 +71,13 @@ call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
+is_compatible(a::LinearMappedSet, b::LinearMappedSet) = left(a)==left(b) && right(a)==right(b) && is_compatible(set(a),set(b))
+
+function (*)(s1::LinearMappedSet, s2::LinearMappedSet, coef_src1, coef_src2)
+    @assert is_compatible(set(s1),set(s2)) 
+    (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
+    (rescale(mset,s1.a,s1.b),mcoef)
+end
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)

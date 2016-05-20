@@ -178,24 +178,19 @@ function transform_normalization_operator(src::ChebyshevBasis; options...)
 	scaling * coefscaling * flip
 end
 
+is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
-# immutable ChebyshevNormalization{ELT} <: AbstractOperator{ELT}
-#     src     :: FunctionSet
-# end
-#
-# ChebyshevNormalization(src::FunctionSet) = ChebyshevNormalization{eltype(src)}(src)
-#
-# dest(op::ChebyshevNormalization) = src(op)
-#
-#
-# function apply_inplace!{ELT}(op::ChebyshevNormalization{ELT}, coef_srcdest)
-# 	L = length(op.src)
-# 	T = numtype(src)
-# 	s = 1/sqrt(ELT(length(coef_srcdest))/2)
-#     coef_srcdest[1] /= sqrt(T(2))
-# end
-#
-
+function (*)(src1::ChebyshevBasis, src2::ChebyshevBasis, coef_src1, coef_src2)
+    dest = ChebyshevBasis(length(src1)+length(src2),eltype(src1,src2))
+    coef_dest = zeros(eltype(dest),length(dest))
+    for i = 1:length(src1)
+        for j = 1:length(src2)
+            coef_dest[i+j-1]+=1/2*coef_src1[i]*coef_src2[j]
+            coef_dest[abs(i-j)+1]+=1/2*coef_src1[i]*coef_src2[j]
+        end
+    end
+    (dest,coef_dest)
+end
 
 ############################################
 # Chebyshev polynomials of the second kind
