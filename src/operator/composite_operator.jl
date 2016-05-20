@@ -1,7 +1,7 @@
 # composite_operator.jl
 
 """
-A composite operator consists of a sequence of operators that are applied
+ operator consists of a sequence of operators that are applied
 consecutively.
 """
 immutable CompositeOperator{ELT} <: AbstractOperator{ELT}

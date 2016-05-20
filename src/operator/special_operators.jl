@@ -133,7 +133,23 @@ convert{ELT}(::Type{DiagonalOperator{ELT}}, op::IdentityOperator{ELT}) =
 (*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) * diagonal(op2))
 (*)(op2::DiagonalOperator, op1::ScalingOperator) = op1 * op2
 
+function diagonal(op::AbstractOperator) 
+    if ~is_diagonal(op)
+        diag(matrix(op))
+    else
+        diagonal =ones(eltype(op),size(src(op))) 
+        apply!(op,diagonal)
+        diagonal = reshape(diagonal,length(src(op)))
+    end
+end
 
+function inv_diagonal(op::AbstractOperator)
+    @assert is_diagonal(op)
+    d = diagonal(op)
+    # Avoid getting Inf values, we prefer a pseudo-inverse in this case
+    d[find(d.==0)] = Inf
+    DiagonalOperator(dest(op), src(op), d.^(-1))
+end
 
 """
 A CoefficientScalingOperator scales a single coefficient.
@@ -314,14 +330,14 @@ end
 
 
 # An index scaling operator, used to generate weights for the polynomial scaling algorithm.
-immutable IdxnScalingOperator{SRC,ELT} <: AbstractOperator{ELT}
-    src     ::  SRC
+immutable IdxnScalingOperator{ELT} <: AbstractOperator{ELT}
+    src     ::  FunctionSet
     order   ::  Int
     scale   ::  Function
 end
 
-IdxnScalingOperator(src::FunctionSet; scale = default_scaling_function) =
-    IdxnScalingOperator{typeof(src),eltype(src)}(src, 1, scale)
+IdxnScalingOperator(src::FunctionSet; order=1, scale = default_scaling_function) =
+    IdxnScalingOperator{eltype(src)}(src, order, scale)
 
 dest(op::IdxnScalingOperator) = src(op)
 
@@ -329,8 +345,10 @@ default_scaling_function(i) = 10.0^-4+(abs(i))+abs(i)^2+abs(i)^3
 default_scaling_function(i,j) = 1+(abs(i)^2+abs(j)^2)
 
 is_inplace(::IdxnScalingOperator) = true
+is_diagonal(::IdxnScalingOperator) = true
 
-function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
+ctranspose(op::IdxnScalingOperator) = DiagonalOperator(src(op), conj(diagonal(op)))
+function apply_inplace!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     ELT = eltype(op)
     for i in eachindex(coef_srcdest)
         coef_srcdest[i] *= op.scale(ELT(natural_index(op.src,i)))^op.order
@@ -338,7 +356,7 @@ function apply!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     coef_srcdest
 end
 
-function apply!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet{Tuple{TS1,TS2}}, src, coef_srcdest)
+function apply_inplace!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet{Tuple{TS1,TS2}}, src, coef_srcdest)
     ELT = eltype(op)
     for i in eachindex(coef_srcdest)
         indices = ind2sub(size(dest),i)
@@ -346,8 +364,7 @@ function apply!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet{Tuple{T
     end
     coef_srcdest
 end
-
-inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, op.src, op.order*(-1), op.scale)
+inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, order=op.order*-1, scale=op.scale)
 
 
 

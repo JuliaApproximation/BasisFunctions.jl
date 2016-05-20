@@ -44,7 +44,6 @@ is_inplace(op::AbstractOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::AbstractOperator) = false
 
-
 function apply(op::AbstractOperator, coef_src)
 		coef_dest = Array(eltype(op), size(dest(op)))
 		apply!(op, coef_dest, coef_src)
@@ -160,7 +159,6 @@ function matrix_fill!(op::AbstractOperator, a, r, s)
     end
     a
 end
-
 
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}

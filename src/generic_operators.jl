@@ -378,3 +378,4 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
         tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:composite_length(s1)]...)
     end
 end
+

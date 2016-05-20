@@ -122,8 +122,14 @@ end
 # Arithmetics with expansions
 ##############################
 
+# Arithmetics are only possible when the basis type is equal.
+is_compatible{S<:FunctionSet}(s1::S, s2::S) = true
+is_compatible(s1::FunctionSet, s2::FunctionSet) = false
+
 for op in (:+, :-)
-    @eval function ($op){S,ELT1,ELT2,ID}(s1::SetExpansion{S,ELT1,ID}, s2::SetExpansion{S,ELT2,ID})
+    @eval function ($op)(s1::SetExpansion, s2::SetExpansion)
+        # First check if the FunctionSets are arithmetically compatible
+        @assert is_compatible(set(s1),set(s2))
             # If the sizes are equal, we can just operate on the coefficients.
             # If not, we have to extend the smaller set to the size of the larger set.
             if size(s1) == size(s2)
@@ -138,10 +144,17 @@ for op in (:+, :-)
     end
 end
 
+function (*)(s1::SetExpansion, s2::SetExpansion)
+    @assert is_compatible(set(s1),set(s2)) 
+    (mset,mcoef) = (*)(set(s1),set(s2),coefficients(s1),coefficients(s2))
+    SetExpansion(mset,mcoef)
+end
+
 (*)(op::AbstractOperator, e::SetExpansion) = apply(op, e)
 
 (*)(a::Number, e::SetExpansion) = SetExpansion(set(e), a*coefficients(e))
 (*)(e::SetExpansion, a::Number) = a*e
+
 
 function apply(op::AbstractOperator, e::SetExpansion)
     @assert set(e) == src(op)

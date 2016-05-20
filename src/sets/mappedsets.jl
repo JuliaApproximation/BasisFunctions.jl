@@ -71,6 +71,13 @@ call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 
+is_compatible(a::LinearMappedSet, b::LinearMappedSet) = left(a)==left(b) && right(a)==right(b) && is_compatible(set(a),set(b))
+
+function (*)(s1::LinearMappedSet, s2::LinearMappedSet, coef_src1, coef_src2)
+    @assert is_compatible(set(s1),set(s2)) 
+    (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
+    (rescale(mset,s1.a,s1.b),mcoef)
+end
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)
@@ -165,15 +172,15 @@ transform_operator_tensor(s1, s2,
 transform_normalization_operator(s1::AbstractMappedSet; options...) =
     WrappedOperator(s1, s1, transform_normalization_operator(set(s1); options...) )
 
-function differentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
-    D = differentiation_operator(s1.set, s2.set, order; options...)
+function differentiation_operator(s1::LinearMappedSet, order::Int; options...)
+    D = differentiation_operator(s1.set, order; options...)
     T = promote_type(eltype(s1), typeof(s1.a))
     S = ScalingOperator(dest(D), (T(right(s1.set)-left(s1.set))/T(s1.b-s1.a))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
 end
 
-function antidifferentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order; options...)
-    D = antidifferentiation_operator(s1.set, s2.set, order; options...)
+function antidifferentiation_operator(s1::LinearMappedSet, order::Int; options...)
+    D = antidifferentiation_operator(s1.set, order; options...)
     T = promote_type(eltype(s1), typeof(s1.a))
     S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
     WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )

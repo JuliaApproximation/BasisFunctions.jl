@@ -54,7 +54,7 @@ end
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N} = tuple(ones(N)...); options...) =
-        TensorProductSet( map( i -> $op(set(s,i), order[i]; options...), 1:N)... )
+        TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end
 
 extension_size(b::TensorProductSet) = map(extension_size, elements(b))

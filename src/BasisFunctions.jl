@@ -64,7 +64,7 @@ export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 export map, imap, map_linear, imap_linear, rescale
 
 #from expansions.jl
-export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
+export SetExpansion, TensorProductExpansion, coefficients, set, random_expansion, differentiate, antidifferentiate, ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operators.jl
 export AbstractOperator, ctranspose, operator, src, dest, apply!,
@@ -75,8 +75,7 @@ export matrix
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, IdxnScalingOperator,
-        CoefficientScalingOperator, MatrixOperator, WrappedOperator
+export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,
