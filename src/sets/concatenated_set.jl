@@ -1,14 +1,14 @@
 # concatenated_set.jl
 
-"A ConcatenatedSet represents the concatenation of two one-dimensional sets."
-immutable ConcatenatedSet{T} <: FunctionSet{1,T}
-    set1    ::  FunctionSet{1,T}
-    set2    ::  FunctionSet{1,T}
+"A ConcatenatedSet represents the concatenation of two n-dimensional sets."
+immutable ConcatenatedSet{N,T} <: FunctionSet{N,T}
+    set1    ::  FunctionSet{N,T}
+    set2    ::  FunctionSet{N,T}
 end
 
-ConcatenatedSet{T}(s1::FunctionSet{1,T}, s2::FunctionSet{1,T}) = ConcatenatedSet(s1, s2)
+ConcatenatedSet{N,T}(s1::FunctionSet{N,T}, s2::FunctionSet{N,T}) = ConcatenatedSet{N,T}(s1, s2)
 
-ConcatenatedSet{T1,T2}(s1::FunctionSet{1,T1}, s2::FunctionSet{1,T2}) = ConcatenatedSet(promote(s1,s2)...)
+ConcatenatedSet{N,T1,T2}(s1::FunctionSet{N,T1}, s2::FunctionSet{N,T2}) = ConcatenatedSet(promote(s1,s2)...)
 
 ⊕(s1::FunctionSet, s2::FunctionSet) = ConcatenatedSet(s1, s2)
 
