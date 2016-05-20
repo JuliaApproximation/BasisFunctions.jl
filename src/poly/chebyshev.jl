@@ -64,9 +64,23 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
-# Map the point x in [a,b] to the corresponding point in [-1,1]
+# We can define this O(1) evaluation method, but only for points in [-1,1]
+# The version below is safe for points outside [-1,1] too.
+# If we don't define anything, evaluation will default to using the three-term
+# recurence relation.
 
-call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+# call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+
+# call_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+
+function moment{T}(b::ChebyshevBasis{T}, idx)
+    n = natural_index(b, idx)
+    if n == 0
+        T(2)
+    else
+        isodd(n) ? zero(T) : -T(2)/((n+1)*(n-1))
+    end
+end
 
 function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
     #	@assert period(dest)==period(src)

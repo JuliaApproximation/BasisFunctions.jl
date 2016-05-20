@@ -93,6 +93,7 @@ call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	?  cos(mapx(b, x) * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(mapx(b, x) * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
+moment{EVEN,T}(b::FourierBasis{EVEN,T}, idx) = idx == 1 ? T(2) : T(0)
 
 function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
 	@assert length(dest)==length(src)

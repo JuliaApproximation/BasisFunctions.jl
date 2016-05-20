@@ -2,56 +2,42 @@
 
 """
 An OperatedSet represents a set that is acted on by an operator, for example the differentiation operator.
-The OperatedSet is like the destination set of the operator, up to a change of basis.
-
-Vice-versa, OperatedSet's can be used to represent a change of basis.
+The OperatedSet has the dimension of the source set of the operator, but each basis function
+is acted on by the operator.
 """
-immutable OperatedSet{S1,S2,OP,T} <: FunctionSet{1,T}
-    "The set that is acted on."
-    src_set     ::  S1
-    "The destination set of the operator."
-    dest_set    ::  S2
+immutable OperatedSet{T} <: FunctionSet{1,T}
     "The operator that acts on the set"
-    op          ::  OP
+    op          ::  AbstractOperator{T}
 
     scratch_src  ::  Array{T,1}
     scratch_dest ::  Array{T,1}
 
-    function OperatedSet(src_set, dest_set, op::AbstractOperator)
-        scratch_src = zeros(T, length(src_set))
-        scratch_dest = zeros(T, length(dest_set))
-        new(src_set, dest_set, op, scratch_src, scratch_dest)
+    function OperatedSet(op::AbstractOperator)
+        scratch_src = zeros(T, length(src(op)))
+        scratch_dest = zeros(T, length(dest(op)))
+        new(op, scratch_src, scratch_dest)
     end
 end
 
 
-function OperatedSet(op::AbstractOperator)
-    ELT = eltype(op)
-    src_set = src(op)
-    dest_set = dest(op)
-    OperatedSet{typeof(src_set),typeof(dest_set),typeof(op),ELT}(src_set, dest_set, op)
-end
+OperatedSet{ELT}(op::AbstractOperator{ELT}) =
+    OperatedSet{ELT}(op)
 
 name(s::OperatedSet) = name(dest(s)) * " transformed by an operator"
 
-src(s::OperatedSet) = s.src_set
+src(s::OperatedSet) = src(s.op)
 
-dest(s::OperatedSet) = s.dest_set
+dest(s::OperatedSet) = dest(s.op)
 
 operator(s::OperatedSet) = s.op
 
 # TODO: add promote_eltype to operators and then come back to fix this
 function promote_eltype{T}(s::OperatedSet, ::Type{T})
-    src_set = promote_eltype(s.src_set, T)
-    dest_set = promote_eltype(s.dest_set, T)
-    OperatedSet{typeof(src_set),typeof(dest_set),typeof(s.op),T}(src_set, dest_set, s.op)
+    s
 end
 
-# Also need resize for operators
-#resize(s::OperatedSet, n) = ?
-
 for op in (:left, :right, :length)
-    @eval $op(b::OperatedSet) = $op(dest(b))
+    @eval $op(b::OperatedSet) = $op(src(b))
 end
 
 

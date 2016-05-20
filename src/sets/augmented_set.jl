@@ -48,7 +48,7 @@ extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}; opti
 form f × S to a ConcatenatedSet of the form f' × S ⊕ f × S'."
 immutable AugmentedSetDifferentiation{D,ELT} <: AbstractOperator{ELT}
     # The differentiation operator of the underlying set
-    D_op    ::  D
+    diff_op ::  D
 
     src     ::  FunctionSet
     dest    ::  FunctionSet
@@ -57,16 +57,16 @@ immutable AugmentedSetDifferentiation{D,ELT} <: AbstractOperator{ELT}
     scratch_dest1   ::  Array{ELT,1}
     scratch_dest2   ::  Array{ELT,1}
 
-    function AugmentedSetDifferentiation(D_op, src, dest::ConcatenatedSet)
+    function AugmentedSetDifferentiation(diff_op, src, dest::ConcatenatedSet)
         scratch_dest1 = Array(ELT, length(set1(dest)))
         scratch_dest2 = Array(ELT, length(set2(dest)))
 
-        new(D_op, src, dest, scratch_dest1, scratch_dest2)
+        new(diff_op, src, dest, scratch_dest1, scratch_dest2)
     end
 end
 
 AugmentedSetDifferentiation(diff_op::AbstractOperator, src::FunctionSet, dest::FunctionSet) =
-    AugmentedSetDifferentiation{typeof(diff_op),op_eltype(src,dest)}(D_op, src, dest)
+    AugmentedSetDifferentiation{typeof(diff_op),op_eltype(src,dest)}(diff_op, src, dest)
 
 function derivative_set(src::AugmentedSet, order)
     @assert order == 1
@@ -93,11 +93,11 @@ function apply!(op::AugmentedSetDifferentiation, coef_dest, coef_src)
     coef_dest1[:] = coef_src[:]
 
     # The second part is the derivative of this expansion.
-    apply!(op.D_op, coef_dest2, coef_src)
+    apply!(op.diff_op, coef_dest2, coef_src)
 
     # Finally, copy the results back into coef_dest
-    L1 = length(set1(dest))
-    L2 = length(set2(dest))
+    L1 = length(coef_dest1)
+    L2 = length(coef_dest2)
     for i in 1:L1
         coef_dest[i] = coef_dest1[i]
     end

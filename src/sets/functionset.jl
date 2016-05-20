@@ -137,6 +137,13 @@ Convert a linear set of coefficients back to a size that is native to the set.
 """
 delinearize(set::FunctionSet, linearcoef) = linearcoef
 
+"""
+Return a set of coefficients that represents zero in the set.
+"""
+# This may be used to allocate storage for the set.
+zero(set::FunctionSet) = zeros(eltype(set), size(set))
+
+
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.
 
@@ -241,6 +248,13 @@ end
 
 "Return the support of the idx-th basis function."
 support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
+
+"""
+Compute the moment of the given basisfunction, i.e. the integral on its
+support.
+"""
+# Default to numerical integration
+moment(b::AbstractBasis, idx) = quadgk(b[idx], left(b), right(b))[1]
 
 # This is a candidate for generated functions to avoid the splatting
 call{N}(b::FunctionSet{N}, i, x::AbstractVector) = call(b, i, x...)

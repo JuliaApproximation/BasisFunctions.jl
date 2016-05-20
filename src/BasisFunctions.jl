@@ -16,6 +16,8 @@ import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
 
 import Base: cos, sin, exp, log
 
+import Base: zero
+
 import Base: getindex, setindex!, eltype
 
 import Base: isreal, iseven, isodd
@@ -50,6 +52,7 @@ export True, False
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative
 export linearize, delinearize
+export moment
 
 # from sets/setfunction.jl
 export SetFunction, index, functionset
