@@ -6,6 +6,7 @@ using ApproxFun
 using ArrayViews
 using FixedSizeArrays
 using Debug
+using PyPlot
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
@@ -27,6 +28,8 @@ import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 import Base: show, showcompact, call, convert, similar
 
 import Base: dct, idct
+
+import PyPlot: plot
 
 
 ## Exports

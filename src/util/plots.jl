@@ -6,11 +6,11 @@ function plot{S <: FunctionSet1d}(s::SetExpansion{S}; n=201, repeats=0, color="b
     x = collect(g)
     if repeats > 0
         for i = -repeats:repeats
-            Main.PyPlot.plot(x+i*(right(g)-left(g)), data, linestyle="dashed", color=color, alpha=alpha)
+            plot(x+i*(right(g)-left(g)), data, linestyle="dashed", color=color, alpha=alpha)
         end
     end
-    Main.PyPlot.plot(x, data, color=color, alpha=alpha)
-    Main.PyPlot.title(title)
+    plot(x, data, color=color, alpha=alpha)
+    PyPlot.title(title)
 end
 
 function plot{S <: FunctionSet2d}(s::SetExpansion{S}; n=201)
@@ -20,7 +20,7 @@ function plot{S <: FunctionSet2d}(s::SetExpansion{S}; n=201)
     pts = collect(Tgrid)
     x = [p[1] for p in pts]
     y = [p[2] for p in pts]
-    Main.PyPlot.plot_trisurf(x,y,data[:])
+    plot_trisurf(x,y,data[:])
 end
 
 function plot_image{S <: FunctionSet{2}}(s::SetExpansion{S}; n=30)
@@ -47,12 +47,12 @@ function plot_image{T,TG}(data::AbstractArray{T,2}, grid::TensorProductGrid{TG,2
     Y = reshape(y, size(grid))
     # X = convert(Array{Float64},real(apply((x,y)->x,Complex{Float64},grid)))
     # Y = convert(Array{Float64},real(apply((x,y)->y,Complex{Float64},grid)))
-    Main.PyPlot.pcolormesh(X,Y,data,vmin=vmin, vmax=vmax, shading = "gouraud")
+    pcolormesh(X,Y,data,vmin=vmin, vmax=vmax, shading = "gouraud")
 
-    Main.PyPlot.axis("scaled")
-    Main.PyPlot.xlim([left(grid)[1], right(grid)[1]])
-    Main.PyPlot.ylim([left(grid)[2], right(grid)[2]])
-    Main.PyPlot.colorbar()
+    axis("scaled")
+    xlim([left(grid)[1], right(grid)[1]])
+    ylim([left(grid)[2], right(grid)[2]])
+    colorbar()
 end
 
 
@@ -61,8 +61,8 @@ function plot_grid(grid::AbstractGrid2d)
     pts = collect(grid)
     x = [p[1] for p in pts]
     y = [p[2] for p in pts]
-    Main.PyPlot.plot(x,y,linestyle="none",marker="o",color="black",mec="black",markersize=1.5)
-    Main.PyPlot.axis("equal")
+    plot(x,y,linestyle="none",marker="o",color="black",mec="black",markersize=1.5)
+    axis("equal")
 end
 
 function plot_grid(grid::AbstractGrid3d)
@@ -70,6 +70,6 @@ function plot_grid(grid::AbstractGrid3d)
     x = [p[1] for p in pts]
     y = [p[2] for p in pts]
     z = [p[3] for p in pts]
-    Main.PyPlot.plot3D(x,y,z,linestyle="none",marker="o",color="blue")
-    Main.PyPlot.axis("equal")
+    plot3D(x,y,z,linestyle="none",marker="o",color="blue")
+    axis("equal")
 end
