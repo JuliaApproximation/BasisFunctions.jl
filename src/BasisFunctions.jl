@@ -12,7 +12,7 @@ import Base: +, *, /, ==, |, &, -, \, ^
 import Base: promote, promote_rule, convert
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect
+        range, collect, endof
 
 import Base: cos, sin, exp, log
 
@@ -82,7 +82,7 @@ export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
     antidifferentiation_operator, approximate,
     evaluation_operator, normalization_operator,
-    Extension, Restriction, extend, Differentiation, TransformOperator,
+    Extension, Restriction, extend, Differentiation, AntiDifferentiation,
     extension_size, transform_normalization_operator, interpolation_matrix,
     tensorproduct
 

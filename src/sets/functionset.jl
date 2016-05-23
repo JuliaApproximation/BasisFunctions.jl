@@ -26,8 +26,10 @@ A basis is a non-redundant frame.
 abstract AbstractBasis{N,T} <: AbstractFrame{N,T}
 
 
-# Useful abstraction for special cases in 1D
+# Useful abstraction for special cases
 typealias FunctionSet1d{T} FunctionSet{1,T}
+typealias FunctionSet2d{T} FunctionSet{2,T}
+typealias FunctionSet3d{T} FunctionSet{3,T}
 typealias AbstractFrame1d{T} AbstractFrame{1,T}
 typealias AbstractBasis1d{T} AbstractBasis{1,T}
 
@@ -143,6 +145,8 @@ Return a set of coefficients that represents zero in the set.
 # This may be used to allocate storage for the set.
 zero(set::FunctionSet) = zeros(eltype(set), size(set))
 
+"Suggest a suitable size, close to n, to resize the given function set."
+approx_length(set::FunctionSet, n) = n
 
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.

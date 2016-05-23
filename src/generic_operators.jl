@@ -111,32 +111,11 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 #################################################################
 
 
-"""
-A function set can implement the apply! method of a suitable TransformOperator for any known
-unitary transform.
-Example: a discrete transform from a set of samples on a grid to a set of expansion coefficients.
-"""
-immutable TransformOperator{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
-    src     ::  SRC
-    dest    ::  DEST
-end
-
-TransformOperator(src::FunctionSet, dest::FunctionSet) =
-    TransformOperator{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
-
-# The default transform from src to dest is a TransformOperator. This may be overridden for specific source and destinations.
-transform_operator(src, dest; options...) = TransformOperator(src, dest)
-
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
 transform_operator(src::AbstractGrid, dest::FunctionSet; options...) =
     transform_operator(DiscreteGridSpace(src, eltype(dest)), dest; options...)
 transform_operator(src::FunctionSet, dest::AbstractGrid; options...) =
     transform_operator(src, DiscreteGridSpace(dest, eltype(src)); options...)
-
-ctranspose(op::TransformOperator) = transform_operator(dest(op), src(op))
-
-# Assume transform is unitary
-inv(op::TransformOperator) = ctranspose(op)
 
 
 ## Interpolation and least squares
@@ -378,4 +357,3 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
         tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:composite_length(s1)]...)
     end
 end
-

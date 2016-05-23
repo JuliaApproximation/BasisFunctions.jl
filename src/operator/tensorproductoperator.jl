@@ -4,22 +4,16 @@
 """
 A TensorProductOperator represents the tensor product of other operators.
 
-immutable TensorProductOperator{TO,ELT,SCRATCH,SRC_SCRATCH,DEST_SCRATCH} <: AbstractOperator{ELT}
-
-Parameters:
-- TO is a tuple of (operator) types.
-- ELT is the element type of the operator.
-- SCRATCH parameters describe the type of scratch storage space
+immutable TensorProductOperator{ELT} <: AbstractOperator{ELT}
 """
-immutable TensorProductOperator{TO,ELT,SCRATCH,SRC_SCRATCH,DEST_SCRATCH} <: AbstractOperator{ELT}
+immutable TensorProductOperator{ELT} <: AbstractOperator{ELT}
     src             ::  FunctionSet
     dest            ::  FunctionSet
-    operators       ::  TO
-    scratch         ::  SCRATCH
-    src_scratch     ::  SRC_SCRATCH
-    dest_scratch    ::  DEST_SCRATCH
+    operators
+    scratch
+    src_scratch
+    dest_scratch
 end
-# TODO: try to remove some of the type parameters.
 
 # Generic functions for composite types:
 elements(op::TensorProductOperator) = op.operators
@@ -28,7 +22,6 @@ composite_length(op::TensorProductOperator) = length(op.operators)
 
 function TensorProductOperator(operators...)
     ELT = promote_type(map(eltype, operators)...)
-    TO = typeof(operators)
     L = length(operators)
     tp_src = tensorproduct(map(src, operators)...)
     tp_dest = tensorproduct(map(dest, operators)...)
@@ -41,7 +34,6 @@ function TensorProductOperator(operators...)
     # where operator J maps a set of length Nj to a set of length Mj.
     scratch_array = [ zeros(ELT, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:L]...) for j=2:L]
     scratch = (scratch_array...)
-    SCRATCH = typeof(scratch)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
     # storage to hold a vector for source and destination for each operator
@@ -49,9 +41,7 @@ function TensorProductOperator(operators...)
     src_scratch = (src_scratch_array...)
     dest_scratch_array = [zeros(ELT, size(dest(operators[j]))) for j=1:L]
     dest_scratch = (dest_scratch_array...)
-    SRC_SCRATCH = typeof(src_scratch)
-    DEST_SCRATCH = typeof(dest_scratch)
-    TensorProductOperator{TO,ELT,SCRATCH,SRC_SCRATCH,DEST_SCRATCH}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
+    TensorProductOperator{ELT}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
 
@@ -260,195 +250,3 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::NTuple{3}, src_scrat
     end
     coef_srcdest
 end
-
-# # Reshape the scratch space first to the right size
-# # TODO: get rid of this by making scr_scratch the right size from the start
-# function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest, coef_src)
-#     src1 = reshape(op.src_scratch[1], size(BasisFunctions.src(op, 1)))
-#     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op, 2)))
-#     dest1 = reshape(op.dest_scratch[1], size(BasisFunctions.dest(op, 1)))
-#     dest2 = reshape(op.dest_scratch[2], size(BasisFunctions.dest(op, 2)))
-#     apply_reshaped!(op, reshape(coef_dest, length(dest1), length(dest2)),
-#         reshape(coef_src, length(src1), length(src2)),
-#         src1, src2, dest1, dest2, op.scratch[1], element(op,1), element(op,2))
-# end
-#
-# # Same for in-place variant
-# function apply_inplace!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_srcdest)
-#     src1 = reshape(op.src_scratch[1], size(BasisFunctions.src(op, 1)))
-#     src2 = reshape(op.src_scratch[2], size(BasisFunctions.src(op.operators[2])))
-#     apply_inplace_reshaped!(op, reshape(coef_srcdest, size(dest)), src1, src2, element(op,1), element(op,2))
-# end
-#
-# # TensorProduct with 2 elements
-# function apply_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef_dest, coef_src,
-#     src1, src2, dest1, dest2, intermediate, op1, op2)
-#     ## @assert size(dest) == size(coef_dest)
-#     ## @assert size(src)  == size(coef_src)
-#
-#     M1,N1 = size(op1)
-#     M2,N2 = size(op2)
-#     # coef_src has size (N1,N2)
-#     # coef_dest has size (M1,M2)
-#     for j = 1:N2
-#         for i = 1:N1
-#             src1[i] = coef_src[i,j]
-#         end
-#         apply!(op1, dest1, src1)
-#         for i = 1:M1
-#             intermediate[i,j] = dest1[i]
-#         end
-#     end
-#
-#     for j = 1:M1
-#         for i = 1:N2
-#             src2[i] = intermediate[j,i]
-#         end
-#         apply!(op2, dest2, src2)
-#         for i = 1:M2
-#             coef_dest[j,i] = dest2[i]
-#         end
-#     end
-#     coef_dest
-# end
-#
-# # In-place variant
-# function apply_inplace_reshaped!{ELT,TO}(op::TensorProductOperator{ELT,TO,2}, coef, src1, src2, op1, op2)
-#     # There are cases where coef_srcdest is a linearized vector instead of a matrix.
-#     M1,N1 = size(op1)
-#     M2,N2 = size(op2)
-#
-#     # coef has size (N1,N2) = (M1,M2)
-#     for j = 1:N2
-#         for i = 1:N1
-#             src1[i] = coef[i,j]
-#         end
-#         apply!(op1, src1)
-#         for i = 1:M1
-#             coef[i,j] = src1[i]
-#         end
-#     end
-#
-#     for j = 1:M1
-#         for i = 1:N2
-#             src2[i] = coef[j,i]
-#         end
-#         apply!(op2, src2)
-#         for i = 1:M2
-#             coef[j,i] = src2[i]
-#         end
-#     end
-#     coef
-# end
-#
-
-#
-# # TensorProduct with 3 elements
-# function apply!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, coef_dest, coef_src)
-#     # @assert size(dest) == size(coef_dest)
-#     # @assert size(src)  == size(coef_src)
-#
-#     M1,N1 = size(element(op,1))
-#     M2,N2 = size(element(op,2))
-#     M3,N3 = size(element(op,3))
-#     # coef_src has size (N1,N2,N3)
-#     # coef_dest has size (M1,M2,M3)
-#
-#     intermediate1 = op.scratch[1]
-#     src_j = op.src_scratch[1]
-#     dest_j = op.dest_scratch[1]
-#     for j = 1:N2
-#         for k = 1:N3
-#             for i = 1:N1
-#                 src_j[i] = coef_src[i,j,k]
-#             end
-#             apply!(element(op,1), dest_j, src_j)
-#             for i = 1:M1
-#                 intermediate1[i,j,k] = dest_j[i]
-#             end
-#         end
-#     end
-#
-#     intermediate2 = op.scratch[2]
-#     src_j = op.src_scratch[2]
-#     dest_j = op.dest_scratch[2]
-#     for i = 1:M1
-#         for k = 1:N3
-#             for j = 1:N2
-#                 src_j[j] = intermediate1[i,j,k]
-#             end
-#             apply!(element(op,2), dest_j, src_j)
-#             for j = 1:M2
-#                 intermediate2[i,j,k] = dest_j[j]
-#             end
-#         end
-#     end
-#
-#     src_j = op.src_scratch[3]
-#     dest_j = op.dest_scratch[3]
-#     for i = 1:M1
-#         for j = 1:M2
-#             for k = 1:N3
-#                 src_j[k] = intermediate2[i,j,k]
-#             end
-#             apply!(element(op,3), dest_j, src_j)
-#             for k = 1:M3
-#                 coef_dest[i,j,k] = dest_j[k]
-#             end
-#         end
-#     end
-#     coef_dest
-# end
-#
-# # In-place variant
-# function apply_inplace!{ELT,TO}(op::TensorProductOperator{ELT,TO,3}, coef_srcdest)
-#
-#     # There are cases where coef_srcdest is a large linearized vector rather than a tensor
-#     # TODO: remove the reshape as for the 2-element tensor product operator
-# #    coef = reshape(coef_srcdest, size(dest))
-#
-#     M1,N1 = size(element(op,1))
-#     M2,N2 = size(element(op,2))
-#     M3,N3 = size(element(op,3))
-#     # coef_srcdest has size (N1,N2,N3) = (M1,M2,M3)
-#
-#     src_j = op.src_scratch[1]
-#     for j = 1:N2
-#         for k = 1:N3
-#             for i = 1:N1
-#                 src_j[i] = coef_srcdest[i,j,k]
-#             end
-#             apply!(element(op,1), src_j)
-#             for i = 1:M1
-#                 coef_srcdest[i,j,k] = src_j[i]
-#             end
-#         end
-#     end
-#
-#     src_j = op.src_scratch[2]
-#     for i = 1:M1
-#         for k = 1:N3
-#             for j = 1:N2
-#                 src_j[j] = coef_srcdest[i,j,k]
-#             end
-#             apply!(element(op,2), src_j)
-#             for j = 1:M2
-#                 coef_srcdest[i,j,k] = src_j[j]
-#             end
-#         end
-#     end
-#
-#     src_j = op.src_scratch[3]
-#     for i = 1:M1
-#         for j = 1:M2
-#             for k = 1:N3
-#                 src_j[k] = coef_srcdest[i,j,k]
-#             end
-#             apply!(element(op,3), src_j)
-#             for k = 1:M3
-#                 coef_srcdest[i,j,k] = src_j[k]
-#             end
-#         end
-#     end
-#     coef_srcdest
-# end

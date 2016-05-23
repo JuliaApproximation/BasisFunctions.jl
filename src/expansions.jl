@@ -21,7 +21,6 @@ SetExpansion(s::FunctionSet) = SetExpansion(s, eltype(s))
 
 SetExpansion{ELT}(s::FunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
 
-
 eltype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ELT
 
 index_dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ID
@@ -130,22 +129,22 @@ for op in (:+, :-)
     @eval function ($op)(s1::SetExpansion, s2::SetExpansion)
         # First check if the FunctionSets are arithmetically compatible
         @assert is_compatible(set(s1),set(s2))
-            # If the sizes are equal, we can just operate on the coefficients.
-            # If not, we have to extend the smaller set to the size of the larger set.
-            if size(s1) == size(s2)
-                SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
-            elseif length(s1) < length(s2)
-                s3 = extension_operator(set(s1), set(s2)) * s1
-                SetExpansion(set(s2), $op(coefficients(s3), coefficients(s2)))
-            else
-                s3 = extension_operator(set(s2), set(s1)) * s2
-                SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
-            end
+        # If the sizes are equal, we can just operate on the coefficients.
+        # If not, we have to extend the smaller set to the size of the larger set.
+        if size(s1) == size(s2)
+            SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
+        elseif length(s1) < length(s2)
+            s3 = extension_operator(set(s1), set(s2)) * s1
+            SetExpansion(set(s2), $op(coefficients(s3), coefficients(s2)))
+        else
+            s3 = extension_operator(set(s2), set(s1)) * s2
+            SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
+        end
     end
 end
 
 function (*)(s1::SetExpansion, s2::SetExpansion)
-    @assert is_compatible(set(s1),set(s2)) 
+    @assert is_compatible(set(s1),set(s2))
     (mset,mcoef) = (*)(set(s1),set(s2),coefficients(s1),coefficients(s2))
     SetExpansion(mset,mcoef)
 end

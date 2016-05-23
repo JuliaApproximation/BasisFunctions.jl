@@ -14,6 +14,8 @@ length(g::AbstractIntervalGrid) = g.n
 
 index_dim{G <: AbstractIntervalGrid}(::Type{G}) = 1
 
+endof(g::AbstractIntervalGrid) = length(g)
+
 # An equispaced grid has equispaced points, and therefore it has a stepsize.
 abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
 

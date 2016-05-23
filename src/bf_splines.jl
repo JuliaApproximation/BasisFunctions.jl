@@ -30,8 +30,6 @@ knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
 
 
 
-
-
 """
 The full space of piecewise polynomials of degree K on n subintervals of [a,b].
 """
@@ -154,6 +152,8 @@ instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{
 
 promote_eltype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,promote_type(T,S)}(b.n, b.a, b.b)
 
+resize{K,T}(b::PeriodicSplineBasis{K,T}, n) = PeriodicSplineBasis{K,T}(n, b.a, b.b)
+
 has_grid(b::PeriodicSplineBasis) = true
 
 
@@ -216,10 +216,5 @@ function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
 		z = z + coef[idx] * call(b, idx, x)
 	end
 
-	z	
+	z
 end
-
-
-
-
-
