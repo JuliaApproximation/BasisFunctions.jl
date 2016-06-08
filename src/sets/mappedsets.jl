@@ -21,6 +21,9 @@ for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
+natural_index(b::MappedSet, idx) = natural_index(set(b), idx)
+
+logical_index(b::MappedSet, idxn) = logical_index(set(b), idxn)
 
 
 
@@ -74,7 +77,7 @@ grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 is_compatible(a::LinearMappedSet, b::LinearMappedSet) = left(a)==left(b) && right(a)==right(b) && is_compatible(set(a),set(b))
 
 function (*)(s1::LinearMappedSet, s2::LinearMappedSet, coef_src1, coef_src2)
-    @assert is_compatible(set(s1),set(s2)) 
+    @assert is_compatible(set(s1),set(s2))
     (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
     (rescale(mset,s1.a,s1.b),mcoef)
 end
