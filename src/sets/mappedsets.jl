@@ -21,9 +21,9 @@ for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
-natural_index(b::MappedSet, idx) = natural_index(set(b), idx)
+natural_index(b::AbstractMappedSet, idx) = natural_index(set(b), idx)
 
-logical_index(b::MappedSet, idxn) = logical_index(set(b), idxn)
+logical_index(b::AbstractMappedSet, idxn) = logical_index(set(b), idxn)
 
 
 
