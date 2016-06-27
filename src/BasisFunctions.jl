@@ -1,11 +1,13 @@
 module BasisFunctions
 
 # We may import ApproxFun to use its implementation of FFT for BigFloat's
-using ApproxFun
+#using ApproxFun
+# This moved to FastTransforms so import that instead
+using FastTransforms
 
 using ArrayViews
 using FixedSizeArrays
-using Debug
+#using Debug
 using PyPlot
 
 import Base: +, *, /, ==, |, &, -, \, ^

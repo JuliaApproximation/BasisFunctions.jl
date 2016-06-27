@@ -169,31 +169,9 @@ end
 
 FastChebyshevTransform(src, dest) = FastChebyshevTransform{op_eltype(src,dest)}(src,dest)
 
-# Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
-# This allocates memory.
-# We have to implement dct in terms of fft, which allocates more memory.
-function dct(a::AbstractArray{Complex{BigFloat}})
-    N = big(length(a))
-    c = fft([a; flipdim(a,1)])
-    d = c[1:N] .* exp(-im*big(pi)*(0:N-1)/(2*N))
-    d[1] = d[1] / sqrt(big(2))
-    d / sqrt(2*N)
-end
-
-dct(a::AbstractArray{BigFloat}) = real(dct(a+0im))
-
-function idct(a::AbstractArray{Complex{BigFloat}})
-    N = big(length(a))
-    b = a * sqrt(2*N)
-    b[1] = b[1] * sqrt(big(2))
-    b = b .* exp(im*big(pi)*(0:N-1)/(2*N))
-    b = [b; 0; conj(flipdim(b[2:end],1))]
-    c = ifft(b)
-    c[1:N]
-end
-
-idct(a::AbstractArray{BigFloat}) = real(idct(a+0im))
-
+# Line below relies on a dct being available for the type of coefficients
+# In particular, for BigFloat's we rely on FastTransforms.jl
+# Same for idct further below.
 apply!(op::FastChebyshevTransform, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
 
 
