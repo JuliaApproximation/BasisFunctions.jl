@@ -6,7 +6,7 @@ immutable ConcatenatedSet{N,T} <: FunctionSet{N,T}
     set2    ::  FunctionSet{N,T}
 end
 
-ConcatenatedSet{N,T}(s1::FunctionSet{N,T}, s2::FunctionSet{N,T}) = ConcatenatedSet{N,T}(s1, s2)
+@compat (b::ConcatenatedSet)(x...) = call_set(b, x...)
 
 ConcatenatedSet{N,T1,T2}(s1::FunctionSet{N,T1}, s2::FunctionSet{N,T2}) = ConcatenatedSet(promote(s1,s2)...)
 

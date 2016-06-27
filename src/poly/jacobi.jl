@@ -9,6 +9,8 @@ immutable JacobiBasis{S,T} <: OPS{T}
     JacobiBasis(n, α = zero(T), β = zero(T)) = new(n, α, β)
 end
 
+@compat (b::JacobiBasis)(x...) = call_set(b, x...)
+
 name(b::JacobiBasis) = "Jacobi OPS"
 
 JacobiBasis{T}(n, ::Type{T} = Float64) = JacobiBasis(n, 0, 0, T)
@@ -21,8 +23,6 @@ instantiate{T}(::Type{JacobiBasis}, n, ::Type{T}) = JacobiBasis(n, T)
 promote_eltype{S,T,T2}(b::JacobiBasis{S,T}, ::Type{T2}) = JacobiBasis{S,promote_type(T,T2)}(b.n, b.α, b.β)
 
 resize(b::JacobiBasis, n) = JacobiBasis(n, b.α, b.β, eltype(b))
-
-name(b::JacobiBasis) = "Jacobi OPS"
 
 left(b::JacobiBasis) = -1
 left(b::JacobiBasis, idx) = -1
@@ -48,4 +48,3 @@ rec_Bn{S,T}(b::JacobiBasis{S,T}, n::Int) =
 
 rec_Cn{S,T}(b::JacobiBasis{S,T}, n::Int) =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
-

@@ -40,6 +40,8 @@ immutable LinearMappedSet{S,T,ELT} <: AbstractMappedSet{S,1,ELT}
     end
 end
 # The underlying set s should support left(s) and right(s).
+@compat (b::LinearMappedSet)(x...) = call_set(b, x...)
+
 
 function LinearMappedSet{T,S}(s::FunctionSet1d{T}, a::S, b::S)
     # ELT = promote_type(T,S)
@@ -171,9 +173,6 @@ transform_operator_tensor(s1, s2,
         WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
             set(src_set1), set(src_set2), set(src_set3),
             dest_set1, dest_set2, dest_set3; options...))
-
-transform_normalization_operator(s1::AbstractMappedSet; options...) =
-    WrappedOperator(s1, s1, transform_normalization_operator(set(s1); options...) )
 
 function differentiation_operator(s1::LinearMappedSet, order::Int; options...)
     D = differentiation_operator(s1.set, order; options...)

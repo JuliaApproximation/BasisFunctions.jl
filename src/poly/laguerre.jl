@@ -6,6 +6,8 @@ immutable LaguerreBasis{S,T} <: OPS{T}
     α       ::  S
 end
 
+@compat (b::LaguerreBasis)(x...) = call_set(b, x...)
+
 name(b::LaguerreBasis) = "Laguerre OPS"
 
 LaguerreBasis{T}(n, ::Type{T} = Float64) = LaguerreBasis(n, 0, T)
@@ -18,8 +20,6 @@ instantiate{T}(::Type{LaguerreBasis}, n, ::Type{T}) = LaguerreBasis(n, T)
 promote_eltype{S,T,T2}(b::LaguerreBasis{S,T}, ::Type{T2}) = LaguerreBasis{S,promote_type(T,T2)}(b.n, b.α)
 
 resize(b::LaguerreBasis, n) = LaguerreBasis(n, b.α, eltype(b))
-
-name(b::LaguerreBasis) = "Laguerre series"
 
 left(b::LaguerreBasis) = 0
 left(b::LaguerreBasis, idx) = left(b)
@@ -43,5 +43,3 @@ rec_An{S,T}(b::LaguerreBasis{S,T}, n::Int) = -T(1) / T(n+1)
 rec_Bn{S,T}(b::LaguerreBasis{S,T}, n::Int) = T(2*n + b.α + 1) / T(n+1)
 
 rec_Cn{S,T}(b::LaguerreBasis{S,T}, n::Int) = T(n + b.α) / T(n+1)
-
-

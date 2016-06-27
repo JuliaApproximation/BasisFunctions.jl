@@ -19,6 +19,8 @@ immutable OperatedSet{T} <: FunctionSet{1,T}
     end
 end
 
+@compat (b::OperatedSet)(x...) = call_set(b, x...)
+
 
 OperatedSet{ELT}(op::AbstractOperator{ELT}) =
     OperatedSet{ELT}(op)

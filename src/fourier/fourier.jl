@@ -10,6 +10,8 @@ immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
 	FourierBasis(n) = (@assert iseven(n)==EVEN; new(n))
 end
 
+@compat (b::FourierBasis)(x...) = call_set(b, x...)
+
 typealias FourierBasisEven{T} FourierBasis{true,T}
 typealias FourierBasisOdd{T} FourierBasis{false,T}
 
@@ -291,4 +293,3 @@ function (*)(src1::FourierBasisOdd, src2::FourierBasisOdd, coef_src1, coef_src2)
     coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
     (dest,coef_dest)
 end
-    

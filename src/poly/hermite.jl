@@ -5,6 +5,8 @@ immutable HermiteBasis{T} <: OPS{T}
     n           ::  Int
 end
 
+@compat (b::HermiteBasis)(x...) = call_set(b, x...)
+
 name(b::HermiteBasis) = "Hermite OPS"
 
 # Constructor with a default numeric type
@@ -16,8 +18,6 @@ promote_eltype{T,S}(b::HermiteBasis{T}, ::Type{S}) = HermiteBasis{promote_type(T
 
 resize(b::HermiteBasis, n) = HermiteBasis(n, eltype(b))
 
-
-name(b::HermiteBasis) = "Hermite series"
 
 left{T}(b::HermiteBasis{T}) = -convert(T, Inf)
 left{T}(b::HermiteBasis{T}, idx) = left(b)
@@ -38,7 +38,3 @@ rec_An(b::HermiteBasis, n::Int) = 2
 rec_Bn(b::HermiteBasis, n::Int) = 0
 
 rec_Cn(b::HermiteBasis, n::Int) = 2*n
-
-
-
-

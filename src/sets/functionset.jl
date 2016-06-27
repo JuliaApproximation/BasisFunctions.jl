@@ -261,24 +261,24 @@ support.
 moment(b::AbstractBasis, idx) = quadgk(b[idx], left(b), right(b))[1]
 
 # This is a candidate for generated functions to avoid the splatting
-call{N}(b::FunctionSet{N}, i, x::AbstractVector) = call(b, i, x...)
+call_set{N}(b::FunctionSet{N}, i, x::AbstractVector) = call(b, i, x...)
 
 # This too is a candidate for generated functions to avoid the splatting
-call{N}(b::FunctionSet{N}, i, x::Vec{N}) = call(b, i, x...)
+call_set{N}(b::FunctionSet{N}, i, x::Vec{N}) = call(b, i, x...)
 
 # Here is another candidate for generated functions to avoid the splatting
-function call(s::FunctionSet, i, x...)
+function call_set(s::FunctionSet, i, x...)
     checkbounds(s, i)
     call_element(s, i, x...)
 end
 
 # Evaluate on a grid
-function call(b::FunctionSet, i::Int, grid::AbstractGrid)
+function call_set(b::FunctionSet, i::Int, grid::AbstractGrid)
     result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
-    call!(result, b, i, grid)
+    call_set!(result, b, i, grid)
 end
 
-function call!(result, b::FunctionSet, i::Int, grid::AbstractGrid)
+function call_set!(result, b::FunctionSet, i::Int, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
     for k in eachindex(grid)

@@ -16,6 +16,8 @@ immutable TensorProductSet{TS,N,T} <: FunctionSet{N,T}
     sets   ::  TS
 end
 
+@compat (b::TensorProductSet)(x...) = call_set(b, x...)
+
 # Generic functions for composite types:
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
@@ -48,7 +50,7 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-for op in (:has_grid, :has_extension, :has_transform, :has_extension)
+for op in (:has_grid, :has_extension, :has_transform)
     @eval $op(b::TensorProductSet) = reduce(&, map($op, elements(b)))
 end
 
@@ -56,8 +58,6 @@ for op in (:derivative_set, :antiderivative_set)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N} = tuple(ones(N)...); options...) =
         TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end
-
-extension_size(b::TensorProductSet) = map(extension_size, elements(b))
 
 promote_eltype{S}(b::TensorProductSet, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), b.sets)...)

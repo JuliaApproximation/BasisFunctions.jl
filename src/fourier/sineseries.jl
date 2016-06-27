@@ -14,10 +14,11 @@ immutable SineSeries{T} <: AbstractBasis1d{T}
     SineSeries(n) = new(n)
 end
 
+@compat (b::SineSeries)(x...) = call_set(b, x...)
 
 name(b::SineSeries) = "Sine series"
 
-    
+
 SineSeries{T}(n, ::Type{T} = Float64) = SineSeries{T}(n)
 
 SineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( SineSeries(n,floatify(T)), a, b)
@@ -73,5 +74,3 @@ function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, c
     end
     coef_dest
 end
-
-

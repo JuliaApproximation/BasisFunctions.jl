@@ -7,6 +7,8 @@ immutable LegendreBasis{T} <: OPS{T}
     n           ::  Int
 end
 
+@compat (b::LegendreBasis)(x...) = call_set(b, x...)
+
 name(b::LegendreBasis) = "Legendre OPS"
 
 # Constructor with a default numeric type
@@ -18,8 +20,6 @@ promote_eltype{T,S}(b::LegendreBasis{T}, ::Type{S}) = LegendreBasis{promote_type
 
 resize(b::LegendreBasis, n) = LegendreBasis(n, eltype(b))
 
-
-name(b::LegendreBasis) = "Legendre series"
 
 left(b::LegendreBasis) = -1
 left(b::LegendreBasis, idx) = -1
@@ -43,7 +43,3 @@ rec_An{T}(b::LegendreBasis{T}, n::Int) = T(2*n+1)/T(n+1)
 rec_Bn{T}(b::LegendreBasis{T}, n::Int) = zero(T)
 
 rec_Cn{T}(b::LegendreBasis{T}, n::Int) = T(n)/T(n+1)
-
-
-
-

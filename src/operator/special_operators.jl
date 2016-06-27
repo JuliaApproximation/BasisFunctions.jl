@@ -77,9 +77,6 @@ end
 (*)(a::Number, op::IdentityOperator) = ScalingOperator(src(op), dest(op), a)
 (*)(op::IdentityOperator, a::Number) = a*op
 
-(+)(op1::ScalingOperator, op2::ScalingOperator) = ScalingOperator(src(op1), dest(op1), scalar(op1)+scalar(op2))
-
-
 
 
 "A diagonal operator."
@@ -133,11 +130,11 @@ convert{ELT}(::Type{DiagonalOperator{ELT}}, op::IdentityOperator{ELT}) =
 (*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) * diagonal(op2))
 (*)(op2::DiagonalOperator, op1::ScalingOperator) = op1 * op2
 
-function diagonal(op::AbstractOperator) 
+function diagonal(op::AbstractOperator)
     if ~is_diagonal(op)
         diag(matrix(op))
     else
-        diagonal =ones(eltype(op),size(src(op))) 
+        diagonal =ones(eltype(op),size(src(op)))
         apply!(op,diagonal)
         diagonal = reshape(diagonal,length(src(op)))
     end

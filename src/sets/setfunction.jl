@@ -25,20 +25,20 @@ end
 functionset(f::SetFunction) = f.set
 
 # TODO: avoid splatting
-call(f::SetFunction, x...) = call(f.set, f.idx, x...)
+@compat (f::SetFunction)(x...) = call_set(f.set, f.idx, x...)
 
 # For now...
 # These will match with anything.
-call{S <: FunctionSet{1}}(f::SetFunction{S}, x) = call(f.set, f.idx, x)
-call{S <: FunctionSet{2}}(f::SetFunction{S}, x, y) = call(f.set, f.idx, x, y)
-call{S <: FunctionSet{3}}(f::SetFunction{S}, x, y, z) = call(f.set, f.idx, x, y, z)
-call{S <: FunctionSet{4}}(f::SetFunction{S}, x, y, z, t) = call(f.set, f.idx, x, y, z, t)
+@compat (f::SetFunction{S}){S <: FunctionSet{1}}(x) = call_set(f.set, f.idx, x)
+@compat (f::SetFunction{S}){S <: FunctionSet{2}}(x, y) = call_set(f.set, f.idx, x, y)
+@compat (f::SetFunction{S}){S <: FunctionSet{3}}(x, y, z) = call_set(f.set, f.idx, x, y, z)
+@compat (f::SetFunction{S}){S <: FunctionSet{4}}(x, y, z, t) = call_set(f.set, f.idx, x, y, z, t)
 
 
 left(f::SetFunction) = left(f.set, f.idx)
 right(f::SetFunction) = right(f.set, f.idx)
 
-call!(result, f::SetFunction, grid::AbstractGrid) = call!(result, set(f), index(f), grid)
+call!(result, f::SetFunction, grid::AbstractGrid) = call_set!(result, set(f), index(f), grid)
 
 
 getindex(s::FunctionSet, idx) = SetFunction(s, idx)

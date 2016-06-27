@@ -31,7 +31,7 @@ set(e::SetExpansion) = e.set
 coefficients(e::SetExpansion) = e.coef
 
 # Delegation of methods
-for op in (:length, :size, :left, :right, :grid, :index_dim)
+for op in (:length, :size, :left, :right, :grid)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
@@ -49,11 +49,11 @@ setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
-call(e::SetExpansion, x...) = call_set(e, set(e), coefficients(e), promote(x...)...)
-call_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
+@compat (e::SetExpansion)(x...) = call_expansion_with_set(e, set(e), coefficients(e), promote(x...)...)
+call_expansion_with_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
 
-call!(result, e::SetExpansion, x...) = call_set!(result, e, set(e), coefficients(e), promote(x...)...)
-call_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
+call!(result, e::SetExpansion, x...) = call_expansion_with_set!(result, e, set(e), coefficients(e), promote(x...)...)
+call_expansion_with_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
 
 function differentiate(f::SetExpansion, order=1)
     op = differentiation_operator(f.set, order)

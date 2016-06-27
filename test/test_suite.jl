@@ -5,7 +5,6 @@ using Base.Test
 
 using BasisFunctions
 using FixedSizeArrays
-using Debug
 BF = BasisFunctions
 
 
