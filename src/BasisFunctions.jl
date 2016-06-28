@@ -56,8 +56,8 @@ export has_transform, has_extension, has_derivative, has_antiderivative
 export linearize, delinearize
 export moment
 
-# from sets/setfunction.jl
-export SetFunction, index, functionset
+# from sets/functionsubset.jl
+export FunctionSubSet, indices
 
 # from sets/tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
@@ -154,7 +154,7 @@ include("util/slices.jl")
 
 include("sets/functionset.jl")
 
-include("sets/setfunction.jl")
+include("sets/subsets.jl")
 
 include("sets/tensorproductset.jl")
 
