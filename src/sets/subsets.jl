@@ -53,10 +53,12 @@ natural_index(s::FunctionSubSet, idx) = natural_index(set(s), s.idx[idx])
 
 call_element(s::FunctionSubSet, i, x...) = call_element(s.set, s.idx[i], x...)
 
-@compat (s::FunctionSubSet)(x...) = (@assert length(s) == 1; call_element(s, 1, x...))
+@compat (s::FunctionSubSet)(x...) = (@assert length(s) == 1; call_set(s, 1, x...))
 
 eachindex(s::FunctionSubSet) = eachindex(s.idx)
 
 getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
+
+getindex(s::FunctionSet, i1::Int, i2::Int, indices::Int...) = FunctionSubSet(s, [(i1,i2,indices...)])
 
 getindex(s::FunctionSubSet, idx) = FunctionSubSet(set(s), s.idx[idx])

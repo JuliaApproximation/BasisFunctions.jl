@@ -40,7 +40,6 @@ immutable LinearMappedSet{S,T,ELT} <: AbstractMappedSet{S,1,ELT}
     end
 end
 # The underlying set s should support left(s) and right(s).
-@compat (b::LinearMappedSet)(x...) = call_set(b, x...)
 
 
 function LinearMappedSet{T,S}(s::FunctionSet1d{T}, a::S, b::S)

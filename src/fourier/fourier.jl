@@ -10,8 +10,6 @@ immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
 	FourierBasis(n) = (@assert iseven(n)==EVEN; new(n))
 end
 
-@compat (b::FourierBasis)(x...) = call_set(b, x...)
-
 typealias FourierBasisEven{T} FourierBasis{true,T}
 typealias FourierBasisOdd{T} FourierBasis{false,T}
 

@@ -14,9 +14,6 @@ immutable CosineSeries{T} <: AbstractBasis1d{T}
     CosineSeries(n) = new(n)
 end
 
-@compat (b::CosineSeries)(x...) = call_set(b, x...)
-
-
 name(b::CosineSeries) = "Cosine series"
 
 

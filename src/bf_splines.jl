@@ -41,8 +41,6 @@ immutable FullSplineBasis{K,T} <: SplineBasis{K,T}
 	FullSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-@compat (b::FullSplineBasis)(x...) = call_set(b, x...)
-
 name(b::FullSplineBasis) = "Full splines of degree $(degree(b))"
 
 
@@ -97,8 +95,6 @@ immutable NaturalSplineBasis{K,T} <: SplineBasis{K,T}
 	NaturalSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
 
-@compat (b::NaturalSplineBasis)(x...) = call_set(b, x...)
-
 name(b::NaturalSplineBasis) = "Natural splines of degree $(degree(b))"
 
 
@@ -141,8 +137,6 @@ immutable PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
 
 	PeriodicSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
 end
-
-@compat (b::PeriodicSplineBasis)(x...) = call_set(b, x...)
 
 name(b::PeriodicSplineBasis) = "Periodic splines of degree $(degree(b))"
 

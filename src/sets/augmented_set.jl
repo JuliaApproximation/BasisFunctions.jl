@@ -9,8 +9,6 @@ immutable AugmentedSet{S,F,T} <: FunctionSet{1,T}
     f       ::  F
 end
 
-@compat (b::AugmentedSet)(x...) = call_set(b, x...)
-
 AugmentedSet{T}(s::FunctionSet{1,T}, f::AbstractFunction) = AugmentedSet{typeof(s),typeof(f),T}(s, f)
 
 name(s::AugmentedSet) = name(fun(s)) * " * " * name(set(s))

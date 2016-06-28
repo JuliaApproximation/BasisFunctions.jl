@@ -14,8 +14,6 @@ immutable SineSeries{T} <: AbstractBasis1d{T}
     SineSeries(n) = new(n)
 end
 
-@compat (b::SineSeries)(x...) = call_set(b, x...)
-
 name(b::SineSeries) = "Sine series"
 
 

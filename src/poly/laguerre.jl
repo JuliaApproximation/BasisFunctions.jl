@@ -6,8 +6,6 @@ immutable LaguerreBasis{S,T} <: OPS{T}
     α       ::  S
 end
 
-@compat (b::LaguerreBasis)(x...) = call_set(b, x...)
-
 name(b::LaguerreBasis) = "Laguerre OPS"
 
 LaguerreBasis{T}(n, ::Type{T} = Float64) = LaguerreBasis(n, 0, T)

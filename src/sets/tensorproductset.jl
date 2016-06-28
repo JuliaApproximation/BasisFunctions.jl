@@ -16,8 +16,6 @@ immutable TensorProductSet{TS,N,T} <: FunctionSet{N,T}
     sets   ::  TS
 end
 
-@compat (b::TensorProductSet)(x...) = call_set(b, x...)
-
 # Generic functions for composite types:
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
@@ -146,4 +144,4 @@ ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
 sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
 
 # Transform linear indexing into multivariate indices
-getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))
+#getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))

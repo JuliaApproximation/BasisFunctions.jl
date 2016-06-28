@@ -9,8 +9,6 @@ immutable NormalizedSet{S,N,T} <: FunctionSet{N,T}
     NormalizedSet(set::FunctionSet{N,T}) = new(set)
 end
 
-@compat (b::NormalizedSet)(x...) = call_set(b, x...)
-
 NormalizedSet{N,T}(s::FunctionSet{N,T}) = NormalizedSet{typeof(s),N,T}(s)
 
 set(s::NormalizedSet) = s.set

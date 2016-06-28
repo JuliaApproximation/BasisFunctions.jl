@@ -9,8 +9,6 @@ immutable JacobiBasis{S,T} <: OPS{T}
     JacobiBasis(n, α = zero(T), β = zero(T)) = new(n, α, β)
 end
 
-@compat (b::JacobiBasis)(x...) = call_set(b, x...)
-
 name(b::JacobiBasis) = "Jacobi OPS"
 
 JacobiBasis{T}(n, ::Type{T} = Float64) = JacobiBasis(n, 0, 0, T)

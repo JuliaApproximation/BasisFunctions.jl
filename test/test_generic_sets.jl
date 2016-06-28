@@ -53,7 +53,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Does indexing work as intended?
     idx = random_index(basis)
     bf = basis[idx]
-    @test functionset(bf) == basis
+    @test set(bf) == basis
 
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ call_set(basis, idx, x)
@@ -64,7 +64,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     ## Does evaluating an expansion equal the sum of coefficients times basis function calls?
     x = fixed_point_in_domain(basis)
-    @test e(x) ≈ sum([coef[i] * basis(i,x) for i in eachindex(coef)])
+    @test e(x) ≈ sum([coef[i] * basis[i](x) for i in eachindex(coef)])
 
     ## Test evaluation on an array
     ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
@@ -116,8 +116,8 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
         # Test evaluation on a grid of a single basis function
         idx = random_index(basis)
-        z = basis(idx, grid2)
-        @test  z ≈ ELT[ basis(idx, grid2[i]) for i in eachindex(grid2) ]
+        z = basis[idx](grid2)
+        @test  z ≈ ELT[ basis[idx](grid2[i]) for i in eachindex(grid2) ]
 
     end
 
@@ -243,7 +243,7 @@ function test_tensor_sets(T)
     x1 = T(2//10)
     x2 = T(3//10)
     x3 = T(4//10)
-    @test bf(x1, x2, x3) ≈ a(3, x1) * b(4, x2) * c(5, x3)
+    @test bf(x1, x2, x3) ≈ call_set(a, 3, x1) * call_set(b, 4, x2) * call_set(c, 5, x3)
 
     # Can you iterate over the product set?
     z = zero(T)

@@ -17,8 +17,6 @@ end
 
 typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
 
-@compat (b::ChebyshevBasis)(x...) = call_set(b, x...)
-
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 
@@ -215,8 +213,6 @@ end
 immutable ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
-
-@compat (b::ChebyshevBasisSecondKind)(x...) = call_set(b, x...)
 
 ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
 

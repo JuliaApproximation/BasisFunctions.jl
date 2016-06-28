@@ -5,8 +5,6 @@ immutable HermiteBasis{T} <: OPS{T}
     n           ::  Int
 end
 
-@compat (b::HermiteBasis)(x...) = call_set(b, x...)
-
 name(b::HermiteBasis) = "Hermite OPS"
 
 # Constructor with a default numeric type

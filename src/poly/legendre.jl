@@ -7,8 +7,6 @@ immutable LegendreBasis{T} <: OPS{T}
     n           ::  Int
 end
 
-@compat (b::LegendreBasis)(x...) = call_set(b, x...)
-
 name(b::LegendreBasis) = "Legendre OPS"
 
 # Constructor with a default numeric type
