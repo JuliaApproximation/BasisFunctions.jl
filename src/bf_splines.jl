@@ -219,7 +219,7 @@ function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
 	z = zero(T)
 	for idxn = i-L1-1:i+L2
 		idx = logical_index(b, mod(idxn,n))
-		z = z + coef[idx] * call(b, idx, x)
+		z = z + coef[idx] * call_set(b, idx, x)
 	end
 
 	z

@@ -25,7 +25,7 @@ for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(s::NormalizedSet) = $op(set(s))
 end
 
-call_element(b::NormalizedSet, i, x) = call(b.set, i, x) / norm(b.set, i)
+call_element(b::NormalizedSet, i, x) = call_set(b.set, i, x) / norm(b.set, i)
 
 
 normalize(s::FunctionSet) = NormalizedSet(s)

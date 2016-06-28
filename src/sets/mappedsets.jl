@@ -72,7 +72,7 @@ mapx(s::LinearMappedSet, x) = map_linear(x, s.a, s.b, left(set(s)), right(set(s)
 
 imapx(s::LinearMappedSet, y) = imap_linear(y, s.a, s.b, left(set(s)), right(set(s)))
 
-call_element(s::LinearMappedSet, idx, y) = call(set(s), idx, imapx(s,y))
+call_element(s::LinearMappedSet, idx, y) = call_set(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 

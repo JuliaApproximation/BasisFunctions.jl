@@ -35,7 +35,7 @@ end
 isreal(s::AugmentedSet) = isreal(set(s)) && isreal(fun(s))
 
 
-call_element(b::AugmentedSet, i, x) = b.f(x) * call(b.set, i, x)
+call_element(b::AugmentedSet, i, x) = b.f(x) * call_set(b.set, i, x)
 
 # Only left multiplication will do
 (*){T}(f::AbstractFunction, b::FunctionSet{1,T}) = AugmentedSet(b, f)

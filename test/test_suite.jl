@@ -20,9 +20,9 @@ global errors = 0
 const show_timings = true
 
 # Custom test handler
-custom_handler(r::Test.Success) = begin print_with_color(:green, "#\tSuccess "); println("on $(r.expr)"); global successes+=1;  end
-custom_handler(r::Test.Failure) = begin print_with_color(:red, "\"\tFailure "); println("on $(r.expr)\""); global failures+=1; end
-custom_handler(r::Test.Error) = begin println("\"\t$(typeof(r.err)) in $(r.expr)\""); global errors+=1; end
+#custom_handler(r::Test.Pass) = begin print_with_color(:green, "#\tSuccess "); println("on $(r.expr)"); global successes+=1;  end
+#custom_handler(r::Test.Fail) = begin print_with_color(:red, "\"\tFailure "); println("on $(r.expr)\""); global failures+=1; end
+#custom_handler(r::Test.Error) = begin println("\"\t$(typeof(r.err)) in $(r.expr)\""); global errors+=1; end
 #custom_handler(r::Test.Error) = Base.showerror(STDOUT,r);
 
 function message(y)
@@ -151,7 +151,7 @@ end
 
 
 
-Test.with_handler(custom_handler) do
+#Test.with_handler(custom_handler) do
 
 
     for T in (Float64,BigFloat)
@@ -198,7 +198,7 @@ Test.with_handler(custom_handler) do
 
     end # for T in...
 
-end # Test.with_handler
+#end # Test.with_handler
 
 
 # Diagnostics

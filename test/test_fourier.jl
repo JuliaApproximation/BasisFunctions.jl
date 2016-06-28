@@ -30,12 +30,12 @@ function test_fourier_series(T)
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(set(fb), freq)
-    @test call(fb, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    @test fb(idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
     idx = frequency2idx(set(fb), freq)
-    @test call(fb, idx, x) ≈ cos(2*T(pi)*freq*y)
+    @test fb(idx, x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
     coef = T[1; 2; 3; 4] * (1+im)
@@ -44,8 +44,8 @@ function test_fourier_series(T)
 
     # Check type promotion: evaluate at an integer and at a rational point
     for i in [1 2]
-        @test typeof(call(fb, i, 0)) == Complex{T}
-        @test typeof(call(fb, i, 1//2)) == Complex{T}
+        @test typeof(call_set(fb, i, 0)) == Complex{T}
+        @test typeof(call_set(fb, i, 1//2)) == Complex{T}
     end
 
     # Try an extension
@@ -86,14 +86,14 @@ function test_fourier_series(T)
     # Is the 0-index basis function the constant 1?
     freq = 0
     idx = frequency2idx(set(fbo), freq)
-    @test call(fbo, idx, T(2//10)) ≈ 1
+    @test fbo(idx, T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(set(fbo), freq)
     x = T(2//10)
     y = (x-a)/(b-a)
-    @test call(fbo, idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    @test fbo(idx, x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]

@@ -261,10 +261,10 @@ support.
 moment(b::AbstractBasis, idx) = quadgk(b[idx], left(b), right(b))[1]
 
 # This is a candidate for generated functions to avoid the splatting
-call_set{N}(b::FunctionSet{N}, i, x::AbstractVector) = call(b, i, x...)
+call_set{N}(b::FunctionSet{N}, i, x::AbstractVector) = call_set(b, i, x...)
 
 # This too is a candidate for generated functions to avoid the splatting
-call_set{N}(b::FunctionSet{N}, i, x::Vec{N}) = call(b, i, x...)
+call_set{N}(b::FunctionSet{N}, i, x::Vec{N}) = call_set(b, i, x...)
 
 # Here is another candidate for generated functions to avoid the splatting
 function call_set(s::FunctionSet, i, x...)
@@ -282,7 +282,7 @@ function call_set!(result, b::FunctionSet, i::Int, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
     for k in eachindex(grid)
-        result[k] = call(b, i, grid[k]...)
+        result[k] = call_set(b, i, grid[k]...)
     end
     result
 end
@@ -299,7 +299,7 @@ Evaluate an expansion given by the set of coefficients `coef` in the point x.
         T = promote_type(eltype(coef), S)
         z = zero(T)
         for i in eachindex(b)
-            z = z + coef[i]*b(i, $(xargs...))
+            z = z + coef[i]*call_set(b, i, $(xargs...))
         end
         z
     end

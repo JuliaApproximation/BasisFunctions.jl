@@ -61,7 +61,8 @@ is_biorthogonal(s::ConcatenatedSet) = _concat_is_biorthogonal(set1(s), set2(s))
 _concat_is_biorthogonal(S1,S2) = false
 
 
-call_element(b::ConcatenatedSet, i, x) = i <= length(b.set1) ? call(b.set1, i, x) : call(b.set2, i-length(b.set1), x)
+call_element(b::ConcatenatedSet, i, x) =
+    i <= length(b.set1) ? call_set(b.set1, i, x) : call_set(b.set2, i-length(b.set1), x)
 
 
 
