@@ -5,8 +5,6 @@
 #####
 
 function test_tensor_operators(T)
-    delimit("Tensor operators")
-
     m1 = 3
     n1 = 4
     m2 = 10

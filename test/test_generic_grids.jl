@@ -27,7 +27,7 @@ end
 
 
 function test_generic_grid(grid)
-    println("Grid: ", typeof(grid))
+    #println("Grid: ", typeof(grid))
     L = length(grid)
 
     T = numtype(grid)
@@ -59,7 +59,6 @@ function test_generic_grid(grid)
 end
 
 function test_grids(T)
-    delimit("Grids and tensor grids")
 
     ## Equispaced grids
     len = 50

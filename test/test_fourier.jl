@@ -4,7 +4,6 @@
 # Fourier series
 #####
 function test_fourier_series(T)
-    delimit("Fourier series")
 
     ## Even length
     n = 12
@@ -25,17 +24,17 @@ function test_fourier_series(T)
     # Is the 0-index basis function the constant 1?
     freq = 0
     idx = frequency2idx(set(fb), freq)
-    @test fb(idx, x) ≈ 1
+    @test fb[idx](x) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(set(fb), freq)
-    @test fb(idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    @test fb[idx](x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
     idx = frequency2idx(set(fb), freq)
-    @test fb(idx, x) ≈ cos(2*T(pi)*freq*y)
+    @test fb[idx](x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
     coef = T[1; 2; 3; 4] * (1+im)
@@ -86,14 +85,14 @@ function test_fourier_series(T)
     # Is the 0-index basis function the constant 1?
     freq = 0
     idx = frequency2idx(set(fbo), freq)
-    @test fbo(idx, T(2//10)) ≈ 1
+    @test fbo[idx](T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
     idx = frequency2idx(set(fbo), freq)
     x = T(2//10)
     y = (x-a)/(b-a)
-    @test fbo(idx, x) ≈ exp(2*T(pi)*1im*freq*y)
+    @test fbo[idx](x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]

@@ -3,8 +3,6 @@
 
 # Chebyshev polynomials
 function test_chebyshev(T)
-    delimit("Chebyshev expansions")
-
     b1 = ChebyshevBasis(160, T)
     A = approximation_operator(b1)
     f = exp

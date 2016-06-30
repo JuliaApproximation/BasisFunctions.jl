@@ -12,32 +12,8 @@ BF = BasisFunctions
 # Auxiliary functions
 ########
 
-# Keep track of successes, failures and errors
-global failures = 0
-global successes = 0
-global errors = 0
+const show_timings = false
 
-const show_timings = true
-
-# Custom test handler
-#custom_handler(r::Test.Pass) = begin print_with_color(:green, "#\tSuccess "); println("on $(r.expr)"); global successes+=1;  end
-#custom_handler(r::Test.Fail) = begin print_with_color(:red, "\"\tFailure "); println("on $(r.expr)\""); global failures+=1; end
-#custom_handler(r::Test.Error) = begin println("\"\t$(typeof(r.err)) in $(r.expr)\""); global errors+=1; end
-#custom_handler(r::Test.Error) = Base.showerror(STDOUT,r);
-
-function message(y)
-    println("\"\t",typeof(y),"\"")
-    Base.showerror(STDOUT,y)
-    global errors+=1
-end
-
-function message(y, backtrace)
-    rethrow(y)
-    println("\tFailure due to ",typeof(y))
-    Base.showerror(STDOUT,y)
-    Base.show_backtrace(STDOUT,backtrace)
-    global errors+=1
-end
 
 function delimit(s::AbstractString)
     println("############")
@@ -135,37 +111,33 @@ function test_derived_sets(T)
     b1 = FourierBasis(11, T)
     b2 = ChebyshevBasis(12, T)
 
-    delimit("Linear mapped sets")
-    test_generic_set_interface(rescale(b1, -1, 2))
+    @testset "$(rpad("Linear mapped sets",80))" begin
+    test_generic_set_interface(rescale(b1, -1, 2)) end
 
-    delimit("Concatenated sets")
-    test_generic_set_interface(b1 ⊕ b2)
+    @testset "$(rpad("Concatenated sets",80))" begin
+    test_generic_set_interface(b1 ⊕ b2) end
 
-    delimit("Operated sets")
-    test_generic_set_interface(OperatedSet(differentiation_operator(b1)))
+    @testset "$(rpad("Operated sets",80))" begin
+    test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
-    delimit("Augmented sets")
-    test_generic_set_interface(BF.Cos() * b1)
+    @testset "$(rpad("Augmented sets",80))" begin
+    test_generic_set_interface(BF.Cos() * b1) end
 end
 
 
 
 
-#Test.with_handler(custom_handler) do
-
-
     for T in (Float64,BigFloat)
-
         println()
-        println("T is ", T)
+        delimit("T is $T", )
+        delimit("Generic interfaces")
 
         SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
                 LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
-#        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-#                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
-        for SET in SETS
+        #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+        #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
+        @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
             # Choose an odd and even number of degrees of freedom
-            for n in (8, 11)
                 basis = instantiate(SET, n, T)
 
                 @test length(basis) == n
@@ -173,37 +145,38 @@ end
                 @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
 
                 test_generic_set_interface(basis, SET)
-            end
         end
 
-        for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
-                        FourierBasis(11) ⊗ FourierBasis(20),
-                        ChebyshevBasis(11) ⊗ ChebyshevBasis(20))
+        @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
+                      FourierBasis(11) ⊗ FourierBasis(20),
+                      ChebyshevBasis(11) ⊗ ChebyshevBasis(20))
             test_generic_set_interface(basis, typeof(basis))
         end
 
-        test_tensor_sets(T)
+        delimit("Tensor specific tests")
+        @testset "$(rpad("test iteration",80))" begin
+            test_tensor_sets(T) end
 
-        test_tensor_operators(T)
+        @testset "$(rpad("test operators",80))" begin
+            test_tensor_operators(T) end
 
-        test_fourier_series(T)
+        delimit("Test Grids")
+        @testset "$(rpad("Grids",80))" begin
+            test_grids(T) end
 
-        test_chebyshev(T)
+        delimit("Check evaluations, interpolations, extensions, setexpansions")
+        
+        @testset "$(rpad("Fourier expansions",80))" begin
+            test_fourier_series(T) end
 
-        test_grids(T)
+        @testset "$(rpad("Chebyshev expansions",80))" begin
+            test_chebyshev(T) end
 
-        test_ops(T)
-
-        test_derived_sets(T)
-
+        @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
+            test_ops(T) end
+        delimit("derived sets")
+            test_derived_sets(T)
     end # for T in...
-
-#end # Test.with_handler
-
-
-# Diagnostics
-println("Succes rate:\t$successes/$(successes+failures+errors)")
-println("Failure rate:\t$failures/$(successes+failures+errors)")
-println("Error rate:\t$errors/$(successes+failures+errors)")
-
+    println()
+println(" All tests passed!")
 end # module

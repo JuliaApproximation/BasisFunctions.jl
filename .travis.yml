@@ -1,26 +1,14 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+julia:
+  - nightly
+  - release
 notifications:
   email: false
-env:
-  matrix:
-    - JULIAVERSION="juliareleases"
-before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   
 script:
-  - julia -e 'Pkg.init()'
-  - julia -e 'Pkg.clone("https://github.com/SimonDanisch/FixedSizeArrays.jl")'
-  - julia -e 'Pkg.clone("https://github.com/ApproxFun/ApproxFun.jl")'
-  - julia -e 'Pkg.clone("https://github.com/toivoh/Debug.jl")'
-  - julia -e 'Pkg.clone("https://github.com/JuliaLang/ArrayViews.jl")'
-  - julia -e 'Pkg.clone("https://github.com/stevengj/PyPlot.jl")'
+
   - julia -e 'Pkg.clone(pwd())'
-  - julia --code-coverage=user --inline=no test/runtests.jl
+  - julia -e 'Pkg.build("BasisFunctions")'
+  - julia --check-bounds=yes -e 'Pkg.test("BasisFunctions", coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
