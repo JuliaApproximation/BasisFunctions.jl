@@ -166,8 +166,8 @@ end
 
         delimit("Check evaluations, interpolations, extensions, setexpansions")
         
-        @testset "$(rpad("Fourier expansions",80))" begin
-            test_fourier_series(T) end
+        ## @testset "$(rpad("Fourier expansions",80))" begin
+        ##     test_fourier_series(T) end
 
         @testset "$(rpad("Chebyshev expansions",80))" begin
             test_chebyshev(T) end
