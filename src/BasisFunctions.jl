@@ -4,7 +4,7 @@ using FastTransforms
 
 using ArrayViews
 using FixedSizeArrays
-#using PyPlot
+using PyPlot
 using Compat
 
 import Base: +, *, /, ==, |, &, -, \, ^
@@ -28,7 +28,7 @@ import Base: show, showcompact, call, convert, similar
 
 import Base: dct, idct
 
-#import PyPlot: plot
+import PyPlot: plot
 
 
 ## Exports

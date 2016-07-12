@@ -212,7 +212,7 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
             #   - finding an integer n so that nlength(dgs)>length(s)
             #   - resorting to the above evaluation + extension
             #   - subsampling by factor n
-            MatrixOperator(s, dgs, interpolation_matrix(s, grid(dgs)))
+            MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
         end
     else
         MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
