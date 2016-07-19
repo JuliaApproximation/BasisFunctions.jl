@@ -20,7 +20,7 @@ abstract AbstractOperator{ELT}
 
 eltype{ELT}(::AbstractOperator{ELT}) = ELT
 eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
-eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(super(OP))
+eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(supertype(OP))
 
 isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
 

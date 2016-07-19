@@ -36,7 +36,7 @@ typealias AbstractBasis1d{T} AbstractBasis{1,T}
 "The dimension of the set."
 ndims{N,T}(::FunctionSet{N,T}) = N
 ndims{N,T}(::Type{FunctionSet{N,T}}) = N
-ndims{S <: FunctionSet}(::Type{S}) = ndims(super(S))
+ndims{S <: FunctionSet}(::Type{S}) = ndims(supertype(S))
 
 "The numeric type of the set is like the eltype of the set, but it is always real."
 numtype(s::FunctionSet) = real(eltype(s))
@@ -49,7 +49,7 @@ The eltype of a set is the typical numeric type of expansion coefficients. It is
 either NumT or Complex{NumT}, where NumT is the numeric type of the set.
 """
 eltype{N,T}(::Type{FunctionSet{N,T}}) = T
-eltype{B <: FunctionSet}(::Type{B}) = eltype(super(B))
+eltype{B <: FunctionSet}(::Type{B}) = eltype(supertype(B))
 
 # Convenience methods
 eltype(x, y) = promote_type(eltype(x), eltype(y))

@@ -9,17 +9,17 @@ typealias AbstractGrid3d{T} AbstractGrid{3,T}
 typealias AbstractGrid4d{T} AbstractGrid{4,T}
 
 ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
-ndims{G <: AbstractGrid}(::Type{G}) = ndims(super(G))
+ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))
 ndims{N,T}(::AbstractGrid{N,T}) = N
 
 numtype{N,T}(::AbstractGrid{N,T}) = T
 numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
-numtype{G <: AbstractGrid}(::Type{G}) = numtype(super(G))
+numtype{G <: AbstractGrid}(::Type{G}) = numtype(supertype(G))
 
 # The element type of a grid is the type returned by getindex.
 eltype{T}(::Type{AbstractGrid{1,T}}) = T
 eltype{N,T}(::Type{AbstractGrid{N,T}}) = Vec{N,T}
-eltype{G <: AbstractGrid}(::Type{G}) = eltype(super(G))
+eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 # Default dimension of the index is 1
 index_dim{N,T}(::Type{AbstractGrid{N,T}}) = 1

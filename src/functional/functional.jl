@@ -12,7 +12,7 @@ abstract AbstractFunctional{SRC,ELT}
 src(f::AbstractFunctional) = f.src
 
 eltype{SRC,ELT}(::Type{AbstractFunctional{SRC,ELT}}) = ELT
-eltype{F <: AbstractFunctional}(::Type{F}) = eltype(super(F))
+eltype{F <: AbstractFunctional}(::Type{F}) = eltype(supertype(F))
 
 length(f::AbstractFunctional) = length(src(f))
 
@@ -33,9 +33,9 @@ end
 
 function row!(result, f::AbstractFunctional)
     n = length(src(f))
-    
+
     @assert size(result) == (1,n)
-    
+
     T = eltype(f)
     r = zeros(T,n)
     r_src = reshape(r, size(src(f)))
@@ -101,6 +101,3 @@ function apply(f::CompositeFunctional, src, coef)
     apply!(operator(f), f.scratch, coef)
     apply(functional(f), f.scratch)
 end
-
-
-
