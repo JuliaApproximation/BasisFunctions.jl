@@ -25,6 +25,9 @@ natural_index(b::AbstractMappedSet, idx) = natural_index(set(b), idx)
 
 logical_index(b::AbstractMappedSet, idxn) = logical_index(set(b), idxn)
 
+for op in [:left, :right]
+    @eval $op(s::AbstractMappedSet, i) = mapx(s, $op(set(s), i))
+end
 
 
 """

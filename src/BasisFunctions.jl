@@ -112,7 +112,10 @@ export set1, set2, ConcatenatedSet
 # from sets/operated_set.jl
 export OperatedSet
 
-# from sets/euclidean.jl"
+# from sets/piecewise_set.jl
+export PiecewiseSet
+
+# from sets/euclidean.jl
 export Cn, Rn
 
 # from fourier/fourier.jl
@@ -155,9 +158,7 @@ include("util/slices.jl")
 include("sets/functionset.jl")
 
 include("sets/subsets.jl")
-
 include("sets/tensorproductset.jl")
-
 include("sets/mappedsets.jl")
 
 include("sets/euclidean.jl")
@@ -184,6 +185,8 @@ include("sets/concatenated_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")
+include("sets/piecewise_set.jl")
+
 
 include("fourier/fouriertransforms.jl")
 include("fourier/fourier.jl")

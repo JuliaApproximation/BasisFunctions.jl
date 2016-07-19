@@ -25,6 +25,10 @@ for op in (:length, :left, :right)
     @eval $op(s::AugmentedSet) = $op(s.set)
 end
 
+for op in (:left, :right)
+    @eval $op(s::AugmentedSet, i) = $op(s.set, i)
+end
+
 # Delegation of properties
 for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(s::AugmentedSet) = $op(set(s))

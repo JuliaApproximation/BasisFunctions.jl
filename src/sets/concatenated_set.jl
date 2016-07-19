@@ -11,6 +11,8 @@ ConcatenatedSet{N,T1,T2}(s1::FunctionSet{N,T1}, s2::FunctionSet{N,T2}) = Concate
 ⊕(s1::FunctionSet, s2::FunctionSet) = ConcatenatedSet(s1, s2)
 
 elements(set::ConcatenatedSet) = (set1(s), set2(s))
+element(set::ConcatenatedSet, i::Int) = i == 1 ? set.set1 : set.set2
+composite_length(set::ConcatenatedSet) = 2
 
 set(b::ConcatenatedSet, i::Int) = i==1 ? b.set1 : b.set2
 
@@ -59,9 +61,22 @@ is_biorthogonal(s::ConcatenatedSet) = _concat_is_biorthogonal(set1(s), set2(s))
 _concat_is_biorthogonal(S1,S2) = false
 
 
-call_element(b::ConcatenatedSet, i, x) =
-    i <= length(b.set1) ? call_set(b.set1, i, x) : call_set(b.set2, i-length(b.set1), x)
+function getsubindex(s::ConcatenatedSet, i::Int)
+    i <= length(s.set1) ? (1,i) : (2,i-length(s.set1))
+end
 
+
+function call_element(s::ConcatenatedSet, idx, x)
+    (i,j) = getsubindex(s, idx)
+    element(s,i)[j](x)
+end
+
+for op in (:left, :right, :norm, :moment)
+    @eval function $op(s::ConcatenatedSet, idx)
+        (i,j) = getsubindex(s, idx)
+        $op(element(s,i), j)
+    end
+end
 
 
 "A ConcatenatedOperator is the concatenation of two operators, and can be applied to concatenated sets (in 1d)."
@@ -135,9 +150,9 @@ derivative_set(s::ConcatenatedSet, order) =
     ConcatenatedSet(derivative_set(set1(s), order), derivative_set(set2(s), order))
 
 
-function differentiation_operator(s1::ConcatenatedSet, s2::ConcatenatedSet, order; options...)
-    op1 = differentiation_operator(set1(s1), set1(s2), order; options...)
-    op2 = differentiation_operator(set2(s1), set2(s2), order; options...)
+function differentiation_operator(s1::ConcatenatedSet, s2::ConcatenatedSet, order = 1; options...)
+    op1 = differentiation_operator(set1(s1), order; options...)
+    op2 = differentiation_operator(set2(s1), order; options...)
     op1 ⊕ op2
 end
 
