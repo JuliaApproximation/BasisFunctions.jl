@@ -80,3 +80,4 @@ end
 include("tensorproductgrid.jl")
 include("mappedgrid.jl")
 include("intervalgrids.jl")
+include("scattered_grid.jl")

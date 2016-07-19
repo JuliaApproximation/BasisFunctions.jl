@@ -35,7 +35,7 @@ import PyPlot: plot
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid
+        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
 export dim, left, right, range, sample
 
 # from operator/dimop.jl
