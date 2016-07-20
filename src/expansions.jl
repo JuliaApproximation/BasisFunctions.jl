@@ -87,6 +87,8 @@ antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(ndims(f
 ctranspose(f::SetExpansion) = differentiate(f)
 ∫(f::SetExpansion) = antidifferentiate(f)
 
+roots(f::SetExpansion) = roots(set(f), coefficients(f))
+
 # Delegate generic operators
 for op in (:extension_operator, :restriction_operator, :transform_operator)
     @eval $op(s1::SetExpansion, s2::SetExpansion) = $op(set(s1), set(s2))

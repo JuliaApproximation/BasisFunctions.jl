@@ -214,6 +214,8 @@ immutable ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
 
+@compat (b::ChebyshevBasisSecondKind)(x...) = call_set(b, x...)
+
 ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
 
 instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisSecondKind{T}(n)

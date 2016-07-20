@@ -14,6 +14,8 @@ end
 
 name(f::PowerFunction, arg = "x") = "$arg^$(f.α)"
 
+derivative(f::PowerFunction) = f.α * PowerFunction(f.α-1)
+
 @compat (f::PowerFunction)(x) = x^(f.α)
 
 
