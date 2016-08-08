@@ -43,7 +43,7 @@ export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
 export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
-export numtype, grid, left, right, support, call, call!, call_set, call_set!
+export numtype, grid, left, right, support, call, call!, call_expansion_with_set, call_expansion_with_set!
 export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
