@@ -9,7 +9,7 @@ typealias AbstractGrid3d{T} AbstractGrid{3,T}
 typealias AbstractGrid4d{T} AbstractGrid{4,T}
 
 ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
-ndims{G <: AbstractGrid}(::Type{G}) = ndims(super(G))
+ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))
 ndims{N,T}(::AbstractGrid{N,T}) = N
 
 numtype{N,T}(::AbstractGrid{N,T}) = T

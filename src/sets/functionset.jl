@@ -49,7 +49,7 @@ The eltype of a set is the typical numeric type of expansion coefficients. It is
 either NumT or Complex{NumT}, where NumT is the numeric type of the set.
 """
 eltype{N,T}(::Type{FunctionSet{N,T}}) = T
-eltype{B <: FunctionSet}(::Type{B}) = eltype(super(B))
+eltype{B <: FunctionSet}(::Type{B}) = eltype(supertype(B))
 
 # Convenience methods
 eltype(x, y) = promote_type(eltype(x), eltype(y))
