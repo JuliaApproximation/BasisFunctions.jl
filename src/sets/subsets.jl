@@ -38,6 +38,7 @@ isreal(s::FunctionSubSet) = isreal(set(s))
 is_orthogonal(s::FunctionSubSet) = is_orthogonal(set(s))
 
 for op in [:left, :right]
+    @eval $op{SET}(s::FunctionSubSet{SET,Int}) = $op(set(s), s.idx)
     @eval $op(s::FunctionSubSet) = $op(set(s))
 end
 
@@ -59,6 +60,11 @@ eachindex(s::FunctionSubSet) = eachindex(s.idx)
 
 getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
 
-getindex(s::FunctionSet, i1::Int, i2::Int, indices::Int...) = FunctionSubSet(s, [(i1,i2,indices...)])
+getindex(s::FunctionSet, i1::Int, i2::Int) = FunctionSubSet(s, [(i1,i2)])
+getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int) = FunctionSubSet(s, [(i1,i2,i3)])
+getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int, i4::Int, indices::Int...) = FunctionSubSet(s, [(i1,i2,i3,i4,indices...)])
 
 getindex(s::FunctionSubSet, idx) = FunctionSubSet(set(s), s.idx[idx])
+
+
+derivative(s::FunctionSubSet) = derivative(set(s))[indices(s)]

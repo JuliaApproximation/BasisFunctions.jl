@@ -122,7 +122,7 @@ transform_operator(src::FunctionSet, dest::AbstractGrid; options...) =
 
 # Compute the interpolation matrix of the given basis on the given set of points (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
-    T = promote_type(eltype(set), numtype(pts))
+    T = promote_type(eltype(set), eltype(pts))
     a = Array(T, length(pts), length(set))
     evaluation_matrix!(a, set, pts)
 end
@@ -212,7 +212,7 @@ function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
             #   - finding an integer n so that nlength(dgs)>length(s)
             #   - resorting to the above evaluation + extension
             #   - subsampling by factor n
-            MatrixOperator(s, dgs, interpolation_matrix(s, grid(dgs)))
+            MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
         end
     else
         MatrixOperator(s, dgs, evaluation_matrix(s, grid(dgs)))

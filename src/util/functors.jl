@@ -8,8 +8,8 @@ abstract AbstractFunction
 isreal(f::AbstractFunction) = true
 
 "The function x^α"
-immutable PowerFunction <: AbstractFunction
-    α   ::  Int
+immutable PowerFunction{T} <: AbstractFunction
+    α   ::  T
 end
 
 name(f::PowerFunction, arg = "x") = "$arg^$(f.α)"
