@@ -4,8 +4,9 @@ using FastTransforms
 
 using ArrayViews
 using FixedSizeArrays
-using PyPlot
+#using PyPlot
 using Compat
+using RecipesBase
 
 import Base: +, *, /, ==, |, &, -, \, ^
 
@@ -28,7 +29,7 @@ import Base: show, showcompact, call, convert, similar
 
 import Base: dct, idct
 
-import PyPlot: plot
+# import PyPlot: plot
 
 
 ## Exports
@@ -137,7 +138,9 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
 # from util/plots.jl
-export plot, plot_expansion, plot_samples, plot_error
+# export plot, plot_expansion, plot_samples, plot_error
+# from util/recipes.jl
+export plotgrid, postprocess
 
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
@@ -207,6 +210,7 @@ include("poly/jacobi.jl")
 include("poly/laguerre.jl")
 include("poly/hermite.jl")
 
-include("util/plots.jl")
+# include("util/plots.jl")
+include("util/recipes.jl")
 
 end # module
