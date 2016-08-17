@@ -61,7 +61,7 @@ function next(it::PiecewiseSetIterator, state)
     if j == it.set.lengths[i]
         nextstate = (i+1,1)
     else
-        (i,j+1)
+        nextstate = (i,j+1)
     end
     (it.set[state[1]], nextstate)
 end

@@ -13,7 +13,7 @@ end
 
 FunctionSubSet{N,T}(set::FunctionSet{N,T}, idx) =
     FunctionSubSet{typeof(set),typeof(idx),N,T}(set, idx)
-
+    
 set(s::FunctionSubSet) = s.set
 indices(s::FunctionSubSet) = s.idx
 
@@ -57,6 +57,7 @@ call_element(s::FunctionSubSet, i, x...) = call_element(s.set, s.idx[i], x...)
 @compat (s::FunctionSubSet)(x...) = (@assert length(s) == 1; call_set(s, 1, x...))
 
 eachindex(s::FunctionSubSet) = eachindex(s.idx)
+eachindex{SET}(s::FunctionSubSet{SET, Int}) = 1
 
 getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
 
