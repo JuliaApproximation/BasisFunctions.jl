@@ -66,9 +66,9 @@ function getsubindex(s::ConcatenatedSet, i::Int)
 end
 
 
-function call_element(s::ConcatenatedSet, idx, x)
+function call_element(s::ConcatenatedSet, idx, x...)
     (i,j) = getsubindex(s, idx)
-    element(s,i)[j](x)
+    element(s,i)[j](x...)
 end
 
 for op in (:left, :right, :norm, :moment)

@@ -4,11 +4,11 @@
 # - evaluate the expansion in the gridpoints (fast if possible)
 # - postprocess the data
 
-@recipe function f(S::SetExpansion; n=200)
-    legend --> :false
+@recipe function f(S::SetExpansion; plot_complex = false, n=200)
+    legend --> false
     title --> "SetExpansion"
     grid = plotgrid(set(S), n)
-    vals = real(S(grid))
+    vals = plot_complex ? S(grid) : real(S(grid))
     grid, postprocess(set(S), grid, vals)
 end
 
@@ -54,24 +54,30 @@ end
 @recipe function f(grid::AbstractGrid)
     seriestype --> :scatter
     size --> (500,400)
+    legend --> false
     collect(grid)
 end
 
 # Plot a 1D grid
 @recipe function f(grid::AbstractGrid{1})
     seriestype --> :scatter
+    yticks --> []
+    ylims --> [-1 1]
     size --> (500,200)
+    legend --> false
     collect(grid), zeros(size(grid))
 end
 
 # Plot a FunctionSet
-@recipe function f(F::FunctionSet; n=200)
+@recipe function f(F::FunctionSet; plot_complex = false, n=200)
     for i in eachindex(F)
         @series begin
             grid = plotgrid(F[i],n)
-            grid, postprocess(F[i],grid,real(F[i](grid)))
+            vals = plot_complex? F[i](grid) : real(F[i](grid))
+            grid, postprocess(F[i],grid,vals)
         end
     end
+    nothing
 end
 
 
@@ -88,3 +94,41 @@ plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n),left(S),right
 
 plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n),left(S)[1],right(S)[1])⊗rescale(PeriodicEquispacedGrid(n),left(S)[2],right(S)[2])
 
+## Split complex plots in real and imaginary parts
+# 1D
+@recipe function f{S<:Real,T<:Complex}(A::Array{S},B::Array{T})
+    # Force double layout
+    layout := 2
+    # Legend is useless here
+    legend --> false
+    @series begin
+        subplot := 1
+        title := "Real"
+        A,real(B)
+    end
+    @series begin
+        subplot :=2
+        title := "Imaginary"
+        A,imag(B)
+    end
+    nothing
+end
+
+# 2D
+@recipe function f{S<:Real,T<:Complex}(A::LinSpace{S},B::LinSpace{S},C::Array{T})
+    # Force double layout
+    layout := 2
+    # Legend is useless here
+    legend --> false
+    @series begin
+        subplot := 1
+        title := "Real"
+        A,B,real(C)
+    end
+    @series begin
+        subplot :=2
+        title := "Imaginary"
+        A,B,imag(C)
+    end
+    nothing
+end

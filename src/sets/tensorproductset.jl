@@ -82,17 +82,20 @@ length(b::TensorProductSet) = prod(size(b))
 
 
 grid(b::TensorProductSet) = tensorproduct(map(grid, elements(b))...)
-grid(b::TensorProductSet, j::Int) = grid(element(b,j))
+#grid(b::TensorProductSet, j::Int) = grid(element(b,j))
 
+# In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
+# The methods below follow this convention.
 left(b::TensorProductSet) = Vec([left(element(b,j)) for j=1:composite_length(b)])
-left(b::TensorProductSet, j::Int) = left(element(b,j))
-left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
-left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
+left(b::TensorProductSet, j::Int) = Vec([left(element(b,i),ind2sub(b,j)[i]) for i=1:composite_length(b)])
+#left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
+#left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
 right(b::TensorProductSet) = Vec([right(element(b,j)) for j=1:composite_length(b)])
-right(b::TensorProductSet, j::Int) = right(element(b,j))
-right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
-right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
+right(b::TensorProductSet, j::Int) = Vec([right(element(b,i),ind2sub(b,j)[i]) for i=1:composite_length(b)])
+#right(b::TensorProductSet, j::Int) = right(element(b,j))
+#right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
+#right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
 
 
 @generated function eachindex{TS}(b::TensorProductSet{TS})
