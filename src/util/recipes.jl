@@ -16,7 +16,9 @@ end
 # dispatch on dimension to set the logscale
 @recipe function f(S::SetExpansion, target::Function; n=200)
     grid = plotgrid(set(S), n)
-    origvals = sample(grid, target)
+    # Determine the return type so we know where to sample
+    RT = Base.return_types(target, fill(Float64, ndims(set(S))) )
+    origvals = sample(grid, target, RT[1])
     vals = abs(origvals - S(grid))
     set(S), grid, postprocess(set(S), grid, vals)
 end
