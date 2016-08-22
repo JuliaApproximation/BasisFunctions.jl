@@ -250,7 +250,7 @@ function test_tensor_sets(T)
         i = i+1
     end
     @test i == length(d)
-    @test abs(-0.211 - z) < 0.01
+    @test abs(-0.5 - z) < 0.01
 
     z = zero(T)
     l = 0
@@ -260,5 +260,5 @@ function test_tensor_sets(T)
         l = l+1
     end
     @test l == length(d)
-    @test abs(-0.211 - z) < 0.01
+    @test abs(-0.5 - z) < 0.01
 end

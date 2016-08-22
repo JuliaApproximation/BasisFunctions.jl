@@ -98,6 +98,7 @@ size(s::FunctionSet) = (length(s),)
 "Return the size of the j-th dimension of the set (if applicable)."
 size(s::FunctionSet, j) = j==1 ? length(s) : throw(BoundsError())
 
+endof(s::FunctionSet) = length(s)
 
 """
 The instantiate function takes a set type, size and numeric type as argument, and

@@ -1,8 +1,16 @@
 # fourier.jl
 
 """
-A Fourier basis on the interval [-1,1].
-EVEN is true if the length of the corresponding Fourier series is even.
+A Fourier basis on the interval [0,1]. The precise basis functions are:
+exp(2 π i k)
+with k ranging from -N to N for Fourier series of odd length 2N+1.
+
+The basis functions are ordered the way they are expected by a typical FFT
+implementation. The frequencies k are in the following order:
+0 1 2 3 ... N -N -N+1 ... -2 -1
+
+Parameter EVEN is true if the length of the corresponding Fourier series is
+even. In that case, the largest frequency function in the set is a cosine.
 """
 immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
 	n			::	Int
@@ -55,7 +63,7 @@ has_extension(b::FourierBasis) = true
 
 length(b::FourierBasis) = b.n
 
-left(b::FourierBasis) = -1
+left(b::FourierBasis) = 0
 
 left(b::FourierBasis, idx) = left(b)
 
@@ -63,15 +71,12 @@ right(b::FourierBasis) = 1
 
 right(b::FourierBasis, idx) = right(b)
 
-period(b::FourierBasis) = 2
+period(b::FourierBasis) = 1
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, numtype(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, 0, 1, numtype(b))
 
 nhalf(b::FourierBasis) = length(b)>>1
 
-
-# Map the point x in [-1,1] to the corresponding point in [0,1]
-mapx(b::FourierBasis, x) = (x+1)/2
 
 # Natural index of an even Fourier basis ranges from -N+1 to N.
 natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
@@ -86,12 +91,12 @@ frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(mapx(b, x) * 2 * T(pi) * 1im  * idx2frequency(b, idx))
+call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(x * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
 # Note that the function below is typesafe because T(pi) converts pi to a complex number, hence the cosine returns a complex number
 call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
-	(idx == nhalf(b)+1	?  cos(mapx(b, x) * 2 * T(pi) * idx2frequency(b,idx))
-						: exp(mapx(b, x) * 2 * T(pi) * 1im * idx2frequency(b,idx)))
+	(idx == nhalf(b)+1	?  cos(x * 2 * T(pi) * idx2frequency(b,idx))
+						: exp(x * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
 moment{EVEN,T}(b::FourierBasis{EVEN,T}, idx) = idx == 1 ? T(2) : T(0)
 
