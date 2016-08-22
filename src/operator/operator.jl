@@ -26,6 +26,14 @@ isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
 
 op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype(dest))
 
+
+"Promote the element type of the given operator."
+# With the definition below, we catch promotions that don't change the element
+# of an operator. Subtypes can implement promote_eltype for an argument type S
+# that differs from ELT, as in:
+# promote_eltype{ELT,S}(op::SomeOperator{ELT}, ::Type{S}) = ...
+promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
+
 # Default implementation of src and dest
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
@@ -135,14 +143,14 @@ function matrix(op::AbstractOperator)
     matrix!(op, a)
 end
 
-function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
+function matrix!(op::AbstractOperator, a)
     n = length(src(op))
     m = length(dest(op))
 
     @assert (m,n) == size(a)
 
-    r = zeros(T, size(src(op)))
-    s = zeros(T, size(dest(op)))
+    r = zeros(eltype(a), size(src(op)))
+    s = zeros(eltype(a), size(dest(op)))
     matrix_fill!(op, a, r, s)
 end
 
@@ -162,13 +170,16 @@ end
 
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
-		op	::	OP
+	op	::	OP
 
-		OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
+	OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
 end
 
 OperatorTranspose(op::AbstractOperator) =
 	OperatorTranspose{typeof(op),eltype(op)}(op)
+
+promote_eltype{OP,ELT,S}(op::OperatorTranspose{OP,ELT}, ::Type{S}) =
+	OperatorTranspose(promote_eltype(op.op, S))
 
 ctranspose(op::AbstractOperator) = OperatorTranspose(op)
 
@@ -191,17 +202,29 @@ apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) =
 apply_inplace!(opt::OperatorTranspose, dest, src, coef_srcdest) =
 	apply_transpose_inplace!(operator(opt), src, dest, coef_srcdest)
 
+function apply_transpose!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+	println("Operation of ", typeof(op), " has no lazy transpose implemented.")
+	throw(InexactError())
+end
+
+function apply_transpose_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+	println("Operation of ", typeof(op), " has no in-place lazy transpose implemented.")
+	throw(InexactError())
+end
 
 
 "An OperatorInverse represents the inverse of an operator."
 immutable OperatorInverse{OP,ELT} <: AbstractOperator{ELT}
-		op	::	OP
+	op	::	OP
 
-		OperatorInverse(op::AbstractOperator{ELT}) = new(op)
+	OperatorInverse(op::AbstractOperator{ELT}) = new(op)
 end
 
 OperatorInverse(op::AbstractOperator) =
 	OperatorInverse{typeof(op),eltype(op)}(op)
+
+promote_eltype{OP,ELT,S}(op::OperatorInverse{OP,ELT}, ::Type{S}) =
+	OperatorInverse(promote_eltype(op.op, S))
 
 inv(op::AbstractOperator) = OperatorInverse(op)
 
@@ -222,6 +245,15 @@ apply!(op::OperatorInverse, dest, src, coef_dest, coef_src) =
 apply!(op::OperatorInverse, dest, src, coef_srcdest) =
 	apply_inv_inplace!(operator(op), src, dest, coef_srcdest)
 
+function apply_inv!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+	println("Operation of ", typeof(op), " has no lazy inverse implemented.")
+	throw(InexactError())
+end
+
+function apply_inv_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+	println("Operation of ", typeof(op), " has no in-place lazy inverse implemented.")
+	throw(InexactError())
+end
 
 
 include("composite_operator.jl")

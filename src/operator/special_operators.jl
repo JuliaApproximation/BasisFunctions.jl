@@ -9,6 +9,9 @@ end
 
 IdentityOperator(src, dest = src) = IdentityOperator{op_eltype(src,dest)}(src,dest)
 
+promote_eltype{ELT,S}(op::IdentityOperator{ELT}, ::Type{S}) =
+    IdentityOperator{S}(op.src, op.dest)
+
 is_inplace(::IdentityOperator) = true
 is_diagonal(::IdentityOperator) = true
 
@@ -16,12 +19,47 @@ inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
 ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
+function matrix!(op::IdentityOperator, a)
+    a[:] = 0
+    for i in 1:min(size(a,1),size(a,2))
+        a[i,i] = 1
+    end
+    a
+end
+
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 # The identity operator is, well, the identity
 (*)(op2::IdentityOperator, op1::IdentityOperator) = IdentityOperator(src(op1), dest(op2))
 (*)(op2::AbstractOperator, op1::IdentityOperator) = op2
 (*)(op2::IdentityOperator, op1::AbstractOperator) = op1
+
+
+"The zero operator maps everything to zero."
+immutable ZeroOperator{ELT} <: AbstractOperator{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
+end
+
+ZeroOperator(src, dest = src) = ZeroOperator{op_eltype(src,dest)}(src,dest)
+
+promote_eltype{ELT,S}(op::ZeroOperator{ELT}, ::Type{S}) =
+    ZeroOperator{S}(op.src, op.dest)
+
+is_inplace(::ZeroOperator) = true
+is_diagonal(::ZeroOperator) = true
+
+ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
+
+matrix!(op::ZeroOperator, a) = (a[:] = 0; a)
+
+apply_inplace!(op::ZeroOperator, coef_srcdest) = coef_srcdest[:] = 0
+
+# The zero operator annihilates all other operators
+(*)(op2::ZeroOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
+(*)(op2::AbstractOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
+(*)(op2::ZeroOperator, op1::AbstractOperator) = ZeroOperator(src(op1), dest(op2))
+
 
 
 """
@@ -39,6 +77,9 @@ function ScalingOperator(src::FunctionSet, dest::FunctionSet, scalar::Number)
 end
 
 ScalingOperator(src::FunctionSet, scalar::Number) = ScalingOperator(src, src, scalar)
+
+promote_eltype{ELT,S}(op::ScalingOperator{ELT}, ::Type{S}) =
+    ScalingOperator{S}(op.src, op.dest, S(op.scalar))
 
 is_inplace(::ScalingOperator) = true
 is_diagonal(::ScalingOperator) = true
@@ -91,7 +132,10 @@ DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(C
 
 DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
 
-diagonal(op::DiagonalOperator) = op.diagonal
+promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
+    DiagonalOperator{S}(op.src, op.dest, convert(Array{S,1}, op.diagonal))
+
+diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
 is_inplace(::DiagonalOperator) = true
 is_diagonal(::DiagonalOperator) = true
@@ -99,6 +143,14 @@ is_diagonal(::DiagonalOperator) = true
 inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), op.diagonal.^(-1))
 
 ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj(diagonal(op)))
+
+function matrix!(op::DiagonalOperator, a)
+    a[:] = 0
+    for i in 1:min(size(a,1),size(a,2))
+        a[i,i] = op.diagonal[i]
+    end
+    a
+end
 
 function apply_inplace!(op::DiagonalOperator, coef_srcdest)
     for i in 1:length(coef_srcdest)
@@ -148,6 +200,7 @@ function inv_diagonal(op::AbstractOperator)
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
 
+
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
@@ -166,6 +219,9 @@ end
 CoefficientScalingOperator(src::FunctionSet, index::Int, scalar::Number) =
     CoefficientScalingOperator(src, src, index, scalar)
 
+promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
+    CoefficientScalingOperator{S}(op.src, op.dest, op.index, S(op.scalar))
+
 index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
@@ -178,6 +234,15 @@ ctranspose(op::CoefficientScalingOperator) =
 
 inv(op::CoefficientScalingOperator) =
     CoefficientScalingOperator(dest(op), src(op), index(op), 1/scalar(op))
+
+function matrix!(op::CoefficientScalingOperator, a)
+    a[:] = 0
+    for i in 1:min(size(a,1),size(a,2))
+        a[i,i] = 1
+    end
+    a[op.index,op.index] = op.scalar
+    a
+end
 
 function apply_inplace!(op::CoefficientScalingOperator, coef_srcdest)
     coef_srcdest[op.index] *= op.scalar
@@ -208,6 +273,9 @@ end
 WrappedOperator(src, dest, op::AbstractOperator) =
     WrappedOperator{typeof(op),eltype(op)}(src, dest, op)
 
+promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
+    WrappedOperator(op.src, op.dest, promote_eltype(op.op, S))
+
 operator(op::WrappedOperator) = op.op
 
 for property in [:is_inplace, :is_diagonal]
@@ -222,6 +290,7 @@ inv(op::WrappedOperator) = WrappedOperator(dest(op), src(op), inv(op.op))
 
 ctranspose(op::WrappedOperator) = WrappedOperator(dest(op), src(op), ctranspose(op.op))
 
+matrix!(op::WrappedOperator, a) = matrix!(op.op, a)
 
 
 """
@@ -400,7 +469,8 @@ ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2)
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
 
 
-apply_inplace!(op::OperatorSum, dest, src, coef_srcdest) = apply_sum_inplace!(op, op.op1, op.op2, coef_srcdest)
+apply_inplace!(op::OperatorSum, dest, src, coef_srcdest) =
+    apply_sum_inplace!(op, op.op1, op.op2, coef_srcdest)
 
 function apply_sum_inplace!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_srcdest)
     scratch = op.scratch

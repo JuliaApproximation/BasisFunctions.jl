@@ -61,6 +61,7 @@ eachindex{SET}(s::FunctionSubSet{SET, Int}) = 1
 
 getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
 
+getindex(s::FunctionSubSet, ::Colon) = s
 getindex(s::FunctionSet, ::Colon) = s
 
 getindex(s::FunctionSet, i1::Int, i2::Int) = FunctionSubSet(s, [(i1,i2)])
