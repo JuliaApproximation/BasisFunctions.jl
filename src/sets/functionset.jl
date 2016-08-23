@@ -6,32 +6,41 @@
 ######################
 
 """
-A FunctionSet is any set of functions. It is a logical superset of sets
-with more structure, such as bases and frames. Each FunctionSet has a finite size,
-and hence typically represents the truncation of an infinite set.
-A FunctionSet has a dimension N and a numeric type T.
+A FunctionSet is any set of functions with a finite size. It is typically the
+truncation of an infinite set, but that need not be the case.
+
+A FunctionSet has a dimension N and a numeric type T. The dimension N corresponds
+to the number of variables of the basis functions. The numeric type T is the
+type of expansion coefficients corresponding to this set.
+
+Each function set is ordered. There is a one-to-one map between the integers
+from 1 to length(s) and the elements of the set. This map defines the order of
+coefficients in a vector that represents a function expansion in the set.
+
+A FunctionSet has two types of indexing: native indexing and linear indexing.
+Linear indexing is used to order elements of the set into a vector, as explained
+above. Native indices are closer to the mathematical definitions of the basis
+functions. For example, a tensor product set consisting of M functions in the
+first dimension times N functions in the second dimension may have a native index
+(i,j), with 1 <= i <= M and 1 <= j <= N. The native representation of an expansion
+in this set is a matrix of size M x N. In contrast, the linear representation is
+a large vector of length MN.
+Another example is given by orthogonal polynomials: they are typically indexed
+by their degree. Hence, their native index ranges from 0 to N-1, but their linear
+index ranges from 1 to N.
+
+Computations in this package are typically performed using native indexing where
+possible. Linear indexing is used to convert representations into a form suitable
+for linear algebra: expansions turn into vectors, and linear operators turn into
+matrices.
 """
 abstract FunctionSet{N,T}
-
-"""
-An AbstractFrame has more structure than a set of functions. It is the truncation
-of an infinite frame. (Since an AbstractFrame has a finite size, strictly speaking
-this is usually a basis, albeit a very ill-conditioned one.)
-"""
-abstract AbstractFrame{N,T} <: FunctionSet{N,T}
-
-"""
-A basis is a non-redundant frame.
-"""
-abstract AbstractBasis{N,T} <: AbstractFrame{N,T}
 
 
 # Useful abstraction for special cases
 typealias FunctionSet1d{T} FunctionSet{1,T}
 typealias FunctionSet2d{T} FunctionSet{2,T}
 typealias FunctionSet3d{T} FunctionSet{3,T}
-typealias AbstractFrame1d{T} AbstractFrame{1,T}
-typealias AbstractBasis1d{T} AbstractBasis{1,T}
 
 "The dimension of the set."
 ndims{N,T}(::FunctionSet{N,T}) = N
@@ -57,33 +66,15 @@ eltype(x, y, z) = promote_type(eltype(x), eltype(y), eltype(z))
 eltype(x, y, z, t) = promote_type(eltype(x), eltype(y), eltype(z), eltype(t))
 eltype(x...) = promote_eltype(map(eltype, x)...)
 
-"""
-The dimension of the index of the set. This may in general be different from the dimension
-of the set. For example, Fourier series on a lattice in 2D may be indexed with a single
-index. Wavelets in 1D are usually indexed with two parameters, scale and position.
-"""
-index_dim{N,T}(::Type{FunctionSet{N,T}}) = 1
-index_dim{B <: FunctionSet}(::Type{B}) = 1
-index_dim(s::FunctionSet) = index_dim(typeof(s))
 
 
 
-
-# Is a given set a basis? In general, it is not. But it could be, even if its
-# type does not derive from AbstractBasis. For example, a TensorProductSet of
-# different bases is a basis, but TensorProductSet does not inherit from
-# AbstractBasis.
+# Is a given set a basis? In general, it is not. But it could be.
 # Hence, we need a property for it:
 is_basis(s::FunctionSet) = false
 
 # Any basis is a frame
 is_frame(s::FunctionSet) = is_basis(s)
-
-# A basis is always a basis.
-is_basis(s::AbstractBasis) = true
-
-# And a frame is always a frame.
-is_frame(s::AbstractFrame) = true
 
 
 "Property to indicate whether a basis is orthogonal."
@@ -124,30 +115,80 @@ end
 
 # similar returns a similar basis of a given size and numeric type
 # It can be implemented in terms of resize and promote_eltype.
-similar{T}(b::FunctionSet, ::Type{T}, n) = resize(promote_eltype(b, T), n)
+similar(b::FunctionSet, T::Type, n) = resize(promote_eltype(b, T), n)
+
+"""
+Return a set of zero coefficients in the native format of the set.
+"""
+zeros(set::FunctionSet) = zeros(eltype(set), set)
+
+# By default we assume that the native format corresponds to an array of the
+# same size as the set. This is not true, e.g., for multisets.
+zeros(T::Type, set::FunctionSet) = zeros(T, size(set))
+
+
+"Compute the native index corresponding to the given linear index."
+native_index(b::FunctionSet, idx) = idx
+
+"Compute the linear index corresponding to the given native index."
+linear_index(b::FunctionSet, idxn) = idxn
 
 """
 Convert the set of coefficients in the native format of the set to a linear list.
 The order of the coefficients in this list is determined by the order of the
 elements in the set.
-The operation may be done in place, in order to avoid memory allocation.
 """
-# By default, we do nothing
-linearize(set::FunctionSet, coef_src) = coef_src
+# We do nothing if the list of coefficiens is already linear and has the right
+# element type
+linearize_coefficients{N,T}(set::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = coef_native
+
+# Otherwise: allocate memory for the linear set and call linearize_coefficients! to do the work
+function linearize_coefficients(set::FunctionSet, coef_native)
+    coef_linear = zeros(eltype(set), length(set))
+    linearize_coefficients!(coef_linear, set, coef_native)
+end
+
+# Default implementation
+function linearize_coefficients!(coef_linear, set::FunctionSet, coef_native)
+    for (i,j) in enumerate(eachindex(coef_native))
+        coef_linear[i] = coef_native[j]
+    end
+    coef_linear
+end
 
 """
-Convert a linear set of coefficients back to a size that is native to the set.
+Convert a linear set of coefficients back to the native representation of the set.
 """
-delinearize(set::FunctionSet, linearcoef) = linearcoef
+function delinearize_coefficients{N,T}(set::FunctionSet{N,T}, coef_linear::AbstractArray{T,1})
+    coef_native = zeros(set)
+    delinearize_coefficients!(coef_native, set, coef_linear)
+end
 
-"""
-Return a set of coefficients that represents zero in the set.
-"""
-# This may be used to allocate storage for the set.
-zero(set::FunctionSet) = zeros(eltype(set), size(set))
+function delinearize_coefficients!(coef_native, set::FunctionSet, coef_linear)
+    for (i,j) in enumerate(eachindex(coef_native))
+        coef_native[j] = coef_linear[i]
+    end
+    coef_native
+end
+
+# Sets have a native size and a linear size. However, there is not necessarily a
+# bijection between the two. You can always convert a native size to a linear size,
+# but the other direction can be done in general only approximately.
+# For example, a 2D tensor product set can only support sizes of the form n1 * n2. Its native size may be
+# (n1,n2) and its linear size n1*n2, but not any integer n maps to a native size tuple.
+# By convention, we denote a native size variable by size_n.
+"Compute the native size best corresponding to the given linear size."
+approximate_native_size(b::FunctionSet, size_l) = size_l
+
+"Compute the linear size corresponding to the given native size."
+linear_size(b::FunctionSet, size_n) = size_n
 
 "Suggest a suitable size, close to n, to resize the given function set."
 approx_length(set::FunctionSet, n) = n
+
+
+###############################
+## Properties of function sets
 
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.
@@ -173,32 +214,11 @@ has_extension(b::FunctionSet) = false
 derivative_set(b::FunctionSet, order = 1) = b
 antiderivative_set(b::FunctionSet, order = 1) = b
 
-# A FunctionSet has logical indices and natural indices. The logical indices correspond to
-# the ordering of the coefficients in an expansion. Each set must support integers from 1 to length(s)
-# as logical index. However, it is free to support more.
-# The natural index may be closer to the mathematical definition. For example, wavelets may
-# have a natural index that corresponds to the combination of scale and position. Or some
-# basis functions may commonly be defined from 0 to n-1, rather than from 1 to n.
-# By convention, we denote a natural index variable by idxn.
-"Compute the natural index corresponding to the given logical index."
-natural_index(b::FunctionSet, idx) = idx
 
-"Compute the logical index corresponding to the given natural index."
-logical_index(b::FunctionSet, idxn) = idxn
+#######################
+## Iterating over sets
 
-# Similarly, sets have a natural size and a logical size. However, there is not necessarily a
-# bijection between the two. You can always convert a natural size to a logical size, but the other
-# direction can be done in general only approximately.
-# For example, a 2D tensor product set can only support sizes of the form n1 * n2. Its natural size may be
-# (n1,n2) and its logical size n1*n2, but not any integer n maps to a natural size tuple.
-# By convention, we denote a natural size variable by size_n.
-"Compute the natural size best corresponding to the given logical size."
-approximate_natural_size(b::FunctionSet, size_l) = size_l
-
-"Compute the logical size corresponding to the given natural size."
-logical_size(b::FunctionSet, size_n) = size_n
-
-# Default set of logical indices: from 1 to length(s)
+# Default set of linear indices: from 1 to length(s)
 # Default algorithms assume this indexing for the basis functions, and the same
 # linear indexing for the set of coefficients.
 # The indices may also have tensor-product structure, for tensor product sets.
@@ -252,14 +272,14 @@ function checkbounds(s::FunctionSet, i...)
 end
 
 "Return the support of the idx-th basis function."
-support(b::AbstractBasis1d, idx) = (left(b,idx), right(b,idx))
+support(b::FunctionSet1d, idx) = (left(b,idx), right(b,idx))
 
 """
 Compute the moment of the given basisfunction, i.e. the integral on its
 support.
 """
 # Default to numerical integration
-moment(b::AbstractBasis, idx) = quadgk(b[idx], left(b), right(b))[1]
+moment(b::FunctionSet, idx) = quadgk(b[idx], left(b), right(b))[1]
 
 # This is a candidate for generated functions to avoid the splatting
 call_set{N}(b::FunctionSet{N}, i, x::AbstractVector) = call_set(b, i, x...)

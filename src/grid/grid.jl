@@ -21,11 +21,6 @@ eltype{T}(::Type{AbstractGrid{1,T}}) = T
 eltype{N,T}(::Type{AbstractGrid{N,T}}) = Vec{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
-# Default dimension of the index is 1
-index_dim{N,T}(::Type{AbstractGrid{N,T}}) = 1
-index_dim{G <: AbstractGrid}(::Type{G}) = 1
-index_dim(g::AbstractGrid) = index_dim(typeof(g))
-
 size(g::AbstractGrid1d) = (length(g),)
 
 support(g::AbstractGrid) = (left(g),right(g))

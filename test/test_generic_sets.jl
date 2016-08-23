@@ -26,24 +26,20 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
 
     ## Test dimensions
-    @test index_dim(basis) == index_dim(SET)
-    @test index_dim(basis) == length(size(basis))
     s = size(basis)
     for i = 1:length(s)
         @test size(basis, i) == s[i]
     end
-    @test index_dim(basis) <= ndims(basis)
 
     ## Test iteration over the set
-    l = 0
     equality = true
+    l = 0
     for i in eachindex(basis)
         l += 1
-
         # Is conversion from logical to native index and back a bijection?
-        idxn = natural_index(basis, i)
-        idx = logical_index(basis, idxn)
-        equality = equality & (idx == i)
+        idxn = native_index(basis, l)
+        idx = linear_index(basis, idxn)
+        equality = equality & (idx == l)
     end
     @test l == n
     @test equality

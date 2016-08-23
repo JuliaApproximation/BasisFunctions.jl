@@ -17,12 +17,12 @@ immutable BlockOperator{ELT} <: AbstractOperator{ELT}
 
     # scratch_dest holds memory for each subset of the destination set (which is
     # a multiset).
-    scratch_dest    ::  Array{Array{ELT},1}
+    scratch_dest
 
     function BlockOperator(ops, src, dest)
         scratch_dest = Array(Array{ELT}, size(ops,1))
         for i in 1:length(scratch_dest)
-            scratch_dest[i] = zeros(ELT, size(element(dest,i)))
+            scratch_dest[i] = zeros(ELT, element(dest,i))
         end
         new(ops, src, dest, scratch_dest)
     end

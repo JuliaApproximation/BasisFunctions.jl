@@ -1,9 +1,6 @@
 # bf_wavelets.jl
 
-abstract WaveletBasis{T} <: AbstractBasis1d{T}
-
-
-hascompactsupport{B <: WaveletBasis}(::Type{B}) = True
+abstract WaveletBasis{T} <: FunctionSet1d{T}
 
 
 abstract OrthogonalWaveletBasis{T} <: WaveletBasis{T}

@@ -12,7 +12,7 @@ implementation. The frequencies k are in the following order:
 Parameter EVEN is true if the length of the corresponding Fourier series is
 even. In that case, the largest frequency function in the set is a cosine.
 """
-immutable FourierBasis{EVEN,T} <: AbstractBasis1d{T}
+immutable FourierBasis{EVEN,T} <: FunctionSet1d{T}
 	n			::	Int
 
 	FourierBasis(n) = (@assert iseven(n)==EVEN; new(n))
@@ -49,6 +49,7 @@ isreal(b::FourierBasis) = false
 iseven{EVEN}(b::FourierBasis{EVEN}) = EVEN
 isodd(b::FourierBasis) = ~iseven(b)
 
+is_basis(b::FourierBasis) = true
 is_orthogonal(b::FourierBasis) = true
 
 
@@ -78,16 +79,16 @@ grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, 0, 1, numtype(b))
 nhalf(b::FourierBasis) = length(b)>>1
 
 
-# Natural index of an even Fourier basis ranges from -N+1 to N.
-natural_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
+# Native index of an even Fourier basis ranges from -N+1 to N.
+native_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
 
-# Natural index of an odd Fourier basis ranges from -N to N.
-natural_index(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+# Native index of an odd Fourier basis ranges from -N to N.
+native_index(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
 
-logical_index(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
+linear_index(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
 
-idx2frequency(b::FourierBasis, idx::Int) = natural_index(b, idx)
-frequency2idx(b::FourierBasis, freq::Int) = logical_index(b, freq)
+idx2frequency(b::FourierBasis, idx::Int) = native_index(b, idx)
+frequency2idx(b::FourierBasis, freq::Int) = linear_index(b, freq)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.

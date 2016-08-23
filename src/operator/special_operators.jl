@@ -57,6 +57,8 @@ apply_inplace!(op::ZeroOperator, coef_srcdest) = coef_srcdest[:] = 0
 
 # The zero operator annihilates all other operators
 (*)(op2::ZeroOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
+(*)(op2::ZeroOperator, op1::IdentityOperator) = ZeroOperator(src(op1), dest(op2))
+(*)(op2::IdentityOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
 (*)(op2::AbstractOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
 (*)(op2::ZeroOperator, op1::AbstractOperator) = ZeroOperator(src(op1), dest(op2))
 
@@ -417,7 +419,7 @@ ctranspose(op::IdxnScalingOperator) = DiagonalOperator(src(op), conj(diagonal(op
 function apply_inplace!(op::IdxnScalingOperator, dest, src, coef_srcdest)
     ELT = eltype(op)
     for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= op.scale(ELT(natural_index(op.src,i)))^op.order
+        coef_srcdest[i] *= op.scale(ELT(native_index(op.src,i)))^op.order
     end
     coef_srcdest
 end
@@ -426,7 +428,7 @@ function apply_inplace!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet
     ELT = eltype(op)
     for i in eachindex(coef_srcdest)
         indices = ind2sub(size(dest),i)
-        coef_srcdest[i]*=op.scale(ELT(natural_index(TS1,indices[1])),ELT(natural_index(TS2,indices[2])))^op.order
+        coef_srcdest[i]*=op.scale(ELT(native_index(TS1,indices[1])),ELT(native_index(TS2,indices[2])))^op.order
     end
     coef_srcdest
 end
@@ -437,27 +439,27 @@ inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, order=op.order*-1, sc
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,N} <: AbstractOperator{ELT}
+immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,S} <: AbstractOperator{ELT}
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  ELT
     val2        ::  ELT
-    scratch     ::  Array{ELT,N}
+    scratch     ::  S
 
-    function OperatorSum(op1, op2, val1, val2)
+    function OperatorSum(op1, op2, val1, val2, scratch)
         # We don't enforce that source and destination of op1 and op2 are the same, but at least
         # their sizes must match.
         @assert size(src(op1)) == size(src(op2))
         @assert size(dest(op1)) == size(dest(op2))
 
-        new(op1, op2, val1, val2, zeros(ELT,size(dest(op1))))
+        new(op1, op2, val1, val2, scratch)
     end
 end
 
 function OperatorSum(op1::AbstractOperator, op2::AbstractOperator, val1::Number, val2::Number)
-#    @assert eltype(op1) == eltype(op2)
     ELT = promote_type(eltype(op1), eltype(op2), typeof(val1), typeof(val2))
-    OperatorSum{typeof(op1),typeof(op2),ELT,index_dim(dest(op1))}(op1, op2, convert(ELT, val1), convert(ELT, val2))
+    scratch = zeros(ELT,dest(op1))
+    OperatorSum{typeof(op1),typeof(op2),ELT,typeof(scratch)}(op1, op2, ELT(val1), ELT(val2), scratch)
 end
 
 src(op::OperatorSum) = src(op.op1)

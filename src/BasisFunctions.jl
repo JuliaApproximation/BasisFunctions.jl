@@ -17,7 +17,7 @@ import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
 
 import Base: cos, sin, exp, log
 
-import Base: zero
+import Base: zeros
 
 import Base: getindex, setindex!, eltype
 
@@ -43,18 +43,18 @@ export dim, left, right, range, sample
 export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
-export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
+export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export numtype, grid, left, right, support, call, call!, call_expansion_with_set, call_expansion_with_set!, call_set, call_set!
 export name
 export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate, promote_eltype, resize
-export natural_index, logical_index, natural_size, logical_size
-export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
+export native_index, linear_index, native_size, linear_size
+export is_basis, is_frame, is_orthogonal, is_biorthogonal
 export True, False
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative
-export linearize, delinearize
+export linearize_coefficients, delinearize_coefficients
 export moment
 
 # from sets/functionsubset.jl
@@ -108,6 +108,9 @@ export NormalizedSet, normalize
 
 # from sets/augmented_set.jl
 export ⊕, set, fun, derivative, AugmentedSet
+
+# from sets/multiple_set.jl
+export MultiSet
 
 # from sets/concatenated_set.jl
 export set1, set2, ConcatenatedSet
@@ -173,6 +176,7 @@ include("operator/operator.jl")
 include("operator/dimop.jl")
 
 include("operator/tensorproductoperator.jl")
+include("operator/block_operator.jl")
 
 include("expansions.jl")
 
@@ -186,6 +190,7 @@ include("tensorproducts.jl")
 
 include("util/functors.jl")
 
+include("sets/multiple_set.jl")
 include("sets/concatenated_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")

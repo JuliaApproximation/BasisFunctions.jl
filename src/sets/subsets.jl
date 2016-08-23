@@ -47,10 +47,10 @@ for op in [:left, :right, :moment, :norm]
 end
 
 
-# We can convert the logical index of a subset to the natural index of the
+# We can convert the linear index of a subset to the native index of the
 # underlying set. The other way around is more difficult, because we would need
 # the inverse of the s.idx map.
-natural_index(s::FunctionSubSet, idx) = natural_index(set(s), s.idx[idx])
+native_index(s::FunctionSubSet, idx) = native_index(set(s), s.idx[idx])
 
 call_element(s::FunctionSubSet, i, x...) = call_element(s.set, s.idx[i], x...)
 

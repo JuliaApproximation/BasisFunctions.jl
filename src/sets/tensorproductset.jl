@@ -35,13 +35,7 @@ end
 
 ndims(b::TensorProductSet, j::Int) = ndims(element(b, j))
 
-linearize(b::TensorProductSet, coef) = reshape(coef, length(b))
-
-delinearize(b::TensorProductSet, coef) = reshape(coef, size(b))
-
 ## Properties
-
-index_dim{TS,N,T}(::Type{TensorProductSet{TS,N,T}}) = tuple_length(TS)
 
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
@@ -87,14 +81,14 @@ grid(b::TensorProductSet) = tensorproduct(map(grid, elements(b))...)
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
 # The methods below follow this convention.
 left(b::TensorProductSet) = Vec([left(element(b,j)) for j=1:composite_length(b)])
-left(b::TensorProductSet, j::Int) = Vec([left(element(b,i),ind2sub(b,j)[i]) for i=1:composite_length(b)])
-#left(b::TensorProductSet, idx::Int, j) = left(b, ind2sub(b,j), j)
+left(b::TensorProductSet, j::Int) = Vec([left(element(b,i),native_index(b,j)[i]) for i=1:composite_length(b)])
+#left(b::TensorProductSet, idx::Int, j) = left(b, native_index(b,j), j)
 #left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
 right(b::TensorProductSet) = Vec([right(element(b,j)) for j=1:composite_length(b)])
-right(b::TensorProductSet, j::Int) = Vec([right(element(b,i),ind2sub(b,j)[i]) for i=1:composite_length(b)])
+right(b::TensorProductSet, j::Int) = Vec([right(element(b,i),native_index(b,j)[i]) for i=1:composite_length(b)])
 #right(b::TensorProductSet, j::Int) = right(element(b,j))
-#right(b::TensorProductSet, idx::Int, j) = right(b, ind2sub(b,j), j)
+#right(b::TensorProductSet, idx::Int, j) = right(b, native_index(b,j), j)
 #right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
 
 
@@ -111,7 +105,7 @@ end
 end
 
 
-checkbounds(b::TensorProductSet, i::Int) = checkbounds(b, ind2sub(b, i))
+checkbounds(b::TensorProductSet, i::Int) = checkbounds(b, native_index(b, i))
 
 function checkbounds(b::TensorProductSet, i)
     for k in 1:composite_length(b)
@@ -127,9 +121,9 @@ function call_element{TS,SN,LEN}(b::TensorProductSet{TS,SN,LEN}, i, x...)
     z
 end
 
-call_element(b::TensorProductSet, i::Int, x, y) = call_element(b, ind2sub(b, i), x, y)
-call_element(b::TensorProductSet, i::Int, x, y, z) = call_element(b, ind2sub(b, i), x, y, z)
-call_element(b::TensorProductSet, i::Int, x, y, z, t) = call_element(b, ind2sub(b, i), x, y, z, t)
+call_element(b::TensorProductSet, i::Int, x, y) = call_element(b, native_index(b, i), x, y)
+call_element(b::TensorProductSet, i::Int, x, y, z) = call_element(b, native_index(b, i), x, y, z)
+call_element(b::TensorProductSet, i::Int, x, y, z, t) = call_element(b, native_index(b, i), x, y, z, t)
 
 # For now, we assume that each set in the tensor product is a 1D set.
 # This may not always be the case.
@@ -143,8 +137,8 @@ call_element(b::TensorProductSet, i, x, y, z, t) =
     call_element(element(b,1), i[1], x) * call_element(element(b,2), i[2], y) * call_element(element(b,3), i[3], z) * call_element(element(b,4), i[4], t)
 
 
-ind2sub(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
-sub2ind(b::TensorProductSet, idx...) = sub2ind(size(b), idx...)
+native_index(b::TensorProductSet, idx::Int) = ind2sub(size(b), idx)
+linear_index(b::TensorProductSet, idxn) = sub2ind(size(b), idxn...)
 
 # Transform linear indexing into multivariate indices
 #getindex(b::TensorProductSet, i::Int) = getindex(b, ind2sub(b, i))

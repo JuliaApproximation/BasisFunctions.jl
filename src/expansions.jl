@@ -1,34 +1,31 @@
 # expansions.jl
 
 """
-A SetExpansion describes a function using its coefficient expansion in a certain function set.
+A SetExpansion describes a function using its expansion coefficients in a certain
+function set.
 
 Parameters:
 - S is the function set.
-- ELT is the numeric type of the coefficients.
-- ID is the dimension of the coefficient matrix.
+- C is the type of the expansion coefficients
 """
-immutable SetExpansion{S,ELT,ID}
-    set     ::  S
-    coef    ::  Array{ELT,ID}
+immutable SetExpansion{S,C}
+    set             ::  S
+    coefficients    ::  C
 
-    SetExpansion(set, coef) = (@assert size(set) == size(coef); new(set,coef))
+    function SetExpansion(set, coefficients)
+        @assert length(set) == length(coefficients)
+        new(set, coefficients)
+    end
 end
 
-SetExpansion{S <: FunctionSet,ELT,ID}(set::S, coef::Array{ELT,ID}) = SetExpansion{S,ELT,ID}(set,coef)
+SetExpansion(s::FunctionSet, coefficients = zeros(s)) =
+    SetExpansion{typeof(s),typeof(coefficients)}(s, coefficients)
 
-SetExpansion(s::FunctionSet) = SetExpansion(s, eltype(s))
-
-SetExpansion{ELT}(s::FunctionSet, ::Type{ELT}) = SetExpansion(s, zeros(ELT, size(s)))
-
-eltype{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ELT
-
-index_dim{S,ELT,ID}(::Type{SetExpansion{S,ELT,ID}}) = ID
-index_dim(s::SetExpansion) = index_dim(typeof(s))
+eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(S)
 
 set(e::SetExpansion) = e.set
 
-coefficients(e::SetExpansion) = e.coef
+coefficients(e::SetExpansion) = e.coefficients
 
 # Delegation of methods
 for op in (:length, :size, :left, :right, :grid)
@@ -43,26 +40,28 @@ end
 has_basis(e::SetExpansion) = is_basis(set(e))
 has_frame(e::SetExpansion) = is_frame(set(e))
 
-getindex(e::SetExpansion, i...) = e.coef[i...]
+getindex(e::SetExpansion, i...) = e.coefficients[i...]
 
-setindex!(e::SetExpansion, v, i...) = (e.coef[i...] = v)
+setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
 @compat (e::SetExpansion)(x...) = call_expansion_with_set(e, set(e), coefficients(e), promote(x...)...)
-call_expansion_with_set(e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion(s, coef, x...)
+call_expansion_with_set(e::SetExpansion, s::FunctionSet, coefficients, x...) = call_expansion(s, coefficients, x...)
 
-call!(result, e::SetExpansion, x...) = call_expansion_with_set!(result, e, set(e), coefficients(e), promote(x...)...)
-call_expansion_with_set!(result, e::SetExpansion, s::FunctionSet, coef, x...) = call_expansion!(result, s, coef, x...)
+call!(result, e::SetExpansion, x...) =
+    call_expansion_with_set!(result, e, set(e), coefficients(e), promote(x...)...)
+call_expansion_with_set!(result, e::SetExpansion, s::FunctionSet, coefficients, x...) =
+    call_expansion!(result, s, coefficients, x...)
 
 function differentiate(f::SetExpansion, order=1)
     op = differentiation_operator(f.set, order)
-    SetExpansion(dest(op), apply(op,f.coef))
+    SetExpansion(dest(op), apply(op,f.coefficients))
 end
 
 function antidifferentiate(f::SetExpansion, order=1)
     op = antidifferentiation_operator(f.set, order)
-    SetExpansion(dest(op), apply(op,f.coef))
+    SetExpansion(dest(op), apply(op,f.coefficients))
 end
 
 
@@ -75,7 +74,7 @@ end
 ∫∂y(f::SetExpansion) = antidifferentiate(f, 2, 1)
 ∫∂z(f::SetExpansion) = antidifferentiate(f, 3, 1)
 # little helper function
-ei(dim,i, coef) = tuple((coef*eye(Int,dim)[:,i])...)
+ei(dim,i, coefficients) = tuple((coefficients*eye(Int,dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
 differentiate(f::SetExpansion, var, order) = differentiate(f, ei(ndims(f), var, order))
 antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(ndims(f), var, order))
@@ -107,7 +106,8 @@ double_one{T <: Real}(::Type{Complex{T}}) = one(T) + im*one(T)
 # Just generate Float64 random values and convert to the type of s
 # This does not work as intended, one(Bigfloat)*rand() gives a Float64 Array
 "Generate an expansion with random coefficients."
-random_expansion{N,ELT}(s::FunctionSet{N,ELT}) = SetExpansion(s, double_one(ELT) * convert(Array{ELT,length(size(s))},rand(size(s))))
+random_expansion{N,ELT}(s::FunctionSet{N,ELT}) =
+    SetExpansion(s, double_one(ELT) * convert(Array{ELT,length(size(s))},rand(size(s))))
 
 
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
@@ -147,8 +147,8 @@ end
 
 function (*)(s1::SetExpansion, s2::SetExpansion)
     @assert is_compatible(set(s1),set(s2))
-    (mset,mcoef) = (*)(set(s1),set(s2),coefficients(s1),coefficients(s2))
-    SetExpansion(mset,mcoef)
+    (mset,mcoefficients) = (*)(set(s1),set(s2),coefficients(s1),coefficients(s2))
+    SetExpansion(mset,mcoefficients)
 end
 
 (*)(op::AbstractOperator, e::SetExpansion) = apply(op, e)

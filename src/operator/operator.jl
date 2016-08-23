@@ -34,7 +34,7 @@ op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype
 # promote_eltype{ELT,S}(op::SomeOperator{ELT}, ::Type{S}) = ...
 promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
 
-# Default implementation of src and dest
+# Default implementation of src and dest: assume they are fields
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
 
@@ -53,9 +53,9 @@ is_inplace(op::AbstractOperator) = false
 is_diagonal(op::AbstractOperator) = false
 
 function apply(op::AbstractOperator, coef_src)
-		coef_dest = Array(eltype(op), size(dest(op)))
-		apply!(op, coef_dest, coef_src)
-		coef_dest
+	coef_dest = zeros(eltype(op), dest(op))
+	apply!(op, coef_dest, coef_src)
+	coef_dest
 end
 
 # Catch applications of an operator, and do:
@@ -149,20 +149,18 @@ function matrix!(op::AbstractOperator, a)
 
     @assert (m,n) == size(a)
 
-    r = zeros(eltype(a), size(src(op)))
-    s = zeros(eltype(a), size(dest(op)))
-    matrix_fill!(op, a, r, s)
+    coef_src  = zeros(eltype(a), src(op))
+    coef_dest = zeros(eltype(a), dest(op))
+    matrix_fill!(op, a, coef_src, coef_dest)
 end
 
-function matrix_fill!(op::AbstractOperator, a, r, s)
-    for i = 1:length(r)
-        if (i > 1)
-            r[i-1] = 0
-        end
-        r[i] = 1
-        apply!(op, s, r)
-        for j = 1:length(s)
-            a[j,i] = s[j]
+function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
+    for (i,si) in enumerate(eachindex(coef_src))
+		coef_src[si] = 1
+        apply!(op, coef_dest, coef_src)
+		coef_src[si] = 0
+        for (j,dj) in enumerate(eachindex(coef_dest))
+            a[j,i] = coef_dest[dj]
         end
     end
     a

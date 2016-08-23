@@ -1,12 +1,13 @@
 # polynomials.jl
 
 
-abstract PolynomialBasis{T} <: AbstractBasis1d{T}
+abstract PolynomialBasis{T} <: FunctionSet1d{T}
 
 # Indices of polynomials naturally start at 0
-natural_index(b::PolynomialBasis, idx) = idx-1
-logical_index(b::PolynomialBasis, idxn) = idxn+1
+native_index(b::PolynomialBasis, idx) = idx-1
+linear_index(b::PolynomialBasis, idxn) = idxn+1
 
+is_basis(b::PolynomialBasis) = true
 
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 

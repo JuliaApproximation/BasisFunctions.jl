@@ -73,7 +73,7 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # call_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function moment{T}(b::ChebyshevBasis{T}, idx)
-    n = natural_index(b, idx)
+    n = native_index(b, idx)
     if n == 0
         T(2)
     else

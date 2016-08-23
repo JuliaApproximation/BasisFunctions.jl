@@ -32,8 +32,6 @@ size(g::TensorProductGrid, j::Int) = length(g.grids[j])
 
 ndims(g::TensorProductGrid, j::Int) = ndims(element(g,j))
 
-index_dim{TG,N,T}(::Type{TensorProductGrid{TG,N,T}}) = tuple_length(TG)
-
 length(g::TensorProductGrid) = prod(size(g))
 
 left(g::TensorProductGrid) = Vec(map(left, g.grids)...)

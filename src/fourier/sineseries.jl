@@ -8,7 +8,7 @@
 """
 Sine series on the interval [0,1].
 """
-immutable SineSeries{T} <: AbstractBasis1d{T}
+immutable SineSeries{T} <: FunctionSet1d{T}
     n           ::  Int
 
     SineSeries(n) = new(n)
@@ -27,6 +27,8 @@ promote_eltype{T,S}(b::SineSeries{T}, ::Type{S}) = SineSeries{promote_type(T,S)}
 
 resize(b::SineSeries, n) = SineSeries(n, eltype(b))
 
+is_basis(b::SineSeries) = true
+is_orthogonal(b::SineSeries) = true
 
 
 has_grid(b::SineSeries) = false

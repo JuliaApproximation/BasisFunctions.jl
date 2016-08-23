@@ -7,19 +7,19 @@ Any functional has a source and an element type.
 
 The dimensions of a functional are like a row: (1,length(src)).
 """
-abstract AbstractFunctional{SRC,ELT}
+abstract AbstractFunctional{ELT}
 
+# Assume that src is a field of f. Override this routine if it isn't.
 src(f::AbstractFunctional) = f.src
 
-eltype{SRC,ELT}(::Type{AbstractFunctional{SRC,ELT}}) = ELT
+eltype{ELT}(::Type{AbstractFunctional{ELT}}) = ELT
 eltype{F <: AbstractFunctional}(::Type{F}) = eltype(supertype(F))
 
 length(f::AbstractFunctional) = length(src(f))
 
 size(f::AbstractFunctional) = (1,length(f))
 
-
-apply(f::AbstractFunctional, coef) = apply(f, src(f), coef)
+apply(f::AbstractFunctional, coef) = apply_functional(f, src(f), coef)
 
 (*)(f::AbstractFunctional, coef::AbstractArray) = apply(f, coef)
 
@@ -32,26 +32,21 @@ function row(f::AbstractFunctional)
 end
 
 function row!(result, f::AbstractFunctional)
-    n = length(src(f))
+    @assert length(result) == length(f)
 
-    @assert size(result) == (1,n)
-
-    T = eltype(f)
-    r = zeros(T,n)
-    r_src = reshape(r, size(src(f)))
-    for i = 1:n
-        if (i > 1)
-            r[i-1] = 0
-        end
-        r[i] = 1
-        result[i] = apply(f, r_src)
+    set = src(f)
+    coef = zeros(set)
+    for (i,j) in enumerate(eachindex(set))
+        coef[j] = 1
+        result[i] = apply(f, coef)
+        coef[j] = 0
     end
     result
 end
 
 
 """An EvaluationFunctional represents a point evaluation."""
-immutable EvaluationFunctional{N,T,SRC,ELT} <: AbstractFunctional{SRC,ELT}
+immutable EvaluationFunctional{N,T,SRC,ELT} <: AbstractFunctional{ELT}
     src ::  SRC
     x   ::  Vec{N,T}
 
@@ -63,41 +58,44 @@ EvaluationFunctional{N,T}(src::FunctionSet{N,T}, x::Vec{N,T}) =
 
 EvaluationFunctional{T,S <: Number}(src::FunctionSet{1,T}, x::S) = EvaluationFunctional(src, Vec{1,T}(x))
 
-
-apply(f::EvaluationFunctional, src, coef) = call_expansion(src, coef, f.x)
+apply(f::EvaluationFunctional, coef) = call_expansion(src(f), coef, f.x)
 
 
 
 
 "A CompositeFunctional represents a functional times an operator."
-immutable CompositeFunctional{F,OP,ID,SRC,ELT} <: AbstractFunctional{SRC,ELT}
-    f   ::  F
-    op  ::  OP
+immutable CompositeFunctional{ELT} <: AbstractFunctional{ELT}
+    functional  ::  AbstractFunctional
+    operator    ::  AbstractOperator
 
-    scratch ::  Array{ELT,1}
+    # Scratch space to hold the result of the operator
+    scratch
 
-    function CompositeFunctional(f::AbstractFunctional, op::AbstractOperator{SRC})
-        scratch = Array(ELT, size(dest(op)))
-        new(f, op, scratch)
+    function CompositeFunctional(functional, operator)
+        scratch = zeros(dest(op))
+        new(functional, operator, scratch)
     end
 end
 
-CompositeFunctional{SRC}(f::AbstractFunctional, op::AbstractOperator{SRC}) =
-    CompositeFunctional{typeof(f), typeof(op), index_dim(dest(op)), SRC, eltype(op)}(f, op)
+function CompositeFunctional(functional::AbstractFunctional, operator::AbstractOperator)
+    ELT = promote_type(eltype(functional), eltype(operator))
+    CompositeFunctional{ELT}(functional, operator)
+end
 
-functional(f::CompositeFunctional) = f.f
+functional(f::CompositeFunctional) = f.functional
 
-operator(f::CompositeFunctional) = f.op
+operator(f::CompositeFunctional) = f.operator
 
 src(f::CompositeFunctional) = src(operator(f))
 
+apply(f::CompositeFunctional, coef) =
+    apply_composite_functional(f.functional, f.operator, f.scratch, coef)
+
+function apply_composite_functional(functional, operator, scratch, coef)
+    apply!(operator, scratch, coef)
+    apply(functional, scratch)
+end
 
 (*)(f::AbstractFunctional, op::AbstractOperator) = CompositeFunctional(f, op)
 
 (*)(f::CompositeFunctional, op::AbstractOperator) = CompositeFunctional(functional(f), operator(f) * op)
-
-
-function apply(f::CompositeFunctional, src, coef)
-    apply!(operator(f), f.scratch, coef)
-    apply(functional(f), f.scratch)
-end
