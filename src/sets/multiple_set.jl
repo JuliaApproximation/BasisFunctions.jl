@@ -58,7 +58,7 @@ resize{N,T}(s::MultiSet{N,T}, n::Array{Int,1}) =
 promote_eltype{N,T,S}(s::MultiSet{N,T}, ::Type{S}) =
     MultiSet([promote_eltype(el, S) for el in elements(s)])
 
-zeros(T::Type, s::MultiSet) = MultiArray([zeros(T,el) for el in elements(s)])
+zeros(T::Type, s::MultiSet) = MultiArray(Array{T,ndims(s)}[zeros(T,el) for el in elements(s)])
 
 for op in (:isreal, )
     @eval $op(s::MultiSet) = reduce($op, elements(s))

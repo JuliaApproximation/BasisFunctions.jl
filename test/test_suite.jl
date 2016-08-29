@@ -122,6 +122,10 @@ function test_derived_sets(T)
 
     @testset "$(rpad("Multiple sets",80))" begin
     test_generic_set_interface(multiset(b1,b2)) end
+
+    @testset "$(rpad("A multiple and augmented set combination",80))" begin
+    s = rescale(b1, 1/2, 1)
+    test_generic_set_interface(multiset(s,Log()*s)) end
 end
 
 
@@ -153,7 +157,7 @@ end
             test_generic_set_interface(basis, typeof(basis))
         end
 
-        delimit("derived sets")
+        delimit("Derived sets")
             test_derived_sets(T)
 
         delimit("Tensor specific tests")

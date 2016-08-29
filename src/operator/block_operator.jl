@@ -35,10 +35,26 @@ function BlockOperator{OP <: AbstractOperator}(operators::Array{OP,2})
     BlockOperator{ELT}(operators, op_src, op_dest)
 end
 
+function block_row_operator(op1::AbstractOperator, op2::AbstractOperator)
+    ELT = promote_type(eltype(op1), eltype(op2))
+    operators = Array(AbstractOperator{ELT}, 1, 2)
+    operators[1] = op1
+    operators[2] = op2
+    BlockOperator(operators)
+end
+
 function block_row_operator{OP <: AbstractOperator}(ops::Array{OP, 1})
     ELT = eltype(ops[1])
     operators = Array(AbstractOperator{ELT}, 1, length(ops))
     operators[:] = ops
+    BlockOperator(operators)
+end
+
+function block_column_operator(op1::AbstractOperator, op2::AbstractOperator)
+    ELT = promote_type(eltype(op1), eltype(op2))
+    operators = Array(AbstractOperator{ELT}, 2, 1)
+    operators[1] = op1
+    operators[2] = op2
     BlockOperator(operators)
 end
 
@@ -118,8 +134,8 @@ function apply_columnoperator!(op::BlockOperator, coef_dest::MultiArray, coef_sr
 end
 
 
-hcat(op1::AbstractOperator, op2::AbstractOperator) = block_row_operator([op1,op2])
-vcat(op1::AbstractOperator, op2::AbstractOperator) = block_column_operator([op1,op2])
+hcat(op1::AbstractOperator, op2::AbstractOperator) = block_row_operator(op1, op2)
+vcat(op1::AbstractOperator, op2::AbstractOperator) = block_column_operator(op1, op2)
 
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
