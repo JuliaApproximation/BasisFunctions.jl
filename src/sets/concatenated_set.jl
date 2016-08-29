@@ -8,7 +8,7 @@ end
 
 ConcatenatedSet{N,T1,T2}(s1::FunctionSet{N,T1}, s2::FunctionSet{N,T2}) = ConcatenatedSet(promote(s1,s2)...)
 
-⊕(s1::FunctionSet, s2::FunctionSet) = ConcatenatedSet(s1, s2)
+#⊕(s1::FunctionSet, s2::FunctionSet) = ConcatenatedSet(s1, s2)
 
 elements(set::ConcatenatedSet) = (set1(s), set2(s))
 element(set::ConcatenatedSet, i::Int) = i == 1 ? set.set1 : set.set2
@@ -111,7 +111,7 @@ end
 
 concatenate(op1::AbstractOperator, op2::AbstractOperator) = ConcatenatedOperator(op1, op2)
 
-⊕(op1::AbstractOperator, op2::AbstractOperator) = concatenate(op1, op2)
+#⊕(op1::AbstractOperator, op2::AbstractOperator) = concatenate(op1, op2)
 
 
 function apply!(op::ConcatenatedOperator, coef_dest, coef_src)

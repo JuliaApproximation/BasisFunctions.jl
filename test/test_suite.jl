@@ -114,14 +114,14 @@ function test_derived_sets(T)
     @testset "$(rpad("Linear mapped sets",80))" begin
     test_generic_set_interface(rescale(b1, -1, 2)) end
 
-    @testset "$(rpad("Concatenated sets",80))" begin
-    test_generic_set_interface(b1 ⊕ b2) end
-
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
     @testset "$(rpad("Augmented sets",80))" begin
     test_generic_set_interface(BF.Cos() * b1) end
+
+    @testset "$(rpad("Multiple sets",80))" begin
+    test_generic_set_interface(multiset(b1,b2)) end
 end
 
 
@@ -153,6 +153,9 @@ end
             test_generic_set_interface(basis, typeof(basis))
         end
 
+        delimit("derived sets")
+            test_derived_sets(T)
+
         delimit("Tensor specific tests")
         @testset "$(rpad("test iteration",80))" begin
             test_tensor_sets(T) end
@@ -165,7 +168,7 @@ end
             test_grids(T) end
 
         delimit("Check evaluations, interpolations, extensions, setexpansions")
-        
+
         ## @testset "$(rpad("Fourier expansions",80))" begin
         ##     test_fourier_series(T) end
 
@@ -174,8 +177,7 @@ end
 
         @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
             test_ops(T) end
-        delimit("derived sets")
-            test_derived_sets(T)
+
     end # for T in...
     println()
 println(" All tests passed!")

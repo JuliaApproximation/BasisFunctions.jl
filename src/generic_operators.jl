@@ -27,7 +27,22 @@
 # Extension and restriction
 ############################
 
-
+# A function set can often be extended to a similar function set of a different size.
+# Extension and restriction operators always have a source and destination set.
+# For introspection, you can ask a set what a suitable extensize size would be,
+# and use a resized set as the destination of the operator:
+#
+#   larger_size = extension_size(some_set)
+#   larger_set = resize(some_set, larger_size)
+#   E = extension_operator(some_set, larger_set)
+#
+# and similarly for restriction. This is the default if no destination set is
+# supplied to extension_operator.
+#
+# If a set does not need to store data for its extension operator, it can simply
+# choose to implement the action of the Extension operator, e.g.:
+#
+# apply!(op::Extension, s1::SomeSet, s2::SomeSet, coef_dest, coef_src) = ...
 
 immutable Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
@@ -44,13 +59,17 @@ s2 as source and destination.
 """
 extension_operator(s1::FunctionSet, s2::FunctionSet; options...) = Extension(s1, s2)
 
+function extension_operator(s1::FunctionSet; options...)
+    larger_size = extension_size(s)
+    s2 = resize(s1, larger_size)
+    extension_operator(s1, s2; options...)
+end
+
 """
 Return a suitable length to extend to, for example one such that the corresponding grids are nested
 and function evaluations can be shared. The default is twice the length of the current set.
 """
 extension_size(s::FunctionSet) = 2*length(s)
-
-extension_size(s::TensorProductSet) = map(extension_size, elements(s))
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
 
@@ -70,6 +89,12 @@ from the restriction. The default restriction_operator is of type Restriction wi
 s2 as source and destination.
 """
 restriction_operator(s1::FunctionSet, s2::FunctionSet; options...) = Restriction(s1, s2)
+
+function restriction_operator(s1::FunctionSet; options...)
+    smaller_size = restriction_size(s1)
+    s2 = resize(s1, smaller_size)
+    restriction_operator(s1, s2; options...)
+end
 
 """
 Return a suitable length to restrict to, for example one such that the corresponding grids are nested
@@ -110,17 +135,36 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 # Approximation: transformation, interpolation and evaluation
 #################################################################
 
+# A function set can have several associated transforms. The default transform is
+# associated with the grid of the set, e.g. the FFT and the DCT for Chebyshev expansions
+# which convert between coefficient space and value space. In this case, the
+# transform maps coefficients to a DiscreteGridSpace.
+#
+# transform_operator takes two arguments, a source and destination set, in order
+# to allow for different transforms.
+#
+# We assume that the transform itself is unitary. In order to compute an approximation
+# to a function from function values, the transform is typically followed by an
+# additional computation (e.g. the first Chebyshev coefficiet is halved after the DCT).
+# This additional operation is achieved by the operator returned by the
+# transform_normalization_operator function.
 
 # Convenience functions: automatically convert a grid to a DiscreteGridSpace
 transform_operator(src::AbstractGrid, dest::FunctionSet; options...) =
     transform_operator(DiscreteGridSpace(src, eltype(dest)), dest; options...)
+
 transform_operator(src::FunctionSet, dest::AbstractGrid; options...) =
     transform_operator(src, DiscreteGridSpace(dest, eltype(src)); options...)
 
+transform_set(set::FunctionSet; options...) = DiscreteGridSpace(grid(set), eltype(set))
+
+transform_operator(src::FunctionSet; options...) =
+    transform_operator(src, transform_set(src; options...); options...)
 
 ## Interpolation and least squares
 
-# Compute the interpolation matrix of the given basis on the given set of points (a grid or any iterable set of points)
+# Compute the interpolation matrix of the given basis on the given set of points
+# (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
     T = promote_type(eltype(set), eltype(pts))
     a = Array(T, length(pts), length(set))
@@ -239,7 +283,8 @@ end
 # source that has a grid
 (*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
 
-approximate(s::FunctionSet, f::Function; options...) = SetExpansion(s, approximation_operator(s; options...) * f)
+approximate(s::FunctionSet, f::Function; options...) =
+    SetExpansion(s, approximation_operator(s; options...) * f)
 
 
 

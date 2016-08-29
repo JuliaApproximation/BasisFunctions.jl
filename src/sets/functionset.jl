@@ -293,6 +293,11 @@ function call_set(s::FunctionSet, i, x...)
     call_element(s, i, x...)
 end
 
+# The specific set can choose to override call_element or call_element_native. The
+# latter is called with a native index.
+call_element(s::FunctionSet, i, x...) =
+    call_element_native(s, native_index(s, i), x...)
+
 # Evaluate on a grid
 function call_set(b::FunctionSet, i::Int, grid::AbstractGrid)
     result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))

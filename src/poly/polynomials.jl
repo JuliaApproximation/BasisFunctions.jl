@@ -68,8 +68,9 @@ end
 #
 # with the coefficients implemented by the rec_An, rec_Bn and rec_Cn functions.
 function recurrence_eval{T,S <: Number}(b::OPS{T}, idx::Int, x::S)
-    z0 = one(promote_type(T,S))
-    z1 = rec_An(b, 0) * x + rec_Bn(b, 0)
+    ELT = promote_type(T,S)
+    z0 = one(ELT)
+    z1 = ELT(rec_An(b, 0) * x + rec_Bn(b, 0))
 
     if idx == 1
         return z0

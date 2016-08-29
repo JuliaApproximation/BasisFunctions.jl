@@ -8,16 +8,16 @@ using FixedSizeArrays
 using Compat
 using RecipesBase
 
-import Base: +, *, /, ==, |, &, -, \, ^
+import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 
-import Base: promote, promote_rule, convert
+import Base: promote, promote_rule, convert, promote_eltype
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
         range, collect, endof
 
 import Base: cos, sin, exp, log
 
-import Base: zeros
+import Base: zeros, fill!
 
 import Base: getindex, setindex!, eltype
 
@@ -28,6 +28,8 @@ import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 import Base: show, showcompact, call, convert, similar
 
 import Base: dct, idct
+
+import Base: indices, normalize
 
 # import PyPlot: plot
 
@@ -80,12 +82,14 @@ export matrix
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
+        IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator,
+        WrappedOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,
     approximation_operator, transform_operator, differentiation_operator,
-    antidifferentiation_operator, approximate,
+    antidifferentiation_operator, derivative_set, antiderivative_set, approximate,
     evaluation_operator, normalization_operator,
     Extension, Restriction, extend, Differentiation, AntiDifferentiation,
     extension_size, transform_normalization_operator, interpolation_matrix,
@@ -93,6 +97,9 @@ export extension_operator, restriction_operator, interpolation_operator,
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
+
+# from operator/block_operator.jl
+export block_row_operator, block_column_operator, composite_size
 
 # from functional/functional.jl
 export AbstractFunctional, EvaluationFunctional, row
@@ -110,16 +117,10 @@ export NormalizedSet, normalize
 export ⊕, set, fun, derivative, AugmentedSet
 
 # from sets/multiple_set.jl
-export MultiSet
-
-# from sets/concatenated_set.jl
-export set1, set2, ConcatenatedSet
+export MultiSet, multiset
 
 # from sets/operated_set.jl
 export OperatedSet
-
-# from sets/piecewise_set.jl
-export PiecewiseSet
 
 # from sets/euclidean.jl
 export Cn, Rn
@@ -157,7 +158,7 @@ using Base.Cartesian
 
 
 include("util/common.jl")
-
+include("util/multiarray.jl")
 
 include("grid/grid.jl")
 
@@ -191,11 +192,9 @@ include("tensorproducts.jl")
 include("util/functors.jl")
 
 include("sets/multiple_set.jl")
-include("sets/concatenated_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")
-include("sets/piecewise_set.jl")
 
 
 include("fourier/fouriertransforms.jl")

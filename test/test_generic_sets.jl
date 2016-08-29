@@ -47,7 +47,10 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Does indexing work as intended?
     idx = random_index(basis)
     bf = basis[idx]
-    @test set(bf) == basis
+    # Test disabled: the 'set' of a basis function is not always the set that
+    # was originally indexed. For example, an indexed multiset will put the 'set'
+    # of the basis function to the original set it belongs to, not the multiset.
+    # @test set(bf) == basis
 
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ call_set(basis, idx, x)

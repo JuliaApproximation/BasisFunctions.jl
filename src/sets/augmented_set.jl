@@ -44,12 +44,13 @@ call_element(b::AugmentedSet, i, x) = b.f(x) * call_set(b.set, i, x)
 
 
 extension_operator{F,S1,S2}(s1::AugmentedSet{S1,F}, s2::AugmentedSet{S2,F}; options...) =
-    WrappedOperator(s1, s2, extension_operator(set(s1), set(s2); options...))
+    wrap_operator(s1, s2, extension_operator(set(s1), set(s2); options...))
 
+has_derivative(s::AugmentedSet) = has_derivative(set(s))
 
 
 "The AugmentedSetDifferentiation enables differentiation of an AugmentedSet of the
-form f × S to a ConcatenatedSet of the form f' × S ⊕ f × S'."
+form f × S to a MultiSet of the form f' × S ⊕ f × S'."
 immutable AugmentedSetDifferentiation{D,ELT} <: AbstractOperator{ELT}
     # The differentiation operator of the underlying set
     diff_op ::  D
@@ -57,13 +58,13 @@ immutable AugmentedSetDifferentiation{D,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 
-    # Reserve scratch space for storing coefficients of the concatenated sets in dest
+    # Reserve scratch space for storing coefficients of the multi sets in dest
     scratch_dest1   ::  Array{ELT,1}
     scratch_dest2   ::  Array{ELT,1}
 
-    function AugmentedSetDifferentiation(diff_op, src, dest::ConcatenatedSet)
-        scratch_dest1 = Array(ELT, length(set1(dest)))
-        scratch_dest2 = Array(ELT, length(set2(dest)))
+    function AugmentedSetDifferentiation(diff_op, src, dest::MultiSet)
+        scratch_dest1 = zeros(ELT, element(dest, 1))
+        scratch_dest2 = zeros(ELT, element(dest, 2))
 
         new(diff_op, src, dest, scratch_dest1, scratch_dest2)
     end
@@ -113,9 +114,12 @@ end
 
 
 # Assume order = 1...
-function differentiation_operator(s1::AugmentedSet, s2::FunctionSet, order; options...)
+function differentiation_operator(s1::AugmentedSet, s2::MultiSet, order; options...)
     @assert order == 1
-    result = AugmentedSetDifferentiation(s1)
-    @assert dest(result) == s2
-    result
+    @assert s2 == derivative_set(s1, order)
+
+    I = IdentityOperator(s1, element(s2, 1))
+    D = differentiation_operator(set(s1))
+    DW = wrap_operator(s1, element(s2, 2), D)
+    block_column_operator([I,DW])
 end

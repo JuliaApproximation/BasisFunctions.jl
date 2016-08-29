@@ -51,9 +51,9 @@ is_diagonal(::ZeroOperator) = true
 
 ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
 
-matrix!(op::ZeroOperator, a) = (a[:] = 0; a)
+matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
-apply_inplace!(op::ZeroOperator, coef_srcdest) = coef_srcdest[:] = 0
+apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, 0); coef_srcdest)
 
 # The zero operator annihilates all other operators
 (*)(op2::ZeroOperator, op1::ZeroOperator) = ZeroOperator(src(op1), dest(op2))
@@ -274,6 +274,10 @@ end
 
 WrappedOperator(src, dest, op::AbstractOperator) =
     WrappedOperator{typeof(op),eltype(op)}(src, dest, op)
+
+wrap_operator(src, dest, op::AbstractOperator) = WrappedOperator(src, dest, op)
+
+wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, operator(op))
 
 promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
     WrappedOperator(op.src, op.dest, promote_eltype(op.op, S))

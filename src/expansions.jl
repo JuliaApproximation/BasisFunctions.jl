@@ -100,14 +100,19 @@ end
 differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(set(s1), set(s2), var...)
 differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
 
-double_one{T <: Real}(::Type{T}) = one(T)
-double_one{T <: Real}(::Type{Complex{T}}) = one(T) + im*one(T)
+# Generate a random value of type T
+random_value{T <: Real}(::Type{T}) = T(rand())
+random_value{T <: Real}(::Type{Complex{T}}) = T(rand()) + im*T(rand())
 
-# Just generate Float64 random values and convert to the type of s
-# This does not work as intended, one(Bigfloat)*rand() gives a Float64 Array
 "Generate an expansion with random coefficients."
-random_expansion{N,ELT}(s::FunctionSet{N,ELT}) =
-    SetExpansion(s, double_one(ELT) * convert(Array{ELT,length(size(s))},rand(size(s))))
+function random_expansion(s::FunctionSet)
+    coef = zeros(s)
+    T = eltype(s)
+    for i in eachindex(coef)
+        coef[i] = random_value(T)
+    end
+    SetExpansion(s, coef)
+end
 
 
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))

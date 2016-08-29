@@ -63,6 +63,8 @@ function approx_length(b::TensorProductSet, n::Int)
     tuple([approx_length(element(b, j), m^ndims(b, j)) for j in 1:composite_length(b)]...)
 end
 
+extension_size(s::TensorProductSet) = map(extension_size, elements(s))
+
 # It would be odd if the first method below was ever called, because LEN=1 makes
 # little sense for a tensor product. But perhaps in generic code somewhere...
 name(b::TensorProductSet) = "tensor product (" * name(element(b,1)) * names(b.sets[2:end]...) * ")"

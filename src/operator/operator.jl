@@ -98,7 +98,7 @@ function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
 	throw(InexactError())
 end
 
-(*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
+(*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 
 """
 Apply an operator multiple times, to each column of the given argument.

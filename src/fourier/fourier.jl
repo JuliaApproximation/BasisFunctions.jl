@@ -220,8 +220,10 @@ end
 
 diff_scaling_function(i) = i* 2 * pi * im
 antidiff_scaling_function(i) = i==0 ? 0 : 1 / (i* 2 * pi * im)
-differentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd,order::Int; options...) = ScalingOperator(b,1/period(b))*IdxnScalingOperator(b,order=order,scale=diff_scaling_function)
-antidifferentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd,order::Int; options...) = ScalingOperator(b,period(b))*IdxnScalingOperator(b,order=order,scale=antidiff_scaling_function)
+differentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...) =
+	ScalingOperator(b,1/period(b))*IdxnScalingOperator(b,order=order,scale=diff_scaling_function)
+antidifferentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...) =
+	ScalingOperator(b,period(b))*IdxnScalingOperator(b,order=order,scale=antidiff_scaling_function)
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...) =
