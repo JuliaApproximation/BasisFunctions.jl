@@ -54,11 +54,17 @@ done(it::MultiArrayIndexIterator, state) = state[1] > composite_length(it.array)
 
 length(it::MultiArrayIndexIterator) = length(it.array)
 
+# Support linear indexing too
+getindex(s::MultiArray, idx::Int) = getindex(s, native_index(s, idx))
+
 getindex(s::MultiArray, idx::NTuple{2,Int}) = getindex(s, idx[1], idx[2])
 
 getindex(s::MultiArray, i::Int, j::Int) = s.arrays[i][j]
 
 getindex(s::MultiArray, i::Int, j::Int...) = s.arrays[i][j...]
+
+# Support linear indexing too
+setindex!(s::MultiArray, v, idx::Int) = setindex!(s, v, native_index(s, idx))
 
 setindex!(s::MultiArray, v, idx::NTuple{2,Int}) = setindex!(s, v, idx[1], idx[2])
 

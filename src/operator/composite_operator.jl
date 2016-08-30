@@ -36,10 +36,10 @@ function CompositeOperator(operators::AbstractOperator...)
     # in-place. We do reserve scratch space for the first operator, even if it
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
-    scratch_array = Any[zeros(ELT, size(dest(operators[1])))]
+    scratch_array = Any[zeros(ELT, dest(operators[1]))]
     for m = 2:L-1
         if ~is_inplace(operators[m])
-            push!(scratch_array, zeros(ELT, size(dest(operators[m]))))
+            push!(scratch_array, zeros(ELT, dest(operators[m])))
         end
     end
     scratch = tuple(scratch_array...)

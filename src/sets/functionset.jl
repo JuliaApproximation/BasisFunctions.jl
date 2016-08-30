@@ -11,10 +11,12 @@ truncation of an infinite set, but that need not be the case.
 
 A FunctionSet has a dimension N and a numeric type T. The dimension N corresponds
 to the number of variables of the basis functions. The numeric type T is the
-type of expansion coefficients corresponding to this set.
+type of expansion coefficients corresponding to this set. This type can be wider
+than the native type of the set (BigFloat versus Float64 for example). For some
+function sets it is always complex.
 
 Each function set is ordered. There is a one-to-one map between the integers
-from 1 to length(s) and the elements of the set. This map defines the order of
+1:length(s) and the elements of the set. This map defines the order of
 coefficients in a vector that represents a function expansion in the set.
 
 A FunctionSet has two types of indexing: native indexing and linear indexing.
@@ -99,12 +101,12 @@ since it is given without parameters.
 
 This function is mainly used to create instances for testing purposes.
 """
-instantiate{B <: FunctionSet}(::Type{B}, n) = instantiate(B, n, Float64)
+instantiate{S <: FunctionSet}(::Type{S}, n) = instantiate(S, n, Float64)
 
 "Promote the element type of the function set."
 # This definition catches cases where nothing needs to be done with diagonal dispatch
 # All sets should implement their own promotion rules.
-promote_eltype{N,T}(b::FunctionSet{N,T}, ::Type{T}) = b
+promote_eltype{N,T}(s::FunctionSet{N,T}, ::Type{T}) = s
 
 promote{N,T}(set1::FunctionSet{N,T}, set2::FunctionSet{N,T}) = (set1,set2)
 
@@ -115,23 +117,23 @@ end
 
 # similar returns a similar basis of a given size and numeric type
 # It can be implemented in terms of resize and promote_eltype.
-similar(b::FunctionSet, T::Type, n) = resize(promote_eltype(b, T), n)
+similar(s::FunctionSet, T::Type, n) = resize(promote_eltype(s, T), n)
 
 """
 Return a set of zero coefficients in the native format of the set.
 """
-zeros(set::FunctionSet) = zeros(eltype(set), set)
+zeros(s::FunctionSet) = zeros(eltype(s), s)
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multisets.
-zeros(T::Type, set::FunctionSet) = zeros(T, size(set))
+zeros(T::Type, s::FunctionSet) = zeros(T, size(s))
 
 
 "Compute the native index corresponding to the given linear index."
-native_index(b::FunctionSet, idx) = idx
+native_index(s::FunctionSet, idx) = idx
 
 "Compute the linear index corresponding to the given native index."
-linear_index(b::FunctionSet, idxn) = idxn
+linear_index(s::FunctionSet, idxn) = idxn
 
 """
 Convert the set of coefficients in the native format of the set to a linear list.
@@ -140,16 +142,16 @@ elements in the set.
 """
 # We do nothing if the list of coefficiens is already linear and has the right
 # element type
-linearize_coefficients{N,T}(set::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = coef_native
+linearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = coef_native
 
 # Otherwise: allocate memory for the linear set and call linearize_coefficients! to do the work
-function linearize_coefficients(set::FunctionSet, coef_native)
-    coef_linear = zeros(eltype(set), length(set))
-    linearize_coefficients!(coef_linear, set, coef_native)
+function linearize_coefficients(s::FunctionSet, coef_native)
+    coef_linear = zeros(eltype(s), length(s))
+    linearize_coefficients!(s, coef_linear, coef_native)
 end
 
 # Default implementation
-function linearize_coefficients!(coef_linear, set::FunctionSet, coef_native)
+function linearize_coefficients!(s::FunctionSet, coef_linear, coef_native)
     for (i,j) in enumerate(eachindex(coef_native))
         coef_linear[i] = coef_native[j]
     end
@@ -159,12 +161,12 @@ end
 """
 Convert a linear set of coefficients back to the native representation of the set.
 """
-function delinearize_coefficients{N,T}(set::FunctionSet{N,T}, coef_linear::AbstractArray{T,1})
-    coef_native = zeros(set)
-    delinearize_coefficients!(coef_native, set, coef_linear)
+function delinearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_linear::AbstractArray{T,1})
+    coef_native = zeros(s)
+    delinearize_coefficients!(s, coef_native, coef_linear)
 end
 
-function delinearize_coefficients!(coef_native, set::FunctionSet, coef_linear)
+function delinearize_coefficients!(s::FunctionSet, coef_native, coef_linear)
     for (i,j) in enumerate(eachindex(coef_native))
         coef_native[j] = coef_linear[i]
     end
@@ -178,13 +180,13 @@ end
 # (n1,n2) and its linear size n1*n2, but not any integer n maps to a native size tuple.
 # By convention, we denote a native size variable by size_n.
 "Compute the native size best corresponding to the given linear size."
-approximate_native_size(b::FunctionSet, size_l) = size_l
+approximate_native_size(s::FunctionSet, size_l) = size_l
 
 "Compute the linear size corresponding to the given native size."
-linear_size(b::FunctionSet, size_n) = size_n
+linear_size(s::FunctionSet, size_n) = size_n
 
 "Suggest a suitable size, close to n, to resize the given function set."
-approx_length(set::FunctionSet, n) = n
+approx_length(s::FunctionSet, n) = n
 
 
 ###############################
@@ -194,25 +196,25 @@ approx_length(set::FunctionSet, n) = n
 # not intended to be used in a time-critical path of the code.
 
 "Does the set implement a derivative?"
-has_derivative(b::FunctionSet) = false
+has_derivative(s::FunctionSet) = false
 
 "Does the set implement an antiderivative?"
-has_antiderivative(b::FunctionSet) = false
+has_antiderivative(s::FunctionSet) = false
 
 "Does the set have an associated interpolation grid?"
-has_grid(b::FunctionSet) = false
+has_grid(s::FunctionSet) = false
 
 "Does the set have a transform associated with some grid (space)?"
-has_transform(b::FunctionSet) = has_grid(b) && has_transform(b, DiscreteGridSpace(grid(b)))
-has_transform(b::FunctionSet, d) = false
+has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, DiscreteGridSpace(grid(s)))
+has_transform(s::FunctionSet, d) = false
 
 "Does the set support extension and restriction operators?"
-has_extension(b::FunctionSet) = false
+has_extension(s::FunctionSet) = false
 
 # A functionset has spaces associated with derivatives or antiderivatives of a certain order.
 # The default is that the function set is closed under derivation/antiderivation
-derivative_set(b::FunctionSet, order = 1) = b
-antiderivative_set(b::FunctionSet, order = 1) = b
+derivative_set(s::FunctionSet, order = 1) = s
+antiderivative_set(s::FunctionSet, order = 1) = s
 
 
 #######################
@@ -272,20 +274,20 @@ function checkbounds(s::FunctionSet, i...)
 end
 
 "Return the support of the idx-th basis function."
-support(b::FunctionSet1d, idx) = (left(b,idx), right(b,idx))
+support(s::FunctionSet1d, idx) = (left(s,idx), right(s,idx))
 
 """
 Compute the moment of the given basisfunction, i.e. the integral on its
 support.
 """
 # Default to numerical integration
-moment(b::FunctionSet, idx) = quadgk(b[idx], left(b), right(b))[1]
+moment(s::FunctionSet, idx) = quadgk(s[idx], left(s), right(s))[1]
 
 # This is a candidate for generated functions to avoid the splatting
-call_set{N}(b::FunctionSet{N}, i, x::AbstractVector) = call_set(b, i, x...)
+call_set{N}(s::FunctionSet{N}, i, x::AbstractVector) = call_set(s, i, x...)
 
 # This too is a candidate for generated functions to avoid the splatting
-call_set{N}(b::FunctionSet{N}, i, x::Vec{N}) = call_set(b, i, x...)
+call_set{N}(s::FunctionSet{N}, i, x::Vec{N}) = call_set(s, i, x...)
 
 # Here is another candidate for generated functions to avoid the splatting
 function call_set(s::FunctionSet, i, x...)
@@ -299,92 +301,92 @@ call_element(s::FunctionSet, i, x...) =
     call_element_native(s, native_index(s, i), x...)
 
 # Evaluate on a grid
-function call_set(b::FunctionSet, i::Int, grid::AbstractGrid)
-    result = zeros(promote_type(eltype(b),numtype(grid)), size(grid))
-    call_set!(result, b, i, grid)
+function call_set(s::FunctionSet, i::Int, grid::AbstractGrid)
+    result = zeros(promote_type(eltype(s),numtype(grid)), size(grid))
+    call_set!(result, s, i, grid)
 end
 
-function call_set!(result, b::FunctionSet, i::Int, grid::AbstractGrid)
+function call_set!(result, s::FunctionSet, i::Int, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
     for k in eachindex(grid)
-        result[k] = call_set(b, i, grid[k]...)
+        result[k] = call_set(s, i, grid[k]...)
     end
     result
 end
 
 # This method to remove an ambiguity warning
-call_expansion(b::FunctionSet, coef) = nothing
+call_expansion(s::FunctionSet, coef) = nothing
 
 """
 Evaluate an expansion given by the set of coefficients `coef` in the point x.
 """
-@generated function call_expansion{S <: Number}(b::FunctionSet, coef, xs::S...)
+@generated function call_expansion{S <: Number}(s::FunctionSet, coef, xs::S...)
     xargs = [:(xs[$d]) for d = 1:length(xs)]
     quote
         T = promote_type(eltype(coef), S)
         z = zero(T)
-        for i in eachindex(b)
-            z = z + coef[i]*call_set(b, i, $(xargs...))
+        for i in eachindex(s)
+            z = z + coef[i]*call_set(s, i, $(xargs...))
         end
         z
     end
 end
 
-@generated function call_expansion{N,T}(b::FunctionSet{N,T}, coef, x::Vec{N})
+@generated function call_expansion{N,T}(s::FunctionSet{N,T}, coef, x::Vec{N})
     xargs = [:(x[$d]) for d = 1:length(x)]
     quote
-        call_expansion(b, coef, $(xargs...))
+        call_expansion(s, coef, $(xargs...))
     end
 end
 
-function call_expansion{V <: Vec}(b::FunctionSet, coef, xs::AbstractArray{V})
+function call_expansion{V <: Vec}(s::FunctionSet, coef, xs::AbstractArray{V})
     result = Array(eltype(coef), size(xs))
-    call_expansion!(result, b, coef, xs)
+    call_expansion!(result, s, coef, xs)
 end
 
 # Vectorized method. Revisit once there is a standard way in Julia to treat
 # vectorized function that is also fast.
 # @generated to avoid splatting overhead (even though the function is vectorized,
 # perhaps there is no need)
-@generated function call_expansion{S <: Number}(b::FunctionSet, coef, xs::AbstractArray{S}...)
+@generated function call_expansion{S <: Number}(s::FunctionSet, coef, xs::AbstractArray{S}...)
     xargs = [:(xs[$d]) for d = 1:length(xs)]
     quote
         T = promote_type(eltype(coef), S)
         result = similar(xs[1], T)
-        call_expansion!(result, b, coef, $(xargs...))
+        call_expansion!(result, s, coef, $(xargs...))
     end
 end
 
 # It's probably best to include some checks
 # - eltype(coef) is promotable to ELT
 # - grid and b have the same numtype
-function call_expansion{N}(b::FunctionSet{N}, coef, grid::AbstractGrid{N})
-    ELT = promote_type(eltype(b), eltype(coef))
+function call_expansion{N}(s::FunctionSet{N}, coef, grid::AbstractGrid{N})
+    ELT = promote_type(eltype(s), eltype(coef))
     result = Array(ELT, size(grid))
-    call_expansion!(result, b, coef, grid)
+    call_expansion!(result, s, coef, grid)
 end
 
 
 
-function call_expansion!{N}(result, b::FunctionSet{N}, coef, grid::AbstractGrid{N})
+function call_expansion!{N}(result, s::FunctionSet{N}, coef, grid::AbstractGrid{N})
     @assert size(result) == size(grid)
-    ELT = promote_type(eltype(b), eltype(coef))
-    E = evaluation_operator(b, DiscreteGridSpace(grid, ELT))
+    ELT = promote_type(eltype(s), eltype(coef))
+    E = evaluation_operator(s, DiscreteGridSpace(grid, ELT))
     apply!(E, result, coef)
 end
 
-function call_expansion!{VEC <: Vec}(result, b::FunctionSet, coef, xs::AbstractArray{VEC})
+function call_expansion!{VEC <: Vec}(result, s::FunctionSet, coef, xs::AbstractArray{VEC})
     @assert size(result) == size(xs)
 
     for i in eachindex(xs)
-        result[i] = call_expansion(b, coef, xs[i]...)
+        result[i] = call_expansion(s, coef, xs[i]...)
     end
     result
 end
 
 
-@generated function call_expansion!(result, b::FunctionSet, coef, xs::AbstractArray...)
+@generated function call_expansion!(result, s::FunctionSet, coef, xs::AbstractArray...)
     xargs = [:(xs[$d][i]) for d = 1:length(xs)]
     quote
         for i in 1:length(xs)
@@ -392,7 +394,7 @@ end
         end
 
         for i in eachindex(xs[1])
-            result[i] = call_expansion(b, coef, $(xargs...))
+            result[i] = call_expansion(s, coef, $(xargs...))
         end
         result
     end

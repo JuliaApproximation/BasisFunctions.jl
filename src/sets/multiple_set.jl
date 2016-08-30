@@ -41,6 +41,8 @@ function multiset(sets::AbstractArray)
     end
 end
 
+vcat(s1::FunctionSet, s2::FunctionSet) = multiset(s1,s2)
+
 ⊕(s1::FunctionSet, s2::FunctionSet) = multiset(s1, s2)
 
 name(s::MultiSet) = "A set consisting of $(composite_length(s)) sets"
@@ -167,11 +169,11 @@ length(it::MultiSetIndexIterator) = length(it.set)
 
 ## Differentiation
 
-# Below, we deliberately use MultiSet instead of multiset, because it is difficult
-# to construct the right differentiation operator if the sets are flattened into
-# a single multiset. Note that muliset flattens while MultiSet doesn't.
 derivative_set(s::MultiSet, order::Int; options...) =
     multiset(map(b-> derivative_set(b, order; options...), elements(s)))
+
+antiderivative_set(s::MultiSet, order::Int; options...) =
+    multiset(map(b-> antiderivative_set(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiSet, s2::MultiSet, order::Int; options...)
