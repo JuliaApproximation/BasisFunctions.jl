@@ -21,9 +21,23 @@ for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
-native_index(b::AbstractMappedSet, idx) = native_index(set(b), idx)
+zeros(ELT::Type, s::AbstractMappedSet) = zeros(ELT, set(s))
 
-linear_index(b::AbstractMappedSet, idxn) = linear_index(set(b), idxn)
+native_index(s::AbstractMappedSet, idx) = native_index(set(s), idx)
+
+linear_index(s::AbstractMappedSet, idxn) = linear_index(set(s), idxn)
+
+linearize_coefficients!(s::AbstractMappedSet, coef_linear, coef_native) =
+    linearize_coefficients!(set(s), coef_linear, coef_native)
+
+delinearize_coefficients!(s::AbstractMappedSet, coef_native, coef_linear) =
+    delinearize_coefficients!(set(s), coef_native, coef_linear)
+
+approximate_native_size(s::AbstractMappedSet, size_l) = approximate_native_size(set(s), size_l)
+
+linear_size(s::AbstractMappedSet, size_n) = linear_size(set(s), size_n)
+
+approx_length(s::AbstractMappedSet, n) = approx_length(set(s), n)
 
 for op in [:left, :right]
     @eval $op(s::AbstractMappedSet, i) = mapx(s, $op(set(s), i))

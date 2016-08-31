@@ -11,6 +11,7 @@ end
 
 typealias DiscreteGridSpace1d{G,ELT} DiscreteGridSpace{G,ELT,1}
 
+name(s::DiscreteGridSpace) = "A discrete grid space"
 
 DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typeof(grid),N,ELT}(grid)
 

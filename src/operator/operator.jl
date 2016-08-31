@@ -252,8 +252,3 @@ function apply_inv_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
 	println("Operation of ", typeof(op), " has no in-place lazy inverse implemented.")
 	throw(InexactError())
 end
-
-
-include("composite_operator.jl")
-
-include("special_operators.jl")

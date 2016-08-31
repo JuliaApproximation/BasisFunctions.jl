@@ -46,16 +46,16 @@ export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export numtype, grid, left, right, support, call, call!, call_expansion_with_set, call_expansion_with_set!, call_set, call_set!
+export numtype, grid, left, right, support, call, call!, call_expansion_with_set,
+        call_expansion_with_set!, call_set, call_set!
 export name
-export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate, promote_eltype, resize
 export native_index, linear_index, native_size, linear_size
 export is_basis, is_frame, is_orthogonal, is_biorthogonal
 export True, False
 export approx_length, extension_size
-export has_transform, has_extension, has_derivative, has_antiderivative
+export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients
 export moment
 
@@ -88,7 +88,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,
-    approximation_operator, transform_operator, differentiation_operator,
+    approximation_operator, transform_operator, transform_set, differentiation_operator,
     antidifferentiation_operator, derivative_set, antiderivative_set, approximate,
     evaluation_operator, normalization_operator,
     Extension, Restriction, extend, Differentiation, AntiDifferentiation,
@@ -166,18 +166,21 @@ include("util/slices.jl")
 
 include("sets/functionset.jl")
 
-include("sets/subsets.jl")
+include("operator/operator.jl")
+include("operator/composite_operator.jl")
+
 include("sets/tensorproductset.jl")
 include("sets/mappedsets.jl")
 
 include("sets/euclidean.jl")
 
-include("operator/operator.jl")
-
 include("operator/dimop.jl")
 
+include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
+
+
 
 include("expansions.jl")
 
@@ -185,12 +188,13 @@ include("functional/functional.jl")
 
 include("grid/discretegridspace.jl")
 
-include("generic_operators.jl")
-
 include("tensorproducts.jl")
 
 include("util/functors.jl")
 
+include("generic_operators.jl")
+
+include("sets/subsets.jl")
 include("sets/multiple_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")

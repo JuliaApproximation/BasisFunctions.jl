@@ -9,12 +9,12 @@ immutable OperatedSet{T} <: FunctionSet{1,T}
     "The operator that acts on the set"
     op          ::  AbstractOperator{T}
 
-    scratch_src  ::  Array{T,1}
-    scratch_dest ::  Array{T,1}
+    scratch_src
+    scratch_dest
 
     function OperatedSet(op::AbstractOperator)
-        scratch_src = zeros(T, length(src(op)))
-        scratch_dest = zeros(T, length(dest(op)))
+        scratch_src = zeros(T, src(op))
+        scratch_dest = zeros(T, dest(op))
         new(op, scratch_src, scratch_dest)
     end
 end
@@ -31,20 +31,23 @@ dest(s::OperatedSet) = dest(s.op)
 
 operator(s::OperatedSet) = s.op
 
-# TODO: add promote_eltype to operators and then come back to fix this
-function promote_eltype{T}(s::OperatedSet, ::Type{T})
-    s
-end
+# We want to do this in the future:
+#promote_eltype{T,S}(s::OperatedSet{T}, ::Type{S}) = OperatedSet(promote_eltype(operator(s), S))
+# But for now:
+promote_eltype{T,S}(s::OperatedSet{T}, ::Type{S}) = s
 
 for op in (:left, :right, :length)
     @eval $op(b::OperatedSet) = $op(src(b))
 end
 
+zeros(ELT::Type, s::OperatedSet) = zeros(ELT, src(s))
+
 
 function call_element(s::OperatedSet, i, x)
-    s.scratch_src[i] = 1
+    idx = native_index(s, i)
+    s.scratch_src[idx] = 1
     apply!(s.op, s.scratch_dest, s.scratch_src)
-    s.scratch_src[i] = 0
+    s.scratch_src[idx] = 0
     call_expansion(dest(s), s.scratch_dest, x)
 end
 
