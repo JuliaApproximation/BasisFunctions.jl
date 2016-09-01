@@ -166,6 +166,18 @@ function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
     a
 end
 
+function getindex(op::AbstractOperator, i::Int, j::Int)
+	s = zeros(eltype(op), src(op))
+	d = zeros(eltype(op), dest(op))
+	# Note that i and j are linear indices.
+	# Below, we assume that the underlying data storage is the linear one. This
+	# is not always so. TOOD: fix
+	s[i] = 1
+	apply!(op, d, s)
+	d[j]
+end
+
+
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
 	op	::	OP

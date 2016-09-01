@@ -9,6 +9,16 @@ linear_index(b::PolynomialBasis, idxn) = idxn+1
 
 is_basis(b::PolynomialBasis) = true
 
+function subset(b::PolynomialBasis, idx::OrdinalRange)
+    if (step(idx) == 1) && (first(idx) == 1)
+        resize(b, last(idx))
+    else
+        FunctionSubSet(b, idx)
+    end
+end
+
+
+
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 
 typealias OPS{T} OrthogonalPolynomialBasis{T}

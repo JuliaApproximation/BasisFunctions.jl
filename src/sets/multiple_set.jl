@@ -85,11 +85,25 @@ for op in (:has_grid, :has_transform)
     @eval ($fname)(s, elements...) = false
 end
 
+# For getindex: return indexed basis function of the underlying set
 getindex(s::MultiSet, idx::NTuple{2,Int}) = getindex(s, idx[1], idx[2])
 
 getindex(s::MultiSet, i::Int, j::Int) = s.sets[i][j]
 
 getindex(s::MultiSet, i::Int, j::Int...) = s.sets[i][j...]
+
+# Try to return ranges of an underlying set, if possible
+function subset(s::MultiSet, idx::OrdinalRange{Int})
+    i1 = native_index(s, first(idx))
+    i2 = native_index(s, last(idx))
+    # Check whether the range lies fully in one set
+    if i1[1] == i2[1]
+        subset(element(s, i1[1]), i1[2]:step(idx):i2[2])
+    else
+        FunctionSubSet(s, idx)
+    end
+end
+
 
 function native_index(s::MultiSet, idx::Int)
     i = 1

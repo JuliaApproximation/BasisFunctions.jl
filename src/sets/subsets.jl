@@ -70,14 +70,13 @@ call_element(s::FunctionSubSet, i, x...) = call_element(s.set, s.idx[i], x...)
 eachindex(s::FunctionSubSet) = eachindex(s.idx)
 eachindex{SET}(s::FunctionSubSet{SET, Int}) = 1
 
-getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
+subset(s::FunctionSet, idx) = FunctionSubSet(s, idx)
+subset(s::FunctionSet, ::Colon) = s
 
-getindex(s::FunctionSubSet, ::Colon) = s
-getindex(s::FunctionSet, ::Colon) = s
-
-getindex(s::FunctionSet, i1::Int, i2::Int) = FunctionSubSet(s, [(i1,i2)])
-getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int) = FunctionSubSet(s, [(i1,i2,i3)])
-getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int, i4::Int, indices::Int...) = FunctionSubSet(s, [(i1,i2,i3,i4,indices...)])
+getindex(s::FunctionSet, idx) = subset(s, idx)
+getindex(s::FunctionSet, i1::Int, i2::Int) = subset(s, [(i1,i2)])
+getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int) = subset(s, [(i1,i2,i3)])
+getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int, i4::Int, indices::Int...) = subset(s, [(i1,i2,i3,i4,indices...)])
 
 getindex(s::FunctionSubSet, idx) = FunctionSubSet(set(s), s.idx[idx])
 
