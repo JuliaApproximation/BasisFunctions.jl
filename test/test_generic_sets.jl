@@ -142,35 +142,52 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     ## Test derivatives
     if BF.has_derivative(basis)
-        D = differentiation_operator(basis)
-        @test basis == src(D)
-        diff_dest = dest(D)
+        for dim in 1:ndims(basis)
+            D = differentiation_operator(basis; dim=dim)
+            @test basis == src(D)
+            diff_dest = dest(D)
 
-        coef1 = random_expansion(basis)
-        coef2 = D*coef
-        e1 = SetExpansion(basis, coef)
-        e2 = SetExpansion(diff_dest, coef2)
+            coef1 = random_expansion(basis)
+            coef2 = D*coef
+            e1 = SetExpansion(basis, coef)
+            e2 = SetExpansion(diff_dest, coef2)
 
-        x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))/10
-        @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000delta
+            x = fixed_point_in_domain(basis)
+            delta = sqrt(eps(T))/10
+            if ndims(basis) > 1
+                unit_vector = zeros(T, ndims(basis))
+                unit_vector[dim] = 1
+                x2 = x + Vec(delta*unit_vector)
+            else
+                x2 = x+delta
+            end
+            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000delta
+        end
     end
 
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
-        D = antidifferentiation_operator(basis)
-        @test basis == src(D)
-        antidiff_dest = dest(D)
+        for dim in 1:ndims(basis)
+            D = antidifferentiation_operator(basis; dim=dim)
+            @test basis == src(D)
+            antidiff_dest = dest(D)
 
-        coef1 = random_expansion(basis)
-        coef2 = D*coef
-        e1 = SetExpansion(basis, coef)
-        e2 = SetExpansion(antidiff_dest, coef2)
+            coef1 = random_expansion(basis)
+            coef2 = D*coef
+            e1 = SetExpansion(basis, coef)
+            e2 = SetExpansion(antidiff_dest, coef2)
 
-        x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))/10
-
-        @test abs( (e2(x+delta)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000delta
+            x = fixed_point_in_domain(basis)
+            delta = sqrt(eps(T))/10
+            if ndims(basis) > 1
+                unit_vector = zeros(T, ndims(basis))
+                unit_vector[dim] = 1
+                x2 = x + Vec(delta*unit_vector)
+            else
+                x2 = x+delta
+            end
+            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000delta
+        end
     end
 
     ## Test associated transform

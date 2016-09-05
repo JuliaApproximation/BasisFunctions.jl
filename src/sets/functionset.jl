@@ -230,11 +230,34 @@ has_transform(s::FunctionSet, d) = false
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false
 
-# A functionset has spaces associated with derivatives or antiderivatives of a certain order.
-# The default is that the function set is closed under derivation/antiderivation
-derivative_set(s::FunctionSet, order = 1) = s
-antiderivative_set(s::FunctionSet, order = 1) = s
+# A concrete FunctionSet has spaces associated with derivatives or antiderivatives of a certain order,
+# and it should implement the following introspective functions:
+# derivative_set(s::MyFunctionSet, order) = ...
+# antiderivative_set(s::MyFunctionSet, order) = ...
+# where order is either an Int (in 1D) or a tuple of Int's (in higher dimensions).
 
+# The default order is 1 for 1d sets:
+derivative_set(s::FunctionSet1d) = derivative_set(s, 1)
+antiderivative_set(s::FunctionSet1d) = antiderivative_set(s, 1)
+
+# Catch tuples with just one element and convert to Int
+derivative_set(s::FunctionSet, order::Tuple{Int}) = derivative_set(s, order[1])
+antiderivative_set(s::FunctionSet, order::Tuple{Int}) = antiderivative_set(s, order[1])
+
+function dimension_tuple(n, dim)
+    t = zeros(Int, n)
+    t[dim] = 1
+    tuple(t...)
+end
+
+# Convenience function to differentiate in a given dimension
+derivative_set(s::FunctionSet; dim=1) = derivative_set(s, dimension_tuple(ndims(s), dim))
+antiderivative_set(s::FunctionSet; dim=1) = antiderivative_set(s, dimension_tuple(ndims(s), dim))
+
+# A concrete FunctionSet may also override extension_set and restriction_set
+# The default is simply to resize.
+extension_set(s::FunctionSet, n) = resize(s, n)
+restriction_set(s::FunctionSet, n) = resize(s, n)
 
 #######################
 ## Iterating over sets

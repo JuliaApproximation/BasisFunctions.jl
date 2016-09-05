@@ -116,14 +116,14 @@ end
 
 function differentiation_operator(s1::FunctionSubSet, s2::FunctionSet, order::Int; options...)
     @assert s2 == derivative_set(s1, order)
-    D = differentiation_operator(set(s1), s2; options...)
+    D = differentiation_operator(set(s1), s2, order; options...)
     E = Extension(s1, set(s1))
     D*E
 end
 
 function antidifferentiation_operator(s1::FunctionSubSet, s2::FunctionSet, order::Int; options...)
     @assert s2 == antiderivative_set(s1, order)
-    D = antidifferentiation_operator(set(s1), s2; options...)
+    D = antidifferentiation_operator(set(s1), s2, order; options...)
     E = Extension(s1, set(s1))
     D*E
 end

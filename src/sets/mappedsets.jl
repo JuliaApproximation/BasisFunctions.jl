@@ -131,8 +131,13 @@ end
 
 # Standard Implementation
 
-for op in (:extension_operator, :restriction_operator, :transform_operator,
-           :normalization_operator)
+for op in (:extension_operator, :restriction_operator)
+    # We assume for simplicity without checking that the mapped sets below are compatible...
+    @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+        wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
+end
+
+for op in (:transform_operator, :transform_normalization_operator)
     # We assume for simplicity without checking that the mapped sets below are compatible...
     @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
         wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )

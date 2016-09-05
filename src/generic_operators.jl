@@ -57,12 +57,9 @@ An extension operator is an operator that can be used to extend a representation
 representation in a larger set s2. The default extension operator is of type Extension with s1 and
 s2 as source and destination.
 """
-extension_operator(s1::FunctionSet, s2::FunctionSet; options...) = Extension(s1, s2)
-
-function extension_operator(s1::FunctionSet; options...)
-    larger_size = extension_size(s)
-    s2 = resize(s1, larger_size)
-    extension_operator(s1, s2; options...)
+function extension_operator(s1::FunctionSet, s2::FunctionSet; options...)
+    @assert has_extension(s1)
+    Extension(s1, s2)
 end
 
 """
@@ -72,6 +69,10 @@ and function evaluations can be shared. The default is twice the length of the c
 extension_size(s::FunctionSet) = 2*length(s)
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
+
+extension_operator(s1::FunctionSet; options...) =
+    extension_operator(s1, extend(s1); options...)
+
 
 immutable Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
@@ -90,17 +91,17 @@ s2 as source and destination.
 """
 restriction_operator(s1::FunctionSet, s2::FunctionSet; options...) = Restriction(s1, s2)
 
-function restriction_operator(s1::FunctionSet; options...)
-    smaller_size = restriction_size(s1)
-    s2 = resize(s1, smaller_size)
-    restriction_operator(s1, s2; options...)
-end
-
 """
 Return a suitable length to restrict to, for example one such that the corresponding grids are nested
 and function evaluations can be shared. The default is half the length of the current set.
 """
 restriction_size(s::FunctionSet) = length(s)>>1
+
+restrict(s::FunctionSet) = resize(s, restriction_size(s))
+
+restriction_operator(s1::FunctionSet; options...) =
+    restriction_operator(s1, restrict(s1); options...)
+
 
 ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
 
@@ -317,12 +318,22 @@ order(op::Differentiation) = op.order
 The differentation_operator function returns an operator that can be used to differentiate
 a function in the function set, with the result as an expansion in a second set.
 """
-differentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) =
+function differentiation_operator(s1::FunctionSet, s2::FunctionSet, order; options...)
+    @assert has_derivative(s1)
     Differentiation(s1, s2, order)
+end
 
-# With this definition below, the user may specify a single set and a variable, with or without an order
-differentiation_operator(s1::FunctionSet, order = 1; options...) =
-    differentiation_operator(s1, derivative_set(s1, order), order; options...)
+# Default if no order is specified
+function differentiation_operator(s1::FunctionSet1d; options...)
+    order = 1
+    s2 = derivative_set(s1, order)
+    differentiation_operator(s1, s2, order; options...)
+end
+function differentiation_operator(s1::FunctionSet; dim=1, options...)
+    order = dimension_tuple(ndims(s1), dim)
+    s2 = derivative_set(s1, order)
+    differentiation_operator(s1, s2, order; options...)
+end
 
 
 """
@@ -348,12 +359,23 @@ order(op::AntiDifferentiation) = op.order
 The antidifferentiation_operator function returns an operator that can be used to find the antiderivative
 of a function in the function set, with the result an expansion in a second set.
 """
-antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order = 1; options...) =
+function antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order; options...)
+    @assert has_antiderivative(s1)
     AntiDifferentiation(s1, s2, order)
+end
 
-# With this definition below, the user may specify a single set and a variable, with or without an order
-antidifferentiation_operator(s1::FunctionSet, order = 1; options...) =
-    antidifferentiation_operator(s1, antiderivative_set(s1, order), order; options...)
+# Default if no order is specified
+function antidifferentiation_operator(s1::FunctionSet1d; options...)
+    order = 1
+    s2 = antiderivative_set(s1, order)
+    antidifferentiation_operator(s1, s2, order; options...)
+end
+function antidifferentiation_operator(s1::FunctionSet; dim=1, options...)
+    order = dimension_tuple(ndims(s1), dim)
+    s2 = antiderivative_set(s1, order)
+    antidifferentiation_operator(s1, s2, order; options...)
+end
+
 
 
 

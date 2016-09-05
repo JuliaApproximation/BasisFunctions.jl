@@ -3,6 +3,10 @@
 """
 A MultiSet is the concatenation of several function sets. The function sets
 may be the same (but scaled to different intervals, say) or they can be different.
+The number of subsets may be large.
+
+The native representation of a MultiSet is a MultiArray, of which each element
+is the native representation of the corresponding element of the multiset.
 """
 immutable MultiSet{S <: FunctionSet,N,T} <: FunctionSet{N,T}
     sets        ::  Array{S,1}
@@ -183,16 +187,16 @@ length(it::MultiSetIndexIterator) = length(it.set)
 
 ## Differentiation
 
-derivative_set(s::MultiSet, order::Int; options...) =
+derivative_set(s::MultiSet, order; options...) =
     multiset(map(b-> derivative_set(b, order; options...), elements(s)))
 
-antiderivative_set(s::MultiSet, order::Int; options...) =
+antiderivative_set(s::MultiSet, order; options...) =
     multiset(map(b-> antiderivative_set(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::MultiSet, s2::MultiSet, order::Int; options...)
+    @eval function $op(s1::MultiSet, s2::MultiSet, order; options...)
         if composite_length(s1) == composite_length(s2)
-            BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i); options...) for i in 1:composite_length(s1)], s1, s2)
+            BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:composite_length(s1)], s1, s2)
         else
             # We have a situation because the sizes of the multisets don't match.
             # The derivative set may have been a nested multiset that was flattened. This

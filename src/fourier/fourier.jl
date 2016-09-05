@@ -212,6 +212,8 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 	coef_dest
 end
 
+derivative_set(b::FourierBasisOdd, order) = b
+
 # We extend the even basis both for derivation and antiderivation, regardless of order
 for op in (:derivative_set, :antiderivative_set)
     @eval $op(b::FourierBasisEven, order::Int; options...) = fourier_basis_odd(length(b)+1,eltype(b))
@@ -219,7 +221,7 @@ end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
     @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, order::Int; options...)
-        $op(b_odd, order; options...) * extension_operator(b, b_odd; options...)
+        $op(b_odd, b_odd, order; options...) * extension_operator(b, b_odd; options...)
     end
 end
 

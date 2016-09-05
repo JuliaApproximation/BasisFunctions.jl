@@ -42,12 +42,12 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-for op in (:has_grid, :has_extension, :has_transform)
+for op in (:has_grid, :has_extension, :has_transform, :has_derivative)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
 
 for op in (:derivative_set, :antiderivative_set)
-    @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N} = tuple(ones(N)...); options...) =
+    @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =
         TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end
 
@@ -104,19 +104,13 @@ end
 getindex(s::TensorProductSet, i::CartesianIndex{2}) = getindex(s, (i[1],i[2]))
 getindex(s::TensorProductSet, i::CartesianIndex{3}) = getindex(s, (i[1],i[2],i[3]))
 getindex(s::TensorProductSet, i::CartesianIndex{4}) = getindex(s, (i[1],i[2],i[3],i[4]))
+# This is a more general, but less readable, definition of getindex for CartesianIndex
 # @generated function getindex{TS}(s::TensorProductSet{TS}, index::CartesianIndex)
 #     LEN = tuple_length(TS)
 #     :(@nref $LEN s d->index[d])
 # end
 
 
-# checkbounds(s::TensorProductSet, i::Int) = checkbounds(s, multilinear_index(s, i))
-#
-# function checkbounds(s::TensorProductSet, i)
-#     for k in 1:composite_length(s)
-#         checkbounds(element(s, k), i[k])
-#     end
-# end
 
 # Routine for linear indices: convert into multilinear index
 call_element(s::TensorProductSet, i::Int, x) = call_element_native(s, multilinear_index(s, i), x)
