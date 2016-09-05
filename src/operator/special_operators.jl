@@ -300,62 +300,112 @@ matrix!(op::WrappedOperator, a) = matrix!(op.op, a)
 
 
 """
-A MatrixOperator is defined by a full matrix, or more generally by something
-that can multiply coefficients.
+A MultiplicationOperator is defined by a (matrix-like) object that multiplies
+coefficients. The multiplication is in-place if type parameter INPLACE is true,
+otherwise it is not in-place.
+
+An alias MatrixOperator is provided, for which type parameter ARRAY equals
+Array{ELT,2}. In this case, multiplication is done using A_mul_B!.
 """
-immutable MatrixOperator{ARRAY,ELT} <: AbstractOperator{ELT}
+immutable MultiplicationOperator{ARRAY,INPLACE,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
-    matrix  ::  ARRAY
+    object  ::  ARRAY
 
-    function MatrixOperator(src, dest, matrix)
-        @assert size(matrix,1) == length(dest)
-        @assert size(matrix,2) == length(src)
-
-        new(src, dest, matrix)
+    function MultiplicationOperator(src, dest, object)
+        # @assert size(object,1) == length(dest)
+        # @assert size(object,2) == length(src)
+        new(src, dest, object)
     end
 end
 
-# An ActualMatrixOperator is defined by an actual matrix, i.e. the parameter
-# ARRAY is Array{T,2}.
-typealias ActualMatrixOperator{ELT} MatrixOperator{Array{ELT,2},ELT}
+object(op::MultiplicationOperator) = op.object
 
-function MatrixOperator(src::FunctionSet, dest::FunctionSet, matrix)
-    ELT = promote_type(eltype(matrix), op_eltype(src,dest))
-    MatrixOperator{typeof(matrix),ELT}(src, dest, matrix)
+# An MatrixOperator is defined by an actual matrix, i.e. the parameter
+# ARRAY is Array{T,2}.
+typealias MatrixOperator{ELT} MultiplicationOperator{Array{ELT,2},false,ELT}
+
+function MultiplicationOperator(src::FunctionSet, dest::FunctionSet, object; inplace = false)
+    ELT = promote_type(eltype(object), op_eltype(src,dest))
+    MultiplicationOperator{typeof(object),inplace,ELT}(src, dest, object)
 end
 
-MatrixOperator{T <: Number}(matrix::AbstractMatrix{T}) =
-    MatrixOperator(Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)), matrix)
+MultiplicationOperator{T <: Number}(matrix::AbstractMatrix{T}) =
+    MultiplicationOperator(Rn{T}(size(matrix,2)), Rn{T}(size(matrix,1)), matrix)
 
-MatrixOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) =
-    MatrixOperator(Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)), matrix)
+MultiplicationOperator{T <: Number}(matrix::AbstractMatrix{Complex{T}}) =
+    MultiplicationOperator(Cn{T}(size(matrix,2)), Cn{T}(size(matrix,1)), matrix)
 
-ctranspose(op::MatrixOperator) = MatrixOperator(dest(op), src(op), ctranspose(matrix(op)))
+# Provide aliases for when the object is an actual matrix.
+MatrixOperator{T}(matrix::Array{T,2}) = MultiplicationOperator(matrix)
+
+function MatrixOperator{T}(src::FunctionSet, dest::FunctionSet, matrix::Array{T,2})
+    @assert size(matrix, 1) == length(dest)
+    @assert size(matrix, 2) == length(src)
+    MultiplicationOperator(src, dest, matrix)
+end
+
+is_inplace{ARRAY,INPLACE}(op::MultiplicationOperator{ARRAY,INPLACE}) = INPLACE
 
 # General definition
-function apply!(op::MatrixOperator, coef_dest, coef_src)
-    coef_dest[:] = op.matrix * coef_src
+function apply!{ARRAY}(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src)
+    # Note: this is very likely to allocate memory in the right hand side
+    coef_dest[:] = op.object * coef_src
     coef_dest
 end
 
+# In-place definition
+apply_inplace!{ARRAY}(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) =
+    op.object * coef_srcdest
+
+
 # Definition in terms of A_mul_B
 apply!{T}(op::MatrixOperator, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) =
-    A_mul_B!(coef_dest, op.matrix, coef_src)
+    A_mul_B!(coef_dest, object(op), coef_src)
 
-# # Be forgiving: whenever one of the coefficients is multi-dimensional, reshape to a linear array first.
+# Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
 apply!{T,N1,N2}(op::MatrixOperator, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
-matrix(op::ActualMatrixOperator) = op.matrix
+matrix(op::MatrixOperator) = op.object
 
-matrix!(op::ActualMatrixOperator, a::Array) = (a[:] = op.matrix)
+matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
 
 
-# A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
-# should implement the \ operator.
-# Examples include a QR or SVD factorization, or a dense matrix.
+ctranspose(op::MultiplicationOperator) = ctranspose_multiplication(op, object(op))
+
+# This can be overriden for types of objects that do not support ctranspose
+ctranspose_multiplication(op::MultiplicationOperator, object) =
+    MultiplicationOperator(dest(op), src(op), ctranspose(object))
+
+inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
+
+# This can be overriden for types of objects that do not support inv
+inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
+
+inv_multiplication(op::MatrixOperator, matrix) = SolverOperator(dest(op), src(op), qr(matrix))
+
+
+
+# Intercept calls to dimension_operator with a MultiplicationOperator and transfer
+# to dimension_operator_multiplication. The latter can be overridden for specific
+# object types.
+# This is used e.g. for multivariate FFT's and friends
+dimension_operator(src, dest, op::MultiplicationOperator, dim; options...) =
+    dimension_operator_multiplication(src, dest, op, dim, object(op); options...)
+
+# Default if no more specialized definition is available: make DimensionOperator
+dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, object; viewtype = VIEW_DEFAULT, options...) =
+    DimensionOperator(src, dest, op, dim, viewtype)
+
+
+
+"""
+A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
+should implement the \ operator.
+Examples include a QR or SVD factorization, or a dense matrix.
+"""
 immutable SolverOperator{Q,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
@@ -373,8 +423,28 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
     coef_dest
 end
 
-inv(op::MatrixOperator) = SolverOperator(dest(op), src(op), qr(matrix(op)))
 
+"""
+A FunctionOperator applies a given function to the set of coefficients and
+returns the result.
+"""
+immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
+    fun     ::  F
+end
+
+function FunctionOperator(src::FunctionSet, dest::FunctionSet, fun)
+    ELT = op_eltype(src, dest)
+    FunctionOperator{typeof(fun),ELT}(src, dest, fun)
+end
+
+# Warning: this very likely allocates memory
+apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
+
+function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
+    coef_dest[:] = fun(coef_src)
+end
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.

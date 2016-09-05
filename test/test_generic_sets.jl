@@ -153,7 +153,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             e2 = SetExpansion(diff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/10
+            delta = sqrt(eps(T))/100
             if ndims(basis) > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
@@ -161,7 +161,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             else
                 x2 = x+delta
             end
-            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000delta
+            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 1000*sqrt(eps(T))
         end
     end
 
@@ -178,7 +178,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             e2 = SetExpansion(antidiff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/10
+            delta = sqrt(eps(T))/1000
             if ndims(basis) > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
@@ -186,7 +186,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             else
                 x2 = x+delta
             end
-            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000delta
+            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 1000*sqrt(eps(T))
         end
     end
 
@@ -223,6 +223,8 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         ni = inv(n)
         @test maximum(abs(x - ni*n*x)) < sqrt(eps(T))
         @test maximum(abs(x - n*ni*x)) < sqrt(eps(T))
+
+        # TODO: check the transposes and inverses here
     end
 
     ## Test interpolation operator on a suitable interpolation grid
