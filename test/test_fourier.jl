@@ -151,7 +151,7 @@ function test_fourier_series(T)
     # Transforms
     b1 = FourierBasis(161, T)
     A = approximation_operator(b1)
-    f = x -> 1/(2+cos(pi*x))
+    f = x -> 1/(2+cos(2*T(pi)*x))
     e = approximate(b1, f)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))

@@ -9,6 +9,7 @@ using Compat
 using RecipesBase
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
+import Base: ≈
 
 import Base: promote, promote_rule, convert, promote_eltype
 

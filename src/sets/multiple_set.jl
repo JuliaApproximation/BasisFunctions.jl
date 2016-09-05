@@ -1,27 +1,29 @@
 # multiple_set.jl
 
 """
-A MultiSet is the concatenation of several different function sets.
+A MultiSet is the concatenation of several function sets. The function sets
+may be the same (but scaled to different intervals, say) or they can be different.
 """
-immutable MultiSet{N,T} <: FunctionSet{N,T}
-    sets        ::  Array{FunctionSet{N,T},1}
-    lengths     ::  Array{Int,1}
+immutable MultiSet{S <: FunctionSet,N,T} <: FunctionSet{N,T}
+    sets        ::  Array{S,1}
+    # The cumulative sum of the lengths of the subsets. Used to compute indices.
+    offsets     ::  Array{Int,1}
 
     function MultiSet(sets)
+        # Disallow a multiset with just one set
         @assert length(sets) > 1
-
-        lengths = map(length, sets)
-        new(sets, lengths)
+        # We compute offsets of the individual sets using a cumulative sum
+        new(sets, [0; cumsum(map(length, sets))])
     end
 end
 
-function MultiSet(sets)
+function MultiSet{S <: FunctionSet}(sets::Array{S,1})
     T = reduce(promote_type, map(eltype, sets))
     N = ndims(sets[1])
-    MultiSet{N,T}([promote_eltype(set, T) for set in sets])
+    MultiSet{S,N,T}([promote_eltype(set, T) for set in sets])
 end
 
-==(s1::MultiSet, s2::MultiSet) = (s1.sets == s2.sets) && (s1.lengths == s2.lengths)
+==(s1::MultiSet, s2::MultiSet) = (s1.sets == s2.sets) && (s1.offsets == s2.offsets)
 
 multiset(set::FunctionSet) = set
 
@@ -52,15 +54,17 @@ element(s::MultiSet, j::Int) = s.sets[j]
 element(s::MultiSet, range::Range) = MultiSet(s.sets[range])
 composite_length(s::MultiSet) = length(s.sets)
 
-length(s::MultiSet) = sum(s.lengths)
+length(s::MultiSet) = s.offsets[end]
 
-resize{N,T}(s::MultiSet{N,T}, n::Array{Int,1}) =
-    MultiSet( FunctionSet{N,T}[resize(element(s,i), n[i]) for i in 1:composite_length(s)] )
+length(s::MultiSet, i::Int) = length(element(s,i))
 
-promote_eltype{N,T,S}(s::MultiSet{N,T}, ::Type{S}) =
-    MultiSet([promote_eltype(el, S) for el in elements(s)])
+resize{S,N,T}(s::MultiSet{S,N,T}, n) =
+    MultiSet( [resize(element(s,i), n[i]) for i in 1:composite_length(s)] )
 
-zeros(T::Type, s::MultiSet) = MultiArray(Array{T,ndims(s)}[zeros(T,el) for el in elements(s)])
+promote_eltype{S,N,T,T2}(s::MultiSet{S,N,T}, ::Type{T2}) =
+    MultiSet([promote_eltype(el, T2) for el in elements(s)])
+
+zeros(T::Type, s::MultiSet) = MultiArray([zeros(T,el) for el in elements(s)])
 
 for op in (:isreal, )
     @eval $op(s::MultiSet) = reduce($op, elements(s))
@@ -85,17 +89,17 @@ for op in (:has_grid, :has_transform)
     @eval ($fname)(s, elements...) = false
 end
 
+getindex(s::MultiSet, i::Int) = getindex(s, multilinear_index(s, i))
+
 # For getindex: return indexed basis function of the underlying set
-getindex(s::MultiSet, idx::NTuple{2,Int}) = getindex(s, idx[1], idx[2])
+getindex(s::MultiSet, idx::Tuple{Int,Any}) = getindex(s, idx[1], idx[2])
 
-getindex(s::MultiSet, i::Int, j::Int) = s.sets[i][j]
-
-getindex(s::MultiSet, i::Int, j::Int...) = s.sets[i][j...]
+getindex(s::MultiSet, i, j) = s.sets[i][j]
 
 # Try to return ranges of an underlying set, if possible
 function subset(s::MultiSet, idx::OrdinalRange{Int})
-    i1 = native_index(s, first(idx))
-    i2 = native_index(s, last(idx))
+    i1 = multilinear_index(s, first(idx))
+    i2 = multilinear_index(s, last(idx))
     # Check whether the range lies fully in one set
     if i1[1] == i2[1]
         subset(element(s, i1[1]), i1[2]:step(idx):i2[2])
@@ -105,31 +109,40 @@ function subset(s::MultiSet, idx::OrdinalRange{Int})
 end
 
 
-function native_index(s::MultiSet, idx::Int)
-    i = 1
-    while idx > s.lengths[i]
-        idx -= s.lengths[i]
+function multilinear_index(s::MultiSet, idx::Int)
+    i = 0
+    while idx > s.offsets[i+1]
         i += 1
     end
-    (i,idx)
+    (i,idx-s.offsets[i])
 end
 
+function native_index(s::MultiSet, idx::Int)
+    (i,j) = multilinear_index(s, idx)
+    (i,native_index(element(s,i), j))
+end
+
+# Convert from a multilinear index
+linear_index(s::MultiSet, idx_ml::NTuple{2,Int}) = s.offsets[idx_ml[1]] + idx_ml[2]
+
+# Convert from a native index (whose type is anything but a tuple of 2 Int's)
 function linear_index(s::MultiSet, idxn)
-    idx = idxn[2]
-    for i = 1:idxn[1]-1
-        idx += s.lengths[i]
-    end
-    idx
+    # We convert the native index in idxn[2] to a linear index
+    i = idxn[1]
+    j = linear_index(element(s, i), idxn[2])
+    # Now we have a multilinear index and we can use the routine above
+    linear_index(s, (i,j))
 end
 
-getindex(s::MultiSet, i::Int) = getindex(s, native_index(s, i))
 
 function checkbounds(s::MultiSet, idx::NTuple{2,Int})
     checkbounds(element(s,idx[1]), idx[2])
 end
 
-function call_element_native(s::MultiSet, idx, x...)
-    call_element( element(s, idx[1]), idx[2], x...)
+call_element(s::MultiSet, idx::Int, x) = call_element(s, multilinear_index(s,idx), x)
+
+function call_element(s::MultiSet, idx::Tuple{Int,Any}, x)
+    call_element( element(s, idx[1]), idx[2], x)
 end
 
 for op in [:left, :right, :moment, :norm]
@@ -142,24 +155,11 @@ end
 left(set::MultiSet) = minimum(map(left, elements(set)))
 right(set::MultiSet) = maximum(map(right, elements(set)))
 
-function linearize_coefficients!(coef_linear, set::MultiSet, coef_native)
-    for (i,j) in enumerate(eachindex(set))
-        coef_linear[i] = coef_native[j[1]][j[2]]
-    end
-    coef_linear
-end
-
-function delinearize_coefficients!(coef_native, set::MultiSet, coef_linear)
-    for (i,j) in enumerate(eachindex(set))
-        coef_native[j[1]][j[2]] = coef_linear[i]
-    end
-    coef_native
-end
 
 ## Iteration
 
-immutable MultiSetIndexIterator{N,T}
-    set ::  MultiSet{N,T}
+immutable MultiSetIndexIterator{S,N,T}
+    set ::  MultiSet{S,N,T}
 end
 
 eachindex(s::MultiSet) = MultiSetIndexIterator(s)
@@ -169,7 +169,7 @@ start(it::MultiSetIndexIterator) = (1,1)
 function next(it::MultiSetIndexIterator, state)
     i = state[1]
     j = state[2]
-    if j == it.set.lengths[i]
+    if j == length(it.set, i)
         nextstate = (i+1,1)
     else
         nextstate = (i,j+1)
@@ -208,14 +208,18 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-evaluation_operator{N,T}(set::MultiSet{N,T}, dgs::DiscreteGridSpace; options...) =
-    block_row_operator( AbstractOperator{T}[evaluation_operator(el,dgs; options...) for el in elements(set)])
+evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace; options...) =
+    block_row_operator( AbstractOperator{eltype(set)}[evaluation_operator(el,dgs; options...) for el in elements(set)])
 
 ## Extension and restriction
 
 extension_size(s::MultiSet) = map(extension_size, elements(s))
 
 for op in [:extension_operator, :restriction_operator]
-    @eval $op{N,T}(s1::MultiSet{N,T}, s2::MultiSet{N,T}; options...) =
-        BlockDiagonalOperator( AbstractOperator{T}[$op(element(s1,i),element(s2,i); options...) for i in 1:composite_length(s1)], s1, s2)
+    @eval $op(s1::MultiSet, s2::MultiSet; options...) =
+        BlockDiagonalOperator( AbstractOperator{eltype(s1)}[$op(element(s1,i),element(s2,i); options...) for i in 1:composite_length(s1)], s1, s2)
 end
+
+## Rescaling
+
+rescale(s::MultiSet, a, b) = multiset(map( t-> rescale(t, a, b), elements(s)))

@@ -68,6 +68,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     z = e(x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
+    # Test linearization of coefficients
+    linear_coefs = zeros(eltype(basis), length(basis))
+    BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
+    coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
+    @test coef ≈ coef2
 
     ## Verify evaluation on the associated grid
     if BF.has_grid(basis)
@@ -155,12 +160,12 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     if BF.has_antiderivative(basis)
         D = antidifferentiation_operator(basis)
         @test basis == src(D)
-        diff_dest = dest(D)
+        antidiff_dest = dest(D)
 
         coef1 = random_expansion(basis)
         coef2 = D*coef
         e1 = SetExpansion(basis, coef)
-        e2 = SetExpansion(diff_dest, coef2)
+        e2 = SetExpansion(antidiff_dest, coef2)
 
         x = fixed_point_in_domain(basis)
         delta = sqrt(eps(T))/10
@@ -171,9 +176,9 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Test associated transform
     if BF.has_transform(basis)
         # Check whether it is unitary
-        g = grid(basis)
-        t = transform_operator(g, basis)
-        it = transform_operator(basis, g)
+        tbasis = transform_set(basis)
+        t = transform_operator(tbasis, basis)
+        it = transform_operator(basis, tbasis)
         A = matrix(t)
         if T == Float64
             @test cond(A) ≈ 1
@@ -195,6 +200,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             x[i] = rand()
         end
         e = SetExpansion(basis, n*t*x)
+        g = grid(basis)
         @test maximum(abs(e(g)-x)) < sqrt(eps(T))
         # - verify the inverse of the normalization
         ni = inv(n)
@@ -203,7 +209,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     end
 
     ## Test interpolation operator on a suitable interpolation grid
-    if is_basis(basis) == True()
+    if is_basis(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(basis, g)
         x = zeros(ELT, size(basis))

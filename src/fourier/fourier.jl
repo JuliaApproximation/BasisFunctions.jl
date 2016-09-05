@@ -79,16 +79,21 @@ grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, 0, 1, numtype(b))
 nhalf(b::FourierBasis) = length(b)>>1
 
 
-# Native index of an even Fourier basis ranges from -N+1 to N.
-native_index(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
+# The frequency of an even Fourier basis ranges from -N+1 to N.
+idx2frequency(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
 
-# Native index of an odd Fourier basis ranges from -N to N.
-native_index(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
+# The frequency of an odd Fourier basis ranges from -N to N.
+idx2frequency(b::FourierBasisOdd, idx::Int) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 2
 
-linear_index(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
+frequency2idx(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
 
-idx2frequency(b::FourierBasis, idx::Int) = native_index(b, idx)
-frequency2idx(b::FourierBasis, freq::Int) = linear_index(b, freq)
+# The native index of a FourierBasis is the frequency. Since that is an integer,
+# it is wrapped in a different type.
+immutable FourierFrequency <: NativeIndex
+	index	::	Int
+end
+native_index(b::FourierBasis, idx::Int) = FourierFrequency(idx2frequency(b, idx))
+linear_index(b::FourierBasis, idxn::NativeIndex) = frequency2idx(b, index(idxn))
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
@@ -218,12 +223,18 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
     end
 end
 
-diff_scaling_function(i) = i* 2 * pi * im
-antidiff_scaling_function(i) = i==0 ? 0 : 1 / (i* 2 * pi * im)
-differentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...) =
-	ScalingOperator(b,1/period(b))*IdxnScalingOperator(b,order=order,scale=diff_scaling_function)
-antidifferentiation_operator(b::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...) =
-	ScalingOperator(b,period(b))*IdxnScalingOperator(b,order=order,scale=antidiff_scaling_function)
+# Both differentiation and antidifferentiation are diagonal operations
+diff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = (2 * T(pi) * im * idx2frequency(b,idx))^order
+function differentiation_operator{T}(b1::FourierBasisOdd{T}, b2::FourierBasisOdd{T}, order::Int; options...)
+	@assert length(b1) == length(b2)
+	DiagonalOperator(b1, [diff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
+end
+
+antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx==0 ? T(0) : 1 / (i* 2 * T(pi) * im)^order
+function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...)
+	@assert length(b1) == length(b2)
+	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
+end
 
 
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...) =

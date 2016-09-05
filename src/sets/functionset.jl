@@ -128,6 +128,25 @@ zeros(s::FunctionSet) = zeros(eltype(s), s)
 # same size as the set. This is not true, e.g., for multisets.
 zeros(T::Type, s::FunctionSet) = zeros(T, size(s))
 
+###########
+# Indexing
+###########
+
+
+# A native index has to be distinguishable from linear indices by type. A linear
+# index is an int. If a native index also has an integer type, then its value
+# should be wrapped in a different type. That is the purpose of NativeIndex.
+# Concrete types with a meaningful name can inherit from this abstract type.
+# If the native index is not an integer, then no wrapping is necessary.
+abstract NativeIndex
+
+# We assume that the index is stored in the 'index' field
+index(idxn::NativeIndex) = idxn.index
+
+length(idxn::NativeIndex) = 1
+
+getindex(idxn::NativeIndex, i) = (assert(i==1); index(idxn))
+
 
 "Compute the native index corresponding to the given linear index."
 native_index(s::FunctionSet, idx) = idx
@@ -142,7 +161,7 @@ elements in the set.
 """
 # We do nothing if the list of coefficiens is already linear and has the right
 # element type
-linearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = coef_native
+linearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = copy(coef_native)
 
 # Otherwise: allocate memory for the linear set and call linearize_coefficients! to do the work
 function linearize_coefficients(s::FunctionSet, coef_native)
@@ -247,31 +266,11 @@ done(s::FunctionSet, state) = done(state[1], state[2])
 # TODO: hook into the Julia checkbounds system, once such a thing is developed.
 checkbounds(i::Int, j::Int) = (1 <= j <= i) ? nothing : throw(BoundsError())
 
-checkbounds(s::FunctionSet, i) = checkbounds(length(s), i)
+# General bounds check: the linear index has to be in the range 1:length(s)
+checkbounds(s::FunctionSet, i::Int) = checkbounds(length(s), i)
 
-function checkbounds(s::FunctionSet, i1, i2)
-    checkbounds(size(s,1),i1)
-    checkbounds(size(s,2),i2)
-end
-
-function checkbounds(s::FunctionSet, i1, i2, i3)
-    checkbounds(size(s,1),i1)
-    checkbounds(size(s,2),i2)
-    checkbounds(size(s,3),i3)
-end
-
-function checkbounds(s::FunctionSet, i1, i2, i3, i4)
-    checkbounds(size(s,1),i1)
-    checkbounds(size(s,2),i2)
-    checkbounds(size(s,3),i3)
-    checkbounds(size(s,4),i4)
-end
-
-function checkbounds(s::FunctionSet, i...)
-    for n = 1:length(i)
-        checkbounds(size(s,n), i[n])
-    end
-end
+# Fail-safe backup when i is not an integer: convert to linear index (which is an integer)
+checkbounds(s::FunctionSet, i) = checkbounds(s, linear_index(s, i))
 
 "Return the support of the idx-th basis function."
 support(s::FunctionSet1d, idx) = (left(s,idx), right(s,idx))
@@ -283,26 +282,28 @@ support.
 # Default to numerical integration
 moment(s::FunctionSet, idx) = quadgk(s[idx], left(s), right(s))[1]
 
-# This is a candidate for generated functions to avoid the splatting
-call_set{N}(s::FunctionSet{N}, i, x::AbstractVector) = call_set(s, i, x...)
+# Internally, we use FixedSizeArrays (Vec) to represent points, except in
+# 1d where we use scalars.
+# Provide an interface with multiple arguments for convenience in 2D-4D.
+call_set(s::FunctionSet, i, x, y) = call_set(s, i, Vec(x,y))
+call_set(s::FunctionSet, i, x, y, z) = call_set(s, i, Vec(x,y,z))
+call_set(s::FunctionSet, i, x, y, z, t) = call_set(s, i, Vec(x,y,z,t))
 
-# This too is a candidate for generated functions to avoid the splatting
-call_set{N}(s::FunctionSet{N}, i, x::Vec{N}) = call_set(s, i, x...)
-
-# Here is another candidate for generated functions to avoid the splatting
-function call_set(s::FunctionSet, i, x...)
+"""
+You can evaluate a member function of a set using the call_set routine.
+It takes as arguments the function set, the index of the member function and
+the point in which to evaluate.
+This function performs bounds checking and then calls call_element on the set.
+"""
+function call_set(s::FunctionSet, i, x)
     checkbounds(s, i)
-    call_element(s, i, x...)
+    call_element(s, i, x)
 end
-
-# The specific set can choose to override call_element or call_element_native. The
-# latter is called with a native index.
-call_element(s::FunctionSet, i, x...) =
-    call_element_native(s, native_index(s, i), x...)
 
 # Evaluate on a grid
 function call_set(s::FunctionSet, i::Int, grid::AbstractGrid)
-    result = zeros(promote_type(eltype(s),numtype(grid)), size(grid))
+    checkbounds(s,i)
+    result = zeros(DiscreteGridSpace(grid, eltype(s)))
     call_set!(result, s, i, grid)
 end
 
@@ -310,7 +311,7 @@ function call_set!(result, s::FunctionSet, i::Int, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
     for k in eachindex(grid)
-        result[k] = call_set(s, i, grid[k]...)
+        result[k] = call_set(s, i, grid[k])
     end
     result
 end

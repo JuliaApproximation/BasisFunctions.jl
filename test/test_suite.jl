@@ -114,6 +114,9 @@ function test_derived_sets(T)
     @testset "$(rpad("Linear mapped sets",80))" begin
     test_generic_set_interface(rescale(b1, -1, 2)) end
 
+    @testset "$(rpad("A simple subset",80))" begin
+    test_generic_set_interface(b1[1:5]) end
+
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
@@ -126,6 +129,10 @@ function test_derived_sets(T)
     @testset "$(rpad("A multiple and augmented set combination",80))" begin
     s = rescale(b1, 1/2, 1)
     test_generic_set_interface(multiset(s,Log()*s)) end
+
+    @testset "$(rpad("A complicated subset",80))" begin
+    s = rescale(b1, 1/2, 1)
+    test_generic_set_interface(s[1:5]) end
 end
 
 
@@ -173,8 +180,8 @@ end
 
         delimit("Check evaluations, interpolations, extensions, setexpansions")
 
-        ## @testset "$(rpad("Fourier expansions",80))" begin
-        ##     test_fourier_series(T) end
+        @testset "$(rpad("Fourier expansions",80))" begin
+            test_fourier_series(T) end
 
         @testset "$(rpad("Chebyshev expansions",80))" begin
             test_chebyshev(T) end

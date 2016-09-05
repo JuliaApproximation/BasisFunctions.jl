@@ -316,6 +316,9 @@ immutable MatrixOperator{ARRAY,ELT} <: AbstractOperator{ELT}
     end
 end
 
+# An ActualMatrixOperator is defined by an actual matrix, i.e. the parameter
+# ARRAY is Array{T,2}.
+typealias ActualMatrixOperator{ELT} MatrixOperator{Array{ELT,2},ELT}
 
 function MatrixOperator(src::FunctionSet, dest::FunctionSet, matrix)
     ELT = promote_type(eltype(matrix), op_eltype(src,dest))
@@ -345,9 +348,9 @@ apply!{T,N1,N2}(op::MatrixOperator, coef_dest::AbstractArray{T,N1}, coef_src::Ab
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
-matrix(op::MatrixOperator) = op.matrix
+matrix(op::ActualMatrixOperator) = op.matrix
 
-matrix!(op::MatrixOperator, a::Array) = (a[:] = op.matrix)
+matrix!(op::ActualMatrixOperator, a::Array) = (a[:] = op.matrix)
 
 
 # A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
