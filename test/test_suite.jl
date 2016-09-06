@@ -133,6 +133,11 @@ function test_derived_sets(T)
     @testset "$(rpad("A complicated subset",80))" begin
     s = rescale(b1, 1/2, 1)
     test_generic_set_interface(s[1:5]) end
+
+    # @testset "$(rpad("A tensor product of MultiSet's",80))" begin
+    # b = multiset(b1,b2)
+    # c = b ⊗ b
+    # test_generic_set_interface(c) end
 end
 
 

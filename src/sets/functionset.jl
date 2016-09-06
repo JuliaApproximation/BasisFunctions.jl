@@ -119,6 +119,10 @@ end
 # It can be implemented in terms of resize and promote_eltype.
 similar(s::FunctionSet, T::Type, n) = resize(promote_eltype(s, T), n)
 
+# Support resize of a 1D set with a tuple of a single element, so that one can
+# write statements of the form resize(s, size(some_set)) in all dimensions.
+resize(s::FunctionSet1d, n::Tuple{Int}) = resize(s, n[1])
+
 """
 Return a set of zero coefficients in the native format of the set.
 """

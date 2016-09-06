@@ -153,7 +153,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             e2 = SetExpansion(diff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/100
+            delta = sqrt(eps(T))/10
             if ndims(basis) > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
@@ -161,7 +161,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             else
                 x2 = x+delta
             end
-            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 1000*sqrt(eps(T))
+            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*sqrt(eps(T))
         end
     end
 
@@ -178,7 +178,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             e2 = SetExpansion(antidiff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/1000
+            delta = sqrt(eps(T))/10
             if ndims(basis) > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
@@ -186,7 +186,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             else
                 x2 = x+delta
             end
-            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 1000*sqrt(eps(T))
+            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000*sqrt(eps(T))
         end
     end
 
@@ -209,23 +209,25 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             #@test_skip cond(AI) ≈ 1
         end
 
-        # Verify the normalization operator and its inverse
-        n = transform_normalization_operator(basis)
-        # - try interpolation using transform+normalization
-        x = zeros(ELT, size(basis))
-        for i in eachindex(x)
-            x[i] = rand()
-        end
-        e = SetExpansion(basis, n*t*x)
+        # Verify the pre and post operators and their inverses
+        pre1 = transform_pre_operator(tbasis, basis)
+        post1 = transform_post_operator(tbasis, basis)
+        pre2 = transform_pre_operator(basis, tbasis)
+        post2 = transform_post_operator(basis, tbasis)
+        # - try interpolation using transform+pre/post-normalization
+        x = coefficients(random_expansion(tbasis))
+        e = SetExpansion(basis, post1*t*pre1*x)
         g = grid(basis)
         @test maximum(abs(e(g)-x)) < sqrt(eps(T))
-        # - verify the inverse of the normalization
-        ni = inv(n)
-        @test maximum(abs(x - ni*n*x)) < sqrt(eps(T))
-        @test maximum(abs(x - n*ni*x)) < sqrt(eps(T))
+        # - try evaluation using transform+pre/post-normalization
+        e = random_expansion(basis)
+        x1 = post2*it*pre2*coefficients(e)
+        x2 = e(grid(basis))
+        @test maximum(abs(x1-x2)) < sqrt(eps(T))
 
         # TODO: check the transposes and inverses here
     end
+
 
     ## Test interpolation operator on a suitable interpolation grid
     if is_basis(basis)

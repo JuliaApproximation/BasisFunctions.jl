@@ -122,10 +122,3 @@ transform_set(s::AugmentedSet) = AugmentedSet(transform_set(set(s)), fun(s))
 
 transform_operator(s1::AugmentedSet, s2::AugmentedSet; options...) =
     wrap_operator(s1, s2, transform_operator(set(s1), set(s2); options...))
-
-function transform_normalization_operator(s::AugmentedSet; options...)
-    N = transform_normalization_operator(set(s); options...)
-    f = fun(s)
-    D = DiagonalOperator([1/f(x) for x in grid(s)])
-    D*N
-end

@@ -12,9 +12,7 @@
 # - approximation_operator
 # - leastsquares_operator
 # - evaluation_operator
-# - transform_operator
-# - transform_normalization_operator
-# - normalization_operator
+# - transform_operator (with transform_pre_operator and transform_post_operator)
 #
 # Calculus:
 # - differentiation_operator
@@ -110,26 +108,6 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 
 
 
-#################
-# Normalization
-#################
-
-
-# TODO: make complete. Should normalization simply be a diagonal operator?
-# immutable NormalizationOperator{SRC,DEST,ELT} <: AbstractOperator{ELT}
-#     src     ::  SRC
-#     dest    ::  DEST
-# end
-#
-# function normalization_operator(src::FunctionSet; options...)
-#     dest = normalize(src)
-#     ELT = promote_type(eltype(src),eltype(dest))
-#     NormalizationOperator{typeof(src),typeof(dest),ELT}(src, dest)
-# end
-#
-# is_inplace(::NormalizationOperator) = true
-
-
 
 
 #################################################################
@@ -145,22 +123,45 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 # to allow for different transforms.
 #
 # We assume that the transform itself is unitary. In order to compute an approximation
-# to a function from function values, the transform is typically followed by an
-# additional computation (e.g. the first Chebyshev coefficiet is halved after the DCT).
-# This additional operation is achieved by the operator returned by the
-# transform_normalization_operator function.
+# to a function from function values, the transform is typically preceded and followed
+# by an additional computation (e.g. the first Chebyshev coefficiet is halved after the DCT).
+# These additional operations are achieved by the operator returned by the
+# transform_pre_operator and transform_post_operator functions: pre acts on the
+# coefficients of the source space, post on the coefficients of the dest space.
 
-# Convenience functions: automatically convert a grid to a DiscreteGridSpace
-transform_operator(src::AbstractGrid, dest::FunctionSet; options...) =
-    transform_operator(DiscreteGridSpace(src, eltype(dest)), dest; options...)
 
-transform_operator(src::FunctionSet, dest::AbstractGrid; options...) =
-    transform_operator(src, DiscreteGridSpace(dest, eltype(src)); options...)
-
+# The default transform space is the space associated with the grid of the set
 transform_set(set::FunctionSet; options...) = DiscreteGridSpace(grid(set), eltype(set))
 
-transform_operator(src::FunctionSet; options...) =
-    transform_operator(src, transform_set(src; options...); options...)
+for op in (:transform_operator, :transform_pre_operator, :transform_post_operator)
+    # Convenience functions: automatically convert a grid to a DiscreteGridSpace
+    @eval $op(src::AbstractGrid, dest::FunctionSet; options...) =
+        $op(DiscreteGridSpace(src, eltype(dest)), dest; options...)
+    @eval $op(src::FunctionSet, dest::AbstractGrid; options...) =
+        $op(src, DiscreteGridSpace(dest, eltype(src)); options...)
+    # With only one argument, use the default transform space
+    @eval $op(src::FunctionSet; options...) =
+        $op(src, transform_set(src; options...); options...)
+end
+
+# Pre and post operations are identity by default.
+transform_pre_operator(src::FunctionSet, dest::FunctionSet; options...) =
+    IdentityOperator(src, dest)
+
+transform_post_operator(src::FunctionSet, dest::FunctionSet; options...) =
+    IdentityOperator(src, dest)
+
+# Return all three of them in a tuple
+transform_operators(sets::FunctionSet...; options...) =
+    (transform_pre_operator(sets...; options...),
+     transform_operator(sets...; options...),
+     transform_post_operator(sets...; options...))
+
+# Return the full operation: Post * Trans * Pre
+function full_transform_operator(sets::FunctionSet...; options...)
+    Pre,T,Post = transform_operators(sets...; options...)
+    Post * T * Pre
+end
 
 ## Interpolation and least squares
 
@@ -201,7 +202,7 @@ interpolation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
 # Interpolate set in the grid of dgs
 function interpolation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
     if has_grid(set) && grid(set) == grid(dgs) && has_transform(set, dgs)
-        transform_normalization_operator(set; options...) * transform_operator(dgs, set; options...)
+        full_transform_operator(dgs, set; options...)
     else
         SolverOperator(dgs, set, qrfact(evaluation_matrix(set, grid(dgs))))
     end
@@ -229,10 +230,11 @@ leastsquares_operator(set::FunctionSet, grid::AbstractGrid; options...) =
 
 function leastsquares_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
     if has_grid(set)
-        larger_set = resize(set, length(dgs))
+        larger_set = resize(set, size(dgs))
         if grid(larger_set) == grid(dgs) && has_transform(larger_set, dgs)
             R = restriction_operator(larger_set, set; options...)
-            return R * transform_normalization_operator(larger_set; options...) * transform_operator(dgs, larger_set; options...)
+            T = full_transform_operator(dgs, larger_set; options...)
+            return R * T
         end
     end
     SolverOperator(dgs, set, qrfact(evaluation_matrix(set, grid(dgs))))
@@ -248,7 +250,7 @@ evaluation_operator(s::FunctionSet, g::AbstractGrid; options...) = evaluation_op
 function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
     if has_transform(s, dgs)
         if length(s) == length(dgs)
-            transform_operator(s, dgs; options...) * inv(transform_normalization_operator(s; options...))
+            full_transform_operator(s, dgs; options...)
         elseif length(s)<length(dgs)
             slarge = resize(s, length(dgs))
             evaluation_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
@@ -370,6 +372,7 @@ function antidifferentiation_operator(s1::FunctionSet1d; options...)
     s2 = antiderivative_set(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
 end
+
 function antidifferentiation_operator(s1::FunctionSet; dim=1, options...)
     order = dimension_tuple(ndims(s1), dim)
     s2 = antiderivative_set(s1, order)
@@ -409,17 +412,19 @@ transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s1_set4,
         transform_operator(s1_set4, s2_set4; options...))
 
 for op in (:extension_operator, :restriction_operator, :evaluation_operator,
-            :interpolation_operator, :leastsquares_operator)
+            :interpolation_operator, :leastsquares_operator,
+            :transform_pre_operator, :transform_post_operator)
     @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
         tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:composite_length(s1)]...)
 end
 
-for op in (:approximation_operator, :normalization_operator, :transform_normalization_operator)
+for op in (:approximation_operator, )
     @eval $op(s::TensorProductSet; options...) =
         tensorproduct([$op(element(s,i); options...) for i in 1:composite_length(s)]...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
+    # TODO: this assumes that the number of elements of the tensor product equals the dimension
     @eval function $op(s1::TensorProductSet, s2::TensorProductSet, order::NTuple; options...)
         tensorproduct([$op(element(s1,i), element(s2,i), order[i]; options...) for i in 1:composite_length(s1)]...)
     end

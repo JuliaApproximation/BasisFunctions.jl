@@ -238,7 +238,6 @@ function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, 
 	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
 end
 
-
 transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...) =
 	_forward_fourier_operator(src, dest, eltype(src, dest); options...)
 
@@ -280,11 +279,14 @@ transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
 		_backward_fourier_operator(src, dest, eltype(src, dest); options...)
 
 
-function transform_normalization_operator(src::FourierBasis; options...)
+function transform_post_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...)
     L = length(src)
     ELT = eltype(src)
-    ScalingOperator(src, 1/sqrt(ELT(L)))
+    ScalingOperator(dest, 1/sqrt(ELT(L)))
 end
+
+transform_pre_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}; options...) =
+	inv(transform_post_operator(dest, src; options...))
 
 is_compatible(s1::FourierBasis, s2::FourierBasis) = true
 # Multiplication of Fourier Series
