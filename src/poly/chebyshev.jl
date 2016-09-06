@@ -72,8 +72,8 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 # call_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function moment{T}(b::ChebyshevBasis{T}, idx)
-    n = native_index(b, idx)
+function moment{T}(b::ChebyshevBasis{T}, idx::Int)
+    n = idx-1
     if n == 0
         T(2)
     else
@@ -183,13 +183,16 @@ transform_operator_tensor(src, dest,
         _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 
-function transform_normalization_operator(src::ChebyshevBasis; options...)
-    ELT = eltype(src)
-    scaling = ScalingOperator(src, 1/sqrt(ELT(length(src)/2)))
-    coefscaling = CoefficientScalingOperator(src, 1, 1/sqrt(ELT(2)))
-    flip = UnevenSignFlipOperator(src)
+function transform_post_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; options...)
+    ELT = eltype(dest)
+    scaling = ScalingOperator(dest, 1/sqrt(ELT(length(dest)/2)))
+    coefscaling = CoefficientScalingOperator(dest, 1, 1/sqrt(ELT(2)))
+    flip = UnevenSignFlipOperator(dest)
 	scaling * coefscaling * flip
 end
+
+transform_pre_operator(src::ChebyshevBasis, dest::DiscreteGridSpace; options...) =
+    inv(transform_post_operator(dest, src; options...))
 
 is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 

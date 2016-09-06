@@ -3,11 +3,27 @@
 
 abstract PolynomialBasis{T} <: FunctionSet1d{T}
 
+# The native index of a polynomial basis is the degree, which starts from 0 rather
+# than from 1. Since it is an integer, it is wrapped in a different type.
+immutable PolynomialDegree <: NativeIndex
+	index	::	Int
+end
+
 # Indices of polynomials naturally start at 0
-native_index(b::PolynomialBasis, idx) = idx-1
-linear_index(b::PolynomialBasis, idxn) = idxn+1
+native_index(b::PolynomialBasis, idx) = PolynomialDegree(idx-1)
+linear_index(b::PolynomialBasis, idxn::PolynomialDegree) = index(idxn)+1
 
 is_basis(b::PolynomialBasis) = true
+
+function subset(b::PolynomialBasis, idx::OrdinalRange)
+    if (step(idx) == 1) && (first(idx) == 1)
+        resize(b, last(idx))
+    else
+        FunctionSubSet(b, idx)
+    end
+end
+
+
 
 abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
 

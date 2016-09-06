@@ -9,6 +9,7 @@ using Compat
 using RecipesBase
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
+import Base: ≈
 
 import Base: promote, promote_rule, convert, promote_eltype
 
@@ -84,15 +85,15 @@ export CompositeOperator, compose
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator,
-        WrappedOperator
+        MultiplicationOperator, WrappedOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,
-    approximation_operator, transform_operator, transform_set, differentiation_operator,
-    antidifferentiation_operator, derivative_set, antiderivative_set, approximate,
-    evaluation_operator, normalization_operator,
+    approximation_operator, transform_operator, transform_set, full_transform_operator,
+    differentiation_operator, antidifferentiation_operator, derivative_set, antiderivative_set,
+    approximate, evaluation_operator,
     Extension, Restriction, extend, Differentiation, AntiDifferentiation,
-    extension_size, transform_normalization_operator, interpolation_matrix,
+    extension_size, transform_pre_operator, transform_post_operator, interpolation_matrix,
     tensorproduct
 
 # from operator/tensorproductoperator.jl

@@ -22,9 +22,18 @@ name(s::FunctionSubSet) = "Subset of " + name(s.set) + " with indices " + string
 promote_eltype{SET,IDX,N,T,S}(s::FunctionSubSet{SET,IDX,N,T}, ::Type{S}) =
     FunctionSubSet(promote_eltype(set(s), S), indices(s))
 
-length(s::FunctionSubSet) = length(indices(s))
+"Returns true if the subset consists of a single element."
+has_single_index(s::FunctionSubSet) = _has_single_index(s, indices(s))
+_has_single_index(s::FunctionSubSet, idx) = false
+_has_single_index(s::FunctionSubSet, idx::Int) = true
+_has_single_index(s::FunctionSubSet, idx::Tuple) = true
+_has_single_index(s::FunctionSubSet, idx::CartesianIndex) = true
+_has_single_index(s::FunctionSubSet, idx::NativeIndex) = true
 
-size(s::FunctionSubSet) = size(indices(s))
+
+length(s::FunctionSubSet) = has_single_index(s) ? 1 : length(indices(s))
+
+size(s::FunctionSubSet) = has_single_index(s) ? (1,) : size(indices(s))
 
 # It is not clear in general what to do when attempting to resize a subset. We
 # can not simply resize the underlying set, because the indices may no longer
@@ -63,23 +72,22 @@ grid(s::FunctionSubSet) = grid(set(s))
 
 rescale(s::FunctionSubSet, a, b) = FunctionSubSet(rescale(set(s), a, b), indices(s))
 
-call_element(s::FunctionSubSet, i, x...) = call_element(s.set, s.idx[i], x...)
+call_element(s::FunctionSubSet, i, x) =
+    has_single_index(s) ? call_element(s.set, s.idx, x) : call_element(s.set, s.idx[i], x)
 
-@compat (s::FunctionSubSet)(x...) = (@assert length(s) == 1; call_set(s, 1, x...))
+@compat (s::FunctionSubSet)(x...) = call_set(s.set, s.idx, x...)
 
-eachindex(s::FunctionSubSet) = eachindex(s.idx)
-eachindex{SET}(s::FunctionSubSet{SET, Int}) = 1
+eachindex(s::FunctionSubSet) = has_single_index(s) ? 1 : eachindex(s.idx)
 
-getindex(s::FunctionSet, idx) = FunctionSubSet(s, idx)
+subset(s::FunctionSet, idx) = FunctionSubSet(s, idx)
+subset(s::FunctionSet, ::Colon) = s
 
-getindex(s::FunctionSubSet, ::Colon) = s
-getindex(s::FunctionSet, ::Colon) = s
+getindex(s::FunctionSet, idx) = subset(s, idx)
+getindex(s::FunctionSet, i1, i2) = subset(s, (i1,i2))
+getindex(s::FunctionSet, i1, i2, i3) = subset(s, (i1,i2,i3))
+getindex(s::FunctionSet, i1, i2, i3, i4) = subset(s, (i1,i2,i3,i4))
 
-getindex(s::FunctionSet, i1::Int, i2::Int) = FunctionSubSet(s, [(i1,i2)])
-getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int) = FunctionSubSet(s, [(i1,i2,i3)])
-getindex(s::FunctionSet, i1::Int, i2::Int, i3::Int, i4::Int, indices::Int...) = FunctionSubSet(s, [(i1,i2,i3,i4,indices...)])
-
-getindex(s::FunctionSubSet, idx) = FunctionSubSet(set(s), s.idx[idx])
+getindex(s::FunctionSubSet, idx) = has_single_index(s) && (idx == 1) ? s : FunctionSubSet(set(s), s.idx[idx])
 
 function apply!(op::Extension, s2::FunctionSet, s1::FunctionSubSet, coef_dest, coef_src)
     @assert s2 == set(s1)
@@ -108,14 +116,14 @@ end
 
 function differentiation_operator(s1::FunctionSubSet, s2::FunctionSet, order::Int; options...)
     @assert s2 == derivative_set(s1, order)
-    D = differentiation_operator(set(s1), s2; options...)
+    D = differentiation_operator(set(s1), s2, order; options...)
     E = Extension(s1, set(s1))
     D*E
 end
 
 function antidifferentiation_operator(s1::FunctionSubSet, s2::FunctionSet, order::Int; options...)
     @assert s2 == antiderivative_set(s1, order)
-    D = antidifferentiation_operator(set(s1), s2; options...)
+    D = antidifferentiation_operator(set(s1), s2, order; options...)
     E = Extension(s1, set(s1))
     D*E
 end

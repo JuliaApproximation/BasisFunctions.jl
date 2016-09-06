@@ -83,7 +83,7 @@ onetuple(::Type{Val{1}}) = (1,)
 onetuple(::Type{Val{2}}) = (1, 1)
 onetuple(::Type{Val{3}}) = (1, 1, 1)
 onetuple(::Type{Val{4}}) = (1, 1, 1, 1)
-onetuple{N}(::Type{Val{N}}) = (1, onetuple(Val{N-1})...)
+# onetuple{N}(::Type{Val{N}}) = (1, onetuple(Val{N-1})...)
 
 
 function stride(siz, dim)
