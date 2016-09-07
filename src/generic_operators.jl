@@ -330,7 +330,8 @@ function differentiation_operator(s1::FunctionSet1d, order=1; options...)
     s2 = derivative_set(s1, order)
     differentiation_operator(s1, s2, order; options...)
 end
-differentiation_operator(s1::FunctionSet; dim=1, options...) = differentiation_operator(s1, dimension_tuple(ndims(s1), 1))
+differentiation_operator(s1::FunctionSet; dim=1, options...) = differentiation_operator(s1, dimension_tuple(ndims(s1), dim))
+
 function differentiation_operator(s1::FunctionSet, order; options...)
     s2 = derivative_set(s1, order)
     differentiation_operator(s1, s2, order; options...)
@@ -366,14 +367,14 @@ function antidifferentiation_operator(s1::FunctionSet, s2::FunctionSet, order; o
 end
 
 # Default if no order is specified
-function antidifferentiation_operator(s1::FunctionSet1d; options...)
-    order = 1
+function antidifferentiation_operator(s1::FunctionSet1d, order=1; options...)
     s2 = antiderivative_set(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
 end
 
-function antidifferentiation_operator(s1::FunctionSet; dim=1, options...)
-    order = dimension_tuple(ndims(s1), dim)
+antidifferentiation_operator(s1::FunctionSet; dim=1, options...) = antidifferentiation_operator(s1, dimension_tuple(ndims(s1), dim))
+
+function antidifferentiation_operator(s1::FunctionSet, order; options...)
     s2 = antiderivative_set(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
 end
