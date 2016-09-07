@@ -100,7 +100,7 @@ export extension_operator, restriction_operator, interpolation_operator,
 export TensorProductOperator
 
 # from operator/block_operator.jl
-export block_row_operator, block_column_operator, composite_size
+export BlockOperator, block_row_operator, block_column_operator, composite_size
 
 # from functional/functional.jl
 export AbstractFunctional, EvaluationFunctional, row
@@ -146,6 +146,9 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
 # export plot, plot_expansion, plot_samples, plot_error
 # from util/recipes.jl
 export plotgrid, postprocess
+
+#from util/MultiArray.jl
+export MultiArray
 
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis

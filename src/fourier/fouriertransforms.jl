@@ -57,15 +57,15 @@ dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::Multi
 
 
 # TODO: implement and test correct transposes
-# ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-#     InverseFastFourierTransformFFTW(dest(op), src(op))
-# ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-#     FastFourierTransformFFTW(dest(op), src(op))
-#
-# inv_multiplication(op::MultiplicationOperator, object::DCTPLAN) =
-#     ctranspose_multiplication(op, object)
-# inv_multiplication(op::MultiplicationOperator, object::IDCTPLAN) =
-#     ctranspose_multiplication(op, object)
+ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+    InverseFastFourierTransformFFTW(dest(op), src(op))
+ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+    FastFourierTransformFFTW(dest(op), src(op))
+
+inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+    ctranspose_multiplication(op, object)
+inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+    ctranspose_multiplication(op, object)
 
 
 # Now the generic implementation, based on using fft and ifft
