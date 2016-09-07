@@ -8,6 +8,13 @@ const VIEW_VIEW = 3
 
 const VIEW_DEFAULT = VIEW_COPY
 
+"""
+A DimensionOperator applies a given operator along one dimension in a higher-dimensional
+data set. For example, an operator can be applied to each row (dim=1) or column (dim=2)
+of a 2D array of coefficients.
+
+A tensor product operation can be implemented as a sequence of DimensionOperator's.
+"""
 # Parameter VIEW determines the view type:
 # 1: make a copy
 # 2: use sub

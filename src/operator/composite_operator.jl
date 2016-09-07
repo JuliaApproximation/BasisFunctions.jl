@@ -1,8 +1,9 @@
 # composite_operator.jl
 
 """
- operator consists of a sequence of operators that are applied
+A CompositeOperator consists of a sequence of operators that are applied
 consecutively.
+Memory is allocated at creation time to hold intermediate results.
 """
 immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
     "The list of operators"
@@ -127,7 +128,73 @@ inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
 
 ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
 
-compose() = nothing
-compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
-
 (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
+
+# Don't do anything if we have just one operator
+compose(op::AbstractOperator) = op
+
+# Here we have at least two operators. Remove nested compositions with flatten and continue.
+compose(ops::AbstractOperator...) = compose_verify_and_simplify(flatten(CompositeOperator, ops...)...)
+# compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
+
+function compose_verify_and_simplify(ops::AbstractOperator...)
+    # Check for correct chain of function spaces
+    for i in 1:length(ops)-1
+        dest(ops[i]) == src(ops[i+1]) || error("Size and destination don't match in ", typeof(ops[i]), " and ", typeof(ops[i+1]))
+    end
+    # Initiate recursive simplification
+    compose_simplify_rec( src(ops[1]), dest(ops[end]), [], ops[1], ops[2:end]...)
+end
+
+# We attempt to simplify the composition of operators with the following rules:
+# - each operator is first simplified on its own (e.g. WrappedOperator can remove the wrap,
+#   IdentityOperator can disappear)
+# - Each operator is then compared with the next one, so that pairs of operators can be simplified
+
+# The function compose_simplify_rec expects the overall source and destination of the
+# chain, an array prev that has already been processed, and the remaining operators as
+# individual arguments.
+
+# Only prev is specified: we have processed all operators and we are done
+compose_simplify_rec(src, dest, prev) = compose_simplify_done(src, dest, prev...)
+
+# One extra argument: we have one operator left to examine
+function compose_simplify_rec(src, dest, prev, current)
+    simple_current = simplify(current)
+    if simple_current == nothing
+        compose_simplify_done(src, dest, prev...)
+    else
+        compose_simplify_done(src, dest, prev..., simple_current)
+    end
+end
+
+# There is a next operator and zero or more remaining operators
+function compose_simplify_rec(src, dest, prev, current, next, remaining::AbstractOperator...)
+    simple_current = simplify(current)
+    if simple_current == nothing
+        compose_simplify_rec(src, dest, prev, next, remaining...)
+    else
+        simple_pair = simplify(simple_current, next)
+        if length(simple_pair) == 0
+            compose_simplify_rec(src, dest, prev, remaining...)
+        elseif length(simple_pair) == 1
+            compose_simplify_rec(src, dest, prev, simple_pair[1], remaining...)
+        else
+            compose_simplify_rec(src, dest, [prev; simple_pair[1:end-1]...], simple_pair[end], remaining...)
+        end
+    end
+end
+
+# By default, simplification does nothing
+simplify(op::AbstractOperator) = op
+simplify(op1::AbstractOperator, op2::AbstractOperator) = (op1,op2)
+
+# When nothing remains, construct an identity operator from src to dest.
+# This is the reason for passing around those arguments all the time.
+compose_simplify_done(src, dest) = IdentityOperator(src, dest)
+
+# Do nothing for a single operator
+compose_simplify_done(src, dest, op::AbstractOperator) = op
+
+# Construct a composite operator
+compose_simplify_done(src, dest, op1::AbstractOperator, op2::AbstractOperator, ops::AbstractOperator...) = CompositeOperator(op1, op2, ops...)

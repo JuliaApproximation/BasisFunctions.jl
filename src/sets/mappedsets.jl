@@ -137,7 +137,7 @@ for op in (:extension_operator, :restriction_operator)
         wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
 end
 
-for op in (:transform_operator, :transform_pre_operator, :transform_post_operator)
+for op in (:transform_operator,)
     # We assume for simplicity without checking that the mapped sets below are compatible...
     @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
         wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
@@ -146,6 +146,23 @@ for op in (:transform_operator, :transform_pre_operator, :transform_post_operato
     @eval $op(s1::FunctionSet, s2::AbstractMappedSet; options...) =
         wrap_operator(s1, s2, $op(s1, set(s2); options...) )
 end
+
+# We have to do these by hand, because the spaces are not the same: s1 is source and destination
+# of the transform_pre_operator. The post operation only acts on s2.
+transform_pre_operator(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(set(s1), set(s2)))
+transform_pre_operator(s1::AbstractMappedSet, s2::FunctionSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(set(s1), s2))
+transform_pre_operator(s1::FunctionSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(s1, set(s2)))
+
+transform_post_operator(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(set(s1), set(s2)))
+transform_post_operator(s1::AbstractMappedSet, s2::FunctionSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(set(s1), s2))
+transform_post_operator(s1::FunctionSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(s1, set(s2)))
+
 
 for op in (:interpolation_operator, :evaluation_operator, :approximation_operator)
     @eval $op(s1::AbstractMappedSet; options...) = wrap_operator(s1, s1, $op(set(s1); options...) )

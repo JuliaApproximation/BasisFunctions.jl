@@ -146,10 +146,10 @@ end
 
 # Pre and post operations are identity by default.
 transform_pre_operator(src::FunctionSet, dest::FunctionSet; options...) =
-    IdentityOperator(src, dest)
+    IdentityOperator(src)
 
 transform_post_operator(src::FunctionSet, dest::FunctionSet; options...) =
-    IdentityOperator(src, dest)
+    IdentityOperator(dest)
 
 # Return all three of them in a tuple
 transform_operators(sets::FunctionSet...; options...) =
