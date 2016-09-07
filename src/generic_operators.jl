@@ -168,7 +168,7 @@ end
 # Compute the interpolation matrix of the given basis on the given set of points
 # (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
-    T = promote_type(eltype(set), eltype(pts))
+    T = promote_type(eltype(set), numtype(pts))
     a = Array(T, length(pts), length(set))
     evaluation_matrix!(a, set, pts)
 end
@@ -326,13 +326,12 @@ function differentiation_operator(s1::FunctionSet, s2::FunctionSet, order; optio
 end
 
 # Default if no order is specified
-function differentiation_operator(s1::FunctionSet1d; options...)
-    order = 1
+function differentiation_operator(s1::FunctionSet1d, order=1; options...)
     s2 = derivative_set(s1, order)
     differentiation_operator(s1, s2, order; options...)
 end
-function differentiation_operator(s1::FunctionSet; dim=1, options...)
-    order = dimension_tuple(ndims(s1), dim)
+differentiation_operator(s1::FunctionSet; dim=1, options...) = differentiation_operator(s1, dimension_tuple(ndims(s1), 1))
+function differentiation_operator(s1::FunctionSet, order; options...)
     s2 = derivative_set(s1, order)
     differentiation_operator(s1, s2, order; options...)
 end

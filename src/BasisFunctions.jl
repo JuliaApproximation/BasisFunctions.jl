@@ -147,6 +147,9 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
 # from util/recipes.jl
 export plotgrid, postprocess
 
+#from util/MultiArray.jl
+export MultiArray
+
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 

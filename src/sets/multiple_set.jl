@@ -55,7 +55,7 @@ name(s::MultiSet) = "A set consisting of $(composite_length(s)) sets"
 
 elements(s::MultiSet) = s.sets
 element(s::MultiSet, j::Int) = s.sets[j]
-element(s::MultiSet, range::Range) = MultiSet(s.sets[range])
+element(s::MultiSet, range::Range) = multiset(s.sets[range])
 composite_length(s::MultiSet) = length(s.sets)
 
 length(s::MultiSet) = s.offsets[end]

@@ -360,11 +360,11 @@ apply_inplace!{ARRAY}(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) =
 
 
 # Definition in terms of A_mul_B
-apply!{T}(op::MatrixOperator, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) =
+apply!{ELT,T}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) =
     A_mul_B!(coef_dest, object(op), coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-apply!{T,N1,N2}(op::MatrixOperator, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) =
+apply!{ELT,T,N1,N2}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
