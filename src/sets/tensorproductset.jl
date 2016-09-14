@@ -77,7 +77,7 @@ size(s::TensorProductSet, j::Int) = length(s.sets[j])
 length(s::TensorProductSet) = prod(size(s))
 
 
-grid(s::TensorProductSet) = tensorproduct(map(grid, elements(s))...)
+grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
 #grid(b::TensorProductSet, j::Int) = grid(element(b,j))
 
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
