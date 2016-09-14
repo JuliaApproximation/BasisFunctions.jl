@@ -188,10 +188,10 @@ length(it::MultiSetIndexIterator) = length(it.set)
 ## Differentiation
 
 derivative_set(s::MultiSet, order; options...) =
-    multiset(map(b-> derivative_set(b, order; options...), elements(s)))
+    MultiSet(map(b-> derivative_set(b, order; options...), elements(s)))
 
 antiderivative_set(s::MultiSet, order; options...) =
-    multiset(map(b-> antiderivative_set(b, order; options...), elements(s)))
+    MultiSet(map(b-> antiderivative_set(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiSet, s2::MultiSet, order; options...)

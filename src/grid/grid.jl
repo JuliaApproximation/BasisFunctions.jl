@@ -29,6 +29,9 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
+checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idx))
+
+
 function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)
 	unsafe_getindex(g, idx)
@@ -37,6 +40,11 @@ end
 # Default implementation of index iterator: construct a range
 eachindex(g::AbstractGrid) = 1:length(g)
 
+# Native and linear indices for grids are like native and linear indices for
+# function sets.
+native_index(g::AbstractGrid, idx) = idx
+
+linear_index(g::AbstractGrid, idxn) = idxn
 
 # Grid iteration:
 #	for x in grid

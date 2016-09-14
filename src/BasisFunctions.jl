@@ -18,7 +18,7 @@ import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
 
 import Base: cos, sin, exp, log
 
-import Base: zeros, fill!
+import Base: zeros, ones, fill!
 
 import Base: getindex, setindex!, eltype
 

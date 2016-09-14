@@ -216,12 +216,12 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         post2 = transform_post_operator(basis, tbasis)
         # - try interpolation using transform+pre/post-normalization
         x = coefficients(random_expansion(tbasis))
-        e = SetExpansion(basis, post1*t*pre1*x)
+        e = SetExpansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs(e(g)-x)) < sqrt(eps(T))
         # - try evaluation using transform+pre/post-normalization
         e = random_expansion(basis)
-        x1 = post2*it*pre2*coefficients(e)
+        x1 = (post2*it*pre2)*coefficients(e)
         x2 = e(grid(basis))
         @test maximum(abs(x1-x2)) < sqrt(eps(T))
 

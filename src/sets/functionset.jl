@@ -128,6 +128,12 @@ Return a set of zero coefficients in the native format of the set.
 """
 zeros(s::FunctionSet) = zeros(eltype(s), s)
 
+function ones(s::FunctionSet)
+    z = zeros(s)
+    z[:] = 1
+    z
+end
+
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multisets.
 zeros(T::Type, s::FunctionSet) = zeros(T, size(s))

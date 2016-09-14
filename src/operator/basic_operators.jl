@@ -28,6 +28,8 @@ function matrix!(op::IdentityOperator, a)
     a
 end
 
+diagonal(op::IdentityOperator) = ones(eltype(op), length(src(op)))
+
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 
@@ -81,7 +83,15 @@ for op in (:+, :*, :-, :/)
         (@assert size(op1) == size(op2); ScalingOperator(src(op1), dest(op1), $op(scalar(op1),scalar(op2))))
 end
 
+diagonal(op::ScalingOperator) = [scalar(op) for i in 1:length(src(op))]
 
+function matrix!(op::ScalingOperator, a)
+    a[:] = 0
+    for i in 1:min(size(a,1),size(a,2))
+        a[i,i] = scalar(op)
+    end
+    a
+end
 
 
 "The zero operator maps everything to zero."
@@ -166,28 +176,6 @@ end
 
 matrix(op::DiagonalOperator) = diagm(diagonal(op))
 
-function diagonal(op::AbstractOperator)
-    if is_diagonal(op)
-        # Make data of all ones in the native representation of the operator
-        all_ones = ones(eltype(op),src(op))
-        # Apply the operator: this extracts the diagonal because the operator is diagonal
-        diagonal_native = apply(op, all_ones)
-        # Convert to vector
-        linearize_coefficients(src(op), diagonal_native)
-    else
-        # This could be more efficient
-        eltype(op)[op[i,i] for i in 1:length(src(op))]
-    end
-end
-
-function inv_diagonal(op::AbstractOperator)
-    @assert is_diagonal(op)
-    d = diagonal(op)
-    # Avoid getting Inf values, we prefer a pseudo-inverse in this case
-    d[find(d.==0)] = Inf
-    DiagonalOperator(dest(op), src(op), d.^(-1))
-end
-
 
 ##################################
 # Promotions and simplifications
@@ -222,6 +210,7 @@ convert{S,T}(::Type{DiagonalOperator{S}}, op::ZeroOperator{T}) =
     DiagonalOperator(src(op), dest(op), zeros(S,length(src(op))))
 
 convert{S,T}(::Type{DiagonalOperator{S}}, op::DiagonalOperator{T}) = promote_eltype(op, S)
+
 
 ## SIMPLIFICATIONS
 

@@ -6,6 +6,11 @@ consecutively.
 Memory is allocated at creation time to hold intermediate results.
 """
 immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
+    # We explicitly store src and dest, because that information may be lost
+    # when the list of operators is optimized (for example, an Identity mapping
+    # between two spaces could disappear).
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
     "The list of operators"
     operators
     "Scratch space for the result of each operator, except the last one"
@@ -18,14 +23,13 @@ elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
 composite_length(op::CompositeOperator) = length(op.operators)
 
-src(op::CompositeOperator, j::Int = 1) = src(op.operators[j])
-dest(op::CompositeOperator, j::Int = composite_length(op)) = dest(op.operators[j])
-
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
 
+CompositeOperator(operators::AbstractOperator...) =
+    CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
 
-function CompositeOperator(operators::AbstractOperator...)
+function CompositeOperator(composite_src::FunctionSet, composite_dest::FunctionSet, operators::AbstractOperator...)
     L = length(operators)
     # Check operator compatibility
     for i in 1:length(operators)-1
@@ -44,8 +48,7 @@ function CompositeOperator(operators::AbstractOperator...)
         end
     end
     scratch = tuple(scratch_array...)
-    # CompositeOperator{ELT}([operators...], scratch_array)
-    CompositeOperator{ELT}(operators, scratch)
+    CompositeOperator{ELT}(composite_src, composite_dest, operators, scratch)
 end
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
@@ -134,16 +137,25 @@ ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
 compose(op::AbstractOperator) = op
 
 # Here we have at least two operators. Remove nested compositions with flatten and continue.
-compose(ops::AbstractOperator...) = compose_verify_and_simplify(flatten(CompositeOperator, ops...)...)
-# compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
+# compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
+compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
 function compose_verify_and_simplify(ops::AbstractOperator...)
     # Check for correct chain of function spaces
+    # We do this before we flatten composite operators, because they might have
+    # been optimized already
     for i in 1:length(ops)-1
-        dest(ops[i]) == src(ops[i+1]) || error("Size and destination don't match in ", typeof(ops[i]), " and ", typeof(ops[i+1]))
+        dest(ops[i]) == src(ops[i+1]) ||
+            error("Source and destination don't match in composition of ", typeof(ops[i]),
+            " and ", typeof(ops[i+1]), ". Sources are: ", typeof(src(ops[i])),
+            " and ", typeof(src(ops[i+1])), ". Destinations are: ", typeof(dest(ops[i])),
+            " and ", typeof(dest(ops[i+1])))
     end
+    composite_src = src(ops[1])
+    composite_dest = dest(ops[end])
+    flatlist = flatten(CompositeOperator, ops...)
     # Initiate recursive simplification
-    compose_simplify_rec( src(ops[1]), dest(ops[end]), [], ops[1], ops[2:end]...)
+    compose_simplify_rec( composite_src, composite_dest, [], flatlist[1], flatlist[2:end]...)
 end
 
 # We attempt to simplify the composition of operators with the following rules:
@@ -187,14 +199,22 @@ end
 
 # By default, simplification does nothing
 simplify(op::AbstractOperator) = op
-simplify(op1::AbstractOperator, op2::AbstractOperator) = (op1,op2)
+function simplify(op1::AbstractOperator, op2::AbstractOperator)
+    if is_diagonal(op1) && is_diagonal(op2)
+        (DiagonalOperator(src(op1), dest(op2), diagonal(op1) .* diagonal(op2)),)
+    else
+        (op1,op2)
+    end
+end
 
 # When nothing remains, construct an identity operator from src to dest.
-# This is the reason for passing around those arguments all the time.
 compose_simplify_done(src, dest) = IdentityOperator(src, dest)
 
-# Do nothing for a single operator
-compose_simplify_done(src, dest, op::AbstractOperator) = op
+# Do nothing for a single operator, except wrap it properly if the spaces don't match
+# anymore
+compose_simplify_done(composite_src, composite_dest, op::AbstractOperator) =
+    (composite_src == src(op)) && (composite_dest == dest(op)) ? op : wrap_operator(composite_src, composite_dest, op)
 
 # Construct a composite operator
-compose_simplify_done(src, dest, op1::AbstractOperator, op2::AbstractOperator, ops::AbstractOperator...) = CompositeOperator(op1, op2, ops...)
+compose_simplify_done(src, dest, op1::AbstractOperator, op2::AbstractOperator, ops::AbstractOperator...) =
+    CompositeOperator(src, dest, op1, op2, ops...)

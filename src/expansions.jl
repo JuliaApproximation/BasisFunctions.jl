@@ -40,6 +40,8 @@ end
 has_basis(e::SetExpansion) = is_basis(set(e))
 has_frame(e::SetExpansion) = is_frame(set(e))
 
+eachindex(e::SetExpansion) = eachindex(coefficients(e))
+
 getindex(e::SetExpansion, i...) = e.coefficients[i...]
 
 setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)

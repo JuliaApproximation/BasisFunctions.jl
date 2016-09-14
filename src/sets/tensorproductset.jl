@@ -101,9 +101,11 @@ right(s::TensorProductSet, j::Int) = Vec([right(element(s,i),multilinear_index(s
     :(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
 end
 
+# Convert CartesianIndex argument to a tuple
 getindex(s::TensorProductSet, i::CartesianIndex{2}) = getindex(s, (i[1],i[2]))
 getindex(s::TensorProductSet, i::CartesianIndex{3}) = getindex(s, (i[1],i[2],i[3]))
 getindex(s::TensorProductSet, i::CartesianIndex{4}) = getindex(s, (i[1],i[2],i[3],i[4]))
+
 # This is a more general, but less readable, definition of getindex for CartesianIndex
 # @generated function getindex{TS}(s::TensorProductSet{TS}, index::CartesianIndex)
 #     LEN = tuple_length(TS)

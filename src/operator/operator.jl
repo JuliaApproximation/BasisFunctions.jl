@@ -177,6 +177,29 @@ function getindex(op::AbstractOperator, i::Int, j::Int)
 	d[j]
 end
 
+function diagonal(op::AbstractOperator)
+    if is_diagonal(op)
+        # Make data of all ones in the native representation of the operator
+        all_ones = ones(src(op))
+        # Apply the operator: this extracts the diagonal because the operator is diagonal
+        diagonal_native = apply(op, all_ones)
+        # Convert to vector
+        linearize_coefficients(src(op), diagonal_native)
+    else
+        # This could be more efficient
+        eltype(op)[op[i,i] for i in 1:length(src(op))]
+    end
+end
+
+function inv_diagonal(op::AbstractOperator)
+    @assert is_diagonal(op)
+    d = diagonal(op)
+    # Avoid getting Inf values, we prefer a pseudo-inverse in this case
+    d[find(d.==0)] = Inf
+    DiagonalOperator(dest(op), src(op), d.^(-1))
+end
+
+
 
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}

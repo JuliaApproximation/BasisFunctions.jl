@@ -1,8 +1,5 @@
 # special_operators.jl
 
-
-
-
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
@@ -21,12 +18,12 @@ end
 CoefficientScalingOperator(src::FunctionSet, index::Int, scalar::Number) =
     CoefficientScalingOperator(src, src, index, scalar)
 
-promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
-    CoefficientScalingOperator{S}(op.src, op.dest, op.index, S(op.scalar))
-
 index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
+
+promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
+    CoefficientScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), op.index, S(op.scalar))
 
 is_inplace(::CoefficientScalingOperator) = true
 is_diagonal(::CoefficientScalingOperator) = true
@@ -51,6 +48,11 @@ function apply_inplace!(op::CoefficientScalingOperator, coef_srcdest)
     coef_srcdest
 end
 
+function diagonal(op::CoefficientScalingOperator)
+    diag = ones(eltype(op), length(src(op)))
+    diag[index(op)] = scalar(op)
+    diag
+end
 
 
 """
@@ -58,6 +60,11 @@ A WrappedOperator has a source and destination, as well as an embedded operator 
 source and destination. The coefficients of the source of the WrappedOperator are passed on
 unaltered as coefficients of the source of the embedded operator. The resulting coefficients
 of the embedded destination are returned as coefficients of the wrapping destination.
+
+The purpose of this operator is to make sure that source and destinations sets of an
+operator are correct, for example if a derived set returns an operator of the embedded set.
+This operator can be wrapped to make sure it has the right source and destination sets, i.e.
+its source and destination would correspond to the derived set, and not to the embedded set.
 """
 immutable WrappedOperator{OP,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
@@ -75,12 +82,25 @@ end
 WrappedOperator(src, dest, op::AbstractOperator) =
     WrappedOperator{typeof(op),eltype(op)}(src, dest, op)
 
+"""
+The function wrap_operator returns an operator with the given source and destination,
+and with the action of the given operator. Depending on the operator, the result is
+a WrappedOperator, but sometimes that can be avoided.
+"""
 wrap_operator(src, dest, op::AbstractOperator) = WrappedOperator(src, dest, op)
 
+# No need to wrap a wrapped operator
 wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, operator(op))
 
+# No need to wrap an IdentityOperator, we can just change src and dest
+# Same for a few other operators
+wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, dest)
+wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, diagonal(op))
+wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
+wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
+
 promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
-    WrappedOperator(op.src, op.dest, promote_eltype(op.op, S))
+    WrappedOperator(promote_eltype(src(op), S), promote_eltype(dest(op), S), promote_eltype(op.op, S))
 
 operator(op::WrappedOperator) = op.op
 
@@ -92,13 +112,14 @@ apply_inplace!(op::WrappedOperator, coef_srcdest) = apply_inplace!(op.op, coef_s
 
 apply!(op::WrappedOperator, coef_dest, coef_src) = apply!(op.op, coef_dest, coef_src)
 
-inv(op::WrappedOperator) = WrappedOperator(dest(op), src(op), inv(op.op))
+inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(op.op))
 
-ctranspose(op::WrappedOperator) = WrappedOperator(dest(op), src(op), ctranspose(op.op))
+ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(op.op))
 
 matrix!(op::WrappedOperator, a) = matrix!(op.op, a)
 
 simplify(op::WrappedOperator) = op.op
+
 
 """
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
@@ -273,6 +294,7 @@ function apply_inplace!(op::UnevenSignFlipOperator, coef_srcdest)
     coef_srcdest
 end
 
+diagonal{ELT}(op::UnevenSignFlipOperator{ELT}) = ELT[-(-1)^i for i in 1:length(src(op))]
 
 
 # An index scaling operator, used to generate weights for the polynomial scaling algorithm.

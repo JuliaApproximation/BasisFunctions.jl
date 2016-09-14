@@ -4,6 +4,15 @@ abstract DiscreteVectorSpace{T} <: FunctionSet{1,T}
 
 length(b::DiscreteVectorSpace) = b.n
 
+immutable DiscreteSet{T} <: FunctionSet{T}
+    n   ::  Int
+end
+
+isreal{T}(s::DiscreteSet{T}) = isreal(T)
+
+promote_eltype{T,S}(s::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(s))
+
+resize{T}(s::DiscreteSet{T}, n) = DiscreteSet{T}(n)
 
 immutable Rn{T} <: DiscreteVectorSpace{T}
     n   ::  Int
