@@ -246,27 +246,27 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
 end
 
 
-"""
-A FunctionOperator applies a given function to the set of coefficients and
-returns the result.
-"""
-immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-    fun     ::  F
-end
+## """
+## A FunctionOperator applies a given function to the set of coefficients and
+## returns the result.
+## """
+## immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
+##     src     ::  FunctionSet
+##     dest    ::  FunctionSet
+##     fun     ::  F
+## end
 
-function FunctionOperator(src::FunctionSet, dest::FunctionSet, fun)
-    ELT = op_eltype(src, dest)
-    FunctionOperator{typeof(fun),ELT}(src, dest, fun)
-end
+## function FunctionOperator(src::FunctionSet, dest::FunctionSet, fun)
+##     ELT = op_eltype(src, dest)
+##     FunctionOperator{typeof(fun),ELT}(src, dest, fun)
+## end
 
-# Warning: this very likely allocates memory
-apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
+## # Warning: this very likely allocates memory
+## apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
 
-function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
-    coef_dest[:] = fun(coef_src)
-end
+## function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
+##     coef_dest[:] = fun(coef_src)
+## end
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
@@ -295,47 +295,6 @@ function apply_inplace!(op::UnevenSignFlipOperator, coef_srcdest)
 end
 
 diagonal{ELT}(op::UnevenSignFlipOperator{ELT}) = ELT[-(-1)^i for i in 1:length(src(op))]
-
-
-# An index scaling operator, used to generate weights for the polynomial scaling algorithm.
-immutable IdxnScalingOperator{ELT} <: AbstractOperator{ELT}
-    src     ::  FunctionSet
-    order   ::  Int
-    scale   ::  Function
-end
-
-IdxnScalingOperator(src::FunctionSet; order=1, scale = default_scaling_function) =
-    IdxnScalingOperator{eltype(src)}(src, order, scale)
-
-dest(op::IdxnScalingOperator) = src(op)
-
-default_scaling_function(i) = 10.0^-4+(abs(i))+abs(i)^2+abs(i)^3
-default_scaling_function(i,j) = 1+(abs(i)^2+abs(j)^2)
-
-is_inplace(::IdxnScalingOperator) = true
-is_diagonal(::IdxnScalingOperator) = true
-
-ctranspose(op::IdxnScalingOperator) = DiagonalOperator(src(op), conj(diagonal(op)))
-function apply_inplace!(op::IdxnScalingOperator, dest, src, coef_srcdest)
-    ELT = eltype(op)
-    for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= op.scale(ELT(native_index(op.src,i)))^op.order
-    end
-    coef_srcdest
-end
-
-function apply_inplace!{TS1,TS2}(op::IdxnScalingOperator, dest::TensorProductSet{Tuple{TS1,TS2}}, src, coef_srcdest)
-    ELT = eltype(op)
-    for i in eachindex(coef_srcdest)
-        indices = ind2sub(size(dest),i)
-        coef_srcdest[i]*=op.scale(ELT(native_index(TS1,indices[1])),ELT(native_index(TS2,indices[2])))^op.order
-    end
-    coef_srcdest
-end
-inv(op::IdxnScalingOperator) = IdxnScalingOperator(op.src, order=op.order*-1, scale=op.scale)
-
-
-
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."

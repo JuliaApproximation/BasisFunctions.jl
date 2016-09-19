@@ -157,7 +157,6 @@ length(idxn::NativeIndex) = 1
 
 getindex(idxn::NativeIndex, i) = (assert(i==1); index(idxn))
 
-
 "Compute the native index corresponding to the given linear index."
 native_index(s::FunctionSet, idx) = idx
 

@@ -76,16 +76,16 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 
 # from operator/operators.jl
 export AbstractOperator, ctranspose, operator, src, dest, apply!,
-        apply, apply_multiple
-export matrix
+        apply, apply_multiple, apply_inplace!
+export matrix, diagonal, is_diagonal, is_inplace
 
 # from operator/composite_operator.jl
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
-        IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator,
-        MultiplicationOperator, WrappedOperator
+        CoefficientScalingOperator, MatrixOperator,
+        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,

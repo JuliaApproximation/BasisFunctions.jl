@@ -168,7 +168,7 @@ end
 # individual arguments.
 
 # Only prev is specified: we have processed all operators and we are done
-compose_simplify_rec(src, dest, prev) = compose_simplify_done(src, dest, prev...)
+vcompose_simplify_rec(src, dest, prev) = compose_simplify_done(src, dest, prev...)
 
 # One extra argument: we have one operator left to examine
 function compose_simplify_rec(src, dest, prev, current)

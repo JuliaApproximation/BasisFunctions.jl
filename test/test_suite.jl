@@ -160,6 +160,9 @@ end
     for T in (Float64,BigFloat)
         println()
         delimit("T is $T", )
+        delimit("Operators")
+        @testset "$(rpad("test diagonal operators",80))" begin
+            test_diagonal_operators(T) end
         delimit("Generic interfaces")
 
         SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,

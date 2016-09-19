@@ -41,3 +41,44 @@ function test_tensor_operators(T)
     @test sum(abs(c_dim-c_manual)) + 1 ≈ 1
     @test sum(abs(c_tp-c_dim)) + 1 ≈ 1
 end
+
+
+
+function test_diagonal_operators(T)
+    for SRC in (FourierBasis(10),ChebyshevBasis(11, Complex{T}))
+        operators = (CoefficientScalingOperator(SRC,3,2.0+0.3im),CoefficientScalingOperator(SRC,3,2),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,2.0+2.0im),ScalingOperator(SRC,3),DiagonalOperator(rand(eltype(SRC),size(SRC))))
+        for Op in operators
+            # Test in-place
+            coef_src = rand(eltype(src(Op)),size(src(Op)))
+            m = matrix(Op)
+            coef_dest_m = m * coef_src
+            coef_dest = apply!(Op, coef_src)            
+            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            # Test out-of-place
+            coef_src = rand(eltype(src(Op)),size(src(Op)))
+            coef_dest = apply(Op, coef_src)
+            coef_dest_m = m * coef_src
+            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            # Test inverse
+            I = inv(Op)
+            @test (sum(abs(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
+            @test (sum(abs((I*Op)*coef_src-coef_src))) + 1 ≈ 1
+            # Test transposes
+            @test (sum(abs(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
+            # Test Sum
+            @test (sum(abs((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            # Test Equivalence to diagonal operator
+            @test (sum(abs(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
+            # Make sure diagonality is retained
+            @test is_diagonal(2*Op) && is_inplace(2*Op)
+            @test is_diagonal(Op') && is_inplace(Op')
+            @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
+            @test is_diagonal(Op*Op) && is_inplace(Op*Op)
+        end
+    end
+end
+
+
+
+
+        

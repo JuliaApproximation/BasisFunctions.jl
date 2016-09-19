@@ -93,6 +93,9 @@ function matrix!(op::ScalingOperator, a)
     a
 end
 
+# default implementation for scalar multiplication is a scaling operator
+*(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op),scalar) * op
+
 
 "The zero operator maps everything to zero."
 immutable ZeroOperator{ELT} <: AbstractOperator{ELT}
@@ -241,3 +244,7 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 (*)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) .* diagonal(op2))
 (*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) * diagonal(op2))
 (*)(op2::DiagonalOperator, op1::ScalingOperator) = op1 * op2
+
+(+)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2))
+(+)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) +  diagonal(op2))
+(+)(op2::DiagonalOperator, op1::ScalingOperator) = op1 + op2
