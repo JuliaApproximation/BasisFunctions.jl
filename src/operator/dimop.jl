@@ -8,6 +8,13 @@ const VIEW_VIEW = 3
 
 const VIEW_DEFAULT = VIEW_COPY
 
+"""
+A DimensionOperator applies a given operator along one dimension in a higher-dimensional
+data set. For example, an operator can be applied to each row (dim=1) or column (dim=2)
+of a 2D array of coefficients.
+
+A tensor product operation can be implemented as a sequence of DimensionOperator's.
+"""
 # Parameter VIEW determines the view type:
 # 1: make a copy
 # 2: use sub
@@ -22,8 +29,8 @@ immutable DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
     scratch_dest    ::  AbstractArray{ELT}
 
     function DimensionOperator(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int)
-        scratch_src = zeros(eltype(op), size(src(op)))
-        scratch_dest = zeros(eltype(op), size(dest(op)))
+        scratch_src = zeros(eltype(op), src(op))
+        scratch_dest = zeros(eltype(op), dest(op))
         new(set_src, set_dest, op, dim, scratch_src, scratch_dest)
     end
 end
@@ -104,10 +111,10 @@ end
 
 
 "Replace the j-th set of a tensor product set with a different one."
-replace(tpset::TensorProductSet, j, s) = tensorproduct([set(tpset, i) for i in 1:j-1]..., s, [set(tpset, i) for i in j+1:composite_length(tpset)]...)
+replace(tpset::TensorProductSet, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:composite_length(tpset)]...)
 
-inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, set(dest(op), op.dim)),
-    replace(dest(op), op.dim, set(src(op), op.dim)), inv(op.op), op.dim, VIEW)
+inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+    replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)
 
-ctranspose{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, set(dest(op), op.dim)),
-    replace(dest(op), op.dim, set(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)
+ctranspose{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+    replace(dest(op), op.dim, element(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)

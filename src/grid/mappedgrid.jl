@@ -11,8 +11,6 @@ end
 
 LinearMappedGrid{T}(g::AbstractGrid1d{T}, a, b) = LinearMappedGrid{typeof(g),T}(g, a, b)
 
-index_dim{G,T}(::Type{LinearMappedGrid{G,T}}) = index_dim(G)
-
 left(g::LinearMappedGrid) = g.a
 right(g::LinearMappedGrid) = g.b
 

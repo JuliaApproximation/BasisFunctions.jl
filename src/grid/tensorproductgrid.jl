@@ -32,8 +32,6 @@ size(g::TensorProductGrid, j::Int) = length(g.grids[j])
 
 ndims(g::TensorProductGrid, j::Int) = ndims(element(g,j))
 
-index_dim{TG,N,T}(::Type{TensorProductGrid{TG,N,T}}) = tuple_length(TG)
-
 length(g::TensorProductGrid) = prod(size(g))
 
 left(g::TensorProductGrid) = Vec(map(left, g.grids)...)
@@ -55,7 +53,13 @@ end
     :(@nref $LEN g d->index[d])
 end
 
+@generated function getindex{TG}(g::TensorProductGrid{TG}, index::Tuple)
+	LEN = tuple_length(TG)
+    :(@nref $LEN g d->index[d])
+end
+
 # For the recursive evaluation of grids, we want to flatten any Vec's
+# (Since in the future a single grid may return a vector rather than a number)
 # This is achieved with FlatVec below:
 FlatVec(x) = Vec(x)
 FlatVec(x, y) = Vec(x, y)
@@ -70,11 +74,13 @@ FlatVec(x::Vec{2}, y::Number) = Vec(x[1], x[2], y)
 FlatVec(x::Vec{2}, y::Number, z::Number) = Vec(x[1], x[2], y, z)
 
 
-getindex(g::TensorProductGrid, i1::Int, i2::Int) =
+getindex(g::TensorProductGrid, i1, i2) =
 	FlatVec(g.grids[1][i1], g.grids[2][i2])
 
-getindex(g::TensorProductGrid, i1::Int, i2::Int, i3::Int) =
+getindex(g::TensorProductGrid, i1, i2, i3) =
 	FlatVec(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3])
 
-getindex(g::TensorProductGrid, i1::Int, i2::Int, i3::Int, i4::Int) =
+getindex(g::TensorProductGrid, i1, i2, i3, i4) =
 	FlatVec(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3], g.grids[4][i4])
+
+getindex(g::TensorProductGrid, idx::Int) = getindex(g, ind2sub(size(g),idx))

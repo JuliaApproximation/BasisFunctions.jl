@@ -3,7 +3,7 @@
 """
 A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
 """
-immutable DiscreteGridSpace{G,N,T} <: AbstractBasis{N,T}
+immutable DiscreteGridSpace{G,N,T} <: FunctionSet{N,T}
 	grid		::	G
 
 	DiscreteGridSpace(grid::AbstractGrid{N}) = new(grid)
@@ -11,6 +11,7 @@ end
 
 typealias DiscreteGridSpace1d{G,ELT} DiscreteGridSpace{G,ELT,1}
 
+name(s::DiscreteGridSpace) = "A discrete grid space"
 
 DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typeof(grid),N,ELT}(grid)
 

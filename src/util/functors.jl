@@ -107,13 +107,13 @@ immutable CombinedFunction{F,G,OP} <: AbstractFunction
     f   ::  F
     g   ::  G
     # op is supposed to be a type that can be called with two arguments
-    # Such as: AddFun, MulFun, etc. -> see base/functors.jl
+    # Such as: +, *, etc
     op  ::  OP
 end
 
-+(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, Base.AddFun())
--(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, Base.SubFun())
-*(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, Base.MulFun())
++(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, +)
+-(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, -)
+*(f::AbstractFunction, g::AbstractFunction) = CombinedFunction(f, g, *)
 
 fun1(f::CombinedFunction) = f.f
 fun2(f::CombinedFunction) = f.g
@@ -122,18 +122,18 @@ operator(f::CombinedFunction) = f.op
 @compat (f::CombinedFunction)(x) = f.op(f.f(x), f.g(x))
 
 name(f::CombinedFunction, arg = "x") = _name(f, f.op, arg)
-_name(f::CombinedFunction, op::Base.AddFun, arg) = name(f.f, arg) * " + " * name(f.g, arg)
-_name(f::CombinedFunction, op::Base.SubFun, arg) = name(f.f, arg) * " - " * name(f.g, arg)
-_name(f::CombinedFunction, op::Base.MulFun, arg) = name(f.f, arg) * " * " * name(f.g, arg)
+_name(f::CombinedFunction, op::typeof(+), arg) = name(f.f, arg) * " + " * name(f.g, arg)
+_name(f::CombinedFunction, op::typeof(-), arg) = name(f.f, arg) * " - " * name(f.g, arg)
+_name(f::CombinedFunction, op::typeof(*), arg) = name(f.f, arg) * " * " * name(f.g, arg)
 
 derivative(f::CombinedFunction) = derivative_op(f, fun1(f), fun2(f), operator(f))
 
-derivative_op(::CombinedFunction, f, g, ::Base.AddFun) = derivative(f) + derivative(g)
+derivative_op(::CombinedFunction, f, g, ::typeof(+)) = derivative(f) + derivative(g)
 
-derivative_op(::CombinedFunction, f, g, ::Base.SubFun) = derivative(f) - derivative(g)
+derivative_op(::CombinedFunction, f, g, ::typeof(-)) = derivative(f) - derivative(g)
 
 # The chain rule
-derivative_op(::CombinedFunction, f, g, ::Base.MulFun) = derivative(f) * g + f * derivative(g)
+derivative_op(::CombinedFunction, f, g, ::typeof(*)) = derivative(f) * g + f * derivative(g)
 
 isreal(f::CombinedFunction) = isreal(f.f) && isreal(f.g)
 

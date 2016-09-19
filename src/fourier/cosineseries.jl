@@ -8,7 +8,7 @@
 """
 Cosine series on the interval [0,1].
 """
-immutable CosineSeries{T} <: AbstractBasis1d{T}
+immutable CosineSeries{T} <: FunctionSet1d{T}
     n           ::  Int
 
     CosineSeries(n) = new(n)
@@ -28,6 +28,8 @@ promote_eltype{T,S}(b::CosineSeries{T}, ::Type{S}) = CosineSeries{promote_type(T
 
 resize(b::CosineSeries, n) = CosineSeries(n, eltype(b))
 
+is_basis(b::CosineSeries) = true
+is_orthogonal(b::CosineSeries) = true
 
 
 has_grid(b::CosineSeries) = true
@@ -49,8 +51,8 @@ period(b::CosineSeries, idx) = 2
 grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(numtype(b)), one(numtype(b)))
 
 
-natural_index(b::CosineSeries, idx) = idx-1
-logical_index(b::CosineSeries, idxn) = idxn+1
+native_index(b::CosineSeries, idx) = idx-1
+linear_index(b::CosineSeries, idxn) = idxn+1
 
 call_element{T}(b::CosineSeries{T}, idx::Int, x) = cos(x * T(pi) * (idx-1))
 

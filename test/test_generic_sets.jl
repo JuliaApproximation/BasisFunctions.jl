@@ -26,24 +26,20 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
 
     ## Test dimensions
-    @test index_dim(basis) == index_dim(SET)
-    @test index_dim(basis) == length(size(basis))
     s = size(basis)
     for i = 1:length(s)
         @test size(basis, i) == s[i]
     end
-    @test index_dim(basis) <= ndims(basis)
 
     ## Test iteration over the set
-    l = 0
     equality = true
+    l = 0
     for i in eachindex(basis)
         l += 1
-
         # Is conversion from logical to native index and back a bijection?
-        idxn = natural_index(basis, i)
-        idx = logical_index(basis, idxn)
-        equality = equality & (idx == i)
+        idxn = native_index(basis, l)
+        idx = linear_index(basis, idxn)
+        equality = equality & (idx == l)
     end
     @test l == n
     @test equality
@@ -51,7 +47,9 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Does indexing work as intended?
     idx = random_index(basis)
     bf = basis[idx]
-    @test set(bf) == basis
+    # Test below disabled because the assumption that the set of a basis function
+    # is always the set that was indexed is false, e.g., for multisets.
+    #@test set(bf) == basis
 
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ call_set(basis, idx, x)
@@ -70,6 +68,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     z = e(x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
+    # Test linearization of coefficients
+    linear_coefs = zeros(eltype(basis), length(basis))
+    BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
+    coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
+    @test coef ≈ coef2
 
     ## Verify evaluation on the associated grid
     if BF.has_grid(basis)
@@ -139,43 +142,60 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     ## Test derivatives
     if BF.has_derivative(basis)
-        D = differentiation_operator(basis)
-        @test basis == src(D)
-        diff_dest = dest(D)
+        for dim in 1:ndims(basis)
+            D = differentiation_operator(basis; dim=dim)
+            @test basis == src(D)
+            diff_dest = dest(D)
 
-        coef1 = random_expansion(basis)
-        coef2 = D*coef
-        e1 = SetExpansion(basis, coef)
-        e2 = SetExpansion(diff_dest, coef2)
+            coef1 = random_expansion(basis)
+            coef2 = D*coef
+            e1 = SetExpansion(basis, coef)
+            e2 = SetExpansion(diff_dest, coef2)
 
-        x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))/10
-        @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000delta
+            x = fixed_point_in_domain(basis)
+            delta = sqrt(eps(T))/10
+            if ndims(basis) > 1
+                unit_vector = zeros(T, ndims(basis))
+                unit_vector[dim] = 1
+                x2 = x + Vec(delta*unit_vector)
+            else
+                x2 = x+delta
+            end
+            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*sqrt(eps(T))
+        end
     end
 
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
-        D = antidifferentiation_operator(basis)
-        @test basis == src(D)
-        diff_dest = dest(D)
+        for dim in 1:ndims(basis)
+            D = antidifferentiation_operator(basis; dim=dim)
+            @test basis == src(D)
+            antidiff_dest = dest(D)
 
-        coef1 = random_expansion(basis)
-        coef2 = D*coef
-        e1 = SetExpansion(basis, coef)
-        e2 = SetExpansion(diff_dest, coef2)
+            coef1 = random_expansion(basis)
+            coef2 = D*coef
+            e1 = SetExpansion(basis, coef)
+            e2 = SetExpansion(antidiff_dest, coef2)
 
-        x = fixed_point_in_domain(basis)
-        delta = sqrt(eps(T))/10
-
-        @test abs( (e2(x+delta)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000delta
+            x = fixed_point_in_domain(basis)
+            delta = sqrt(eps(T))/10
+            if ndims(basis) > 1
+                unit_vector = zeros(T, ndims(basis))
+                unit_vector[dim] = 1
+                x2 = x + Vec(delta*unit_vector)
+            else
+                x2 = x+delta
+            end
+            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000*sqrt(eps(T))
+        end
     end
 
     ## Test associated transform
     if BF.has_transform(basis)
         # Check whether it is unitary
-        g = grid(basis)
-        t = transform_operator(g, basis)
-        it = transform_operator(basis, g)
+        tbasis = transform_set(basis)
+        t = transform_operator(tbasis, basis)
+        it = transform_operator(basis, tbasis)
         A = matrix(t)
         if T == Float64
             @test cond(A) ≈ 1
@@ -189,23 +209,28 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             #@test_skip cond(AI) ≈ 1
         end
 
-        # Verify the normalization operator and its inverse
-        n = transform_normalization_operator(basis)
-        # - try interpolation using transform+normalization
-        x = zeros(ELT, size(basis))
-        for i in eachindex(x)
-            x[i] = rand()
-        end
-        e = SetExpansion(basis, n*t*x)
+        # Verify the pre and post operators and their inverses
+        pre1 = transform_pre_operator(tbasis, basis)
+        post1 = transform_post_operator(tbasis, basis)
+        pre2 = transform_pre_operator(basis, tbasis)
+        post2 = transform_post_operator(basis, tbasis)
+        # - try interpolation using transform+pre/post-normalization
+        x = coefficients(random_expansion(tbasis))
+        e = SetExpansion(basis, (post1*t*pre1)*x)
+        g = grid(basis)
         @test maximum(abs(e(g)-x)) < sqrt(eps(T))
-        # - verify the inverse of the normalization
-        ni = inv(n)
-        @test maximum(abs(x - ni*n*x)) < sqrt(eps(T))
-        @test maximum(abs(x - n*ni*x)) < sqrt(eps(T))
+        # - try evaluation using transform+pre/post-normalization
+        e = random_expansion(basis)
+        x1 = (post2*it*pre2)*coefficients(e)
+        x2 = e(grid(basis))
+        @test maximum(abs(x1-x2)) < sqrt(eps(T))
+
+        # TODO: check the transposes and inverses here
     end
 
+
     ## Test interpolation operator on a suitable interpolation grid
-    if is_basis(basis) == True()
+    if is_basis(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(basis, g)
         x = zeros(ELT, size(basis))
@@ -250,7 +275,7 @@ function test_tensor_sets(T)
         i = i+1
     end
     @test i == length(d)
-    @test abs(-0.211 - z) < 0.01
+    @test abs(-0.5 - z) < 0.01
 
     z = zero(T)
     l = 0
@@ -260,5 +285,5 @@ function test_tensor_sets(T)
         l = l+1
     end
     @test l == length(d)
-    @test abs(-0.211 - z) < 0.01
+    @test abs(-0.5 - z) < 0.01
 end

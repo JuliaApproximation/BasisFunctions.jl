@@ -1,5 +1,7 @@
 #normalized_set.jl
 
+# TODO: can this be replaced by an operated set with a diagonal operator?
+
 """
 A normalized set represents the normalization of an existing set.
 """

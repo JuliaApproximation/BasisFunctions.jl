@@ -1,111 +1,93 @@
 # fouriertransforms.jl
 
 # We wrap the discrete Fourier and cosine transforms in an operator.
-# Separate definitions are used for Float64 and BigFloat type (for the time being).
+# For Float64 and Complex{Float64} we can use FFTW. The plans that FFTW computes
+# support multiplication, and hence we can store them in a MultiplicationOperator.
+#
+# For other types (like BigFloat) we have to resort to a different implementation.
+# We make specific operator types that call fft and dct from FastTransforms.jl
+# (dct moved there from this code).
+#
+# This situation will improve once the pure-julia implementation of FFT lands (#6193).
 
 
-abstract DiscreteFourierTransform{ELT} <: AbstractOperator{ELT}
-
-abstract DiscreteFourierTransformFFTW{ELT} <: DiscreteFourierTransform{ELT}
-
-# These types use FFTW and so they are (currently) limited to Float64.
-# This will improve once the pure-julia implementation of FFT lands (#6193).
-# But, we can also borrow from ApproxFun so let's do that right away
-
-is_inplace(::DiscreteFourierTransformFFTW) = true
+#############################
+# The Fast Fourier transform
+#############################
 
 
-immutable FastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
-    src         ::  FunctionSet
-    dest        ::  FunctionSet
-    plan!       ::  Base.DFT.FFTW.cFFTWPlan
-    scalefactor ::  ELT
+function FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet,
+    dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
 
-    function FastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...)
-        scalefactor = one(ELT)
-        for dim in dims
-            scalefactor *= size(dest,dim)
-        end
-        scalefactor = 1/sqrt(scalefactor)
-        new(src, dest, plan_fft!(zeros(ELT,size(dest)), dims; flags = fftwflags), scalefactor)
-    end
+    ELT = op_eltype(src, dest)
+    plan = plan_fft!(zeros(ELT, dest), dims; flags = fftwflags)
+    t_op = MultiplicationOperator(src, dest, plan; inplace = true)
+
+    scalefactor = 1/sqrt(length(dest))
+    s_op = ScalingOperator(dest, dest, scalefactor)
+
+    s_op * t_op
 end
-
-FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet, dims = 1:ndims(dest); options...) =
-    FastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
-
-dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastFourierTransformFFTW, dim; options...) =
-    FastFourierTransformFFTW(src, dest, dim:dim; options...)
 
 # Note that we choose to use bfft, an unscaled inverse fft.
-immutable InverseFastFourierTransformFFTW{ELT} <: DiscreteFourierTransformFFTW{ELT}
-    src         ::  FunctionSet
-    dest        ::  FunctionSet
-    plan!       ::  Base.DFT.FFTW.cFFTWPlan
-    scalefactor ::  ELT
+function InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+    ELT = op_eltype(src, dest)
+    plan = plan_bfft!(zeros(ELT, src), dims; flags = fftwflags)
+    t_op = MultiplicationOperator(src, dest, plan; inplace = true)
 
-    function InverseFastFourierTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...)
-        scalefactor = one(ELT)
-        for dim in dims
-            scalefactor *= size(dest,dim)
-        end
-        scalefactor = 1/sqrt(scalefactor)
-        new(src, dest, plan_bfft!(zeros(ELT,size(src)), dims; flags = fftwflags), scalefactor)
-    end
+    scalefactor = 1/sqrt(length(dest))
+    s_op = ScalingOperator(dest, dest, scalefactor)
+
+    s_op * t_op
 end
 
-InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); options...) =
-    InverseFastFourierTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
+# We have to know the precise type of the FFT plans in order to intercept calls to
+# dimension_operator. These are important to catch, since there are specific FFT-plans
+# that work along one dimension and they are more efficient than our own generic implementation.
+typealias FFTPLAN{T,N} Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
+typealias IFFTPLAN{T,N} Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
 
-dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastFourierTransformFFTW, dim; options...) =
-    InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
+dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+    dim, object::FFTPLAN; options...) =
+        FastFourierTransformFFTW(src, dest, dim:dim; options...)
 
-function apply_inplace!(op::DiscreteFourierTransformFFTW, coef_srcdest)
-    op.plan!*coef_srcdest
-    for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= op.scalefactor
-    end
-    coef_srcdest
+dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+    dim, object::IFFTPLAN; options...) =
+        InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
+
+
+# TODO: implement and test correct transposes
+ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+    InverseFastFourierTransformFFTW(dest(op), src(op))
+ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+    FastFourierTransformFFTW(dest(op), src(op))
+
+inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+    ctranspose_multiplication(op, object)
+inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+    ctranspose_multiplication(op, object)
+
+
+# Now the generic implementation, based on using fft and ifft
+
+function FastFourierTransform(src, dest)
+    ELT = op_eltype(src, dest)
+    scalefactor = 1/sqrt(ELT(length(src)))
+    s_op = ScalingOperator(dest, dest, scalefactor)
+    t_op = FunctionOperator(src, dest, fft)
+
+    s_op * t_op
 end
 
+function InverseFastFourierTransform(src, dest)
+    ELT = op_eltype(src, dest)
+    scalefactor = sqrt(ELT(length(src)))
+    s_op = ScalingOperator(dest, dest, scalefactor)
+    t_op = FunctionOperator(src, dest, ifft)
 
-immutable FastFourierTransform{ELT} <: DiscreteFourierTransform{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    s_op * t_op
 end
 
-FastFourierTransform(src, dest) = FastFourierTransform{op_eltype(src,dest)}(src,dest)
-
-# Our alternative for non-Float64 is to use ApproxFun's fft, at least for 1d.
-# This allocates memory.
-function apply!{ELT}(op::FastFourierTransform{ELT}, coef_dest, coef_src)
-    l = sqrt(ELT(length(coef_src)))
-    coef_dest[:] = fft(coef_src) / l
-    coef_dest
-end
-
-
-immutable InverseFastFourierTransform{ELT} <: DiscreteFourierTransform{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-end
-
-InverseFastFourierTransform(src, dest) =
-    InverseFastFourierTransform{op_eltype(src,dest)}(src,dest)
-
-function apply!{ELT}(op::InverseFastFourierTransform{ELT}, coef_dest, coef_src)
-    l = sqrt(ELT(length(coef_src)))
-    coef_dest[:] = ifft(coef_src) * l
-    coef_dest
-end
-
-ctranspose(op::FastFourierTransform) = InverseFastFourierTransform(dest(op), src(op))
-ctranspose(op::FastFourierTransformFFTW) = InverseFastFourierTransformFFTW(dest(op), src(op))
-
-ctranspose(op::InverseFastFourierTransform) = FastFourierTransform(dest(op), src(op))
-ctranspose(op::InverseFastFourierTransformFFTW) = FastFourierTransformFFTW(dest(op), src(op))
-
-inv(op::DiscreteFourierTransform) = ctranspose(op)
 
 
 ##################################
@@ -116,79 +98,46 @@ inv(op::DiscreteFourierTransform) = ctranspose(op)
 # See Strang's paper for the different versions:
 # http://www-math.mit.edu/~gs/papers/dct.pdf
 
-abstract DiscreteChebyshevTransform{ELT} <: AbstractOperator{ELT}
+# First: the FFTW routines. We can use MultiplicationOperator with the DCT plans.
 
-abstract DiscreteChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransform{ELT}
-
-# These types use FFTW and so they are (currently) limited to Float64.
-# This may improve once the pure-julia implementation of FFT lands (#6193).
-
-is_inplace(::DiscreteChebyshevTransformFFTW) = true
-
-
-immutable FastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFFTW{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-    plan!   ::  Base.DFT.FFTW.DCTPlan
-
-    FastChebyshevTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_dct!(zeros(ELT,size(dest)), dims; flags = fftwflags))
+function FastChebyshevTransformFFTW(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
+    ELT = op_eltype(src, dest)
+    plan = plan_dct!(zeros(ELT, dest), dims; flags = fftwflags)
+    MultiplicationOperator(src, dest, plan; inplace=true)
 end
 
-FastChebyshevTransformFFTW(src, dest, dims = 1:ndims(dest); options...) =
-    FastChebyshevTransformFFTW{op_eltype(src, dest)}(src, dest, dims; options...)
-
-dimension_operator(src::FunctionSet, dest::FunctionSet, op::FastChebyshevTransformFFTW, dim; options...) =
-    FastChebyshevTransformFFTW(src, dest, dim:dim; options...)
-
-
-immutable InverseFastChebyshevTransformFFTW{ELT} <: DiscreteChebyshevTransformFFTW{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-    plan!   ::  Base.DFT.FFTW.DCTPlan
-
-    InverseFastChebyshevTransformFFTW(src, dest, dims; fftwflags = FFTW.MEASURE, options...) =
-        new(src, dest, plan_idct!(zeros(ELT,size(src)), dims; flags = fftwflags))
+function InverseFastChebyshevTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+    ELT = op_eltype(src, dest)
+    plan = plan_idct!(zeros(ELT, src), dims; flags = fftwflags)
+    MultiplicationOperator(src, dest, plan; inplace=true)
 end
 
-InverseFastChebyshevTransformFFTW(src, dest, dims = 1:ndims(src); options...) =
-    InverseFastChebyshevTransformFFTW{op_eltype(src,dest)}(src, dest, dims; options...)
+# We have to know the precise type of the DCT plan in order to intercept calls to
+# dimension_operator. These are important to catch, since there are specific DCT-plans
+# that work along one dimension and they are more efficient than our own generic implementation.
+typealias DCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,5,true}
+typealias IDCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,4,true}
 
-dimension_operator(src::FunctionSet, dest::FunctionSet, op::InverseFastChebyshevTransformFFTW, dim; options...) =
-    InverseFastChebyshevTransformFFTW(src, dest, dim:dim; options...)
+dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+    dim, object::DCTPLAN; options...) =
+        FastChebyshevTransformFFTW(src, dest, dim:dim; options...)
 
-function apply_inplace!(op::DiscreteChebyshevTransformFFTW, coef_srcdest)
-    op.plan!*coef_srcdest
-end
+dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+    dim, object::IDCTPLAN; options...) =
+        InverseFastChebyshevTransformFFTW(src, dest, dim:dim; options...)
 
+ctranspose_multiplication(op::MultiplicationOperator, object::DCTPLAN) =
+    InverseFastChebyshevTransformFFTW(dest(op), src(op))
+ctranspose_multiplication(op::MultiplicationOperator, object::IDCTPLAN) =
+    FastChebyshevTransformFFTW(dest(op), src(op))
 
-immutable FastChebyshevTransform{ELT} <: DiscreteChebyshevTransform{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-end
-
-FastChebyshevTransform(src, dest) = FastChebyshevTransform{op_eltype(src,dest)}(src,dest)
-
-# Line below relies on a dct being available for the type of coefficients
-# In particular, for BigFloat's we rely on FastTransforms.jl
-# Same for idct further below.
-apply!(op::FastChebyshevTransform, coef_dest, coef_src) = (coef_dest[:] = dct(coef_src))
-
-
-immutable InverseFastChebyshevTransform{ELT} <: DiscreteChebyshevTransform{ELT}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
-end
-
-InverseFastChebyshevTransform(src, dest) = InverseFastChebyshevTransform{op_eltype(src,dest)}(src,dest)
-
-apply!(op::InverseFastChebyshevTransform, coef_dest, coef_src) = (coef_dest[:] = idct(coef_src))
+inv_multiplication(op::MultiplicationOperator, object::DCTPLAN) =
+    ctranspose_multiplication(op, object)
+inv_multiplication(op::MultiplicationOperator, object::IDCTPLAN) =
+    ctranspose_multiplication(op, object)
 
 
-ctranspose(op::FastChebyshevTransform) = InverseFastChebyshevTransform(dest(op), src(op))
-ctranspose(op::FastChebyshevTransformFFTW) = InverseFastChebyshevTransformFFTW(dest(op), src(op))
-
-ctranspose(op::InverseFastChebyshevTransform) = FastChebyshevTransform(dest(op), src(op))
-ctranspose(op::InverseFastChebyshevTransformFFTW) = FastChebyshevTransformFFTW(dest(op), src(op))
-
-inv(op::DiscreteChebyshevTransform) = ctranspose(op)
+# Next, the generic routines. They rely on dct and idct being available for the
+# types of coefficients.
+FastChebyshevTransform(src, dest) = FunctionOperator(src, dest, dct)
+InverseFastChebyshevTransform(src, dest) = FunctionOperator(src, dest, idct)

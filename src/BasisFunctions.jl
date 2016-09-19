@@ -8,16 +8,17 @@ using FixedSizeArrays
 using Compat
 using RecipesBase
 
-import Base: +, *, /, ==, |, &, -, \, ^
+import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
+import Base: ≈
 
-import Base: promote, promote_rule, convert
+import Base: promote, promote_rule, convert, promote_eltype
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
         range, collect, endof
 
 import Base: cos, sin, exp, log
 
-import Base: zero
+import Base: zeros, ones, fill!
 
 import Base: getindex, setindex!, eltype
 
@@ -28,6 +29,8 @@ import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 import Base: show, showcompact, call, convert, similar
 
 import Base: dct, idct
+
+import Base: indices, normalize
 
 # import PyPlot: plot
 
@@ -43,18 +46,18 @@ export dim, left, right, range, sample
 export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
-export FunctionSet, AbstractFrame, AbstractBasis, AbstractBasis1d
-export numtype, grid, left, right, support, call, call!, call_expansion_with_set, call_expansion_with_set!, call_set, call_set!
+export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
+export numtype, grid, left, right, support, call, call!, call_expansion_with_set,
+        call_expansion_with_set!, call_set, call_set!
 export name
-export transform_operator, differentiation_operator, approximation_operator
 export complexify
 export instantiate, promote_eltype, resize
-export natural_index, logical_index, natural_size, logical_size
-export is_basis, is_frame, is_orthogonal, is_biorthogonal, index_dim
+export native_index, linear_index, native_size, linear_size
+export is_basis, is_frame, is_orthogonal, is_biorthogonal
 export True, False
 export approx_length, extension_size
-export has_transform, has_extension, has_derivative, has_antiderivative
-export linearize, delinearize
+export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
+export linearize_coefficients, delinearize_coefficients
 export moment
 
 # from sets/functionsubset.jl
@@ -73,26 +76,31 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 
 # from operator/operators.jl
 export AbstractOperator, ctranspose, operator, src, dest, apply!,
-        apply, apply_multiple
-export matrix
+        apply, apply_multiple, apply_inplace!
+export matrix, diagonal, is_diagonal, is_inplace
 
 # from operator/composite_operator.jl
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal, IdxnScalingOperator, CoefficientScalingOperator, MatrixOperator, WrappedOperator
+export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
+        CoefficientScalingOperator, MatrixOperator, FunctionOperator,
+        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator
 
 # from generic_operator.jl
 export extension_operator, restriction_operator, interpolation_operator,
-    approximation_operator, transform_operator, differentiation_operator,
-    antidifferentiation_operator, approximate,
-    evaluation_operator, normalization_operator,
+    approximation_operator, transform_operator, transform_set, full_transform_operator,
+    differentiation_operator, antidifferentiation_operator, derivative_set, antiderivative_set,
+    approximate, evaluation_operator,
     Extension, Restriction, extend, Differentiation, AntiDifferentiation,
-    extension_size, transform_normalization_operator, interpolation_matrix,
+    extension_size, transform_pre_operator, transform_post_operator, interpolation_matrix,
     tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
+
+# from operator/block_operator.jl
+export BlockOperator, block_row_operator, block_column_operator, composite_size
 
 # from functional/functional.jl
 export AbstractFunctional, EvaluationFunctional, row
@@ -109,14 +117,11 @@ export NormalizedSet, normalize
 # from sets/augmented_set.jl
 export ⊕, set, fun, derivative, AugmentedSet
 
-# from sets/concatenated_set.jl
-export set1, set2, ConcatenatedSet
+# from sets/multiple_set.jl
+export MultiSet, multiset
 
 # from sets/operated_set.jl
 export OperatedSet
-
-# from sets/piecewise_set.jl
-export PiecewiseSet
 
 # from sets/euclidean.jl
 export Cn, Rn
@@ -142,6 +147,9 @@ export ChebyshevBasis, ChebyshevBasisSecondKind,
 # from util/recipes.jl
 export plotgrid, postprocess
 
+#from util/MultiArray.jl
+export MultiArray
+
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
@@ -154,7 +162,7 @@ using Base.Cartesian
 
 
 include("util/common.jl")
-
+include("util/multiarray.jl")
 
 include("grid/grid.jl")
 
@@ -162,17 +170,22 @@ include("util/slices.jl")
 
 include("sets/functionset.jl")
 
-include("sets/subsets.jl")
+include("operator/operator.jl")
+include("operator/composite_operator.jl")
+
 include("sets/tensorproductset.jl")
 include("sets/mappedsets.jl")
 
 include("sets/euclidean.jl")
 
-include("operator/operator.jl")
-
 include("operator/dimop.jl")
 
+include("operator/basic_operators.jl")
+include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
+include("operator/block_operator.jl")
+
+
 
 include("expansions.jl")
 
@@ -180,17 +193,17 @@ include("functional/functional.jl")
 
 include("grid/discretegridspace.jl")
 
-include("generic_operators.jl")
-
 include("tensorproducts.jl")
 
 include("util/functors.jl")
 
-include("sets/concatenated_set.jl")
+include("generic_operators.jl")
+
+include("sets/subsets.jl")
+include("sets/multiple_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")
-include("sets/piecewise_set.jl")
 
 
 include("fourier/fouriertransforms.jl")

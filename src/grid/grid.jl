@@ -21,11 +21,6 @@ eltype{T}(::Type{AbstractGrid{1,T}}) = T
 eltype{N,T}(::Type{AbstractGrid{N,T}}) = Vec{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
-# Default dimension of the index is 1
-index_dim{N,T}(::Type{AbstractGrid{N,T}}) = 1
-index_dim{G <: AbstractGrid}(::Type{G}) = 1
-index_dim(g::AbstractGrid) = index_dim(typeof(g))
-
 size(g::AbstractGrid1d) = (length(g),)
 
 support(g::AbstractGrid) = (left(g),right(g))
@@ -33,6 +28,9 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
+
+checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idx))
+
 
 function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)
@@ -42,6 +40,11 @@ end
 # Default implementation of index iterator: construct a range
 eachindex(g::AbstractGrid) = 1:length(g)
 
+# Native and linear indices for grids are like native and linear indices for
+# function sets.
+native_index(g::AbstractGrid, idx) = idx
+
+linear_index(g::AbstractGrid, idxn) = idxn
 
 # Grid iteration:
 #	for x in grid

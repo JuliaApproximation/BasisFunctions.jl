@@ -26,7 +26,15 @@ isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
 
 op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype(dest))
 
-# Default implementation of src and dest
+
+"Promote the element type of the given operator."
+# With the definition below, we catch promotions that don't change the element
+# of an operator. Subtypes can implement promote_eltype for an argument type S
+# that differs from ELT, as in:
+# promote_eltype{ELT,S}(op::SomeOperator{ELT}, ::Type{S}) = ...
+promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
+
+# Default implementation of src and dest: assume they are fields
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
 
@@ -45,9 +53,9 @@ is_inplace(op::AbstractOperator) = false
 is_diagonal(op::AbstractOperator) = false
 
 function apply(op::AbstractOperator, coef_src)
-		coef_dest = Array(eltype(op), size(dest(op)))
-		apply!(op, coef_dest, coef_src)
-		coef_dest
+	coef_dest = zeros(eltype(op), dest(op))
+	apply!(op, coef_dest, coef_src)
+	coef_dest
 end
 
 # Catch applications of an operator, and do:
@@ -90,7 +98,7 @@ function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
 	throw(InexactError())
 end
 
-(*)(op::AbstractOperator, coef_src::AbstractArray) = apply(op, coef_src)
+(*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
 
 """
 Apply an operator multiple times, to each column of the given argument.
@@ -135,40 +143,76 @@ function matrix(op::AbstractOperator)
     matrix!(op, a)
 end
 
-function matrix!{T}(op::AbstractOperator, a::AbstractArray{T})
+function matrix!(op::AbstractOperator, a)
     n = length(src(op))
     m = length(dest(op))
 
     @assert (m,n) == size(a)
 
-    r = zeros(T, size(src(op)))
-    s = zeros(T, size(dest(op)))
-    matrix_fill!(op, a, r, s)
+    coef_src  = zeros(eltype(a), src(op))
+    coef_dest = zeros(eltype(a), dest(op))
+    matrix_fill!(op, a, coef_src, coef_dest)
 end
 
-function matrix_fill!(op::AbstractOperator, a, r, s)
-    for i = 1:length(r)
-        if (i > 1)
-            r[i-1] = 0
-        end
-        r[i] = 1
-        apply!(op, s, r)
-        for j = 1:length(s)
-            a[j,i] = s[j]
+function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
+    for (i,si) in enumerate(eachindex(coef_src))
+		coef_src[si] = 1
+        apply!(op, coef_dest, coef_src)
+		coef_src[si] = 0
+        for (j,dj) in enumerate(eachindex(coef_dest))
+            a[j,i] = coef_dest[dj]
         end
     end
     a
 end
 
+function getindex(op::AbstractOperator, i::Int, j::Int)
+	s = zeros(eltype(op), src(op))
+	d = zeros(eltype(op), dest(op))
+	# Note that i and j are linear indices.
+	# Below, we assume that the underlying data storage is the linear one. This
+	# is not always so. TOOD: fix
+	s[i] = 1
+	apply!(op, d, s)
+	d[j]
+end
+
+function diagonal(op::AbstractOperator)
+    if is_diagonal(op)
+        # Make data of all ones in the native representation of the operator
+        all_ones = ones(src(op))
+        # Apply the operator: this extracts the diagonal because the operator is diagonal
+        diagonal_native = apply(op, all_ones)
+        # Convert to vector
+        linearize_coefficients(src(op), diagonal_native)
+    else
+        # This could be more efficient
+        eltype(op)[op[i,i] for i in 1:length(src(op))]
+    end
+end
+
+function inv_diagonal(op::AbstractOperator)
+    @assert is_diagonal(op)
+    d = diagonal(op)
+    # Avoid getting Inf values, we prefer a pseudo-inverse in this case
+    d[find(d.==0)] = Inf
+    DiagonalOperator(dest(op), src(op), d.^(-1))
+end
+
+
+
 "An OperatorTranspose represents the transpose of an operator."
 immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
-		op	::	OP
+	op	::	OP
 
-		OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
+	OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
 end
 
 OperatorTranspose(op::AbstractOperator) =
 	OperatorTranspose{typeof(op),eltype(op)}(op)
+
+promote_eltype{OP,ELT,S}(op::OperatorTranspose{OP,ELT}, ::Type{S}) =
+	OperatorTranspose(promote_eltype(op.op, S))
 
 ctranspose(op::AbstractOperator) = OperatorTranspose(op)
 
@@ -191,17 +235,29 @@ apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) =
 apply_inplace!(opt::OperatorTranspose, dest, src, coef_srcdest) =
 	apply_transpose_inplace!(operator(opt), src, dest, coef_srcdest)
 
+function apply_transpose!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+	println("Operation of ", typeof(op), " has no lazy transpose implemented.")
+	throw(InexactError())
+end
+
+function apply_transpose_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+	println("Operation of ", typeof(op), " has no in-place lazy transpose implemented.")
+	throw(InexactError())
+end
 
 
 "An OperatorInverse represents the inverse of an operator."
 immutable OperatorInverse{OP,ELT} <: AbstractOperator{ELT}
-		op	::	OP
+	op	::	OP
 
-		OperatorInverse(op::AbstractOperator{ELT}) = new(op)
+	OperatorInverse(op::AbstractOperator{ELT}) = new(op)
 end
 
 OperatorInverse(op::AbstractOperator) =
 	OperatorInverse{typeof(op),eltype(op)}(op)
+
+promote_eltype{OP,ELT,S}(op::OperatorInverse{OP,ELT}, ::Type{S}) =
+	OperatorInverse(promote_eltype(op.op, S))
 
 inv(op::AbstractOperator) = OperatorInverse(op)
 
@@ -222,8 +278,12 @@ apply!(op::OperatorInverse, dest, src, coef_dest, coef_src) =
 apply!(op::OperatorInverse, dest, src, coef_srcdest) =
 	apply_inv_inplace!(operator(op), src, dest, coef_srcdest)
 
+function apply_inv!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+	println("Operation of ", typeof(op), " has no lazy inverse implemented.")
+	throw(InexactError())
+end
 
-
-include("composite_operator.jl")
-
-include("special_operators.jl")
+function apply_inv_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+	println("Operation of ", typeof(op), " has no in-place lazy inverse implemented.")
+	throw(InexactError())
+end

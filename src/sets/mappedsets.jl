@@ -21,9 +21,23 @@ for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
-natural_index(b::AbstractMappedSet, idx) = natural_index(set(b), idx)
+zeros(ELT::Type, s::AbstractMappedSet) = zeros(ELT, set(s))
 
-logical_index(b::AbstractMappedSet, idxn) = logical_index(set(b), idxn)
+native_index(s::AbstractMappedSet, idx) = native_index(set(s), idx)
+
+linear_index(s::AbstractMappedSet, idxn) = linear_index(set(s), idxn)
+
+linearize_coefficients!(s::AbstractMappedSet, coef_linear, coef_native) =
+    linearize_coefficients!(set(s), coef_linear, coef_native)
+
+delinearize_coefficients!(s::AbstractMappedSet, coef_native, coef_linear) =
+    delinearize_coefficients!(set(s), coef_native, coef_linear)
+
+approximate_native_size(s::AbstractMappedSet, size_l) = approximate_native_size(set(s), size_l)
+
+linear_size(s::AbstractMappedSet, size_n) = linear_size(set(s), size_n)
+
+approx_length(s::AbstractMappedSet, n) = approx_length(set(s), n)
 
 for op in [:left, :right]
     @eval $op(s::AbstractMappedSet, i) = mapx(s, $op(set(s), i))
@@ -62,6 +76,8 @@ extension_size(s::LinearMappedSet) = extension_size(set(s))
 left(s::LinearMappedSet) = s.a
 right(s::LinearMappedSet) = s.b
 
+endpoint_type(s::LinearMappedSet) = typeof(left(s))
+
 name(s::LinearMappedSet) = name(set(s)) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
 # Ma the point x in [c,d] to a point in [a,b]
@@ -83,7 +99,7 @@ is_compatible(a::LinearMappedSet, b::LinearMappedSet) = left(a)==left(b) && righ
 function (*)(s1::LinearMappedSet, s2::LinearMappedSet, coef_src1, coef_src2)
     @assert is_compatible(set(s1),set(s2))
     (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
-    (rescale(mset,s1.a,s1.b),mcoef)
+    (rescale(mset,left(s1),right(s1)),mcoef)
 end
 
 "Rescale a function set to an interval [a,b]."
@@ -115,24 +131,41 @@ end
 
 # Standard Implementation
 
-for op in (:extension_operator, :restriction_operator, :transform_operator,
-           :normalization_operator)
-    @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) = WrappedOperator(s1, s2, $op(set(s1), set(s2); options...) )
+for op in (:extension_operator, :restriction_operator)
+    # We assume for simplicity without checking that the mapped sets below are compatible...
+    @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+        wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
 end
 
-for op in (:extension_operator, :restriction_operator, :transform_operator,
-           :normalization_operator)
-    @eval $op(s1::AbstractMappedSet, s2::FunctionSet; options...) = WrappedOperator(s1, s2, $op(set(s1), s2; options...) )
+for op in (:transform_operator,)
+    # We assume for simplicity without checking that the mapped sets below are compatible...
+    @eval $op(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+        wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
+    @eval $op(s1::AbstractMappedSet, s2::FunctionSet; options...) =
+        wrap_operator(s1, s2, $op(set(s1), s2; options...) )
+    @eval $op(s1::FunctionSet, s2::AbstractMappedSet; options...) =
+        wrap_operator(s1, s2, $op(s1, set(s2); options...) )
 end
 
-for op in (:extension_operator, :restriction_operator, :transform_operator,
-           :normalization_operator)
-    @eval $op(s1::FunctionSet, s2::AbstractMappedSet; options...) = WrappedOperator(s1, s2, $op(s1, set(s2); options...) )
-end
+# We have to do these by hand, because the spaces are not the same: s1 is source and destination
+# of the transform_pre_operator. The post operation only acts on s2.
+transform_pre_operator(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(set(s1), set(s2)))
+transform_pre_operator(s1::AbstractMappedSet, s2::FunctionSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(set(s1), s2))
+transform_pre_operator(s1::FunctionSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(s1, set(s2)))
 
-for op in (:interpolation_operator, :evaluation_operator, :approximation_operator,
-    :normalization_operator, :transform_normalization_operator)
-    @eval $op(s1::AbstractMappedSet; options...) = WrappedOperator(s1, s1, $op(set(s1); options...) )
+transform_post_operator(s1::AbstractMappedSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(set(s1), set(s2)))
+transform_post_operator(s1::AbstractMappedSet, s2::FunctionSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(set(s1), s2))
+transform_post_operator(s1::FunctionSet, s2::AbstractMappedSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(s1, set(s2)))
+
+
+for op in (:interpolation_operator, :evaluation_operator, :approximation_operator)
+    @eval $op(s1::AbstractMappedSet; options...) = wrap_operator(s1, s1, $op(set(s1); options...) )
 end
 
 # Undo set mappings in a TensorProductSet
@@ -143,51 +176,51 @@ unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet,
     dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet; options...) =
-        WrappedOperator(s1, s2,
+        wrap_operator(s1, s2,
             transform_operator_tensor(unmapset(s1), unmapset(s2), set(src_set1), set(src_set2), set(dest_set1), set(dest_set2); options...) )
 
 transform_operator_tensor(s1, s2, src_set1, src_set2,
     dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet; options...) =
-        WrappedOperator(s1, s2,
+        wrap_operator(s1, s2,
             transform_operator_tensor(s1, unmapset(s2), src_set1, src_set2, set(dest_set1), set(dest_set2); options...) )
 
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, dest_set1, dest_set2; options...) =
-    WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2; options...))
+    wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2; options...))
 
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, src_set3::AbstractMappedSet,
     dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet, dest_set3::AbstractMappedSet; options...) =
-        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
             set(src_set1), set(src_set2), set(src_set3),
             set(dest_set1), set(dest_set2), set(dest_set3); options...) )
 
 transform_operator_tensor(s1, s2,
     src_set1, src_set2, src_set3,
     dest_set1::AbstractMappedSet, dest_set2::AbstractMappedSet, dest_set3::AbstractMappedSet; options...) =
-        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
             src_set1, src_set2, src_set3,
             set(dest_set1), set(dest_set2), set(dest_set3); options...))
 
 transform_operator_tensor(s1, s2,
     src_set1::AbstractMappedSet, src_set2::AbstractMappedSet, src_set3::AbstractMappedSet,
     dest_set1, dest_set2, dest_set3; options...) =
-        WrappedOperator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
             set(src_set1), set(src_set2), set(src_set3),
             dest_set1, dest_set2, dest_set3; options...))
 
-function differentiation_operator(s1::LinearMappedSet, order::Int; options...)
-    D = differentiation_operator(s1.set, order; options...)
-    T = promote_type(eltype(s1), typeof(s1.a))
-    S = ScalingOperator(dest(D), (T(right(s1.set)-left(s1.set))/T(s1.b-s1.a))^order)
-    WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
+function differentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order::Int; options...)
+    D = differentiation_operator(s1.set, s2.set, order; options...)
+    T = promote_type(eltype(s1), endpoint_type(s1))
+    S = ScalingOperator(dest(D), (T(right(s1.set)-left(s1.set))/T(right(s1)-left(s1)))^order)
+    wrap_operator( rescale(src(D), left(s1), right(s1)), rescale(dest(D), left(s1), right(s1)), S*D )
 end
 
-function antidifferentiation_operator(s1::LinearMappedSet, order::Int; options...)
-    D = antidifferentiation_operator(s1.set, order; options...)
-    T = promote_type(eltype(s1), typeof(s1.a))
-    S = ScalingOperator(dest(D), (T(s1.b-s1.a)/T(right(s1.set)-left(s1.set)))^order)
-    WrappedOperator( rescale(src(D), s1.a, s1.b), rescale(dest(D), s1.a, s1.b), S*D )
+function antidifferentiation_operator(s1::LinearMappedSet, s2::LinearMappedSet, order::Int; options...)
+    D = antidifferentiation_operator(s1.set, s2.set, order; options...)
+    T = promote_type(eltype(s1), endpoint_type(s1))
+    S = ScalingOperator(dest(D), (T(right(s1)-left(s1))/T(right(s1.set)-left(s1.set)))^order)
+    wrap_operator( rescale(src(D), left(s1), right(s1)), rescale(dest(D), left(s1), right(s1)), S*D )
 end
 
 for op in (:derivative_set, :antiderivative_set)
