@@ -190,9 +190,9 @@ apply!{ELT,T,N1,N2}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, coef_des
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
-matrix(op::MatrixOperator) = op.object
+matrix{ELT}(op::MultiplicationOperator{Array{ELT,2},false,ELT}) = op.object
 
-matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
+matrix!{ELT}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, a::Array) = (a[:] = op.object)
 
 
 ctranspose(op::MultiplicationOperator) = ctranspose_multiplication(op, object(op))
@@ -206,7 +206,7 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
-inv_multiplication(op::MatrixOperator, matrix) = SolverOperator(dest(op), src(op), qr(matrix))
+inv_multiplication{ELT}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) = SolverOperator(dest(op), src(op), qrfact(matrix))
 
 
 
@@ -235,7 +235,8 @@ immutable SolverOperator{Q,ELT} <: AbstractOperator{ELT}
 end
 
 function SolverOperator(src::FunctionSet, dest::FunctionSet, solver)
-    ELT = promote_type(eltype(solver), op_eltype(src, dest))
+    # Note, we do not require eltype(solver) to be implemented, so we can't infer the type of the solver.
+    ELT = op_eltype(src, dest)
     SolverOperator{typeof(solver),ELT}(src, dest, solver)
 end
 
@@ -246,27 +247,27 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
 end
 
 
-## """
-## A FunctionOperator applies a given function to the set of coefficients and
-## returns the result.
-## """
-## immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
-##     src     ::  FunctionSet
-##     dest    ::  FunctionSet
-##     fun     ::  F
-## end
+"""
+A FunctionOperator applies a given function to the set of coefficients and
+returns the result.
+"""
+immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
+    src     ::  FunctionSet
+    dest    ::  FunctionSet
+    fun     ::  F
+end
 
-## function FunctionOperator(src::FunctionSet, dest::FunctionSet, fun)
-##     ELT = op_eltype(src, dest)
-##     FunctionOperator{typeof(fun),ELT}(src, dest, fun)
-## end
+function FunctionOperator(src::FunctionSet, dest::FunctionSet, fun)
+    ELT = op_eltype(src, dest)
+    FunctionOperator{typeof(fun),ELT}(src, dest, fun)
+end
 
-## # Warning: this very likely allocates memory
-## apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
+# Warning: this very likely allocates memory
+apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
 
-## function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
-##     coef_dest[:] = fun(coef_src)
-## end
+function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
+    coef_dest[:] = fun(coef_src)
+end
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
