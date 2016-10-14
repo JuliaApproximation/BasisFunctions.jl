@@ -16,7 +16,7 @@ name(f::PowerFunction, arg = "x") = "$arg^$(f.α)"
 
 derivative(f::PowerFunction) = f.α * PowerFunction(f.α-1)
 
-@compat (f::PowerFunction)(x) = x^(f.α)
+(f::PowerFunction)(x) = x^(f.α)
 
 
 "Functor for the logarithmic function."
@@ -25,7 +25,7 @@ end
 
 name(f::Log, arg = "x") = "log($(arg))"
 
-@compat (f::Log)(x) = log(x)
+(f::Log)(x) = log(x)
 
 derivative(f::Log) = PowerFunction(-1)
 
@@ -36,7 +36,7 @@ end
 
 name(f::Exp, arg = "x") = "exp($(arg))"
 
-@compat (f::Exp)(x) = exp(x)
+(f::Exp)(x) = exp(x)
 
 derivative(f::Exp) = f
 
@@ -47,7 +47,7 @@ end
 
 name(f::Cos, arg = "x") = "cos($(arg))"
 
-@compat (f::Cos)(x) = cos(x)
+(f::Cos)(x) = cos(x)
 
 
 "Functor for the sine function."
@@ -56,7 +56,7 @@ end
 
 name(f::Sin, arg = "x") = "sin($(arg))"
 
-@compat (f::Sin)(x) = sin(x)
+(f::Sin)(x) = sin(x)
 
 derivative(f::Cos) = -1 * Sin()
 
@@ -75,7 +75,7 @@ scalar(f::ScaledFunction) = f.a
 *(a::Number, f::AbstractFunction) = ScaledFunction(f, a)
 *(a::Number, f::ScaledFunction) = ScaledFunction(f.f, a*f.a)
 
-@compat (f::ScaledFunction)(x) = f.a * f.f(x)
+(f::ScaledFunction)(x) = f.a * f.f(x)
 
 name(f::ScaledFunction, arg = "x") = "$(f.a) * " * name(f.f, arg)
 
@@ -93,7 +93,7 @@ end
 
 scalar(f::DilatedFunction) = f.a
 
-@compat (f::DilatedFunction)(x) = f.f(f.a*x)
+(f::DilatedFunction)(x) = f.f(f.a*x)
 
 name(f::DilatedFunction, arg = "x") = name(f.f, "$(f.a) * " * arg)
 
@@ -119,7 +119,7 @@ fun1(f::CombinedFunction) = f.f
 fun2(f::CombinedFunction) = f.g
 operator(f::CombinedFunction) = f.op
 
-@compat (f::CombinedFunction)(x) = f.op(f.f(x), f.g(x))
+(f::CombinedFunction)(x) = f.op(f.f(x), f.g(x))
 
 name(f::CombinedFunction, arg = "x") = _name(f, f.op, arg)
 _name(f::CombinedFunction, op::typeof(+), arg) = name(f.f, arg) * " + " * name(f.g, arg)
@@ -146,7 +146,7 @@ end
 
 ∘(f::AbstractFunction, g::AbstractFunction) = CompositeFunction(f, g)
 
-@compat (f::CompositeFunction)(x) = f.f(f.g(x))
+(f::CompositeFunction)(x) = f.f(f.g(x))
 
 name(f::CompositeFunction, arg = "x") = name(f.f, name(f.g, arg))
 
@@ -159,7 +159,7 @@ isreal(f::CompositeFunction) = isreal(f.f) && isreal(f.g)
 immutable IdentityFunction <: AbstractFunction
 end
 
-@compat (f::IdentityFunction)(x) = x
+(f::IdentityFunction)(x) = x
 
 name(f::IdentityFunction, arg = "x") = arg
 
@@ -171,7 +171,7 @@ derivative(f::IdentityFunction) = ConstantFunction()
 immutable ConstantFunction <: AbstractFunction
 end
 
-@compat (f::ConstantFunction)(x) = one(x)
+(f::ConstantFunction)(x) = one(x)
 
 name(f::ConstantFunction, arg = "x") = "1"
 

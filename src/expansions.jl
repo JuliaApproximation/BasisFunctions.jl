@@ -48,7 +48,7 @@ setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
-@compat (e::SetExpansion)(x...) = call_expansion_with_set(e, set(e), coefficients(e), promote(x...)...)
+(e::SetExpansion)(x...) = call_expansion_with_set(e, set(e), coefficients(e), promote(x...)...)
 call_expansion_with_set(e::SetExpansion, s::FunctionSet, coefficients, x...) = call_expansion(s, coefficients, x...)
 
 call!(result, e::SetExpansion, x...) =

@@ -75,7 +75,7 @@ rescale(s::FunctionSubSet, a, b) = FunctionSubSet(rescale(set(s), a, b), indices
 call_element(s::FunctionSubSet, i, x) =
     has_single_index(s) ? call_element(s.set, s.idx, x) : call_element(s.set, s.idx[i], x)
 
-@compat (s::FunctionSubSet)(x...) = call_set(s.set, s.idx, x...)
+(s::FunctionSubSet)(x...) = call_set(s.set, s.idx, x...)
 
 eachindex(s::FunctionSubSet) = has_single_index(s) ? 1 : eachindex(s.idx)
 

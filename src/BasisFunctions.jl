@@ -4,8 +4,6 @@ using FastTransforms
 
 using ArrayViews
 using StaticArrays
-#using PyPlot
-using Compat
 using RecipesBase
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
