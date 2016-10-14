@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/daanhb/BasisFunctions.jl.svg?branch=master)](https://travis-ci.org/daanhb/BasisFunctions.jl)
+[![Coverage Status](https://coveralls.io/repos/github/daanhb/BasisFunctions.jl/badge.svg)](https://coveralls.io/github/daanhb/BasisFunctions.jl)
 
 # BasisFunctions.jl
 ===================
