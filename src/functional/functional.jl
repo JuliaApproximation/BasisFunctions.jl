@@ -48,15 +48,15 @@ end
 """An EvaluationFunctional represents a point evaluation."""
 immutable EvaluationFunctional{N,T,SRC,ELT} <: AbstractFunctional{ELT}
     src ::  SRC
-    x   ::  Vec{N,T}
+    x   ::  SVector{N,T}
 
-    EvaluationFunctional(src::FunctionSet{N,T}, x::Vec{N,T}) = new(src, x)
+    EvaluationFunctional(src::FunctionSet{N,T}, x::SVector{N,T}) = new(src, x)
 end
 
-EvaluationFunctional{N,T}(src::FunctionSet{N,T}, x::Vec{N,T}) =
+EvaluationFunctional{N,T}(src::FunctionSet{N,T}, x::SVector{N,T}) =
     EvaluationFunctional{N,T,typeof(src),eltype(src)}(src, x)
 
-EvaluationFunctional{T,S <: Number}(src::FunctionSet{1,T}, x::S) = EvaluationFunctional(src, Vec{1,T}(x))
+EvaluationFunctional{T,S <: Number}(src::FunctionSet{1,T}, x::S) = EvaluationFunctional(src, SVector{1,T}(x))
 
 apply(f::EvaluationFunctional, coef) = call_expansion(src(f), coef, f.x)
 

@@ -42,9 +42,9 @@ _isreal(s::AugmentedSet, set, fun::Function) = isreal(set)
 
 
 call_element(s::AugmentedSet, i, x::Number) = s.fun(x) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::Vec{2}) = s.fun(x[1], x[2]) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::Vec{3}) = s.fun(x[1], x[2], x[3]) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::Vec{4}) = s.fun(x[1], x[2], x[3], x[4]) * call_set(s.set, i, x)
+call_element(s::AugmentedSet, i, x::SVector{2}) = s.fun(x[1], x[2]) * call_set(s.set, i, x)
+call_element(s::AugmentedSet, i, x::SVector{3}) = s.fun(x[1], x[2], x[3]) * call_set(s.set, i, x)
+call_element(s::AugmentedSet, i, x::SVector{4}) = s.fun(x[1], x[2], x[3], x[4]) * call_set(s.set, i, x)
 
 # You can create an AugmentedSet by multiplying a function with a set, using
 # left multiplication.

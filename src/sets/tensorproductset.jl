@@ -82,13 +82,13 @@ grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
 
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
 # The methods below follow this convention.
-left(s::TensorProductSet) = Vec([left(element(s,j)) for j=1:composite_length(s)])
-left(s::TensorProductSet, j::Int) = Vec([left(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
+left(s::TensorProductSet) = SVector(map(left, elements(s)))
+left{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
 #left(b::TensorProductSet, idx::Int, j) = left(b, multilinear_index(b,j), j)
 #left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
-right(s::TensorProductSet) = Vec([right(element(s,j)) for j=1:composite_length(s)])
-right(s::TensorProductSet, j::Int) = Vec([right(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
+right(s::TensorProductSet) = SVector(map(right, elements(s)))
+right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
 #right(b::TensorProductSet, j::Int) = right(element(b,j))
 #right(b::TensorProductSet, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])

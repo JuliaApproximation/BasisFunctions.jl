@@ -4,7 +4,7 @@ module test_suite
 using Base.Test
 
 using BasisFunctions
-using FixedSizeArrays
+using StaticArrays
 BF = BasisFunctions
 
 
@@ -36,7 +36,7 @@ include("test_chebyshev.jl")
 
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
-function point_in_domain(basis::FunctionSet{1}, scalar)
+function point_in_domain(basis::FunctionSet1d, scalar)
     # Try to find an interval within the support of the basis
     a = left(basis)
     b = right(basis)
@@ -59,29 +59,33 @@ function point_in_domain(basis::FunctionSet, scalar)
     a = left(basis)
     b = right(basis)
 
-    # Avoid infinities for some bases on the real line
-    va = Vector(a)
-    vb = Vector(b)
-    for i in 1:length(va)
-        if isinf(va[i])
-            va[i] = -1
+    if isinf(norm(a)) || isinf(norm(b))
+        va = MVector(a)
+        vb = MVector(b)
+        # Avoid infinities for some bases on the real line
+        for i in 1:length(va)
+            if isinf(va[i])
+                va[i] = -1
+            end
+            if isinf(vb[i])
+                vb[i] = 1
+            end
         end
-        if isinf(vb[i])
-            vb[i] = 1
-        end
+        a = SVector(va)
+        b = SVector(vb)
     end
-    pa = Vec(va...)
-    pb = Vec(va...)
-    x = scalar * pa + (1-scalar) * pb
+    x = scalar * a + (1-scalar) * b
 end
 
 
-function random_point_in_domain{N,T}(basis::FunctionSet{N,T})
+function random_point_in_domain(basis::FunctionSet)
+    T = eltype(basis)
     w = one(T) * rand()
     point_in_domain(basis, w)
 end
 
-function fixed_point_in_domain{N,T}(basis::FunctionSet{N,T})
+function fixed_point_in_domain(basis::FunctionSet)
+    T = eltype(basis)
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end
@@ -103,9 +107,9 @@ suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(s
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
-Base.rationalize{N}(x::Vec{N,Float64}) = Vec{N,Rational{Int}}([rationalize(x_i) for x_i in x])
+Base.rationalize{N}(x::SVector{N,Float64}) = SVector{N,Rational{Int}}([rationalize(x_i) for x_i in x])
 
-Base.rationalize{N}(x::Vec{N,BigFloat}) = Vec{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
+Base.rationalize{N}(x::SVector{N,BigFloat}) = SVector{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
 
 function test_derived_sets(T)
     b1 = FourierBasis(11, T)
@@ -163,10 +167,10 @@ end
         delimit("Operators")
         @testset "$(rpad("test diagonal operators",80))" begin
             test_diagonal_operators(T) end
-        
+
         @testset "$(rpad("test multidiagonal operators",80))" begin
             test_multidiagonal_operators(T) end
-        
+
         @testset "$(rpad("test invertible operators",80))" begin
             test_invertible_operators(T) end
 

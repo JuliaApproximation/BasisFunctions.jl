@@ -90,7 +90,9 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Test output type of calling function
 
     types_correct = true
-    for x in [ fixed_point_in_domain(basis) rationalize(point_in_domain(basis, 0.5)) ]
+    # The comma in the line below is important, otherwise the two static vectors
+    # are combined into a statix matrix.
+    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, 0.5)) ]
         for idx in [1 2 n>>1 n-1 n]
             z = call_set(basis, idx, x)
             types_correct = types_correct & (typeof(z) == ELT)
@@ -154,10 +156,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
             x = fixed_point_in_domain(basis)
             delta = sqrt(eps(T))/10
-            if ndims(basis) > 1
+            N = ndims(basis)
+            if N > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
-                x2 = x + Vec(delta*unit_vector)
+                x2 = x + SVector{N}(delta*unit_vector)
             else
                 x2 = x+delta
             end
@@ -179,10 +182,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
             x = fixed_point_in_domain(basis)
             delta = sqrt(eps(T))/10
-            if ndims(basis) > 1
+            N = ndims(basis)
+            if N > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
-                x2 = x + Vec(delta*unit_vector)
+                x2 = x + SVector(delta*unit_vector)
             else
                 x2 = x+delta
             end

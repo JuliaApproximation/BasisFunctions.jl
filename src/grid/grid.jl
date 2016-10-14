@@ -18,7 +18,7 @@ numtype{G <: AbstractGrid}(::Type{G}) = numtype(supertype(G))
 
 # The element type of a grid is the type returned by getindex.
 eltype{T}(::Type{AbstractGrid{1,T}}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = Vec{N,T}
+eltype{N,T}(::Type{AbstractGrid{N,T}}) = SVector{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)

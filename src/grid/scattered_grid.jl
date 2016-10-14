@@ -7,7 +7,7 @@ end
 
 ScatteredGrid{T<:Real}(points::Array{T,1}) = ScatteredGrid{1,T,T}(points)
 
-ScatteredGrid{N,T<:Real}(points::Array{Vec{N,T},1}) = ScatteredGrid{N,Vec{N,T},T}(points)
+ScatteredGrid{N,T<:Real}(points::Array{SVector{N,T},1}) = ScatteredGrid{N,SVector{N,T},T}(points)
 
 length(g::ScatteredGrid) = length(g.points)
 

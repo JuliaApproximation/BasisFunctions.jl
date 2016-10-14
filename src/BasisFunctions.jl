@@ -3,7 +3,7 @@ module BasisFunctions
 using FastTransforms
 
 using ArrayViews
-using FixedSizeArrays
+using StaticArrays
 #using PyPlot
 using Compat
 using RecipesBase

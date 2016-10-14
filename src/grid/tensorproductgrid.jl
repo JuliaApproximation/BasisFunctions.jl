@@ -34,10 +34,10 @@ ndims(g::TensorProductGrid, j::Int) = ndims(element(g,j))
 
 length(g::TensorProductGrid) = prod(size(g))
 
-left(g::TensorProductGrid) = Vec(map(left, g.grids)...)
+left(g::TensorProductGrid) = SVector(map(left, g.grids))
 left(g::TensorProductGrid, j) = left(g.grids[j])
 
-right(g::TensorProductGrid) = Vec(map(right, g.grids)...)
+right(g::TensorProductGrid) = SVector(map(right, g.grids))
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
 
@@ -61,26 +61,26 @@ end
 # For the recursive evaluation of grids, we want to flatten any Vec's
 # (Since in the future a single grid may return a vector rather than a number)
 # This is achieved with FlatVec below:
-FlatVec(x) = Vec(x)
-FlatVec(x, y) = Vec(x, y)
-FlatVec(x, y, z) = Vec(x, y, z)
-FlatVec(x, y, z, t) = Vec(x, y, z, t)
+FlatVector(x) = SVector(x)
+FlatVector(x, y) = SVector(x, y)
+FlatVector(x, y, z) = SVector(x, y, z)
+FlatVector(x, y, z, t) = SVector(x, y, z, t)
 
-FlatVec(x::Number, y::Vec{2}) = Vec(x, y[1], y[2])
-FlatVec(x::Number, y::Vec{2}, z::Number) = Vec(x, y[1], y[2], z)
-FlatVec(x::Number, y::Vec{3}) = Vec(x, y[1], y[2], y[3])
-FlatVec(x::Vec{2}, y::Vec{2}) = Vec(x[1], x[2], y[1], y[2])
-FlatVec(x::Vec{2}, y::Number) = Vec(x[1], x[2], y)
-FlatVec(x::Vec{2}, y::Number, z::Number) = Vec(x[1], x[2], y, z)
+FlatVector(x::Number, y::SVector{2}) = SVector(x, y[1], y[2])
+FlatVector(x::Number, y::SVector{2}, z::Number) = SVector(x, y[1], y[2], z)
+FlatVector(x::Number, y::SVector{3}) = SVector(x, y[1], y[2], y[3])
+FlatVector(x::SVector{2}, y::SVector{2}) = SVector(x[1], x[2], y[1], y[2])
+FlatVector(x::SVector{2}, y::Number) = SVector(x[1], x[2], y)
+FlatVector(x::SVector{2}, y::Number, z::Number) = SVector(x[1], x[2], y, z)
 
 
 getindex(g::TensorProductGrid, i1, i2) =
-	FlatVec(g.grids[1][i1], g.grids[2][i2])
+	FlatVector(g.grids[1][i1], g.grids[2][i2])
 
 getindex(g::TensorProductGrid, i1, i2, i3) =
-	FlatVec(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3])
+	FlatVector(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3])
 
 getindex(g::TensorProductGrid, i1, i2, i3, i4) =
-	FlatVec(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3], g.grids[4][i4])
+	FlatVector(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3], g.grids[4][i4])
 
 getindex(g::TensorProductGrid, idx::Int) = getindex(g, ind2sub(size(g),idx))

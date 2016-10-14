@@ -32,7 +32,7 @@ rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
 
 
 # Preserve tensor product structure
-function rescale{N}(g::TensorProductGrid, a::Vec{N}, b::Vec{N})
+function rescale{N}(g::TensorProductGrid, a::SVector{N}, b::SVector{N})
 	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:N]
 	TensorProductGrid(scaled_grids...)
 end

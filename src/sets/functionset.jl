@@ -316,12 +316,12 @@ support.
 # Default to numerical integration
 moment(s::FunctionSet, idx) = quadgk(s[idx], left(s), right(s))[1]
 
-# Internally, we use FixedSizeArrays (Vec) to represent points, except in
+# Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars.
 # Provide an interface with multiple arguments for convenience in 2D-4D.
-call_set(s::FunctionSet, i, x, y) = call_set(s, i, Vec(x,y))
-call_set(s::FunctionSet, i, x, y, z) = call_set(s, i, Vec(x,y,z))
-call_set(s::FunctionSet, i, x, y, z, t) = call_set(s, i, Vec(x,y,z,t))
+call_set(s::FunctionSet, i, x, y) = call_set(s, i, SVector(x,y))
+call_set(s::FunctionSet, i, x, y, z) = call_set(s, i, SVector(x,y,z))
+call_set(s::FunctionSet, i, x, y, z, t) = call_set(s, i, SVector(x,y,z,t))
 
 """
 You can evaluate a member function of a set using the call_set routine.
@@ -368,14 +368,14 @@ Evaluate an expansion given by the set of coefficients `coef` in the point x.
     end
 end
 
-@generated function call_expansion{N,T}(s::FunctionSet{N,T}, coef, x::Vec{N})
+@generated function call_expansion{N,T}(s::FunctionSet{N,T}, coef, x::SVector{N})
     xargs = [:(x[$d]) for d = 1:length(x)]
     quote
         call_expansion(s, coef, $(xargs...))
     end
 end
 
-function call_expansion{V <: Vec}(s::FunctionSet, coef, xs::AbstractArray{V})
+function call_expansion{V <: SVector}(s::FunctionSet, coef, xs::AbstractArray{V})
     result = Array(eltype(coef), size(xs))
     call_expansion!(result, s, coef, xs)
 end
@@ -411,7 +411,7 @@ function call_expansion!{N}(result, s::FunctionSet{N}, coef, grid::AbstractGrid{
     apply!(E, result, coef)
 end
 
-function call_expansion!{VEC <: Vec}(result, s::FunctionSet, coef, xs::AbstractArray{VEC})
+function call_expansion!{VEC <: SVector}(result, s::FunctionSet, coef, xs::AbstractArray{VEC})
     @assert size(result) == size(xs)
 
     for i in eachindex(xs)

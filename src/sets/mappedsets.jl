@@ -118,7 +118,7 @@ rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
 
 
 # Preserve tensor product structure
-function rescale{N}(s::TensorProductSet, a::Vec{N}, b::Vec{N})
+function rescale{N}(s::TensorProductSet, a::SVector{N}, b::SVector{N})
     scaled_sets = [ rescale(set(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
 end
