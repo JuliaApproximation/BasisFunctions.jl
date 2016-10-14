@@ -11,7 +11,7 @@ using RecipesBase
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
 
-import Base: promote, promote_rule, convert, promote_eltype
+import Base: promote, promote_rule, convert, promote_eltype, widen
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
         range, collect, endof

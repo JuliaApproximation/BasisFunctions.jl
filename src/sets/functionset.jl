@@ -108,6 +108,8 @@ instantiate{S <: FunctionSet}(::Type{S}, n) = instantiate(S, n, Float64)
 # All sets should implement their own promotion rules.
 promote_eltype{N,T}(s::FunctionSet{N,T}, ::Type{T}) = s
 
+widen(s::FunctionSet) = promote_eltype(s, widen(eltype(s)))
+
 promote{N,T}(set1::FunctionSet{N,T}, set2::FunctionSet{N,T}) = (set1,set2)
 
 function promote{N,T1,T2}(set1::FunctionSet{N,T1}, set2::FunctionSet{N,T2})
