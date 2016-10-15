@@ -35,6 +35,9 @@ import Base: indices, normalize
 
 ## Exports
 
+# from maps/maps.jl
+export AffineMap, linearmap, interval_map, scaling_map
+
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
@@ -161,10 +164,12 @@ using Base.Cartesian
 
 include("util/common.jl")
 include("util/multiarray.jl")
+include("util/slices.jl")
+include("util/functors.jl")
+
+include("maps/maps.jl")
 
 include("grid/grid.jl")
-
-include("util/slices.jl")
 
 include("sets/functionset.jl")
 
@@ -193,8 +198,6 @@ include("grid/discretegridspace.jl")
 
 include("tensorproducts.jl")
 
-include("util/functors.jl")
-
 include("generic_operators.jl")
 
 include("sets/subsets.jl")
@@ -221,7 +224,6 @@ include("poly/jacobi.jl")
 include("poly/laguerre.jl")
 include("poly/hermite.jl")
 
-# include("util/plots.jl")
 include("util/recipes.jl")
 
 end # module
