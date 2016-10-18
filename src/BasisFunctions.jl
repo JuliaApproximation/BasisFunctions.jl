@@ -36,7 +36,8 @@ import Base: indices, normalize
 ## Exports
 
 # from maps/maps.jl
-export AffineMap, linearmap, interval_map, scaling_map
+export AbstractMap, AffineMap, DiagonalMap, linearmap, interval_map, scaling_map
+export translation
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
