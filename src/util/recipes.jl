@@ -17,8 +17,7 @@ end
 @recipe function f(S::SetExpansion, target::Function; n=200)
     grid = plotgrid(set(S), n)
     # Determine the return type so we know where to sample
-    RT = Base.return_types(target, fill(Float64, ndims(set(S))) )
-    origvals = sample(grid, target, RT[1])
+    origvals = sample(grid, target, eltype(S))
     vals = abs(origvals - S(grid))
     set(S), grid, postprocess(set(S), grid, vals)
 end
@@ -92,9 +91,9 @@ postprocess(S::FunctionSubSet, grid, vals) = postprocess(set(S), grid, vals)
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
-plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n),left(S),right(S))
+plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S),right(S))
 
-plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n),left(S)[1],right(S)[1])⊗rescale(PeriodicEquispacedGrid(n),left(S)[2],right(S)[2])
+plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])⊗rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
 
 ## Split complex plots in real and imaginary parts
 # 1D

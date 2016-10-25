@@ -106,40 +106,6 @@ call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 
 moment{EVEN,T}(b::FourierBasis{EVEN,T}, idx) = idx == 1 ? T(2) : T(0)
 
-function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
-	@assert length(dest)==length(src)
-#	@assert period(dest)==period(src)
-
-	nh = nhalf(src)
-	p = period(src)
-	i = order(op)
-
-	for j = 0:nh
-		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
-	end
-	for j = 1:nh
-		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
-	end
-	result
-end
-
-function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
-	@assert length(dest)==length(src)
-#	@assert period(dest)==period(src)
-
-	nh = nhalf(src)
-	p = period(src)
-	i = -1*order(op)
-
-        result[1] = 0
-	for j = 1:nh
-		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
-	end
-	for j = 1:nh
-		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
-	end
-	result
-end
 
 extension_size(b::FourierBasisEven) = 2*length(b)
 extension_size(b::FourierBasisOdd) = 2*length(b)+1
@@ -213,7 +179,7 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 end
 
 derivative_set(b::FourierBasisOdd, order) = b
-
+antiderivative_set(b::FourierBasisOdd, order) = b
 # We extend the even basis both for derivation and antiderivation, regardless of order
 for op in (:derivative_set, :antiderivative_set)
     @eval $op(b::FourierBasisEven, order::Int; options...) = fourier_basis_odd(length(b)+1,eltype(b))
@@ -232,7 +198,7 @@ function differentiation_operator{T}(b1::FourierBasisOdd{T}, b2::FourierBasisOdd
 	DiagonalOperator(b1, [diff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
 end
 
-antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx==0 ? T(0) : 1 / (i* 2 * T(pi) * im)^order
+antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
 function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...)
 	@assert length(b1) == length(b2)
 	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
