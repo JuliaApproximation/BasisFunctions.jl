@@ -323,6 +323,10 @@ call_set(s::FunctionSet, idx, x, y) = call_set(s, idx, SVector(x,y))
 call_set(s::FunctionSet, idx, x, y, z) = call_set(s, idx, SVector(x,y,z))
 call_set(s::FunctionSet, idx, x, y, z, t) = call_set(s, idx, SVector(x,y,z,t))
 
+call_expansion(s::FunctionSet, coefficients, x, y) = call_expansion(s, coefficients, SVector(x,y))
+call_expansion(s::FunctionSet, coefficients, x, y, z) = call_expansion(s, coefficients, SVector(x,y,z))
+call_expansion(s::FunctionSet, coefficients, x, y, z, t) = call_expansion(s, coefficients, SVector(x,y,z,t))
+
 """
 You can evaluate a member function of a set using the call_set routine.
 It takes as arguments the function set, the index of the member function and
@@ -356,81 +360,30 @@ call_expansion(s::FunctionSet, coef) = nothing
 """
 Evaluate an expansion given by the set of coefficients `coef` in the point x.
 """
-@generated function call_expansion{S <: Number}(s::FunctionSet, coef, xs::S...)
-    xargs = [:(xs[$d]) for d = 1:length(xs)]
-    quote
-        T = promote_type(eltype(coef), S)
-        z = zero(T)
-        for i in eachindex(s)
-            z = z + coef[i]*call_set(s, i, $(xargs...))
-        end
-        z
+function call_expansion(s::FunctionSet, coefficients, x)
+    T = promote_type(eltype(coefficients), eltype(s))
+    z = zero(T)
+    for i in eachindex(s)
+        z = z + coefficients[i] * call_set(s, i, x)
     end
-end
-
-@generated function call_expansion{N,T}(s::FunctionSet{N,T}, coef, x::SVector{N})
-    xargs = [:(x[$d]) for d = 1:length(x)]
-    quote
-        call_expansion(s, coef, $(xargs...))
-    end
-end
-
-function call_expansion{V <: SVector}(s::FunctionSet, coef, xs::AbstractArray{V})
-    result = Array(eltype(coef), size(xs))
-    call_expansion!(result, s, coef, xs)
-end
-
-# Vectorized method. Revisit once there is a standard way in Julia to treat
-# vectorized function that is also fast.
-# @generated to avoid splatting overhead (even though the function is vectorized,
-# perhaps there is no need)
-@generated function call_expansion{S <: Number}(s::FunctionSet, coef, xs::AbstractArray{S}...)
-    xargs = [:(xs[$d]) for d = 1:length(xs)]
-    quote
-        T = promote_type(eltype(coef), S)
-        result = similar(xs[1], T)
-        call_expansion!(result, s, coef, $(xargs...))
-    end
+    z
 end
 
 # It's probably best to include some checks
 # - eltype(coef) is promotable to ELT
 # - grid and b have the same numtype
-function call_expansion{N}(s::FunctionSet{N}, coef, grid::AbstractGrid{N})
-    ELT = promote_type(eltype(s), eltype(coef))
+function call_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
+    ELT = promote_type(eltype(set), eltype(coefficients))
     result = Array(ELT, size(grid))
-    call_expansion!(result, s, coef, grid)
+    call_expansion!(result, set, coefficients, grid)
 end
 
 
-
-function call_expansion!{N}(result, s::FunctionSet{N}, coef, grid::AbstractGrid{N})
+function call_expansion!(result, set::FunctionSet, coefficients, grid::AbstractGrid)
+    @assert ndims(set) == ndims(grid)
+    @assert size(coefficients) == size(set)
     @assert size(result) == size(grid)
-    ELT = promote_type(eltype(s), eltype(coef))
-    E = evaluation_operator(s, DiscreteGridSpace(grid, ELT))
-    apply!(E, result, coef)
-end
 
-function call_expansion!{VEC <: SVector}(result, s::FunctionSet, coef, xs::AbstractArray{VEC})
-    @assert size(result) == size(xs)
-
-    for i in eachindex(xs)
-        result[i] = call_expansion(s, coef, xs[i]...)
-    end
-    result
-end
-
-
-@generated function call_expansion!(result, s::FunctionSet, coef, xs::AbstractArray...)
-    xargs = [:(xs[$d][i]) for d = 1:length(xs)]
-    quote
-        for i in 1:length(xs)
-            @assert size(result) == size(xs[i])
-        end
-
-        for i in eachindex(xs[1])
-            result[i] = call_expansion(s, coef, $(xargs...))
-        end
-        result
-    end
+    E = evaluation_operator(set, DiscreteGridSpace(grid, eltype(result)))
+    apply!(E, result, coefficients)
 end

@@ -18,8 +18,8 @@ immutable SetExpansion{S,C}
     end
 end
 
-SetExpansion(s::FunctionSet, coefficients = zeros(s)) =
-    SetExpansion{typeof(s),typeof(coefficients)}(s, coefficients)
+SetExpansion(set::FunctionSet, coefficients = zeros(set)) =
+    SetExpansion{typeof(set),typeof(coefficients)}(set, coefficients)
 
 eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(S)
 
@@ -51,22 +51,22 @@ setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
-(e::SetExpansion)(x...) = call_expansion_with_set(e, set(e), coefficients(e), promote(x...)...)
-call_expansion_with_set(e::SetExpansion, s::FunctionSet, coefficients, x...) = call_expansion(s, coefficients, x...)
+(e::SetExpansion)(x...) = call_setexpansion(e, set(e), coefficients(e), promote(x...)...)
+call_setexpansion(e::SetExpansion, set::FunctionSet, coefficients, x...) = call_expansion(set, coefficients, x...)
 
 call!(result, e::SetExpansion, x...) =
-    call_expansion_with_set!(result, e, set(e), coefficients(e), promote(x...)...)
-call_expansion_with_set!(result, e::SetExpansion, s::FunctionSet, coefficients, x...) =
-    call_expansion!(result, s, coefficients, x...)
+    call_setexpansion!(result, e, set(e), coefficients(e), promote(x...)...)
+call_setexpansion!(result, e::SetExpansion, set::FunctionSet, coefficients, x...) =
+    call_expansion!(result, set, coefficients, x...)
 
-function differentiate(f::SetExpansion, order=1)
-    op = differentiation_operator(f.set, order)
-    SetExpansion(dest(op), apply(op,f.coefficients))
+function differentiate(e::SetExpansion, order=1)
+    op = differentiation_operator(e.set, order)
+    SetExpansion(dest(op), apply(op,e.coefficients))
 end
 
-function antidifferentiate(f::SetExpansion, order=1)
-    op = antidifferentiation_operator(f.set, order)
-    SetExpansion(dest(op), apply(op,f.coefficients))
+function antidifferentiate(e::SetExpansion, order=1)
+    op = antidifferentiation_operator(e.set, order)
+    SetExpansion(dest(op), apply(op,e.coefficients))
 end
 
 

@@ -65,7 +65,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Test evaluation on an array
     ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
     x_array = ARRAY_TYPE[random_point_in_domain(basis) for i in 1:10]
-    z = e(x_array)
+    z = map(e, x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
     # Test linearization of coefficients

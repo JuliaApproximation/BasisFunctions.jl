@@ -116,9 +116,6 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
-# from sets/normalized_set.jl
-export NormalizedSet, normalize
-
 # from sets/augmented_set.jl
 export ⊕, set, fun, derivative, AugmentedSet
 
@@ -214,7 +211,6 @@ include("sets/multiple_set.jl")
 include("sets/piecewise_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
-include("sets/normalized_set.jl")
 
 
 include("fourier/fouriertransforms.jl")

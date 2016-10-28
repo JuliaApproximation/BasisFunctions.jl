@@ -57,6 +57,11 @@ composite_length(a::MultiArray) = length(a.arrays)
 
 length(a::MultiArray) = a.offsets[end]
 
+# This definition is up for debate: what is the size of a MultiArray?
+# By defining it as (length(a),), we can assert elsewhere that the size of a
+# multiset equals the size of its multiarray representation.
+size(a::MultiArray) = (length(a),)
+
 length(a::MultiArray, i::Int) = length(a.arrays[i])
 
 show(io::IO, a::MultiArray) = show(io, a.arrays)
