@@ -319,9 +319,9 @@ moment(s::FunctionSet, idx) = quadgk(s[idx], left(s), right(s))[1]
 # Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars.
 # Provide an interface with multiple arguments for convenience in 2D-4D.
-call_set(s::FunctionSet, i, x, y) = call_set(s, i, SVector(x,y))
-call_set(s::FunctionSet, i, x, y, z) = call_set(s, i, SVector(x,y,z))
-call_set(s::FunctionSet, i, x, y, z, t) = call_set(s, i, SVector(x,y,z,t))
+call_set(s::FunctionSet, idx, x, y) = call_set(s, idx, SVector(x,y))
+call_set(s::FunctionSet, idx, x, y, z) = call_set(s, idx, SVector(x,y,z))
+call_set(s::FunctionSet, idx, x, y, z, t) = call_set(s, idx, SVector(x,y,z,t))
 
 """
 You can evaluate a member function of a set using the call_set routine.
@@ -329,23 +329,23 @@ It takes as arguments the function set, the index of the member function and
 the point in which to evaluate.
 This function performs bounds checking and then calls call_element on the set.
 """
-function call_set(s::FunctionSet, i, x)
-    checkbounds(s, i)
-    call_element(s, i, x)
+function call_set(s::FunctionSet, idx, x)
+    checkbounds(s, idx)
+    call_element(s, idx, x)
 end
 
 # Evaluate on a grid
-function call_set(s::FunctionSet, i::Int, grid::AbstractGrid)
-    checkbounds(s,i)
+function call_set(s::FunctionSet, idx, grid::AbstractGrid)
+    checkbounds(s,idx)
     result = zeros(DiscreteGridSpace(grid, eltype(s)))
-    call_set!(result, s, i, grid)
+    call_set!(result, s, idx, grid)
 end
 
-function call_set!(result, s::FunctionSet, i::Int, grid::AbstractGrid)
+function call_set!(result, s::FunctionSet, idx, grid::AbstractGrid)
     @assert size(result) == size(grid)
 
     for k in eachindex(grid)
-        result[k] = call_set(s, i, grid[k])
+        result[k] = call_set(s, idx, grid[k])
     end
     result
 end

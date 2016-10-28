@@ -27,6 +27,9 @@ set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coefficients
 
+# For expansions of composite types, return a SetExpansion of a subset
+element(e::SetExpansion, i) = SetExpansion(element(e.set, i), element(e.coefficients, i))
+
 # Delegation of methods
 for op in (:length, :size, :left, :right, :grid)
     @eval $op(e::SetExpansion) = $op(set(e))

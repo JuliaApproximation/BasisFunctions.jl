@@ -73,7 +73,7 @@ grid(s::FunctionSubSet) = grid(set(s))
 rescale(s::FunctionSubSet, a, b) = FunctionSubSet(rescale(set(s), a, b), indices(s))
 
 call_element(s::FunctionSubSet, i, x) =
-    has_single_index(s) ? call_element(s.set, s.idx, x) : call_element(s.set, s.idx[i], x)
+    has_single_index(s) ? call_set(s.set, s.idx, x) : call_set(s.set, s.idx[i], x)
 
 (s::FunctionSubSet)(x...) = call_set(s.set, s.idx, x...)
 

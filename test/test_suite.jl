@@ -128,7 +128,8 @@ function test_derived_sets(T)
     test_generic_set_interface(BF.Cos() * b1) end
 
     @testset "$(rpad("Multiple sets",80))" begin
-    test_generic_set_interface(multiset(b1,b2)) end
+    test_generic_set_interface(multiset(b1,b2))
+    test_generic_set_interface(MultiSet((b1,b2))) end
 
     @testset "$(rpad("A multiple and augmented set combination",80))" begin
     s = rescale(b1, 1/2, 1)
@@ -137,6 +138,11 @@ function test_derived_sets(T)
     @testset "$(rpad("A complicated subset",80))" begin
     s = rescale(b1, 1/2, 1)
     test_generic_set_interface(s[1:5]) end
+
+    @testset "$(rpad("Piecewise sets",80))" begin
+    part = PiecewiseInterval(0, 10, 10)
+    pw = PiecewiseSet(b2, part)
+    test_generic_set_interface(pw) end
 
     # @testset "$(rpad("A tensor product of MultiSet's",80))" begin
     # b = multiset(b1,b2)

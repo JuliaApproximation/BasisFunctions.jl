@@ -8,6 +8,8 @@ immutable DiscreteSet{T} <: FunctionSet{T}
     n   ::  Int
 end
 
+length(s::DiscreteSet) = s.n
+
 isreal{T}(s::DiscreteSet{T}) = isreal(T)
 
 promote_eltype{T,S}(s::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(s))

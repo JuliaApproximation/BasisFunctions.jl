@@ -362,3 +362,37 @@ end
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, -1)
+
+"""
+An operator that calls linearize on a native representation of a set, returning
+a Vector with the length of the set. For example, one can not apply a matrix
+to a non-arraylike representation, hence the representation has to be linearized
+first.
+"""
+immutable LinearizationOperator{ELT} <: AbstractOperator{ELT}
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+end
+
+LinearizationOperator(src::FunctionSet, ELT = eltype(src)) =
+    LinearizationOperator{ELT}(src, DiscreteSet{ELT}(length(src)))
+
+apply!(op::LinearizationOperator, coef_dest, coef_src) =
+    linearize_coefficients!(coef_dest, coef_src)
+
+is_diagonal(op::LinearizationOperator) = true
+
+
+"The inverse of a LinearizationOperator."
+immutable DelinearizationOperator{ELT} <: AbstractOperator{ELT}
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+end
+
+DelinearizationOperator(dest::FunctionSet, ELT = eltype(dest)) =
+    LinearizationOperator{ELT}(DiscreteSet{ELT}(length(src)), dest)
+
+apply!(op::DelinearizationOperator, coef_dest, coef_src) =
+    delinearize_coefficients!(coef_dest, coef_src)
+
+is_diagonal(op::DelinearizationOperator) = true

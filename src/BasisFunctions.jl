@@ -39,6 +39,9 @@ import Base: indices, normalize
 export AbstractMap, AffineMap, DiagonalMap, linearmap, interval_map, scaling_map
 export translation
 
+# from maps/partition.jl
+export PiecewiseInterval, Partition
+
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
@@ -122,6 +125,9 @@ export ⊕, set, fun, derivative, AugmentedSet
 # from sets/multiple_set.jl
 export MultiSet, multiset
 
+# from sets/piecewise_set.jl
+export PiecewiseSet
+
 # from sets/operated_set.jl
 export OperatedSet
 
@@ -169,6 +175,7 @@ include("util/slices.jl")
 include("util/functors.jl")
 
 include("maps/maps.jl")
+include("maps/partition.jl")
 
 include("grid/grid.jl")
 
@@ -202,7 +209,9 @@ include("tensorproducts.jl")
 include("generic_operators.jl")
 
 include("sets/subsets.jl")
+include("sets/composite_set.jl")
 include("sets/multiple_set.jl")
+include("sets/piecewise_set.jl")
 include("sets/operated_set.jl")
 include("sets/augmented_set.jl")
 include("sets/normalized_set.jl")

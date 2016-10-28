@@ -25,29 +25,30 @@ immutable BlockOperator{ELT} <: AbstractOperator{ELT}
     end
 end
 
-function BlockOperator{OP <: AbstractOperator}(operators::Array{OP,2})
+function BlockOperator{OP <: AbstractOperator}(operators::Array{OP,2},
+    op_src = multiset(map(src, operators[1,:])),
+    op_dest = multiset(map(dest, operators[:,1])))
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
 
-    op_src = multiset(map(src, operators[1,:]))
-    op_dest = multiset(map(dest, operators[:,1]))
     ELT = promote_type(eltype(op_src), eltype(op_dest))
     BlockOperator{ELT}(operators, op_src, op_dest)
 end
 
-function block_row_operator(op1::AbstractOperator, op2::AbstractOperator)
+# sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
+function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::FunctionSet...)
     ELT = promote_type(eltype(op1), eltype(op2))
     operators = Array(AbstractOperator{ELT}, 1, 2)
     operators[1] = op1
     operators[2] = op2
-    BlockOperator(operators)
+    BlockOperator(operators, sets...)
 end
 
-function block_row_operator{OP <: AbstractOperator}(ops::Array{OP, 1})
+function block_row_operator{OP <: AbstractOperator}(ops::Array{OP, 1}, sets::FunctionSet...)
     ELT = eltype(ops[1])
     operators = Array(AbstractOperator{ELT}, 1, length(ops))
     operators[:] = ops
-    BlockOperator(operators)
+    BlockOperator(operators, sets...)
 end
 
 function block_column_operator(op1::AbstractOperator, op2::AbstractOperator)

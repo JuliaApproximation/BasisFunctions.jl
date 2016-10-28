@@ -4,35 +4,52 @@
 A MultiArray in its simplest form is an array of arrays. It is meant to store
 coefficient sets of different expansions together, i.e. each element of the outer
 array stores the coefficients of an expansion. This is useful as a representation
-for MultiSet's. The number of expansions may be large.
+for MultiSet's.
+
+A MultiArray has one outer array, of which each element is an inner array. The
+inner arrays can represent the coefficients of an expansion. In case the
+outer array is actually of type Array, the number of inner arrays may be large.
+However, for good efficiency, all inner arrays should have the same type. The outer
+array can also be a tuple, in which case the inner arrays can have mixed types,
+but there should not be too many.
 
 The MultiArray can be indexed with a linear index, which iterates over all the
 elements of the subarray's linearly. This index would correspond to the linear
 index of a MultiSet. Alternatively, the MultiArray can be index with a native index,
 which is a tuple consisting of the outer array index and the native index of the
-coefficient set it points to. This linear indexing is one motivation for using
-this type compared to using an Array of Array's.
+coefficient set it points to.
 
-Usually, the individual expansions are themselves Array's, but that need not be
-the case. A MultiArray can contain other kinds of function representations,
-including mixed types. The type parameter R is a supertype of all elements in the
-outer array, and for mixed types it can be Any. Some more efficient algorithms
-are implemented when R = Array{ELT,1}.
+Usually, the individual expansions (i.e. the inner arrays) have type Array{ELT,N},
+but that need not be the case. A MultiArray can contain other kinds of function
+representations. However, they should all have the same eltype.
+
+The differences between this type and an Array of Array's are:
+- this type supports linear indexing
+- the eltype of a MultiArray is the eltype of the inner arrays, not the type of
+an inner array.
+These differences have motivated this special purpose type.
 """
-immutable MultiArray{R,ELT}
+immutable MultiArray{A,ELT}
     # The underlying data is usually an array of arrays, but may be more general.
-    arrays  ::  Array{R,1}
+    # At the least, it is an indexable set that supports a linear index.
+    arrays  ::  A
     # The cumulative sum of the lengths of the subarrays. Used to compute indices.
+    # The linear index for the i-th subarray starts at offsets[i]+1.
     offsets ::  Array{Int,1}
 
     function MultiArray(arrays)
-        new(arrays, [0; cumsum(map(length, arrays))])
+        new(arrays, compute_offsets(arrays))
     end
 end
 
-MultiArray{R}(a::Array{R,1}) = MultiArray{R,eltype(a[1])}(a)
+function MultiArray(arrays, ELT = eltype(arrays[1]))
+    for array in arrays
+        @assert eltype(array) == ELT
+    end
+    MultiArray{typeof(arrays),ELT}(arrays)
+end
 
-eltype{R,ELT}(::Type{MultiArray{R,ELT}}) = ELT
+eltype{A,ELT}(::Type{MultiArray{A,ELT}}) = ELT
 
 element(a::MultiArray, i) = a.arrays[i]
 elements(a::MultiArray) = a.arrays
@@ -70,8 +87,8 @@ end
 ##########################
 
 # We introduce this type in order to support eachindex for MultiArray's below
-immutable MultiArrayIndexIterator{R,ELT}
-    array   ::  MultiArray{R,ELT}
+immutable MultiArrayIndexIterator{A,ELT}
+    array   ::  MultiArray{A,ELT}
 end
 
 eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
@@ -97,10 +114,12 @@ done(it::MultiArrayIndexIterator, state) = (state[1]==composite_length(it.array)
 
 length(it::MultiArrayIndexIterator) = length(it.array)
 
-# Our iterator can be simpler when the element sets are vectors
-start{T}(it::MultiArrayIndexIterator{Array{T,1}}) = (1,1)
+typealias ArrayOfArray{T} Array{Array{T,1},1}
 
-function next{T}(it::MultiArrayIndexIterator{Array{T,1}}, state)
+# Our iterator can be simpler when the element sets are vectors in an array
+start{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}) = (1,1)
+
+function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)
     i = state[1]
     j = state[2]
     if j == length(it.array, i)
@@ -111,7 +130,7 @@ function next{T}(it::MultiArrayIndexIterator{Array{T,1}}, state)
     (state, nextstate)
 end
 
-done{T}(it::MultiArrayIndexIterator{Array{T,1}}, state) = state[1] > composite_length(it.array)
+done{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) = state[1] > composite_length(it.array)
 
 # Support linear indexing too
 getindex(a::MultiArray, idx::Int) = getindex(a, multilinear_index(a, idx))
