@@ -49,7 +49,7 @@ function point_in_domain(basis::FunctionSet1d, scalar)
     if isinf(b)
         b = T(1)
     end
-    x = scalar * a + (1-scalar) * b
+    x = (1-scalar) * a + scalar * b
 end
 
 
@@ -74,9 +74,15 @@ function point_in_domain(basis::FunctionSet, scalar)
         a = SVector(va)
         b = SVector(vb)
     end
-    x = scalar * a + (1-scalar) * b
+    x = (1-scalar) * a + scalar * b
 end
 
+# Abuse point_in_domain with a scalar greater than one in order to get
+# a point outside the domain.
+point_outside_domain(basis::FunctionSet) = point_in_domain(basis, eltype(basis)(1.1))
+
+point_outside_domain(basis::LaguerreBasis) = -one(eltype(basis))
+point_outside_domain(basis::HermiteBasis) = one(eltype(basis))+im
 
 function random_point_in_domain(basis::FunctionSet)
     T = eltype(basis)
@@ -94,14 +100,15 @@ function suitable_interpolation_grid(basis::FunctionSet)
     if BF.has_grid(basis)
         grid(basis)
     else
-        EquispacedGrid(length(basis), point_in_domain(basis, 1), point_in_domain(basis, 0))
+        T = numtype(basis)
+        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
     end
 end
 
 suitable_interpolation_grid(basis::TensorProductSet) =
     TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
 
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), -10, 10)
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
 
 suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
 
@@ -119,7 +126,7 @@ function test_derived_sets(T)
     test_generic_set_interface(rescale(b1, -1, 2)) end
 
     @testset "$(rpad("A simple subset",80))" begin
-    test_generic_set_interface(b1[1:5]) end
+    test_generic_set_interface(b1[2:6]) end
 
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end

@@ -51,8 +51,30 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # is always the set that was indexed is false, e.g., for multisets.
     #@test set(bf) == basis
 
+    @test endof(basis) == length(basis)
+    # Is a boundserror thrown when the index is too large?
+    @test try
+        basis[length(basis)+1]
+        false
+    catch
+        true
+    end
+
+    # Error thrown for a range that is out of range?
+    @test try
+        basis[1:length(basis)+1]
+        false
+    catch
+        true
+    end
+
     x = fixed_point_in_domain(basis)
-    @test bf(x) ≈ call_set(basis, idx, x)
+    @test bf(x) ≈ eval_set_element(basis, idx, x)
+
+    x_outside = point_outside_domain(basis)
+    @test bf(x_outside) == 0
+    @test isnan(eval_set_element(basis, idx, x_outside, T(NaN)))
+
 
     # Create a random expansion in the basis to test expansion interface
     e = random_expansion(basis)
@@ -94,7 +116,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # are combined into a statix matrix.
     for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, 0.5)) ]
         for idx in [1 2 n>>1 n-1 n]
-            z = call_set(basis, idx, x)
+            z = eval_set_element(basis, idx, x)
             types_correct = types_correct & (typeof(z) == ELT)
         end
     end
@@ -269,7 +291,7 @@ function test_tensor_sets(T)
     x1 = T(2//10)
     x2 = T(3//10)
     x3 = T(4//10)
-    @test bf(x1, x2, x3) ≈ call_set(a, 3, x1) * call_set(b, 4, x2) * call_set(c, 5, x3)
+    @test bf(x1, x2, x3) ≈ eval_set_element(a, 3, x1) * eval_set_element(b, 4, x2) * eval_set_element(c, 5, x3)
 
     # Can you iterate over the product set?
     z = zero(T)
@@ -290,4 +312,13 @@ function test_tensor_sets(T)
     end
     @test l == length(d)
     @test abs(-0.5 - z) < 0.01
+
+    # Indexing with ranges
+    # @test try
+    #     d[CartesianRange(CartesianIndex(1,1,1),CartesianIndex(3,4,5))]
+    #     true
+    # catch
+    #     false
+    # end
+    # Is an error thrown if you index with a range that is out of range?
 end
