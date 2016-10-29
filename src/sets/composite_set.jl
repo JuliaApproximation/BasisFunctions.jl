@@ -73,6 +73,7 @@ getindex(set::CompositeSet, idx::Tuple{Int,Any}) = getindex(set, idx[1], idx[2])
 
 getindex(set::CompositeSet, i, j) = set.sets[i][j]
 
+typealias MultiLinearIndex{N} NTuple{N,Int}
 
 function multilinear_index(set::CompositeSet, idx::Int)
     i = 0
@@ -82,13 +83,17 @@ function multilinear_index(set::CompositeSet, idx::Int)
     (i,idx-set.offsets[i])
 end
 
-function native_index(set::CompositeSet, idx::Int)
-    (i,j) = multilinear_index(set, idx)
-    (i,native_index(element(set,i), j))
+native_index(set::CompositeSet, idx::Int) =
+    native_index(set, multilinear_index(set, idx))
+
+# Conversion from multilinear index
+function native_index(set::CompositeSet, idxm::MultiLinearIndex{2})
+    i,j = idxm
+    (i, native_index(element(set, i), j))
 end
 
 # Convert from a multilinear index
-linear_index(set::CompositeSet, idx_ml::NTuple{2,Int}) = set.offsets[idx_ml[1]] + idx_ml[2]
+linear_index(set::CompositeSet, idxm::MultiLinearIndex{2}) = set.offsets[idxm[1]] + idxm[2]
 
 # Convert from a native index (whose type is anything but a tuple of 2 Int's)
 function linear_index(set::CompositeSet, idxn)
@@ -143,10 +148,10 @@ for op in [:extension_operator, :restriction_operator]
 end
 
 # Calling and evaluation
-call_element(set::CompositeSet, idx::Int, x) = call_element(set, multilinear_index(set,idx), x)
+eval_element(set::CompositeSet, idx::Int, x) = eval_element(set, multilinear_index(set,idx), x)
 
-function call_element(set::CompositeSet, idx::Tuple{Int,Any}, x)
-    call_element( element(set, idx[1]), idx[2], x)
+function eval_element(set::CompositeSet, idx::Tuple{Int,Any}, x)
+    eval_element( element(set, idx[1]), idx[2], x)
 end
 
 

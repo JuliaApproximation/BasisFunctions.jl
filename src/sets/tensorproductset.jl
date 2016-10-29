@@ -1,7 +1,5 @@
 # tensorproductset.jl
 
-using Base.Cartesian
-
 
 """
 A TensorProductSet is itself a set: the tensor product of a number of sets.
@@ -56,6 +54,13 @@ promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
 
+in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
+
+in_support(set::TensorProductSet, idx::Tuple, x) = reduce(&, map((s,i,t)->in_support(s, i, t), elements(set), idx, x))
+
+# Convert a CartesianIndex to a tuple so that we can use the implementation above using map
+in_support(set::TensorProductSet, idx::CartesianIndex, x) = in_support(set, idx.I, x)
+
 function approx_length(s::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
     N = ndims(s)
@@ -75,6 +80,21 @@ size(s::TensorProductSet) = map(length, s.sets)
 size(s::TensorProductSet, j::Int) = length(s.sets[j])
 
 length(s::TensorProductSet) = prod(size(s))
+
+getindex(s::TensorProductSet, ::Colon, i::Int) = (@assert composite_length(s)==2; element(s,1))
+getindex(s::TensorProductSet, i::Int, ::Colon) = (@assert composite_length(s)==2; element(s,2))
+getindex(s::TensorProductSet, ::Colon, ::Colon) = (@assert composite_length(s)==2; s)
+
+getindex(s::TensorProductSet, ::Colon, i::Int, j::Int) = (@assert composite_length(s)==3; element(s,1))
+getindex(s::TensorProductSet, i::Int, ::Colon, j::Int) = (@assert composite_length(s)==3; element(s,2))
+getindex(s::TensorProductSet, i::Int, j::Int, ::Colon) = (@assert composite_length(s)==3; element(s,3))
+getindex(s::TensorProductSet, ::Colon, ::Colon, i::Int) =
+    (@assert composite_length(s)==3; TensorProductSet(element(s,1),element(s,2)))
+getindex(s::TensorProductSet, ::Colon, i::Int, ::Colon) =
+    (@assert composite_length(s)==3; TensorProductSet(element(s,1),element(s,3)))
+getindex(s::TensorProductSet, i::Int, ::Colon, ::Colon) =
+    (@assert composite_length(s)==3; TensorProductSet(element(s,2),element(s,3)))
+getindex(s::TensorProductSet, ::Colon, ::Colon, ::Colon) = (@assert composite_length(s)==3; s)
 
 
 grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
@@ -102,34 +122,25 @@ right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s
 end
 
 # Convert CartesianIndex argument to a tuple
-getindex(s::TensorProductSet, i::CartesianIndex{2}) = getindex(s, (i[1],i[2]))
-getindex(s::TensorProductSet, i::CartesianIndex{3}) = getindex(s, (i[1],i[2],i[3]))
-getindex(s::TensorProductSet, i::CartesianIndex{4}) = getindex(s, (i[1],i[2],i[3],i[4]))
-
-# This is a more general, but less readable, definition of getindex for CartesianIndex
-# @generated function getindex{TS}(s::TensorProductSet{TS}, index::CartesianIndex)
-#     LEN = tuple_length(TS)
-#     :(@nref $LEN s d->index[d])
-# end
-
+getindex(s::TensorProductSet, idx::CartesianIndex) = getindex(s, idx.I)
 
 
 # Routine for linear indices: convert into multilinear index
-call_element(s::TensorProductSet, i::Int, x) = call_element_native(s, multilinear_index(s, i), x)
+eval_element(s::TensorProductSet, i::Int, x) = eval_element_native(s, multilinear_index(s, i), x)
 
 # For any other type of index: assume it is a native one.
-call_element(s::TensorProductSet, i, x) = call_element_native(s, i, x)
+eval_element(s::TensorProductSet, i, x) = eval_element_native(s, i, x)
 
 # For now, we assume that each set in the tensor product is a 1D set.
 # This may not always be the case.
-call_element_native{TS}(s::TensorProductSet{TS,2}, i, x) =
-    call_element(element(s,1), i[1], x[1]) * call_element(element(s,2), i[2], x[2])
+eval_element_native{TS}(s::TensorProductSet{TS,2}, i, x) =
+    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2])
 
-call_element_native{TS}(s::TensorProductSet{TS,3}, i, x) =
-    call_element(element(s,1), i[1], x[1]) * call_element(element(s,2), i[2], x[2]) * call_element(element(s,3), i[3], x[3])
+eval_element_native{TS}(s::TensorProductSet{TS,3}, i, x) =
+    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2]) * eval_element(element(s,3), i[3], x[3])
 
-call_element_native{TS}(s::TensorProductSet{TS,4}, i, x) =
-    call_element(element(s,1), i[1], x[1]) * call_element(element(s,2), i[2], x[2]) * call_element(element(s,3), i[3], x[3]) * call_element(element(s,4), i[4], x[4])
+eval_element_native{TS}(s::TensorProductSet{TS,4}, i, x) =
+    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2]) * eval_element(element(s,3), i[3], x[3]) * eval_element(element(s,4), i[4], x[4])
 
 
 # A multilinear index of a set is a tuple consisting of linear indices of
@@ -146,12 +157,8 @@ end
 
 # Convert to linear index. If the argument is a tuple of integers, it can be assumed to
 # be a multilinear index. Same for CartesianIndex.
-linear_index(s::TensorProductSet, i::NTuple{2,Int}) = sub2ind(size(s), i[1], i[2])
-linear_index(s::TensorProductSet, i::NTuple{3,Int}) = sub2ind(size(s), i[1], i[2], i[3])
-linear_index(s::TensorProductSet, i::NTuple{4,Int}) = sub2ind(size(s), i[1], i[2], i[3], i[4])
-linear_index(s::TensorProductSet, i::CartesianIndex{2}) = sub2ind(size(s), i[1], i[2])
-linear_index(s::TensorProductSet, i::CartesianIndex{3}) = sub2ind(size(s), i[1], i[2], i[3])
-linear_index(s::TensorProductSet, i::CartesianIndex{4}) = sub2ind(size(s), i[1], i[2], i[3], i[4])
+linear_index{N}(s::TensorProductSet, i::NTuple{N,Int}) = sub2ind(size(s), i...)
+linear_index(s::TensorProductSet, i::CartesianIndex) = sub2ind(size(s), i.I...)
 
-# If its type is anything else, it is a tuple of native indices.
-linear_index(s::TensorProductSet, idxn) = linear_index(s, map(linear_index, elements(s), idxn))
+# If its type is anything else, it may be a tuple of native indices
+linear_index(s::TensorProductSet, idxn::Tuple) = linear_index(s, map(linear_index, elements(s), idxn))

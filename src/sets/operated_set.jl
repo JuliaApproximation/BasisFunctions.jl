@@ -40,15 +40,21 @@ for op in (:left, :right, :length)
     @eval $op(b::OperatedSet) = $op(src(b))
 end
 
+# We don't know in general what the support of a specific basis functions is.
+# The safe option is to return the support of the set itself for each element.
+for op in (:left, :right)
+    @eval $op(b::OperatedSet, idx) = $op(src(b))
+end
+
 zeros(ELT::Type, s::OperatedSet) = zeros(ELT, src(s))
 
 
-function call_element(s::OperatedSet, i, x)
+function eval_element(s::OperatedSet, i, x)
     idx = native_index(s, i)
     s.scratch_src[idx] = 1
     apply!(s.op, s.scratch_dest, s.scratch_src)
     s.scratch_src[idx] = 0
-    call_expansion(dest(s), s.scratch_dest, x)
+    eval_expansion(dest(s), s.scratch_dest, x)
 end
 
 ## Properties
@@ -59,4 +65,6 @@ for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(op::OperatedSet) = false
 end
 
+# If a set has a differentiation operator, then we can represent the set of derivatives
+# by an OperatedSet.
 derivative(s::FunctionSet; options...) = OperatedSet(differentiation_operator(s; options...))

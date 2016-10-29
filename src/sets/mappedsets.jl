@@ -23,7 +23,7 @@ end
 
 zeros(ELT::Type, s::AbstractMappedSet) = zeros(ELT, set(s))
 
-native_index(s::AbstractMappedSet, idx) = native_index(set(s), idx)
+native_index(s::AbstractMappedSet, idx::Int) = native_index(set(s), idx)
 
 linear_index(s::AbstractMappedSet, idxn) = linear_index(set(s), idxn)
 
@@ -90,7 +90,7 @@ mapx(s::LinearMappedSet, x) = map_linear(x, s.a, s.b, left(set(s)), right(set(s)
 
 imapx(s::LinearMappedSet, y) = imap_linear(y, s.a, s.b, left(set(s)), right(set(s)))
 
-call_element(s::LinearMappedSet, idx, y) = call_set(set(s), idx, imapx(s,y))
+eval_element(s::LinearMappedSet, idx, y) = eval_element(set(s), idx, imapx(s,y))
 
 grid(s::LinearMappedSet) = rescale(grid(set(s)), left(s), right(s))
 

@@ -51,13 +51,11 @@ setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the set of the expansion
-(e::SetExpansion)(x...) = call_setexpansion(e, set(e), coefficients(e), promote(x...)...)
-call_setexpansion(e::SetExpansion, set::FunctionSet, coefficients, x...) = call_expansion(set, coefficients, x...)
+(e::SetExpansion)(x) = call_set_expansion(e, set(e), coefficients(e), x)
+(e::SetExpansion)(x, y...) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y...))
 
-call!(result, e::SetExpansion, x...) =
-    call_setexpansion!(result, e, set(e), coefficients(e), promote(x...)...)
-call_setexpansion!(result, e::SetExpansion, set::FunctionSet, coefficients, x...) =
-    call_expansion!(result, set, coefficients, x...)
+call_set_expansion(e::SetExpansion, set::FunctionSet, coefficients, x) =
+    eval_expansion(set, coefficients, x)
 
 function differentiate(e::SetExpansion, order=1)
     op = differentiation_operator(e.set, order)

@@ -1,8 +1,8 @@
 # cosineseries.jl
 
-############################################
+##################
 # Cosine series
-############################################
+##################
 
 
 """
@@ -51,10 +51,10 @@ period(b::CosineSeries, idx) = 2
 grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(numtype(b)), one(numtype(b)))
 
 
-native_index(b::CosineSeries, idx) = idx-1
-linear_index(b::CosineSeries, idxn) = idxn+1
+native_index(b::CosineSeries, idx::Int) = idx-1
+linear_index(b::CosineSeries, idxn::Int) = idxn+1
 
-call_element{T}(b::CosineSeries{T}, idx::Int, x) = cos(x * T(pi) * (idx-1))
+eval_element{T}(b::CosineSeries{T}, idx::Int, x) = cos(x * T(pi) * (idx-1))
 
 
 function apply!(op::Extension, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)

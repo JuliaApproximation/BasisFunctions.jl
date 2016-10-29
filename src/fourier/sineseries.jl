@@ -50,7 +50,7 @@ period(b::SineSeries, idx) = 2
 grid{T}(b::SineSeries{T}) = EquispacedGrid(b.n, T(0), T(1))
 
 
-call_element{T}(b::SineSeries{T}, idx::Int, x) = sin(x * T(pi) * idx)
+eval_element{T}(b::SineSeries{T}, idx::Int, x) = sin(x * T(pi) * idx)
 
 
 function apply!(op::Extension, dest::SineSeries, src::SineSeries, coef_dest, coef_src)

@@ -60,8 +60,8 @@ instantiate{T}(::Type{FullSplineBasis}, n, ::Type{T}) = FullSplineBasis{3,T}(n-3
 length{K}(b::FullSplineBasis{K}) = b.n+K
 
 # Indices of splines naturally range from -K to n-1.
-native_index{K}(b::FullSplineBasis{K}, idx) = idx-K-1
-linear_index{K}(b::FullSplineBasis{K}, idxn) = idxn+K+1
+native_index{K}(b::FullSplineBasis{K}, idx::Int) = idx-K-1
+linear_index{K}(b::FullSplineBasis{K}, idxn::Int) = idxn+K+1
 
 left(b::FullSplineBasis, idx) = max(b.a, knot(b, native_index(b, idx)))
 
@@ -80,7 +80,7 @@ end
 
 
 
-function call_element{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
+function eval_element{K,T}(b::FullSplineBasis{K,T}, idx::Int, x)
 	x < left(b) && throw(BoundsError())
 	x > right(b) && throw(BoundsError())
 	spline_eval(SplineDegree{K}, native_index(b, idx), x, b.a, b.b, stepsize(b))
@@ -115,8 +115,8 @@ has_grid(b::NaturalSplineBasis) = true
 length(b::NaturalSplineBasis) = b.n+1
 
 # Indices of natural splines naturally range from 0 to n
-native_index(b::NaturalSplineBasis, idx) = idx-1
-linear_index(b::NaturalSplineBasis, idxn) = idxn+1
+native_index(b::NaturalSplineBasis, idx::Int) = idx-1
+linear_index(b::NaturalSplineBasis, idxn::Int) = idxn+1
 
 left(b::NaturalSplineBasis, idx) = max(b.a, b.a + (native_index(b, idx)-1)*b.h)
 
@@ -126,7 +126,7 @@ stepsize(b::NaturalSplineBasis) = stepsize(b.grid)
 
 grid(b::NaturalSplineBasis) = EquispacedGrid(b.n, b.a, b.b)
 
-call_element{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
+eval_element{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
 """
@@ -164,8 +164,8 @@ length(b::PeriodicSplineBasis) = b.n
 grid(b::PeriodicSplineBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 # Indices of periodic splines naturally range from 0 to n-1
-native_index(b::PeriodicSplineBasis, idx) = idx-1
-linear_index{K}(b::PeriodicSplineBasis{K}, idxn) = idxn+1
+native_index(b::PeriodicSplineBasis, idx::Int) = idx-1
+linear_index{K}(b::PeriodicSplineBasis{K}, idxn::Int) = idxn+1
 
 stepsize(b::PeriodicSplineBasis) = (b.b-b.a)/b.n
 
@@ -175,14 +175,28 @@ left(b::PeriodicSplineBasis) = b.a
 
 right(b::PeriodicSplineBasis) = b.b
 
+# There is something non-standard about these left and right routines: they currently
+# return points outside the interval [a,b] for the first few and last few
+# splines. This is due to periodicity: the first spline actually has its support near
+# a and near b, i.e., its support restricted to [a,b] consists of two pieces. It is
+# easier to use periodicity, and return a single interval near a or b, possibly outside [a,b].
 left{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - 1 - ((K+1) >> 1) ) * stepsize(b)
 
 right{K}(b::PeriodicSplineBasis{K}, j::Int) = b.a + (j - ((K+1) >> 1) + K) * stepsize(b)
 
+# We only return true when x is actually inside the interval, in spite of periodicity
+function in_support{K}(b::PeriodicSplineBasis{K}, idx, x)
+	period = right(b) - left(b)
+
+	A = left(b) <= x <= right(b)
+	B = (left(b, idx) <= x <= right(b, idx)) || (left(b, idx) <= x-period <= right(b, idx)) ||
+		(left(b, idx) <= x+period <= right(b, idx))
+	A && B
+end
+
 rescale{K,T}(s::PeriodicSplineBasis{K,T}, a, b) = PeriodicSplineBasis{K,T}(s.n, a, b)
 
-function call_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
-	checkbounds(b, idx)
+function eval_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 	while x < left(b)
 		x = x + period(b)
 	end
@@ -205,7 +219,7 @@ function call_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 end
 
 
-function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
+function eval_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
 	i = interval(b, x)
 	n = length(b)
 
@@ -215,7 +229,7 @@ function call_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
 	z = zero(T)
 	for idxn = i-L1-1:i+L2
 		idx = linear_index(b, mod(idxn,n))
-		z = z + coef[idx] * call_set(b, idx, x)
+		z = z + coef[idx] * eval_element(b, idx, x)
 	end
 
 	z

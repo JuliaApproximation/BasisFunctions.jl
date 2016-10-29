@@ -41,10 +41,8 @@ _isreal(s::AugmentedSet, set, fun::AbstractFunction) = isreal(set) && isreal(fun
 _isreal(s::AugmentedSet, set, fun::Function) = isreal(set)
 
 
-call_element(s::AugmentedSet, i, x::Number) = s.fun(x) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::SVector{2}) = s.fun(x[1], x[2]) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::SVector{3}) = s.fun(x[1], x[2], x[3]) * call_set(s.set, i, x)
-call_element(s::AugmentedSet, i, x::SVector{4}) = s.fun(x[1], x[2], x[3], x[4]) * call_set(s.set, i, x)
+eval_element(set::AugmentedSet, idx, x) = set.fun(x) * eval_element(set.set, idx, x)
+eval_element(set::AugmentedSet, idx, x::SVector) = set.fun(x...) * eval_element(set.set, idx, x)
 
 # You can create an AugmentedSet by multiplying a function with a set, using
 # left multiplication.
@@ -57,7 +55,7 @@ zeros(ELT::Type, s::AugmentedSet) = zeros(ELT, set(s))
 
 eachindex(s::AugmentedSet) = eachindex(set(s))
 
-native_index(s::AugmentedSet, idx) = native_index(set(s), idx)
+native_index(s::AugmentedSet, idx::Int) = native_index(set(s), idx)
 
 linear_index(s::AugmentedSet, idxn) = linear_index(set(s), idxn)
 

@@ -10,13 +10,13 @@ immutable PolynomialDegree <: NativeIndex
 end
 
 # Indices of polynomials naturally start at 0
-native_index(b::PolynomialBasis, idx) = PolynomialDegree(idx-1)
+native_index(b::PolynomialBasis, idx::Int) = PolynomialDegree(idx-1)
 linear_index(b::PolynomialBasis, idxn::PolynomialDegree) = index(idxn)+1
 
 is_basis(b::PolynomialBasis) = true
 
 function subset(b::PolynomialBasis, idx::OrdinalRange)
-    if (step(idx) == 1) && (first(idx) == 1)
+    if (step(idx) == 1) && (first(idx) == 1) && (last(idx) <= length(b))
         resize(b, last(idx))
     else
         FunctionSubSet(b, idx)
@@ -106,7 +106,7 @@ end
 
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-call_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
+eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 
 

@@ -1,5 +1,12 @@
 # subsets.jl
 
+checkbounds(set::FunctionSet, idx::Range) =
+    (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
+
+checkbounds(set::FunctionSet, idx::CartesianRange) =
+    (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
+
+
 """
 A FunctionSubSet is a subset of a function set. It is characterized by the
 underlying larger set, and a collection of indices into that set.
@@ -8,7 +15,10 @@ immutable FunctionSubSet{SET, IDX, N, T} <: FunctionSet{N,T}
     set ::  SET
     idx ::  IDX
 
-    FunctionSubSet(set::FunctionSet{N,T}, idx::IDX) = new(set, idx)
+    function FunctionSubSet(set::FunctionSet{N,T}, idx::IDX)
+        checkbounds(set, idx)
+        new(set, idx)
+    end
 end
 
 FunctionSubSet{N,T}(set::FunctionSet{N,T}, idx) =
@@ -34,6 +44,10 @@ _has_single_index(s::FunctionSubSet, idx::NativeIndex) = true
 length(s::FunctionSubSet) = has_single_index(s) ? 1 : length(indices(s))
 
 size(s::FunctionSubSet) = has_single_index(s) ? (1,) : size(indices(s))
+
+
+native_index(s::FunctionSubSet, idx::Int) = idx
+linear_index(s::FunctionSubSet, idxn::Int) = idxn
 
 # It is not clear in general what to do when attempting to resize a subset. We
 # can not simply resize the underlying set, because the indices may no longer
@@ -72,10 +86,14 @@ grid(s::FunctionSubSet) = grid(set(s))
 
 rescale(s::FunctionSubSet, a, b) = FunctionSubSet(rescale(set(s), a, b), indices(s))
 
-call_element(s::FunctionSubSet, i, x) =
-    has_single_index(s) ? call_set(s.set, s.idx, x) : call_set(s.set, s.idx[i], x)
+eval_element(s::FunctionSubSet, i, x) =
+    has_single_index(s) ? eval_element(s.set, s.idx, x) : eval_element(s.set, s.idx[i], x)
 
-(s::FunctionSubSet)(x...) = call_set(s.set, s.idx, x...)
+# Internally, we use StaticArrays (SVector) to represent points, except in
+# 1d where we use scalars. Here, for convenience, you can call a function with
+# x, y, z arguments and so on. These are wrapped into an SVector.
+(s::FunctionSubSet)(x) = eval_set_element(s.set, s.idx, x)
+(s::FunctionSubSet)(x, y...) = eval_set_element(s.set, s.idx, SVector(x,y...))
 
 eachindex(s::FunctionSubSet) = has_single_index(s) ? 1 : eachindex(s.idx)
 
@@ -83,9 +101,7 @@ subset(s::FunctionSet, idx) = FunctionSubSet(s, idx)
 subset(s::FunctionSet, ::Colon) = s
 
 getindex(s::FunctionSet, idx) = subset(s, idx)
-getindex(s::FunctionSet, i1, i2) = subset(s, (i1,i2))
-getindex(s::FunctionSet, i1, i2, i3) = subset(s, (i1,i2,i3))
-getindex(s::FunctionSet, i1, i2, i3, i4) = subset(s, (i1,i2,i3,i4))
+getindex(s::FunctionSet, idx, indices...) = subset(s, (idx, indices...))
 
 getindex(s::FunctionSubSet, idx) = has_single_index(s) && (idx == 1) ? s : FunctionSubSet(set(s), s.idx[idx])
 

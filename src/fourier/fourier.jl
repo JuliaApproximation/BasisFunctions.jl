@@ -78,6 +78,9 @@ grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, 0, 1, numtype(b))
 
 nhalf(b::FourierBasis) = length(b)>>1
 
+in_support{T <: Real}(set::FourierBasis, idx, x::T) = 0 <= x <= 1
+
+in_support{T <: Complex}(set::FourierBasis, idx, x::T) = imag(x) == 0 && in_support(set, idx, real(x))
 
 # The frequency of an even Fourier basis ranges from -N+1 to N.
 idx2frequency(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1
@@ -97,10 +100,10 @@ linear_index(b::FourierBasis, idxn::NativeIndex) = frequency2idx(b, index(idxn))
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-call_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(x * 2 * T(pi) * 1im  * idx2frequency(b, idx))
+eval_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(x * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
 # Note that the function below is typesafe because T(pi) converts pi to a complex number, hence the cosine returns a complex number
-call_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
+eval_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	?  cos(x * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(x * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 

@@ -58,7 +58,7 @@ EvaluationFunctional{N,T}(src::FunctionSet{N,T}, x::SVector{N,T}) =
 
 EvaluationFunctional{T,S <: Number}(src::FunctionSet{1,T}, x::S) = EvaluationFunctional(src, SVector{1,T}(x))
 
-apply(f::EvaluationFunctional, coef) = call_expansion(src(f), coef, f.x)
+apply(f::EvaluationFunctional, coef) = eval_expansion(src(f), coef, f.x)
 
 
 

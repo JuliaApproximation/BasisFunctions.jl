@@ -160,10 +160,21 @@ length(idxn::NativeIndex) = 1
 getindex(idxn::NativeIndex, i) = (assert(i==1); index(idxn))
 
 "Compute the native index corresponding to the given linear index."
-native_index(s::FunctionSet, idx) = idx
+native_index(s::FunctionSet, idx::Int) = idx
+# By default, the native index of a set is its linear index.
+# The given idx argument should always be an Int for conversion from linear indices.
+# Subtypes may add definitions for other types, such as multilinear indices.
+# Typing idx to be Int here narrows the scope of false definitions for subsets.
+# The downside is we have to write idx::Int everywhere else too in order to avoid ambiguities.
 
 "Compute the linear index corresponding to the given native index."
-linear_index(s::FunctionSet, idxn) = idxn
+linear_index(s::FunctionSet, idxn) = idxn::Int
+# We don't specify an argument type to idxn here, even though we would only want
+# this default to apply to Int's. Instead, we add an assertion to the result.
+# Adding Int to idxn causes lots of ambiguities. Not adding the assertion either leads to
+# potentially wrong definitions, since in that case linear_index doesn't do anything.
+# This can lead to StackOverflowError's in other parts of the code that expect
+# the type of idxn to change to Int after calling linear_index.
 
 """
 Convert the set of coefficients in the native format of the set to a linear list.
@@ -218,9 +229,17 @@ linear_size(s::FunctionSet, size_n) = size_n
 "Suggest a suitable size, close to n, to resize the given function set."
 approx_length(s::FunctionSet, n) = n
 
+# Default set of linear indices: from 1 to length(s)
+# Default algorithms assume this indexing for the basis functions, and the same
+# linear indexing for the set of coefficients.
+# The indices may also have tensor-product structure, for tensor product sets.
+eachindex(s::FunctionSet) = 1:length(s)
+
+
 
 ###############################
 ## Properties of function sets
+###############################
 
 # The following properties are not implemented as traits with types, because they are
 # not intended to be used in a time-critical path of the code.
@@ -272,12 +291,7 @@ restriction_set(s::FunctionSet, n) = resize(s, n)
 
 #######################
 ## Iterating over sets
-
-# Default set of linear indices: from 1 to length(s)
-# Default algorithms assume this indexing for the basis functions, and the same
-# linear indexing for the set of coefficients.
-# The indices may also have tensor-product structure, for tensor product sets.
-eachindex(s::FunctionSet) = 1:length(s)
+#######################
 
 # Default iterator over sets of functions: based on underlying index iterator.
 function start(s::FunctionSet)
@@ -286,9 +300,8 @@ function start(s::FunctionSet)
 end
 
 function next(s::FunctionSet, state)
-    iter = state[1]
-    iter_state = state[2]
-    idx,iter_newstate = next(iter,iter_state)
+    iter, iter_state = state
+    idx, iter_newstate = next(iter,iter_state)
     (s[idx], (iter,iter_newstate))
 end
 
@@ -309,81 +322,91 @@ checkbounds(s::FunctionSet, i) = checkbounds(s, linear_index(s, i))
 "Return the support of the idx-th basis function."
 support(s::FunctionSet1d, idx) = (left(s,idx), right(s,idx))
 
+"Does the given point lie inside the support of the given set function?"
+in_support(set::FunctionSet1d, idx, x) = left(set, idx) <= x <= right(set, idx)
+
+# isless doesn't work when comparing complex numbers. It may happen that a real
+# function set uses a complex element type, or that the user evaluates at a
+# complex point.  Our default is to check for a zero imaginary part, and then
+# convert x to a real number. Genuinely complex function sets should override.
+in_support{T <: Complex}(set::FunctionSet1d, idx, x::T) =
+    imag(x) == 0 && in_support(set, idx, real(x))
+
+
+##############################################
+## Evaluating set elements and expansions
+##############################################
+
+
+"""
+You can evaluate a member function of a set using the eval_set_element routine.
+It takes as arguments the function set, the index of the member function and
+the point in which to evaluate.
+
+This function performs bounds checking on the index and also checks whether the
+point x lies inside the support of the function. A BoundsError() is thrown for
+an index out of bounds. By default, the value 0 is returned when x is outside
+the support. This value can be changed with an optional extra argument.
+
+After the checks, this routine calls eval_element on the concrete set.
+"""
+function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
+    checkbounds(set, idx)
+    in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
+end
+
+# We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
+# We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
+function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
+    result = zeros(DiscreteGridSpace(grid, eltype(set)))
+    eval_set_element!(result, set, idx, grid, outside_value...)
+end
+
+function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
+    @assert size(result) == size(grid)
+    checkbounds(set, idx)
+
+    @inbounds for k in eachindex(grid)
+        result[k] = eval_set_element(set, idx, grid[k], outside_value)
+    end
+    result
+end
+
+"""
+Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
+"""
+function eval_expansion(set::FunctionSet, coefficients, x)
+    T = promote_type(eltype(coefficients), eltype(set))
+    z = zero(T)
+
+    # It is safer below to use eval_set_element than eval_element, because of
+    # the check on the support. We elide the boundscheck with @inbounds (perhaps).
+    @inbounds for idx in eachindex(set)
+        z = z + coefficients[idx] * eval_set_element(set, idx, x)
+    end
+    z
+end
+
+function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
+    @assert ndims(set) == ndims(grid)
+    @assert size(coefficients) == size(set)
+    @assert numtype(grid) == numtype(set)
+
+    T = promote_type(eltype(set), eltype(coefficients))
+    E = evaluation_operator(set, DiscreteGridSpace(grid, T))
+    E * coefficients
+end
+
+# There is no need for an eval_expansion! method, since one can use evaluation_operator for that purpose
+
+
+#######################
+## Application support
+#######################
+
 """
 Compute the moment of the given basisfunction, i.e. the integral on its
 support.
 """
 # Default to numerical integration
-moment(s::FunctionSet, idx) = quadgk(s[idx], left(s), right(s))[1]
-
-# Internally, we use StaticArrays (SVector) to represent points, except in
-# 1d where we use scalars.
-# Provide an interface with multiple arguments for convenience in 2D-4D.
-call_set(s::FunctionSet, idx, x, y) = call_set(s, idx, SVector(x,y))
-call_set(s::FunctionSet, idx, x, y, z) = call_set(s, idx, SVector(x,y,z))
-call_set(s::FunctionSet, idx, x, y, z, t) = call_set(s, idx, SVector(x,y,z,t))
-
-call_expansion(s::FunctionSet, coefficients, x, y) = call_expansion(s, coefficients, SVector(x,y))
-call_expansion(s::FunctionSet, coefficients, x, y, z) = call_expansion(s, coefficients, SVector(x,y,z))
-call_expansion(s::FunctionSet, coefficients, x, y, z, t) = call_expansion(s, coefficients, SVector(x,y,z,t))
-
-"""
-You can evaluate a member function of a set using the call_set routine.
-It takes as arguments the function set, the index of the member function and
-the point in which to evaluate.
-This function performs bounds checking and then calls call_element on the set.
-"""
-function call_set(s::FunctionSet, idx, x)
-    checkbounds(s, idx)
-    call_element(s, idx, x)
-end
-
-# Evaluate on a grid
-function call_set(s::FunctionSet, idx, grid::AbstractGrid)
-    checkbounds(s,idx)
-    result = zeros(DiscreteGridSpace(grid, eltype(s)))
-    call_set!(result, s, idx, grid)
-end
-
-function call_set!(result, s::FunctionSet, idx, grid::AbstractGrid)
-    @assert size(result) == size(grid)
-
-    for k in eachindex(grid)
-        result[k] = call_set(s, idx, grid[k])
-    end
-    result
-end
-
-# This method to remove an ambiguity warning
-call_expansion(s::FunctionSet, coef) = nothing
-
-"""
-Evaluate an expansion given by the set of coefficients `coef` in the point x.
-"""
-function call_expansion(s::FunctionSet, coefficients, x)
-    T = promote_type(eltype(coefficients), eltype(s))
-    z = zero(T)
-    for i in eachindex(s)
-        z = z + coefficients[i] * call_set(s, i, x)
-    end
-    z
-end
-
-# It's probably best to include some checks
-# - eltype(coef) is promotable to ELT
-# - grid and b have the same numtype
-function call_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
-    ELT = promote_type(eltype(set), eltype(coefficients))
-    result = Array(ELT, size(grid))
-    call_expansion!(result, set, coefficients, grid)
-end
-
-
-function call_expansion!(result, set::FunctionSet, coefficients, grid::AbstractGrid)
-    @assert ndims(set) == ndims(grid)
-    @assert size(coefficients) == size(set)
-    @assert size(result) == size(grid)
-
-    E = evaluation_operator(set, DiscreteGridSpace(grid, eltype(result)))
-    apply!(E, result, coefficients)
-end
+moment(s::FunctionSet1d, idx) = quadgk(s[idx], left(s), right(s))[1]

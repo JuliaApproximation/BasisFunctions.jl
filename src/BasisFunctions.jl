@@ -12,7 +12,7 @@ import Base: ≈
 import Base: promote, promote_rule, convert, promote_eltype, widen
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect, endof
+        range, collect, endof, checkbounds
 
 import Base: cos, sin, exp, log
 
@@ -52,13 +52,13 @@ export DimensionOperator, dimension_operator
 
 # from sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export numtype, grid, left, right, support, call, call!, call_expansion_with_set,
-        call_expansion_with_set!, call_set, call_set!
+export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
 export complexify
 export instantiate, promote_eltype, resize
-export native_index, linear_index, native_size, linear_size
+export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_basis, is_frame, is_orthogonal, is_biorthogonal
+export in_support
 export True, False
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
@@ -76,7 +76,7 @@ export map, imap, map_linear, imap_linear, rescale
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, roots,
-        random_expansion, differentiate, antidifferentiate,
+        random_expansion, differentiate, antidifferentiate, call_set_expansion,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operators.jl

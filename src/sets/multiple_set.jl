@@ -96,9 +96,11 @@ end
 
 
 for op in [:left, :right, :moment, :norm]
-    @eval function $op(s::MultiSet, idx)
-        (i,j) = native_index(s, idx)
-        $op(s.sets[i], j)
+    @eval $op(set::MultiSet, idx::Int) = $op(set, multilinear_index(set, idx))
+    # Pass along a linear or a native index to the subset
+    @eval function $op(set::MultiSet, idx::Union{MultiLinearIndex,Tuple{Int,Any}})
+        i,j = idx
+        $op(set.sets[i], j)
     end
 end
 

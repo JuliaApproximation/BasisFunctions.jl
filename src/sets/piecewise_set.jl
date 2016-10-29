@@ -40,10 +40,6 @@ sets(set::PiecewiseSet) = set.sets
 partition(set::PiecewiseSet) = set.partition
 
 
-for op in [:left, :right]
-    @eval $op(set::PiecewiseSet) = $op(partition(set))
-end
-
 name(set::PiecewiseSet) = "Piecewise function set"
 
 similar_set(set::PiecewiseSet, sets, T = eltype(set)) = PiecewiseSet(sets, partition(set), T)
@@ -51,6 +47,12 @@ similar_set(set::PiecewiseSet, sets, T = eltype(set)) = PiecewiseSet(sets, parti
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
     @eval $op(s::PiecewiseSet) = reduce(&, map($op, elements(s)))
+end
+
+for op in (:left, :right)
+    @eval $op(set::PiecewiseSet) = $op(partition(set))
+    @eval $op(set::PiecewiseSet, idx::Int) = $op(set, multilinear_index(set, idx))
+    @eval $op(set::PiecewiseSet, idx) = $op(element(set, idx[1]), idx[2])
 end
 
 # The set has a grid and a transform if all its subsets have it
@@ -67,13 +69,13 @@ end
 # Perhaps this should change, and any function should be zero outside its support.
 getindex(set::PiecewiseSet, i, j) = FunctionSubSet(set, (i,j))
 
-function call_element(set::PiecewiseSet, idx::Tuple{Int,Any}, x)
-    x ∈ set.partition[idx[1]] ? call_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))
+function eval_element(set::PiecewiseSet, idx::Tuple{Int,Any}, x)
+    x ∈ set.partition[idx[1]] ? eval_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))
 end
 
-function call_expansion(set::PiecewiseSet, x)
+function eval_expansion(set::PiecewiseSet, x)
     i = partition_index(set, x)
-    call_expansion(element(set, i), x)
+    eval_expansion(element(set, i), x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set

@@ -68,9 +68,9 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
 
-# call_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
 
-# call_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+# eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function moment{T}(b::ChebyshevBasis{T}, idx::Int)
     n = idx-1
@@ -216,8 +216,6 @@ end
 immutable ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
-
-(b::ChebyshevBasisSecondKind)(x...) = call_set(b, x...)
 
 ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
 
