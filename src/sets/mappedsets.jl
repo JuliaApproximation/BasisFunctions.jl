@@ -21,6 +21,8 @@ for op in (:has_derivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::AbstractMappedSet) = $op(set(s))
 end
 
+has_transform(s::AbstractMappedSet, dgs) = has_transform(set(s), dgs)
+
 zeros(ELT::Type, s::AbstractMappedSet) = zeros(ELT, set(s))
 
 native_index(s::AbstractMappedSet, idx::Int) = native_index(set(s), idx)

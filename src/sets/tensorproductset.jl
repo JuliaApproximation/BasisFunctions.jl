@@ -40,9 +40,12 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-for op in (:has_grid, :has_extension, :has_transform, :has_derivative)
+for op in (:has_grid, :has_extension, :has_transform, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
+
+has_transform(s::TensorProductSet, dgs::TensorProductSet) =
+    reduce(&, map(has_transform, elements(s), elements(dgs)))
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =

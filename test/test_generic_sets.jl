@@ -208,7 +208,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             if N > 1
                 unit_vector = zeros(T, ndims(basis))
                 unit_vector[dim] = 1
-                x2 = x + SVector(delta*unit_vector)
+                x2 = x + SVector{N}(delta*unit_vector)
             else
                 x2 = x+delta
             end
@@ -218,6 +218,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     ## Test associated transform
     if BF.has_transform(basis)
+        @test has_transform(basis) == has_transform(basis, DiscreteGridSpace(grid(basis)))
         # Check whether it is unitary
         tbasis = transform_set(basis)
         t = transform_operator(tbasis, basis)

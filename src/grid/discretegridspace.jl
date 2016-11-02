@@ -17,6 +17,11 @@ DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typ
 
 DiscreteGridSpace(set::FunctionSet) = DiscreteGridSpace(grid(set), eltype(set))
 
+# We choose for the DiscreteGridSpace of a tensor product set to be a tensor
+# product of discrete grid spaces, rather than a discrete grid space of a tensor
+# product set. This has implications elsewhere, for example in the definitions
+# of operators for tensor product sets. With our convention, src and dest of such
+# operators both have tensor product structure.
 DiscreteGridSpace(grid::TensorProductGrid, ELT = numtype(grid)) =
     tensorproduct( [ DiscreteGridSpace(element(grid, j), ELT) for j in 1:composite_length(grid)]...)
 

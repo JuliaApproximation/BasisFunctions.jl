@@ -182,6 +182,9 @@ include("sets/functionset.jl")
 include("operator/operator.jl")
 include("operator/composite_operator.jl")
 
+include("grid/discretegridspace.jl")
+
+include("sets/derived_set.jl")
 include("sets/tensorproductset.jl")
 include("sets/mappedsets.jl")
 
@@ -200,13 +203,11 @@ include("expansions.jl")
 
 include("functional/functional.jl")
 
-include("grid/discretegridspace.jl")
 
 include("tensorproducts.jl")
 
 include("generic_operators.jl")
 
-include("sets/derived_set.jl")
 include("sets/subsets.jl")
 include("sets/composite_set.jl")
 include("sets/multiple_set.jl")

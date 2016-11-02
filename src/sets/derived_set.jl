@@ -39,12 +39,15 @@ end
 for op in (:has_derivative, :has_antiderivative, :has_grid, :has_transform, :has_extension)
     @eval $op(s::DerivedSet) = $op(set(s))
 end
+# has_transform can take an extra argument, a DiscreteGridSpace
+has_transform(s::DerivedSet, dgs) = has_transform(set(s), dgs)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false
 # has_antiderivative(s::ConcreteSet) = false
 # has_grid(s::ConcreteSet) = false
 # has_transform(s::ConcreteSet) = false
+# has_transform(s::ConcreteSet, dgs) = false
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
