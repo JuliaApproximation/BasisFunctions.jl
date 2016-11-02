@@ -43,7 +43,8 @@ export translation
 export PiecewiseInterval, Partition
 
 # from grid/grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d, AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
+export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
+        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
 export dim, left, right, range, sample
 
@@ -205,6 +206,7 @@ include("tensorproducts.jl")
 
 include("generic_operators.jl")
 
+include("sets/derived_set.jl")
 include("sets/subsets.jl")
 include("sets/composite_set.jl")
 include("sets/multiple_set.jl")

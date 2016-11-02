@@ -110,6 +110,8 @@ suitable_interpolation_grid(basis::TensorProductSet) =
 
 suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
 
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
+
 suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
@@ -122,6 +124,9 @@ function test_derived_sets(T)
     b1 = FourierBasis(11, T)
     b2 = ChebyshevBasis(12, T)
 
+    @testset "$(rpad("Generic derived set",80))" begin
+    test_generic_set_interface(BasisFunctions.ConcreteDerivedSet(b2)) end
+
     @testset "$(rpad("Linear mapped sets",80))" begin
     test_generic_set_interface(rescale(b1, -1, 2)) end
 
@@ -132,7 +137,10 @@ function test_derived_sets(T)
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
     @testset "$(rpad("Augmented sets",80))" begin
-    test_generic_set_interface(BF.Cos() * b1) end
+    # Try a functor
+    test_generic_set_interface(BF.Cos() * b1)
+    # as well as a regular function
+    test_generic_set_interface(cos * b1) end
 
     @testset "$(rpad("Multiple sets",80))" begin
     test_generic_set_interface(multiset(b1,b2))
