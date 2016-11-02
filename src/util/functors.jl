@@ -1,11 +1,17 @@
 # functors.jl
 
 # TODO: perhaps we don't need functors anymore with Julia-0.5?
+# In any case, the implementation below is very inefficient and hard on the
+# type system. The approach in Calculus scales much better.
 
 "AbstractFunction is the supertype of all functors."
 abstract AbstractFunction
 
 isreal(f::AbstractFunction) = true
+
+# We can do automatic differentiation for functors, but not for general functions.
+has_derivative(f::AbstractFunction) = true
+has_derivative(f::Function) = false
 
 "The function x^α"
 immutable PowerFunction{T} <: AbstractFunction
