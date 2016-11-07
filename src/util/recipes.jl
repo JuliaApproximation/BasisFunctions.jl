@@ -82,8 +82,8 @@ end
 end
 
 
-# 
-# For regular SetExpansions, no postprocessing is needed 
+#
+# For regular SetExpansions, no postprocessing is needed
 postprocess(S::FunctionSet, grid, vals) = vals
 
 # For FunctionSubSets, revert to the underlying FunctionSet for postprocessing

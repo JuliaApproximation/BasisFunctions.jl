@@ -23,7 +23,7 @@ element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)
 composite_length{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
 
 function TensorProductSet(set::FunctionSet)
-    warning("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
+    warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
     set
 end
 
@@ -55,6 +55,7 @@ promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), s.sets)...)
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
+resize{TS,N,T}(s::TensorProductSet{TS,N,T}, n::Int) = resize(s,ntuple(k->n,N))
 
 function approx_length(s::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards

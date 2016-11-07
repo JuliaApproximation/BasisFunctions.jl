@@ -64,6 +64,7 @@ length(s::MultiSet, i::Int) = length(element(s,i))
 
 resize{S,N,T}(s::MultiSet{S,N,T}, n) =
     MultiSet( [resize(element(s,i), n[i]) for i in 1:composite_length(s)] )
+resize(s::MultiSet, n::Int) = resize(s, ntuple(k->n, composite_length(s)))
 
 promote_eltype{S,N,T,T2}(s::MultiSet{S,N,T}, ::Type{T2}) =
     MultiSet([promote_eltype(el, T2) for el in elements(s)])
