@@ -190,7 +190,6 @@ include("grid/discretegridspace.jl")
 
 include("sets/derived_set.jl")
 include("sets/tensorproductset.jl")
-#include("sets/mappedsets.jl")
 include("sets/mapped_set.jl")
 
 include("sets/euclidean.jl")
