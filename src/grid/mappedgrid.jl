@@ -32,7 +32,7 @@ for op in (:left, :right)
 	@eval $op(g::MappedGrid1d) = forward_map(g.map, $op(grid(g)))
 end
 
-getindex(g::MappedGrid, idx::Int) = forward_map(g.map, g.grid[i])
+getindex(g::MappedGrid, idx::Int) = forward_map(g.map, g.grid[idx])
 
 
 function rescale(g::AbstractGrid1d, a, b)

@@ -135,4 +135,22 @@ function test_grids(T)
     @test x[1] ≈ x1
     @test x[2] ≈ x2
     @test x[3] ≈ x3
+
+    # Test a mapped grid
+    m = interval_map(T(0), T(1), T(2), T(3))
+    # Make a MappedGrid by hand because mapped_grid would simplify
+    mg1 = MappedGrid(PeriodicEquispacedGrid(30, T(0), T(1)), m)
+    test_generic_grid(mg1)
+    # Does mapped_grid simplify?
+    mg2 = mapped_grid(PeriodicEquispacedGrid(30, T(0), T(1)), m)
+    @test typeof(mg2) <: PeriodicEquispacedGrid
+    @test left(mg2) ≈ T(2)
+    @test right(mg2) ≈ T(3)
+
+    # Apply a second map and check whether everything simplified
+    m2 = interval_map(T(2), T(3), T(4), T(5))
+    mg3 = mapped_grid(mg1, m2)
+    @test left(mg3) ≈ T(4)
+    @test right(mg3) ≈ T(5)
+    @test typeof(grid(mg3)) <: PeriodicEquispacedGrid
 end

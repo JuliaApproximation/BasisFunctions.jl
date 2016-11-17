@@ -49,6 +49,9 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
 export dim, left, right, range, sample
 
+# from grid/mappedgrid.jl
+export MappedGrid, mapped_grid
+
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
