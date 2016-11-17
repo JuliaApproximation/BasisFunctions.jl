@@ -327,7 +327,7 @@ end
 
 # Default if no order is specified
 function differentiation_operator(s1::FunctionSet1d, order=1; options...)
-    s2 = derivative_set(s1, order)
+    s2 = derivative_set(s1, order; options...)
     differentiation_operator(s1, s2, order; options...)
 end
 differentiation_operator(s1::FunctionSet; dim=1, options...) = differentiation_operator(s1, dimension_tuple(ndims(s1), dim))

@@ -128,7 +128,8 @@ function test_derived_sets(T)
     test_generic_set_interface(BasisFunctions.ConcreteDerivedSet(b2)) end
 
     @testset "$(rpad("Linear mapped sets",80))" begin
-    test_generic_set_interface(rescale(b1, -1, 2)) end
+    test_generic_set_interface(rescale(b1, -T(1), T(2)))
+    end
 
     @testset "$(rpad("A simple subset",80))" begin
     test_generic_set_interface(b1[2:6]) end

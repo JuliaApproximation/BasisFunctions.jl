@@ -27,21 +27,14 @@ composite_length(map::DiagonalMap) = length(elements(map))
 ⊗(map1::AbstractMap, map2::DiagonalMap) = DiagonalMap((map1,elements(map2)...))
 ⊗(map1::DiagonalMap, map2::DiagonalMap) = DiagonalMap((elements(map1)...,elements(map2)...))
 
-# TODO: provide dimension-independent implementation
-forward_map(dmap::DiagonalMap{1}, x) = SVector(dmap.maps[1]*x[1])
-forward_map(dmap::DiagonalMap{2}, x) = SVector(dmap.maps[1]*x[1], dmap.maps[2]*x[2])
-forward_map(dmap::DiagonalMap{3}, x) = SVector(dmap.maps[1]*x[1], dmap.maps[2]*x[2], dmap.maps[3]*x[3])
-forward_map(dmap::DiagonalMap{4}, x) = SVector(dmap.maps[1]*x[1], dmap.maps[2]*x[2], dmap.maps[3]*x[3], dmap.maps[4]*x[4])
-
-is_linear(map::DiagonalMap{1}) = is_linear(map.maps[1])
-is_linear(map::DiagonalMap{2}) = is_linear(map.maps[1]) & is_linear(map.maps[2])
-is_linear(map::DiagonalMap{3}) = is_linear(map.maps[1]) & is_linear(map.maps[2]) & is_linear(map.maps[3])
-is_linear(map::DiagonalMap{4}) = is_linear(map.maps[1]) & is_linear(map.maps[2]) & is_linear(map.maps[3]) & is_linear(map.maps[4])
-is_linear{N}(map::DiagonalMap{N}) = reduce(&, map(is_linear, map.maps))
+forward_map{N}(dmap::DiagonalMap{N}, x) = SVector{N}(map(forward_map, dmap.maps, x))
+inverse_map{N}(dmap::DiagonalMap{N}, x) = SVector{N}(map(inverse_map, dmap.maps, x))
 
 inv(dmap::DiagonalMap) = DiagonalMap(map(inv, dmap.maps))
 
-isreal(dmap::DiagonalMap) = reduce(&, map(isreal, elements(dmap)))
+for op in (:is_linear, :isreal)
+    @eval $op(dmap::DiagonalMap) = reduce(&, map($op, elements(dmap)))
+end
 
 
 # TODO: implement jacobian

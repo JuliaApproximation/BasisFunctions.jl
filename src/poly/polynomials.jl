@@ -34,8 +34,8 @@ is_orthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_set(b::OPS, order::Int) = resize(b, b.n-order)
-antiderivative_set(b::OPS, order::Int) = resize(b, b.n+order)
+derivative_set(b::OPS, order::Int; options...) = resize(b, b.n-order)
+antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 

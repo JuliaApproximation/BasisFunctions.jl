@@ -215,7 +215,7 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 	coef_dest
 end
 
-derivative_set(b::FourierBasisOdd, order) = b
+derivative_set(b::FourierBasisOdd, order; options...) = b
 
 # We extend the even basis both for derivation and antiderivation, regardless of order
 for op in (:derivative_set, :antiderivative_set)

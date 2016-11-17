@@ -37,6 +37,7 @@ import Base: indices, normalize
 
 # from maps/maps.jl
 export AbstractMap, AffineMap, DiagonalMap, linearmap, interval_map, scaling_map
+export forward_map, inverse_map
 export translation
 
 # from maps/partition.jl
@@ -74,6 +75,9 @@ export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 
 # from sets/mappedsets.jl
 export map, imap, map_linear, imap_linear, rescale
+
+# from sets/mapped_set.jl
+export MappedSet, mapped_set
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, roots,
@@ -186,7 +190,8 @@ include("grid/discretegridspace.jl")
 
 include("sets/derived_set.jl")
 include("sets/tensorproductset.jl")
-include("sets/mappedsets.jl")
+#include("sets/mappedsets.jl")
+include("sets/mapped_set.jl")
 
 include("sets/euclidean.jl")
 

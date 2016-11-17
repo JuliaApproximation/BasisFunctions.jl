@@ -15,7 +15,11 @@ function test_fourier_series(T)
     @test left(fb) ≈ a
     @test right(fb) ≈ b
 
-    @test grid(fb) == PeriodicEquispacedGrid(n, a, b)
+    g = grid(fb)
+    @test typeof(g) <: PeriodicEquispacedGrid
+    @test left(g) ≈ a
+    @test right(g) ≈ b
+    @test length(g) == length(fb)
 
     # Take a random point in the domain
     x = T(a+rand()*(b-a))

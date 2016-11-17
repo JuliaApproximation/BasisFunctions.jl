@@ -103,10 +103,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         @test length(grid1) == length(basis)
 
         z1 = e(grid1)
-        @test z1 ≈ ELT[ e(grid1[i]) for i in eachindex(grid1) ]
-        E = evaluation_operator(set(e), DiscreteGridSpace(set(e)) )
-        z2 = E * coefficients(e)
+        z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
         @test z1 ≈ z2
+        E = evaluation_operator(set(e), DiscreteGridSpace(set(e)) )
+        z3 = E * coefficients(e)
+        @test z1 ≈ z3
     end
 
     ## Test output type of calling function

@@ -51,7 +51,7 @@ transform_pre_operator(src::DiscreteGridSpace, dest::AugmentedSet; options...) =
 	inv(transform_post_operator(dest, src; options...))
 
 
-function derivative_set(src::AugmentedSet, order)
+function derivative_set(src::AugmentedSet, order; options...)
     @assert order == 1
 
     s = set(src)

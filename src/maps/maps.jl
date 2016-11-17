@@ -11,21 +11,15 @@ inverse_map(map::AbstractMap, y) = forward_map(y, inv(map))
 
 (\)(map::AbstractMap, y) = inverse_map(map, y)
 
-is_linear(map::AbstractMap) = False()
+is_linear(map::AbstractMap) = false
 
 isreal(map::AbstractMap) = true
 
 """
 Return the matrix and vector of a linear map.
 """
-matrix_vector(map::AbstractMap) = matrix_vector(is_linear(map), map)
-
-function matrix_vector(::False, map::AbstractMap)
-    println("In matrix_vector: map ", typeof(map), " is not a linear map.")
-	throw(ExceptionError())
-end
-
-function matrix_vector(::True, map::AbstractMap)
+function matrix_vector(map::AbstractMap)
+    is_linear(map) || throw(ExceptionError())
     N = ndims(map)
     T = eltype(map)
     I = eye(SMatrix{N,N,T})
@@ -56,7 +50,7 @@ inv(map::IdentityMap) = map
 
 jacobian(map::IdentityMap, x) = x
 
-is_linear(map::IdentityMap) = True()
+is_linear(map::IdentityMap) = true
 
 include("affine_map.jl")
 include("diagonal_map.jl")
@@ -82,7 +76,9 @@ forward_map_rec(x, map1::AbstractMap, maps::AbstractMap...) = forward_map_rec(ma
 
 inv(cmap::CompositeMap) = CompositeMap(reverse(map(inv, cmap.maps)))
 
-isreal(cmap::CompositeMap) = reduce(&, map(isreal, elements(cmap)))
+for op in (:is_linear, :isreal)
+    @eval $op(cmap::CompositeMap) = reduce(&, map($op, elements(cmap)))
+end
 
 # TODO: implement jacobian
 # jacobian(map::CompositeMap, x) =
@@ -92,6 +88,7 @@ isreal(cmap::CompositeMap) = reduce(&, map(isreal, elements(cmap)))
 (*)(map1::AbstractMap, map2::CompositeMap) = CompositeMap((elements(map2)..., map1))
 (*)(map1::CompositeMap, map2::CompositeMap) = CompositeMap((elements(map2)...,elements(map1)...))
 
+is_compatible(m1::AbstractMap, m2::AbstractMap) = m1==m2
 
 ########################
 # Special maps

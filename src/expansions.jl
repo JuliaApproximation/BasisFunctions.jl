@@ -14,6 +14,7 @@ immutable SetExpansion{S,C}
 
     function SetExpansion(set, coefficients)
         @assert length(set) == length(coefficients)
+        @assert eltype(set) == eltype(coefficients)
         new(set, coefficients)
     end
 end

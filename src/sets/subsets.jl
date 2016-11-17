@@ -127,7 +127,7 @@ end
 # of the underlying set. We can not know generically whether the derivative set
 # can be indexed as well. Same for antiderivative.
 for op in [:derivative_set, :antiderivative_set]
-    @eval $op(s::FunctionSubSet, order::Int) = $op(set(s), order)
+    @eval $op(s::FunctionSubSet, order::Int; options...) = $op(set(s), order; options...)
 end
 
 function differentiation_operator(s1::FunctionSubSet, s2::FunctionSet, order::Int; options...)

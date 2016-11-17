@@ -104,18 +104,18 @@ function (*)(s1::LinearMappedSet, s2::LinearMappedSet, coef_src1, coef_src2)
     (rescale(mset,left(s1),right(s1)),mcoef)
 end
 
-"Rescale a function set to an interval [a,b]."
-function rescale(s::FunctionSet1d, a, b)
-    T = numtype(s)
-    if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
-        s
-    else
-        LinearMappedSet(s, promote(a,b)...)
-    end
-end
+# "Rescale a function set to an interval [a,b]."
+# function rescale(s::FunctionSet1d, a, b)
+#     T = numtype(s)
+#     if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
+#         s
+#     else
+#         LinearMappedSet(s, promote(a,b)...)
+#     end
+# end
 
 # avoid multiple linear mappings
-rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
+# rescale(s::LinearMappedSet, a, b) = rescale(set(s), a, b)
 
 
 

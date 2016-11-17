@@ -1,34 +1,44 @@
 # mappedgrid.jl
 
-# Map a grid 'g' defined on [left(g),right(g)] to the interval [a,b].
-immutable LinearMappedGrid{G,T} <: AbstractGrid1d{T}
+"""
+A MappedGrid consists of a grid and a map. Each grid point of the mapped grid
+is the map of the corresponding point of the underlying grid.
+"""
+immutable MappedGrid{G,M,N,T} <: AbstractGrid{N,T}
 	grid	::	G
-	a		::	T
-	b		::	T
+	map		::	M
 
-	LinearMappedGrid(grid::AbstractGrid1d{T}, a, b) = new(grid, a, b)
+	MappedGrid(grid::AbstractGrid{N,T}, map) = new(grid, map)
 end
 
-LinearMappedGrid{T}(g::AbstractGrid1d{T}, a, b) = LinearMappedGrid{typeof(g),T}(g, a, b)
+typealias MappedGrid1d{G,M,T} MappedGrid{G,M,1,T}
 
-left(g::LinearMappedGrid) = g.a
-right(g::LinearMappedGrid) = g.b
+MappedGrid{N,T}(grid::AbstractGrid{N,T}, map::AbstractMap) =
+	MappedGrid{typeof(grid),typeof(map),N,T}(grid, map)
 
-grid(g::LinearMappedGrid) = g.grid
+mapped_grid(grid::AbstractGrid, map::AbstractMap) = MappedGrid(grid, map)
 
-length(g::LinearMappedGrid) = length(g.grid)
+# avoid multiple mappings
+mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(grid(g), map*mapping(g))
 
-for op in (:size,:eachindex)
-	@eval $op(g::LinearMappedGrid) = $op(grid(g))
+grid(g::MappedGrid) = g.grid
+mapping(g::MappedGrid) = g.map
+
+for op in (:length, :size, :eachindex)
+	@eval $op(g::MappedGrid) = $op(grid(g))
 end
 
-getindex(g::LinearMappedGrid, idx::Int) = map_linear(getindex(grid(g),idx), left(g), right(g), left(grid(g)), right(grid(g)))
+for op in (:left, :right)
+	@eval $op(g::MappedGrid1d) = forward_map(g.map, $op(grid(g)))
+end
+
+getindex(g::MappedGrid, idx::Int) = forward_map(g.map, g.grid[i])
 
 
-rescale(g::AbstractGrid1d, a, b) = LinearMappedGrid(g, a, b)
-
-# Avoid multiple linear mappings
-rescale(g::LinearMappedGrid, a, b) = LinearMappedGrid(grid(g), a, b)
+function rescale(g::AbstractGrid1d, a, b)
+	m = interval_map(left(g), right(g), a, b)
+	mapped_grid(g, m)
+end
 
 
 # Preserve tensor product structure
