@@ -32,6 +32,7 @@ include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
+include("test_maps.jl")
 
 
 
@@ -235,6 +236,10 @@ end
         delimit("Test Grids")
         @testset "$(rpad("Grids",80))" begin
             test_grids(T) end
+
+        delimit("Test Maps")
+        @testset "$(rpad("Maps",80))" begin
+            test_maps(T) end
 
         delimit("Check evaluations, interpolations, extensions, setexpansions")
 

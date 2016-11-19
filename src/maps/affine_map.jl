@@ -75,13 +75,15 @@ jacobian(map::AffineMap, x) = map.a
 
 is_linear(map::AffineMap) = true
 
+translation_vector(map::AffineMap, x) = map.b - map.a*x
+
 
 # Some useful functions
 "Make the linear map y = a*x + b."
-linearmap(a, b) = AffineMap(a, b)
+linear_map(a, b) = AffineMap(a, b)
 
 "Map the interval [a,b] to the interval [c,d]."
-interval_map(a, b, c, d) = linearmap((d-c)/(b-a), c - a*(d-c)/(b-a))
+interval_map(a, b, c, d) = linear_map((d-c)/(b-a), c - a*(d-c)/(b-a))
 
 ## Simple scailng maps
 
@@ -94,8 +96,9 @@ scaling_map(a, b) = AffineMap(SMatrix{2,2}(a,0,0,b))
 "Scale the variables by a, b and c."
 scaling_map(a, b, c) = AffineMap(SMatrix{3,3}(a,0,0, 0,b,0, 0,0,c))
 
-"Scale the variables by a, b, c and d."
-scaling_map(a, b, c, d) = AffineMap(SMatrix{4,4}(a,0,0,0, 0,b,0,0, 0,0,c,0, 0,0,0,d))
+# 4x4 StaticArrays don't seem to work as well as 1-3d, the code below errors
+# "Scale the variables by a, b, c and d."
+# scaling_map(a, b, c, d) = AffineMap(SMatrix{4,4}(a,0,0,0, 0,b,0,0, 0,0,c,0, 0,0,0,d))
 
 """
 Compute the affine map that represents map2*map1, that is:

@@ -123,3 +123,14 @@ function rescale(s::FunctionSet1d, a, b)
         mapped_set(s, m)
     end
 end
+
+#################
+# Arithmetic
+#################
+
+
+function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
+    @assert is_compatible(set(s1),set(s2))
+    (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
+    (MappedSet(mset, mapping(s1)), mcoef)
+end

@@ -36,9 +36,10 @@ import Base: indices, normalize
 ## Exports
 
 # from maps/maps.jl
-export AbstractMap, AffineMap, DiagonalMap, linearmap, interval_map, scaling_map
-export forward_map, inverse_map
-export translation
+export AbstractMap, AffineMap, DiagonalMap, IdentityMap
+export forward_map, inverse_map, jacobian, linearize
+export translation, linear_map, interval_map, scaling_map
+export is_linear
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition

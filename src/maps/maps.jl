@@ -15,6 +15,8 @@ is_linear(map::AbstractMap) = false
 
 isreal(map::AbstractMap) = true
 
+linearize(map::AbstractMap, x) = (jacobian(map, x), translation_vector(map, x))
+
 """
 Return the matrix and vector of a linear map.
 """
@@ -48,12 +50,20 @@ inverse_map(map::IdentityMap, y) = y
 
 inv(map::IdentityMap) = map
 
-jacobian(map::IdentityMap, x) = x
+jacobian{N,T}(map::IdentityMap, x::SVector{N,T}) = eye(SMatrix{N,N,T})
+
+jacobian{T}(map::IdentityMap, x::Vector{T}) = eye(T, length(x), length(x))
 
 is_linear(map::IdentityMap) = true
 
+translation_vector{N,T}(map::IdentityMap, x::SVector{N,T}) = @SVector zeros(T,N)
+
+translation_vector{T}(map::IdentityMap, x::Vector{T}) = zeros(T,length(x))
+
+
 include("affine_map.jl")
 include("diagonal_map.jl")
+
 
 """
 The composition of several maps.
