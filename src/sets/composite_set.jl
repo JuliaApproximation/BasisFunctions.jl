@@ -161,4 +161,4 @@ derivative_set(set::CompositeSet, order; options...) =
     similar_set(set, map(s->derivative_set(s,order; options...), elements(set)))
 
 antiderivative_set(set::CompositeSet, order; options...) =
-    similar_set(set, map(s-> antiderivative_set(s, order; options...), elements(s)))
+    similar_set(set, map(s-> antiderivative_set(s, order; options...), elements(set)))

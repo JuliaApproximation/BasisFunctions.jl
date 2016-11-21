@@ -25,7 +25,7 @@ mapping(set::MappedSet) = set.map
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
 
 has_derivative(s::MappedSet) = has_derivative(set(s)) && is_linear(mapping(s))
-has_antiderivative(s::MappedSet) = false
+has_antiderivative(s::MappedSet) = has_antiderivative(set(s)) && is_linear(mapping(s))
 
 grid(s::MappedSet) = _grid(s, set(s), mapping(s))
 _grid(s::MappedSet1d, set, map) = mapped_grid(grid(set), map)
