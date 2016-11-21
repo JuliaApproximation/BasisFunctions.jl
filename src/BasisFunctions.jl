@@ -51,7 +51,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
 export dim, left, right, range, sample
 
 # from grid/mappedgrid.jl
-export MappedGrid, mapped_grid
+export MappedGrid, mapped_grid, apply_map
 
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
@@ -81,7 +81,7 @@ export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 export map, imap, map_linear, imap_linear, rescale
 
 # from sets/mapped_set.jl
-export MappedSet, mapped_set
+export MappedSet, mapped_set, mapping
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, roots,

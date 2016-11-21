@@ -273,8 +273,8 @@ The approximation_operator function returns an operator that can be used to appr
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
 function approximation_operator(b::FunctionSet; options...)
-    if is_basis(b)
-        interpolation_operator(b; options...)
+    if is_basis(b) && has_grid(b)
+        interpolation_operator(b, grid(b); options...)
     else
         default_approximation_operator(b; options...)
     end

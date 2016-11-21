@@ -1,5 +1,57 @@
 # test_generic_sets.jl
 
+# We try to test approximation for all function sets, except those that
+# are currently known to fail for lack of an implementation.
+supports_approximation(s::FunctionSet) = true
+# Laguerre and Hermite fail because they have unbounded support.
+supports_approximation(s::LaguerreBasis) = false
+supports_approximation(s::HermiteBasis) = false
+
+# It is difficult to do approximation in subsets generically
+supports_approximation(s::FunctionSubSet) = false
+supports_approximation(s::OperatedSet) = false
+
+supports_approximation(s::TensorProductSet) =
+    reduce(&, map(supports_approximation, elements(s)))
+
+# Pick a simple function to approximate
+suitable_function(s::FunctionSet1d) = exp
+
+# Make a simple periodic function for Fourier
+suitable_function(s::FourierBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(s::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(s::CosineSeries) =  x->1/(10+cos(2*pi*x))
+
+# Make a tensor product of suitable functions
+function suitable_function(s::TensorProductSet)
+    if ndims(s) == 2
+        f1 = suitable_function(element(s,1))
+        f2 = suitable_function(element(s,2))
+        (x,y) -> f1(x)*f2(y)
+    elseif ndims(s) == 3
+        f1 = suitable_function(element(s,1))
+        f2 = suitable_function(element(s,2))
+        f3 = suitable_function(element(s,3))
+        (x,y,z) -> f1(x)*f2(y)*f3(z)
+    end
+    # We should never get here
+end
+
+# Make a suitable function by undoing the map
+function suitable_function(s::MappedSet)
+    f = suitable_function(set(s))
+    m = inv(mapping(s))
+    x -> f(m*x)
+end
+
+function suitable_function(s::AugmentedSet)
+    f = suitable_function(set(s))
+    g = fun(s)
+    x -> g(x) * f(x)
+end
+
+
+
 function test_generic_set_interface(basis, SET = typeof(basis))
     ELT = eltype(basis)
     T = numtype(basis)
@@ -275,6 +327,18 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     e = random_expansion(basis)
     y = E*e
     @test maximum([abs(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
+
+    ## Test approximation operator
+    if supports_approximation(basis)
+        A = approximation_operator(basis)
+        f = suitable_function(basis)
+        e = SetExpansion(basis, A*f)
+        x = random_point_in_domain(basis)
+        # We choose a fairly large error, because the ndof's can be very small.
+        # We don't want to test convergence, only that something terrible did
+        # not happen, so an error of 1e-3 will do.
+        @test abs(e(x)-f(x...)) < 1e-3
+    end
 end
 
 
