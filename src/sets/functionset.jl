@@ -273,9 +273,11 @@ derivative_set(s::FunctionSet1d) = derivative_set(s, 1)
 antiderivative_set(s::FunctionSet1d) = antiderivative_set(s, 1)
 
 # Catch tuples with just one element and convert to Int
-derivative_set(s::FunctionSet, order::Tuple{Int}) = derivative_set(s, order[1])
-antiderivative_set(s::FunctionSet, order::Tuple{Int}) = antiderivative_set(s, order[1])
+derivative_set(s::FunctionSet1d, order::Tuple{Int}) = derivative_set(s, order[1])
+antiderivative_set(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_set(s, order[1])
 
+# This is a candidate for a better implementation. How does one generate a
+# unit vector in a tuple?
 function dimension_tuple(n, dim)
     t = zeros(Int, n)
     t[dim] = 1

@@ -98,13 +98,14 @@ eval_element(s::DerivedSet, idx, x) = eval_element(set(s), idx, x)
 # Wrapping of operators
 #########################
 
-for op in (:transform_set, :derivative_set,:antiderivative_set)
+for op in (:transform_set,)
     @eval $op(s::DerivedSet; options...) = $op(set(s); options...)
 end
 
-derivative_set(s::DerivedSet, order; options...) = derivative_set(set(s), order; options...)
+for op in (:derivative_set,:antiderivative_set)
+    @eval $op(s::DerivedSet, order; options...) = $op(set(s), order; options...)
+end
 
-antiderivative_set(s::DerivedSet, order; options...) = antiderivative_set(set(s), order; options...)
 
 for op in (:extension_operator, :restriction_operator)
     @eval $op(s1::DerivedSet, s2::DerivedSet; options...) =

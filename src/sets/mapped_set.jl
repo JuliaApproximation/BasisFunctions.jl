@@ -17,6 +17,9 @@ MappedSet{N,T}(set::FunctionSet{N,T}, map::AbstractMap) =
 
 mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
 
+# Convenience function, similar to apply_map for grids etcetera
+apply_map(set::FunctionSet, map::AbstractMap) = mapped_set(set, map)
+
 mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
@@ -51,6 +54,8 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 # destination are mapped in the same way.
 # We have to wrap the operators appropriately though.
 
+transform_set(s::MappedSet; options...) = apply_map(transform_set(set(s); options...), mapping(s))
+
 # Checks for compatibility of maps are not yet included below
 
 for op in (:transform_operator,)
@@ -82,12 +87,60 @@ transform_post_operator(s1::DiscreteGridSpace, s2::MappedSet; options...) =
     wrap_operator(s2, s2, transform_post_operator(mapped_set(s1, inv(mapping(s2))), set(s2); options...))
 
 
+############################
+# Tensor product transforms
+############################
+
+
+# Undo set mappings in a TensorProductSet
+unmapset(s::FunctionSet) = s
+unmapset(s::MappedSet) = set(s)
+unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
+
+transform_operator_tensor(s1, s2,
+    src_set1::MappedSet, src_set2::MappedSet,
+    dest_set1::MappedSet, dest_set2::MappedSet; options...) =
+        wrap_operator(s1, s2,
+            transform_operator_tensor(unmapset(s1), unmapset(s2), set(src_set1), set(src_set2), set(dest_set1), set(dest_set2); options...) )
+
+transform_operator_tensor(s1, s2, src_set1, src_set2,
+    dest_set1::MappedSet, dest_set2::MappedSet; options...) =
+        wrap_operator(s1, s2,
+            transform_operator_tensor(s1, unmapset(s2), src_set1, src_set2, set(dest_set1), set(dest_set2); options...) )
+
+transform_operator_tensor(s1, s2,
+    src_set1::MappedSet, src_set2::MappedSet, dest_set1, dest_set2; options...) =
+    wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2; options...))
+
+transform_operator_tensor(s1, s2,
+    src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
+    dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            set(src_set1), set(src_set2), set(src_set3),
+            set(dest_set1), set(dest_set2), set(dest_set3); options...) )
+
+transform_operator_tensor(s1, s2,
+    src_set1, src_set2, src_set3,
+    dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            src_set1, src_set2, src_set3,
+            set(dest_set1), set(dest_set2), set(dest_set3); options...))
+
+transform_operator_tensor(s1, s2,
+    src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
+    dest_set1, dest_set2, dest_set3; options...) =
+        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+            set(src_set1), set(src_set2), set(src_set3),
+            dest_set1, dest_set2, dest_set3; options...))
+
+
 ###################
 # Differentiation
 ###################
 
 for op in (:derivative_set, :antiderivative_set)
-    @eval $op(s::MappedSet1d, order::Int; options...) = mapped_set( $op(set(s), order; options...), mapping(s) )
+    @eval $op(s::MappedSet1d, order::Int; options...) =
+        (@assert is_linear(mapping(s)); apply_map( $op(set(s), order; options...), mapping(s) ))
 end
 
 function differentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
