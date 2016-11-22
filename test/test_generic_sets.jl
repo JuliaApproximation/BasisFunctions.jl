@@ -271,6 +271,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     ## Test associated transform
     if BF.has_transform(basis)
+        # We have to look into this test
         @test has_transform(basis) == has_transform(basis, DiscreteGridSpace(grid(basis)))
         # Check whether it is unitary
         tbasis = transform_set(basis)

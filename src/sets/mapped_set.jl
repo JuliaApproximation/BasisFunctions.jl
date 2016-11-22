@@ -8,6 +8,10 @@ underlying set in the corresponding point.
 immutable MappedSet{S,M,N,T} <: DerivedSet{N,T}
     set     ::  S
     map     ::  M
+
+    function MappedSet(set::FunctionSet{N,T}, map)
+        new(set, map)
+    end
 end
 
 typealias MappedSet1d{S,M,T} MappedSet{S,M,1,T}
@@ -18,7 +22,7 @@ MappedSet{N,T}(set::FunctionSet{N,T}, map::AbstractMap) =
 mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
 
 # Convenience function, similar to apply_map for grids etcetera
-apply_map(set::FunctionSet, map::AbstractMap) = mapped_set(set, map)
+apply_map(set::FunctionSet, map) = mapped_set(set, map)
 
 mapping(set::MappedSet) = set.map
 
@@ -62,27 +66,44 @@ for op in (:transform_operator,)
     # Both sets are mapped: undo the maps
     @eval $op(s1::MappedSet, s2::MappedSet; options...) =
         wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
-    # The destination is not mapped: try to apply the inverse map to it.
+    # The destination is a DiscreteGridSpace:
+    # - is it a mapped grid? If so, unmap
+    @eval $op{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
+        wrap_operator(s1, s2, $op(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...) )
+    # - if not, apply the inverse map to the grid
     @eval $op(s1::MappedSet, s2::DiscreteGridSpace; options...) =
         wrap_operator(s1, s2, $op(set(s1), mapped_set(s2, inv(mapping(s1))) ; options...) )
-    # The source is not mapped: try to apply the inverse map to it.
+    # The source is a DiscreteGridSpace:
+    # - Is it a mapped grid:
+    @eval $op{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
+        wrap_operator(s1, s2, $op(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...) )
+    # - Or not:
     @eval $op(s1::DiscreteGridSpace, s2::MappedSet; options...) =
         wrap_operator(s1, s2, $op(mapped_set(s1, inv(mapping(s2))), set(s2); options...) )
 end
 
 # We have to do these by hand, because the spaces are not the same: s1 is source and destination
 # of the transform_pre_operator. The post operation only acts on s2.
+# We have the same cases as in transform_operator above
 transform_pre_operator(s1::MappedSet, s2::MappedSet; options...) =
     wrap_operator(s1, s1, transform_pre_operator(set(s1), set(s2); options...))
+transform_pre_operator{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...) )
 transform_pre_operator(s1::MappedSet, s2::DiscreteGridSpace; options...) =
     wrap_operator(s1, s1, transform_pre_operator(set(s1), mapped_set(s2, inv(mapping(s1))); options...) )
+transform_pre_operator{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
+    wrap_operator(s1, s1, transform_pre_operator(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...))
 transform_pre_operator(s1::DiscreteGridSpace, s2::MappedSet; options...) =
     wrap_operator(s1, s1, transform_pre_operator(mapped_set(s1, inv(mapping(s2))), set(s2); options...))
 
 transform_post_operator(s1::MappedSet, s2::MappedSet; options...) =
     wrap_operator(s2, s2, transform_post_operator(set(s1), set(s2); options...))
+transform_post_operator{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
+    wrap_operator(s2, s2, transform_post_operator(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...))
 transform_post_operator(s1::MappedSet, s2::DiscreteGridSpace; options...) =
     wrap_operator(s2, s2, transform_post_operator(set(s1), mapped_set(s2, inv(mapping(s1))); options...))
+transform_post_operator{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
+    wrap_operator(s2, s2, transform_post_operator(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...))
 transform_post_operator(s1::DiscreteGridSpace, s2::MappedSet; options...) =
     wrap_operator(s2, s2, transform_post_operator(mapped_set(s1, inv(mapping(s2))), set(s2); options...))
 
@@ -162,9 +183,10 @@ end
 # Special cases
 #################
 
+# TODO: check for promotions here
 mapped_set(s::MappedSet, map::AbstractMap) = MappedSet(set(s), map*mapping(s))
 
-mapped_set(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map))
+mapped_set(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map), eltype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)
@@ -173,7 +195,7 @@ function rescale(s::FunctionSet1d, a, b)
         s
     else
         m = interval_map(left(s), right(s), a, b)
-        mapped_set(s, m)
+        apply_map(s, m)
     end
 end
 

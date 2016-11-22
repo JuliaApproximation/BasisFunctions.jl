@@ -140,4 +140,4 @@ evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace; options...) =
 
 ## Rescaling
 
-rescale(s::MultiSet, a, b) = multiset(map( t-> rescale(t, a, b), elements(s)))
+apply_map(s::MultiSet, m) = multiset(map( t-> apply_map(t, m), elements(s)))

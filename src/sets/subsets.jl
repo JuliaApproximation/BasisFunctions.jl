@@ -84,7 +84,7 @@ end
 
 grid(s::FunctionSubSet) = grid(set(s))
 
-rescale(s::FunctionSubSet, a, b) = FunctionSubSet(rescale(set(s), a, b), indices(s))
+apply_map(s::FunctionSubSet, map) = FunctionSubSet(apply_map(set(s), map), indices(s))
 
 eval_element(s::FunctionSubSet, i, x) =
     has_single_index(s) ? eval_element(s.set, s.idx, x) : eval_element(s.set, s.idx[i], x)

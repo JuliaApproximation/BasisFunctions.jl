@@ -30,8 +30,8 @@ resize(s::DerivedSet, n) = similar_set(s, resize(set(s),n))
 promote_eltype{N,T1,T2}(s::DerivedSet{N,T1}, ::Type{T2}) =
     similar_set(s, promote_eltype(set(s), T2))
 
-# Delegetion of properties
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+# Delegation of properties
+for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
     @eval $op(s::DerivedSet) = $op(set(s))
 end
 
@@ -65,6 +65,8 @@ for op in (:size,)
 end
 
 approx_length(s::DerivedSet, n) = approx_length(set(s), n)
+
+apply_map(s::DerivedSet, map) = similar_set(s, apply_map(set(s), map))
 
 #########################
 # Indexing and iteration

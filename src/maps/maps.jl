@@ -18,12 +18,12 @@ isreal(map::AbstractMap) = true
 linearize(map::AbstractMap, x) = (jacobian(map, x), translation_vector(map, x))
 
 """
-Return the matrix and vector of a linear map.
+Return the matrix and vector of a linear map, with elements of the given type
+(which defaults to eltype, if applicable).
 """
-function matrix_vector(map::AbstractMap)
+function matrix_vector(map::AbstractMap, T = eltype(map))
     is_linear(map) || throw(ExceptionError())
     N = ndims(map)
-    T = eltype(map)
     I = eye(SMatrix{N,N,T})
     B = map * zeros(SVector{N,T})
     mA = zeros(T,N,N)
@@ -34,6 +34,8 @@ function matrix_vector(map::AbstractMap)
     A = SMatrix{N,N}(mA)
     A,B
 end
+
+is_compatible(m1::AbstractMap, m2::AbstractMap) = m1==m2
 
 
 """
@@ -60,6 +62,8 @@ translation_vector{N,T}(map::IdentityMap, x::SVector{N,T}) = @SVector zeros(T,N)
 
 translation_vector{T}(map::IdentityMap, x::Vector{T}) = zeros(T,length(x))
 
+# dest_type{T}(map::IdentityMap, ::Type{T}) = T
+
 
 include("affine_map.jl")
 include("diagonal_map.jl")
@@ -78,6 +82,8 @@ elements(map::CompositeMap) = map.maps
 element(map::CompositeMap, i::Int) = map.maps[i]
 element(map::CompositeMap, range::Range) = CompositeMap(map.maps[range])
 composite_length(map::CompositeMap) = length(elements(map))
+
+# dest_type{T}(map::CompositeMap, ::Type{T}) = promote_type(map(m->dest_type(m,T), elements(map))...)
 
 forward_map(map::CompositeMap, x) = forward_map_rec(x, map.maps...)
 
@@ -98,7 +104,6 @@ end
 (*)(map1::AbstractMap, map2::CompositeMap) = CompositeMap((elements(map2)..., map1))
 (*)(map1::CompositeMap, map2::CompositeMap) = CompositeMap((elements(map2)...,elements(map1)...))
 
-is_compatible(m1::AbstractMap, m2::AbstractMap) = m1==m2
 
 ########################
 # Special maps
