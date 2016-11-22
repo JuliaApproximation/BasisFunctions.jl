@@ -26,6 +26,9 @@ end
     title --> "Error"
     legend --> false
     yscale --> :log10
+    ylims --> [.1eps(real(eltype(S))),Inf]
+    vals[vals.==0] = eps(real(eltype(S)))^2
+    # yaxis --> (:log10, (,Inf))
     grid, vals
 end
 # 2D error plot
