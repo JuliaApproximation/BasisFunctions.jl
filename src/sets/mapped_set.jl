@@ -55,105 +55,108 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 ###############
 
 # We assume that maps do not affect a transform, as long as both the source and
-# destination are mapped in the same way.
-# We have to wrap the operators appropriately though.
+# destination are mapped in the same way. If a source or destination grid is not
+# mapped, we attempt to apply the inverse map to the grid and continue.
+# For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
+# general interval. It is not necessarily a mapped grid.
 
 transform_set(s::MappedSet; options...) = apply_map(transform_set(set(s); options...), mapping(s))
 
-# Checks for compatibility of maps are not yet included below
+has_transform(s::MappedSet, dgs::DiscreteGridSpace) = _has_transform(s, dgs, grid(dgs))
 
-for op in (:transform_operator,)
-    # Both sets are mapped: undo the maps
-    @eval $op(s1::MappedSet, s2::MappedSet; options...) =
-        wrap_operator(s1, s2, $op(set(s1), set(s2); options...) )
-    # The destination is a DiscreteGridSpace:
-    # - is it a mapped grid? If so, unmap
-    @eval $op{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
-        wrap_operator(s1, s2, $op(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...) )
-    # - if not, apply the inverse map to the grid
-    @eval $op(s1::MappedSet, s2::DiscreteGridSpace; options...) =
-        wrap_operator(s1, s2, $op(set(s1), mapped_set(s2, inv(mapping(s1))) ; options...) )
-    # The source is a DiscreteGridSpace:
-    # - Is it a mapped grid:
-    @eval $op{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
-        wrap_operator(s1, s2, $op(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...) )
-    # - Or not:
-    @eval $op(s1::DiscreteGridSpace, s2::MappedSet; options...) =
-        wrap_operator(s1, s2, $op(mapped_set(s1, inv(mapping(s2))), set(s2); options...) )
+function _has_transform(s::MappedSet, dgs, g::MappedGrid)
+    is_compatible(mapping(s), mapping(g)) && has_transform(set(s), DiscreteGridSpace(grid(g), eltype(dgs)))
 end
 
-# We have to do these by hand, because the spaces are not the same: s1 is source and destination
-# of the transform_pre_operator. The post operation only acts on s2.
-# We have the same cases as in transform_operator above
-transform_pre_operator(s1::MappedSet, s2::MappedSet; options...) =
-    wrap_operator(s1, s1, transform_pre_operator(set(s1), set(s2); options...))
-transform_pre_operator{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
-    wrap_operator(s1, s1, transform_pre_operator(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...) )
-transform_pre_operator(s1::MappedSet, s2::DiscreteGridSpace; options...) =
-    wrap_operator(s1, s1, transform_pre_operator(set(s1), mapped_set(s2, inv(mapping(s1))); options...) )
-transform_pre_operator{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
-    wrap_operator(s1, s1, transform_pre_operator(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...))
-transform_pre_operator(s1::DiscreteGridSpace, s2::MappedSet; options...) =
-    wrap_operator(s1, s1, transform_pre_operator(mapped_set(s1, inv(mapping(s2))), set(s2); options...))
+function _has_transform(s::MappedSet, dgs, g::AbstractGrid)
+    g2 = apply_map(g, inv(mapping(s)))
+    has_transform(set(s), DiscreteGridSpace(g2, eltype(dgs)))
+end
 
-transform_post_operator(s1::MappedSet, s2::MappedSet; options...) =
-    wrap_operator(s2, s2, transform_post_operator(set(s1), set(s2); options...))
-transform_post_operator{G <: MappedGrid}(s1::MappedSet, s2::DiscreteGridSpace{G}; options...) =
-    wrap_operator(s2, s2, transform_post_operator(set(s1), DiscreteGridSpace(grid(s2), eltype(s2)); options...))
-transform_post_operator(s1::MappedSet, s2::DiscreteGridSpace; options...) =
-    wrap_operator(s2, s2, transform_post_operator(set(s1), mapped_set(s2, inv(mapping(s1))); options...))
-transform_post_operator{G <: MappedGrid}(s1::DiscreteGridSpace{G}, s2::MappedSet; options...) =
-    wrap_operator(s2, s2, transform_post_operator(DiscreteGridSpace(grid(s1), eltype(s1)), set(s2); options...))
-transform_post_operator(s1::DiscreteGridSpace, s2::MappedSet; options...) =
-    wrap_operator(s2, s2, transform_post_operator(mapped_set(s1, inv(mapping(s2))), set(s2); options...))
+
+# We have some work to do to get the spaces of the wrapped operator right. For
+# the transform itself they are s1 and s2, but for the pre operators they are s1 and s1,
+# and for the post operators they are s2 and s2.
+for op in ( (:transform_from_grid, :s1, :s2),
+            (:transform_from_grid_pre, :s1, :s1),
+            (:transform_from_grid_post, :s1, :s2))
+    # If the grid is also mapped, we undo the maps
+    @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::MappedGrid; options...)
+        @assert is_compatible(mapping(s2), mapping(g))
+        g2 = grid(g)
+        wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
+    end
+    # If the grid was not mapped, we try to proceed by applying the inverse map to it
+    @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::AbstractGrid; options...)
+        g2 = apply_map(g, inv(mapping(s2)))
+        wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
+    end
+end
+
+
+for op in ( (:transform_to_grid, :s1, :s2),
+            (:transform_to_grid_pre, :s1, :s1),
+            (:transform_to_grid_post, :s1, :s2))
+    # If the grid is also mapped, we undo the maps
+    @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::MappedGrid; options...)
+        @assert is_compatible(mapping(s1), mapping(g))
+        g2 = grid(g)
+        wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
+    end
+    # If the grid was not mapped, we try to proceed by applying the inverse map to it
+    @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::AbstractGrid; options...)
+        g2 = apply_map(g, inv(mapping(s1)))
+        wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
+    end
+end
 
 
 ############################
 # Tensor product transforms
 ############################
 
-
-# Undo set mappings in a TensorProductSet
-unmapset(s::FunctionSet) = s
-unmapset(s::MappedSet) = set(s)
-unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
-
-transform_operator_tensor(s1, s2,
-    src_set1::MappedSet, src_set2::MappedSet,
-    dest_set1::MappedSet, dest_set2::MappedSet; options...) =
-        wrap_operator(s1, s2,
-            transform_operator_tensor(unmapset(s1), unmapset(s2), set(src_set1), set(src_set2), set(dest_set1), set(dest_set2); options...) )
-
-transform_operator_tensor(s1, s2, src_set1, src_set2,
-    dest_set1::MappedSet, dest_set2::MappedSet; options...) =
-        wrap_operator(s1, s2,
-            transform_operator_tensor(s1, unmapset(s2), src_set1, src_set2, set(dest_set1), set(dest_set2); options...) )
-
-transform_operator_tensor(s1, s2,
-    src_set1::MappedSet, src_set2::MappedSet, dest_set1, dest_set2; options...) =
-    wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2; options...))
-
-transform_operator_tensor(s1, s2,
-    src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
-    dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
-        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
-            set(src_set1), set(src_set2), set(src_set3),
-            set(dest_set1), set(dest_set2), set(dest_set3); options...) )
-
-transform_operator_tensor(s1, s2,
-    src_set1, src_set2, src_set3,
-    dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
-        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
-            src_set1, src_set2, src_set3,
-            set(dest_set1), set(dest_set2), set(dest_set3); options...))
-
-transform_operator_tensor(s1, s2,
-    src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
-    dest_set1, dest_set2, dest_set3; options...) =
-        wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
-            set(src_set1), set(src_set2), set(src_set3),
-            dest_set1, dest_set2, dest_set3; options...))
-
+#
+# # Undo set mappings in a TensorProductSet
+# unmapset(s::FunctionSet) = s
+# unmapset(s::MappedSet) = set(s)
+# unmapset(s::TensorProductSet) = tensorproduct(map(unmapset, elements(s))...)
+#
+# transform_operator_tensor(s1, s2,
+#     src_set1::MappedSet, src_set2::MappedSet,
+#     dest_set1::MappedSet, dest_set2::MappedSet; options...) =
+#         wrap_operator(s1, s2,
+#             transform_operator_tensor(unmapset(s1), unmapset(s2), set(src_set1), set(src_set2), set(dest_set1), set(dest_set2); options...) )
+#
+# transform_operator_tensor(s1, s2, src_set1, src_set2,
+#     dest_set1::MappedSet, dest_set2::MappedSet; options...) =
+#         wrap_operator(s1, s2,
+#             transform_operator_tensor(s1, unmapset(s2), src_set1, src_set2, set(dest_set1), set(dest_set2); options...) )
+#
+# transform_operator_tensor(s1, s2,
+#     src_set1::MappedSet, src_set2::MappedSet, dest_set1, dest_set2; options...) =
+#     wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), s2, set(src_set1), set(src_set2), dest_set1, dest_set2; options...))
+#
+# transform_operator_tensor(s1, s2,
+#     src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
+#     dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
+#         wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+#             set(src_set1), set(src_set2), set(src_set3),
+#             set(dest_set1), set(dest_set2), set(dest_set3); options...) )
+#
+# transform_operator_tensor(s1, s2,
+#     src_set1, src_set2, src_set3,
+#     dest_set1::MappedSet, dest_set2::MappedSet, dest_set3::MappedSet; options...) =
+#         wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+#             src_set1, src_set2, src_set3,
+#             set(dest_set1), set(dest_set2), set(dest_set3); options...))
+#
+# transform_operator_tensor(s1, s2,
+#     src_set1::MappedSet, src_set2::MappedSet, src_set3::MappedSet,
+#     dest_set1, dest_set2, dest_set3; options...) =
+#         wrap_operator(s1, s2, transform_operator_tensor(unmapset(s1), unmapset(s2),
+#             set(src_set1), set(src_set2), set(src_set3),
+#             dest_set1, dest_set2, dest_set3; options...))
+#
 
 ###################
 # Differentiation

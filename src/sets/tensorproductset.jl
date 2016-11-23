@@ -44,8 +44,13 @@ for op in (:has_grid, :has_extension, :has_transform, :has_derivative, :has_anti
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
 
-has_transform(s::TensorProductSet, dgs::TensorProductSet) =
-    reduce(&, map(has_transform, elements(s), elements(dgs)))
+has_transform(s::TensorProductSet, dgs::DiscreteGridSpace) =
+    has_transform(s, dgs, grid(dgs))
+
+has_transform(s::TensorProductSet, dgs, grid::TensorProductGrid) =
+    reduce(&, map(has_transform, elements(s), elements(grid)))
+
+has_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =

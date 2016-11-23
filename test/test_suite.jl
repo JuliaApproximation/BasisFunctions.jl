@@ -130,6 +130,7 @@ function test_derived_sets(T)
 
     @testset "$(rpad("Linear mapped sets",80))" begin
     test_generic_set_interface(rescale(b1, -T(1), T(2)))
+    test_generic_set_interface(rescale(b2, -T(2), T(3)))
     end
 
     @testset "$(rpad("A simple subset",80))" begin
@@ -218,8 +219,11 @@ end
         end
 
         @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
-                      FourierBasis(11) ⊗ FourierBasis(20),
-                      ChebyshevBasis(11) ⊗ ChebyshevBasis(20))
+                      FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+                      FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
+                      ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
+                      FourierBasis(9, 2, 3) ⊗ FourierBasis(7, 4, 5), # Two mapped Fourier series
+                      ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
             test_generic_set_interface(basis, typeof(basis))
         end
 

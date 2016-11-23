@@ -58,9 +58,17 @@ has_grid(b::FourierBasis) = true
 has_derivative(b::FourierBasis) = true
 # Until adapted for DC coefficient
 has_antiderivative(b::FourierBasis) = false
-has_transform{G <: PeriodicEquispacedGrid}(b::FourierBasis, d::DiscreteGridSpace{G}) = true
 has_extension(b::FourierBasis) = true
 
+# Check whether the given periodic equispaced grid is compatible with the FFT operators
+compatible_grid(set::FourierBasis, grid::PeriodicEquispacedGrid) =
+	(left(set) ≈ left(grid)) && (right(set) ≈ right(grid)) && (length(set)==length(grid))
+
+# Any non-periodic grid is not compatible
+compatible_grid(set::FourierBasis, grid::AbstractGrid) = false
+
+
+has_transform(b::FourierBasis, dgs::DiscreteGridSpace) = compatible_grid(b, grid(dgs))
 
 length(b::FourierBasis) = b.n
 
@@ -108,41 +116,6 @@ eval_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 						: exp(x * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
 moment{EVEN,T}(b::FourierBasis{EVEN,T}, idx) = idx == 1 ? T(2) : T(0)
-
-function apply!{T}(op::Differentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
-	@assert length(dest)==length(src)
-#	@assert period(dest)==period(src)
-
-	nh = nhalf(src)
-	p = period(src)
-	i = order(op)
-
-	for j = 0:nh
-		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
-	end
-	for j = 1:nh
-		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
-	end
-	result
-end
-
-function apply!{T}(op::AntiDifferentiation, dest::FourierBasisOdd{T}, src::FourierBasisOdd{T}, result, coef)
-	@assert length(dest)==length(src)
-#	@assert period(dest)==period(src)
-
-	nh = nhalf(src)
-	p = period(src)
-	i = -1*order(op)
-
-        result[1] = 0
-	for j = 1:nh
-		result[j+1] = (2 * T(pi) * im * j / p)^i * coef[j+1]
-	end
-	for j = 1:nh
-		result[nh+1+j] = (2 * T(pi) * im * (-nh-1+j) / p)^i * coef[nh+1+j]
-	end
-	result
-end
 
 extension_size(b::FourierBasisEven) = 2*length(b)
 extension_size(b::FourierBasisOdd) = 2*length(b)+1
@@ -241,8 +214,11 @@ function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, 
 	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
 end
 
-transform_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...) =
+
+function transform_from_grid(src, dest::FourierBasis, grid; options...)
+	@assert compatible_grid(dest, grid)
 	_forward_fourier_operator(src, dest, eltype(src, dest); options...)
+end
 
 _forward_fourier_operator(src, dest, ::Type{Complex{Float64}}; options...) =
 	FastFourierTransformFFTW(src, dest; options...)
@@ -251,8 +227,10 @@ _forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; opt
 	FastFourierTransform(src, dest)
 
 
-transform_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}; options...) =
+function transform_to_grid(src::FourierBasis, dest, grid; options...)
+	@assert compatible_grid(src, grid)
 	_backward_fourier_operator(src, dest, eltype(src, dest); options...)
+end
 
 _backward_fourier_operator(src, dest, ::Type{Complex{Float64}}; options...) =
 	InverseFastFourierTransformFFTW(src, dest; options...)
@@ -260,36 +238,33 @@ _backward_fourier_operator(src, dest, ::Type{Complex{Float64}}; options...) =
 _backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
 	InverseFastFourierTransform(src, dest)
 
-# Catch 2D and 3D fft's automatically
-transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
-	src_set1::DiscreteGridSpace{G}, src_set2::DiscreteGridSpace{G},
-	dest_set1::FourierBasis, dest_set2::FourierBasis; options...) =
-		_forward_fourier_operator(src, dest, eltype(src, dest); options...)
+# Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
+# Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
+function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
+	println(22)
+	_backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+end
 
-transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
-	src_set1::FourierBasis, src_set2::FourierBasis,
-	dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}; options...) =
-		_backward_fourier_operator(src, dest, eltype(src, dest); options...)
-
-transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
-	src_set1::DiscreteGridSpace{G}, src_set2::DiscreteGridSpace{G}, src_set3::DiscreteGridSpace{G},
-	dest_set1::FourierBasis, dest_set2::FourierBasis, dest_set3::FourierBasis; options...) =
-		_forward_fourier_operator(src, dest, eltype(src, dest); options...)
-
-transform_operator_tensor{G <: PeriodicEquispacedGrid}(src, dest,
-	src_set1::FourierBasis, src_set2::FourierBasis, src_set3::FourierBasis,
-	dest_set1::DiscreteGridSpace{G}, dest_set2::DiscreteGridSpace{G}, dest_set3::DiscreteGridSpace{G}; options...) =
-		_backward_fourier_operator(src, dest, eltype(src, dest); options...)
+function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
+	println(21)
+	_forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+end
 
 
-function transform_post_operator{G <: PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::FourierBasis; options...)
+
+function transform_from_grid_post(src, dest::FourierBasis, grid; options...)
+	@assert compatible_grid(dest, grid)
     L = length(src)
     ELT = eltype(src)
     ScalingOperator(dest, 1/sqrt(ELT(L)))
 end
 
-transform_pre_operator{G <: PeriodicEquispacedGrid}(src::FourierBasis, dest::DiscreteGridSpace{G}; options...) =
-	inv(transform_post_operator(dest, src; options...))
+function transform_to_grid_pre(src::FourierBasis, dest, grid; options...)
+	@assert compatible_grid(src, grid)
+	inv(transform_from_grid_post(dest, src, grid; options...))
+end
 
 is_compatible(s1::FourierBasis, s2::FourierBasis) = true
 # Multiplication of Fourier Series

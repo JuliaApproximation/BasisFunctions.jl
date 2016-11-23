@@ -291,10 +291,10 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         end
 
         # Verify the pre and post operators and their inverses
-        pre1 = transform_pre_operator(tbasis, basis)
-        post1 = transform_post_operator(tbasis, basis)
-        pre2 = transform_pre_operator(basis, tbasis)
-        post2 = transform_post_operator(basis, tbasis)
+        pre1 = transform_operator_pre(tbasis, basis)
+        post1 = transform_operator_post(tbasis, basis)
+        pre2 = transform_operator_pre(basis, tbasis)
+        post2 = transform_operator_post(basis, tbasis)
         # - try interpolation using transform+pre/post-normalization
         x = coefficients(random_expansion(tbasis))
         e = SetExpansion(basis, (post1*t*pre1)*x)

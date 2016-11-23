@@ -107,8 +107,11 @@ export extension_operator, restriction_operator, interpolation_operator,
     differentiation_operator, antidifferentiation_operator, derivative_set, antiderivative_set,
     approximate, evaluation_operator,
     Extension, Restriction, extend, Differentiation, AntiDifferentiation,
-    extension_size, transform_pre_operator, transform_post_operator, interpolation_matrix,
+    extension_size, transform_operator_pre, transform_operator_post, interpolation_matrix,
     tensorproduct
+
+# from tensorproducts.jl
+export is_homogeneous, basetype
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator

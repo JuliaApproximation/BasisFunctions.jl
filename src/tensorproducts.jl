@@ -18,6 +18,16 @@ for (BaseType,TPType) in [(:AbstractOperator,:TensorProductOperator),
 
 end
 
+function is_homogeneous(tp)
+    T = typeof(element(tp, 1))
+    reduce(&, map(el->typeof(el)==T, elements(tp)))
+end
+
+function basetype(tp)
+    promote_type(map(typeof, elements(tp))...)
+end
+
+
 # Flatten a sequence of elements that may be recursively composite
 # For example: a TensorProductSet of TensorProductSets will yield a list of each of the
 # individual sets, like the leafs of a tree structure.

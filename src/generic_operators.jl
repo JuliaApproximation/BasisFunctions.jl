@@ -117,7 +117,7 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 # A function set can have several associated transforms. The default transform is
 # associated with the grid of the set, e.g. the FFT and the DCT for Chebyshev expansions
 # which convert between coefficient space and value space. In this case, the
-# transform maps coefficients to a DiscreteGridSpace.
+# transform maps coefficients to or from a DiscreteGridSpace.
 #
 # transform_operator takes two arguments, a source and destination set, in order
 # to allow for different transforms.
@@ -126,36 +126,62 @@ ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 # to a function from function values, the transform is typically preceded and followed
 # by an additional computation (e.g. the first Chebyshev coefficiet is halved after the DCT).
 # These additional operations are achieved by the operator returned by the
-# transform_pre_operator and transform_post_operator functions: pre acts on the
+# transform_operator_pre and transform_operator_post functions: pre acts on the
 # coefficients of the source space, post on the coefficients of the dest space.
+#
+# An important case is where the destination is a DiscreteGridSpace. In that case,
+# the routines transform_from_grid, transform_from_grid_pre and transform_from_grid_post
+# are invoked, with the grid as a third argument. When the source is a DiscreteGridSpace,
+# similar routines with "to_grid" in their names are invoked.
+# FunctionSet's can intercept these functions and define their coefficient-to-value
+# and value-to-coefficient transforms.
 
 
 # The default transform space is the space associated with the grid of the set
 transform_set(set::FunctionSet; options...) = DiscreteGridSpace(grid(set), eltype(set))
 
-for op in (:transform_operator, :transform_pre_operator, :transform_post_operator)
-    # Convenience functions: automatically convert a grid to a DiscreteGridSpace
-    @eval $op(src::AbstractGrid, dest::FunctionSet; options...) =
-        $op(DiscreteGridSpace(src, eltype(dest)), dest; options...)
-    @eval $op(src::FunctionSet, dest::AbstractGrid; options...) =
-        $op(src, DiscreteGridSpace(dest, eltype(src)); options...)
+for op in (:transform_operator, :transform_operator_pre, :transform_operator_post)
     # With only one argument, use the default transform space
     @eval $op(src::FunctionSet; options...) =
         $op(src, transform_set(src; options...); options...)
 end
 
-# Pre and post operations are identity by default.
-transform_pre_operator(src::FunctionSet, dest::FunctionSet; options...) =
-    IdentityOperator(src)
+# If the destination is a DiscreteGridSpace, invoke the "to_grid" routines
+for op in ( (:transform_operator, :transform_to_grid),
+            (:transform_operator_pre, :transform_to_grid_pre),
+            (:transform_operator_post, :transform_to_grid_post) )
+    @eval $(op[1])(src::FunctionSet, dest::DiscreteGridSpace; options...) =
+        $(op[2])(src, dest, grid(dest); options...)
+    # Convenience function: convert a grid to a grid space
+    @eval $(op[1])(src::FunctionSet, grid::AbstractGrid; options...) =
+        $(op[1])(src, DiscreteGridSpace(grid, eltype(src)); options...)
+end
 
-transform_post_operator(src::FunctionSet, dest::FunctionSet; options...) =
-    IdentityOperator(dest)
+# If the source is a DiscreteGridSpace, invoke the "from_grid" routines
+for op in ( (:transform_operator, :transform_from_grid),
+            (:transform_operator_pre, :transform_from_grid_pre),
+            (:transform_operator_post, :transform_from_grid_post) )
+    @eval $(op[1])(src::DiscreteGridSpace, dest::FunctionSet; options...) =
+        $(op[2])(src, dest, grid(src); options...)
+    # Convenience function: convert a grid to a grid space
+    @eval $(op[1])(src::AbstractGrid, dest::FunctionSet; options...) =
+        $(op[1])(DiscreteGridSpace(src, eltype(dest)), dest; options...)
+end
+
+# Pre and post operations are identity by default.
+for op in (:transform_from_grid_pre, :transform_to_grid_pre)
+    @eval $op(src, dest, grid; options...) = IdentityOperator(src)
+end
+
+for op in (:transform_from_grid_post, :transform_to_grid_post)
+    @eval $op(src, dest, grid; options...) = IdentityOperator(dest)
+end
 
 # Return all three of them in a tuple
 transform_operators(sets::FunctionSet...; options...) =
-    (transform_pre_operator(sets...; options...),
+    (transform_operator_pre(sets...; options...),
      transform_operator(sets...; options...),
-     transform_post_operator(sets...; options...))
+     transform_operator_post(sets...; options...))
 
 # Return the full operation: Post * Trans * Pre
 function full_transform_operator(sets::FunctionSet...; options...)
@@ -387,33 +413,35 @@ end
 # Operators for tensor product sets
 #####################################
 
+# We make TensorProductOperator's for each generic operator, when invoked with
+# TensorProductSet's.
 
+# We make a special case for transform operators, so that they can be intercepted
+# in case a multidimensional transform is available for a specific basis.
+# If source or destination is a product set, and the grid is a product grid, then
+# a X_tensor routine is invoked where the first two arguments are the joint supertypes
+# of the elements of the set and the elements of the grid. For example, the first
+# two arguments can be FourierBasis and PeriodicEquispacedGrid. For homogeneous
+# tensor products, the function set can intercept this call.
+for op in (:transform_from_grid, :transform_from_grid_pre, :transform_from_grid_post)
+    op_tensor = Symbol("$(op)_tensor")
+    @eval $op(s1::DiscreteGridSpace, s2::TensorProductSet, grid::TensorProductGrid; options...) =
+        $(op_tensor)(basetype(s2), basetype(grid), s1, s2, grid; options...)
+    # Default implementation of the X_tensor routine: make a tensor product operator.
+    @eval $(op_tensor)(S, G, s1, s2, grid; options...) = tensorproduct([$op(element(s1,i),element(s2,i), element(grid,i); options...) for i in 1:composite_length(s1)]...)
+end
 
-# We make a special case for transform operators, so that they can be intercepted in case a multidimensional
-# transform is available for a specific basis.
-transform_operator(s1::TensorProductSet, s2::TensorProductSet; options...) =
-    transform_operator_tensor(s1, s2, elements(s1)..., elements(s2)...; options...)
-
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s2_set1, s2_set2; options...) =
-    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
-        transform_operator(s1_set2, s2_set2; options...))
-
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3,
-                                  s2_set1, s2_set2, s2_set3; options...) =
-    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
-        transform_operator(s1_set2, s2_set2; options...),
-        transform_operator(s1_set3, s2_set3; options...))
-
-transform_operator_tensor(s1, s2, s1_set1, s1_set2, s1_set3, s1_set4,
-                                  s2_set1, s2_set2, s2_set3, s2_set4; options...) =
-    tensorproduct(transform_operator(s1_set1, s2_set1; options...),
-        transform_operator(s1_set2, s2_set2; options...),
-        transform_operator(s1_set3, s2_set3; options...),
-        transform_operator(s1_set4, s2_set4; options...))
+for op in (:transform_to_grid, :transform_to_grid_pre, :transform_to_grid_post)
+    op_tensor = Symbol("$(op)_tensor")
+    @eval $op(s1::TensorProductSet, s2::DiscreteGridSpace, grid::TensorProductGrid; options...) =
+        $(op_tensor)(basetype(s1), basetype(grid), s1, s2, grid; options...)
+    # Default implementation of the X_tensor routine: make a tensor product operator.
+    @eval $(op_tensor)(S, G, s1, s2, grid; options...) =
+        tensorproduct([$op(element(s1,i),element(s2,i), element(grid,i); options...) for i in 1:composite_length(s1)]...)
+end
 
 for op in (:extension_operator, :restriction_operator, :evaluation_operator,
-            :interpolation_operator, :leastsquares_operator,
-            :transform_pre_operator, :transform_post_operator)
+            :interpolation_operator, :leastsquares_operator)
     @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
         tensorproduct([$op(element(s1,i),element(s2, i); options...) for i in 1:composite_length(s1)]...)
 end

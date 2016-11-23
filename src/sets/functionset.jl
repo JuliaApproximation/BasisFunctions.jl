@@ -255,9 +255,10 @@ has_grid(s::FunctionSet) = false
 
 "Does the set have a transform associated with some grid (space)?"
 has_transform(s::FunctionSet, dgs) = false
-# Usually dgs will be a DiscreteGridSpace, but not always (for example, it could
-# be a tensor product set). The default is the space of the associated grid.
-has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, DiscreteGridSpace(grid(s)))
+
+# Convenience functions: default grid, and conversion from grid to space
+has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, eltype(s)))
+has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, grid(s))
 
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false

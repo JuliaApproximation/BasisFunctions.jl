@@ -42,13 +42,13 @@ eval_element(set::AugmentedSet, idx, x::SVector) = set.fun(x...) * eval_element(
 (*)(f::AbstractFunction, s::FunctionSet) = AugmentedSet(s, f)
 
 
-function transform_post_operator(src::AugmentedSet, dest::DiscreteGridSpace; options...)
+function transform_to_grid_post(src::AugmentedSet, dest::DiscreteGridSpace, grid; options...)
     f = fun(src)
-    DiagonalOperator(dest, dest, [f(x) for x in grid(dest)])
+    DiagonalOperator(dest, dest, [f(x) for x in grid])
 end
 
-transform_pre_operator(src::DiscreteGridSpace, dest::AugmentedSet; options...) =
-	inv(transform_post_operator(dest, src; options...))
+transform_from_grid_pre(src::DiscreteGridSpace, dest::AugmentedSet, grid; options...) =
+	inv(transform_to_grid_post(dest, src, grid; options...))
 
 
 function derivative_set(src::AugmentedSet, order; options...)

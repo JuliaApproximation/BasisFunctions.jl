@@ -34,7 +34,10 @@ resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
-has_transform{G <: ChebyshevIIGrid}(b::ChebyshevBasis, d::DiscreteGridSpace{G}) = true
+
+has_transform(b::ChebyshevBasis, dgs::DiscreteGridSpace) = _has_transform(b, dgs, grid(dgs))
+_has_transform(b::ChebyshevBasis, dgs, ::ChebyshevIIGrid) = true
+_has_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
 left(b::ChebyshevBasis) = -1
@@ -135,9 +138,7 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-
-# TODO: restrict the grid of grid space here
-transform_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; options...) =
+transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevIIGrid; options...) =
 	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
 _forward_chebyshev_operator(src, dest, ::Union{Type{Float64},Type{Complex{Float64}}}; options...) =
@@ -147,8 +148,7 @@ _forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 	FastChebyshevTransform(src, dest)
 
 
-
-transform_operator(src::ChebyshevBasis, dest::DiscreteGridSpace; options...) =
+transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevIIGrid; options...) =
 	_backward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
 _backward_chebyshev_operator(src, dest, ::Type{Float64}; options...) =
@@ -161,29 +161,19 @@ _backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 	InverseFastChebyshevTransform(src, dest)
 
 
-# Catch 2D and 3D fft's automatically
-transform_operator_tensor(src, dest,
-    src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace,
-    dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis; options...) =
-        _forward_chebyshev_operator(src, dest, eltype(src, dest); options...)
+function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+	println(33)
+	_backward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
+end
 
-transform_operator_tensor(src, dest,
-    src_set1::ChebyshevBasis, src_set2::ChebyshevBasis,
-    dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace; options...) =
-        _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
-
-transform_operator_tensor(src, dest,
-    src_set1::DiscreteGridSpace, src_set2::DiscreteGridSpace, src_set3::DiscreteGridSpace,
-    dest_set1::ChebyshevBasis, dest_set2::ChebyshevBasis, dest_set3::ChebyshevBasis; options...) =
-        _forward_chebyshev_operator(src, dest, eltype(src, dest); options...)
-
-transform_operator_tensor(src, dest,
-    src_set1::ChebyshevBasis, src_set2::ChebyshevBasis, src_set3::ChebyshevBasis,
-    dest_set1::DiscreteGridSpace, dest_set2::DiscreteGridSpace, dest_set3::DiscreteGridSpace; options...) =
-        _backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
+function transform_from_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+	println(34)
+	_forward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
+end
 
 
-function transform_post_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; options...)
+
+function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevIIGrid; options...)
     ELT = eltype(dest)
     scaling = ScalingOperator(dest, 1/sqrt(ELT(length(dest)/2)))
     coefscaling = CoefficientScalingOperator(dest, 1, 1/sqrt(ELT(2)))
@@ -191,8 +181,8 @@ function transform_post_operator(src::DiscreteGridSpace, dest::ChebyshevBasis; o
 	scaling * coefscaling * flip
 end
 
-transform_pre_operator(src::ChebyshevBasis, dest::DiscreteGridSpace; options...) =
-    inv(transform_post_operator(dest, src; options...))
+transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevIIGrid; options...) =
+    inv(transform_from_grid_post(dest, src, grid; options...))
 
 is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
