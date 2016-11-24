@@ -274,11 +274,15 @@ evaluation_operator(s::FunctionSet, g::AbstractGrid; options...) = evaluation_op
 
 # Evaluate s in the grid of dgs
 function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
-    if has_transform(s, dgs)
-        if length(s) == length(dgs)
+    if has_transform(s)
+        if has_transform(s, dgs)
             full_transform_operator(s, dgs; options...)
-        elseif length(s)<length(dgs)
-            slarge = resize(s, length(dgs))
+        elseif length(s) < length(dgs)
+            if ndims(s) == 1
+                slarge = resize(s, length(dgs))
+            else
+                slarge = resize(s, size(dgs))
+            end
             evaluation_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
         else
             # This might be faster implemented by:
