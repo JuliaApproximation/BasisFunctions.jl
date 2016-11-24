@@ -1,6 +1,5 @@
 # tensorproductset.jl
 
-
 """
 A TensorProductSet is itself a set: the tensor product of a number of sets.
 
@@ -40,17 +39,14 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
 end
 
 ## Feature methods
-for op in (:has_grid, :has_extension, :has_transform, :has_derivative, :has_antiderivative)
+for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
 
-has_transform(s::TensorProductSet, dgs::DiscreteGridSpace) =
-    has_transform(s, dgs, grid(dgs))
-
-has_transform(s::TensorProductSet, dgs, grid::TensorProductGrid) =
+has_grid_transform(s::TensorProductSet, dgs, grid::TensorProductGrid) =
     reduce(&, map(has_transform, elements(s), elements(grid)))
 
-has_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
+has_grid_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =

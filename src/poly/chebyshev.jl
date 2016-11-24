@@ -35,9 +35,8 @@ has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_transform(b::ChebyshevBasis, dgs::DiscreteGridSpace) = _has_transform(b, dgs, grid(dgs))
-_has_transform(b::ChebyshevBasis, dgs, ::ChebyshevIIGrid) = true
-_has_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevIIGrid) = true
+has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
 left(b::ChebyshevBasis) = -1
@@ -162,12 +161,10 @@ _backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 
 
 function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
-	println(33)
 	_backward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 function transform_from_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
-	println(34)
 	_forward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
 end
 

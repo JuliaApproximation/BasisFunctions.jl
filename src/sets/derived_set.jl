@@ -39,8 +39,8 @@ end
 for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
     @eval $op(s::DerivedSet) = $op(set(s))
 end
-# has_transform can take an extra argument, a DiscreteGridSpace
-has_transform(s::DerivedSet, dgs::DiscreteGridSpace) = has_transform(set(s), dgs)
+# has_transform has extra arguments
+has_grid_transform(s::DerivedSet, dgs, grid) = has_grid_transform(set(s), dgs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false
@@ -114,23 +114,50 @@ for op in (:extension_operator, :restriction_operator)
         wrap_operator(s1, s2, $op(set(s1), set(s2); options...))
 end
 
-transform_from_grid(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-    wrap_operator(s1, s2, transform_from_grid(s1, set(s2), grid; options...) )
+# By default we return the underlying set when simplifying transforms
+simplify_transform_pair(s::DerivedSet, grid::AbstractGrid) = (set(s),grid)
 
-transform_from_grid_pre(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-    wrap_operator(s1, s1, transform_from_grid_pre(s1, set(s2), grid; options...) )
+# Simplify invocations of transform_from/to_grid with DerivedSet's
+for op in ( (:transform_from_grid, :s1, :s2),
+            (:transform_from_grid_pre, :s1, :s1),
+            (:transform_from_grid_post, :s1, :s2))
 
-transform_from_grid_post(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-    wrap_operator(s2, s2, transform_from_grid_post(s1, set(s2), grid; options...) )
+    @eval function $(op[1])(s1, s2::DerivedSet, grid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
+        wrap_operator($(op[2]), $(op[3]), operator)
+    end
+end
 
-transform_to_grid(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-    wrap_operator(s1, s2, transform_to_grid(set(s1), s2, grid; options...) )
+for op in ( (:transform_to_grid, :s1, :s2),
+            (:transform_to_grid_pre, :s1, :s1),
+            (:transform_to_grid_post, :s1, :s2))
 
-transform_to_grid_pre(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-    wrap_operator(s1, s1, transform_to_grid_pre(set(s1), s2, grid; options...) )
+    @eval function $(op[1])(s1::DerivedSet, s2, grid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
+        wrap_operator($(op[2]), $(op[3]), operator)
+    end
+end
 
-transform_to_grid_post(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-    wrap_operator(s2, s2, transform_to_grid_post(set(s1), s2, grid; options...) )
+
+# transform_from_grid(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
+#     wrap_operator(s1, s2, transform_from_grid(s1, set(s2), grid; options...) )
+#
+# transform_from_grid_pre(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
+#     wrap_operator(s1, s1, transform_from_grid_pre(s1, set(s2), grid; options...) )
+#
+# transform_from_grid_post(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
+#     wrap_operator(s2, s2, transform_from_grid_post(s1, set(s2), grid; options...) )
+#
+# transform_to_grid(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
+#     wrap_operator(s1, s2, transform_to_grid(set(s1), s2, grid; options...) )
+#
+# transform_to_grid_pre(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
+#     wrap_operator(s1, s1, transform_to_grid_pre(set(s1), s2, grid; options...) )
+#
+# transform_to_grid_post(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
+#     wrap_operator(s2, s2, transform_to_grid_post(set(s1), s2, grid; options...) )
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
     @eval $op(s1::DerivedSet, s2::FunctionSet, order; options...) =

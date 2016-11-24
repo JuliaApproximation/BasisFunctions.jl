@@ -60,15 +60,15 @@ has_derivative(b::FourierBasis) = true
 has_antiderivative(b::FourierBasis) = false
 has_extension(b::FourierBasis) = true
 
-# Check whether the given periodic equispaced grid is compatible with the FFT operators
+# For has_transform we introduce some more functionality:
+# - Check whether the given periodic equispaced grid is compatible with the FFT operators
 compatible_grid(set::FourierBasis, grid::PeriodicEquispacedGrid) =
 	(left(set) ≈ left(grid)) && (right(set) ≈ right(grid)) && (length(set)==length(grid))
-
-# Any non-periodic grid is not compatible
+# - Any non-periodic grid is not compatible
 compatible_grid(set::FourierBasis, grid::AbstractGrid) = false
+# - We have a transform if the grid is compatible
+has_grid_transform(b::FourierBasis, dgs, grid) = compatible_grid(b, grid)
 
-
-has_transform(b::FourierBasis, dgs::DiscreteGridSpace) = compatible_grid(b, grid(dgs))
 
 length(b::FourierBasis) = b.n
 
@@ -242,13 +242,11 @@ _backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; op
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
 function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	println(22)
 	_backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	println(21)
 	_forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 

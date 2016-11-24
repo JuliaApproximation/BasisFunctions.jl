@@ -23,11 +23,20 @@ promote_eltype{G,N,T,S}(s::DiscreteGridSpace{G,N,T}, ::Type{S}) = DiscreteGridSp
 
 resize{G,N,T}(s::DiscreteGridSpace{G,N,T}, n) = DiscreteGridSpace(resize(grid(s), n), T)
 
+similar(dgs::DiscreteGridSpace, grid::AbstractGrid) = DiscreteGridSpace(grid, eltype(dgs))
+
 grid(s::DiscreteGridSpace) = s.grid
 
 for op in (:length, :size, :left, :right)
     @eval $op(b::DiscreteGridSpace) = $op(grid(b))
 end
+
+# Convenience function: add grid as extra parameter to has_transform
+has_transform(s::FunctionSet, dgs::DiscreteGridSpace) =
+	has_grid_transform(s, dgs, grid(dgs))
+# and provide a default
+has_grid_transform(s::FunctionSet, dgs, grid) = false
+
 
 is_discrete(s::DiscreteGridSpace) = true
 

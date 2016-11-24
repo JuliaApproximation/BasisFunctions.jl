@@ -62,53 +62,64 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 
 transform_set(s::MappedSet; options...) = apply_map(transform_set(set(s); options...), mapping(s))
 
-has_transform(s::MappedSet, dgs::DiscreteGridSpace) = _has_transform(s, dgs, grid(dgs))
-
-function _has_transform(s::MappedSet, dgs, g::MappedGrid)
+has_grid_transform(s::MappedSet, dgs, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) && has_transform(set(s), DiscreteGridSpace(grid(g), eltype(dgs)))
-end
 
-function _has_transform(s::MappedSet, dgs, g::AbstractGrid)
+function has_grid_transform(s::MappedSet, dgs, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_transform(set(s), DiscreteGridSpace(g2, eltype(dgs)))
+    has_grid_transform(set(s), DiscreteGridSpace(g2, eltype(dgs)), g2)
 end
 
 
-# We have some work to do to get the spaces of the wrapped operator right. For
-# the transform itself they are s1 and s2, but for the pre operators they are s1 and s1,
-# and for the post operators they are s2 and s2.
-for op in ( (:transform_from_grid, :s1, :s2),
-            (:transform_from_grid_pre, :s1, :s1),
-            (:transform_from_grid_post, :s1, :s2))
-    # If the grid is also mapped, we undo the maps
-    @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::MappedGrid; options...)
-        @assert is_compatible(mapping(s2), mapping(g))
-        g2 = grid(g)
-        wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
-    end
-    # If the grid was not mapped, we try to proceed by applying the inverse map to it
-    @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::AbstractGrid; options...)
-        g2 = apply_map(g, inv(mapping(s2)))
-        wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
+function simplify_transform_pair(s::MappedSet, g::MappedGrid)
+    if is_compatible(mapping(s), mapping(g))
+        set(s), grid(g)
+    else
+        s, g
     end
 end
 
-
-for op in ( (:transform_to_grid, :s1, :s2),
-            (:transform_to_grid_pre, :s1, :s1),
-            (:transform_to_grid_post, :s1, :s2))
-    # If the grid is also mapped, we undo the maps
-    @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::MappedGrid; options...)
-        @assert is_compatible(mapping(s1), mapping(g))
-        g2 = grid(g)
-        wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
-    end
-    # If the grid was not mapped, we try to proceed by applying the inverse map to it
-    @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::AbstractGrid; options...)
-        g2 = apply_map(g, inv(mapping(s1)))
-        wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
-    end
+function simplify_transform_pair(s::MappedSet, g::AbstractGrid)
+    g2 = apply_map(g, inv(mapping(s)))
+    simplify_transform_pair(set(s), g2)
 end
+
+#
+# # We have some work to do to get the spaces of the wrapped operator right. For
+# # the transform itself they are s1 and s2, but for the pre operators they are s1 and s1,
+# # and for the post operators they are s2 and s2.
+# for op in ( (:transform_from_grid, :s1, :s2),
+#             (:transform_from_grid_pre, :s1, :s1),
+#             (:transform_from_grid_post, :s1, :s2))
+#     # If the grid is also mapped, we undo the maps
+#     @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::MappedGrid; options...)
+#         @assert is_compatible(mapping(s2), mapping(g))
+#         g2 = grid(g)
+#         wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
+#     end
+#     # If the grid was not mapped, we try to proceed by applying the inverse map to it
+#     @eval function $(op[1])(s1::DiscreteGridSpace, s2::MappedSet, g::AbstractGrid; options...)
+#         g2 = apply_map(g, inv(mapping(s2)))
+#         wrap_operator($(op[2]), $(op[3]), $(op[1])(DiscreteGridSpace(g2, eltype(s1)), set(s2), g2; options...))
+#     end
+# end
+
+
+# for op in ( (:transform_to_grid, :s1, :s2),
+#             (:transform_to_grid_pre, :s1, :s1),
+#             (:transform_to_grid_post, :s1, :s2))
+#     # If the grid is also mapped, we undo the maps
+#     @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::MappedGrid; options...)
+#         @assert is_compatible(mapping(s1), mapping(g))
+#         g2 = grid(g)
+#         wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
+#     end
+#     # If the grid was not mapped, we try to proceed by applying the inverse map to it
+#     @eval function $(op[1])(s1::MappedSet, s2::DiscreteGridSpace, g::AbstractGrid; options...)
+#         g2 = apply_map(g, inv(mapping(s1)))
+#         wrap_operator($(op[2]), $(op[3]), $(op[1])(set(s1), DiscreteGridSpace(g2, eltype(s2)), g2; options...))
+#     end
+# end
 
 
 ############################

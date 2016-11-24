@@ -253,12 +253,12 @@ has_antiderivative(s::FunctionSet) = false
 "Does the set have an associated interpolation grid?"
 has_grid(s::FunctionSet) = false
 
-"Does the set have a transform associated with some grid (space)?"
-has_transform(s::FunctionSet, dgs) = false
+"Does the set have a transform associated with some space?"
+has_transform(s1::FunctionSet, s2) = false
 
 # Convenience functions: default grid, and conversion from grid to space
-has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, eltype(s)))
 has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, grid(s))
+has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, eltype(s)))
 
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false

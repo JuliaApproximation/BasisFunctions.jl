@@ -87,7 +87,13 @@ The function wrap_operator returns an operator with the given source and destina
 and with the action of the given operator. Depending on the operator, the result is
 a WrappedOperator, but sometimes that can be avoided.
 """
-wrap_operator(src, dest, op::AbstractOperator) = WrappedOperator(src, dest, op)
+function wrap_operator(w_src, w_dest, op::AbstractOperator)
+    if (w_src == src(op)) && (w_dest == dest(op))
+        op
+    else
+        WrappedOperator(w_src, w_dest, op)
+    end
+end
 
 # No need to wrap a wrapped operator
 wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, operator(op))
