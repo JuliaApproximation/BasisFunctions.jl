@@ -70,7 +70,7 @@ extension_size(s::TensorProductSet) = map(extension_size, elements(s))
 # little sense for a tensor product. But perhaps in generic code somewhere...
 name(s::TensorProductSet) = "tensor product (" * name(element(s,1)) * names(s.sets[2:end]...) * ")"
 names(s1::FunctionSet) = " x " * name(s1)
-names(s1::FunctionSet, s::FunctionSet...) = " x " * name(s1) * names(s)
+names(s1::FunctionSet, s::FunctionSet...) = " x " * name(s1) * names(s...)
 
 size(s::TensorProductSet) = map(length, s.sets)
 size(s::TensorProductSet, j::Int) = length(s.sets[j])
