@@ -129,6 +129,12 @@ function rescale(s::FunctionSet1d, a, b)
     end
 end
 
+"Preserve Tensor Product Structure"
+function rescale{N}(s::TensorProductSet, a::SVector{N}, b::SVector{N})
+    scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
+    tensorproduct(scaled_sets...)
+end
+
 #################
 # Arithmetic
 #################

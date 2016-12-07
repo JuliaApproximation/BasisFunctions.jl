@@ -274,7 +274,7 @@ evaluation_operator(s::FunctionSet, g::AbstractGrid; options...) = evaluation_op
 
 # Evaluate s in the grid of dgs
 function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
-    if has_transform(s)
+    if has_transform(s,dgs)
         if has_transform(s, dgs)
             full_transform_operator(s, dgs; options...)
         elseif length(s) < length(dgs)
