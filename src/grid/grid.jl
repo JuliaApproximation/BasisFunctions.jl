@@ -22,7 +22,7 @@ eltype{N,T}(::Type{AbstractGrid{N,T}}) = SVector{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)
-
+endof(g::AbstractGrid) = length(g)
 support(g::AbstractGrid) = (left(g),right(g))
 
 endof(g::AbstractGrid) = length(g)

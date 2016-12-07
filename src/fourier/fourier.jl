@@ -208,7 +208,7 @@ function differentiation_operator{T}(b1::FourierBasisOdd{T}, b2::FourierBasisOdd
 	DiagonalOperator(b1, [diff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
 end
 
-antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx==0 ? T(0) : 1 / (i* 2 * T(pi) * im)^order
+antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
 function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...)
 	@assert length(b1) == length(b2)
 	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])

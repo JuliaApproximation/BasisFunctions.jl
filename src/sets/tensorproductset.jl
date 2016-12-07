@@ -20,7 +20,7 @@ element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)
 composite_length{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
 
 function TensorProductSet(set::FunctionSet)
-    warning("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
+    warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
     set
 end
 
@@ -57,6 +57,7 @@ promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), s.sets)...)
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
+resize{TS,N,T}(s::TensorProductSet{TS,N,T}, n::Int) = resize(s,ntuple(k->n,N))
 
 in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
 
@@ -78,7 +79,7 @@ extension_size(s::TensorProductSet) = map(extension_size, elements(s))
 # little sense for a tensor product. But perhaps in generic code somewhere...
 name(s::TensorProductSet) = "tensor product (" * name(element(s,1)) * names(s.sets[2:end]...) * ")"
 names(s1::FunctionSet) = " x " * name(s1)
-names(s1::FunctionSet, s::FunctionSet...) = " x " * name(s1) * names(s)
+names(s1::FunctionSet, s::FunctionSet...) = " x " * name(s1) * names(s...)
 
 size(s::TensorProductSet) = map(length, s.sets)
 size(s::TensorProductSet, j::Int) = length(s.sets[j])
