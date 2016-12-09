@@ -274,16 +274,21 @@ evaluation_operator(s::FunctionSet, g::AbstractGrid; options...) = evaluation_op
 
 # Evaluate s in the grid of dgs
 function evaluation_operator(s::FunctionSet, dgs::DiscreteGridSpace; options...)
-    if has_transform(s,dgs)
+    if has_transform(s)
         if has_transform(s, dgs)
             full_transform_operator(s, dgs; options...)
         elseif length(s) < length(dgs)
             if ndims(s) == 1
                 slarge = resize(s, length(dgs))
-            else
+            # The basis should at least be resizeable to the dimensions of the grid
+            elseif ndims(s) == length(size(dgs))
                 slarge = resize(s, size(dgs))
             end
-            evaluation_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
+            if has_transform(slarge, dgs)
+                full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
+            else
+                MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
+            end
         else
             # This might be faster implemented by:
             #   - finding an integer n so that nlength(dgs)>length(s)
