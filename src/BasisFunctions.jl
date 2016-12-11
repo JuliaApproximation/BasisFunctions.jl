@@ -1,3 +1,7 @@
+# BasisFunctions
+
+__precompile__()
+
 module BasisFunctions
 
 using FastTransforms
