@@ -124,7 +124,7 @@ function rescale(s::FunctionSet1d, a, b)
     if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
         s
     else
-        m = interval_map(left(s), right(s), a, b)
+        m = interval_map(left(s), right(s), T(a), T(b))
         apply_map(s, m)
     end
 end

@@ -27,8 +27,10 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
-checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idx))
+checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idxn))
 
+# Catch indexing of 1d grids with CartesianIndex
+getindex(g::AbstractGrid1d, idx::CartesianIndex{1}) = getindex(g, idx[1])
 
 function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)
