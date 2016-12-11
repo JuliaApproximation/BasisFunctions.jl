@@ -25,8 +25,6 @@ size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)
 support(g::AbstractGrid) = (left(g),right(g))
 
-endof(g::AbstractGrid) = length(g)
-
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
 checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idx))
