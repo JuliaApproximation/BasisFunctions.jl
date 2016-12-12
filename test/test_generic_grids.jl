@@ -74,6 +74,14 @@ function test_grids(T)
     test_generic_grid(g3)
     test_generic_grid(g4)
 
+    # Test a subgrid
+    g5 = g1[10:20]
+    @test g5[1] == g1[10]
+    @test g5[11] == g1[20]
+    test_generic_grid(g5)
+    g6 = g1[10:2:20]
+    @test g6[2] == g1[12]
+
     g = EquispacedGrid(len, a, b)
     idx = 5
     @test g[idx] ≈ a + (idx-1) * (b-a)/(len-1)

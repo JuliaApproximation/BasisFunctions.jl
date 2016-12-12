@@ -55,3 +55,6 @@ _element(s::DiscreteGridSpace, i, grid) = DiscreteGridSpace(element(grid, i), el
 composite_length(s::DiscreteGridSpace) = composite_length(grid(s))
 
 elements(s::DiscreteGridSpace) = map(t->DiscreteGridSpace(t, eltype(s)), elements(grid(s)))
+
+# Make a DiscreteGridSpace with the same eltype as the given function set
+gridspace(s::FunctionSet, g = grid(s)) = DiscreteGridSpace(g, eltype(s))

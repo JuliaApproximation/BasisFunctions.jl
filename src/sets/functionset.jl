@@ -392,7 +392,7 @@ function eval_expansion(set::FunctionSet, coefficients, x)
     z
 end
 
-function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
+function broadcast_eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
     @assert ndims(set) == ndims(grid)
     @assert size(coefficients) == size(set)
     @assert numtype(grid) == numtype(set)

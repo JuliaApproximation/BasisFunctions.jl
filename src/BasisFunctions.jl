@@ -16,7 +16,7 @@ import Base: ≈
 import Base: promote, promote_rule, convert, promote_eltype, widen
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect, endof, checkbounds
+        range, collect, endof, checkbounds, first, last
 
 import Base: cos, sin, exp, log
 
@@ -33,6 +33,8 @@ import Base: show, showcompact, call, convert, similar
 import Base: dct, idct
 
 import Base: indices, normalize
+
+import Base: broadcast
 
 # import PyPlot: plot
 
@@ -53,6 +55,10 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
 export dim, left, right, range, sample
+
+# from grid/subgrid.jl
+export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
+    similar_subgrid
 
 # from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
@@ -105,17 +111,36 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator
 
-# from generic_operator.jl
-export extension_operator, restriction_operator, interpolation_operator,
-    approximation_operator, transform_operator, transform_set, full_transform_operator,
-    differentiation_operator, antidifferentiation_operator, derivative_set, antiderivative_set,
-    approximate, evaluation_operator,
-    Extension, Restriction, extend, Differentiation, AntiDifferentiation,
-    extension_size, transform_operator_pre, transform_operator_post, interpolation_matrix,
-    tensorproduct
+# from generic/transform.jl
+export transform_operator, transform_set, full_transform_operator,
+    transform_operator_pre, transform_operator_post,
+    transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
+    transform_from_grid, transform_from_grid_pre, transform_from_grid_post
+
+# from generic/extension
+export extension_operator, default_extension_operator, extension_size, extend,
+    restriction_operator, default_restriction_operator, restriction_size, restrict,
+    Extension, Restriction
+
+# from generic/evaluation.jl
+export evaluation_operator, grid_evaluation_operator, default_evaluation_operator,
+    evaluation_matrix
+
+# from generic/interpolation.jl
+export interpolation_operator, default_interpolation_operator, interpolation_matrix
+
+# from generic/leastsquares.jl
+export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
+
+# from generic/approximation.jl
+export approximation_operator, default_approximation_operator, approximate
+
+# from generic/differentiation.jl
+export differentiation_operator, antidifferentiation_operator, derivative_set,
+    antiderivative_set, Differentiation, Antidifferentiation
 
 # from tensorproducts.jl
-export is_homogeneous, basetype
+export is_homogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -127,7 +152,8 @@ export BlockOperator, block_row_operator, block_column_operator, composite_size
 export AbstractFunctional, EvaluationFunctional, row
 
 # from grid/discretegridspace.jl
-export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right
+export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
+    gridspace
 
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
@@ -191,6 +217,7 @@ include("maps/maps.jl")
 include("maps/partition.jl")
 
 include("grid/grid.jl")
+include("grid/tensorproductgrid.jl")
 
 include("sets/functionset.jl")
 
@@ -198,6 +225,10 @@ include("operator/operator.jl")
 include("operator/composite_operator.jl")
 
 include("grid/discretegridspace.jl")
+include("grid/mappedgrid.jl")
+include("grid/intervalgrids.jl")
+include("grid/scattered_grid.jl")
+include("grid/subgrid.jl")
 
 include("sets/derived_set.jl")
 include("sets/tensorproductset.jl")
@@ -221,7 +252,7 @@ include("functional/functional.jl")
 
 include("tensorproducts.jl")
 
-include("generic_operators.jl")
+include("generic/generic_operators.jl")
 
 include("sets/subsets.jl")
 include("sets/composite_set.jl")

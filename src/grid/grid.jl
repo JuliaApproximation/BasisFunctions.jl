@@ -23,6 +23,10 @@ eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)
+
+first(g::AbstractGrid) = g[first(eachindex(g))]
+last(g::AbstractGrid) = g[last(eachindex(g))]
+
 support(g::AbstractGrid) = (left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
@@ -78,9 +82,3 @@ sample(g::AbstractGrid, f::Function, ELT = numtype(g)) = sample!(zeros(ELT, size
 		result
 	end
 end
-
-
-include("tensorproductgrid.jl")
-include("mappedgrid.jl")
-include("intervalgrids.jl")
-include("scattered_grid.jl")

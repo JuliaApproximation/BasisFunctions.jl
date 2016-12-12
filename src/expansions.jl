@@ -68,6 +68,9 @@ function antidifferentiate(e::SetExpansion, order=1)
     SetExpansion(dest(op), apply(op,e.coefficients))
 end
 
+broadcast(e::SetExpansion, grid::AbstractGrid) = eval_expansion(set(e), coefficients(e), grid)
+
+broadcast{T}(e::SetExpansion, x::LinSpace{T}) = broadcast(e, convert(EquispacedGrid{T}, x))
 
 # Shorthands for partial derivatives
 ∂x(f::SetExpansion) = differentiate(f, 1, 1)

@@ -38,7 +38,7 @@ immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
     a   ::  T
     b   ::  T
 
-    EquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
+    EquispacedGrid(n::Int, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
 EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
@@ -48,6 +48,10 @@ EquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = EquispacedGrid{T}(n, a
 similar_grid(g::EquispacedGrid, a, b, T) = EquispacedGrid{T}(length(g), a, b)
 
 stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
+
+# Support conversion from a LinSpace in julia Base
+# (What about more general ranges?)
+convert{T}(::Type{BasisFunctions.EquispacedGrid{T}}, x::LinSpace{T}) = EquispacedGrid{T}(length(x), first(x), last(x))
 
 
 """

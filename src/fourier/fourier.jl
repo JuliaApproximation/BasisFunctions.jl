@@ -265,6 +265,42 @@ function transform_to_grid_pre(src::FourierBasis, dest, grid; options...)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
+
+# Try to efficiently evaluate a Fourier series on a regular equispaced grid
+# The case of a periodic grid is handled generically in generic/evaluation, because
+# it is the associated grid of the function set.
+function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options...)
+	a = left(grid)
+	b = right(grid)
+	# We can use the fft if the equispaced grid is a subset of the periodic grid
+	if (a > 0) || (b < 1)
+		# We are dealing with a subgrid. The main question is: if we extend it
+		# to the full support, is it compatible with a periodic grid?
+		h = stepsize(grid)
+		nleft = a/h
+		nright = (1-b)/h
+		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))
+			nleft_int = round(Int, nleft)
+			nright_int = round(Int, nright)
+			ntot = length(grid) + nleft_int + nright_int - 1
+			T = numtype(grid)
+			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
+			super_dgs = gridspace(set, super_grid)
+			E = evaluation_operator(set, super_dgs; options...)
+			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
+			R*E
+		else
+			default_evaluation_operator(set, dgs; options...)
+		end
+	elseif a ≈ left(set) && b ≈ right(set)
+		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
+		# but with the right endpoint added
+		default_evaluation_operator(set, dgs; options...)
+	else
+		default_evaluation_operator(set, dgs; options...)
+	end
+end
+
 is_compatible(s1::FourierBasis, s2::FourierBasis) = true
 # Multiplication of Fourier Series
 function (*)(src1::FourierBasisOdd, src2::FourierBasisEven, coef_src1, coef_src2)

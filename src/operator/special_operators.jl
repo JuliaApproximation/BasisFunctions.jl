@@ -128,6 +128,82 @@ simplify(op::WrappedOperator) = op.op
 
 
 """
+An IndexRestrictionOperator selects a subset of coefficients based on their indices.
+"""
+immutable IndexRestrictionOperator{I,ELT} <: AbstractOperator{ELT}
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+    subindices  ::  I
+
+    function IndexRestrictionOperator(src, dest, subindices)
+        @assert length(dest) == length(subindices)
+        @assert length(src) >= length(dest)
+        new(src, dest, subindices)
+    end
+end
+
+function IndexRestrictionOperator(src, dest, subindices)
+    ELT = promote_type(eltype(src), eltype(dest))
+    IndexRestrictionOperator{typeof(subindices),ELT}(src, dest, subindices)
+end
+
+subindices(op::IndexRestrictionOperator) = op.subindices
+
+is_diagonal(::IndexRestrictionOperator) = true
+
+function apply!(op::IndexRestrictionOperator, coef_dest, coef_src)
+    for (i,j) in enumerate(subindices(op))
+        coef_dest[i] = coef_src[j]
+    end
+    coef_dest
+end
+
+promote_eltype{I,ELT,S}(op::IndexRestrictionOperator{I,ELT}, ::Type{S}) =
+    IndexRestrictionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
+
+
+"""
+An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
+"""
+immutable IndexExtensionOperator{I,ELT} <: AbstractOperator{ELT}
+    src         ::  FunctionSet
+    dest        ::  FunctionSet
+    subindices  ::  I
+
+    function IndexExtensionOperator(src, dest, subindices)
+        @assert length(src) == length(subindices)
+        @assert length(dest) >= length(src)
+        new(src, dest, subindices)
+    end
+end
+
+function IndexExtensionOperator(src, dest, subindices)
+    ELT = promote_type(eltype(src), eltype(dest))
+    IndexExtensionOperator{typeof(subindices),ELT}(src, dest, subindices)
+end
+
+subindices(op::IndexExtensionOperator) = op.subindices
+
+is_diagonal(::IndexExtensionOperator) = true
+
+function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
+    for (i,j) in enumerate(subindices(op))
+        coef_dest[j] = coef_src[i]
+    end
+    coef_dest
+end
+
+promote_eltype{I,ELT,S}(op::IndexExtensionOperator{I,ELT}, ::Type{S}) =
+    IndexExtensionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
+
+ctranspose(op::IndexRestrictionOperator) =
+    IndexExtensionOperator(dest(op), src(op), subindices(op))
+
+ctranspose(op::IndexExtensionOperator) =
+    IndexRestrictionOperator(dest(op), src(op), subindices(op))
+
+
+"""
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
 otherwise it is not in-place.

@@ -86,6 +86,41 @@ end
 
 
 ###################
+# Evaluation
+###################
+
+# If the set is mapped and the grid is mapped, and if the maps are identical,
+# we can use the evaluation operator of the underlying set and grid
+function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::MappedGrid; options...)
+    if is_compatible(mapping(s), mapping(g))
+        E = evaluation_operator(set(s), grid(g); options...)
+        wrap_operator(s, dgs, E)
+    else
+        default_evaluation_operator(s, dgs; options...)
+    end
+end
+
+# If the grid is not mapped, we proceed by performing the inverse map on the grid,
+# like we do for transforms above
+function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractGrid; options...)
+    g2 = apply_map(g, inv(mapping(s)))
+    E = evaluation_operator(set(s), gridspace(set(s), g2); options...)
+    wrap_operator(s, dgs, E)
+end
+
+# We have to intercept the case of a subgrid, because there is a general rule
+# for subgrids and abstract FunctionSet's in generic/evaluation that causes an
+# ambiguity. We proceed here by applying the inverse map to the underlying grid
+# of the subgrid.
+function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
+    mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
+    g2 = similar_subgrid(g, mapped_supergrid)
+    g2_dgs = gridspace(set(s), g2)
+    E = evaluation_operator(set(s), g2_dgs; options...)
+    wrap_operator(s, dgs, E)
+end
+
+###################
 # Differentiation
 ###################
 
