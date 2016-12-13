@@ -27,8 +27,8 @@ set(s::DerivedSet) = s.set
 
 resize(s::DerivedSet, n) = similar_set(s, resize(set(s),n))
 
-promote_eltype{N,T1,T2}(s::DerivedSet{N,T1}, ::Type{T2}) =
-    similar_set(s, promote_eltype(set(s), T2))
+set_promote_eltype{N,T,S}(s::DerivedSet{N,T}, ::Type{S}) =
+    similar_set(s, promote_eltype(set(s), S))
 
 # Delegation of properties
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)

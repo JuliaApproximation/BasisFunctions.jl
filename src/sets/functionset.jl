@@ -104,9 +104,15 @@ This function is mainly used to create instances for testing purposes.
 instantiate{S <: FunctionSet}(::Type{S}, n) = instantiate(S, n, Float64)
 
 "Promote the element type of the function set."
-# This definition catches cases where nothing needs to be done with diagonal dispatch
-# All sets should implement their own promotion rules.
-promote_eltype{N,T}(s::FunctionSet{N,T}, ::Type{T}) = s
+promote_eltype{N,T,S}(s::FunctionSet{N,T}, ::Type{S}) = _promote_eltype(s, promote_type(T,S))
+
+# Subtypes should implement op_promote_eltype:
+# set_promote_eltype{N,T,S}(set::SomeSet{N,T}, ::Type{S}) = ...
+# They can assume that S is different from T, and that it is wider than T.
+
+_promote_eltype{N,T}(set::FunctionSet{N,T}, ::Type{T}) = set
+_promote_eltype{N,T,S}(set::FunctionSet{N,T}, ::Type{S}) =
+    set_promote_eltype(set, S)
 
 widen(s::FunctionSet) = promote_eltype(s, widen(eltype(s)))
 

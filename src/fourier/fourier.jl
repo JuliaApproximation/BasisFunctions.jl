@@ -37,7 +37,7 @@ fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
 
 instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
 
-promote_eltype{EVEN,T,S}(b::FourierBasis{EVEN,T}, ::Type{S}) = FourierBasis{EVEN,promote_type(T,S)}(b.n)
+set_promote_eltype{EVEN,T,S}(b::FourierBasis{EVEN,T}, ::Type{S}) = FourierBasis{EVEN,S}(b.n)
 
 resize(b::FourierBasis, n) = FourierBasis(n, eltype(b))
 

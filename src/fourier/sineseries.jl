@@ -23,7 +23,7 @@ SineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale(
 
 instantiate{T}(::Type{SineSeries}, n, ::Type{T}) = SineSeries{T}(n)
 
-promote_eltype{T,S}(b::SineSeries{T}, ::Type{S}) = SineSeries{promote_type(T,S)}(b.n)
+set_promote_eltype{T,S}(b::SineSeries{T}, ::Type{S}) = SineSeries{S}(b.n)
 
 resize(b::SineSeries, n) = SineSeries(n, eltype(b))
 

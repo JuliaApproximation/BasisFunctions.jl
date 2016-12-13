@@ -152,7 +152,7 @@ PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = Peri
 
 instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
 
-promote_eltype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,promote_type(T,S)}(b.n, b.a, b.b)
+set_promote_eltype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,S}(b.n, b.a, b.b)
 
 resize{K,T}(b::PeriodicSplineBasis{K,T}, n) = PeriodicSplineBasis{K,T}(n, b.a, b.b)
 

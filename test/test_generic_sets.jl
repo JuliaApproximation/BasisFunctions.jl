@@ -69,12 +69,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # Test type promotion
     ELT2 = widen(ELT)
     basis2 = promote_eltype(basis, ELT2)
-    if typeof(basis2) <: OperatedSet
-        # This test fails for an OperatedSet, because the eltype of an operator can not yet be promoted
-        # @test_skip eltype(basis2) == ELT2
-    else
-        @test eltype(basis2) == ELT2
-    end
+    @test eltype(basis2) == ELT2
 
 
     ## Test dimensions

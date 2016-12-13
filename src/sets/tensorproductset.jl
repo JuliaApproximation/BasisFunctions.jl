@@ -53,7 +53,7 @@ for op in (:derivative_set, :antiderivative_set)
         TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end
 
-promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
+set_promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), s.sets)...)
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)

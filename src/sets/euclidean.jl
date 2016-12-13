@@ -12,7 +12,7 @@ length(s::DiscreteSet) = s.n
 
 isreal{T}(s::DiscreteSet{T}) = isreal(T)
 
-promote_eltype{T,S}(s::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(s))
+set_promote_eltype{T,S}(set::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(set))
 
 resize{T}(s::DiscreteSet{T}, n) = DiscreteSet{T}(n)
 

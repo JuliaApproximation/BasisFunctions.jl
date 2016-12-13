@@ -24,7 +24,7 @@ CosineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) =
 
 instantiate{T}(::Type{CosineSeries}, n, ::Type{T}) = CosineSeries{T}(n)
 
-promote_eltype{T,S}(b::CosineSeries{T}, ::Type{S}) = CosineSeries{promote_type(T,S)}(b.n)
+set_promote_eltype{T,S}(b::CosineSeries{T}, ::Type{S}) = CosineSeries{S}(b.n)
 
 resize(b::CosineSeries, n) = CosineSeries(n, eltype(b))
 

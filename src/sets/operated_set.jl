@@ -31,10 +31,7 @@ dest(s::OperatedSet) = dest(s.op)
 
 operator(s::OperatedSet) = s.op
 
-# We want to do this in the future:
-#promote_eltype{T,S}(s::OperatedSet{T}, ::Type{S}) = OperatedSet(promote_eltype(operator(s), S))
-# But for now:
-promote_eltype{T,S}(s::OperatedSet{T}, ::Type{S}) = s
+set_promote_eltype{T,S}(set::OperatedSet{T}, ::Type{S}) = OperatedSet(promote_eltype(operator(set), S))
 
 for op in (:left, :right, :length)
     @eval $op(b::OperatedSet) = $op(src(b))

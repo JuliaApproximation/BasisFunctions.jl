@@ -51,8 +51,8 @@ similar_set(set::CompositeSet, sets) = similar_set(set, sets, eltype(set))
 resize(set::CompositeSet, n) =
     similar_set(set, map( (s,l) -> resize(s, l), elements(set), n))
 
-promote_eltype{N,T,T2}(set::CompositeSet{N,T}, ::Type{T2}) =
-    similar_set(set, map(s->promote_eltype(s, T2), elements(set)), T2)
+set_promote_eltype{N,T,S}(set::CompositeSet{N,T}, ::Type{S}) =
+    similar_set(set, map(s->promote_eltype(s, S), elements(set)), S)
 
 zeros(T::Type, set::CompositeSet) = MultiArray(map(s->zeros(T,s),elements(set)))
 
