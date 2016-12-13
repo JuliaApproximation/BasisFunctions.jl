@@ -114,6 +114,18 @@ _promote_eltype{N,T}(set::FunctionSet{N,T}, ::Type{T}) = set
 _promote_eltype{N,T,S}(set::FunctionSet{N,T}, ::Type{S}) =
     set_promote_eltype(set, S)
 
+promote_eltype{N1,N2,T}(set1::FunctionSet{N1,T}, set2::FunctionSet{N2,T}) = (set1,set2)
+
+function promote_eltype{N1,N2,T,S}(set1::FunctionSet{N1,T}, set2::FunctionSet{N2,S})
+    ELT = promote_type(T,S)
+    promote_eltype(set1, ELT), promote_eltype(set2, ELT)
+end
+
+# Convenience function: promote both function sets to eltype T
+promote_eltypes{T}(::Type{T}, set1::FunctionSet, set2::FunctionSet) =
+    (promote_eltype(set1, T), promote_eltype(set2, T))
+
+
 widen(s::FunctionSet) = promote_eltype(s, widen(eltype(s)))
 
 promote{N,T}(set1::FunctionSet{N,T}, set2::FunctionSet{N,T}) = (set1,set2)

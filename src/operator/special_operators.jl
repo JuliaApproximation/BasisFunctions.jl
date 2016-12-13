@@ -3,7 +3,7 @@
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
-immutable CoefficientScalingOperator{ELT} <: AbstractOperator{ELT}
+immutable CoefficientScalingOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     index   ::  Int
@@ -16,8 +16,8 @@ immutable CoefficientScalingOperator{ELT} <: AbstractOperator{ELT}
 end
 
 function CoefficientScalingOperator(src::FunctionSet, dest::FunctionSet, index::Int, scalar::Number)
-    ELT = promote_type(eltype(src), eltype(dest), typeof(scalar))
-    CoefficientScalingOperator{ELT}(src, dest, index, scalar)
+    T = promote_type(eltype(src), eltype(dest), typeof(scalar))
+    CoefficientScalingOperator{T}(promote_eltype(src,T), promote_eltype(dest, T), index, convert(T,scalar))
 end
 
 CoefficientScalingOperator(src::FunctionSet, index::Int, scalar::Number) =
@@ -71,7 +71,7 @@ operator are correct, for example if a derived set returns an operator of the em
 This operator can be wrapped to make sure it has the right source and destination sets, i.e.
 its source and destination would correspond to the derived set, and not to the embedded set.
 """
-immutable WrappedOperator{OP,ELT} <: AbstractOperator{ELT}
+immutable WrappedOperator{OP,T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     op      ::  OP
@@ -84,8 +84,11 @@ immutable WrappedOperator{OP,ELT} <: AbstractOperator{ELT}
     end
 end
 
-WrappedOperator(src, dest, op::AbstractOperator) =
-    WrappedOperator{typeof(op),eltype(op)}(src, dest, op)
+function WrappedOperator(src, dest, op::AbstractOperator)
+    T = promote_type(eltype(src), eltype(dest), eltype(op))
+    promoted_op = promote_eltype(op, T)
+    WrappedOperator{typeof(promoted_op),T}(promote_eltype(src, T), promote_eltype(dest, T), promoted_op)
+end
 
 """
 The function wrap_operator returns an operator with the given source and destination,
@@ -135,7 +138,7 @@ simplify(op::WrappedOperator) = op.op
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.
 """
-immutable IndexRestrictionOperator{I,ELT} <: AbstractOperator{ELT}
+immutable IndexRestrictionOperator{I,T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
     subindices  ::  I
@@ -148,8 +151,8 @@ immutable IndexRestrictionOperator{I,ELT} <: AbstractOperator{ELT}
 end
 
 function IndexRestrictionOperator(src, dest, subindices)
-    ELT = promote_type(eltype(src), eltype(dest))
-    IndexRestrictionOperator{typeof(subindices),ELT}(src, dest, subindices)
+    T = promote_type(eltype(src), eltype(dest))
+    IndexRestrictionOperator{typeof(subindices),T}(src, dest, subindices)
 end
 
 subindices(op::IndexRestrictionOperator) = op.subindices

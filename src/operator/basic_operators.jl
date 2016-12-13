@@ -3,7 +3,7 @@
 """
 The identity operator between two (possibly different) function sets.
 """
-immutable IdentityOperator{ELT} <: AbstractOperator{ELT}
+immutable IdentityOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 
@@ -13,10 +13,13 @@ immutable IdentityOperator{ELT} <: AbstractOperator{ELT}
     end
 end
 
-IdentityOperator(src, dest = src) = IdentityOperator{op_eltype(src,dest)}(src,dest)
+IdentityOperator{N1,N2,T}(src::FunctionSet{N1,T}, dest::FunctionSet{N2,T}) =
+    IdentityOperator{T}(src, dest)
 
-op_promote_eltype{ELT,S}(op::IdentityOperator{ELT}, ::Type{S}) =
-    IdentityOperator{S}(promote_eltype(src(op), S), promote_eltype(dest(op), S))
+IdentityOperator(src, dest = src) = IdentityOperator(promote_eltype(src,dest)...)
+
+op_promote_eltype{T,S}(op::IdentityOperator{T}, ::Type{S}) =
+    IdentityOperator{S}(promote_eltypes(S, src(op), dest(op))...)
 
 is_inplace(::IdentityOperator) = true
 is_diagonal(::IdentityOperator) = true
@@ -43,10 +46,10 @@ apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 """
 A ScalingOperator is the identity operator up to a scaling.
 """
-immutable ScalingOperator{ELT} <: AbstractOperator{ELT}
+immutable ScalingOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
-    scalar  ::  ELT
+    scalar  ::  T
 
     function ScalingOperator(src, dest, scalar)
         @assert length(src) == length(dest)
@@ -55,14 +58,14 @@ immutable ScalingOperator{ELT} <: AbstractOperator{ELT}
 end
 
 function ScalingOperator(src::FunctionSet, dest::FunctionSet, scalar::Number)
-    ELT = promote_type(op_eltype(src, dest), typeof(scalar))
-    ScalingOperator{ELT}(src, dest, ELT(scalar))
+    T = promote_type(eltype(src), eltype(dest), typeof(scalar))
+    ScalingOperator{T}(promote_eltypes(T, src, dest)..., convert(T, scalar))
 end
 
 ScalingOperator(src::FunctionSet, scalar::Number) = ScalingOperator(src, src, scalar)
 
-op_promote_eltype{ELT,S}(op::ScalingOperator{ELT}, ::Type{S}) =
-    ScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), S(op.scalar))
+op_promote_eltype{T,S}(op::ScalingOperator{T}, ::Type{S}) =
+    ScalingOperator{S}(promote_eltypes(S, src(op), dest(op))..., convert(S, op.scalar))
 
 is_inplace(::ScalingOperator) = true
 is_diagonal(::ScalingOperator) = true
@@ -105,7 +108,7 @@ function matrix!(op::ScalingOperator, a)
     a
 end
 
-unsafe_getindex{ELT}(op::ScalingOperator{ELT}, i, j) = i == j ? ELT(op.scalar) : ELT(0)
+unsafe_getindex{T}(op::ScalingOperator{T}, i, j) = i == j ? convert(T, op.scalar) : convert(T, 0)
 
 
 # default implementation for scalar multiplication is a scaling operator
@@ -113,15 +116,18 @@ unsafe_getindex{ELT}(op::ScalingOperator{ELT}, i, j) = i == j ? ELT(op.scalar) :
 
 
 "The zero operator maps everything to zero."
-immutable ZeroOperator{ELT} <: AbstractOperator{ELT}
+immutable ZeroOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 end
 
-ZeroOperator(src, dest = src) = ZeroOperator{op_eltype(src,dest)}(src,dest)
+ZeroOperator{N1,N2,T}(src::FunctionSet{N1,T}, dest::FunctionSet{N2,T}) =
+    ZeroOperator{T}(src, dest)
 
-op_promote_eltype{ELT,S}(op::ZeroOperator{ELT}, ::Type{S}) =
-    ZeroOperator{S}(promote_eltype(op.src, S), promote_eltype(op.dest, S))
+ZeroOperator(src, dest = src) = ZeroOperator(promote_eltype(src, dest)...)
+
+op_promote_eltype{T,S}(op::ZeroOperator{T}, ::Type{S}) =
+    ZeroOperator(promote_eltypes(S, op.src, op.dest)...)
 
 # We can only be in-place if the numbers of coefficients of src and dest match
 is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
@@ -138,7 +144,7 @@ apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, 0); coef_dest)
 
 diagonal(op::ZeroOperator) = zeros(eltype(op), min(length(src(op)), length(dest(op))))
 
-unsafe_getindex{ELT}(op::ZeroOperator{ELT}, i, j) = ELT(0)
+unsafe_getindex{T}(op::ZeroOperator{T}, i, j) = convert(T, 0)
 
 
 
@@ -164,7 +170,7 @@ DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(C
 DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
 
 op_promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
-    DiagonalOperator{S}(promote_eltype(src(op), S), promote_eltype(dest(op), S), convert(Array{S,1}, op.diagonal))
+    DiagonalOperator{S}(promote_eltypes(S, src(op), dest(op))..., convert(Array{S,1}, op.diagonal))
 
 diagonal(op::DiagonalOperator) = copy(op.diagonal)
 

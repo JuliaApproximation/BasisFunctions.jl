@@ -7,12 +7,15 @@
 function test_generic_operators(T)
     b1 = FourierBasis(3, T)
     b2 = ChebyshevBasis(4, T)
+    b3 = ChebyshevBasis(3, T)
 
     operators = [
         ["Identity operator", IdentityOperator(b1, b1)],
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
+        ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
+        ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b1, b1, T(2))) ],
     ]
 
     for ops in operators
@@ -25,7 +28,8 @@ end
 function test_generic_operator_interface(op, T)
     ELT = eltype(op)
     @test promote_type(T,ELT) == ELT
-    @test ELT == promote_type(eltype(src(op)), eltype(dest(op)))
+    @test eltype(src(op)) == ELT
+    @test eltype(dest(op)) == ELT
 
     m = matrix(op)
 
@@ -74,8 +78,8 @@ function test_generic_operator_interface(op, T)
         # ELT2 may not equal T, but it must be wider.
         # For example, when T2 is BigFloat, ELT2 could be Complex{BigFloat}
         @test promote_type(T2, ELT2) == ELT2
-        @test promote_type(T2, eltype(src(op2))) == eltype(src(op2))
-        @test promote_type(T2, eltype(dest(op2))) == eltype(dest(op2))
+        @test eltype(src(op2)) == ELT2
+        @test eltype(dest(op2)) == ELT2
     end
 
     # Verify inverse
