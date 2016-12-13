@@ -66,7 +66,7 @@ eltype{B <: FunctionSet}(::Type{B}) = eltype(supertype(B))
 eltype(x, y) = promote_type(eltype(x), eltype(y))
 eltype(x, y, z) = promote_type(eltype(x), eltype(y), eltype(z))
 eltype(x, y, z, t) = promote_type(eltype(x), eltype(y), eltype(z), eltype(t))
-eltype(x...) = promote_eltype(map(eltype, x)...)
+eltype(x...) = promote_type(map(eltype, x)...)
 
 
 

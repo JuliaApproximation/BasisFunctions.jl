@@ -4,6 +4,102 @@
 # Tensor operators
 #####
 
+function test_generic_operators(T)
+    b1 = FourierBasis(3, T)
+    b2 = ChebyshevBasis(4, T)
+
+    operators = [
+        ["Identity operator", IdentityOperator(b1, b1)],
+        ["Scaling operator", ScalingOperator(b1, b1, T(2))],
+        ["Zero operator", ZeroOperator(b1, b2)],
+        ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
+    ]
+
+    for ops in operators
+        @testset "$(rpad("$(ops[1])", 80))" begin
+            test_generic_operator_interface(ops[2], T)
+        end
+    end
+end
+
+function test_generic_operator_interface(op, T)
+    ELT = eltype(op)
+    @test promote_type(T,ELT) == ELT
+    @test ELT == promote_type(eltype(src(op)), eltype(dest(op)))
+
+    m = matrix(op)
+
+    # Test elementwise equality
+    for i in 1:size(op,1)
+        for j in 1:size(op,2)
+            @test m[i,j] == op[i,j]
+        end
+    end
+
+    # Does the operator agree with its matrix?
+    r = zeros(ELT, src(op))
+    v1 = zeros(ELT, dest(op))
+    v2 = m*r
+    @test maximum(abs(v1-v2)) < 10*sqrt(eps(T))
+
+    # Verify claim to be in-place
+    if is_inplace(op)
+        v3 = copy(r)
+        apply_inplace!(op, v3)
+        @test maximum(abs(v3-v2)) < 10*sqrt(eps(T))
+    end
+
+    # Test claim to be diagonal
+    if is_diagonal(op)
+        for i in 1:size(op,1)
+            for j in 1:size(op,2)
+                if i != j
+                    @test abs(m[i,j]) < 10*sqrt(eps(T))
+                end
+            end
+        end
+    end
+
+    # Verify diagonal entries
+    d = diagonal(op)
+    for i in 1:min(size(op,1),size(op,2))
+        d[i] ≈ m[i,i]
+    end
+
+    # Verify eltype promotion
+    T2 = widen(T)
+    if T2 != T
+        op2 = promote_eltype(op, T2)
+        ELT2 = eltype(op2)
+        # ELT2 may not equal T, but it must be wider.
+        # For example, when T2 is BigFloat, ELT2 could be Complex{BigFloat}
+        @test promote_type(T2, ELT2) == ELT2
+        @test promote_type(T2, eltype(src(op2))) == eltype(src(op2))
+        @test promote_type(T2, eltype(dest(op2))) == eltype(dest(op2))
+    end
+
+    # Verify inverse
+    inv_op = inv(op)
+    if ~(typeof(inv_op) <: OperatorInverse)
+        @test src(inv_op) == dest(op)
+        @test dest(inv_op) == src(op)
+        m2 = matrix(inv_op)
+        I1 = eye(ELT, length(src(op)))
+        I2 = eye(ELT, length(dest(op)))
+        @test maximum(abs(m2*m - I1)) < 10*sqrt(eps(T))
+        @test maximum(abs(m*m2 - I2)) < 10*sqrt(eps(T))
+    end
+
+    # Verify transpose
+    ct_op = ctranspose(op)
+    if ~(typeof(ct_op) <: OperatorTranspose)
+        @test src(ct_op) == dest(op)
+        @test dest(ct_op) == src(op)
+        m2 = matrix(ct_op)
+        @test maximum(abs(m' - m2)) < 10*sqrt(eps(T))
+    end
+end
+
 function test_tensor_operators(T)
     m1 = 3
     n1 = 4
@@ -52,7 +148,7 @@ function test_diagonal_operators(T)
             coef_src = map(eltype(src(Op)),rand(size(src(Op))))
             m = matrix(Op)
             coef_dest_m = m * coef_src
-            coef_dest = apply!(Op, coef_src)            
+            coef_dest = apply!(Op, coef_src)
             @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test out-of-place
             coef_src = map(eltype(src(Op)),rand(size(src(Op))))
@@ -73,7 +169,7 @@ function test_diagonal_operators(T)
             @test is_diagonal(2*Op) && is_inplace(2*Op)
             @test is_diagonal(Op') && is_inplace(Op')
             @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
-            @test is_diagonal(Op*Op) && is_inplace(Op*Op)    
+            @test is_diagonal(Op*Op) && is_inplace(Op*Op)
         end
     end
 end
@@ -99,7 +195,7 @@ function test_multidiagonal_operators(T)
         coef_dest = linearize_coefficients(MSet,apply(Op, coef_src))
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)
         @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
-        
+
         # Test inverse
         I = inv(Op)
         @test I*(Op*coef_src)≈coef_src
@@ -115,7 +211,7 @@ function test_multidiagonal_operators(T)
         @test is_diagonal(Op') && is_inplace(Op')
         @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
         @test is_diagonal(Op*Op) && is_inplace(Op*Op)
-    end    
+    end
 end
 
 function test_invertible_operators(T)
@@ -158,6 +254,3 @@ function test_noninvertible_operators(T)
         end
     end
 end
-
-
-        

@@ -189,6 +189,9 @@ end
         println()
         delimit("T is $T", )
         delimit("Operators")
+
+        test_generic_operators(T)
+
         @testset "$(rpad("test diagonal operators",80))" begin
             test_diagonal_operators(T) end
 
@@ -200,6 +203,10 @@ end
 
         @testset "$(rpad("test noninvertible operators",80))" begin
             test_noninvertible_operators(T) end
+
+        @testset "$(rpad("test tensor operators",80))" begin
+            test_tensor_operators(T)
+        end
 
         delimit("Generic interfaces")
 
@@ -233,9 +240,6 @@ end
         delimit("Tensor specific tests")
         @testset "$(rpad("test iteration",80))" begin
             test_tensor_sets(T) end
-
-        @testset "$(rpad("test operators",80))" begin
-            test_tensor_operators(T) end
 
         delimit("Test Grids")
         @testset "$(rpad("Grids",80))" begin

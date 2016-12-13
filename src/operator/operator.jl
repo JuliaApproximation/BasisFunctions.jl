@@ -28,11 +28,17 @@ op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype
 
 
 "Promote the element type of the given operator."
-# With the definition below, we catch promotions that don't change the element
-# of an operator. Subtypes can implement promote_eltype for an argument type S
-# that differs from ELT, as in:
+promote_eltype{ELT,S}(op::AbstractOperator{ELT}, ::Type{S}) =
+	_promote_eltype(op, promote_type(ELT,S))
+
+# For eltype promotion, subtypes should implement op_promote_eltype. They can
+# assume that S differs from ELT and that S is wider than ELT. The definition
+# should be like:
 # promote_eltype{ELT,S}(op::SomeOperator{ELT}, ::Type{S}) = ...
-promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
+# The eltypes of the source and destination sets should also be promoted.
+_promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
+_promote_eltype{ELT,S}(op::AbstractOperator{ELT}, ::Type{S}) =
+	op_promote_eltype(op, S)
 
 # Default implementation of src and dest: assume they are fields
 src(op::AbstractOperator) = op.src
@@ -167,11 +173,14 @@ function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
 end
 
 function getindex(op::AbstractOperator, i::Int, j::Int)
+	1 <= i <= size(op,1) || throw(BoundsError())
+	1 <= j <= size(op,2) || throw(BoundsError())
+	unsafe_getindex(op, i, j)
+end
+
+function unsafe_getindex(op::AbstractOperator, i, j)
 	s = zeros(eltype(op), src(op))
 	d = zeros(eltype(op), dest(op))
-	# Note that i and j are linear indices.
-	# Below, we assume that the underlying data storage is the linear one. This
-	# is not always so. TOOD: fix
 	s[i] = 1
 	apply!(op, d, s)
 	d[j]

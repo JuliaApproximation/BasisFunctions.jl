@@ -8,6 +8,11 @@ immutable CoefficientScalingOperator{ELT} <: AbstractOperator{ELT}
     dest    ::  FunctionSet
     index   ::  Int
     scalar  ::  ELT
+
+    function CoefficientScalingOperator(src, dest, index, scalar)
+        @assert length(src) == length(dest)
+        new(src, dest, index, scalar)
+    end
 end
 
 function CoefficientScalingOperator(src::FunctionSet, dest::FunctionSet, index::Int, scalar::Number)
@@ -22,7 +27,7 @@ index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
-promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
+op_promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
     CoefficientScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), op.index, S(op.scalar))
 
 is_inplace(::CoefficientScalingOperator) = true
@@ -105,7 +110,7 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
+op_promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
     WrappedOperator(promote_eltype(src(op), S), promote_eltype(dest(op), S), promote_eltype(op.op, S))
 
 operator(op::WrappedOperator) = op.op
@@ -158,7 +163,7 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src)
     coef_dest
 end
 
-promote_eltype{I,ELT,S}(op::IndexRestrictionOperator{I,ELT}, ::Type{S}) =
+op_promote_eltype{I,ELT,S}(op::IndexRestrictionOperator{I,ELT}, ::Type{S}) =
     IndexRestrictionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
 
 
@@ -193,7 +198,7 @@ function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
     coef_dest
 end
 
-promote_eltype{I,ELT,S}(op::IndexExtensionOperator{I,ELT}, ::Type{S}) =
+op_promote_eltype{I,ELT,S}(op::IndexExtensionOperator{I,ELT}, ::Type{S}) =
     IndexExtensionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
 
 ctranspose(op::IndexRestrictionOperator) =

@@ -6,11 +6,16 @@ The identity operator between two (possibly different) function sets.
 immutable IdentityOperator{ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
+
+    function IdentityOperator(src, dest)
+        @assert length(src) == length(dest)
+        new(src, dest)
+    end
 end
 
 IdentityOperator(src, dest = src) = IdentityOperator{op_eltype(src,dest)}(src,dest)
 
-promote_eltype{ELT,S}(op::IdentityOperator{ELT}, ::Type{S}) =
+op_promote_eltype{ELT,S}(op::IdentityOperator{ELT}, ::Type{S}) =
     IdentityOperator{S}(promote_eltype(src(op), S), promote_eltype(dest(op), S))
 
 is_inplace(::IdentityOperator) = true
@@ -21,8 +26,10 @@ inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
 function matrix!(op::IdentityOperator, a)
+    @assert size(a,1) == size(a,2)
+
     a[:] = 0
-    for i in 1:min(size(a,1),size(a,2))
+    for i in 1:size(a,1)
         a[i,i] = 1
     end
     a
@@ -40,6 +47,11 @@ immutable ScalingOperator{ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     scalar  ::  ELT
+
+    function ScalingOperator(src, dest, scalar)
+        @assert length(src) == length(dest)
+        new(src, dest, scalar)
+    end
 end
 
 function ScalingOperator(src::FunctionSet, dest::FunctionSet, scalar::Number)
@@ -49,7 +61,7 @@ end
 
 ScalingOperator(src::FunctionSet, scalar::Number) = ScalingOperator(src, src, scalar)
 
-promote_eltype{ELT,S}(op::ScalingOperator{ELT}, ::Type{S}) =
+op_promote_eltype{ELT,S}(op::ScalingOperator{ELT}, ::Type{S}) =
     ScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), S(op.scalar))
 
 is_inplace(::ScalingOperator) = true
@@ -93,6 +105,9 @@ function matrix!(op::ScalingOperator, a)
     a
 end
 
+unsafe_getindex{ELT}(op::ScalingOperator{ELT}, i, j) = i == j ? ELT(op.scalar) : ELT(0)
+
+
 # default implementation for scalar multiplication is a scaling operator
 *(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op),scalar) * op
 
@@ -105,10 +120,12 @@ end
 
 ZeroOperator(src, dest = src) = ZeroOperator{op_eltype(src,dest)}(src,dest)
 
-promote_eltype{ELT,S}(op::ZeroOperator{ELT}, ::Type{S}) =
-    ZeroOperator{S}(op.src, op.dest)
+op_promote_eltype{ELT,S}(op::ZeroOperator{ELT}, ::Type{S}) =
+    ZeroOperator{S}(promote_eltype(op.src, S), promote_eltype(op.dest, S))
 
-is_inplace(::ZeroOperator) = true
+# We can only be in-place if the numbers of coefficients of src and dest match
+is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
+
 is_diagonal(::ZeroOperator) = true
 
 ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
@@ -117,7 +134,11 @@ matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
 apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, 0); coef_srcdest)
 
+apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, 0); coef_dest)
+
 diagonal(op::ZeroOperator) = zeros(eltype(op), min(length(src(op)), length(dest(op))))
+
+unsafe_getindex{ELT}(op::ZeroOperator{ELT}, i, j) = ELT(0)
 
 
 
@@ -142,8 +163,8 @@ DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(C
 
 DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
 
-promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
-    DiagonalOperator{S}(op.src, op.dest, convert(Array{S,1}, op.diagonal))
+op_promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
+    DiagonalOperator{S}(promote_eltype(src(op), S), promote_eltype(dest(op), S), convert(Array{S,1}, op.diagonal))
 
 diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
