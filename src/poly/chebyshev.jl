@@ -140,24 +140,24 @@ end
 transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevIIGrid; options...) =
 	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
-_forward_chebyshev_operator(src, dest, ::Union{Type{Float64},Type{Complex{Float64}}}; options...) =
-	FastChebyshevTransformFFTW(src, dest; options...)
-
-_forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
-	FastChebyshevTransform(src, dest)
-
-
 transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevIIGrid; options...) =
 	_backward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
-_backward_chebyshev_operator(src, dest, ::Type{Float64}; options...) =
-	InverseFastChebyshevTransformFFTW(src, dest; options...)
-
-_backward_chebyshev_operator(src, dest, ::Type{Complex{Float64}}; options...) =
-	InverseFastChebyshevTransformFFTW(src, dest; options...)
+# These are the generic fallbacks
+_forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
+	FastChebyshevTransform(src, dest)
 
 _backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
 	InverseFastChebyshevTransform(src, dest)
+
+# But for some types we use FFTW
+for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
+    @eval _forward_chebyshev_operator(src, dest, ::Type{$(op)}; options...) =
+	   FastChebyshevTransformFFTW(src, dest; options...)
+    @eval _backward_chebyshev_operator(src, dest, ::Type{$(op)}; options...) =
+       	InverseFastChebyshevTransformFFTW(src, dest; options...)
+end
+
 
 
 function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)

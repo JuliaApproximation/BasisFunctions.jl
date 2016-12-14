@@ -172,18 +172,22 @@ function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
     a
 end
 
-function getindex(op::AbstractOperator, i::Int, j::Int)
+function checkbounds(op::AbstractOperator, i::Int, j::Int)
 	1 <= i <= size(op,1) || throw(BoundsError())
 	1 <= j <= size(op,2) || throw(BoundsError())
+end
+
+function getindex(op::AbstractOperator, i, j)
+	checkbounds(op, i, j)
 	unsafe_getindex(op, i, j)
 end
 
 function unsafe_getindex(op::AbstractOperator, i, j)
 	s = zeros(eltype(op), src(op))
 	d = zeros(eltype(op), dest(op))
-	s[i] = 1
+	s[j] = 1
 	apply!(op, d, s)
-	d[j]
+	d[i]
 end
 
 function diagonal(op::AbstractOperator)

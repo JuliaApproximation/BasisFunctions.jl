@@ -31,10 +31,14 @@ support(g::AbstractGrid) = (left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
+# If the given argument is not an integer, we convert to a linear index
 checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idxn))
 
 # Catch indexing of 1d grids with CartesianIndex
 getindex(g::AbstractGrid1d, idx::CartesianIndex{1}) = getindex(g, idx[1])
+
+# Pack a list of integers into a tuple
+getindex(g::AbstractGrid, idx1::Int, idx2::Int, indices::Int...) = getindex(g, (idx1,idx2,indices...))
 
 function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)

@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__()
+#__precompile__()
 
 module BasisFunctions
 
@@ -22,7 +22,7 @@ import Base: cos, sin, exp, log
 
 import Base: zeros, ones, fill!
 
-import Base: getindex, setindex!, eltype
+import Base: getindex, setindex!, unsafe_getindex, eltype
 
 import Base: isreal, iseven, isodd
 
@@ -110,7 +110,8 @@ export CompositeOperator, compose
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
-        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator
+        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
+        IndexRestrictionOperator, IndexExtensionOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,

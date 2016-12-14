@@ -74,7 +74,9 @@ similar_grid(g::PeriodicEquispacedGrid, a, b, T) = PeriodicEquispacedGrid{T}(len
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 
-
+# We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
+==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
+    (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
 
 """
 A MidpointEquispaced grid is an equispaced grid with grid points in the centers of the equispaced

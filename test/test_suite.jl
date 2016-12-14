@@ -158,7 +158,7 @@ function test_derived_sets(T)
     test_generic_set_interface(s[1:5]) end
 
     @testset "$(rpad("Piecewise sets",80))" begin
-    part = PiecewiseInterval(0, 10, 10)
+    part = PiecewiseInterval(T(0), T(10), 10)
     pw = PiecewiseSet(b2, part)
     test_generic_set_interface(pw) end
 
@@ -169,98 +169,98 @@ function test_derived_sets(T)
 end
 
 
-    # Verify types of FFT and DCT plans by FFTW
-    # If anything changes here, the aliases in fouriertransforms.jl have to change as well
-    d1 = plan_fft!(zeros(Complex{Float64}, 10), 1:1)
-    @test typeof(d1) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,1}
-    d2 = plan_fft!(zeros(Complex{Float64}, 10, 10), 1:2)
-    @test typeof(d2) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,2}
-    d3 = plan_bfft!(zeros(Complex{Float64}, 10), 1:1)
-    @test typeof(d3) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,1}
-    d4 = plan_bfft!(zeros(Complex{Float64}, 10, 10), 1:2)
-    @test typeof(d4) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,2}
+# Verify types of FFT and DCT plans by FFTW
+# If anything changes here, the aliases in fouriertransforms.jl have to change as well
+d1 = plan_fft!(zeros(Complex{Float64}, 10), 1:1)
+@test typeof(d1) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,1}
+d2 = plan_fft!(zeros(Complex{Float64}, 10, 10), 1:2)
+@test typeof(d2) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,2}
+d3 = plan_bfft!(zeros(Complex{Float64}, 10), 1:1)
+@test typeof(d3) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,1}
+d4 = plan_bfft!(zeros(Complex{Float64}, 10, 10), 1:2)
+@test typeof(d4) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,2}
 
-    d5 = plan_dct!(zeros(10), 1:1)
-    @test typeof(d5) == Base.DFT.FFTW.DCTPlan{Float64,5,true}
-    d6 = plan_idct!(zeros(10), 1:1)
-    @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
+d5 = plan_dct!(zeros(10), 1:1)
+@test typeof(d5) == Base.DFT.FFTW.DCTPlan{Float64,5,true}
+d6 = plan_idct!(zeros(10), 1:1)
+@test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
-    for T in (Float64,BigFloat)
-        println()
-        delimit("T is $T", )
-        delimit("Operators")
-
-        test_generic_operators(T)
-
-        @testset "$(rpad("test diagonal operators",80))" begin
-            test_diagonal_operators(T) end
-
-        @testset "$(rpad("test multidiagonal operators",80))" begin
-            test_multidiagonal_operators(T) end
-
-        @testset "$(rpad("test invertible operators",80))" begin
-            test_invertible_operators(T) end
-
-        @testset "$(rpad("test noninvertible operators",80))" begin
-            test_noninvertible_operators(T) end
-
-        @testset "$(rpad("test tensor operators",80))" begin
-            test_tensor_operators(T)
-        end
-
-        delimit("Generic interfaces")
-
-        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
-        #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-        #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
-        @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
-            # Choose an odd and even number of degrees of freedom
-                basis = instantiate(SET, n, T)
-
-                @test length(basis) == n
-                @test numtype(basis) == T
-                @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
-
-                test_generic_set_interface(basis, SET)
-        end
-
-        @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
-                      FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
-                      FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-                      ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
-                      FourierBasis(9, 2, 3) ⊗ FourierBasis(7, 4, 5), # Two mapped Fourier series
-                      ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
-            test_generic_set_interface(basis, typeof(basis))
-        end
-
-        delimit("Derived sets")
-            test_derived_sets(T)
-
-        delimit("Tensor specific tests")
-        @testset "$(rpad("test iteration",80))" begin
-            test_tensor_sets(T) end
-
-        delimit("Test Grids")
-        @testset "$(rpad("Grids",80))" begin
-            test_grids(T) end
-
-        delimit("Test Maps")
-        @testset "$(rpad("Maps",80))" begin
-            test_maps(T) end
-
-        delimit("Check evaluations, interpolations, extensions, setexpansions")
-
-        @testset "$(rpad("Fourier expansions",80))" begin
-            test_fourier_series(T) end
-
-        @testset "$(rpad("Chebyshev expansions",80))" begin
-            test_chebyshev(T) end
-
-        @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
-            test_ops(T) end
-
-    end # for T in...
+for T in (Float64,BigFloat)
     println()
+    delimit("T is $T", )
+    delimit("Operators")
+
+    test_generic_operators(T)
+
+    @testset "$(rpad("test diagonal operators",80))" begin
+        test_diagonal_operators(T) end
+
+    @testset "$(rpad("test multidiagonal operators",80))" begin
+        test_multidiagonal_operators(T) end
+
+    @testset "$(rpad("test invertible operators",80))" begin
+        test_invertible_operators(T) end
+
+    @testset "$(rpad("test noninvertible operators",80))" begin
+        test_noninvertible_operators(T) end
+
+    @testset "$(rpad("test tensor operators",80))" begin
+        test_tensor_operators(T)
+    end
+
+    delimit("Generic interfaces")
+
+    SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+    #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
+    #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
+        # Choose an odd and even number of degrees of freedom
+            basis = instantiate(SET, n, T)
+
+            @test length(basis) == n
+            @test numtype(basis) == T
+            @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
+
+            test_generic_set_interface(basis, SET)
+    end
+
+    @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
+                  FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
+                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
+                  FourierBasis(9, 2, 3) ⊗ FourierBasis(7, 4, 5), # Two mapped Fourier series
+                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
+        test_generic_set_interface(basis, typeof(basis))
+    end
+
+    delimit("Derived sets")
+        test_derived_sets(T)
+
+    delimit("Tensor specific tests")
+    @testset "$(rpad("test iteration",80))" begin
+        test_tensor_sets(T) end
+
+    delimit("Test Grids")
+    @testset "$(rpad("Grids",80))" begin
+        test_grids(T) end
+
+    delimit("Test Maps")
+    @testset "$(rpad("Maps",80))" begin
+        test_maps(T) end
+
+    delimit("Check evaluations, interpolations, extensions, setexpansions")
+
+    @testset "$(rpad("Fourier expansions",80))" begin
+        test_fourier_series(T) end
+
+    @testset "$(rpad("Chebyshev expansions",80))" begin
+        test_chebyshev(T) end
+
+    @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
+        test_ops(T) end
+
+end # for T in...
+println()
 println(" All tests passed!")
 end # module

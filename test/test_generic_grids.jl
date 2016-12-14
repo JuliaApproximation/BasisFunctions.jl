@@ -78,9 +78,11 @@ function test_grids(T)
     g5 = g1[10:20]
     @test g5[1] == g1[10]
     @test g5[11] == g1[20]
+    @test length(g5) == 20-10+1
     test_generic_grid(g5)
     g6 = g1[10:2:20]
     @test g6[2] == g1[12]
+    @test length(g6) == 6
 
     g = EquispacedGrid(len, a, b)
     idx = 5

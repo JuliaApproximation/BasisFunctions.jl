@@ -162,7 +162,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, 0.5)) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, T(0.5))) ]
         for idx in [1 2 n>>1 n-1 n]
             z = eval_set_element(basis, idx, x)
             types_correct = types_correct & (typeof(z) == ELT)

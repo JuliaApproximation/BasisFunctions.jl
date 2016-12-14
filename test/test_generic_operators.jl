@@ -16,6 +16,7 @@ function test_generic_operators(T)
         ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
         ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b1, b1, T(2))) ],
+        ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
     ]
 
     for ops in operators
@@ -42,7 +43,11 @@ function test_generic_operator_interface(op, T)
 
     # Does the operator agree with its matrix?
     r = zeros(ELT, src(op))
+    for i in eachindex(r)
+        r[i] = convert(ELT, rand())
+    end
     v1 = zeros(ELT, dest(op))
+    apply!(op, v1, r)
     v2 = m*r
     @test maximum(abs(v1-v2)) < 10*sqrt(eps(T))
 
@@ -52,6 +57,12 @@ function test_generic_operator_interface(op, T)
         apply_inplace!(op, v3)
         @test maximum(abs(v3-v2)) < 10*sqrt(eps(T))
     end
+
+    # Verify that coef_src is not altered when applying out-of-place
+    r2 = copy(r)
+    v = zeros(ELT, dest(op))
+    apply!(op, v, r)
+    @test maximum(abs(r-r2)) < eps(T)
 
     # Test claim to be diagonal
     if is_diagonal(op)

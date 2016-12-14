@@ -13,4 +13,4 @@ length(g::ScatteredGrid) = length(g.points)
 
 size(g::ScatteredGrid) = (length(g),)
 
-getindex(g::ScatteredGrid, idx::Int) = g.points[idx]
+unsafe_getindex(g::ScatteredGrid, idx) = g.points[idx]

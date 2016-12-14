@@ -34,7 +34,7 @@ eachindex(g::IndexSubGrid) = eachindex(subindices(g))
 
 # The speed of this routine is the main reason why supergrid and subindices
 # are typed fields, leading to extra type parameters.
-getindex(g::IndexSubGrid, i) = g.supergrid[g.subindices[i]]
+unsafe_getindex(g::IndexSubGrid, idx) = unsafe_getindex(g.supergrid, g.subindices[idx])
 
 left(g::IndexSubGrid) = first(g)
 
@@ -45,6 +45,8 @@ right(g::IndexSubGrid) = last(g)
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
 
 function grid_extension_operator(src::DiscreteGridSpace, dest::DiscreteGridSpace, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
+	println(src_grid)
+	println(dest_grid)
     @assert supergrid(src_grid) == dest_grid
     IndexExtensionOperator(src, dest, subindices(src_grid))
 end

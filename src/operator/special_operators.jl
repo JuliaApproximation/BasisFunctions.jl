@@ -7,7 +7,7 @@ immutable CoefficientScalingOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     index   ::  Int
-    scalar  ::  ELT
+    scalar  ::  T
 
     function CoefficientScalingOperator(src, dest, index, scalar)
         @assert length(src) == length(dest)
@@ -27,7 +27,7 @@ index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
-op_promote_eltype{ELT,S}(op::CoefficientScalingOperator{ELT}, ::Type{S}) =
+op_promote_eltype{T,S}(op::CoefficientScalingOperator{T}, ::Type{S}) =
     CoefficientScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), op.index, S(op.scalar))
 
 is_inplace(::CoefficientScalingOperator) = true
@@ -113,7 +113,7 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-op_promote_eltype{OP,ELT,S}(op::WrappedOperator{OP,ELT}, ::Type{S}) =
+op_promote_eltype{OP,T,S}(op::WrappedOperator{OP,T}, ::Type{S}) =
     WrappedOperator(promote_eltype(src(op), S), promote_eltype(dest(op), S), promote_eltype(op.op, S))
 
 operator(op::WrappedOperator) = op.op
@@ -152,7 +152,7 @@ end
 
 function IndexRestrictionOperator(src, dest, subindices)
     T = promote_type(eltype(src), eltype(dest))
-    IndexRestrictionOperator{typeof(subindices),T}(src, dest, subindices)
+    IndexRestrictionOperator{typeof(subindices),T}(promote_eltype(src, T), promote_eltype(dest, T), subindices)
 end
 
 subindices(op::IndexRestrictionOperator) = op.subindices
@@ -166,14 +166,14 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src)
     coef_dest
 end
 
-op_promote_eltype{I,ELT,S}(op::IndexRestrictionOperator{I,ELT}, ::Type{S}) =
+op_promote_eltype{I,T,S}(op::IndexRestrictionOperator{I,T}, ::Type{S}) =
     IndexRestrictionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
 
 
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
 """
-immutable IndexExtensionOperator{I,ELT} <: AbstractOperator{ELT}
+immutable IndexExtensionOperator{I,T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
     subindices  ::  I
@@ -186,8 +186,8 @@ immutable IndexExtensionOperator{I,ELT} <: AbstractOperator{ELT}
 end
 
 function IndexExtensionOperator(src, dest, subindices)
-    ELT = promote_type(eltype(src), eltype(dest))
-    IndexExtensionOperator{typeof(subindices),ELT}(src, dest, subindices)
+    T = promote_type(eltype(src), eltype(dest))
+    IndexExtensionOperator{typeof(subindices),T}(src, dest, subindices)
 end
 
 subindices(op::IndexExtensionOperator) = op.subindices
@@ -195,13 +195,14 @@ subindices(op::IndexExtensionOperator) = op.subindices
 is_diagonal(::IndexExtensionOperator) = true
 
 function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
+    fill!(coef_dest, 0)
     for (i,j) in enumerate(subindices(op))
         coef_dest[j] = coef_src[i]
     end
     coef_dest
 end
 
-op_promote_eltype{I,ELT,S}(op::IndexExtensionOperator{I,ELT}, ::Type{S}) =
+op_promote_eltype{I,T,S}(op::IndexExtensionOperator{I,T}, ::Type{S}) =
     IndexExtensionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
 
 ctranspose(op::IndexRestrictionOperator) =
@@ -217,9 +218,9 @@ coefficients. The multiplication is in-place if type parameter INPLACE is true,
 otherwise it is not in-place.
 
 An alias MatrixOperator is provided, for which type parameter ARRAY equals
-Array{ELT,2}. In this case, multiplication is done using A_mul_B!.
+Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
-immutable MultiplicationOperator{ARRAY,INPLACE,ELT} <: AbstractOperator{ELT}
+immutable MultiplicationOperator{ARRAY,INPLACE,T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     object  ::  ARRAY
@@ -235,11 +236,11 @@ object(op::MultiplicationOperator) = op.object
 
 # An MatrixOperator is defined by an actual matrix, i.e. the parameter
 # ARRAY is Array{T,2}.
-typealias MatrixOperator{ELT} MultiplicationOperator{Array{ELT,2},false,ELT}
+typealias MatrixOperator{T} MultiplicationOperator{Array{T,2},false,T}
 
 function MultiplicationOperator(src::FunctionSet, dest::FunctionSet, object; inplace = false)
-    ELT = promote_type(eltype(object), op_eltype(src,dest))
-    MultiplicationOperator{typeof(object),inplace,ELT}(src, dest, object)
+    T = promote_type(eltype(object), op_eltype(src,dest))
+    MultiplicationOperator{typeof(object),inplace,T}(src, dest, object)
 end
 
 MultiplicationOperator{T <: Number}(matrix::AbstractMatrix{T}) =
@@ -474,13 +475,13 @@ is_diagonal(op::LinearizationOperator) = true
 
 
 "The inverse of a LinearizationOperator."
-immutable DelinearizationOperator{ELT} <: AbstractOperator{ELT}
+immutable DelinearizationOperator{T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
 end
 
-DelinearizationOperator(dest::FunctionSet, ELT = eltype(dest)) =
-    LinearizationOperator{ELT}(DiscreteSet{ELT}(length(src)), dest)
+DelinearizationOperator(dest::FunctionSet, T = eltype(dest)) =
+    LinearizationOperator{T}(DiscreteSet{T}(length(src)), dest)
 
 apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)

@@ -221,23 +221,27 @@ function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	_forward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
 
-_forward_fourier_operator(src, dest, ::Type{Complex{Float64}}; options...) =
-	FastFourierTransformFFTW(src, dest; options...)
-
-_forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-	FastFourierTransform(src, dest)
-
-
 function transform_to_grid(src::FourierBasis, dest, grid; options...)
 	@assert compatible_grid(src, grid)
 	_backward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
 
-_backward_fourier_operator(src, dest, ::Type{Complex{Float64}}; options...) =
-	InverseFastFourierTransformFFTW(src, dest; options...)
+# These are the generic fallbacks
+_forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
+	FastFourierTransform(src, dest)
 
 _backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
 	InverseFastFourierTransform(src, dest)
+
+# But for some types we can use FFTW
+for op in (:(Complex{Float32}), :(Complex{Float64}))
+	@eval _forward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
+		FastFourierTransformFFTW(src, dest; options...)
+
+	@eval _backward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
+		InverseFastFourierTransformFFTW(src, dest; options...)
+end
+
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...

@@ -40,6 +40,13 @@ left(g::TensorProductGrid, j) = left(g.grids[j])
 right(g::TensorProductGrid) = SVector(map(right, g.grids))
 right(g::TensorProductGrid, j) = right(g.grids[j])
 
+# Convert to linear index. If the argument is a tuple of integers, it can be assumed to
+# be a multilinear index. Same for CartesianIndex.
+linear_index{N}(grid::TensorProductGrid, i::NTuple{N,Int}) = sub2ind(size(grid), i...)
+linear_index(grid::TensorProductGrid, i::CartesianIndex) = linear_index(grid, i.I)
+
+# If its type is anything else, it may be a tuple of native indices
+linear_index(grid::TensorProductGrid, idxn::Tuple) = linear_index(grid, map(linear_index, elements(grid), idxn))
 
 @generated function eachindex{TG}(g::TensorProductGrid{TG})
 	LEN = tuple_length(TG)
@@ -48,15 +55,14 @@ right(g::TensorProductGrid, j) = right(g.grids[j])
 	:(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
 end
 
-@generated function getindex{TG}(g::TensorProductGrid{TG}, index::CartesianIndex)
-	LEN = tuple_length(TG)
-    :(@nref $LEN g d->index[d])
-end
+unsafe_getindex(grid::TensorProductGrid, idx::CartesianIndex{2}) =
+	unsafe_getindex(grid, idx[1], idx[2])
+unsafe_getindex(grid::TensorProductGrid, idx::CartesianIndex{3}) =
+	unsafe_getindex(grid, idx[1], idx[2], idx[3])
+unsafe_getindex(grid::TensorProductGrid, idx::CartesianIndex{4}) =
+	unsafe_getindex(grid, idx[1], idx[2], idx[3], idx[4])
 
-@generated function getindex{TG}(g::TensorProductGrid{TG}, index::Tuple)
-	LEN = tuple_length(TG)
-    :(@nref $LEN g d->index[d])
-end
+unsafe_getindex(g::TensorProductGrid, index::Tuple) = unsafe_getindex(g, index...)
 
 # For the recursive evaluation of grids, we want to flatten any Vec's
 # (Since in the future a single grid may return a vector rather than a number)
@@ -73,14 +79,13 @@ FlatVector(x::SVector{2}, y::SVector{2}) = SVector(x[1], x[2], y[1], y[2])
 FlatVector(x::SVector{2}, y::Number) = SVector(x[1], x[2], y)
 FlatVector(x::SVector{2}, y::Number, z::Number) = SVector(x[1], x[2], y, z)
 
-
-getindex(g::TensorProductGrid, i1, i2) =
+unsafe_getindex(g::TensorProductGrid, i1, i2) =
 	FlatVector(g.grids[1][i1], g.grids[2][i2])
 
-getindex(g::TensorProductGrid, i1, i2, i3) =
+unsafe_getindex(g::TensorProductGrid, i1, i2, i3) =
 	FlatVector(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3])
 
-getindex(g::TensorProductGrid, i1, i2, i3, i4) =
+unsafe_getindex(g::TensorProductGrid, i1, i2, i3, i4) =
 	FlatVector(g.grids[1][i1], g.grids[2][i2], g.grids[3][i3], g.grids[4][i4])
 
-getindex(g::TensorProductGrid, idx::Int) = getindex(g, ind2sub(size(g),idx))
+unsafe_getindex(grid::TensorProductGrid, idx::Int) = unsafe_getindex(grid, multilinear_index(grid, idx))

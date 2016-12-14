@@ -19,11 +19,11 @@
 function FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet,
     dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
 
-    ELT = op_eltype(src, dest)
-    plan = plan_fft!(zeros(ELT, dest), dims; flags = fftwflags)
+    T = op_eltype(src, dest)
+    plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
     t_op = MultiplicationOperator(src, dest, plan; inplace = true)
 
-    scalefactor = 1/sqrt(length(dest))
+    scalefactor = 1/sqrt(convert(T, length(dest)))
     s_op = ScalingOperator(dest, dest, scalefactor)
 
     s_op * t_op
@@ -31,11 +31,11 @@ end
 
 # Note that we choose to use bfft, an unscaled inverse fft.
 function InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
-    ELT = op_eltype(src, dest)
-    plan = plan_bfft!(zeros(ELT, src), dims; flags = fftwflags)
+    T = op_eltype(src, dest)
+    plan = plan_bfft!(zeros(T, src), dims; flags = fftwflags)
     t_op = MultiplicationOperator(src, dest, plan; inplace = true)
 
-    scalefactor = 1/sqrt(length(dest))
+    scalefactor = 1/sqrt(convert(T,length(dest)))
     s_op = ScalingOperator(dest, dest, scalefactor)
 
     s_op * t_op
