@@ -71,7 +71,7 @@ export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
 export complexify
-export instantiate, set_promote_eltype, resize
+export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_basis, is_frame, is_orthogonal, is_biorthogonal
 export in_support

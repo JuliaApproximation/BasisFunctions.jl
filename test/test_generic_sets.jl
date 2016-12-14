@@ -39,14 +39,14 @@ end
 
 # Make a suitable function by undoing the map
 function suitable_function(s::MappedSet)
-    f = suitable_function(set(s))
+    f = suitable_function(superset(s))
     m = inv(mapping(s))
     x -> f(m*x)
 end
 
-function suitable_function(s::AugmentedSet)
-    f = suitable_function(set(s))
-    g = fun(s)
+function suitable_function(s::WeightedSet)
+    f = suitable_function(superset(s))
+    g = weightfunction(s)
     x -> g(x) * f(x)
 end
 

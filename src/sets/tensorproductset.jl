@@ -61,7 +61,17 @@ resize{TS,N,T}(s::TensorProductSet{TS,N,T}, n::Int) = resize(s,ntuple(k->n,N))
 
 in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
 
-in_support(set::TensorProductSet, idx::Tuple, x) = reduce(&, map((s,i,t)->in_support(s, i, t), elements(set), idx, x))
+# This line is way too slow:
+#in_support(set::TensorProductSet, idx::Tuple, x) = reduce(&, map((s,i,t)->in_support(s, i, t), elements(set), idx, x))
+# We handcode a few cases:
+in_support(set::TensorProductSet, idx::NTuple{2,Int}, x) =
+    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2])
+
+in_support(set::TensorProductSet, idx::NTuple{3,Int}, x) =
+    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2]) && in_support(element(set,3), idx[3], x[3])
+
+in_support(set::TensorProductSet, idx::NTuple{4,Int}, x) =
+    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2]) && in_support(element(set,3), idx[3], x[3]) && in_support(element(set,4), idx[4], x[4])
 
 # Convert a CartesianIndex to a tuple so that we can use the implementation above using map
 in_support(set::TensorProductSet, idx::CartesianIndex, x) = in_support(set, idx.I, x)

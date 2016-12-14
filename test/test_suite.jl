@@ -113,7 +113,7 @@ suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis)
 
 suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
 
-suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
+suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
@@ -139,7 +139,7 @@ function test_derived_sets(T)
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
-    @testset "$(rpad("Augmented sets",80))" begin
+    @testset "$(rpad("Weighted sets",80))" begin
     # Try a functor
     test_generic_set_interface(BF.Cos() * b1)
     # as well as a regular function
@@ -149,7 +149,7 @@ function test_derived_sets(T)
     test_generic_set_interface(multiset(b1,b2))
     test_generic_set_interface(MultiSet((b1,b2))) end
 
-    @testset "$(rpad("A multiple and augmented set combination",80))" begin
+    @testset "$(rpad("A multiple and weighted set combination",80))" begin
     s = rescale(b1, 1/2, 1)
     test_generic_set_interface(multiset(s,Log()*s)) end
 
