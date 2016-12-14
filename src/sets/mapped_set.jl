@@ -6,8 +6,8 @@ one. Evaluating the MappedSet in a point uses the inverse map to evaluate the
 underlying set in the corresponding point.
 """
 immutable MappedSet{S,M,N,T} <: DerivedSet{N,T}
-    set     ::  S
-    map     ::  M
+    superset    ::  S
+    map         ::  M
 
     function MappedSet(set::FunctionSet{N,T}, map)
         new(set, map)
@@ -28,26 +28,26 @@ mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
 
-has_derivative(s::MappedSet) = has_derivative(set(s)) && is_linear(mapping(s))
-has_antiderivative(s::MappedSet) = has_antiderivative(set(s)) && is_linear(mapping(s))
+has_derivative(s::MappedSet) = has_derivative(superset(s)) && is_linear(mapping(s))
+has_antiderivative(s::MappedSet) = has_antiderivative(superset(s)) && is_linear(mapping(s))
 
-grid(s::MappedSet) = _grid(s, set(s), mapping(s))
+grid(s::MappedSet) = _grid(s, superset(s), mapping(s))
 _grid(s::MappedSet1d, set, map) = mapped_grid(grid(set), map)
 
 for op in (:left, :right)
-    @eval $op(s::MappedSet1d) = forward_map( mapping(s), $op(set(s)) )
-    @eval $op(s::MappedSet1d, idx) = forward_map( mapping(s), $op(set(s), idx) )
+    @eval $op(s::MappedSet1d) = forward_map( mapping(s), $op(superset(s)) )
+    @eval $op(s::MappedSet1d, idx) = forward_map( mapping(s), $op(superset(s), idx) )
 end
 
-name(s::MappedSet) = _name(s, set(s), mapping(s))
+name(s::MappedSet) = _name(s, superset(s), mapping(s))
 _name(s::MappedSet, set, map) = "A mapped set based on " * name(set)
 _name(s::MappedSet1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
-isreal(s::MappedSet) = isreal(set(s)) && isreal(mapping(s))
+isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
 
-eval_element(s::MappedSet, idx, y) = eval_element(set(s), idx, inverse_map(mapping(s),y))
+eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, inverse_map(mapping(s),y))
 
-is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(set(s1),set(s2))
+is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superset(s1),superset(s2))
 
 
 ###############
@@ -60,20 +60,20 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_set(s::MappedSet; options...) = apply_map(transform_set(set(s); options...), mapping(s))
+transform_set(s::MappedSet; options...) = apply_map(transform_set(superset(s); options...), mapping(s))
 
 has_grid_transform(s::MappedSet, dgs, g::MappedGrid) =
-    is_compatible(mapping(s), mapping(g)) && has_transform(set(s), DiscreteGridSpace(grid(g), eltype(dgs)))
+    is_compatible(mapping(s), mapping(g)) && has_transform(superset(s), DiscreteGridSpace(grid(g), eltype(dgs)))
 
 function has_grid_transform(s::MappedSet, dgs, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(set(s), DiscreteGridSpace(g2, eltype(dgs)), g2)
+    has_grid_transform(superset(s), DiscreteGridSpace(g2, eltype(dgs)), g2)
 end
 
 
 function simplify_transform_pair(s::MappedSet, g::MappedGrid)
     if is_compatible(mapping(s), mapping(g))
-        set(s), grid(g)
+        superset(s), grid(g)
     else
         s, g
     end
@@ -81,7 +81,7 @@ end
 
 function simplify_transform_pair(s::MappedSet, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    simplify_transform_pair(set(s), g2)
+    simplify_transform_pair(superset(s), g2)
 end
 
 
@@ -93,7 +93,7 @@ end
 # we can use the evaluation operator of the underlying set and grid
 function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::MappedGrid; options...)
     if is_compatible(mapping(s), mapping(g))
-        E = evaluation_operator(set(s), grid(g); options...)
+        E = evaluation_operator(superset(s), grid(g); options...)
         wrap_operator(s, dgs, E)
     else
         default_evaluation_operator(s, dgs; options...)
@@ -104,7 +104,7 @@ end
 # like we do for transforms above
 function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractGrid; options...)
     g2 = apply_map(g, inv(mapping(s)))
-    E = evaluation_operator(set(s), gridspace(set(s), g2); options...)
+    E = evaluation_operator(superset(s), gridspace(superset(s), g2); options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -115,8 +115,8 @@ end
 function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
     mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
     g2 = similar_subgrid(g, mapped_supergrid)
-    g2_dgs = gridspace(set(s), g2)
-    E = evaluation_operator(set(s), g2_dgs; options...)
+    g2_dgs = gridspace(superset(s), g2)
+    E = evaluation_operator(superset(s), g2_dgs; options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -126,19 +126,19 @@ end
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op(s::MappedSet1d, order::Int; options...) =
-        (@assert is_linear(mapping(s)); apply_map( $op(set(s), order; options...), mapping(s) ))
+        (@assert is_linear(mapping(s)); apply_map( $op(superset(s), order; options...), mapping(s) ))
 end
 
 function differentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
     @assert is_linear(mapping(s1))
-    D = differentiation_operator(set(s1), set(s2), order; options...)
+    D = differentiation_operator(superset(s1), superset(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order))
     wrap_operator( s1, s2, S*D )
 end
 
 function antidifferentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
     @assert is_linear(mapping(s1))
-    D = antidifferentiation_operator(set(s1), set(s2), order; options...)
+    D = antidifferentiation_operator(superset(s1), superset(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order))
     wrap_operator( s1, s2, S*D )
 end
@@ -149,7 +149,7 @@ end
 #################
 
 # TODO: check for promotions here
-mapped_set(s::MappedSet, map::AbstractMap) = MappedSet(set(s), map*mapping(s))
+mapped_set(s::MappedSet, map::AbstractMap) = MappedSet(superset(s), map*mapping(s))
 
 mapped_set(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map), eltype(s))
 
@@ -176,7 +176,7 @@ end
 
 
 function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
-    @assert is_compatible(set(s1),set(s2))
-    (mset,mcoef) = (*)(set(s1),set(s2),coef_src1, coef_src2)
+    @assert is_compatible(superset(s1),superset(s2))
+    (mset,mcoef) = (*)(superset(s1),superset(s2),coef_src1, coef_src2)
     (MappedSet(mset, mapping(s1)), mcoef)
 end
