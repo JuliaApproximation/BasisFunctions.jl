@@ -35,7 +35,8 @@ has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevIIGrid) = true
+has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevNodeGrid) = true
+has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevExtremaGrid) = true
 has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
@@ -45,7 +46,11 @@ left(b::ChebyshevBasis, idx) = left(b)
 right(b::ChebyshevBasis) = 1
 right(b::ChebyshevBasis, idx) = right(b)
 
-grid{T}(b::ChebyshevBasis{T}) = ChebyshevIIGrid(b.n,numtype(b))
+grid{T}(b::ChebyshevBasis{T}) = ChebyshevNodeGrid(b.n,numtype(b))
+secondgrid{T}(b::ChebyshevBasis{T}) = ChebyshevExtremaGrid(b.n,numtype(b))
+# extends the default definition at transform.jl
+transform_set(set::ChebyshevBasis; nodegrid=true, options...) =
+    nodegrid ? DiscreteGridSpace(grid(set), eltype(set)) : DiscreteGridSpace(secondgrid(set), eltype(set))
 
 # The weight function
 weight{T}(b::ChebyshevBasis{T}, x) = 1/sqrt(1-T(x)^2)
@@ -137,10 +142,15 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevIIGrid; options...) =
+
+
+################################################################
+# Methods to transform from ChebyshevBasis to ChebyshevNodeGrid
+###############################################################
+transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodeGrid; options...) =
 	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
-transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevIIGrid; options...) =
+transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevNodeGrid; options...) =
 	_backward_chebyshev_operator(src, dest, eltype(src,dest); options...)
 
 # These are the generic fallbacks
@@ -160,17 +170,17 @@ end
 
 
 
-function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevNodeGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	_backward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
 end
 
-function transform_from_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevIIGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+function transform_from_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevNodeGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	_forward_chebyshev_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 
 
-function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevIIGrid; options...)
+function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevNodeGrid; options...)
     ELT = eltype(dest)
     scaling = ScalingOperator(dest, 1/sqrt(ELT(length(dest)/2)))
     coefscaling = CoefficientScalingOperator(dest, 1, 1/sqrt(ELT(2)))
@@ -178,8 +188,63 @@ function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevIIGr
 	scaling * coefscaling * flip
 end
 
-transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevIIGrid; options...) =
+transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevNodeGrid; options...) =
     inv(transform_from_grid_post(dest, src, grid; options...))
+
+
+##################################################################
+# Methods to transform from ChebyshevBasis to ChebyshevExtremaGrid
+##################################################################
+transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevExtremaGrid; options...) =
+_chebyshevI_operator(src, dest, eltype(src,dest); options...)
+
+transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevExtremaGrid; options...) =
+_chebyshevI_operator(src, dest, eltype(src,dest); options...)
+
+# These are the generic fallbacks
+_chebyshevI_operator{T <: Number}(src, dest, ::Type{T}; options...) =
+FastChebyshevITransform(src, dest)
+
+# But for some types we use FFTW
+for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
+  @eval _chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
+   FastChebyshevITransformFFTW(src, dest; options...)
+end
+
+function transform_to_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevExtremaGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+  _chebyshevI_operator(s1, s2, eltype(s1, s2); options...)
+end
+
+function transform_from_grid_tensor{F <: ChebyshevBasis,G <: ChebyshevExtremaGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+  _chebyshevI_operator(s1, s2, eltype(s1, s2); options...)
+end
+
+function transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevExtremaGrid; options...)
+    ELT = eltype(src)
+    coefscaling1 = CoefficientScalingOperator(src, 1, ELT(2))
+    coefscaling2 = CoefficientScalingOperator(src, length(src), ELT(2))
+  coefscaling1 * coefscaling2
+end
+
+function transform_to_grid_post(src::ChebyshevBasis, dest, grid::ChebyshevExtremaGrid; options...)
+  ELT = eltype(src)
+  ScalingOperator(dest, 1/ELT(2))
+end
+
+function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevExtremaGrid; options...)
+    # Inverse DCT is unnormalized, applying DCT and its inverse gives N times the original. N=2(length-1)
+    ELT = eltype(dest)
+    scaling = ScalingOperator(dest, 1/(2*ELT(length(dest)-1)))
+  scaling * inv(transform_to_grid_pre(dest, src, grid; options...))
+end
+
+transform_from_grid_pre(src, dest::ChebyshevBasis, grid::ChebyshevExtremaGrid; options...) =
+  inv(transform_to_grid_post(dest, src, grid; options...))
+
+
+
+
+
 
 is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
@@ -221,7 +286,7 @@ left{T}(b::ChebyshevBasisSecondKind{T}, idx) = left(b)
 right{T}(b::ChebyshevBasisSecondKind{T}) = one(T)
 right{T}(b::ChebyshevBasisSecondKind{T}, idx) = right(b)
 
-grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevIIGrid{T}(b.n)
+grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevNodeGrid{T}(b.n)
 
 
 # The weight function

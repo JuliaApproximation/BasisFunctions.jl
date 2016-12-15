@@ -33,6 +33,7 @@ include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
 include("test_maps.jl")
+include("test_DCTI.jl")
 
 
 
@@ -261,6 +262,11 @@ for T in (Float64,BigFloat)
         test_ops(T) end
 
 end # for T in...
+delimit("Test DCTI")
+@testset "$(rpad("evaluation",80))" begin
+test_full_transform_extremagrid() end
+@testset "$(rpad("inverse",80))" begin
+test_inverse_transform_extremagrid() end
 println()
 println(" All tests passed!")
 end # module

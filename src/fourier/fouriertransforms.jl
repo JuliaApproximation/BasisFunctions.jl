@@ -94,21 +94,29 @@ end
 # The Discrete Cosine transform
 ##################################
 
-# We only implement the standard type II DCT.
+# We implement the standard type II DCT and less standard type I DCT here.
+# The type II DCT is used for the discrete Chebyshev transform from Chebyshev roots
+# The type I DCT is used for the discrete Chebyshev transforn from Chebyshev extrema
 # See Strang's paper for the different versions:
 # http://www-math.mit.edu/~gs/papers/dct.pdf
 
 # First: the FFTW routines. We can use MultiplicationOperator with the DCT plans.
 
-function FastChebyshevTransformFFTW(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
-    ELT = op_eltype(src, dest)
-    plan = plan_dct!(zeros(ELT, dest), dims; flags = fftwflags)
-    MultiplicationOperator(src, dest, plan; inplace=true)
+for (transform, plan) in
+    ((:FastChebyshevTransformFFTW, :plan_dct!),
+    (:InverseFastChebyshevTransformFFTW, :plan_idct!))
+  @eval begin
+    function $transform(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
+        ELT = op_eltype(src, dest)
+        plan = FFTW.$plan(zeros(ELT, dest), dims; flags = fftwflags)
+        MultiplicationOperator(src, dest, plan; inplace=true)
+    end
+  end
 end
 
-function InverseFastChebyshevTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+function FastChebyshevITransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
     ELT = op_eltype(src, dest)
-    plan = plan_idct!(zeros(ELT, src), dims; flags = fftwflags)
+    plan = FFTW.plan_r2r!(zeros(ELT, src), FFTW.REDFT00, dims; flags = fftwflags)
     MultiplicationOperator(src, dest, plan; inplace=true)
 end
 
@@ -117,27 +125,28 @@ end
 # that work along one dimension and they are more efficient than our own generic implementation.
 typealias DCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,5,true}
 typealias IDCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,4,true}
+typealias DCTIPLAN{T} Base.DFT.FFTW.r2rFFTWPlan{T,(3,),false,1}
 
-dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
-    dim, object::DCTPLAN; options...) =
-        FastChebyshevTransformFFTW(src, dest, dim:dim; options...)
+for (plan, transform, invtransform) in (
+      (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
+      (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
+      (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
+  @eval begin
+    dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+        dim, object::$plan; options...) =
+            $transform(src, dest, dim:dim; options...)
+    ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
+        $invtransform(dest(op), src(op))
+    inv_multiplication(op::MultiplicationOperator, object::$plan) =
+        ctranspose_multiplication(op, object)
+  end
+end
 
-dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
-    dim, object::IDCTPLAN; options...) =
-        InverseFastChebyshevTransformFFTW(src, dest, dim:dim; options...)
-
-ctranspose_multiplication(op::MultiplicationOperator, object::DCTPLAN) =
-    InverseFastChebyshevTransformFFTW(dest(op), src(op))
-ctranspose_multiplication(op::MultiplicationOperator, object::IDCTPLAN) =
-    FastChebyshevTransformFFTW(dest(op), src(op))
-
-inv_multiplication(op::MultiplicationOperator, object::DCTPLAN) =
-    ctranspose_multiplication(op, object)
-inv_multiplication(op::MultiplicationOperator, object::IDCTPLAN) =
-    ctranspose_multiplication(op, object)
-
-
-# Next, the generic routines. They rely on dct and idct being available for the
+# The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.
 FastChebyshevTransform(src, dest) = FunctionOperator(src, dest, dct)
 InverseFastChebyshevTransform(src, dest) = FunctionOperator(src, dest, idct)
+
+# The generic routines for the DCTI. They they are not yet available
+FastChebyshevITransform(src, dest) = error("The FastChebyshevITransform is not available for the type ", eltype(src))
+InverseFastChebyshevITransform(src, dest) = error("The InverseFastChebyshevITransform is not available for the type ", eltype(src))

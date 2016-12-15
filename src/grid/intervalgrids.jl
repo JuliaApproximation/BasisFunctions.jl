@@ -104,17 +104,31 @@ stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
 
 
-immutable ChebyshevIIGrid{T} <: AbstractIntervalGrid{T}
+immutable ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-typealias ChebyshevGrid ChebyshevIIGrid
+typealias ChebyshevGrid ChebyshevNodeGrid
 
-ChebyshevIIGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevIIGrid{T}(n)
+ChebyshevNodeGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevNodeGrid{T}(n)
 
 
-left{T}(g::ChebyshevIIGrid{T}) = -one(T)
-right{T}(g::ChebyshevIIGrid{T}) = one(T)
+left{T}(g::ChebyshevNodeGrid{T}) = -one(T)
+right{T}(g::ChebyshevNodeGrid{T}) = one(T)
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex{T}(g::ChebyshevIIGrid{T}, i) = T(-1)*cos((i-1/2) * T(pi) / (g.n) )
+unsafe_getindex{T}(g::ChebyshevNodeGrid{T}, i) = T(-1)*cos((i-1/2) * T(pi) / (g.n) )
+
+immutable ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
+    n   ::  Int
+end
+
+typealias ChebyshevPointsOfTheSecondKind ChebyshevExtremaGrid
+
+ChebyshevExtremaGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevExtremaGrid{T}(n)
+
+left{T}(g::ChebyshevExtremaGrid{T}) = -one(T)
+right{T}(g::ChebyshevExtremaGrid{T}) = one(T)
+
+# Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
+unsafe_getindex{T}(g::ChebyshevExtremaGrid{T}, i) = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )

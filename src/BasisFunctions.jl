@@ -53,7 +53,7 @@ export PiecewiseInterval, Partition
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid
+        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
 export dim, left, right, range, sample
 
 # from grid/subgrid.jl
@@ -81,7 +81,7 @@ export has_transform, has_extension, has_derivative, has_antiderivative, has_gri
 export linearize_coefficients, delinearize_coefficients
 export moment
 
-# from sets/functionsubset.jl
+# from sets/subsets.jl
 export FunctionSubSet, indices
 
 # from sets/tensorproductset.jl

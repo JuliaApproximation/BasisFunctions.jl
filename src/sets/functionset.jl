@@ -297,11 +297,8 @@ antiderivative_set(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_set(s, 
 
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?
-function dimension_tuple(n, dim)
-    t = zeros(Int, n)
-    t[dim] = 1
-    tuple(t...)
-end
+# ASK is this indeed a better implementation?
+dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
 
 # Convenience function to differentiate in a given dimension
 derivative_set(s::FunctionSet; dim=1) = derivative_set(s, dimension_tuple(ndims(s), dim))
