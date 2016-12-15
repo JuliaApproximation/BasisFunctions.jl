@@ -45,8 +45,6 @@ right(g::IndexSubGrid) = last(g)
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
 
 function grid_extension_operator(src::DiscreteGridSpace, dest::DiscreteGridSpace, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
-	println(src_grid)
-	println(dest_grid)
     @assert supergrid(src_grid) == dest_grid
     IndexExtensionOperator(src, dest, subindices(src_grid))
 end
