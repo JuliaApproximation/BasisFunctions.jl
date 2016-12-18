@@ -68,6 +68,10 @@ approx_length(s::DerivedSet, n) = approx_length(superset(s), n)
 
 apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
 
+elements(set::DerivedSet) = elements(superset(set))
+element(set::DerivedSet, j) = element(superset(set), j)
+composite_length(set::DerivedSet) = composite_length(superset(set))
+
 #########################
 # Indexing and iteration
 #########################
