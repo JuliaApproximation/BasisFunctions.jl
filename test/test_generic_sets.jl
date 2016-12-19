@@ -18,9 +18,32 @@ supports_approximation(s::TensorProductSet) =
 suitable_function(s::FunctionSet1d) = exp
 
 # Make a simple periodic function for Fourier
-suitable_function(s::FourierBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(s::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(s::CosineSeries) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
+
+suitable_function(set::OperatedSet) = suitable_function(src(set))
+
+function suitable_interpolation_grid(basis::FunctionSet)
+    if BF.has_grid(basis)
+        grid(basis)
+    else
+        T = numtype(basis)
+        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
+    end
+end
+
+suitable_interpolation_grid(basis::TensorProductSet) =
+    TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
+
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
+
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
+
+suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
+
+suitable_interpolation_grid(basis::OperatedSet) = suitable_interpolation_grid(src(basis))
+
 
 # Make a tensor product of suitable functions
 function suitable_function(s::TensorProductSet)

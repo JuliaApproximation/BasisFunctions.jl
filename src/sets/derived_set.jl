@@ -27,6 +27,9 @@ superset(s::DerivedSet) = s.superset
 
 resize(s::DerivedSet, n) = similar_set(s, resize(superset(s),n))
 
+# To avoid ambiguity with a similar definition for abstract type FunctionSet:
+resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
+
 set_promote_eltype{N,T,S}(s::DerivedSet{N,T}, ::Type{S}) =
     similar_set(s, promote_eltype(superset(s), S))
 
@@ -55,12 +58,13 @@ zeros(ELT::Type, s::DerivedSet) = zeros(ELT, superset(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :grid)
+for op in (:length, :extension_size, :size, :grid, :is_composite, :composite_length,
+    :elements)
     @eval $op(s::DerivedSet) = $op(superset(s))
 end
 
 # Delegation of methods with an index parameter
-for op in (:size,)
+for op in (:size, :element)
     @eval $op(s::DerivedSet, i) = $op(superset(s), i)
 end
 
@@ -68,9 +72,11 @@ approx_length(s::DerivedSet, n) = approx_length(superset(s), n)
 
 apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
 
-elements(set::DerivedSet) = elements(superset(set))
-element(set::DerivedSet, j) = element(superset(set), j)
-composite_length(set::DerivedSet) = composite_length(superset(set))
+in_support(set::DerivedSet, i, x) = in_support(superset(set), i, x)
+
+# To avoid an ambiguity with a similar definition for abstract type FunctionSet:
+in_support{T <: Complex}(set::DerivedSet, idx, x::T) =
+    imag(x) == 0 && in_support(superset(set), idx, real(x))
 
 #########################
 # Indexing and iteration

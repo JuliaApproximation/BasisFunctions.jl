@@ -23,6 +23,7 @@ subsets
 abstract CompositeSet{N,T} <: FunctionSet{N,T}
 
 # We assume that every subset has an indexable field called sets
+is_composite(set::CompositeSet) = true
 elements(set::CompositeSet) = set.sets
 element(set::CompositeSet, j::Int) = set.sets[j]
 composite_length(set::CompositeSet) = length(set.sets)

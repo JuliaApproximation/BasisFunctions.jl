@@ -26,8 +26,14 @@ has_derivative(set::WeightedSet) = has_derivative(superset(set)) && has_derivati
 has_antiderivative(set::WeightedSet) = false
 
 # Evaluating basis functions: we multiply by the function of the set
-eval_element(set::WeightedSet, idx, x) = set.weightfun(x) * eval_element(superset(set), idx, x)
-eval_element(set::WeightedSet, idx, x::SVector) = set.weightfun(x...) * eval_element(superset(set), idx, x)
+eval_element(set::WeightedSet, idx, x) = _eval_element(set, weightfunction(set), idx, x)
+_eval_element(set::WeightedSet, w, idx, x) = w(x) * eval_element(superset(set), idx, x)
+
+eval_expansion(set::WeightedSet, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)
+
+_eval_expansion(set::WeightedSet, w, coefficients, x) = w(x) * eval_expansion(superset(set), coefficients, x)
+
+_eval_expansion(set::WeightedSet, w, coefficients, grid::AbstractGrid) = w.(grid) .* eval_expansion(superset(set), coefficients, grid)
 
 # You can create an WeightedSet by multiplying a function with a set, using
 # left multiplication.

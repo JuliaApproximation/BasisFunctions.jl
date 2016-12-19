@@ -93,6 +93,9 @@ size(s::FunctionSet, j) = j==1 ? length(s) : throw(BoundsError())
 
 endof(s::FunctionSet) = length(s)
 
+"Is the function set composite, i.e. does it consist of several components?"
+is_composite(s::FunctionSet) = false
+
 """
 The instantiate function takes a set type, size and numeric type as argument, and
 returns an instance of the type with the given size and numeric type and using

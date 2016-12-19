@@ -47,6 +47,10 @@ isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
 
 eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, inverse_map(mapping(s),y))
 
+eval_expansion(s::MappedSet, coef, y) = eval_expansion(superset(s), coef, inverse_map(mapping(s),y))
+
+in_support(set::MappedSet, idx, y) = in_support(superset(set), idx, inverse_map(mapping(set), y))
+
 is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superset(s1),superset(s2))
 
 

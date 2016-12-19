@@ -14,6 +14,7 @@ immutable TensorProductSet{TS,N,T} <: FunctionSet{N,T}
 end
 
 # Generic functions for composite types:
+is_composite(set::TensorProductSet) = true
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
 element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)

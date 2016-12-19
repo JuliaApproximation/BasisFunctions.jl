@@ -92,28 +92,10 @@ function random_point_in_domain(basis::FunctionSet)
 end
 
 function fixed_point_in_domain(basis::FunctionSet)
-    T = eltype(basis)
+    T = numtype(basis)
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end
-
-function suitable_interpolation_grid(basis::FunctionSet)
-    if BF.has_grid(basis)
-        grid(basis)
-    else
-        T = numtype(basis)
-        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
-    end
-end
-
-suitable_interpolation_grid(basis::TensorProductSet) =
-    TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
-
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
-
-suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
-
-suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
@@ -229,7 +211,7 @@ for T in (Float64,BigFloat)
                   FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
                   FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
-                  FourierBasis(9, 2, 3) ⊗ FourierBasis(7, 4, 5), # Two mapped Fourier series
+                  FourierBasis(15, 2, 3) ⊗ FourierBasis(15, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
         test_generic_set_interface(basis, typeof(basis))
     end
