@@ -47,7 +47,9 @@ isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
 
 eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, inverse_map(mapping(s),y))
 
-eval_expansion(s::MappedSet, coef, y) = eval_expansion(superset(s), coef, inverse_map(mapping(s),y))
+eval_expansion(s::MappedSet, coef, y::Number) = eval_expansion(superset(s), coef, inverse_map(mapping(s),y))
+
+eval_expansion(s::MappedSet, coef, grid::AbstractGrid) = eval_expansion(superset(s), coef, apply_map(grid, inv(mapping(s))))
 
 in_support(set::MappedSet, idx, y) = in_support(superset(set), idx, inverse_map(mapping(set), y))
 

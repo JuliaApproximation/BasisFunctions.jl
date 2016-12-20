@@ -86,7 +86,7 @@ point_outside_domain(basis::LaguerreBasis) = -one(eltype(basis))
 point_outside_domain(basis::HermiteBasis) = one(eltype(basis))+im
 
 function random_point_in_domain(basis::FunctionSet)
-    T = eltype(basis)
+    T = numtype(basis)
     w = one(T) * rand()
     point_in_domain(basis, w)
 end
@@ -211,7 +211,7 @@ for T in (Float64,BigFloat)
                   FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
                   FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
-                  FourierBasis(15, 2, 3) ⊗ FourierBasis(15, 4, 5), # Two mapped Fourier series
+                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
         test_generic_set_interface(basis, typeof(basis))
     end
