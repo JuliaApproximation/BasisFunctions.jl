@@ -48,6 +48,8 @@ linear_index(grid::TensorProductGrid, i::CartesianIndex) = linear_index(grid, i.
 # If its type is anything else, it may be a tuple of native indices
 linear_index(grid::TensorProductGrid, idxn::Tuple) = linear_index(grid, map(linear_index, elements(grid), idxn))
 
+multilinear_index(grid::TensorProductGrid, idx::Int) = ind2sub(size(grid), idx)
+
 @generated function eachindex{TG}(g::TensorProductGrid{TG})
 	LEN = tuple_length(TG)
 	startargs = fill(1, LEN)

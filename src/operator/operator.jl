@@ -190,6 +190,7 @@ function unsafe_getindex(op::AbstractOperator, i, j)
 	d[i]
 end
 
+"Return the diagonal of the operator."
 function diagonal(op::AbstractOperator)
     if is_diagonal(op)
         # Make data of all ones in the native representation of the operator
@@ -199,10 +200,21 @@ function diagonal(op::AbstractOperator)
         # Convert to vector
         linearize_coefficients(src(op), diagonal_native)
     else
-        # This could be more efficient
-        eltype(op)[op[i,i] for i in 1:length(src(op))]
+		# Compute the diagonal by calling unsafe_diagonal for each index
+        [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
+
+"Return the diagonal element op[i,i] of the operator."
+function diagonal(op::AbstractOperator, i)
+	# Perform bounds checking and call unsafe_diagonal
+	checkbounds(op, i, i)
+	unsafe_diagonal(op, i)
+end
+
+# Default behaviour: call unsafe_getindex
+unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
+
 
 function inv_diagonal(op::AbstractOperator)
     @assert is_diagonal(op)

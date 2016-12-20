@@ -79,6 +79,7 @@ function test_generic_operator_interface(op, T)
     d = diagonal(op)
     for i in 1:min(size(op,1),size(op,2))
         d[i] ≈ m[i,i]
+        diagonal(op, i) ≈ m[i,i]
     end
 
     # Verify eltype promotion

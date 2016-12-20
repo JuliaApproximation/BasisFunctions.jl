@@ -71,8 +71,9 @@ export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
 export complexify
-export instantiate, promote_eltype, resize
+export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
+export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal
 export in_support
 export True, False
@@ -87,11 +88,11 @@ export FunctionSubSet, indices
 # from sets/tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 
-# from sets/mappedsets.jl
-export map, imap, map_linear, imap_linear, rescale
+# from sets/derived_set.jl
+export DerivedSet
 
 # from sets/mapped_set.jl
-export MappedSet, mapped_set, mapping
+export MappedSet, mapped_set, mapping, superset, rescale
 
 #from expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, roots,
@@ -160,17 +161,17 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
-# from sets/augmented_set.jl
-export ⊕, set, fun, derivative, AugmentedSet
+# from sets/weighted_set.jl
+export WeightedSet, weightfunction
 
 # from sets/multiple_set.jl
-export MultiSet, multiset
+export MultiSet, multiset, ⊕
 
 # from sets/piecewise_set.jl
 export PiecewiseSet
 
 # from sets/operated_set.jl
-export OperatedSet
+export OperatedSet, derivative
 
 # from sets/euclidean.jl
 export Cn, Rn
@@ -261,7 +262,7 @@ include("sets/composite_set.jl")
 include("sets/multiple_set.jl")
 include("sets/piecewise_set.jl")
 include("sets/operated_set.jl")
-include("sets/augmented_set.jl")
+include("sets/weighted_set.jl")
 
 
 include("fourier/fouriertransforms.jl")

@@ -40,6 +40,8 @@ end
 
 diagonal(op::IdentityOperator) = ones(eltype(op), length(src(op)))
 
+unsafe_diagonal(op::IdentityOperator, i) = one(eltype(op))
+
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 
@@ -100,6 +102,8 @@ end
 
 diagonal(op::ScalingOperator) = [scalar(op) for i in 1:length(src(op))]
 
+unsafe_diagonal(op::ScalingOperator, i) = scalar(op)
+
 function matrix!(op::ScalingOperator, a)
     a[:] = 0
     for i in 1:min(size(a,1),size(a,2))
@@ -143,6 +147,8 @@ apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, 0); coef_s
 apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, 0); coef_dest)
 
 diagonal(op::ZeroOperator) = zeros(eltype(op), min(length(src(op)), length(dest(op))))
+
+unsafe_diagonal(op::ZeroOperator, i) = zero(eltype(op))
 
 unsafe_getindex{T}(op::ZeroOperator{T}, i, j) = convert(T, 0)
 
