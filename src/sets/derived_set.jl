@@ -114,8 +114,8 @@ for op in (:transform_set,)
     @eval $op(s::DerivedSet; options...) = $op(superset(s); options...)
 end
 
-for op in (:derivative_set,:antiderivative_set)
-    @eval $op(s::DerivedSet, order; options...) = $op(superset(s), order; options...)
+for op in (:derivative_set, :antiderivative_set)
+    @eval $op(s::DerivedSet, order; options...) = similar_set(s, $op(superset(s), order; options...))
 end
 
 
@@ -152,8 +152,8 @@ end
 
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedSet, s2::FunctionSet, order; options...) =
-        wrap_operator(s1, s2, $op(superset(s1), s2, order; options...))
+    @eval $op(s1::DerivedSet, s2::DerivedSet, order; options...) =
+        wrap_operator(s1, s2, $op(superset(s1), superset(s2), order; options...))
 end
 
 
