@@ -5,16 +5,16 @@
 #####################
 
 # A function set can have several associated transforms. The default transform is
-# associated with the grid of the set, e.g. the FFT and the DCT for Chebyshev expansions
+# associated with the grid of the set, e.g. the FFT and the DCTII for Chebyshev expansions
 # which convert between coefficient space and value space. In this case, the
 # transform maps coefficients to or from a DiscreteGridSpace.
 #
 # transform_operator takes two arguments, a source and destination set, in order
 # to allow for different transforms.
 #
-# We assume that the transform itself is unitary. In order to compute an approximation
+# We assume that the transform itself is unitary (ASK up to a normalization). In order to compute an approximation
 # to a function from function values, the transform is typically preceded and followed
-# by an additional computation (e.g. the first Chebyshev coefficiet is halved after the DCT).
+# by an additional computation (e.g. the first Chebyshev coefficient is halved after the DCT).
 # These additional operations are achieved by the operator returned by the
 # transform_operator_pre and transform_operator_post functions: pre acts on the
 # coefficients of the source space, post on the coefficients of the dest space.

@@ -67,7 +67,7 @@ length(a::MultiArray, i::Int) = length(a.arrays[i])
 show(io::IO, a::MultiArray) = show(io, a.arrays)
 
 function linearize_coefficients(a::MultiArray)
-    b = zeros(eltype(s), length(s))
+    b = zeros(eltype(a), length(a))
     linearize_coefficients!(b, a)
 end
 
