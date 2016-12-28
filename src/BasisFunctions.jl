@@ -36,6 +36,10 @@ import Base: indices, normalize
 
 import Base: broadcast
 
+import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name
+import Wavelets.Sequences: support
+import Wavelets.Util: isdyadic
+
 # import PyPlot: plot
 
 
