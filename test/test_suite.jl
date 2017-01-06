@@ -194,7 +194,7 @@ for T in (Float64,BigFloat)
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)

@@ -22,6 +22,8 @@ suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
 
+suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
+
 suitable_function(set::OperatedSet) = suitable_function(src(set))
 
 function suitable_interpolation_grid(basis::FunctionSet)
@@ -38,7 +40,7 @@ suitable_interpolation_grid(basis::TensorProductSet) =
 
 suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
 
-suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, numtype(basis))
 
 suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
 
