@@ -117,7 +117,8 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 export transform_operator, transform_set, full_transform_operator,
     transform_operator_pre, transform_operator_post,
     transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
-    transform_from_grid, transform_from_grid_pre, transform_from_grid_post
+    transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
+    transform_operators
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,

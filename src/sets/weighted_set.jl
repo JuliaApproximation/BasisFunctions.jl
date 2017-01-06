@@ -72,3 +72,11 @@ function differentiation_operator(s1::WeightedSet, s2::MultiSet, order; options.
     DW = wrap_operator(s1, element(s2, 2), D)
     block_column_operator([I,DW])
 end
+
+function grid_evaluation_operator(set::WeightedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
+    super_e = grid_evaluation_operator(superset(set), dgs, grid; options...)
+    f = weightfunction(set)
+    T = eltype(dgs)
+    D = DiagonalOperator(dgs, dgs, T[f(x) for x in grid])
+    D * wrap_operator(set, dgs, super_e)
+end

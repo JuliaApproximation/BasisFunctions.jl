@@ -156,6 +156,9 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
         wrap_operator(s1, s2, $op(superset(s1), superset(s2), order; options...))
 end
 
+grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
+
 
 #########################
 # Concrete set

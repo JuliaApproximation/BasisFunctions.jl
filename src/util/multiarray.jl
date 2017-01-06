@@ -134,6 +134,8 @@ length(it::MultiArrayIndexIterator) = length(it.array)
 typealias ArrayOfArray{T} Array{Array{T,1},1}
 
 # Our iterator can be simpler when the element sets are vectors in an array
+# Strictly speaking we can do even better, since we don't need the full array in the
+# field of the iterator, only its dimensions
 start{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}) = (1,1)
 
 function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)
