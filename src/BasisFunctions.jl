@@ -151,9 +151,6 @@ export TensorProductOperator
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
 
-# from functional/functional.jl
-export AbstractFunctional, EvaluationFunctional, row
-
 # from grid/discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
     gridspace
@@ -249,8 +246,6 @@ include("operator/block_operator.jl")
 
 
 include("expansions.jl")
-
-include("functional/functional.jl")
 
 
 include("tensorproducts.jl")
