@@ -324,7 +324,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         x2 = e(grid(basis))
         @test maximum(abs(x1-x2)) < sqrt(eps(T))
 
-        # TODO: check the transposes and inverses here
+        # Verify the transposes and inverses
+        @test maximum(abs( (t' * t)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (inv(t) * t)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (it' * it)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (inv(it) * it)*x-x)) < sqrt(eps(T))
     end
 
 

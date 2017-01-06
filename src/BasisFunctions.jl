@@ -102,7 +102,6 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 # from operator/operators.jl
 export AbstractOperator, operator, src, dest, apply!,
         apply, apply_multiple, apply_inplace!
-export OperatorInverse, OperatorTranspose
 export matrix, diagonal, is_diagonal, is_inplace
 
 # from operator/composite_operator.jl
