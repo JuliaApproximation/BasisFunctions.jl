@@ -1,5 +1,16 @@
 # common.jl
 
+macro add_properties(T, props...)
+    e = quote end
+    for prop in props
+        f = quote $(esc(prop))(a::$(esc(T))) = true end
+        append!(e.args, f.args)
+    end
+    e
+end
+
+
+
 # Convenience definitions for the implementation of traits
 typealias True Val{true}
 typealias False Val{false}
@@ -27,7 +38,7 @@ floatify{T}(::Type{Rational{T}}) = floatify(T)
 
 
 function copy!(dest, src)
-    for i in eachindex(dest)
+    for i in eachindex(dest, src)
         dest[i] = src[i]
     end
     dest
