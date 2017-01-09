@@ -69,12 +69,17 @@ function suitable_function(s::MappedSet)
     x -> f(m*x)
 end
 
-function suitable_function(s::WeightedSet)
+function suitable_function(s::WeightedSet1d)
     f = suitable_function(superset(s))
     g = weightfunction(s)
     x -> g(x) * f(x)
 end
 
+function suitable_function(s::WeightedSet2d)
+    f = suitable_function(superset(s))
+    g = weightfunction(s)
+    (x,y) -> g(x, y) * f(x, y)
+end
 
 
 function test_generic_set_interface(basis, SET = typeof(basis))
@@ -157,8 +162,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     @test e(x) ≈ sum([coef[i] * basis[i](x) for i in eachindex(coef)])
 
     ## Test evaluation on an array
-    ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
-    x_array = ARRAY_TYPE[random_point_in_domain(basis) for i in 1:10]
+    x_array = [random_point_in_domain(basis) for i in 1:10]
     z = map(e, x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 

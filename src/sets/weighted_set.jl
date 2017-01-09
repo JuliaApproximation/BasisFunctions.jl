@@ -8,6 +8,10 @@ immutable WeightedSet{N,T} <: DerivedSet{N,T}
     weightfun
 end
 
+typealias WeightedSet1d{T} WeightedSet{1,T}
+typealias WeightedSet2d{T} WeightedSet{2,T}
+typealias WeightedSet3d{T} WeightedSet{3,T}
+
 weightfunction(set::WeightedSet) = set.weightfun
 
 similar_set(set::WeightedSet, set2::FunctionSet) = WeightedSet(set2, weightfunction(set))
@@ -25,15 +29,34 @@ has_derivative(set::WeightedSet) = has_derivative(superset(set)) && has_derivati
 # We can not compute antiderivatives in general.
 has_antiderivative(set::WeightedSet) = false
 
+# We have to distinguish between 1d and higher-dimensional grids, since we
+# have to splat the arguments to the weightfunction
+eval_weight_on_grid(w, grid::AbstractGrid1d) = [w(x) for x in grid]
+
+function eval_weight_on_grid(w, grid::AbstractGrid)
+    # Perhaps the implementation here could be simpler, but [w(x...) for x in grid]
+    # does not seem to respect the size of the grid, only its length
+    a = zeros(numtype(grid), size(grid))
+    for i in eachindex(grid)
+        a[i] = w(grid[i]...)
+    end
+    a
+end
+
 # Evaluating basis functions: we multiply by the function of the set
 eval_element(set::WeightedSet, idx, x) = _eval_element(set, weightfunction(set), idx, x)
-_eval_element(set::WeightedSet, w, idx, x) = w(x) * eval_element(superset(set), idx, x)
+_eval_element(set::WeightedSet1d, w, idx, x) = w(x) * eval_element(superset(set), idx, x)
+_eval_element(set::WeightedSet, w, idx, x) = w(x...) * eval_element(superset(set), idx, x)
 
+# Evaluate an expansion: same story
 eval_expansion(set::WeightedSet, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)
 
-_eval_expansion(set::WeightedSet, w, coefficients, x) = w(x) * eval_expansion(superset(set), coefficients, x)
+_eval_expansion(set::WeightedSet1d, w, coefficients, x::Number) = w(x) * eval_expansion(superset(set), coefficients, x)
+_eval_expansion(set::WeightedSet, w, coefficients, x) = w(x...) * eval_expansion(superset(set), coefficients, x)
 
-_eval_expansion(set::WeightedSet, w, coefficients, grid::AbstractGrid) = w.(grid) .* eval_expansion(superset(set), coefficients, grid)
+_eval_expansion(set::WeightedSet, w, coefficients, grid::AbstractGrid) =
+    eval_weight_on_grid(w, grid) .* eval_expansion(superset(set), coefficients, grid)
+
 
 # You can create an WeightedSet by multiplying a function with a set, using
 # left multiplication.
@@ -42,11 +65,14 @@ _eval_expansion(set::WeightedSet, w, coefficients, grid::AbstractGrid) = w.(grid
 # and our own functors:
 (*)(f::AbstractFunction, set::FunctionSet) = WeightedSet(set, f)
 
+weightfun_scaling_operator(dgs::DiscreteGridSpace1d, weightfunction) =
+    DiagonalOperator(dgs, dgs, eltype(dgs)[weightfunction(x) for x in grid(dgs)])
 
-function transform_to_grid_post(src::WeightedSet, dest::DiscreteGridSpace, grid; options...)
-    f = weightfunction(src)
-    DiagonalOperator(dest, dest, [f(x) for x in grid])
-end
+weightfun_scaling_operator(dgs::DiscreteGridSpace, weightfunction) =
+    DiagonalOperator(dgs, dgs, eltype(dgs)[weightfunction(x...) for x in grid(dgs)])
+
+transform_to_grid_post(src::WeightedSet, dest::DiscreteGridSpace, grid; options...) =
+    weightfun_scaling_operator(dest, weightfunction(src))
 
 transform_from_grid_pre(src::DiscreteGridSpace, dest::WeightedSet, grid; options...) =
 	inv(transform_to_grid_post(dest, src, grid; options...))
@@ -75,8 +101,6 @@ end
 
 function grid_evaluation_operator(set::WeightedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
     super_e = grid_evaluation_operator(superset(set), dgs, grid; options...)
-    f = weightfunction(set)
-    T = eltype(dgs)
-    D = DiagonalOperator(dgs, dgs, T[f(x) for x in grid])
+    D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
 end
