@@ -2,13 +2,15 @@
 
 
 """
-A MultiSet is the concatenation of several function sets. The function sets
-may be the same (but scaled to different intervals, say) or they can be different.
-The sets are contained in an indexable set, such as a tuple or an array. In case
-of an array, the number of sets may be large.
+A MultiSet is the concatenation of several function sets. The sets are contained
+in an indexable set, such as a tuple or an array. In case of an array, the number
+of sets may be large.
 
 The native representation of a MultiSet is a MultiArray, of which each element
 is the native representation of the corresponding element of the multiset.
+
+Evaluation of an expansion at a point is defined by summing the evaluation of all
+functions in the set at that point.
 """
 immutable MultiSet{SETS,N,T} <: CompositeSet{N,T}
     sets    ::  SETS
@@ -136,8 +138,8 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace; options...) =
-    block_row_operator( AbstractOperator{eltype(set)}[evaluation_operator(el,dgs; options...) for el in elements(set)], set, dgs)
+grid_evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    block_row_operator( AbstractOperator{eltype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
 ## Rescaling
 

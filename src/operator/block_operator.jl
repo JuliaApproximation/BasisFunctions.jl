@@ -15,13 +15,16 @@ immutable BlockOperator{ELT} <: AbstractOperator{ELT}
     src         ::  FunctionSet
     dest        ::  FunctionSet
 
-    # scratch_dest holds memory for each subset of the destination set (which is
-    # a multiset).
+    # scratch_src and scratch_dest hold scratch memory for each subset of the
+    # source and destination sets, for allocation-free implementation of the
+    # action of the operator
+    scratch_src
     scratch_dest
 
     function BlockOperator(operators, src, dest)
+        scratch_src = zeros(ELT, src)
         scratch_dest = zeros(ELT, dest)
-        new(operators, src, dest, scratch_dest)
+        new(operators, src, dest, scratch_src, scratch_dest)
     end
 end
 
@@ -96,16 +99,27 @@ is_columnlike(op::BlockOperator) = size(op.operators,2) == 1
 
 function apply!(op::BlockOperator, coef_dest, coef_src)
     if is_rowlike(op)
-        apply_rowoperator!(op, coef_dest, coef_src, op.scratch_dest)
+        apply_rowoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
     elseif is_columnlike(op)
-        apply_columnoperator!(op, coef_dest, coef_src)
+        apply_columnoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
     else
-        for m in 1:composite_length(coef_dest)
-            fill!(element(coef_dest, m), 0)
-            for n in 1:composite_length(coef_src)
-                apply_block_element!(element(op, m, n), element(coef_dest, m),
-                    element(coef_src,n), element(op.scratch_dest, m))
-            end
+        apply_blockoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
+    end
+    coef_dest
+end
+
+function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::AbstractVector, scratch_src, scratch_dest)
+    delinearize_coefficients!(scratch_src, coef_src)
+    apply_block_operator(op, scratch_dest, scratch_src, scratch_src, scratch_dest)
+    linearize_coefficients!(coef_dest, scratch_dest)
+end
+
+function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::MultiArray, scratch_src, scratch_dest)
+    for m in 1:composite_length(coef_dest)
+        fill!(element(coef_dest, m), 0)
+        for n in 1:composite_length(coef_src)
+            apply_block_element!(element(op, m, n), element(coef_dest, m),
+                element(coef_src,n), element(op.scratch_dest, m))
         end
     end
     coef_dest
@@ -118,22 +132,31 @@ function apply_block_element!(op, coef_dest, coef_src, scratch)
     end
 end
 
-function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::MultiArray, scratch)
+function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::MultiArray, scratch_src, scratch_dest)
     fill!(coef_dest, 0)
     for n in 1:composite_length(coef_src)
-        apply!(op.operators[1,n], scratch, element(coef_src,n))
+        apply!(op.operators[1,n], scratch_dest, element(coef_src,n))
         for i in eachindex(coef_dest)
-            coef_dest[i] += scratch[i]
+            coef_dest[i] += scratch_dest[i]
         end
     end
 end
 
-function apply_columnoperator!(op::BlockOperator, coef_dest::MultiArray, coef_src)
+function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::AbstractVector, scratch_src, scratch_dest)
+    delinearize_coefficients!(scratch_src, coef_src)
+    apply_rowoperator!(op, coef_dest, scratch_src, scratch_src, scratch_dest)
+end
+
+function apply_columnoperator!(op::BlockOperator, coef_dest::MultiArray, coef_src, scratch_src, scratch_dest)
     for m in 1:composite_length(coef_dest)
         apply!(op.operators[m,1], element(coef_dest, m), coef_src)
     end
 end
 
+function apply_columnoperator!(op::BlockOperator, coef_dest::AbstractVector, coef_src, scratch_src, scratch_dest)
+    apply_columnoperator!(op, scratch_dest, coef_src, scratch_src, scratch_dest)
+    linearize_coefficients!(coef_dest, scratch_dest)
+end
 
 hcat(op1::AbstractOperator, op2::AbstractOperator) = block_row_operator(op1, op2)
 vcat(op1::AbstractOperator, op2::AbstractOperator) = block_column_operator(op1, op2)

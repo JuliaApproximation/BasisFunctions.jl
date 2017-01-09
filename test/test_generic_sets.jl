@@ -18,9 +18,34 @@ supports_approximation(s::TensorProductSet) =
 suitable_function(s::FunctionSet1d) = exp
 
 # Make a simple periodic function for Fourier
-suitable_function(s::FourierBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(s::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(s::CosineSeries) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
+
+suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
+
+suitable_function(set::OperatedSet) = suitable_function(src(set))
+
+function suitable_interpolation_grid(basis::FunctionSet)
+    if BF.has_grid(basis)
+        grid(basis)
+    else
+        T = numtype(basis)
+        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
+    end
+end
+
+suitable_interpolation_grid(basis::TensorProductSet) =
+    TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
+
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
+
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, numtype(basis))
+
+suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
+
+suitable_interpolation_grid(basis::OperatedSet) = suitable_interpolation_grid(src(basis))
+
 
 # Make a tensor product of suitable functions
 function suitable_function(s::TensorProductSet)
@@ -39,17 +64,22 @@ end
 
 # Make a suitable function by undoing the map
 function suitable_function(s::MappedSet)
-    f = suitable_function(set(s))
+    f = suitable_function(superset(s))
     m = inv(mapping(s))
     x -> f(m*x)
 end
 
-function suitable_function(s::AugmentedSet)
-    f = suitable_function(set(s))
-    g = fun(s)
+function suitable_function(s::WeightedSet1d)
+    f = suitable_function(superset(s))
+    g = weightfunction(s)
     x -> g(x) * f(x)
 end
 
+function suitable_function(s::WeightedSet2d)
+    f = suitable_function(superset(s))
+    g = weightfunction(s)
+    (x,y) -> g(x, y) * f(x, y)
+end
 
 
 function test_generic_set_interface(basis, SET = typeof(basis))
@@ -132,8 +162,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     @test e(x) ≈ sum([coef[i] * basis[i](x) for i in eachindex(coef)])
 
     ## Test evaluation on an array
-    ARRAY_TYPE = typeof(fixed_point_in_domain(basis))
-    x_array = ARRAY_TYPE[random_point_in_domain(basis) for i in 1:10]
+    x_array = [random_point_in_domain(basis) for i in 1:10]
     z = map(e, x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
@@ -301,7 +330,11 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         x2 = e(grid(basis))
         @test maximum(abs(x1-x2)) < sqrt(eps(T))
 
-        # TODO: check the transposes and inverses here
+        # Verify the transposes and inverses
+        @test maximum(abs( (t' * t)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (inv(t) * t)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (it' * it)*x-x)) < sqrt(eps(T))
+        @test maximum(abs( (inv(it) * it)*x-x)) < sqrt(eps(T))
     end
 
 

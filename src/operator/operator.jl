@@ -190,6 +190,7 @@ function unsafe_getindex(op::AbstractOperator, i, j)
 	d[i]
 end
 
+"Return the diagonal of the operator."
 function diagonal(op::AbstractOperator)
     if is_diagonal(op)
         # Make data of all ones in the native representation of the operator
@@ -199,10 +200,21 @@ function diagonal(op::AbstractOperator)
         # Convert to vector
         linearize_coefficients(src(op), diagonal_native)
     else
-        # This could be more efficient
-        eltype(op)[op[i,i] for i in 1:length(src(op))]
+		# Compute the diagonal by calling unsafe_diagonal for each index
+        [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
+
+"Return the diagonal element op[i,i] of the operator."
+function diagonal(op::AbstractOperator, i)
+	# Perform bounds checking and call unsafe_diagonal
+	checkbounds(op, i, i)
+	unsafe_diagonal(op, i)
+end
+
+# Default behaviour: call unsafe_getindex
+unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
+
 
 function inv_diagonal(op::AbstractOperator)
     @assert is_diagonal(op)
@@ -210,93 +222,4 @@ function inv_diagonal(op::AbstractOperator)
     # Avoid getting Inf values, we prefer a pseudo-inverse in this case
     d[find(d.==0)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
-end
-
-
-
-"An OperatorTranspose represents the transpose of an operator."
-immutable OperatorTranspose{OP,ELT} <: AbstractOperator{ELT}
-	op	::	OP
-
-	OperatorTranspose(op::AbstractOperator{ELT}) = new(op)
-end
-
-OperatorTranspose(op::AbstractOperator) =
-	OperatorTranspose{typeof(op),eltype(op)}(op)
-
-promote_eltype{OP,ELT,S}(op::OperatorTranspose{OP,ELT}, ::Type{S}) =
-	OperatorTranspose(promote_eltype(op.op, S))
-
-ctranspose(op::AbstractOperator) = OperatorTranspose(op)
-
-operator(opt::OperatorTranspose) = opt.op
-
-# By simply switching src and dest, we implicitly identify the dual of these linear vector spaces
-# with the spaces themselves.
-src(opt::OperatorTranspose) = dest(operator(opt))
-
-dest(opt::OperatorTranspose) = src(operator(opt))
-
-for property in [:is_inplace, :is_diagonal]
-	@eval $property(opt::OperatorTranspose) = $property(operator(opt))
-end
-
-# Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
-apply!(opt::OperatorTranspose, dest, src, coef_dest, coef_src) =
-	apply_transpose!(operator(opt), src, dest, coef_dest, coef_src)
-
-apply_inplace!(opt::OperatorTranspose, dest, src, coef_srcdest) =
-	apply_transpose_inplace!(operator(opt), src, dest, coef_srcdest)
-
-function apply_transpose!(op::AbstractOperator, dest, src, coef_dest, coef_src)
-	println("Operation of ", typeof(op), " has no lazy transpose implemented.")
-	throw(InexactError())
-end
-
-function apply_transpose_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
-	println("Operation of ", typeof(op), " has no in-place lazy transpose implemented.")
-	throw(InexactError())
-end
-
-
-"An OperatorInverse represents the inverse of an operator."
-immutable OperatorInverse{OP,ELT} <: AbstractOperator{ELT}
-	op	::	OP
-
-	OperatorInverse(op::AbstractOperator{ELT}) = new(op)
-end
-
-OperatorInverse(op::AbstractOperator) =
-	OperatorInverse{typeof(op),eltype(op)}(op)
-
-promote_eltype{OP,ELT,S}(op::OperatorInverse{OP,ELT}, ::Type{S}) =
-	OperatorInverse(promote_eltype(op.op, S))
-
-inv(op::AbstractOperator) = OperatorInverse(op)
-
-operator(op::OperatorInverse) = op.op
-
-src(op::OperatorInverse) = dest(operator(op))
-
-dest(op::OperatorInverse) = src(operator(op))
-
-for property in [:is_inplace, :is_diagonal]
-	@eval $property(op::OperatorInverse) = $property(operator(op))
-end
-
-# Types may implement this general transpose call to implement their transpose without creating a new operator type for it.
-apply!(op::OperatorInverse, dest, src, coef_dest, coef_src) =
-	apply_inv!(operator(op), src, dest, coef_dest, coef_src)
-
-apply!(op::OperatorInverse, dest, src, coef_srcdest) =
-	apply_inv_inplace!(operator(op), src, dest, coef_srcdest)
-
-function apply_inv!(op::AbstractOperator, dest, src, coef_dest, coef_src)
-	println("Operation of ", typeof(op), " has no lazy inverse implemented.")
-	throw(InexactError())
-end
-
-function apply_inv_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
-	println("Operation of ", typeof(op), " has no in-place lazy inverse implemented.")
-	throw(InexactError())
 end

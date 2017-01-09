@@ -360,6 +360,17 @@ function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
     coef_dest[:] = fun(coef_src)
 end
 
+ctranspose(op::FunctionOperator) = ctranspose_function(op, op.fun)
+
+# This can be overriden for types of functions that do not support ctranspose
+ctranspose_function(op::FunctionOperator, fun) =
+    FunctionOperator(dest(op), src(op), ctranspose(fun))
+
+inv(op::FunctionOperator) = inv_function(op, op.fun)
+
+# This can be overriden for types of functions that do not support inv
+inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
+
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
 immutable UnevenSignFlipOperator{ELT} <: AbstractOperator{ELT}

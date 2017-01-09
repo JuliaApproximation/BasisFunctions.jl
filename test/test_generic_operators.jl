@@ -79,6 +79,7 @@ function test_generic_operator_interface(op, T)
     d = diagonal(op)
     for i in 1:min(size(op,1),size(op,2))
         d[i] ≈ m[i,i]
+        diagonal(op, i) ≈ m[i,i]
     end
 
     # Verify eltype promotion
@@ -94,24 +95,32 @@ function test_generic_operator_interface(op, T)
     end
 
     # Verify inverse
-    inv_op = inv(op)
-    if ~(typeof(inv_op) <: OperatorInverse)
-        @test src(inv_op) == dest(op)
-        @test dest(inv_op) == src(op)
-        m2 = matrix(inv_op)
-        I1 = eye(ELT, length(src(op)))
-        I2 = eye(ELT, length(dest(op)))
-        @test maximum(abs(m2*m - I1)) < 10*sqrt(eps(T))
-        @test maximum(abs(m*m2 - I2)) < 10*sqrt(eps(T))
+    try
+        inv_op = inv(op)
+        if ~(typeof(inv_op) <: OperatorInverse)
+            @test src(inv_op) == dest(op)
+            @test dest(inv_op) == src(op)
+            m2 = matrix(inv_op)
+            I1 = eye(ELT, length(src(op)))
+            I2 = eye(ELT, length(dest(op)))
+            @test maximum(abs(m2*m - I1)) < 10*sqrt(eps(T))
+            @test maximum(abs(m*m2 - I2)) < 10*sqrt(eps(T))
+        end
+    catch MethodError
+        # Inverse was not defined
     end
 
     # Verify transpose
-    ct_op = ctranspose(op)
-    if ~(typeof(ct_op) <: OperatorTranspose)
-        @test src(ct_op) == dest(op)
-        @test dest(ct_op) == src(op)
-        m2 = matrix(ct_op)
-        @test maximum(abs(m' - m2)) < 10*sqrt(eps(T))
+    try
+        ct_op = ctranspose(op)
+        if ~(typeof(ct_op) <: OperatorTranspose)
+            @test src(ct_op) == dest(op)
+            @test dest(ct_op) == src(op)
+            m2 = matrix(ct_op)
+            @test maximum(abs(m' - m2)) < 10*sqrt(eps(T))
+        end
+    catch MethodError
+        # transpose was not defined
     end
 end
 

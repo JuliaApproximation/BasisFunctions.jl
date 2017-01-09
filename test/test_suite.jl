@@ -87,34 +87,16 @@ point_outside_domain(basis::LaguerreBasis) = -one(eltype(basis))
 point_outside_domain(basis::HermiteBasis) = one(eltype(basis))+im
 
 function random_point_in_domain(basis::FunctionSet)
-    T = eltype(basis)
+    T = numtype(basis)
     w = one(T) * rand()
     point_in_domain(basis, w)
 end
 
 function fixed_point_in_domain(basis::FunctionSet)
-    T = eltype(basis)
+    T = numtype(basis)
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end
-
-function suitable_interpolation_grid(basis::FunctionSet)
-    if BF.has_grid(basis)
-        grid(basis)
-    else
-        T = numtype(basis)
-        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
-    end
-end
-
-suitable_interpolation_grid(basis::TensorProductSet) =
-    TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
-
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
-
-suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), -1, 1, numtype(basis))
-
-suitable_interpolation_grid(basis::AugmentedSet) = suitable_interpolation_grid(set(basis))
 
 random_index(basis::FunctionSet) = 1 + Int(floor(rand()*length(basis)))
 
@@ -140,17 +122,22 @@ function test_derived_sets(T)
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
-    @testset "$(rpad("Augmented sets",80))" begin
-    # Try a functor
-    test_generic_set_interface(BF.Cos() * b1)
-    # as well as a regular function
-    test_generic_set_interface(cos * b1) end
+    @testset "$(rpad("Weighted sets",80))" begin
+        # Try a functor
+        test_generic_set_interface(BF.Cos() * b1)
+        # as well as a regular function
+        test_generic_set_interface(cos * b1)
+        # and a 2D example
+        # (not just yet, fix 2D for BigFloat first)
+#        test_generic_set_interface( ((x,y) -> cos(x+y)) * tensorproduct(b1, 2) )
+    end
+
 
     @testset "$(rpad("Multiple sets",80))" begin
     test_generic_set_interface(multiset(b1,b2))
     test_generic_set_interface(MultiSet((b1,b2))) end
 
-    @testset "$(rpad("A multiple and augmented set combination",80))" begin
+    @testset "$(rpad("A multiple and weighted set combination",80))" begin
     s = rescale(b1, 1/2, 1)
     test_generic_set_interface(multiset(s,Log()*s)) end
 
@@ -212,7 +199,7 @@ for T in (Float64,BigFloat)
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -226,11 +213,12 @@ for T in (Float64,BigFloat)
             test_generic_set_interface(basis, SET)
     end
 
+    # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
                   FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
                   FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
-                  FourierBasis(9, 2, 3) ⊗ FourierBasis(7, 4, 5), # Two mapped Fourier series
+                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
         test_generic_set_interface(basis, typeof(basis))
     end

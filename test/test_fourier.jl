@@ -27,17 +27,17 @@ function test_fourier_series(T)
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(set(fb), freq)
+    idx = frequency2idx(superset(fb), freq)
     @test fb[idx](x) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(set(fb), freq)
+    idx = frequency2idx(superset(fb), freq)
     @test fb[idx](x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
-    idx = frequency2idx(set(fb), freq)
+    idx = frequency2idx(superset(fb), freq)
     @test fb[idx](x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
@@ -88,12 +88,12 @@ function test_fourier_series(T)
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(set(fbo), freq)
+    idx = frequency2idx(superset(fbo), freq)
     @test fbo[idx](T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(set(fbo), freq)
+    idx = frequency2idx(superset(fbo), freq)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test fbo[idx](x) ≈ exp(2*T(pi)*1im*freq*y)

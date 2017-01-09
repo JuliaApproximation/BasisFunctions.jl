@@ -15,7 +15,7 @@ abstract DerivedSet{N,T} <: FunctionSet{N,T}
 ###########################################################################
 
 # Assume the concrete set has a field called set -- override if it doesn't
-set(s::DerivedSet) = s.set
+superset(s::DerivedSet) = s.superset
 
 # The concrete subset should implement similar_set, as follows:
 #
@@ -25,22 +25,25 @@ set(s::DerivedSet) = s.set
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
 
-resize(s::DerivedSet, n) = similar_set(s, resize(set(s),n))
+resize(s::DerivedSet, n) = similar_set(s, resize(superset(s),n))
+
+# To avoid ambiguity with a similar definition for abstract type FunctionSet:
+resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
 
 set_promote_eltype{N,T,S}(s::DerivedSet{N,T}, ::Type{S}) =
-    similar_set(s, promote_eltype(set(s), S))
+    similar_set(s, promote_eltype(superset(s), S))
 
 # Delegation of properties
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
-    @eval $op(s::DerivedSet) = $op(set(s))
+    @eval $op(s::DerivedSet) = $op(superset(s))
 end
 
 # Delegation of feature methods
 for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
-    @eval $op(s::DerivedSet) = $op(set(s))
+    @eval $op(s::DerivedSet) = $op(superset(s))
 end
 # has_transform has extra arguments
-has_grid_transform(s::DerivedSet, dgs, grid) = has_grid_transform(set(s), dgs, grid)
+has_grid_transform(s::DerivedSet, dgs, grid) = has_grid_transform(superset(s), dgs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false
@@ -51,49 +54,56 @@ has_grid_transform(s::DerivedSet, dgs, grid) = has_grid_transform(set(s), dgs, g
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
-zeros(ELT::Type, s::DerivedSet) = zeros(ELT, set(s))
+zeros(ELT::Type, s::DerivedSet) = zeros(ELT, superset(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :grid)
-    @eval $op(s::DerivedSet) = $op(set(s))
+for op in (:length, :extension_size, :size, :grid, :is_composite, :composite_length,
+    :elements)
+    @eval $op(s::DerivedSet) = $op(superset(s))
 end
 
 # Delegation of methods with an index parameter
-for op in (:size,)
-    @eval $op(s::DerivedSet, i) = $op(set(s), i)
+for op in (:size, :element)
+    @eval $op(s::DerivedSet, i) = $op(superset(s), i)
 end
 
-approx_length(s::DerivedSet, n) = approx_length(set(s), n)
+approx_length(s::DerivedSet, n) = approx_length(superset(s), n)
 
-apply_map(s::DerivedSet, map) = similar_set(s, apply_map(set(s), map))
+apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
+
+in_support(set::DerivedSet, i, x) = in_support(superset(set), i, x)
+
+# To avoid an ambiguity with a similar definition for abstract type FunctionSet:
+in_support{T <: Complex}(set::DerivedSet, idx, x::T) =
+    imag(x) == 0 && in_support(superset(set), idx, real(x))
 
 #########################
 # Indexing and iteration
 #########################
 
-native_index(s::DerivedSet, idx::Int) = native_index(set(s), idx)
+native_index(s::DerivedSet, idx::Int) = native_index(superset(s), idx)
 
-linear_index(s::DerivedSet, idxn) = linear_index(set(s), idxn)
+linear_index(s::DerivedSet, idxn) = linear_index(superset(s), idxn)
 
-eachindex(s::DerivedSet) = eachindex(set(s))
+eachindex(s::DerivedSet) = eachindex(superset(s))
 
 linearize_coefficients!(s::DerivedSet, coef_linear, coef_native) =
-    linearize_coefficients!(set(s), coef_linear, coef_native)
+    linearize_coefficients!(superset(s), coef_linear, coef_native)
 
 delinearize_coefficients!(s::DerivedSet, coef_native, coef_linear) =
-    delinearize_coefficients!(set(s), coef_native, coef_linear)
+    delinearize_coefficients!(superset(s), coef_native, coef_linear)
 
-approximate_native_size(s::DerivedSet, size_l) = approximate_native_size(set(s), size_l)
+approximate_native_size(s::DerivedSet, size_l) = approximate_native_size(superset(s), size_l)
 
-linear_size(s::DerivedSet, size_n) = linear_size(set(s), size_n)
+linear_size(s::DerivedSet, size_n) = linear_size(superset(s), size_n)
 
 for op in (:left, :right)
-    @eval $op{T}(s::DerivedSet{1,T}) = $op(set(s))
-    @eval $op{T}(s::DerivedSet{1,T}, idx) = $op(set(s), idx)
+    @eval $op(s::DerivedSet) = $op(superset(s))
+    @eval $op(s::DerivedSet, idx) = $op(superset(s), idx)
 end
 
-eval_element(s::DerivedSet, idx, x) = eval_element(set(s), idx, x)
+eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
 
 
 #########################
@@ -101,21 +111,21 @@ eval_element(s::DerivedSet, idx, x) = eval_element(set(s), idx, x)
 #########################
 
 for op in (:transform_set,)
-    @eval $op(s::DerivedSet; options...) = $op(set(s); options...)
+    @eval $op(s::DerivedSet; options...) = $op(superset(s); options...)
 end
 
-for op in (:derivative_set,:antiderivative_set)
-    @eval $op(s::DerivedSet, order; options...) = $op(set(s), order; options...)
+for op in (:derivative_set, :antiderivative_set)
+    @eval $op(s::DerivedSet, order; options...) = similar_set(s, $op(superset(s), order; options...))
 end
 
 
 for op in (:extension_operator, :restriction_operator)
     @eval $op(s1::DerivedSet, s2::DerivedSet; options...) =
-        wrap_operator(s1, s2, $op(set(s1), set(s2); options...))
+        wrap_operator(s1, s2, $op(superset(s1), superset(s2); options...))
 end
 
 # By default we return the underlying set when simplifying transforms
-simplify_transform_pair(s::DerivedSet, grid::AbstractGrid) = (set(s),grid)
+simplify_transform_pair(s::DerivedSet, grid::AbstractGrid) = (superset(s),grid)
 
 # Simplify invocations of transform_from/to_grid with DerivedSet's
 for op in ( (:transform_from_grid, :s1, :s2),
@@ -141,28 +151,13 @@ for op in ( (:transform_to_grid, :s1, :s2),
 end
 
 
-# transform_from_grid(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-#     wrap_operator(s1, s2, transform_from_grid(s1, set(s2), grid; options...) )
-#
-# transform_from_grid_pre(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-#     wrap_operator(s1, s1, transform_from_grid_pre(s1, set(s2), grid; options...) )
-#
-# transform_from_grid_post(s1::DiscreteGridSpace, s2::DerivedSet, grid; options...) =
-#     wrap_operator(s2, s2, transform_from_grid_post(s1, set(s2), grid; options...) )
-#
-# transform_to_grid(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-#     wrap_operator(s1, s2, transform_to_grid(set(s1), s2, grid; options...) )
-#
-# transform_to_grid_pre(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-#     wrap_operator(s1, s1, transform_to_grid_pre(set(s1), s2, grid; options...) )
-#
-# transform_to_grid_post(s1::DerivedSet, s2::DiscreteGridSpace, grid; options...) =
-#     wrap_operator(s2, s2, transform_to_grid_post(set(s1), s2, grid; options...) )
-
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedSet, s2::FunctionSet, order; options...) =
-        wrap_operator(s1, s2, $op(set(s1), s2, order; options...))
+    @eval $op(s1::DerivedSet, s2::DerivedSet, order; options...) =
+        wrap_operator(s1, s2, $op(superset(s1), superset(s2), order; options...))
 end
+
+grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
 
 
 #########################
@@ -173,13 +168,10 @@ end
 For testing purposes we define a concrete subset of DerivedSet. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
-immutable ConcreteDerivedSet{S,N,T} <: DerivedSet{N,T}
-    set ::  S
+immutable ConcreteDerivedSet{N,T} <: DerivedSet{N,T}
+    superset ::  FunctionSet{N,T}
 end
 
-# Implementing a constructor and similar_set is all it takes.
-
-ConcreteDerivedSet{N,T}(set::FunctionSet{N,T}) =
-    ConcreteDerivedSet{typeof(set),N,T}(set)
+# Implementing similar_set is all it takes.
 
 similar_set(s::ConcreteDerivedSet, s2::FunctionSet) = ConcreteDerivedSet(s2)
