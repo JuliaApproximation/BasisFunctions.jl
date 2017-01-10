@@ -70,13 +70,13 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
+
 # We can define this O(1) evaluation method, but only for points in [-1,1]
+# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
-
-# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
-
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function moment{T}(b::ChebyshevBasis{T}, idx::Int)
