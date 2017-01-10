@@ -40,10 +40,10 @@ has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevExtremaGrid) = length(b) =
 has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
-left(b::ChebyshevBasis) = -1
+left(b::ChebyshevBasis) = -one(numtype(b))
 left(b::ChebyshevBasis, idx) = left(b)
 
-right(b::ChebyshevBasis) = 1
+right(b::ChebyshevBasis) = one(numtype(b))
 right(b::ChebyshevBasis, idx) = right(b)
 
 grid{T}(b::ChebyshevBasis{T}) = ChebyshevNodeGrid(b.n,numtype(b))

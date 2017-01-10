@@ -108,6 +108,25 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         @test size(basis, i) == s[i]
     end
 
+    # Bounds checking
+    # disable periodic splines for now, since sometimes left(basis,idx) is not
+    # in_support currently...
+    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis)
+        if ~isinf(left(basis, 1))
+            @test in_support(basis, 1, left(basis, 1))
+            @test in_support(basis, 1, left(basis, 1)-1/2*sqrt(eps(T)))
+            @test ~in_support(basis, 1, left(basis, 1)-1)
+        end
+        if ~isinf(right(basis, 1))
+            @test in_support(basis, 1, right(basis, 1))
+            @test in_support(basis, 1, right(basis, 1)+1/2*sqrt(eps(T)))
+            @test ~in_support(basis, 1, right(basis, 1)+1)
+        end
+        if ~isinf(left(basis, 1)) && ~isinf(right(basis, 1))
+            @test in_support(basis, 1, 1/2*(left(basis, 1) + right(basis, 1)))
+        end
+    end
+
     ## Test iteration over the set
     equality = true
     l = 0
