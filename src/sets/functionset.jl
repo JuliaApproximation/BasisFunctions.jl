@@ -331,6 +331,7 @@ end
 done(s::FunctionSet, state) = done(state[1], state[2])
 
 
+tolerance(set::FunctionSet) = tolerance(eltype(set))
 
 # Provide this implementation which Base does not include anymore
 # TODO: hook into the Julia checkbounds system, once such a thing is developed.
@@ -346,14 +347,14 @@ checkbounds(s::FunctionSet, i) = checkbounds(s, linear_index(s, i))
 support(s::FunctionSet1d, idx) = (left(s,idx), right(s,idx))
 
 "Does the given point lie inside the support of the given set function?"
-in_support(set::FunctionSet1d, idx, x) = left(set, idx) <= x <= right(set, idx)
+in_support(set::FunctionSet1d, idx, x) = left(set, idx)-tolerance(set) <= x <= right(set, idx)+tolerance(set)
 
 # isless doesn't work when comparing complex numbers. It may happen that a real
 # function set uses a complex element type, or that the user evaluates at a
 # complex point.  Our default is to check for a zero imaginary part, and then
 # convert x to a real number. Genuinely complex function sets should override.
 in_support{T <: Complex}(set::FunctionSet1d, idx, x::T) =
-    imag(x) == 0 && in_support(set, idx, real(x))
+    abs(imag(x)) <= tolerance(set) && in_support(set, idx, real(x))
 
 
 ##############################################

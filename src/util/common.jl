@@ -9,6 +9,8 @@ macro add_properties(T, props...)
     e
 end
 
+tolerance{T}(::Type{T}) = sqrt(eps(T))
+tolerance{T <: Real}(::Type{Complex{T}}) = tolerance(T)
 
 
 # Convenience definitions for the implementation of traits

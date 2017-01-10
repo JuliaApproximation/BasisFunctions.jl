@@ -50,6 +50,8 @@ _eval_element(set::WeightedSet, w, idx, x) = w(x...) * eval_element(superset(set
 
 # Evaluate an expansion: same story
 eval_expansion(set::WeightedSet, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)
+# temporary, to remove an ambiguity
+eval_expansion(set::WeightedSet, coefficients, x::AbstractGrid) = _eval_expansion(set, weightfunction(set), coefficients, x)
 
 _eval_expansion(set::WeightedSet1d, w, coefficients, x::Number) = w(x) * eval_expansion(superset(set), coefficients, x)
 _eval_expansion(set::WeightedSet, w, coefficients, x) = w(x...) * eval_expansion(superset(set), coefficients, x)
