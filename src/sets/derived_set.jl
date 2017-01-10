@@ -99,8 +99,8 @@ approximate_native_size(s::DerivedSet, size_l) = approximate_native_size(superse
 linear_size(s::DerivedSet, size_n) = linear_size(superset(s), size_n)
 
 for op in (:left, :right)
-    @eval $op{T}(s::DerivedSet{1,T}) = $op(superset(s))
-    @eval $op{T}(s::DerivedSet{1,T}, idx) = $op(superset(s), idx)
+    @eval $op(s::DerivedSet) = $op(superset(s))
+    @eval $op(s::DerivedSet, idx) = $op(superset(s), idx)
 end
 
 eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
@@ -155,6 +155,9 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
     @eval $op(s1::DerivedSet, s2::DerivedSet, order; options...) =
         wrap_operator(s1, s2, $op(superset(s1), superset(s2), order; options...))
 end
+
+grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
 
 
 #########################

@@ -98,6 +98,18 @@ end
 
 eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
 
+function eachindex(s1::MultiArray, s2::MultiArray)
+    @assert composite_length(s1) == composite_length(s2)
+    @assert length(s1) == length(s2)
+    eachindex(s1)
+end
+
+function eachindex(s1::MultiArray, s2::AbstractArray)
+    @assert length(s1) == length(s2)
+    1:length(s)
+end
+
+
 function start(it::MultiArrayIndexIterator)
     I = eachindex(element(it.array, 1))
     (1, I, start(I))
@@ -122,6 +134,8 @@ length(it::MultiArrayIndexIterator) = length(it.array)
 typealias ArrayOfArray{T} Array{Array{T,1},1}
 
 # Our iterator can be simpler when the element sets are vectors in an array
+# Strictly speaking we can do even better, since we don't need the full array in the
+# field of the iterator, only its dimensions
 start{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}) = (1,1)
 
 function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)

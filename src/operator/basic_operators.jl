@@ -21,8 +21,7 @@ IdentityOperator(src, dest = src) = IdentityOperator(promote_eltype(src,dest)...
 op_promote_eltype{T,S}(op::IdentityOperator{T}, ::Type{S}) =
     IdentityOperator{S}(promote_eltypes(S, src(op), dest(op))...)
 
-is_inplace(::IdentityOperator) = true
-is_diagonal(::IdentityOperator) = true
+@add_properties(IdentityOperator, is_inplace, is_diagonal)
 
 inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 

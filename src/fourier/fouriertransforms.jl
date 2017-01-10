@@ -15,29 +15,40 @@
 # The Fast Fourier transform
 #############################
 
+function fftw_scaling_operator(set::FunctionSet)
+    scalefactor = 1/sqrt(convert(eltype(set), length(set)))
+    ScalingOperator(set, set, scalefactor)
+end
 
+function fftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
+    T = eltype(dest)
+    plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
+    MultiplicationOperator(src, dest, plan; inplace = true)
+end
+
+function ifftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
+    T = eltype(dest)
+    plan = plan_bfft!(zeros(T, src), dims; flags = fftwflags)
+    MultiplicationOperator(src, dest, plan; inplace = true)
+end
+
+# We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
+# in order to have a unitary transform. Additional scaling is done in the _pre and
+# _post routines.
 function FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet,
     dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
 
-    T = op_eltype(src, dest)
-    plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
-    t_op = MultiplicationOperator(src, dest, plan; inplace = true)
-
-    scalefactor = 1/sqrt(convert(T, length(dest)))
-    s_op = ScalingOperator(dest, dest, scalefactor)
-
+    t_op = fftw_operator(src, dest, dims, fftwflags)
+    # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
+    s_op = fftw_scaling_operator(dest)
     s_op * t_op
 end
 
 # Note that we choose to use bfft, an unscaled inverse fft.
 function InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
-    T = op_eltype(src, dest)
-    plan = plan_bfft!(zeros(T, src), dims; flags = fftwflags)
-    t_op = MultiplicationOperator(src, dest, plan; inplace = true)
-
-    scalefactor = 1/sqrt(convert(T,length(dest)))
-    s_op = ScalingOperator(dest, dest, scalefactor)
-
+    t_op = ifftw_operator(src, dest, dims, fftwflags)
+    # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
+    s_op = fftw_scaling_operator(dest)
     s_op * t_op
 end
 
@@ -56,16 +67,29 @@ dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::Multi
         InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
 
-# TODO: implement and test correct transposes
 ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    InverseFastFourierTransformFFTW(dest(op), src(op))
+    ifftw_operator(dest(op), src(op), 1:ndims(dest(op)), object.flags)
+
 ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    FastFourierTransformFFTW(dest(op), src(op))
+    fftw_operator(dest(op), src(op), 1:ndims(dest(op)), object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    ctranspose_multiplication(op, object)
+    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    ctranspose_multiplication(op, object)
+    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+
+
+ctranspose_function(op::FunctionOperator, fun::typeof(fft)) =
+    FunctionOperator(dest(op), src(op), ifft) * ScalingOperator(dest(op), dest(op), length(dest(op)))
+
+ctranspose_function(op::FunctionOperator, fun::typeof(ifft)) =
+    FunctionOperator(dest(op), src(op), fft) * ScalingOperator(dest(op), dest(op), 1/convert(eltype(op), length(dest(op))))
+
+# The two functions below are used when computing the inv of a
+# FunctionOperator that uses fft/ifft:
+inv(fun::typeof(fft)) = ifft
+inv(fun::typeof(ifft)) = fft
 
 
 # Now the generic implementation, based on using fft and ifft
@@ -141,6 +165,13 @@ for (plan, transform, invtransform) in (
         ctranspose_multiplication(op, object)
   end
 end
+
+# The four functions below are used when computing the ctranspose or inv of a
+# FunctionOperator that uses dct/idct:
+inv(fun::typeof(dct)) = idct
+inv(fun::typeof(idct)) = dct
+ctranspose(fun::typeof(dct)) = idct
+ctranspose(fun::typeof(idct)) = dct
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.

@@ -123,10 +123,15 @@ function test_derived_sets(T)
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
 
     @testset "$(rpad("Weighted sets",80))" begin
-    # Try a functor
-    test_generic_set_interface(BF.Cos() * b1)
-    # as well as a regular function
-    test_generic_set_interface(cos * b1) end
+        # Try a functor
+        test_generic_set_interface(BF.Cos() * b1)
+        # as well as a regular function
+        test_generic_set_interface(cos * b1)
+        # and a 2D example
+        # (not just yet, fix 2D for BigFloat first)
+#        test_generic_set_interface( ((x,y) -> cos(x+y)) * tensorproduct(b1, 2) )
+    end
+
 
     @testset "$(rpad("Multiple sets",80))" begin
     test_generic_set_interface(multiset(b1,b2))
@@ -194,7 +199,7 @@ for T in (Float64,BigFloat)
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -208,6 +213,7 @@ for T in (Float64,BigFloat)
             test_generic_set_interface(basis, SET)
     end
 
+    # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
                   FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
                   FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series

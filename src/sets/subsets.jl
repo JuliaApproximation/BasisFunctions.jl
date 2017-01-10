@@ -27,7 +27,7 @@ FunctionSubSet{N,T}(set::FunctionSet{N,T}, idx) =
 set(s::FunctionSubSet) = s.set
 indices(s::FunctionSubSet) = s.idx
 
-name(s::FunctionSubSet) = "Subset of " + name(set(s)) + " with indices " + string(indices(s))
+name(s::FunctionSubSet) = "Subset of " * name(set(s)) * " with indices " * string(indices(s))
 
 set_promote_eltype{SET,IDX,N,T,S}(s::FunctionSubSet{SET,IDX,N,T}, ::Type{S}) =
     FunctionSubSet(promote_eltype(set(s), S), indices(s))

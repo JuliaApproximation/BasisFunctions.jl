@@ -138,8 +138,8 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace; options...) =
-    block_row_operator( AbstractOperator{eltype(set)}[evaluation_operator(el,dgs; options...) for el in elements(set)], set, dgs)
+grid_evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    block_row_operator( AbstractOperator{eltype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
 ## Rescaling
 

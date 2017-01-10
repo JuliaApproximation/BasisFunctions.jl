@@ -108,7 +108,6 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 # from operator/operators.jl
 export AbstractOperator, operator, src, dest, apply!,
         apply, apply_multiple, apply_inplace!
-export OperatorInverse, OperatorTranspose
 export matrix, diagonal, is_diagonal, is_inplace
 
 # from operator/composite_operator.jl
@@ -124,7 +123,8 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 export transform_operator, transform_set, full_transform_operator,
     transform_operator_pre, transform_operator_post,
     transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
-    transform_from_grid, transform_from_grid_pre, transform_from_grid_post
+    transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
+    transform_operators
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -157,9 +157,6 @@ export TensorProductOperator
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
 
-# from functional/functional.jl
-export AbstractFunctional, EvaluationFunctional, row
-
 # from grid/discretegridspace.jl
 export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
     gridspace
@@ -168,7 +165,8 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
 # from sets/weighted_set.jl
-export WeightedSet, weightfunction
+export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d, 
+    weightfunction, weightfun_scaling_operator
 
 # from sets/multiple_set.jl
 export MultiSet, multiset, ⊕
@@ -257,8 +255,6 @@ include("operator/block_operator.jl")
 
 
 include("expansions.jl")
-
-include("functional/functional.jl")
 
 
 include("tensorproducts.jl")
