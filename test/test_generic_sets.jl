@@ -212,7 +212,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             b = T(1)
         end
 
-        grid2 = EquispacedGrid(n+3, T(a), T(b))
+        grid2 = EquispacedGrid(n+3, T(a)+sqrt(eps(T)), T(b)-sqrt(eps(T)))
         z = e(grid2)
         @test z ≈ ELT[ e(grid2[i]) for i in eachindex(grid2) ]
 

@@ -40,8 +40,8 @@ approx_length(b::WaveletBasis, n::Int) = 1<<ceil(Int, log2(n))
 
 call_element(b::WaveletBasis, idx::Int, x) =
     error("There is no explicit formula for elements of wavelet basis, ", b)
-# ASK resize is here defined on dyadic_length
-resize{B<:WaveletBasis}(b::B, L::Int) = B(wavelet(b),L)
+
+resize{B<:WaveletBasis}(b::B, n::Int) = B(wavelet(b),round(Int, log2(n)))
 
 has_grid(::WaveletBasis) = true
 # TODO implement transform
@@ -89,7 +89,7 @@ function eval_element{T, S<:Real}(b::WaveletBasis{T}, idx::Int, x::S; xtol::S = 
 end
 
 function transform_from_grid(src, dest::WaveletBasis, grid; options...)
-  @assert compatible_grid(src, grid)
+  @assert compatible_grid(dest, grid)
   DiscreteWaveletTransform(src, dest, wavelet(dest); options...)
 end
 
@@ -102,9 +102,14 @@ function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::Discre
   FunctionOperator(src, dest, x->full_dwt(x, w, perbound))
 end
 
-function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
-  FunctionOperator(src, dest, x->idwt(x, w, perbound))
+function InverseDistreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
+  FunctionOperator(src, dest, x->full_idwt(x, w, perbound))
 end
+
+# TODO use evaluate_periodic_in_dyadicpoints if grid has only dyadic points
+# function grid_evaluation_operator(set::WaveletBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options)
+#
+# end
 
 abstract OrthogonalWaveletBasis{T} <: WaveletBasis{T}
 
@@ -128,7 +133,7 @@ promote_eltype{P,T,S}(b::DaubechiesWaveletBasis{P,T}, ::Type{S}) =
 
 instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWaveletBasis(3, approx_length(n), T)
 
-is_compatible{P,L1,L2,T1,T2}(src1::DaubechiesWaveletBasis{P,L1,T1}, src2::DaubechiesWaveletBasis{P,L2,T2}) = true
+is_compatible{P,T1,T2}(src1::DaubechiesWaveletBasis{P,T1}, src2::DaubechiesWaveletBasis{P,T2}) = true
 
 # TODO ensure that only bases with existing CDFwavelets are built
 immutable CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
@@ -144,4 +149,4 @@ promote_eltype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
 
 instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)
 
-is_compatible{P,QL1,L2,T1,T2}(src1::CDFWaveletBasis{P,Q,L1,T1}, src2::CDFWaveletBasis{P,Q,L2,T2}) = true
+is_compatible{P,Q,T1,T2}(src1::CDFWaveletBasis{P,Q,T1}, src2::CDFWaveletBasis{P,Q,T2}) = true
