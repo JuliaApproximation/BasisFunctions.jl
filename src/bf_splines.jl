@@ -56,8 +56,8 @@ instantiate{T}(::Type{FullSplineBasis}, n, ::Type{T}) = FullSplineBasis{3,T}(n-3
 
 # Full splines to not have an interpolation grid
 #has_grid(b::FullSplineBasis) = true
-
-length{K}(b::FullSplineBasis{K}) = b.n+K
+# ASK added -1, correct?
+length{K}(b::FullSplineBasis{K}) = b.n+K-1
 
 # Indices of splines naturally range from -K to n-1.
 native_index{K}(b::FullSplineBasis{K}, idx::Int) = idx-K-1

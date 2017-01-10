@@ -6,7 +6,7 @@ dyadic_length(b::WaveletBasis) = b.L
 
 length(b::WaveletBasis) = 1<<dyadic_length(b)
 
-wavelet(b::WaveletBasis) = b.w
+BasisFunctions.wavelet(b::WaveletBasis) = b.w
 
 BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
 
@@ -43,45 +43,68 @@ call_element(b::WaveletBasis, idx::Int, x) =
 # ASK resize is here defined on dyadic_length
 resize{B<:WaveletBasis}(b::B, L::Int) = B(wavelet(b),L)
 
-# TODO implement grid
 has_grid(::WaveletBasis) = true
 # TODO implement transform
 has_transform(::WaveletBasis) = true
 
-left(::WaveletBasis) = 0
-right(::WaveletBasis) = 1
-function left(w::WaveletBasis, i::Int)
-  if i == 1
-    support(primal_scalingfilter(wavelet(w)), 0, 0)[1]
-  else
-    j = level(length(w), i)
-    k = mod(i,1<<(j+1))
-    support(primal_waveletfilter(wavelet(w)), level(length(w), ), 0)[1]
-  end
+compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
+	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
+compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
+has_grid_transform(b::WaveletBasis, dgs, grid) = compatible_grid(b, grid)
+
+left{T}(::WaveletBasis{T}) = T(0)
+right{T}(::WaveletBasis{T}) = T(1)
+
+function support{T}(b::WaveletBasis{T}, i::Int)
+   l,r = support(primal, length(b), i, dyadic_length(b), wavelet(b))
+   l < 0 || r > 1 ? (T(0),T(1)) : (l,r)
 end
+
+left(b::WaveletBasis, i::Int) = support(b,i)[1]
+right(b::WaveletBasis, i::Int) = support(b,i)[2]
+
+period{T}(::WaveletBasis{T}) = T(1)
 
 grid{T}(b::WaveletBasis{T}) = PeriodicEquispacedGrid(length(b), left(b), right(b), T)
 
-transform_operator{G<:PeriodicEquispacedGrid}(src::DiscreteGridSpace{G}, dest::WaveletBasis; options...) =
-    dwt_operator(src, dest, eltype(src, dest); options...)
-
-transform_operator{G<:PeriodicEquispacedGrid}(src::WaveletBasis, dest::DiscreteGridSpace{G}; options...) =
-    idwt_operator(src, dest, eltype(src, dest); options...)
-
-
-
-function level(n::Int, i::Int)
-  (i == 1 || i == 2) && (return 0)
-  for l in 1:round(Int,log2(n))
-    if i <= (1<<(l+1))
-      return l
-    end
-  end
+function idx2waveletidx(b::WaveletBasis, idx::Int)
+  kind, j, k = wavelet_index(length(b), idx, dyadic_length(b))
+  kind, j, k
 end
 
+waveletidx2idx(b::WaveletBasis, kind::Kind, j::Int, k::Int) = coefficient_index(kind, j, k)
 
+native_index(b::WaveletBasis, idx::Int) = idx2waveletidx(b,idx)
+linear_index(b::WaveletBasis, waveletidx::Tuple{Kind,Int,Int}) = waveletidx2idx(b, waveletidx...)
 
+approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
 
+approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
+
+extension_size(b::WaveletBasis) = 2*length(b)
+
+function eval_element{T, S<:Real}(b::WaveletBasis{T}, idx::Int, x::S; xtol::S = 1e-4, options...)
+  kind, j, k = native_index(b, idx)
+  evaluate_periodic(primal, kind, wavelet(b), j, k, x; xtol = xtol, options...)
+end
+
+function transform_from_grid(src, dest::WaveletBasis, grid; options...)
+  @assert compatible_grid(src, grid)
+  DiscreteWaveletTransform(src, dest, wavelet(dest); options...)
+end
+
+function transform_to_grid(src::WaveletBasis, dest, grid; options...)
+  @assert compatible_grid(src, grid)
+  InverseDistreteWaveletTransform(src, dest, wavelet(src); options...)
+end
+
+function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
+  FunctionOperator(src, dest, x->full_dwt(x, w, perbound))
+end
+
+function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
+  FunctionOperator(src, dest, x->idwt(x, w, perbound))
+end
 
 abstract OrthogonalWaveletBasis{T} <: WaveletBasis{T}
 
@@ -102,6 +125,12 @@ DaubechiesWaveletBasis{T}(P::Int, L::Int, ::Type{T} = Float64) =
 
 promote_eltype{P,T,S}(b::DaubechiesWaveletBasis{P,T}, ::Type{S}) =
       DaubechiesWaveletBasis(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
+
+instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWaveletBasis(3, approx_length(n), T)
+
+is_compatible{P,L1,L2,T1,T2}(src1::DaubechiesWaveletBasis{P,L1,T1}, src2::DaubechiesWaveletBasis{P,L2,T2}) = true
+
+# TODO ensure that only bases with existing CDFwavelets are built
 immutable CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
   w   ::    CDFWavelet{P,Q,T}
   L   ::    Int
@@ -112,3 +141,7 @@ CDFWaveletBasis{T}(P::Int, Q::Int, L::Int, ::Type{T} = Float64) =
 
 promote_eltype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
       CDFWaveletBasis(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
+
+instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)
+
+is_compatible{P,QL1,L2,T1,T2}(src1::CDFWaveletBasis{P,Q,L1,T1}, src2::CDFWaveletBasis{P,Q,L2,T2}) = true

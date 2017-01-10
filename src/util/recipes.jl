@@ -84,7 +84,6 @@ end
     nothing
 end
 
-
 #
 # For regular SetExpansions, no postprocessing is needed
 postprocess(S::FunctionSet, grid, vals) = vals

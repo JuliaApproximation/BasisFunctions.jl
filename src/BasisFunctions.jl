@@ -36,7 +36,9 @@ import Base: indices, normalize
 
 import Base: broadcast
 
-import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name
+import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_in_dyadic_points
+import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
+import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
 import Wavelets.Sequences: support
 import Wavelets.Util: isdyadic
 
@@ -207,6 +209,8 @@ export MultiArray
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
+# from bf_wavelets.jl
+export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 export degree, interval
