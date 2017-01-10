@@ -5,6 +5,15 @@
 #####
 function test_fourier_series(T)
 
+    ### Test bounds checking
+    fb0 = FourierBasis(5, T)
+    @test ~in_support(fb0, 1, -one(T)/10)
+    @test in_support(fb0, 1, zero(T))
+    @test in_support(fb0, 1, one(T)/2)
+    @test in_support(fb0, 1, one(T))
+    @test in_support(fb0, 1, zero(T)-0.9*sqrt(eps(T)))
+    @test in_support(fb0, 1, one(T)+0.9*sqrt(eps(T)))
+
     ## Even length
     n = 12
     a = -T(1.2)

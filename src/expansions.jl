@@ -53,7 +53,9 @@ setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 
 # This indirect call enables dispatch on the type of the set of the expansion
 (e::SetExpansion)(x) = call_set_expansion(e, set(e), coefficients(e), x)
-(e::SetExpansion)(x, y...) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y...))
+(e::SetExpansion)(x, y) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y))
+(e::SetExpansion)(x, y, z) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y, z))
+(e::SetExpansion)(x, y, z, t) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y, z, t))
 
 call_set_expansion(e::SetExpansion, set::FunctionSet, coefficients, x) =
     eval_expansion(set, coefficients, x)

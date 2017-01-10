@@ -73,23 +73,18 @@ has_grid_transform(b::FourierBasis, dgs, grid) = compatible_grid(b, grid)
 
 length(b::FourierBasis) = b.n
 
-left(b::FourierBasis) = 0
-
+left(b::FourierBasis) = zero(numtype(b))
 left(b::FourierBasis, idx) = left(b)
 
-right(b::FourierBasis) = 1
-
+right(b::FourierBasis) = one(numtype(b))
 right(b::FourierBasis, idx) = right(b)
 
 period(b::FourierBasis) = 1
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, 0, 1, numtype(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), numtype(b))
 
 nhalf(b::FourierBasis) = length(b)>>1
 
-in_support{T <: Real}(set::FourierBasis, idx, x::T) = 0 <= x <= 1
-
-in_support{T <: Complex}(set::FourierBasis, idx, x::T) = imag(x) == 0 && in_support(set, idx, real(x))
 
 # The frequency of an even Fourier basis ranges from -N+1 to N.
 idx2frequency(b::FourierBasisEven, idx) = idx <= nhalf(b)+1 ? idx-1 : idx - 2*nhalf(b) - 1

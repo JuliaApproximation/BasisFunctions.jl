@@ -40,10 +40,10 @@ has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevExtremaGrid) = length(b) =
 has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
-left(b::ChebyshevBasis) = -1
+left(b::ChebyshevBasis) = -one(numtype(b))
 left(b::ChebyshevBasis, idx) = left(b)
 
-right(b::ChebyshevBasis) = 1
+right(b::ChebyshevBasis) = one(numtype(b))
 right(b::ChebyshevBasis, idx) = right(b)
 
 grid{T}(b::ChebyshevBasis{T}) = ChebyshevNodeGrid(b.n,numtype(b))
@@ -70,13 +70,13 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
+
 # We can define this O(1) evaluation method, but only for points in [-1,1]
+# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
-
-# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
-
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function moment{T}(b::ChebyshevBasis{T}, idx::Int)
