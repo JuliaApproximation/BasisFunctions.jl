@@ -5,6 +5,15 @@
 #####
 function test_fourier_series(T)
 
+    ### Test bounds checking
+    fb0 = FourierBasis(5, T)
+    @test ~in_support(fb0, 1, -one(T)/10)
+    @test in_support(fb0, 1, zero(T))
+    @test in_support(fb0, 1, one(T)/2)
+    @test in_support(fb0, 1, one(T))
+    @test in_support(fb0, 1, zero(T)-0.9*sqrt(eps(T)))
+    @test in_support(fb0, 1, one(T)+0.9*sqrt(eps(T)))
+
     ## Even length
     n = 12
     a = -T(1.2)
@@ -159,4 +168,14 @@ function test_fourier_series(T)
     e = approximate(b1, f)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
+
+    # Arithmetic
+
+    b2 = FourierBasis(162, T)
+    f2 = x -> 1/(2+cos(2*T(pi)*x))
+    e2 = approximate(b2, f2)
+    x0 = T(1//2)
+    @test abs((e*e2)(T(x0))-f(x0)*f2(x0)) < sqrt(eps(T))
+    @test abs((e+2*e2)(T(x0))-(f(x0)+2*f2(x0))) < sqrt(eps(T))
+    @test abs((3*e-e2)(T(x0))-(3*f(x0)-f2(x0))) < sqrt(eps(T))
 end

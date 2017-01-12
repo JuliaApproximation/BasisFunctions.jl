@@ -62,19 +62,26 @@ resize{TS,N,T}(s::TensorProductSet{TS,N,T}, n::Int) = resize(s,ntuple(k->n,N))
 
 in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
 
-# This line is way too slow:
-#in_support(set::TensorProductSet, idx::Tuple, x) = reduce(&, map((s,i,t)->in_support(s, i, t), elements(set), idx, x))
-# We handcode a few cases:
-in_support(set::TensorProductSet, idx::NTuple{2,Int}, x) =
-    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2])
+# We pass elements(set) as an extra argument in order to avoid extra memory allocation
+in_support(set::TensorProductSet, idx, x) = _in_support(set, elements(set), idx, x)
 
-in_support(set::TensorProductSet, idx::NTuple{3,Int}, x) =
-    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2]) && in_support(element(set,3), idx[3], x[3])
+# This line is a bit slower than the lines below:
+_in_support(::TensorProductSet, sets, idx, x) = reduce(&, map(in_support, sets, idx, x))
 
-in_support(set::TensorProductSet, idx::NTuple{4,Int}, x) =
-    in_support(element(set,1), idx[1], x[1]) && in_support(element(set,2), idx[2], x[2]) && in_support(element(set,3), idx[3], x[3]) && in_support(element(set,4), idx[4], x[4])
+# That is why we handcode a few cases:
+_in_support(::TensorProductSet, sets, idx::NTuple{1,Int}, x) =
+    in_support(sets[1], idx[1], x[1])
 
-# Convert a CartesianIndex to a tuple so that we can use the implementation above using map
+_in_support(::TensorProductSet, sets, idx::NTuple{2,Int}, x) =
+    in_support(sets[1], idx[1], x[1]) && in_support(sets[2], idx[2], x[2])
+
+_in_support(::TensorProductSet, sets, idx::NTuple{3,Int}, x) =
+    in_support(sets[1], idx[1], x[1]) && in_support(sets[2], idx[2], x[2]) && in_support(sets[3], idx[3], x[3])
+
+_in_support(::TensorProductSet, sets, idx::NTuple{4,Int}, x) =
+    in_support(sets[1], idx[1], x[1]) && in_support(sets[2], idx[2], x[2]) && in_support(sets[3], idx[3], x[3]) && in_support(sets[4], idx[4], x[4])
+
+# Convert a CartesianIndex to a tuple so that we can use the implementation above
 in_support(set::TensorProductSet, idx::CartesianIndex, x) = in_support(set, idx.I, x)
 
 function approx_length(s::TensorProductSet, n::Int)
@@ -147,16 +154,27 @@ eval_element(s::TensorProductSet, i::Int, x) = eval_element_native(s, multilinea
 # For any other type of index: assume it is a native one.
 eval_element(s::TensorProductSet, i, x) = eval_element_native(s, i, x)
 
+# We have to pass on the elements of s as an extra argument in order to avoid
+# memory allocations in the lines below
+eval_element_native(s::TensorProductSet, i, x) = _eval_element_native(s, elements(s), i, x)
+
 # For now, we assume that each set in the tensor product is a 1D set.
 # This may not always be the case.
-eval_element_native{TS}(s::TensorProductSet{TS,2}, i, x) =
-    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2])
+_eval_element_native{TS}(s::TensorProductSet{TS,1}, sets, i, x) =
+    eval_element(sets[1], i[1], x[1])
 
-eval_element_native{TS}(s::TensorProductSet{TS,3}, i, x) =
-    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2]) * eval_element(element(s,3), i[3], x[3])
+_eval_element_native{TS}(s::TensorProductSet{TS,2}, sets, i, x) =
+    eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2])
 
-eval_element_native{TS}(s::TensorProductSet{TS,4}, i, x) =
-    eval_element(element(s,1), i[1], x[1]) * eval_element(element(s,2), i[2], x[2]) * eval_element(element(s,3), i[3], x[3]) * eval_element(element(s,4), i[4], x[4])
+_eval_element_native{TS}(s::TensorProductSet{TS,3}, sets, i, x) =
+    eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3])
+
+_eval_element_native{TS}(s::TensorProductSet{TS,4}, sets, i, x) =
+    eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3]) * eval_element(sets[4], i[4], x[4])
+
+# Generic implementation, slightly slower
+_eval_element_native(s::TensorProductSet, sets, i, x) =
+    reduce(*, map(eval_element, sets, i, x))
 
 
 # A multilinear index of a set is a tuple consisting of linear indices of

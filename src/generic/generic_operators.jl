@@ -135,11 +135,14 @@ for op in ( (:transform_to_grid, :s1, :s2),
 end
 
 
-for op in (:extension_operator, :restriction_operator, :evaluation_operator,
+for op in (:extension_operator, :restriction_operator,
             :interpolation_operator, :leastsquares_operator)
     @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
+
+grid_evaluation_operator(set::TensorProductSet, dgs::DiscreteGridSpace, grid::TensorProductGrid; options...) =
+    tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(set), elements(grid))...)
 
 for op in (:approximation_operator, )
     @eval $op(s::TensorProductSet; options...) =
