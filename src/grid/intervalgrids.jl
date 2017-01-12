@@ -66,9 +66,9 @@ immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     PeriodicEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
 end
 
-PeriodicEquispacedGrid{T}(n, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
+PeriodicEquispacedGrid{T}(n::Int, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
 
-PeriodicEquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = PeriodicEquispacedGrid{T}(n, a, b)
+PeriodicEquispacedGrid{T}(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) = PeriodicEquispacedGrid{T}(n, a, b)
 
 similar_grid(g::PeriodicEquispacedGrid, a, b, T) = PeriodicEquispacedGrid{T}(length(g), a, b)
 
@@ -77,6 +77,38 @@ stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 # We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
 ==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
     (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
+
+"""
+A dyadic periodic equispaced grid is an equispaced grid that omits the right endpoint and length 2^l.
+It has stepsize (b-a)/n.
+"""
+immutable DyadicPeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+    l   ::  Int
+    a   ::  T
+    b   ::  T
+
+    DyadicPeriodicEquispacedGrid(l, a = zero(T), b = one(T)) = (@assert a < b; new(l, a, b))
+end
+
+dyadic_length(g::DyadicPeriodicEquispacedGrid) = g.l
+
+length(g::DyadicPeriodicEquispacedGrid) = 1<<dyadic_length(g)
+
+DyadicPeriodicEquispacedGrid{T}(l, ::Type{T} = Float64) = DyadicPeriodicEquispacedGrid{T}(l)
+
+DyadicPeriodicEquispacedGrid{T}(l, a, b, ::Type{T} = typeof((b-a)/l)) = DyadicPeriodicEquispacedGrid{T}(l, a, b)
+
+PeriodicEquispacedGrid{T}(g::DyadicPeriodicEquispacedGrid{T}) = PeriodicEquispacedGrid{T}(length(g), g.a, g.b)
+
+similar_grid(g::DyadicPeriodicEquispacedGrid, a, b, T) = DyadicPeriodicEquispacedGrid{T}(g.l, a, b)
+
+stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
+
+# We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
+==(g1::DyadicPeriodicEquispacedGrid, g2::DyadicPeriodicEquispacedGrid) =
+    (g1.l == g2.l) && (g1.a == g2.a) && (g1.b==g2.b)
+==(g1::DyadicPeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
+    (length(g1) == length(g2)) && (g1.a == g2.a) && (g1.b==g2.b)
 
 """
 A MidpointEquispaced grid is an equispaced grid with grid points in the centers of the equispaced

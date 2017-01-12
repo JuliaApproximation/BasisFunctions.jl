@@ -49,6 +49,8 @@ has_transform(::WaveletBasis) = true
 
 compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
 	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
+compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
+	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
 has_grid_transform(b::WaveletBasis, dgs, grid) = compatible_grid(b, grid)
 
@@ -65,7 +67,7 @@ right(b::WaveletBasis, i::Int) = support(b,i)[2]
 
 period{T}(::WaveletBasis{T}) = T(1)
 
-grid{T}(b::WaveletBasis{T}) = PeriodicEquispacedGrid(length(b), left(b), right(b), T)
+grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
 
 function idx2waveletidx(b::WaveletBasis, idx::Int)
   kind, j, k = wavelet_index(length(b), idx, dyadic_length(b))
@@ -110,6 +112,17 @@ end
 # function grid_evaluation_operator(set::WaveletBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options)
 #
 # end
+
+# Used for fast plot of all elements in a WaveletBasis
+#TODO make in place implementation of evaluate_periodic_in_dyadic_points
+function eval_set_element!(result, set::WaveletBasis, idx, grid::DyadicPeriodicEquispacedGrid, outside_value = zero(eltype(set)))
+  if (1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1)
+    kind, j, k = native_index(set, idx)
+    result = evaluate_periodic_in_dyadic_points(primal, kind, wavelet(set), j, k, dyadic_length(grid))
+  else
+    eval_set_element!(result, set, idx, PeriodicEquispacedGrid(grid), outside_value)
+  end
+end
 
 abstract OrthogonalWaveletBasis{T} <: WaveletBasis{T}
 
