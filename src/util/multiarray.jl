@@ -106,7 +106,12 @@ end
 
 function eachindex(s1::MultiArray, s2::AbstractArray)
     @assert length(s1) == length(s2)
-    1:length(s)
+    1:length(s1)
+end
+
+function eachindex(s1::AbstractArray, s2::MultiArray)
+    @assert length(s1) == length(s2)
+    1:length(s1)
 end
 
 
