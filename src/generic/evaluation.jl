@@ -45,16 +45,14 @@ function grid_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace, grid
             full_transform_operator(set, dgs; options...)
         elseif length(set) < length(dgs)
             if ndims(set) == 1
-                larger_set = resize(set, length(dgs))
+                slarge = resize(set, length(dgs))
+                has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
             # The basis should at least be resizeable to the dimensions of the grid
             elseif ndims(set) == length(size(dgs))
-                larger_set = resize(set, size(dgs))
+                slarge = resize(set, size(dgs))
+                has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
             end
-            if has_transform(larger_set, dgs)
-                full_transform_operator(larger_set, dgs; options...) * extension_operator(set, larger_set; options...)
-            else
-                default_evaluation_operator(set, dgs; options...)
-            end
+            return default_evaluation_operator(set, dgs; options...)
         else
             # This might be faster implemented by:
             #   - finding an integer n so that nlength(dgs)>length(s)
