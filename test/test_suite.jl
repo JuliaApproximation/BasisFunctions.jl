@@ -81,10 +81,10 @@ end
 
 # Abuse point_in_domain with a scalar greater than one in order to get
 # a point outside the domain.
-point_outside_domain(basis::FunctionSet) = point_in_domain(basis, eltype(basis)(1.1))
+point_outside_domain(basis::FunctionSet) = point_in_domain(basis, numtype(basis)(1.1))
 
-point_outside_domain(basis::LaguerreBasis) = -one(eltype(basis))
-point_outside_domain(basis::HermiteBasis) = one(eltype(basis))+im
+point_outside_domain(basis::LaguerreBasis) = -one(numtype(basis))
+point_outside_domain(basis::HermiteBasis) = one(numtype(basis))+im
 
 function random_point_in_domain(basis::FunctionSet)
     T = numtype(basis)
@@ -134,8 +134,9 @@ function test_derived_sets(T)
 
 
     @testset "$(rpad("Multiple sets",80))" begin
-    test_generic_set_interface(multiset(b1,b2))
-    test_generic_set_interface(MultiSet((b1,b2))) end
+    # Test sets with internal representation as vector and as tuple separately
+    test_generic_set_interface(multiset(b1,rescale(b2, 0, 1)))
+    test_generic_set_interface(MultiSet((b1,rescale(b2, 0, 1)))) end
 
     @testset "$(rpad("A multiple and weighted set combination",80))" begin
     s = rescale(b1, 1/2, 1)
