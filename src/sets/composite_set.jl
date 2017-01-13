@@ -110,6 +110,9 @@ function checkbounds(set::CompositeSet, idx::NTuple{2,Int})
     checkbounds(element(set,idx[1]), idx[2])
 end
 
+in_support(set::CompositeSet, idx, x) = _in_support(set, elements(set), idx, x)
+
+_in_support(set::CompositeSet, sets, idx, x) = reduce(&, map((s,i)->in_support(s, i, x), sets, idx))
 
 ## Iteration
 
