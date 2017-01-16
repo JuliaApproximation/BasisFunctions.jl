@@ -114,12 +114,12 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
-            @test in_support(basis, 1, left(basis, 1)-1/2*sqrt(eps(T)))
+            @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))
             @test ~in_support(basis, 1, left(basis, 1)-1)
         end
         if ~isinf(right(basis, 1))
             @test in_support(basis, 1, right(basis, 1))
-            @test in_support(basis, 1, right(basis, 1)+1/2*sqrt(eps(T)))
+            @test in_support(basis, 1, right(basis, 1)+1/10*sqrt(eps(T)))
             @test ~in_support(basis, 1, right(basis, 1)+1)
         end
         if ~isinf(left(basis, 1)) && ~isinf(right(basis, 1))
@@ -258,6 +258,20 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         e3 = R * e2
         @test e2(x1) ≈ e3(x1)
         @test e2(x2) ≈ e3(x2)
+    end
+
+    # Verify whether evaluation in a larger grid works
+    if BF.has_extension(basis) && BF.has_grid(basis)
+        basis_ext = extend(basis)
+        grid_ext = grid(basis_ext)
+        L = evaluation_operator(basis, grid_ext)
+        e = random_expansion(basis)
+        z = L*e
+        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
+        z2 = L2*e
+        @test maximum(abs.(z-z2)) < sqrt(eps(T))
+        # In the future, when we can test for 'fastness' of operators
+        # @test is_fast(L2) == is_fast(L)
     end
 
     ## Test derivatives

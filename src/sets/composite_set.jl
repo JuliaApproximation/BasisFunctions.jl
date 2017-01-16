@@ -110,6 +110,12 @@ function checkbounds(set::CompositeSet, idx::NTuple{2,Int})
     checkbounds(element(set,idx[1]), idx[2])
 end
 
+# Translate a linear index into a multilinear index
+in_support(set::CompositeSet, idx, x) = _in_support(set, elements(set), idx, x)
+
+_in_support(set::CompositeSet, sets, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
+
+_in_support(set::CompositeSet, sets, idx, x) = in_support(sets[idx[1]], idx[2], x)
 
 ## Iteration
 

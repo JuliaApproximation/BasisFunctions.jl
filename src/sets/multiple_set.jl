@@ -109,7 +109,9 @@ end
 left(set::MultiSet) = minimum(map(left, elements(set)))
 right(set::MultiSet) = maximum(map(right, elements(set)))
 
-resize(s::MultiSet, n::Int) = resize(s, ntuple(k->n, composite_length(s)))
+resize(s::MultiSet, n::Int) = resize(s, approx_length(s, n))
+
+approx_length(s::MultiSet, n::Int) = ntuple(t->ceil(Int,n/composite_length(s)), composite_length(s))
 
 ## Differentiation
 

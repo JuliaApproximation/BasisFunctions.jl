@@ -58,7 +58,7 @@ set_promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
     TensorProductSet(map(i -> promote_eltype(i,S), s.sets)...)
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
-resize{TS,N,T}(s::TensorProductSet{TS,N,T}, n::Int) = resize(s,ntuple(k->n,N))
+resize(s::TensorProductSet, n::Int) = resize(s, approx_length(s, n))
 
 in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
 
