@@ -78,7 +78,8 @@ export in_support
 export True, False
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
-export linearize_coefficients, delinearize_coefficients
+export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
+    delinearize_coefficients!
 export moment
 
 # from sets/subsets.jl
@@ -160,6 +161,9 @@ export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 # from sets/weighted_set.jl
 export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
     weightfunction, weightfun_scaling_operator
+
+# from sets/composite_set.jl
+export tail
 
 # from sets/multiple_set.jl
 export MultiSet, multiset, ⊕

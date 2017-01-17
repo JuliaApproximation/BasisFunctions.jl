@@ -31,6 +31,8 @@ composite_length(set::CompositeSet) = length(set.sets)
 # to create a new set of the same type as the given set.
 element(set::CompositeSet, range::Range) = similar_set(set, set.sets[range])
 
+tail(set::CompositeSet) = composite_length(set) == 2 ? element(set, 2) : element(set, 2:composite_length(set))
+
 # We compute offsets of the individual sets using a cumulative sum
 compute_offsets(sets::Array) = [0; cumsum(map(length, sets))]
 

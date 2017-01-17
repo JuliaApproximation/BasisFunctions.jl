@@ -59,7 +59,7 @@ zeros(ELT::Type, s::DerivedSet) = zeros(ELT, superset(s))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :grid, :is_composite, :composite_length,
-    :elements)
+    :elements, :tail)
     @eval $op(s::DerivedSet) = $op(superset(s))
 end
 
