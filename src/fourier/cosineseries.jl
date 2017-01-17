@@ -20,7 +20,7 @@ name(b::CosineSeries) = "Cosine series"
 CosineSeries{T}(n, ::Type{T} = Float64) = CosineSeries{T}(n)
 
 CosineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) =
-    rescale( CosineSeries(n,floatify(T)), a, b)
+    rescale( CosineSeries(n,float(T)), a, b)
 
 instantiate{T}(::Type{CosineSeries}, n, ::Type{T}) = CosineSeries{T}(n)
 

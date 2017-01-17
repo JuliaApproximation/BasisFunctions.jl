@@ -19,7 +19,7 @@ name(b::SineSeries) = "Sine series"
 
 SineSeries{T}(n, ::Type{T} = Float64) = SineSeries{T}(n)
 
-SineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( SineSeries(n,floatify(T)), a, b)
+SineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( SineSeries(n,float(T)), a, b)
 
 instantiate{T}(::Type{SineSeries}, n, ::Type{T}) = SineSeries{T}(n)
 

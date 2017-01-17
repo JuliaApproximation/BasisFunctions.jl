@@ -70,7 +70,6 @@ export DimensionOperator, dimension_operator
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
-export complexify
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_composite
@@ -159,7 +158,7 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
 # from sets/weighted_set.jl
-export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d, 
+export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
     weightfunction, weightfun_scaling_operator
 
 # from sets/multiple_set.jl

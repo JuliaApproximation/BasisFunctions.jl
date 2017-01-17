@@ -33,6 +33,8 @@ end
 
 ndims(s::TensorProductSet, j::Int) = ndims(element(s, j))
 
+^(s::FunctionSet, n::Int) = tensorproduct(s, n)
+
 ## Properties
 
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)

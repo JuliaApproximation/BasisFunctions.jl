@@ -24,7 +24,7 @@ typealias FourierBasisOdd{T} FourierBasis{false,T}
 name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
-FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complexify(floatify(T))}(n)
+FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complex(float(T))}(n)
 
 FourierBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale(FourierBasis(n, T), a, b)
 
