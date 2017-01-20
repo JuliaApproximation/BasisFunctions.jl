@@ -92,12 +92,32 @@ end
 
 function transform_from_grid(src, dest::WaveletBasis, grid; options...)
   @assert compatible_grid(dest, grid)
-  DiscreteWaveletTransform(src, dest, wavelet(dest); options...)
+  L = length(src)
+  ELT = eltype(src)
+  S = ScalingOperator(dest, 1/sqrt(ELT(L)))
+  T = DiscreteWaveletTransform(src, dest, wavelet(dest); options...)
+  T*S
 end
 
 function transform_to_grid(src::WaveletBasis, dest, grid; options...)
   @assert compatible_grid(src, grid)
-  InverseDistreteWaveletTransform(src, dest, wavelet(src); options...)
+  L = length(src)
+  ELT = eltype(src)
+  S = ScalingOperator(dest, 1/sqrt(ELT(L)))
+  T = InverseDistreteWaveletTransform(src, dest, wavelet(src); options...)
+  T*S
+end
+
+function transform_from_grid_post(src, dest::WaveletBasis, grid; options...)
+	@assert compatible_grid(dest, grid)
+    L = length(src)
+    ELT = eltype(src)
+    ScalingOperator(dest, 1/sqrt(ELT(L)))
+end
+
+function transform_to_grid_pre(src::WaveletBasis, dest, grid; options...)
+	@assert compatible_grid(src, grid)
+	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
 function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
