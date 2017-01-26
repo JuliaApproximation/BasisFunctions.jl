@@ -42,7 +42,7 @@ import Base: broadcast
 ## Exports
 
 # from maps/maps.jl
-export AbstractMap, AffineMap, DiagonalMap, IdentityMap
+export AbstractMap, AffineMap, DiagonalMap, IdentityMap, CompositeMap, CartToPolarMap, PolarToCartMap
 export forward_map, inverse_map, jacobian, linearize
 export translation, linear_map, interval_map, scaling_map
 export is_linear
