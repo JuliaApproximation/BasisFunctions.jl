@@ -362,53 +362,56 @@ in_support{T <: Complex}(set::FunctionSet1d, idx, x::T) =
 ##############################################
 
 
-"""
-You can evaluate a member function of a set using the eval_set_element routine.
-It takes as arguments the function set, the index of the member function and
-the point in which to evaluate.
+for (eval_set, eval_set!, eval_, eval_exp) in ((:eval_set_element, :eval_set_element!, :eval_element, :eval_expansion),
+                              (:eval_set_dualelement, :eval_set_dualelement!, :eval_dualelement, :eval_dualexpansion))
+  """
+  You can evaluate a member function of a set using the eval_set_element routine.
+  It takes as arguments the function set, the index of the member function and
+  the point in which to evaluate.
 
-This function performs bounds checking on the index and also checks whether the
-point x lies inside the support of the function. A BoundsError() is thrown for
-an index out of bounds. By default, the value 0 is returned when x is outside
-the support. This value can be changed with an optional extra argument.
+  This function performs bounds checking on the index and also checks whether the
+  point x lies inside the support of the function. A BoundsError() is thrown for
+  an index out of bounds. By default, the value 0 is returned when x is outside
+  the support. This value can be changed with an optional extra argument.
 
-After the checks, this routine calls eval_element on the concrete set.
-"""
-function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
-    checkbounds(set, idx)
-    in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
-end
+  After the checks, this routine calls eval_element on the concrete set.
+  """
+  @eval function $eval_set(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
+      checkbounds(set, idx)
+      in_support(set, idx, x) ? $eval_(set, idx, x) : outside_value
+  end
 
-# We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
-# We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
-function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(DiscreteGridSpace(grid, eltype(set)))
-    eval_set_element!(result, set, idx, grid, outside_value...)
-end
+  # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
+  # We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
+  @eval function $eval_set(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
+      result = zeros(DiscreteGridSpace(grid, eltype(set)))
+      $eval_set!(result, set, idx, grid, outside_value...)
+  end
 
-function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
-    @assert size(result) == size(grid)
-    checkbounds(set, idx)
+  @eval function $eval_set!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
+      @assert size(result) == size(grid)
+      checkbounds(set, idx)
 
-    @inbounds for k in eachindex(grid)
-        result[k] = eval_set_element(set, idx, grid[k], outside_value)
-    end
-    result
-end
+      @inbounds for k in eachindex(grid)
+          result[k] = $eval_set(set, idx, grid[k], outside_value)
+      end
+      result
+  end
 
-"""
-Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
-"""
-function eval_expansion(set::FunctionSet, coefficients, x)
-    T = promote_type(eltype(coefficients), eltype(set))
-    z = zero(T)
+  """
+  Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
+  """
+  @eval function $eval_exp(set::FunctionSet, coefficients, x)
+      T = promote_type(eltype(coefficients), eltype(set))
+      z = zero(T)
 
-    # It is safer below to use eval_set_element than eval_element, because of
-    # the check on the support. We elide the boundscheck with @inbounds (perhaps).
-    @inbounds for idx in eachindex(set)
-        z = z + coefficients[idx] * eval_set_element(set, idx, x)
-    end
-    z
+      # It is safer below to use eval_set_element than eval_element, because of
+      # the check on the support. We elide the boundscheck with @inbounds (perhaps).
+      @inbounds for idx in eachindex(set)
+          z = z + coefficients[idx] * $eval_set(set, idx, x)
+      end
+      z
+  end
 end
 
 function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
@@ -434,3 +437,71 @@ support.
 """
 # Default to numerical integration
 moment(s::FunctionSet1d, idx) = quadgk(s[idx], left(s), right(s))[1]
+
+
+################
+## Gram matrices
+################
+
+"""
+The gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+"""
+grammatrix(b::FunctionSet) = grammatrix(b, is_orthogonal(b)? Val{true}: Val{false})
+
+grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
+
+"""
+The dual gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
+"""
+dualgrammatrix(b::FunctionSet) = dualgrammatrix(b, is_orthogonal(b)? Val{true}: Val{false})
+
+grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
+
+"""
+The mixed gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
+"""
+mixedgrammatrix(b::FunctionSet) = eye(length(b))
+
+"""
+The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+"""
+Gram(b::FunctionSet) = Gram(b, is_orthogonal(b)? Val{true}: Val{false})
+
+Gram(b::FunctionSet, ::Type{Val{true}}) = IdentityOperator(b,b)
+
+"""
+The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
+"""
+DualGram(b::FunctionSet) = DualGram(b, is_orthogonal(b)? Val{true}: Val{false})
+
+DualGram(b::FunctionSet, ::Type{Val{true}}) = IdentityOperator(b,b)
+
+"""
+The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
+"""
+MixedGram(b::FunctionSet) = IdentityOperator(b,b)
+
+
+###########################
+## Dual Function evaluation
+###########################
+eval_dualelement(b::FunctionSet, idx::Int, x) = eval_dualelement(b, idx, x, is_orthogonal(b)? Val{0}: Val{1})
+
+eval_dualelement(b::FunctionSet, idx::Int, x, ::Type{Val{0}}) = eval_element(b, idx, x)
+
+################################################################################################
+## Take inner products between function and basisfunctions. Used in continous approximation case.
+################################################################################################
+"""
+" Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
+"""
+project(b::FunctionSet, f::Function, ELT = eltype(b); options...) = project!(zeros(ELT,size(b)), b, f; options...)
+
+function project!(result, b::FunctionSet1d, f::Function; options...)
+  for i in eachindex(result)
+    result[i] = innerproduct(b, f, i; options...)
+  end
+  result
+end
+
+innerproduct(b::FunctionSet1d, f::Function, idx::Int; options...) = quadgk(x->b[idx](x)*f(x),left(b),right(b); options...)[1]

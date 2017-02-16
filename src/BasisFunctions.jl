@@ -9,6 +9,7 @@ using FastTransforms
 using ArrayViews
 using StaticArrays
 using RecipesBase
+using SpecialMatrices
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
@@ -87,6 +88,7 @@ export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients
 export moment
+export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
 
 # from sets/subsets.jl
 export FunctionSubSet, indices
@@ -117,7 +119,7 @@ export CompositeOperator, compose
 export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
-        IndexRestrictionOperator, IndexExtensionOperator
+        IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,
@@ -211,6 +213,9 @@ export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
+# from bf_periodicbsplines.jl
+export PeriodicBSplineBasis
+
 export degree, interval
 
 
@@ -276,6 +281,8 @@ include("fourier/sineseries.jl")
 
 include("bf_splines.jl")
 
+include("bf_periodicbsplines.jl")
+
 include("bf_wavelets.jl")
 
 include("poly/polynomials.jl")
@@ -287,5 +294,6 @@ include("poly/laguerre.jl")
 include("poly/hermite.jl")
 
 include("util/recipes.jl")
+
 
 end # module

@@ -59,7 +59,7 @@ is_inplace(op::AbstractOperator) = false
 is_diagonal(op::AbstractOperator) = false
 
 function apply(op::AbstractOperator, coef_src)
-	coef_dest = zeros(eltype(op), dest(op))
+	coef_dest = zeros(eltype(dest(op)), dest(op))
 	apply!(op, coef_dest, coef_src)
 	coef_dest
 end
