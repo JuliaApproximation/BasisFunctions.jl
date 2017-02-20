@@ -82,6 +82,9 @@ is_frame(s::FunctionSet) = is_basis(s)
 "Property to indicate whether a basis is orthogonal."
 is_orthogonal(s::FunctionSet) = false
 
+"Property to indicate whether a basis is orthonormal"
+is_orthonormal(s::FunctionSet) = false
+
 "Property to indicate whether a basis is biorthogonal (or a Riesz basis)."
 is_biorthogonal(s::FunctionSet) = is_orthogonal(s)
 
@@ -446,46 +449,69 @@ moment(s::FunctionSet1d, idx) = quadgk(s[idx], left(s), right(s))[1]
 """
 The gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-grammatrix(b::FunctionSet) = grammatrix(b, is_orthogonal(b)? Val{true}: Val{false})
+grammatrix(b) = grammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
 
 grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
+
+function grammatrix!(result, b::FunctionSet; options...)
+  for i in 1:size(result,1)
+    for j in i:size(result,2)
+      I = innerproduct(b, x->b[j](x), i; options...)
+      result[i,j] = I
+      if i!= j
+        result[j,i] = conj(I)
+      end
+    end
+  end
+  result
+end
 
 """
 The dual gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-dualgrammatrix(b::FunctionSet) = dualgrammatrix(b, is_orthogonal(b)? Val{true}: Val{false})
+dualgrammatrix(b) = dualgrammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
 
-grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
+dualgrammatrix(b, ::Type{Val{true}}) = grammatrix(b)
 
 """
 The mixed gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-mixedgrammatrix(b::FunctionSet) = eye(length(b))
+mixedgrammatrix(b) = mixedgrammatrix(b, is_biorthogonal(b) ? Val{true}: Val{false})
+mixedgrammatrix(b, ::Type{Val{true}}) = eye(length(b))
 
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-Gram(b::FunctionSet) = Gram(b, is_orthogonal(b)? Val{true}: Val{false})
+Gram(b::FunctionSet; options...) = Gram(b, is_orthonormal(b)? Val{true}: Val{false}; options...)
 
-Gram(b::FunctionSet, ::Type{Val{true}}) = IdentityOperator(b,b)
+Gram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
+
+function Gram(set::FunctionSet, ::Type{Val{false}}; options...)
+  A = zeros(eltype(set),length(set),length(set))
+  grammatrix!(A,set; options...)
+  MatrixOperator(A)
+end
 
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-DualGram(b::FunctionSet) = DualGram(b, is_orthogonal(b)? Val{true}: Val{false})
+DualGram(b::FunctionSet; options...) = DualGram(b, is_biorthogonal(b)? Val{true}: Val{false}; options...)
 
-DualGram(b::FunctionSet, ::Type{Val{true}}) = IdentityOperator(b,b)
+DualGram(b::FunctionSet, ::Type{Val{true}}; options...) = inv(Gram(b; options...))
+
 
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-MixedGram(b::FunctionSet) = IdentityOperator(b,b)
+MixedGram(b::FunctionSet; options...) = MixedGram(b, is_biorthogonal(b)? Val{true}: Val{false}; options...)
+
+MixedGram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
 
 
 ###########################
 ## Dual Function evaluation
 ###########################
-eval_dualelement(b::FunctionSet, idx::Int, x) = eval_dualelement(b, idx, x, is_orthogonal(b)? Val{0}: Val{1})
+eval_dualelement(b::FunctionSet, idx::Int, x) = eval_dualelement(b, idx, x, is_orthonormal(b)? Val{0}: Val{1})
 
 eval_dualelement(b::FunctionSet, idx::Int, x, ::Type{Val{0}}) = eval_element(b, idx, x)
 
@@ -495,13 +521,17 @@ eval_dualelement(b::FunctionSet, idx::Int, x, ::Type{Val{0}}) = eval_element(b, 
 """
 " Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
 """
-project(b::FunctionSet, f::Function, ELT = eltype(b); options...) = project!(zeros(ELT,size(b)), b, f; options...)
+project(b, f::Function, ELT = eltype(b); options...) = project!(zeros(ELT,size(b)), b, f; options...)
 
-function project!(result, b::FunctionSet1d, f::Function; options...)
+function project!(result, b, f::Function; options...)
   for i in eachindex(result)
     result[i] = innerproduct(b, f, i; options...)
   end
   result
 end
 
-innerproduct(b::FunctionSet1d, f::Function, idx::Int; options...) = quadgk(x->b[idx](x)*f(x),left(b),right(b); options...)[1]
+innerproduct(b::FunctionSet1d, f::Function, idx::Int; options...) =
+    innerproduct(b, f, idx, left(b), right(b); options...)
+
+innerproduct(b::FunctionSet1d, f::Function, idx::Int, left::Real, right::Real; options...) =
+    quadgk(x->conj(b[idx](x))*f(x), left, right; options...)[1]

@@ -51,7 +51,8 @@ isodd(b::FourierBasis) = ~iseven(b)
 
 is_basis(b::FourierBasis) = true
 is_orthogonal(b::FourierBasis) = true
-
+is_orthonormal(b::FourierBasis) = true
+is_biorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true

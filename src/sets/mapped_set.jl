@@ -186,3 +186,13 @@ function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
     (mset,mcoef) = (*)(superset(s1),superset(s2),coef_src1, coef_src2)
     (MappedSet(mset, mapping(s1)), mcoef)
 end
+
+Gram(s::MappedSet; options...) = wrap_operator(s, s, Gram(superset(s), mapping(s); options...))
+
+Gram(s::FunctionSet, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
+
+innerproduct(s::MappedSet, f::Function, idx::Int; options...) =
+    innerproduct(superset(s), mapping(s), f, idx; options...)
+
+innerproduct(b::FunctionSet, map::AffineMap, f::Function, idx::Int; options...) =
+    jacobian(map,nothing)*innerproduct(b, x->f(forward_map(map,x)), idx; options...)
