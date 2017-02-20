@@ -31,6 +31,7 @@ typealias OPS{T} OrthogonalPolynomialBasis{T}
 
 
 is_orthogonal(b::OPS) = true
+is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
@@ -39,6 +40,11 @@ antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
+innerproduct{T}(b::OPS{T}, f::Function, idx::Int; options...) =
+		innerproduct(b, f, idx, left(b)+eps(T),right(b)-eps(T); options...)
+
+innerproduct{T}(b::OPS{T}, f::Function, idx::Int, left::Real, right::Real; options...) =
+		quadgk(x->weight(b,x)*b[idx](x)*f(x), left, right; options...)[1]
 
 function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
     @assert length(dest) > length(src)

@@ -81,7 +81,7 @@ export complexify
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_composite
-export is_basis, is_frame, is_orthogonal, is_biorthogonal
+export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
 export True, False
 export approx_length, extension_size

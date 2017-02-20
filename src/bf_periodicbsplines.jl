@@ -7,6 +7,8 @@ immutable PeriodicBSplineBasis{K,T} <: SplineBasis{K,T}
   PeriodicBSplineBasis{T}(n::Int, degree, ::Type{T}) = new{degree,T}(n,gramcolumn(degree,n,T),dualgramcolumn(degree,n,T))
 end
 
+is_biorthogonal(::PeriodicBSplineBasis) = true
+
 name(b::PeriodicBSplineBasis) = "Periodic squeezed B-splines of degree $(degree(b))"
 
 left{K,T}(::PeriodicBSplineBasis{K,T}) = real(T)(0)
@@ -64,16 +66,14 @@ end
 function eval_expansion{K,T <: Number}(b::PeriodicBSplineBasis{K}, coef, x::T)
 	i = interval(b, x)
 	n = length(b)
-
 	z = zero(T)
-	for idxn = i:i+K+1
+	for idxn = i-K:i
 		idx = linear_index(b, mod(idxn,n))
 		z = z + coef[idx] * eval_element(b, idx, x)
 	end
 
 	z
 end
-
 
 function gramcolumn(degree, n, T)
     result = zeros(n)
@@ -102,22 +102,55 @@ function Gram{K,T}(b::PeriodicBSplineBasis{K,T}; options...)
   R*iF*DiagonalOperator(BasisFunctions.fftw_operator(b,b,1:1,FFTW.MEASURE)*b.gramcolumn)*F*C
 end
 
-function DualGram(b::PeriodicBSplineBasis; options...)
-  inv(Gram(b, options...))
-end
-
-
 grammatrix(b::PeriodicBSplineBasis) = full(Circulant(b.gramcolumn))
 dualgrammatrix(b::PeriodicBSplineBasis) = full(Circulant(b.dualgramcolumn))
 
 eval_dualelement{K,T}(b::PeriodicBSplineBasis{K,T}, idx::Int, x) = eval_expansion(b,circshift(b.dualgramcolumn,(idx-1)),x)
 
-function innerproduct{K,T}(b::PeriodicBSplineBasis{K,T}, f::Function, idx::Int; options...)
-  n = length(b)
+# function innerproduct{K,T}(b::PeriodicBSplineBasis{K,T}, f::Function, idx::Int; options...)
+#   n = length(b)
+#   if idx > n-K
+#     quadgk(x->b[idx](x)*f(x), linspace(left(b, idx), right(b), n-idx+2)...; options...)[1] +
+#     quadgk(x->b[idx](x)*f(x), linspace(left(b), right(b, idx) - period(b), K+idx-n+1)...; options...)[1]
+#   else
+#     quadgk(x->b[idx](x)*f(x), linspace(left(b,idx), right(b,idx), K+2)...; options...)[1]
+#   end
+# end
+
+function innerproduct{K,T}(basis::PeriodicBSplineBasis{K,T}, f::Function, idx::Int, a, b; options...)
+  n = length(basis)
   if idx > n-K
-    quadgk(x->b[idx](x)*f(x), linspace(left(b, idx), right(b), n-idx+2)...; options...)[1] +
-    quadgk(x->b[idx](x)*f(x), linspace(left(b), right(b, idx), K+idx-n+1)...; options...)[1]
+    quadgkwrap(x->basis[idx](x)*f(x), nodes(left(basis, idx), b, n); options...) +
+    quadgkwrap(x->basis[idx](x)*f(x), nodes(a, right(basis,idx)-period(basis), n); options...)
   else
-    quadgk(x->b[idx](x)*f(x), linspace(left(b,idx), right(b,idx), K+2)...; options...)[1]
+    quadgkwrap(x->basis[idx](x)*f(x), nodes(a, b, n); options...)
   end
 end
+
+function nodes(left::Real, right::Real, n::Int)
+    if left >= right
+        return [NaN]
+    end
+    left *= n
+    right *= n
+    low = ceil(Int,left)
+    up = floor(Int,right)
+    l = linspace(low, up, up-low+1)
+    if up ≈ right
+        if low ≈ left
+            result = [l...]
+        else
+            result = [left, l...]
+        end
+    else
+        if low ≈ left
+            result = [l..., right]
+        else
+            result = [left, l..., right]
+        end
+    end
+    result/n
+end
+
+quadgkwrap(f::Function, range; options...) =
+  length(range) == 1? 0. : quadgk(f, range...; options...)[1]

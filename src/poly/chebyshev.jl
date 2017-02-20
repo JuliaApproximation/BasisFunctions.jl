@@ -142,7 +142,11 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-
+function Gram{T}(b::ChebyshevBasis{T}; options...)
+  diag = T(pi)/T(2)*ones(T,length(b))
+  diag[1] = T(pi)
+  DiagonalOperator(b, diag)
+end
 
 ################################################################
 # Methods to transform from ChebyshevBasis to ChebyshevNodeGrid
