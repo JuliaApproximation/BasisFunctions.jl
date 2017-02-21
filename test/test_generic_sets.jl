@@ -20,6 +20,7 @@ suitable_function(s::FunctionSet1d) = exp
 # Make a simple periodic function for Fourier
 suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::PeriodicBSplineBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
 
 suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
@@ -111,7 +112,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis)
+    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: PeriodicBSplineBasis)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
             @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))

@@ -238,9 +238,38 @@ function test_multidiagonal_operators(T)
     end
 end
 
+function test_complexify_operator(T)
+  for SRC in (PeriodicBSplineBasis(11, 2, T), PeriodicBSplineBasis(11, 2, complex(T)))
+    op = ComplexifyOperator(SRC)
+    DEST = dest(op)
+    ELT = eltype(op)
+    @test ELT == eltype(src(op))
+    @test eltype(dest(op)) == complex(T)
+    coef_src = zeros(eltype(SRC),SRC)
+    coef_dest = zeros(eltype(DEST),DEST)
+    for i in eachindex(coef_src)
+        coef_src[i]=map(eltype(src(op)),rand())
+    end
+    apply!(op, coef_dest, coef_src)
+    @test norm(coef_dest-coef_src) == 0
+
+    op = RealifyOperator(SRC)
+    ELT = eltype(op)
+    @test ELT == eltype(dest(op))
+    @test eltype(dest(op)) == T
+    coef_src = zeros(eltype(SRC),SRC)
+    coef_dest = zeros(eltype(DEST),DEST)
+    for i in eachindex(coef_src)
+        coef_src[i]=map(eltype(src(op)),rand())
+    end
+    apply!(op, coef_dest, coef_src)
+    @test norm(coef_dest-coef_src) == 0
+  end
+end
+
 function test_invertible_operators(T)
     for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}))
-        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),)
+        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),ComplexifyOperator(SRC),RealifyOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place

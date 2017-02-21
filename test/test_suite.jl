@@ -196,11 +196,14 @@ for T in (Float64,BigFloat)
     @testset "$(rpad("test tensor operators",80))" begin
         test_tensor_operators(T)
     end
+    @testset "$(rpad("test complexify/realify operator",80))" begin
+      test_complexify_operator(T)
+    end
 
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries, PeriodicBSplineBasis)
     #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)

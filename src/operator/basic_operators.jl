@@ -291,10 +291,13 @@ immutable ComplexifyOperator{T} <: AbstractOperator{T}
     new(src, dest)
   end
 end
-ComplexifyOperator{N,T}(src::FunctionSet{N,T}, dest::FunctionSet) = ComplexifyOperator{T}(src, dest)
+ComplexifyOperator(src::FunctionSet, dest::FunctionSet) = ComplexifyOperator{eltype(src)}(src, dest)
 ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, set_promote_eltype(src,complex(eltype(src))))
+ComplexifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
 Base.inv(op::ComplexifyOperator) = RealifyOperator(dest(op),src(op))
 is_diagonal(::ComplexifyOperator) = true
+ctranspose(op::ComplexifyOperator) = op
+
 function apply!(op::ComplexifyOperator, coef_dest, coef_src)
   for i in eachindex(coef_src)
       coef_dest[i] = complex(coef_src[i])
@@ -309,10 +312,12 @@ immutable RealifyOperator{T} <: AbstractOperator{T}
     new(src, dest)
   end
 end
-RealifyOperator{N,T}(src::FunctionSet, dest::FunctionSet{N,T}) = RealifyOperator{T}(src, dest)
-RealifyOperator(src::FunctionSet) = RealifyOperator(src, set_promote_eltype(src,complex(eltype(src))))
+RealifyOperator(src::FunctionSet, dest::FunctionSet) = RealifyOperator{eltype(dest)}(src, dest)
+RealifyOperator(src::FunctionSet) = RealifyOperator(src, set_promote_eltype(src,real(eltype(src))))
+RealifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
 inv(op::RealifyOperator) = ComplexifyOperator(dest(op),src(op))
 is_diagonal(::RealifyOperator) = true
+ctranspose(op::RealifyOperator) = op
 function apply!(op::RealifyOperator, coef_dest, coef_src)
   for i in eachindex(coef_src)
       coef_dest[i] = real(coef_src[i])

@@ -30,6 +30,7 @@ promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{promote_ty
 
 resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
 
+set_promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{S}(b.n)
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
