@@ -91,3 +91,13 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
         BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:composite_length(s1)], s1, s2)
     end
 end
+
+function innerproduct(set::PiecewiseSet, f::Function, idx::Int; options...)
+  idxn = native_index(set, idx)
+  b = set.sets[idxn[1]]
+  innerproduct(b, f, linear_index(b,idxn[2]); options...)
+end
+
+function Gram(set::PiecewiseSet; options...)
+  BlockDiagonalOperator(AbstractOperator{eltype(set)}[Gram(element(set,i); options...) for i in 1:composite_length(set)], set, set)
+end

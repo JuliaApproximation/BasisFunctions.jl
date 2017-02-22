@@ -31,8 +31,13 @@ right(b::LegendreBasis, idx) = 1
 jacobi_α(b::LegendreBasis) = 0
 jacobi_β(b::LegendreBasis) = 0
 
-weight{T}(b::LegendreBasis{T}, x) = ones(T,x)
+weight{T}(b::LegendreBasis{T}, x) = T(1)
 
+function gramdiagonal!{T}(result, ::LegendreBasis{T}; options...)
+  for i in 1:length(result)
+    result[i] = T(2//(2(i-1)+1))
+  end
+end
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i

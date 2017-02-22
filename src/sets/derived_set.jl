@@ -159,7 +159,10 @@ end
 grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
     wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
 
-
+for op in (:innerproduct, )
+  @eval $op(s::DerivedSet, f::Function, idx::Int; options...) = $op(superset(s), f, idx; options...)
+  @eval $op(s::DerivedSet, f::Function, idx::Int, a::Real, b::Real; options...) = $op(superset(s), f, idx, a, b; options...)
+end
 #########################
 # Concrete set
 #########################

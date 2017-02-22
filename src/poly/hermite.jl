@@ -36,3 +36,9 @@ rec_An(b::HermiteBasis, n::Int) = 2
 rec_Bn(b::HermiteBasis, n::Int) = 0
 
 rec_Cn(b::HermiteBasis, n::Int) = 2*n
+
+function gramdiagonal!{T}(result, ::HermiteBasis{T}; options...)
+  for i in 1:length(result)
+    result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
+  end
+end

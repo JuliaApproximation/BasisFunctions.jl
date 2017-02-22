@@ -8,6 +8,7 @@ typealias Degree{N} Val{N}
 
 function evaluate_periodic_Bspline(N::Int, x, period, T::Type)
   x -= period*fld(x, period)
+  x >= period && (x -= period)
   @assert(0<= x < period)
   res = T(0)
   for k in 0:floor(Int, (N+1-x)/period)

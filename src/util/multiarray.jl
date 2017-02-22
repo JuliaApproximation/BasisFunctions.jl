@@ -54,6 +54,7 @@ eltype{A,ELT}(::Type{MultiArray{A,ELT}}) = ELT
 element(a::MultiArray, i) = a.arrays[i]
 elements(a::MultiArray) = a.arrays
 composite_length(a::MultiArray) = length(a.arrays)
+similar_multiarray(a::MultiArray) = MultiArray(elements(a))
 
 length(a::MultiArray) = a.offsets[end]
 
@@ -77,6 +78,12 @@ function linearize_coefficients!{T}(b::Array{T,1}, a::MultiArray)
         b[i] = a[j]
     end
     b
+end
+
+function delinearize_coefficients{T}(a::MultiArray, b::Array{T,1})
+  multiarray = similar_multiarray(a)
+  delinearize_coefficients!(multiarray, b)
+  multiarray
 end
 
 function delinearize_coefficients!{T}(a::MultiArray, b::Array{T,1})

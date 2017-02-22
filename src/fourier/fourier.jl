@@ -214,41 +214,24 @@ end
 
 function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)
-	_forward_fourier_operator(src, dest, eltype(src, dest); options...)
+	forward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
 
 function transform_to_grid(src::FourierBasis, dest, grid; options...)
 	@assert compatible_grid(src, grid)
-	_backward_fourier_operator(src, dest, eltype(src, dest); options...)
+	backward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
-
-# These are the generic fallbacks
-_forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-	FastFourierTransform(src, dest)
-
-_backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-	InverseFastFourierTransform(src, dest)
-
-# But for some types we can use FFTW
-for op in (:(Complex{Float32}), :(Complex{Float64}))
-	@eval _forward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
-		FastFourierTransformFFTW(src, dest; options...)
-
-	@eval _backward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
-		InverseFastFourierTransformFFTW(src, dest; options...)
-end
-
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
 function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	_backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	_forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 

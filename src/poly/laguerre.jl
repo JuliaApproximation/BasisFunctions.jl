@@ -32,6 +32,12 @@ jacobi_α(b::LaguerreBasis) = b.α
 
 weight{S,T}(b::LaguerreBasis{S,T}, x) = exp(-x) * T(x)^(b.α)
 
+function gramdiagonal!{S,T}(result, ::LaguerreBasis{S,T}; options...)
+  for i in 1:length(result)
+    result[i] = gamma(T(i+jacobi_α(b)))/factorial(i-1)
+  end
+end
+
 
 
 # See DLMF, Table 18.9.1

@@ -12,6 +12,8 @@ spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) *
 # Splines of degree K (with equispaced knots only...)
 abstract SplineBasis{K,T} <: FunctionSet1d{T}
 
+is_biorthogonal(::SplineBasis) = true
+ 
 "The degree of the splines."
 degree{K}(b::SplineBasis{K}) = K
 

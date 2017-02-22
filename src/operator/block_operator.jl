@@ -182,11 +182,13 @@ immutable BlockDiagonalOperator{ELT} <: AbstractOperator{ELT}
     dest        ::  FunctionSet
 end
 
-function BlockDiagonalOperator{ELT}(operators::Array{AbstractOperator{ELT},1})
-    op_src = MultiSet(map(src, operators))
-    op_dest = MultiSet(map(dest, operators))
-    BlockDiagonalOperator{ELT}(operators, op_src, op_dest)
+function BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}, src, dest)
+  ELT = promote_type(map(eltype, operators)...)
+  BlockDiagonalOperator{ELT}(operators, src, dest)
 end
+
+BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
+    BlockDiagonalOperator(operators, MultiSet(map(src, operators)), MultiSet(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
 
@@ -242,6 +244,8 @@ function element{ELT}(op::BlockDiagonalOperator{ELT}, i::Int, j::Int)
     end
 end
 
+apply!{T}(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Array{T,1}) = apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
+
 function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::MultiArray)
     for i in 1:composite_length(coef_src)
         apply!(op.operators[i], element(coef_dest, i), element(coef_src, i))
@@ -251,4 +255,5 @@ end
 
 ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, operators(op)))
 
-inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)))
+inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
+# inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(AbstractOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])

@@ -2,7 +2,7 @@
 module test_suite
 
 using Base.Test
-
+srand(1234)
 using BasisFunctions
 using StaticArrays
 BF = BasisFunctions
@@ -32,6 +32,7 @@ include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
+include("test_periodicbsplines.jl")
 include("test_maps.jl")
 include("test_DCTI.jl")
 
@@ -174,7 +175,7 @@ d5 = plan_dct!(zeros(10), 1:1)
 d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
-for T in (Float64,BigFloat)
+for T in (Float64, BigFloat,)
     println()
     delimit("T is $T", )
     delimit("Operators")
@@ -204,6 +205,7 @@ for T in (Float64,BigFloat)
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
             LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries, PeriodicBSplineBasis)
+    # SETS = (FourierBasis, PeriodicBSplineBasis)
     #        SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #                LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -252,6 +254,9 @@ for T in (Float64,BigFloat)
 
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
+
+    @testset "$(rpad("Periodic B spline expansions",80))" begin
+        test_periodicbsplines(T) end
 
 end # for T in...
 delimit("Test DCTI")

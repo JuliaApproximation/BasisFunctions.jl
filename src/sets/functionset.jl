@@ -463,7 +463,14 @@ function grammatrix!(result, b::FunctionSet; options...)
       end
     end
   end
-  result
+  nothing
+end
+
+function gramdiagonal!(result, b::FunctionSet; options...)
+  for i in 1:size(result,1)
+    result[i] = innerproduct(b, x->b[i](x), i; options...)
+  end
+  nothing
 end
 
 """
@@ -487,9 +494,15 @@ Gram(b::FunctionSet; options...) = Gram(b, is_orthonormal(b)? Val{true}: Val{fal
 Gram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
 
 function Gram(set::FunctionSet, ::Type{Val{false}}; options...)
-  A = zeros(eltype(set),length(set),length(set))
-  grammatrix!(A,set; options...)
-  MatrixOperator(A)
+  if is_orthogonal(set)
+    d = zeros(eltype(set), length(set))
+    gramdiagonal!(d, set; options...)
+    DiagonalOperator(set, set, d)
+  else
+    A = zeros(eltype(set),length(set),length(set))
+    grammatrix!(A,set; options...)
+    MatrixOperator(set, set, A)
+  end
 end
 
 """

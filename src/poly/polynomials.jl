@@ -44,7 +44,7 @@ innerproduct{T}(b::OPS{T}, f::Function, idx::Int; options...) =
 		innerproduct(b, f, idx, left(b)+eps(T),right(b)-eps(T); options...)
 
 innerproduct{T}(b::OPS{T}, f::Function, idx::Int, left::Real, right::Real; options...) =
-		quadgk(x->weight(b,x)*b[idx](x)*f(x), left, right; options...)[1]
+		quadgk(x->weight(b,x)*b[idx](x)*f(x), left+eps(T), right-eps(T); options...)[1]
 
 function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
     @assert length(dest) > length(src)

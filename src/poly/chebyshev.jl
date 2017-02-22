@@ -143,10 +143,10 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-function Gram{T}(b::ChebyshevBasis{T}; options...)
-  diag = T(pi)/T(2)*ones(T,length(b))
-  diag[1] = T(pi)
-  DiagonalOperator(b, diag)
+function gramdiagonal!{T}(result, ::ChebyshevBasis{T}; options...)
+  for i in 1:length(result)
+    i==1? result[i] = T(pi) : result[i] = T(pi)/2
+  end
 end
 
 ################################################################
@@ -293,6 +293,7 @@ right{T}(b::ChebyshevBasisSecondKind{T}, idx) = right(b)
 
 grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevNodeGrid{T}(b.n)
 
+Gram{T}(b::ChebyshevBasisSecondKind{T}; options...) = ScalingOperator(b, b, T(pi)/2)
 
 # The weight function
 weight{T}(b::ChebyshevBasisSecondKind{T}, x) = sqrt(1-T(x)^2)

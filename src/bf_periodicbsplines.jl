@@ -33,7 +33,9 @@ length(b::PeriodicBSplineBasis) = b.n
 
 grid(b::PeriodicBSplineBasis) = PeriodicEquispacedGrid(length(b), left(b), right(b))
 
-splinescaling(n) = sqrt(n)
+splinescaling(b::PeriodicBSplineBasis) = splinescaling(length(b), eltype(b))
+
+splinescaling{T}(n,::Type{T}) = sqrt(T(n))
 
 # Indices of periodic splines naturally range from 0 to n-1
 native_index(b::PeriodicBSplineBasis, idx::Int) = idx-1
@@ -48,19 +50,19 @@ left{K}(b::PeriodicBSplineBasis{K}, j::Int) = (j - 1) * stepsize(b)
 right{K}(b::PeriodicBSplineBasis{K}, j::Int) = (j - 1 + K + 1) * stepsize(b)
 
 function in_support{K}(b::PeriodicBSplineBasis{K}, idx::Int, x)
-	period = right(b) - left(b)
-
+	per = period(b)
 	A = left(b) <= x <= right(b)
-	B = (left(b, idx) <= x <= right(b, idx)) || (left(b, idx) <= x-period <= right(b, idx)) ||
-		(left(b, idx) <= x+period <= right(b, idx))
+	B = (left(b, idx) <= x <= right(b, idx)) || (left(b, idx) <= x-per <= right(b, idx)) ||
+		(left(b, idx) <= x+per <= right(b, idx))
 	A && B
 end
 
 function eval_element{K,T}(b::PeriodicBSplineBasis{K,T}, idx::Int, x)
+  x = T(x)
   if !in_support(b, idx, x)
     return T(0)
   end
-  splinescaling(length(b))*Cardinal_b_splines.evaluate_periodic_Bspline(K, length(b)*x-(idx-1), length(b), T)
+  splinescaling(b)*Cardinal_b_splines.evaluate_periodic_Bspline(K, length(b)*x-(idx-1), length(b), T)
 end
 
 function eval_expansion{K,T <: Number}(b::PeriodicBSplineBasis{K}, coef, x::T)
@@ -78,12 +80,13 @@ end
 function gramcolumn(degree, n, T)
     result = zeros(n)
     for i in 1:degree+1
-        I = quadgk(x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x, T)*BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x-(i-1), T),linspace(0,degree+i,degree+i+1)...)[1]
+        nodes = map(real(T),linspace(0,degree+i,degree+i+1))
+        I = quadgk(x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x, T)*BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x-(i-1), T),nodes...; reltol=sqrt(eps(real(T))))[1]
 
         result[i] = I
         i > 1 &&(result[n-(i-2)] = I)
     end
-    splinescaling(n)^2/n*result
+    splinescaling(n,T)^2/n*result
 end
 
 function dualgramcolumn(degree, n, T)
@@ -96,9 +99,9 @@ end
 function Gram{K,T}(b::PeriodicBSplineBasis{K,T}; options...)
   C = ComplexifyOperator(b)
   R = inv(C)
-  b = set_promote_eltype(b,complex(T))
-  F = FastFourierTransformFFTW(b, b; options...)
-  iF = InverseFastFourierTransformFFTW(b, b; options...)
+  b = dest(C)
+  F = forward_fourier_operator(b, b, eltype(b); options...)
+  iF = backward_fourier_operator(b, b, eltype(b); options...)
   R*iF*DiagonalOperator(BasisFunctions.fftw_operator(b,b,1:1,FFTW.MEASURE)*b.gramcolumn)*F*C
 end
 
@@ -107,17 +110,7 @@ dualgrammatrix(b::PeriodicBSplineBasis) = full(Circulant(b.dualgramcolumn))
 
 eval_dualelement{K,T}(b::PeriodicBSplineBasis{K,T}, idx::Int, x) = eval_expansion(b,circshift(b.dualgramcolumn,(idx-1)),x)
 
-# function innerproduct{K,T}(b::PeriodicBSplineBasis{K,T}, f::Function, idx::Int; options...)
-#   n = length(b)
-#   if idx > n-K
-#     quadgk(x->b[idx](x)*f(x), linspace(left(b, idx), right(b), n-idx+2)...; options...)[1] +
-#     quadgk(x->b[idx](x)*f(x), linspace(left(b), right(b, idx) - period(b), K+idx-n+1)...; options...)[1]
-#   else
-#     quadgk(x->b[idx](x)*f(x), linspace(left(b,idx), right(b,idx), K+2)...; options...)[1]
-#   end
-# end
-
-function innerproduct{K,T}(basis::PeriodicBSplineBasis{K,T}, f::Function, idx::Int, a, b; options...)
+function innerproduct{K,T}(basis::PeriodicBSplineBasis{K,T}, f::Function, idx::Int, a::Real, b::Real; options...)
   n = length(basis)
   if idx > n-K
     quadgkwrap(x->basis[idx](x)*f(x), nodes(left(basis, idx), b, n); options...) +
