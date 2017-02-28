@@ -37,6 +37,8 @@ import Base: indices, normalize
 
 import Base: broadcast
 
+import Base.LinAlg: dot
+
 import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
 import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
 import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
@@ -215,6 +217,8 @@ export DaubechiesWaveletBasis, CDFWaveletBasis
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bf_periodicbsplines.jl
 export PeriodicBSplineBasis
+# from set_of_translates.jl
+export CompactPeriodicSetOfTranslates, BSplineTranslatesBasis
 
 export degree, interval
 
@@ -282,6 +286,8 @@ include("fourier/sineseries.jl")
 include("bf_splines.jl")
 
 include("bf_periodicbsplines.jl")
+
+include("set_of_translates.jl")
 
 include("bf_wavelets.jl")
 

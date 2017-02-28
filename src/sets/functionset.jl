@@ -548,3 +548,62 @@ innerproduct(b::FunctionSet1d, f::Function, idx::Int; options...) =
 
 innerproduct(b::FunctionSet1d, f::Function, idx::Int, left::Real, right::Real; options...) =
     quadgk(x->conj(b[idx](x))*f(x), left, right; options...)[1]
+
+function dot{T}(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), options...)
+  (I,e) = quadgk(x->f(x), nodes...; reltol=reltol, abstol=abstol)
+  (e > sqrt(reltol)) && (warn("Dot product not converged"))
+  I
+end
+
+# type NativeBorder end
+# native_nodes(set::FunctionSet1d) = [left(set), right(set)]
+#
+# dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+#     dot(x->f1(x)*f2(x), nodes; options...)
+#
+# dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
+#     dot(set, x->set[f1](x), f2, nodes; options...)
+#
+# dot{T}(set::FunctionSet, f1::Function, f2::Int, nodes::Array=native_nodes(set); options...) =
+#     dot(set, f1, x->set[f2](x), nodes; options...)
+#
+# dot{T}(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
+#     dot(set, f1, x->set[f2](x), nodes; options...)
+#
+# dot(set::FunctionSet, f1, f2, ::NativeBorder; options...) =
+#     dot(set, f1, f2, native_nodes(set); options...)
+#
+# dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+#     dot(x->conj(f1(x))*f2(x), nodes; options...)
+#
+# dot(set::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+#     dot(x->weight(set,x)*f1(x)*f2(x), nodes; options...)
+#
+# native_nodes{T}(set::OPS{T}) = [left(set)+eps(T), right(set)-eps(T)]
+#
+#
+# dot(s::DerivedSet, f1::Function, f2::Function, nodes=native_nodes(s); options...) = dot(superset(s), f1, f2, nodes; options...)
+#
+# native_nodes(s::DerivedSet) = native_nodes(superset(s))
+#
+# dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...) =
+#     dot(superset(s), mapping(s), f1, f2, nodes; options...)
+#
+# dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
+#     jacobian(map, nothing)*dot(s, x->f1(forward_map(map,x)), x->f2(forward_map(map,x)), forward_map(map, nodes); options...)
+#
+# native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
+#
+# native_nodes(s::FunctionSet, map::AffineMap) = inverse_map(map, native_nodes(s))
+#
+# function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...)
+#   idxn = native_index(set, f1)
+#   b = set.sets[idxn[1]]
+#   dot(b, linear_index(b,idxn[2]), f2, nodes; options...)
+# end
+#
+# function dot(set::PiecewiseSet, f1::Function, f2::Int, nodes::Array=native_nodes(set); options...)
+#   idxn = native_index(set, f2)
+#   b = set.sets[idxn[1]]
+#   dot(b, f1, linear_index(b,idxn[2]), nodes; options...)
+# end
