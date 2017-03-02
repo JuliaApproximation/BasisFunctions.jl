@@ -87,7 +87,7 @@ export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
 export True, False
 export approx_length, extension_size
-export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
+export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients
 export moment
 export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement

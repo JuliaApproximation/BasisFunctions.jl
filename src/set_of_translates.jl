@@ -17,6 +17,8 @@ fun(b::SetOfTranslates) = b.fun
 native_index(b::SetOfTranslates, idx::Int) = idx-1
 linear_index(b::SetOfTranslates, idxn::Int) = idxn+1
 
+has_unitary_transform(::SetOfTranslates) = false
+
 """
   Set consisting of n equispaced translates of a periodic function.
 
@@ -35,7 +37,7 @@ right(set::PeriodicSetOfTranslates, j::Int) = right(set)
 
 has_grid(::PeriodicSetOfTranslates) = true
 
-grid(set::PeriodicSetOfTranslates) = MidpointEquispacedGrid(length(set), left(set), right(set))
+# grid(set::PeriodicSetOfTranslates) = MidpointEquispacedGrid(length(set), left(set), right(set))
 
 period(set::PeriodicSetOfTranslates) = right(set)-left(set)
 
@@ -46,6 +48,8 @@ has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid
 
 compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =
     (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
+
+native_nodes(b::PeriodicSetOfTranslates) = [k*stepsize(b) for k in 0:length(b)]
 
 function transform_from_grid(src, dest::PeriodicSetOfTranslates, grid; options...)
 	inv(transform_to_grid(dest, src, grid; options...))
@@ -88,6 +92,7 @@ function dualgramcolumn{T}(primalgramcolumn::Array{T,1})
     real(ifft(Diagonal(d)*fft(e1)))
 end
 
+# TODO think about extension.
 """
   Set consisting of n translates of a compact and periodic function.
 
@@ -131,7 +136,7 @@ function eval_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, coef, x:
 end
 
 """
-  Basis consisting of squeezed and translated cardinal b splines.
+  Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
 immutable BSplineTranslatesBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
   n               :: Int
@@ -158,8 +163,13 @@ set_promote_eltype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTr
 resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, degree(b), T)
 
 Gram(b::BSplineTranslatesBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
-
+# TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
-compatible_grid(b::BSplineTranslatesBasis{1}, grid::MidpointEquispacedGrid) = false
+compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) = iseven(K) &&
+    (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
+compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) = isodd(K) &&
+    (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
 # we use a PeriodicEquispacedGrid in stead
-grid(b::BSplineTranslatesBasis{1}) = PeriodicEquispacedGrid(length(b),left(b),right(b))
+grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
+    PeriodicEquispacedGrid(length(b), left(b), right(b)) :
+    MidpointEquispacedGrid(length(b), left(b), right(b))

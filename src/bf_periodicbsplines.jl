@@ -1,3 +1,9 @@
+"""
+  Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
+
+  Will be replaced by BSplineTranslatesBasis that uses the circulant properties of the Gram
+  and the collocation matrix.
+"""
 immutable PeriodicBSplineBasis{K,T} <: SplineBasis{K,T}
   n   :: Int
 

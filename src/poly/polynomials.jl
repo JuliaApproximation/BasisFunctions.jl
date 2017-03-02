@@ -41,6 +41,7 @@ antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 length(o::OrthogonalPolynomialBasis) = o.n
 
 function dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...)
+		# To avoid difficult points at the ends of the domain.
 		shifted = map(x->max(x, -T(1)+eps(real(T))), nodes)
 		shifted = map(x->min(x, +T(1)-eps(real(T))), shifted)
 		dot(x->weight(set,x)*f1(x)*f2(x), shifted; options...)

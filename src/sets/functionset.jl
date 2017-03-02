@@ -280,6 +280,10 @@ has_grid(s::FunctionSet) = false
 "Does the set have a transform associated with some space?"
 has_transform(s1::FunctionSet, s2) = false
 
+"Does the set have a transform associated with some space that is unitary"
+has_unitary_transform(s::FunctionSet) = has_transform(s)
+# If a set has a transform, we assume it is unitary. If it is not, this function has to be over written.
+
 # Convenience functions: default grid, and conversion from grid to space
 has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, grid(s))
 has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, eltype(s)))
@@ -537,11 +541,13 @@ end
 
 native_nodes(set::FunctionSet1d) = [left(set), right(set)]
 
-dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
 dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
-    dot(set, x->set[f1](x), f2, nodes; options...)
+    dot(set, x->eval_element(set, f1, x), f2, nodes; options...)
 
-dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
-    dot(set, f1, x->set[f2](x), nodes; options...)
+function dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...)
+    # dot(set, f1, x->eval_element(set, f2, x), nodes; options...)
+    dot(set, x->eval_element(set, f1, x),x->eval_element(set, f2, x), nodes; options...)
+end

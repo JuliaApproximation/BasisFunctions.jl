@@ -46,7 +46,7 @@ function grid_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace, grid
         elseif length(set) < length(dgs)
             if ndims(set) == 1
                 slarge = resize(set, length(dgs))
-                has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
+                (has_transform(slarge, dgs) && has_extension(set)) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
             # The basis should at least be resizeable to the dimensions of the grid
             elseif ndims(set) == length(size(dgs))
                 slarge = resize(set, size(dgs))
