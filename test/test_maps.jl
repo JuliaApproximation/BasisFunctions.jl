@@ -73,4 +73,7 @@ function test_maps(T)
 
     test_generic_map(T, IdentityMap(), 1)
     test_generic_map(T, IdentityMap(), 2)
+
+    # Diagonal maps
+    
 end

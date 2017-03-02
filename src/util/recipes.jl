@@ -6,7 +6,7 @@
 
 @recipe function f(S::SetExpansion; plot_complex = false, n=200)
     legend --> false
-    title --> "SetExpansion"
+    # title --> "SetExpansion"
     grid = plotgrid(set(S), n)
     vals = plot_complex ? S(grid) : real(S(grid))
     grid, postprocess(set(S), grid, vals)

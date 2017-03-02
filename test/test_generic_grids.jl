@@ -163,4 +163,9 @@ function test_grids(T)
     @test left(mg3) ≈ T(4)
     @test right(mg3) ≈ T(5)
     @test typeof(grid(mg3)) <: PeriodicEquispacedGrid
+
+    # Scattered grid
+    pts = map(T, rand(10))
+    sg = ScatteredGrid(pts)
+    test_generic_grid(sg)
 end
