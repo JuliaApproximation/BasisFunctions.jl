@@ -24,6 +24,8 @@ mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
 # Convenience function, similar to apply_map for grids etcetera
 apply_map(set::FunctionSet, map) = mapped_set(set, map)
 
+apply_map(set::MappedSet, map) = mapped_set(superset(set), map*mapping(set))
+
 mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
@@ -170,7 +172,7 @@ function rescale(s::FunctionSet1d, a, b)
     end
 end
 
-"Preserve Tensor Product Structure"
+# "Preserve Tensor Product Structure"
 function rescale{N}(s::TensorProductSet, a::SVector{N}, b::SVector{N})
     scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
@@ -191,8 +193,11 @@ Gram(s::MappedSet; options...) = wrap_operator(s, s, Gram(superset(s), mapping(s
 
 Gram(s::FunctionSet, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
 
-innerproduct(s::MappedSet, f::Function, idx::Int; options...) =
-    innerproduct(superset(s), mapping(s), f, idx; options...)
+dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...) =
+    dot(superset(s), mapping(s), f1, f2, nodes; options...)
 
-innerproduct(b::FunctionSet, map::AffineMap, f::Function, idx::Int; options...) =
-    jacobian(map,nothing)*innerproduct(b, x->f(forward_map(map,x)), idx; options...)
+dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
+    jacobian(map, nothing)*dot(s, x->f1(forward_map(map,x)), x->f2(forward_map(map,x)), inverse_map(map,nodes); options...)
+
+native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
+native_nodes(s::FunctionSet, map::AffineMap) = forward_map(map, native_nodes(s))

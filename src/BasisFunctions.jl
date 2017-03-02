@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__()
+# __precompile__()
 
 module BasisFunctions
 
@@ -61,7 +61,7 @@ export PiecewiseInterval, Partition
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
-        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid,
+        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
 export dim, left, right, range, sample
 
@@ -122,6 +122,8 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+# from operator/circulant_operator.jl
+export CirculantOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,
@@ -260,6 +262,7 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
+include("operator/circulant_operator.jl")
 
 
 

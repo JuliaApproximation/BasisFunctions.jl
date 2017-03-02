@@ -1,5 +1,5 @@
 # test_generic_sets.jl
-
+TEST_CONTINUOUS = true
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::FunctionSet) = true
@@ -405,7 +405,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
-        if ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(eltype(basis))==BigFloat)
+        if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(eltype(basis))==BigFloat)
           e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
           @test abs(e(x)-f(x...)) < 1e-3
         end

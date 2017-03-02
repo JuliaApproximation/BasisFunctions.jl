@@ -40,11 +40,11 @@ antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
-innerproduct{T}(b::OPS{T}, f::Function, idx::Int; options...) =
-		innerproduct(b, f, idx, left(b)+eps(T),right(b)-eps(T); options...)
-
-innerproduct{T}(b::OPS{T}, f::Function, idx::Int, left::Real, right::Real; options...) =
-		quadgk(x->weight(b,x)*b[idx](x)*f(x), left+eps(T), right-eps(T); options...)[1]
+function dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...)
+		shifted = map(x->max(x, -T(1)+eps(real(T))), nodes)
+		shifted = map(x->min(x, +T(1)-eps(real(T))), shifted)
+		dot(x->weight(set,x)*f1(x)*f2(x), shifted; options...)
+end
 
 function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
     @assert length(dest) > length(src)

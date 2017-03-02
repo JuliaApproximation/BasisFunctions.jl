@@ -363,58 +363,53 @@ in_support{T <: Complex}(set::FunctionSet1d, idx, x::T) =
 ##############################################
 ## Evaluating set elements and expansions
 ##############################################
+"""
+You can evaluate a member function of a set using the eval_set_element routine.
+It takes as arguments the function set, the index of the member function and
+the point in which to evaluate.
 
+This function performs bounds checking on the index and also checks whether the
+point x lies inside the support of the function. A BoundsError() is thrown for
+an index out of bounds. By default, the value 0 is returned when x is outside
+the support. This value can be changed with an optional extra argument.
 
-for (eval_set, eval_set!, eval_, eval_exp) in ((:eval_set_element, :eval_set_element!, :eval_element, :eval_expansion),
-                              (:eval_set_dualelement, :eval_set_dualelement!, :eval_dualelement, :eval_dualexpansion))
-  """
-  You can evaluate a member function of a set using the eval_set_element routine.
-  It takes as arguments the function set, the index of the member function and
-  the point in which to evaluate.
+After the checks, this routine calls eval_element on the concrete set.
+"""
+function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
+    checkbounds(set, idx)
+    in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
+end
 
-  This function performs bounds checking on the index and also checks whether the
-  point x lies inside the support of the function. A BoundsError() is thrown for
-  an index out of bounds. By default, the value 0 is returned when x is outside
-  the support. This value can be changed with an optional extra argument.
+# We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
+# We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
+function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
+    result = zeros(DiscreteGridSpace(grid, eltype(set)))
+    eval_set_element!(result, set, idx, grid, outside_value...)
+end
 
-  After the checks, this routine calls eval_element on the concrete set.
-  """
-  @eval function $eval_set(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
-      checkbounds(set, idx)
-      in_support(set, idx, x) ? $eval_(set, idx, x) : outside_value
-  end
+function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
+    @assert size(result) == size(grid)
+    checkbounds(set, idx)
 
-  # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
-  # We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
-  @eval function $eval_set(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-      result = zeros(DiscreteGridSpace(grid, eltype(set)))
-      $eval_set!(result, set, idx, grid, outside_value...)
-  end
+    @inbounds for k in eachindex(grid)
+        result[k] = eval_set_element(set, idx, grid[k], outside_value)
+    end
+    result
+end
 
-  @eval function $eval_set!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
-      @assert size(result) == size(grid)
-      checkbounds(set, idx)
+"""
+Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
+"""
+function eval_expansion(set::FunctionSet, coefficients, x)
+    T = promote_type(eltype(coefficients), eltype(set))
+    z = zero(T)
 
-      @inbounds for k in eachindex(grid)
-          result[k] = $eval_set(set, idx, grid[k], outside_value)
-      end
-      result
-  end
-
-  """
-  Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
-  """
-  @eval function $eval_exp(set::FunctionSet, coefficients, x)
-      T = promote_type(eltype(coefficients), eltype(set))
-      z = zero(T)
-
-      # It is safer below to use eval_set_element than eval_element, because of
-      # the check on the support. We elide the boundscheck with @inbounds (perhaps).
-      @inbounds for idx in eachindex(set)
-          z = z + coefficients[idx] * $eval_set(set, idx, x)
-      end
-      z
-  end
+    # It is safer below to use eval_set_element than eval_element, because of
+    # the check on the support. We elide the boundscheck with @inbounds (perhaps).
+    @inbounds for idx in eachindex(set)
+        z = z + coefficients[idx] * eval_set_element(set, idx, x)
+    end
+    z
 end
 
 function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
@@ -442,50 +437,9 @@ support.
 moment(s::FunctionSet1d, idx) = quadgk(s[idx], left(s), right(s))[1]
 
 
-################
-## Gram matrices
-################
-
-"""
-The gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
-"""
-grammatrix(b) = grammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
-
-grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
-
-function grammatrix!(result, b::FunctionSet; options...)
-  for i in 1:size(result,1)
-    for j in i:size(result,2)
-      I = innerproduct(b, x->b[j](x), i; options...)
-      result[i,j] = I
-      if i!= j
-        result[j,i] = conj(I)
-      end
-    end
-  end
-  nothing
-end
-
-function gramdiagonal!(result, b::FunctionSet; options...)
-  for i in 1:size(result,1)
-    result[i] = innerproduct(b, x->b[i](x), i; options...)
-  end
-  nothing
-end
-
-"""
-The dual gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
-"""
-dualgrammatrix(b) = dualgrammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
-
-dualgrammatrix(b, ::Type{Val{true}}) = grammatrix(b)
-
-"""
-The mixed gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
-"""
-mixedgrammatrix(b) = mixedgrammatrix(b, is_biorthogonal(b) ? Val{true}: Val{false})
-mixedgrammatrix(b, ::Type{Val{true}}) = eye(length(b))
-
+#################
+## Gram operators
+#################
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
@@ -520,13 +474,45 @@ MixedGram(b::FunctionSet; options...) = MixedGram(b, is_biorthogonal(b)? Val{tru
 
 MixedGram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
 
+"""
+The gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+"""
+grammatrix(b) = grammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
 
-###########################
-## Dual Function evaluation
-###########################
-eval_dualelement(b::FunctionSet, idx::Int, x) = eval_dualelement(b, idx, x, is_orthonormal(b)? Val{0}: Val{1})
+grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
 
-eval_dualelement(b::FunctionSet, idx::Int, x, ::Type{Val{0}}) = eval_element(b, idx, x)
+function grammatrix!(result, b::FunctionSet; options...)
+  for i in 1:size(result,1)
+    for j in i:size(result,2)
+      I = dot(b, i, j; options...)
+      result[i,j] = I
+      if i!= j
+        result[j,i] = conj(I)
+      end
+    end
+  end
+  result
+end
+
+function gramdiagonal!(result, b::FunctionSet; options...)
+  for i in 1:size(result,1)
+    result[i] = dot(b, i, i; options...)
+  end
+  result
+end
+
+"""
+The dual gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
+"""
+dualgrammatrix(b) = dualgrammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
+
+dualgrammatrix(b, ::Type{Val{true}}) = grammatrix(b)
+
+"""
+The mixed gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
+"""
+mixedgrammatrix(b) = mixedgrammatrix(b, is_biorthogonal(b) ? Val{true}: Val{false})
+mixedgrammatrix(b, ::Type{Val{true}}) = eye(length(b))
 
 ################################################################################################
 ## Take inner products between function and basisfunctions. Used in continous approximation case.
@@ -538,72 +524,24 @@ project(b, f::Function, ELT = eltype(b); options...) = project!(zeros(ELT,size(b
 
 function project!(result, b, f::Function; options...)
   for i in eachindex(result)
-    result[i] = innerproduct(b, f, i; options...)
+    result[i] = dot(b, i, f; options...)
   end
   result
 end
 
-innerproduct(b::FunctionSet1d, f::Function, idx::Int; options...) =
-    innerproduct(b, f, idx, left(b), right(b); options...)
-
-innerproduct(b::FunctionSet1d, f::Function, idx::Int, left::Real, right::Real; options...) =
-    quadgk(x->conj(b[idx](x))*f(x), left, right; options...)[1]
-
-function dot{T}(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), options...)
+function dot{T}(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verbose=false, options...)
   (I,e) = quadgk(x->f(x), nodes...; reltol=reltol, abstol=abstol)
-  (e > sqrt(reltol)) && (warn("Dot product not converged"))
+  (e > sqrt(reltol) && verbose) && (warn("Dot product did not converge"))
   I
 end
 
-# type NativeBorder end
-# native_nodes(set::FunctionSet1d) = [left(set), right(set)]
-#
-# dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
-#     dot(x->f1(x)*f2(x), nodes; options...)
-#
-# dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
-#     dot(set, x->set[f1](x), f2, nodes; options...)
-#
-# dot{T}(set::FunctionSet, f1::Function, f2::Int, nodes::Array=native_nodes(set); options...) =
-#     dot(set, f1, x->set[f2](x), nodes; options...)
-#
-# dot{T}(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
-#     dot(set, f1, x->set[f2](x), nodes; options...)
-#
-# dot(set::FunctionSet, f1, f2, ::NativeBorder; options...) =
-#     dot(set, f1, f2, native_nodes(set); options...)
-#
-# dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
-#     dot(x->conj(f1(x))*f2(x), nodes; options...)
-#
-# dot(set::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
-#     dot(x->weight(set,x)*f1(x)*f2(x), nodes; options...)
-#
-# native_nodes{T}(set::OPS{T}) = [left(set)+eps(T), right(set)-eps(T)]
-#
-#
-# dot(s::DerivedSet, f1::Function, f2::Function, nodes=native_nodes(s); options...) = dot(superset(s), f1, f2, nodes; options...)
-#
-# native_nodes(s::DerivedSet) = native_nodes(superset(s))
-#
-# dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...) =
-#     dot(superset(s), mapping(s), f1, f2, nodes; options...)
-#
-# dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
-#     jacobian(map, nothing)*dot(s, x->f1(forward_map(map,x)), x->f2(forward_map(map,x)), forward_map(map, nodes); options...)
-#
-# native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
-#
-# native_nodes(s::FunctionSet, map::AffineMap) = inverse_map(map, native_nodes(s))
-#
-# function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...)
-#   idxn = native_index(set, f1)
-#   b = set.sets[idxn[1]]
-#   dot(b, linear_index(b,idxn[2]), f2, nodes; options...)
-# end
-#
-# function dot(set::PiecewiseSet, f1::Function, f2::Int, nodes::Array=native_nodes(set); options...)
-#   idxn = native_index(set, f2)
-#   b = set.sets[idxn[1]]
-#   dot(b, f1, linear_index(b,idxn[2]), nodes; options...)
-# end
+native_nodes(set::FunctionSet1d) = [left(set), right(set)]
+
+dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+    dot(x->conj(f1(x))*f2(x), nodes; options...)
+
+dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
+    dot(set, x->set[f1](x), f2, nodes; options...)
+
+dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
+    dot(set, f1, x->set[f2](x), nodes; options...)

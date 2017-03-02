@@ -92,10 +92,12 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-function innerproduct(set::PiecewiseSet, f::Function, idx::Int; options...)
-  idxn = native_index(set, idx)
+function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set); options...)
+  idxn = native_index(set, f1)
   b = set.sets[idxn[1]]
-  innerproduct(b, f, linear_index(b,idxn[2]); options...)
+  shifted = map(x->max(x, left(b)), nodes)
+  shifted = map(x->min(x, right(b)), shifted)
+  dot(b, linear_index(b,idxn[2]), f2, shifted; options...)
 end
 
 function Gram(set::PiecewiseSet; options...)

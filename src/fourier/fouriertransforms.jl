@@ -20,18 +20,6 @@ function fftw_scaling_operator(set::FunctionSet)
     ScalingOperator(set, set, scalefactor)
 end
 
-# function fftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
-#     T = eltype(dest)
-#     plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
-#     MultiplicationOperator(src, dest, plan; inplace = true)
-# end
-
-# function ifftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
-#     T = eltype(dest)
-#     plan = plan_bfft!(zeros(T, src), dims; flags = fftwflags)
-#     MultiplicationOperator(src, dest, plan; inplace = true)
-# end
-
 for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
                             (:ifftw_operator, :plan_bfft!, :ifft))
     # fftw_operator and ifftw_operator take a different route depending on the eltype of dest

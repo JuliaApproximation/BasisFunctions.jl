@@ -80,7 +80,7 @@ left(b::FourierBasis, idx) = left(b)
 right(b::FourierBasis) = one(numtype(b))
 right(b::FourierBasis, idx) = right(b)
 
-period(b::FourierBasis) = 1
+period{EVEN,T}(b::FourierBasis{EVEN,T}) = T(1)
 
 grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), numtype(b))
 
@@ -310,3 +310,10 @@ function (*)(src1::FourierBasisOdd, src2::FourierBasisOdd, coef_src1, coef_src2)
     coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
     (dest,coef_dest)
 end
+
+dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+    dot(x->conj(f1(x))*f2(x), nodes; options...)
+
+Gram(b::FourierBasisOdd) = IdentityOperator(b, b)
+
+Gram{T}(b::FourierBasisEven{T}) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)

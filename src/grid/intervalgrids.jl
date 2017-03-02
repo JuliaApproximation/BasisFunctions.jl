@@ -133,7 +133,32 @@ unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsiz
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
-
+# Not yet necessary
+# """
+# A RandomEquispacedGrid grid is an equispaced grid with grid points in a random point of the equispaced
+# subintervals.
+#
+# Its points are `a+offset+k*stepsize`
+# It has stepsize (b-a)/n.
+# """
+# immutable RandomEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+#     n   ::  Int
+#     a   ::  T
+#     b   ::  T
+#     os  ::  T
+#
+#     RandomEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b, (b-a)/n*rand()))
+# end
+#
+# RandomEquispacedGrid{T}(n, ::Type{T} = Float64) = RandomEquispacedGrid{T}(n)
+#
+# RandomEquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = RandomEquispacedGrid{T}(n, a, b)
+#
+# RandomEquispacedGrid(g::RandomEquispacedGrid, a, b, T) = RandomEquispacedGrid{T}(length(g), a, b)
+#
+# unsafe_getindex{T}(g::RandomEquispacedGrid{T}, i) = g.a + g.os + (i-1)*stepsize(g)
+#
+# stepsize(g::RandomEquispacedGrid) = (g.b-g.a)/g.n
 
 
 immutable ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
