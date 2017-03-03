@@ -145,8 +145,6 @@ immutable BSplineTranslatesBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
   fun             :: Function
 end
 
-is_biorthogonal(::BSplineTranslatesBasis) = true
-
 degree{K}(b::BSplineTranslatesBasis{K}) = K
 # include("util/bsplines.jl")
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =

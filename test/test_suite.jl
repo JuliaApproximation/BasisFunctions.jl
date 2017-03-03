@@ -33,6 +33,7 @@ include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
 include("test_periodicbsplines.jl")
+include("test_bsplinetranslatedbasis.jl")
 include("test_maps.jl")
 include("test_DCTI.jl")
 
@@ -268,6 +269,9 @@ for T in (Float64, BigFloat,)
 
     @testset "$(rpad("Periodic B spline expansions",80))" begin
         test_periodicbsplines(T) end
+
+    @testset "$(rpad("Translates of B spline expansions",80))"begin
+        test_translatedbsplines(T) end
 
 end # for T in...
 delimit("Test DCTI")
