@@ -119,6 +119,14 @@ extension_size(b::FourierBasisOdd) = 2*length(b)+1
 approx_length(b::FourierBasisEven, n::Int) = iseven(n) ? n : n+1
 approx_length(b::FourierBasisOdd, n::Int) = isodd(n) ? n : n+1
 
+"Shift an expansion to the right by delta."
+function shift(b::FourierBasisOdd, coefficients, delta)
+	coef2 = copy(coefficients)
+	for i in eachindex(coefficients)
+		coef2[i] *= exp(2*pi*im*idx2frequency(b, i)*delta)
+	end
+	coef2
+end
 
 function apply!(op::Extension, dest::FourierBasis, src::FourierBasisEven, coef_dest, coef_src)
 	## @assert length(dest) > length(src)

@@ -22,6 +22,8 @@ end
 SetExpansion(set::FunctionSet, coefficients = zeros(set)) =
     SetExpansion{typeof(set),typeof(coefficients)}(set, coefficients)
 
+similar(e::SetExpansion, coefficients) = SetExpansion(set(e), coefficients)
+
 eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(S)
 
 set(e::SetExpansion) = e.set
