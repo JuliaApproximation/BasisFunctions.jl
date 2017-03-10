@@ -59,7 +59,7 @@ end
     seriestype --> :scatter
     size --> (500,400)
     legend --> false
-    collect(grid)
+    broadcast(x->tuple(x...),collect(grid))
 end
 
 # Plot a 1D grid
