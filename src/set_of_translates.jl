@@ -176,15 +176,15 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function restriction_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
-
-function extension_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
+# function restriction_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
+#   println("Method does not exists for splines of different degrees")
+#   throw(InexactError())
+# end
+#
+# function extension_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
+#   println("Method does not exists for splines of different degrees")
+#   throw(InexactError())
+# end
 
 function extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
   @assert 2*length(s1) == length(s2)
