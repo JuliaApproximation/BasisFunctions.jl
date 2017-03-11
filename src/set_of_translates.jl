@@ -176,21 +176,30 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-# TODO find a nice way to construct this
+function restriction_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
+  println("Method does not exists for splines of different degrees")
+  throw(InexactError())
+end
+
+function extension_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
+  println("Method does not exists for splines of different degrees")
+  throw(InexactError())
+end
+
 function extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
   @assert 2*length(s1) == length(s2)
   c = zeros(T, length(s2))
   for k in 1:K+2
     c[k] = binomial(K+1, k-1)
   end
-  T(1)/(1<<(degree(s1)+1))*CirculantOperator(s2, s2, c)*ExpandOperator(s1, s2, 1, 2)
+  T(1)/(1<<(degree(s1)))*CirculantOperator(s2, s2, c)*ExpandOperator(s1, s2, 1, 2)
 
 end
 
+# TODO find a nice way to construct this
 function restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
     @assert length(s1) == 2*length(s2)
     t = zeros(s2)
     t[1] = 1
     SelectOperator(s1,s2,1,2)*CirculantOperator(s1, s1, matrix(extension_operator(s2, s1; options...))'\t)'
-
 end

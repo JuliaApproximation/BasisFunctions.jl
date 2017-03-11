@@ -1,4 +1,5 @@
 function test_translatedbsplines(T)
+  tol = sqrt(eps(real(T)))
   n = 5
   b = BSplineTranslatesBasis(n,3, T)
 
@@ -50,8 +51,8 @@ function test_translatedbsplines(T)
   b=BSplineTranslatesBasis(n,1,T)
   @test degree(b) == 1
   # gramcolu
-  @test BasisFunctions.grammatrix(b) ≈ [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n
-  @test BasisFunctions.dualgrammatrix(b) ≈ [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n
+  @test abs(sum(BasisFunctions.grammatrix(b) - [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n)) < tol
+  @test abs(sum(BasisFunctions.dualgrammatrix(b) - [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n)) < tol
   # @test matrix(BasisFunctions.Gram(b)) ≈ BasisFunctions.grammatrix(b)
   # @test sum(abs(BasisFunctions.dualgrammatrix(b)-matrix(BasisFunctions.DualGram(b)))) < 1e-5
   # @test matrix(BasisFunctions.Gram(b))*matrix(BasisFunctions.DualGram(b)) ≈ eye(n)
@@ -67,7 +68,7 @@ function test_translatedbsplines(T)
   t = linspace(0,1)
   fp = map(x->BasisFunctions.eval_element(b,1,x),t)
   fd = 1/n*map(x->BasisFunctions.eval_dualelement(b,1,x),t)
-  @test norm(fp-fd) < sqrt(eps(T))
+  @test norm(fp-fd) < tol
 
 
   @test BasisFunctions.compatible_grid(b, grid(b))
@@ -76,12 +77,30 @@ function test_translatedbsplines(T)
   @test !BasisFunctions.compatible_grid(b, MidpointEquispacedGrid(n,0.1,1))
   @test !BasisFunctions.compatible_grid(b, MidpointEquispacedGrid(n,0,1.1))
 
+
+  n = 8
+  for degree in 0:3
+    b = BSplineTranslatesBasis(n, degree, T)
+    basis_ext = extend(b)
+    r = restriction_operator(basis_ext, b)
+    e = extension_operator(b, basis_ext)
+    @test abs(sum(eye(n)-matrix(r*e))) < tol
+
+    grid_ext = grid(basis_ext)
+    L = evaluation_operator(b, grid_ext)
+    e = random_expansion(b)
+    z = L*e
+    L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
+    z2 = L2*e
+    @test maximum(abs.(z-z2)) < tol
+  end
 end
 
-
+# exit()
 # using Base.Test
 # using BasisFunctions
 # @testset begin test_translatedbsplines(BigFloat) end
+
 
 
 # using Plots
