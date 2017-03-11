@@ -220,7 +220,7 @@ for T in (Float64, BigFloat,)
             test_generic_set_interface(basis, SET)
     end
     SETS = (BSplineTranslatesBasis,)
-    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (30,31)
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (50,51)
         # Choose an odd and even number of degrees of freedom
             basis = instantiate(SET, n, T)
 

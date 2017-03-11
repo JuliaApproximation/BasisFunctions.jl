@@ -15,12 +15,13 @@ supports_approximation(s::TensorProductSet) =
     reduce(&, map(supports_approximation, elements(s)))
 
 # Pick a simple function to approximate
-suitable_function(s::FunctionSet1d) = exp
+suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
 
 # Make a simple periodic function for Fourier
 suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicBSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::BSplineTranslatesBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
 
 suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
@@ -404,6 +405,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         f = suitable_function(basis)
         e = SetExpansion(basis, A*f)
         x = random_point_in_domain(basis)
+        
         # We choose a fairly large error, because the ndof's can be very small.
         # We don't want to test convergence, only that something terrible did
         # not happen, so an error of 1e-3 will do.
@@ -414,7 +416,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
         if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(eltype(basis))==BigFloat)
           e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
-          @test abs(e(x)-f(x...)) < 1e-1
+          @test abs(e(x)-f(x...)) < 1e-3
         end
     end
 end

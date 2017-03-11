@@ -39,9 +39,9 @@ has_grid(::PeriodicSetOfTranslates) = true
 
 # grid(set::PeriodicSetOfTranslates) = MidpointEquispacedGrid(length(set), left(set), right(set))
 
-period(set::PeriodicSetOfTranslates) = right(set)-left(set)
+period{T}(set::PeriodicSetOfTranslates{T}) = T(right(set)-left(set))
 
-stepsize(set::PeriodicSetOfTranslates) = period(set)/length(set)
+stepsize{T}(set::PeriodicSetOfTranslates{T}) = T(period(set)/length(set))
 
 has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid) =
     compatible_grid(b, grid)
@@ -49,7 +49,7 @@ has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid
 compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =
     (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
 
-native_nodes(b::PeriodicSetOfTranslates) = [k*stepsize(b) for k in 0:length(b)]
+native_nodes{T}(b::PeriodicSetOfTranslates{T}) = [T(k*stepsize(b)) for k in 0:length(b)]
 
 function transform_from_grid(src, dest::PeriodicSetOfTranslates, grid; options...)
 	inv(transform_to_grid(dest, src, grid; options...))
@@ -147,8 +147,12 @@ end
 
 degree{K}(b::BSplineTranslatesBasis{K}) = K
 # include("util/bsplines.jl")
+# BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
+#     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->sqrt(T(n))*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
+# BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
+#     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->T(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->sqrt(T(n))*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
+    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
 
 length_compact_support(b::BSplineTranslatesBasis) = stepsize(b)*(degree(b)+1)
 
@@ -171,3 +175,22 @@ compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) =
 grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
+
+# TODO find a nice way to construct this
+function extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
+  @assert 2*length(s1) == length(s2)
+  c = zeros(T, length(s2))
+  for k in 1:K+2
+    c[k] = binomial(K+1, k-1)
+  end
+  T(1)/(1<<(degree(s1)+1))*CirculantOperator(s2, s2, c)*ExpandOperator(s1, s2, 1, 2)
+
+end
+
+function restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
+    @assert length(s1) == 2*length(s2)
+    t = zeros(s2)
+    t[1] = 1
+    SelectOperator(s1,s2,1,2)*CirculantOperator(s1, s1, matrix(extension_operator(s2, s1; options...))'\t)'
+
+end

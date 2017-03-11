@@ -19,17 +19,17 @@ promote_eltype{T,S}(b::LegendreBasis{T}, ::Type{S}) = LegendreBasis{promote_type
 resize(b::LegendreBasis, n) = LegendreBasis(n, eltype(b))
 
 
-left(b::LegendreBasis) = -1
-left(b::LegendreBasis, idx) = -1
+left{T}(b::LegendreBasis{T}) = -T(1)
+left{T}(b::LegendreBasis{T}, idx) = -T(1)
 
-right(b::LegendreBasis) = 1
-right(b::LegendreBasis, idx) = 1
+right{T}(b::LegendreBasis{T}) = T(1)
+right{T}(b::LegendreBasis{T}, idx) = T(1)
 
 #grid(b::LegendreBasis) = LegendreGrid(b.n)
 
 
-jacobi_α(b::LegendreBasis) = 0
-jacobi_β(b::LegendreBasis) = 0
+jacobi_α{T}(b::LegendreBasis{T}) = T(0)
+jacobi_β{T}(b::LegendreBasis{T}) = T(0)
 
 weight{T}(b::LegendreBasis{T}, x) = T(1)
 

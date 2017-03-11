@@ -314,6 +314,6 @@ end
 dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-Gram(b::FourierBasisOdd) = IdentityOperator(b, b)
+Gram(b::FourierBasisOdd; options...) = IdentityOperator(b, b)
 
-Gram{T}(b::FourierBasisEven{T}) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)
+Gram{T}(b::FourierBasisEven{T}; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)

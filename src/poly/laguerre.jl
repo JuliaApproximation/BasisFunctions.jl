@@ -19,7 +19,7 @@ promote_eltype{S,T,T2}(b::LaguerreBasis{S,T}, ::Type{T2}) = LaguerreBasis{S,prom
 
 resize(b::LaguerreBasis, n) = LaguerreBasis(n, b.α, eltype(b))
 
-left(b::LaguerreBasis) = 0
+left{T}(b::LaguerreBasis{T}) = T(0)
 left(b::LaguerreBasis, idx) = left(b)
 
 right(b::LaguerreBasis) = convert(eltype(b), Inf)

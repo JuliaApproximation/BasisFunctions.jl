@@ -547,7 +547,5 @@ dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(se
 dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
     dot(set, x->eval_element(set, f1, x), f2, nodes; options...)
 
-function dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...)
-    # dot(set, f1, x->eval_element(set, f2, x), nodes; options...)
+dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
     dot(set, x->eval_element(set, f1, x),x->eval_element(set, f2, x), nodes; options...)
-end

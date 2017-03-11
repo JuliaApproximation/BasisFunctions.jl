@@ -22,11 +22,11 @@ promote_eltype{S,T,T2}(b::JacobiBasis{S,T}, ::Type{T2}) = JacobiBasis{S,promote_
 
 resize(b::JacobiBasis, n) = JacobiBasis(n, b.α, b.β, eltype(b))
 
-left(b::JacobiBasis) = -1
-left(b::JacobiBasis, idx) = -1
+left{T}(b::JacobiBasis{T}) = -T(1)
+left(b::JacobiBasis, idx) = left(b)
 
-right(b::JacobiBasis) = 1
-right(b::JacobiBasis, idx) = 1
+right{T}(b::JacobiBasis{T}) = T(1)
+right(b::JacobiBasis, idx) = right(b)
 
 #grid{S,T}(b::JacobiBasis{T}) = JacobiGrid{T}(b.n, jacobi_α(b), jacobi_β(b))
 

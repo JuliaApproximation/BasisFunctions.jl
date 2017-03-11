@@ -50,8 +50,8 @@ function test_translatedbsplines(T)
   b=BSplineTranslatesBasis(n,1,T)
   @test degree(b) == 1
   # gramcolu
-  @test BasisFunctions.grammatrix(b) ≈ [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]
-  @test BasisFunctions.dualgrammatrix(b) ≈ [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]
+  @test BasisFunctions.grammatrix(b) ≈ [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n
+  @test BasisFunctions.dualgrammatrix(b) ≈ [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n
   # @test matrix(BasisFunctions.Gram(b)) ≈ BasisFunctions.grammatrix(b)
   # @test sum(abs(BasisFunctions.dualgrammatrix(b)-matrix(BasisFunctions.DualGram(b)))) < 1e-5
   # @test matrix(BasisFunctions.Gram(b))*matrix(BasisFunctions.DualGram(b)) ≈ eye(n)
@@ -66,7 +66,7 @@ function test_translatedbsplines(T)
   @test degree(b) == 0
   t = linspace(0,1)
   fp = map(x->BasisFunctions.eval_element(b,1,x),t)
-  fd = map(x->BasisFunctions.eval_dualelement(b,1,x),t)
+  fd = 1/n*map(x->BasisFunctions.eval_dualelement(b,1,x),t)
   @test norm(fp-fd) < sqrt(eps(T))
 
 

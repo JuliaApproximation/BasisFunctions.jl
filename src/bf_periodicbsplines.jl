@@ -10,7 +10,7 @@ immutable PeriodicBSplineBasis{K,T} <: SplineBasis{K,T}
   gramcolumn :: Array{T}
   dualgramcolumn :: Array{T}
 
-  PeriodicBSplineBasis{T}(n::Int, degree, ::Type{T}) = new{degree,T}(n,gramcolumn(degree,n,T),dualgramcolumn(degree,n,T))
+  PeriodicBSplineBasis{T}(n::Int, degree, ::Type{T}; options...) = new{degree,T}(n,gramcolumn(degree,n,T; options...),dualgramcolumn(degree,n,T))
 end
 
 is_biorthogonal(::PeriodicBSplineBasis) = true
@@ -23,7 +23,7 @@ right{K,T}(::PeriodicBSplineBasis{K,T}) = real(T)(1)
 
 include("util/bsplines.jl")
 
-PeriodicBSplineBasis{T}(n::Int, K::Int, ::Type{T} = Float64) =   PeriodicBSplineBasis{K,T}(n, K, T)
+PeriodicBSplineBasis{T}(n::Int, K::Int, ::Type{T} = Float64; options...) =  PeriodicBSplineBasis{K,T}(n, K, T; options...)
 
 import Base: ==
 =={K1,K2,T1,T2}(b1::PeriodicBSplineBasis{K1,T1}, b2::PeriodicBSplineBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1)==length(b2)
@@ -51,9 +51,9 @@ stepsize{K,T}(b::PeriodicBSplineBasis{K,T}) = real(T)(1)/length(b)
 
 period{K,T}(b::PeriodicBSplineBasis{K,T}) = real(T)(1)
 # return only one interval, but because of periodicity two parts of this interval may lay in [0,1]
-left{K}(b::PeriodicBSplineBasis{K}, j::Int) = (j - 1) * stepsize(b)
+left{K,T}(b::PeriodicBSplineBasis{K,T}, j::Int) = real(T)((j - 1) * stepsize(b))
 
-right{K}(b::PeriodicBSplineBasis{K}, j::Int) = (j - 1 + K + 1) * stepsize(b)
+right{K,T}(b::PeriodicBSplineBasis{K,T}, j::Int) = real(T)((j - 1 + K + 1) * stepsize(b))
 
 function in_support{K}(b::PeriodicBSplineBasis{K}, idx::Int, x)
 	per = period(b)
@@ -83,12 +83,16 @@ function eval_expansion{K,T <: Number}(b::PeriodicBSplineBasis{K}, coef, x::T)
 	z
 end
 
-function gramcolumn(degree, n, T)
+native_nodes{K,T}(b::PeriodicBSplineBasis{K,T}) = [real(T)(k*stepsize(b)) for k in 0:length(b)]
+
+function gramcolumn(degree, n, T; options...)
+  T = real(T)
     result = zeros(n)
     for i in 1:degree+1
-        nodes = map(real(T),linspace(0,degree+i,degree+i+1))
-        I = quadgk(x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x, T)*BasisFunctions.Cardinal_b_splines.evaluate_Bspline(degree, x-(i-1), T),nodes...; reltol=sqrt(eps(real(T))))[1]
-
+        nodes = [T(k) for k in 0:n]
+        f1 = x->BasisFunctions.Cardinal_b_splines.evaluate_periodic_Bspline(degree, x, T(n), T)
+        f2 = x->BasisFunctions.Cardinal_b_splines.evaluate_periodic_Bspline(degree, x-(i-1), T(n), T)
+        I = dot(x->f1(x)*f2(x), nodes; options...)
         result[i] = I
         i > 1 &&(result[n-(i-2)] = I)
     end

@@ -17,6 +17,8 @@ function test_generic_operators(T)
         ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b1, b1, T(2))) ],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
+        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
+        ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
     ]
 
     for ops in operators
@@ -166,7 +168,8 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis(10),ChebyshevBasis(11))
-        operators = (ComplexifyOperator(SRC),RealifyOperator(SRC),CoefficientScalingOperator(SRC,3,map(eltype(SRC),rand())),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,rand(eltype(SRC))),ScalingOperator(SRC,3),DiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))))
+        operators = (ComplexifyOperator(SRC),RealifyOperator(SRC),CoefficientScalingOperator(SRC,3,map(eltype(SRC),rand())),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,rand(eltype(SRC))),ScalingOperator(SRC,3),
+        DiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))), PseudoDiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place

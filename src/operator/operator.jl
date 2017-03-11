@@ -223,3 +223,30 @@ function inv_diagonal(op::AbstractOperator)
     d[find(d.==0)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
+
+abstract DerivedOperator{T} <: AbstractOperator{T}
+
+superoperator(op::DerivedOperator) = op.superoperator
+
+for op in (:src, :dest, :is_inplace, :is_diagonal, :inv, :ctranspose, :diagonal, :unsafe_diagonal)
+	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
+end
+
+for op in (:matrix!, :apply_inplace!)
+	@eval $op(operator::DerivedOperator, a) = $op(superoperator(operator), a)
+end
+
+for op in (:apply!,)
+	@eval $op(operator::DerivedOperator, coef_dest, coef_src) = $op(superoperator(operator), coef_dest, coef_src)
+end
+
+for op in (:unsafe_getindex,)
+	@eval $op(operator::DerivedOperator, i, j) = $op(superoperator(operator), i, j)
+end
+
+immutable ConcreteDerivedOperator{T} <: DerivedOperator{T}
+	superoperator		:: AbstractOperator{T}
+end
+
+op_promote_eltype{T,S}(op::ConcreteDerivedOperator{T}, ::Type{S}) =
+    ConcreteDerivedOperator(op_promote_eltype(superoperator(op), S))

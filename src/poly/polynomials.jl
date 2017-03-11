@@ -40,11 +40,29 @@ antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
-function dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...)
+dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
 		# To avoid difficult points at the ends of the domain.
-		shifted = map(x->max(x, -T(1)+eps(real(T))), nodes)
-		shifted = map(x->min(x, +T(1)-eps(real(T))), shifted)
-		dot(x->weight(set,x)*f1(x)*f2(x), shifted; options...)
+		dot(x->weight(set,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+
+clip{T<:Real}(a::T, low::T, up::T) = min(max(low, a), up)
+
+function clip_and_cut{T<:Real}(a::Array{T,1}, low::T, up::T)
+	clipped = clip.(a,low, up)
+	t = clipped[1]
+	s = 1
+	for i in 2:length(a)
+		t != clipped[i] && break
+		t = clipped[i]
+		s += 1
+	end
+	t = clipped[end]
+	e = length(a)
+	for i in length(a)-1:-1:1
+		t != clipped[i] && break
+		t = clipped[i]
+		e -= 1
+	end
+	clipped[s:e]
 end
 
 function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)

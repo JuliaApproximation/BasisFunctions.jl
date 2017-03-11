@@ -123,7 +123,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
 # from operator/circulant_operator.jl
-export CirculantOperator
+export CirculantOperator, SelectOperator, ExpandOperator, ConcreteDerivedOperator, PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,

@@ -95,9 +95,8 @@ end
 function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set); options...)
   idxn = native_index(set, f1)
   b = set.sets[idxn[1]]
-  shifted = map(x->max(x, left(b)), nodes)
-  shifted = map(x->min(x, right(b)), shifted)
-  dot(b, linear_index(b,idxn[2]), f2, shifted; options...)
+  
+  dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
 end
 
 function Gram(set::PiecewiseSet; options...)
