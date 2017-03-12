@@ -93,3 +93,7 @@ end
 # be done more efficiently if we can exploit ordering of the points in the grid.
 # Perhaps partition_index applied to an iterable set of points could return an
 # iterable set of indices?
+
+split_interval(part::PiecewiseInterval, i::Int, x) = PiecewiseInterval([part.points[1:i]...,x,part.points[i+1:end]...])
+
+split_interval(part::PiecewiseInterval, x) = split(part, partition_index(part, x), x)

@@ -58,3 +58,5 @@ elements(s::DiscreteGridSpace) = map(t->DiscreteGridSpace(t, eltype(s)), element
 
 # Make a DiscreteGridSpace with the same eltype as the given function set
 gridspace(s::FunctionSet, g = grid(s)) = DiscreteGridSpace(g, eltype(s))
+
+sample(s::DiscreteGridSpace, f) = sample(grid(s), f, eltype(s))

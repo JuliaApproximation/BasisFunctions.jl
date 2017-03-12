@@ -33,13 +33,15 @@ coefficients(e::SetExpansion) = e.coefficients
 # For expansions of composite types, return a SetExpansion of a subset
 element(e::SetExpansion, i) = SetExpansion(element(e.set, i), element(e.coefficients, i))
 
+elements(e::SetExpansion) = map(SetExpansion, elements(e.set), elements(e.coefficients))
+
 # Delegation of methods
 for op in (:length, :size, :left, :right, :grid)
     @eval $op(e::SetExpansion) = $op(set(e))
 end
 
 # Delegation of property methods
-for op in (:numtype, :ndims)
+for op in (:numtype, :ndims, :composite_length)
     @eval $op(s::SetExpansion) = $op(set(s))
 end
 
@@ -134,6 +136,9 @@ function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
 end
 
 
+# Invoke split_interval on the set and compute the coefficients such that
+# the piecewise function agrees with the original one.
+split_interval(s::SetExpansion, x) = SetExpansion(split_interval_expansion(set(s), coefficients(s), x)...)
 
 ##############################
 # Arithmetics with expansions

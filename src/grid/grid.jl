@@ -74,9 +74,11 @@ end
 done(g::AbstractGrid, state) = done(state[1], state[2])
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f::Function, ELT = numtype(g)) = sample!(zeros(ELT, size(g)), g, f)
+sample(g::AbstractGrid, f, ELT = numtype(g)) = sample!(zeros(ELT, size(g)), g, f)
 
-@generated function sample!(result, g::AbstractGrid, f::Function)
+# We use a generated function to avoid the overhead of splatting when we
+# evaluate f with several arguments
+@generated function sample!(result, g::AbstractGrid, f)
 	xargs = [:(x[$d]) for d = 1:ndims(g)]
 	quote
 		for i in eachindex(g)

@@ -49,6 +49,7 @@ export is_linear
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
+export split_interval
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
@@ -213,6 +214,7 @@ using Base.Cartesian
 
 
 include("util/common.jl")
+include("util/composite_index.jl")
 include("util/multiarray.jl")
 include("util/slices.jl")
 include("util/functors.jl")
@@ -222,6 +224,7 @@ include("maps/partition.jl")
 
 include("grid/grid.jl")
 include("grid/tensorproductgrid.jl")
+include("grid/derived_grid.jl")
 
 include("sets/functionset.jl")
 

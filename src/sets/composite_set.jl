@@ -119,33 +119,7 @@ _in_support(set::CompositeSet, sets, idx::Int, x) = in_support(set, multilinear_
 
 _in_support(set::CompositeSet, sets, idx, x) = in_support(sets[idx[1]], idx[2], x)
 
-## Iteration
-
-# TODO: this iterator should not depend on the set. It is sufficient to store
-# the offsets of the set. Then this type needs no type parameters.
-immutable CompositeSetIndexIterator{S <: CompositeSet}
-    set     ::  S
-end
-
-eachindex(set::CompositeSet) = CompositeSetIndexIterator(set)
-
-start(it::CompositeSetIndexIterator) = (1,1)
-
-function next(it::CompositeSetIndexIterator, state)
-    i = state[1]
-    j = state[2]
-    if j == length(it.set, i)
-        nextstate = (i+1,1)
-    else
-        nextstate = (i,j+1)
-    end
-    (state, nextstate)
-end
-
-done(it::CompositeSetIndexIterator, state) = state[1] > composite_length(it.set)
-
-length(it::CompositeSetIndexIterator) = length(it.set)
-
+eachindex(set::CompositeSet) = CompositeIndexIterator(map(length, elements(set)))
 
 ## Extension and restriction
 

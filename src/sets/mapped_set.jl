@@ -24,6 +24,8 @@ mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
 # Convenience function, similar to apply_map for grids etcetera
 apply_map(set::FunctionSet, map) = mapped_set(set, map)
 
+apply_map(set::MappedSet, map) = apply_map(superset(set), map*mapping(set))
+
 mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))

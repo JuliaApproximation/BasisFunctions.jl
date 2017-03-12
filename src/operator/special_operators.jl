@@ -144,7 +144,10 @@ immutable IndexRestrictionOperator{I,T} <: AbstractOperator{T}
     subindices  ::  I
 
     function IndexRestrictionOperator(src, dest, subindices)
-        @assert length(dest) == length(subindices)
+        # Verify the lenght of subindices, but only if its length is defined
+        if Base.iteratorsize(subindices) != Base.SizeUnknown()
+            @assert length(dest) == length(subindices)
+        end
         @assert length(src) >= length(dest)
         new(src, dest, subindices)
     end
@@ -159,8 +162,10 @@ subindices(op::IndexRestrictionOperator) = op.subindices
 
 is_diagonal(::IndexRestrictionOperator) = true
 
-function apply!(op::IndexRestrictionOperator, coef_dest, coef_src)
-    for (i,j) in enumerate(subindices(op))
+apply!(op::IndexRestrictionOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, subindices(op))
+
+function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
+    for (i,j) in enumerate(subindices)
         coef_dest[i] = coef_src[j]
     end
     coef_dest

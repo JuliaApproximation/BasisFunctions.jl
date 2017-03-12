@@ -87,6 +87,15 @@ function delinearize_coefficients!{T}(a::MultiArray, b::Array{T,1})
     b
 end
 
+"Set the coefficients of element idx of the multiarray to the given values."
+function coefficients!(a::MultiArray, idx, values)
+    z = element(a, idx)
+    for k in eachindex(z, values)
+        z[k] = values[k]
+    end
+    a
+end
+
 ##########################
 ## Iteration and indexing
 ##########################
@@ -97,6 +106,11 @@ immutable MultiArrayIndexIterator{A,ELT}
 end
 
 eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
+
+# Or should we just do:
+# eachindex(s::MultiArray) = CompositeIndexIterator(map(length, elements(s)))
+# and do away with MultiArrayIndexIterator?
+
 
 function eachindex(s1::MultiArray, s2::MultiArray)
     @assert composite_length(s1) == composite_length(s2)

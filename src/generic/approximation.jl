@@ -22,7 +22,9 @@ end
 
 # Automatically sample a function if an operator is applied to it with a
 # source that has a grid
-(*)(op::AbstractOperator, f::Function) = op * sample(grid(src(op)), f, eltype(src(op)))
+(*)(op::AbstractOperator, f::Function) = op * sample(gridspace(src(op)), f)
 
-approximate(s::FunctionSet, f::Function; options...) =
-    SetExpansion(s, approximation_operator(s; options...) * f)
+function approximate(s::FunctionSet, f; options...)
+    A = approximation_operator(s; options...)
+    SetExpansion(s, A * sample(gridspace(src(A)), f))
+end

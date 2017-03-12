@@ -15,18 +15,29 @@ immutable PiecewiseSet{P <: Partition,SETS,N,T} <: CompositeSet{N,T}
     end
 end
 
-function PiecewiseSet(sets, partition, T = eltype(sets[1]), N = ndims(sets[1]))
+# Make a PiecewiseSet by scaling one set to each of the elements of the partition
+function PiecewiseSet(set::FunctionSet1d, partition::Partition, n = ones(length(partition))*length(set))
+    sets = [rescale(resize(set, n[i]), left(partition, i), right(partition, i)) for i in 1:length(partition)]
+    PiecewiseSet(sets, partition)
+end
+
+# Make a PiecewiseSet from a list of sets and a given partition
+function PiecewiseSet(sets, partition::Partition, T = eltype(sets[1]), N = ndims(sets[1]))
+    # Make sure that the sets are an indexable list of FunctionSet's
+    @assert indexable_set(sets, FunctionSet)
+    # TODO: We should check that the supports of the sets match the partition pieces
+
     PiecewiseSet{typeof(partition),typeof(sets),N,T}(sets, partition)
 end
 
 # Construct a piecewise set from a list of sets in 1d
 function PiecewiseSet{S <: FunctionSet1d}(sets::Array{S})
     for i in 1:length(sets)-1
-        @assert right(sets[i]) ≃ left(sets[i+1])
+        @assert right(sets[i]) ≈ left(sets[i+1])
     end
     points = map(left, sets)
     push!(points, right(sets[end]))
-    partition = IntervalPartition(points)
+    partition = PiecewiseInterval(points)
     PiecewiseSet(sets, partition)
 end
 
@@ -90,4 +101,81 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
         # TODO: improve the type of the array elements below
         BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:composite_length(s1)], s1, s2)
     end
+end
+
+"""
+Make a piecewise function set from a one-dimensional function set, by inserting
+the point x in the support of the original set. This yields a PiecewiseSet on
+the partition [left(set), x, right(set)].
+
+The original set is duplicated and rescaled to the two subintervals.
+"""
+function split_interval(set::FunctionSet1d, x)
+    @assert left(set) < x < right(set)
+    points = [left(set), x, right(set)]
+    PiecewiseSet(set, PiecewiseInterval(points))
+end
+
+split_interval(set::PiecewiseSet, x) = split_interval(set, partition_index(partition(set), x), x)
+
+function split_interval(set::PiecewiseSet, i::Int, x)
+    part = partition(set)
+    @assert left(part, i) < x < right(part, i)
+
+    part2 = split_interval(part, i, x)
+    two_sets = split_interval(element(set, i), x)
+    PiecewiseSet(insert_at(elements(set), i, elements(two_sets)), part2)
+end
+
+# Compute the coefficients in an expansion that results from splitting the given
+# expansion at a point x.
+function split_interval_expansion(set::FunctionSet1d, coefficients, x)
+    pset = split_interval(set, x)
+    z = zeros(pset)
+    pset1 = element(pset, 1)
+    pset2 = element(pset, 2)
+    # We will manually evaluate the current function at the approximation grids
+    # of the newly created sets with smaller support, and use those function values
+    # to reconstruct the original function on each subinterval.
+    A1 = approximation_operator(pset1)
+    A2 = approximation_operator(pset2)
+    E1 = evaluation_operator(set, grid(src(A1)))
+    E2 = evaluation_operator(set, grid(src(A2)))
+    z1 = A1*(E1*coefficients)
+    z2 = A2*(E2*coefficients)
+    coefficients!(z, 1, z1)
+    coefficients!(z, 2, z2)
+    # We return the new set and its expansion coefficients
+    pset, z
+end
+
+function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x)
+    part = partition(set)
+    i = partition_index(part, x)
+    set_i = element(set, i)
+    coef_i = element(coefficients, i)
+    split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
+    S = eltype(set.sets)
+
+    # Now we want to replace the i-th set by the two new sets, and same for the coefficients
+    # Technicalities arise when i is 1 or i equals the composite_length of the set
+    local sets, coefs
+    old_sets = elements(set)
+    old_coef = elements(coefficients)
+    if i > 1
+        if i < composite_length(set)
+            # We retain the old elements before and after the new ones
+            sets = S[old_sets[1:i-1]..., element(split_set, 1), element(split_set, 2), old_sets[i+1:end]...]
+            coefs = [old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+        else
+            # We replace the last element, so no elements come after the new ones
+            sets = S[old_sets[1:i-1]..., element(split_set, 1), element(split_set, 2)]
+            coefs = [old_coef[1:i-1], element(split_coef, 1), element(split_coef, 2)]
+        end
+    else
+        # Here i==1, so there are no elements before the new ones
+        sets = S[element(split_set, 1), element(split_set, 2), old_sets[i+1:end]...]
+        coefs = [element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+    end
+    PiecewiseSet(sets), MultiArray(coefs)
 end
