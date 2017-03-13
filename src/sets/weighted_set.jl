@@ -25,7 +25,8 @@ _isreal(set::WeightedSet, superset, fun::AbstractFunction) = isreal(superset) &&
 _isreal(set::WeightedSet, superset, fun::Function) = isreal(superset)
 
 has_derivative(set::WeightedSet) = has_derivative(superset(set)) && has_derivative(weightfunction(set))
-
+is_orthonormal(set::WeightedSet) = false
+is_orthogonal(set::WeightedSet) = false
 # We can not compute antiderivatives in general.
 has_antiderivative(set::WeightedSet) = false
 

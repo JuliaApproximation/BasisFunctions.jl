@@ -11,9 +11,11 @@ notifications:
 
 before_install:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  
+before_script:
+  - julia -e 'Pkg.init()'
+  - julia -e 'Pkg.clone("https://github.com/vincentcp/Wavelets.jl")'
+  - julia -e 'Pkg.add("Plotly")'
 script:
-
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.build("BasisFunctions")'
   - julia --check-bounds=yes -e 'Pkg.test("BasisFunctions", coverage=true)'

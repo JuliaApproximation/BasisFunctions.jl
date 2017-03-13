@@ -17,6 +17,8 @@ function test_generic_operators(T)
         ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b1, b1, T(2))) ],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
+        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
+        ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
     ]
 
     for ops in operators
@@ -166,14 +168,17 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis(10),ChebyshevBasis(11))
-        operators = (CoefficientScalingOperator(SRC,3,map(eltype(SRC),rand())),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,rand(eltype(SRC))),ScalingOperator(SRC,3),DiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))))
+        operators = (ComplexifyOperator(SRC),RealifyOperator(SRC),CoefficientScalingOperator(SRC,3,map(eltype(SRC),rand())),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,rand(eltype(SRC))),ScalingOperator(SRC,3),
+        DiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))), PseudoDiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))))
         for Op in operators
-            # Test in-place
-            coef_src = map(eltype(src(Op)),rand(size(src(Op))))
             m = matrix(Op)
-            coef_dest_m = m * coef_src
-            coef_dest = apply!(Op, coef_src)
-            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            # Test in-place
+            if is_inplace(Op)
+              coef_src = map(eltype(src(Op)),rand(size(src(Op))))
+              coef_dest_m = m * coef_src
+              coef_dest = apply!(Op, coef_src)
+              @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            end
             # Test out-of-place
             coef_src = map(eltype(src(Op)),rand(size(src(Op))))
             coef_dest = apply(Op, coef_src)
@@ -190,10 +195,17 @@ function test_diagonal_operators(T)
             # Test Equivalence to diagonal operator
             @test (sum(abs(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
-            @test is_diagonal(2*Op) && is_inplace(2*Op)
-            @test is_diagonal(Op') && is_inplace(Op')
-            @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
-            @test is_diagonal(Op*Op) && is_inplace(Op*Op)
+            @test is_diagonal(2*Op)
+            @test is_diagonal(Op')
+            @test is_diagonal(inv(Op))
+            @test is_diagonal(Op*Op)
+            # Make sure in_place is retained
+            if is_inplace(Op)
+              @test is_inplace(2*Op)
+              @test is_inplace(Op')
+              @test is_inplace(inv(Op))
+              @test is_inplace(Op*Op)
+            end
         end
     end
 end
@@ -238,9 +250,38 @@ function test_multidiagonal_operators(T)
     end
 end
 
+function test_complexify_operator(T)
+  for SRC in (PeriodicBSplineBasis(11, 2, T), PeriodicBSplineBasis(11, 2, complex(T)))
+    op = ComplexifyOperator(SRC)
+    DEST = dest(op)
+    ELT = eltype(op)
+    @test ELT == eltype(src(op))
+    @test eltype(dest(op)) == complex(T)
+    coef_src = zeros(eltype(SRC),SRC)
+    coef_dest = zeros(eltype(DEST),DEST)
+    for i in eachindex(coef_src)
+        coef_src[i]=map(eltype(src(op)),rand())
+    end
+    apply!(op, coef_dest, coef_src)
+    @test norm(coef_dest-coef_src) == 0
+
+    op = RealifyOperator(SRC)
+    ELT = eltype(op)
+    @test ELT == eltype(dest(op))
+    @test eltype(dest(op)) == T
+    coef_src = zeros(eltype(SRC),SRC)
+    coef_dest = zeros(eltype(DEST),DEST)
+    for i in eachindex(coef_src)
+        coef_src[i]=map(eltype(src(op)),rand())
+    end
+    apply!(op, coef_dest, coef_src)
+    @test norm(coef_dest-coef_src) == 0
+  end
+end
+
 function test_invertible_operators(T)
-    for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}))
-        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),)
+    for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}), ChebyshevBasis(10,T))
+        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),ComplexifyOperator(SRC),RealifyOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place

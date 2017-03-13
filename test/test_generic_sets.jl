@@ -1,5 +1,5 @@
 # test_generic_sets.jl
-
+TEST_CONTINUOUS = true
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::FunctionSet) = true
@@ -15,11 +15,13 @@ supports_approximation(s::TensorProductSet) =
     reduce(&, map(supports_approximation, elements(s)))
 
 # Pick a simple function to approximate
-suitable_function(s::FunctionSet1d) = exp
+suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
 
 # Make a simple periodic function for Fourier
 suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::PeriodicBSplineBasis) =  x->1/(10+cos(2*pi*x))
+suitable_function(set::BSplineTranslatesBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
 
 suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
@@ -111,7 +113,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis)
+    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: PeriodicBSplineBasis || typeof(basis) <: BSplineTranslatesBasis)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
             @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))
@@ -231,7 +233,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             b = T(1)
         end
 
-        grid2 = EquispacedGrid(n+3, T(a), T(b))
+        grid2 = EquispacedGrid(n+3, T(a)+sqrt(eps(T)), T(b)-sqrt(eps(T)))
         z = e(grid2)
         @test z ≈ ELT[ e(grid2[i]) for i in eachindex(grid2) ]
 
@@ -335,16 +337,18 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         t = transform_operator(tbasis, basis)
         it = transform_operator(basis, tbasis)
         A = matrix(t)
-        if T == Float64
-            @test cond(A) ≈ 1
-        else
-            #@test_skip cond(A) ≈ 1
-        end
-        AI = matrix(it)
-        if T == Float64
-            @test cond(AI) ≈ 1
-        else
-            #@test_skip cond(AI) ≈ 1
+        if has_unitary_transform(basis)
+          if T == Float64
+              @test cond(A) ≈ 1
+          else
+              #@test_skip cond(A) ≈ 1
+          end
+          AI = matrix(it)
+          if T == Float64
+              @test cond(AI) ≈ 1
+          else
+              #@test_skip cond(AI) ≈ 1
+          end
         end
 
         # Verify the pre and post operators and their inverses
@@ -364,10 +368,15 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         @test maximum(abs(x1-x2)) < sqrt(eps(T))
 
         # Verify the transposes and inverses
-        @test maximum(abs( (t' * t)*x-x)) < sqrt(eps(T))
-        @test maximum(abs( (inv(t) * t)*x-x)) < sqrt(eps(T))
-        @test maximum(abs( (it' * it)*x-x)) < sqrt(eps(T))
-        @test maximum(abs( (inv(it) * it)*x-x)) < sqrt(eps(T))
+        if has_unitary_transform(basis)
+          @test maximum(abs( (t' * t)*x-x)) < sqrt(eps(T))
+          @test maximum(abs( (it' * it)*x-x)) < sqrt(eps(T))
+          @test maximum(abs( (inv(t) * t)*x-x)) < sqrt(eps(T))
+          @test maximum(abs( (inv(it) * it)*x-x)) < sqrt(eps(T))
+          @test maximum(abs( (it * t)*x-x)) < sqrt(eps(T))
+        end
+
+
     end
 
 
@@ -396,10 +405,19 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         f = suitable_function(basis)
         e = SetExpansion(basis, A*f)
         x = random_point_in_domain(basis)
+        
         # We choose a fairly large error, because the ndof's can be very small.
         # We don't want to test convergence, only that something terrible did
         # not happen, so an error of 1e-3 will do.
         @test abs(e(x)-f(x...)) < 1e-3
+
+        # # continuous operator only supported for 1 D
+        # No efficient implementation for BigFloat to construct full gram matrix.
+        # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
+        if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(eltype(basis))==BigFloat)
+          e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
+          @test abs(e(x)-f(x...)) < 1e-3
+        end
     end
 end
 

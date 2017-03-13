@@ -155,7 +155,11 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
     set_i = element(set, i)
     coef_i = element(coefficients, i)
     split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
+    # We compute the types of the individual sets and their coefficients
+    # in a hacky way to help inference further on. TODO: fix, because this
+    # violates encapsulation and it assumes homogeneous elements
     S = eltype(set.sets)
+    C = eltype(coefficients.arrays)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
     # Technicalities arise when i is 1 or i equals the composite_length of the set
@@ -166,16 +170,27 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
         if i < composite_length(set)
             # We retain the old elements before and after the new ones
             sets = S[old_sets[1:i-1]..., element(split_set, 1), element(split_set, 2), old_sets[i+1:end]...]
-            coefs = [old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+            coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
         else
             # We replace the last element, so no elements come after the new ones
             sets = S[old_sets[1:i-1]..., element(split_set, 1), element(split_set, 2)]
-            coefs = [old_coef[1:i-1], element(split_coef, 1), element(split_coef, 2)]
+            coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2)]
         end
     else
         # Here i==1, so there are no elements before the new ones
         sets = S[element(split_set, 1), element(split_set, 2), old_sets[i+1:end]...]
-        coefs = [element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+        coefs = C[element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
     end
     PiecewiseSet(sets), MultiArray(coefs)
+end
+
+function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set); options...)
+  idxn = native_index(set, f1)
+  b = set.sets[idxn[1]]
+
+  dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
+end
+
+function Gram(set::PiecewiseSet; options...)
+    BlockDiagonalOperator(AbstractOperator{eltype(set)}[Gram(element(set,i); options...) for i in 1:composite_length(set)], set, set)
 end

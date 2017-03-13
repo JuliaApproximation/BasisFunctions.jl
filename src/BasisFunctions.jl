@@ -9,6 +9,7 @@ using FastTransforms
 using ArrayViews
 using StaticArrays
 using RecipesBase
+using SpecialMatrices
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
@@ -36,7 +37,14 @@ import Base: indices, normalize
 
 import Base: broadcast
 
-# import PyPlot: plot
+import Base.LinAlg: dot
+
+import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
+import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
+import Wavelets.Sequences: support
+import Wavelets.Util: isdyadic
+
 
 
 ## Exports
@@ -49,11 +57,12 @@ export is_linear
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
+export partition
 export split_interval
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
-        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid,
+        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
 export dim, left, right, range, sample
 
@@ -74,14 +83,15 @@ export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_composite
-export is_basis, is_frame, is_orthogonal, is_biorthogonal
+export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
 export True, False
 export approx_length, extension_size
-export has_transform, has_extension, has_derivative, has_antiderivative, has_grid
+export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment
+export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
 
 # from sets/subsets.jl
 export FunctionSubSet, indices
@@ -112,7 +122,9 @@ export CompositeOperator, compose
 export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
-        IndexRestrictionOperator, IndexExtensionOperator
+        IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+# from operator/circulant_operator.jl
+export CirculantOperator, SelectOperator, ExpandOperator, ConcreteDerivedOperator, PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,
@@ -137,7 +149,7 @@ export interpolation_operator, default_interpolation_operator, interpolation_mat
 export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
-export approximation_operator, default_approximation_operator, approximate
+export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator
 
 # from generic/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_set,
@@ -205,8 +217,15 @@ export MultiArray
 # from poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
+# from bf_wavelets.jl
+export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
+# from bf_periodicbsplines.jl
+export PeriodicBSplineBasis
+# from set_of_translates.jl
+export CompactPeriodicSetOfTranslates, BSplineTranslatesBasis
+
 export degree, interval
 
 
@@ -249,6 +268,7 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
+include("operator/circulant_operator.jl")
 
 
 
@@ -274,6 +294,10 @@ include("fourier/sineseries.jl")
 
 include("bf_splines.jl")
 
+include("bf_periodicbsplines.jl")
+
+include("set_of_translates.jl")
+
 include("bf_wavelets.jl")
 
 include("poly/polynomials.jl")
@@ -285,5 +309,6 @@ include("poly/laguerre.jl")
 include("poly/hermite.jl")
 
 include("util/recipes.jl")
+
 
 end # module

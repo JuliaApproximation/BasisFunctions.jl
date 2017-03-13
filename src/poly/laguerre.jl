@@ -19,7 +19,7 @@ promote_eltype{S,T,T2}(b::LaguerreBasis{S,T}, ::Type{T2}) = LaguerreBasis{S,prom
 
 resize(b::LaguerreBasis, n) = LaguerreBasis(n, b.α, eltype(b))
 
-left(b::LaguerreBasis) = 0
+left{T}(b::LaguerreBasis{T}) = T(0)
 left(b::LaguerreBasis, idx) = left(b)
 
 right(b::LaguerreBasis) = convert(eltype(b), Inf)
@@ -31,6 +31,12 @@ jacobi_α(b::LaguerreBasis) = b.α
 
 
 weight{S,T}(b::LaguerreBasis{S,T}, x) = exp(-x) * T(x)^(b.α)
+
+function gramdiagonal!{S,T}(result, ::LaguerreBasis{S,T}; options...)
+  for i in 1:length(result)
+    result[i] = gamma(T(i+jacobi_α(b)))/factorial(i-1)
+  end
+end
 
 
 

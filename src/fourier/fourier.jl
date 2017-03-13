@@ -51,7 +51,8 @@ isodd(b::FourierBasis) = ~iseven(b)
 
 is_basis(b::FourierBasis) = true
 is_orthogonal(b::FourierBasis) = true
-
+is_orthonormal(b::FourierBasis) = true
+is_biorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
 has_grid(b::FourierBasis) = true
@@ -79,7 +80,7 @@ left(b::FourierBasis, idx) = left(b)
 right(b::FourierBasis) = one(numtype(b))
 right(b::FourierBasis, idx) = right(b)
 
-period(b::FourierBasis) = 1
+period{EVEN,T}(b::FourierBasis{EVEN,T}) = T(1)
 
 grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), numtype(b))
 
@@ -221,41 +222,24 @@ end
 
 function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)
-	_forward_fourier_operator(src, dest, eltype(src, dest); options...)
+	forward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
 
 function transform_to_grid(src::FourierBasis, dest, grid; options...)
 	@assert compatible_grid(src, grid)
-	_backward_fourier_operator(src, dest, eltype(src, dest); options...)
+	backward_fourier_operator(src, dest, eltype(src, dest); options...)
 end
-
-# These are the generic fallbacks
-_forward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-	FastFourierTransform(src, dest)
-
-_backward_fourier_operator{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-	InverseFastFourierTransform(src, dest)
-
-# But for some types we can use FFTW
-for op in (:(Complex{Float32}), :(Complex{Float64}))
-	@eval _forward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
-		FastFourierTransformFFTW(src, dest; options...)
-
-	@eval _backward_fourier_operator(src, dest, ::Type{$(op)}; options...) =
-		InverseFastFourierTransformFFTW(src, dest; options...)
-end
-
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
 function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	_backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	_forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
 end
 
 
@@ -334,3 +318,10 @@ function (*)(src1::FourierBasisOdd, src2::FourierBasisOdd, coef_src1, coef_src2)
     coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
     (dest,coef_dest)
 end
+
+dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+    dot(x->conj(f1(x))*f2(x), nodes; options...)
+
+Gram(b::FourierBasisOdd; options...) = IdentityOperator(b, b)
+
+Gram{T}(b::FourierBasisEven{T}; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)

@@ -30,6 +30,7 @@ promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{promote_ty
 
 resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
 
+set_promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{S}(b.n)
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -142,7 +143,11 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-
+function gramdiagonal!{T}(result, ::ChebyshevBasis{T}; options...)
+  for i in 1:length(result)
+    i==1? result[i] = T(pi) : result[i] = T(pi)/2
+  end
+end
 
 ################################################################
 # Methods to transform from ChebyshevBasis to ChebyshevNodeGrid
@@ -288,6 +293,7 @@ right{T}(b::ChebyshevBasisSecondKind{T}, idx) = right(b)
 
 grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevNodeGrid{T}(b.n)
 
+Gram{T}(b::ChebyshevBasisSecondKind{T}; options...) = ScalingOperator(b, b, T(pi)/2)
 
 # The weight function
 weight{T}(b::ChebyshevBasisSecondKind{T}, x) = sqrt(1-T(x)^2)

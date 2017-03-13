@@ -12,6 +12,8 @@ spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) *
 # Splines of degree K (with equispaced knots only...)
 abstract SplineBasis{K,T} <: FunctionSet1d{T}
 
+is_biorthogonal(::SplineBasis) = true
+ 
 "The degree of the splines."
 degree{K}(b::SplineBasis{K}) = K
 
@@ -56,8 +58,8 @@ instantiate{T}(::Type{FullSplineBasis}, n, ::Type{T}) = FullSplineBasis{3,T}(n-3
 
 # Full splines to not have an interpolation grid
 #has_grid(b::FullSplineBasis) = true
-
-length{K}(b::FullSplineBasis{K}) = b.n+K
+# ASK added -1, correct?
+length{K}(b::FullSplineBasis{K}) = b.n+K-1
 
 # Indices of splines naturally range from -K to n-1.
 native_index{K}(b::FullSplineBasis{K}, idx::Int) = idx-K-1

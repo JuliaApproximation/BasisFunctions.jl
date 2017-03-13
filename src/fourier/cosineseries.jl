@@ -40,13 +40,13 @@ has_extension(b::CosineSeries) = true
 
 length(b::CosineSeries) = b.n
 
-left(b::CosineSeries) = 0
+left{T}(b::CosineSeries{T}) = T(0)
 left(b::CosineSeries, idx) = left(b)
 
-right(b::CosineSeries) = 1
+right{T}(b::CosineSeries{T}) = T(1)
 right(b::CosineSeries, idx) = right(b)
 
-period(b::CosineSeries, idx) = 2
+period{T}(b::CosineSeries{T}, idx) = T(2)
 
 grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(numtype(b)), one(numtype(b)))
 
@@ -77,4 +77,10 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
         coef_dest[i] = coef_src[i]
     end
     coef_dest
+end
+
+function Gram{T}(b::CosineSeries{T}; options...)
+  diag = ones(T,length(b))/2
+  diag[1] = 1
+  DiagonalOperator(b, b, diag)
 end

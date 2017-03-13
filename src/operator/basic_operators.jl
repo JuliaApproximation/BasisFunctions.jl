@@ -280,3 +280,59 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 (+)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2))
 (+)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) +  diagonal(op2))
 (+)(op2::DiagonalOperator, op1::ScalingOperator) = op1 + op2
+
+
+"""
+A ComplexifyOperator converts real numbers to their complex counterparts.
+
+A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
+"""
+immutable ComplexifyOperator{T} <: AbstractOperator{T}
+  src   ::  FunctionSet
+  dest  ::  FunctionSet
+  function ComplexifyOperator(src, dest)
+    @assert length(src) == length(dest)
+    @assert complex(eltype(src)) == eltype(dest)
+    new(src, dest)
+  end
+end
+ComplexifyOperator(src::FunctionSet, dest::FunctionSet) = ComplexifyOperator{eltype(src)}(src, dest)
+ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, promote_eltype(src,complex(eltype(src))))
+ComplexifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
+Base.inv(op::ComplexifyOperator) = RealifyOperator(dest(op),src(op))
+is_diagonal(::ComplexifyOperator) = true
+ctranspose(op::ComplexifyOperator) = inv(op)
+
+function apply!(op::ComplexifyOperator, coef_dest, coef_src)
+  for i in eachindex(coef_src)
+      coef_dest[i] = complex(coef_src[i])
+  end
+end
+
+"""
+A RealifyOperator converts complex numbers to their real counterparts.
+
+If the complex numbers should have no significant imaginary part.
+A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
+"""
+immutable RealifyOperator{T} <: AbstractOperator{T}
+  src   ::  FunctionSet
+  dest  ::  FunctionSet
+  function RealifyOperator(src, dest)
+    @assert length(src) == length(dest)
+    @assert real(eltype(src)) == eltype(dest)
+    new(src, dest)
+  end
+end
+RealifyOperator(src::FunctionSet, dest::FunctionSet) = RealifyOperator{eltype(dest)}(src, dest)
+RealifyOperator(src::FunctionSet) = RealifyOperator(src, set_promote_eltype(src,real(eltype(src))))
+RealifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
+inv(op::RealifyOperator) = ComplexifyOperator(dest(op),src(op))
+is_diagonal(::RealifyOperator) = true
+ctranspose(op::RealifyOperator) = inv(op)
+function apply!(op::RealifyOperator, coef_dest, coef_src)
+  for i in eachindex(coef_src)
+      coef_dest[i] = real(coef_src[i])
+      @assert abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op))))
+  end
+end

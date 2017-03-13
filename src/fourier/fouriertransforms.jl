@@ -20,37 +20,59 @@ function fftw_scaling_operator(set::FunctionSet)
     ScalingOperator(set, set, scalefactor)
 end
 
-function fftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
-    T = eltype(dest)
-    plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
-    MultiplicationOperator(src, dest, plan; inplace = true)
+for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
+                            (:ifftw_operator, :plan_bfft!, :ifft))
+    # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
+    @eval $op(src::FunctionSet, dest::FunctionSet, dims, fftwflags) = $op(src, dest, eltype(dest), dims, fftwflags)
+    # In the default case apply fft or ifft
+    @eval $op{T <: AbstractFloat}(src::FunctionSet, dest::FunctionSet, ::Type{Complex{T}}, dims, fftwflags) =
+      FunctionOperator(src, dest, $f)
+    # When possible apply the fast FFTW operator
+    for T in (:(Complex{Float32}), :(Complex{Float64}))
+    	@eval function $op(src::FunctionSet, dest::FunctionSet, ::Type{$(T)}, dims, fftwflags)
+          plan = $plan_(zeros($T, dest), dims; flags = fftwflags)
+          MultiplicationOperator(src, dest, plan; inplace = true)
+      end
+    end
 end
 
-function ifftw_operator(src::FunctionSet, dest::FunctionSet, dims, fftwflags)
-    T = eltype(dest)
-    plan = plan_bfft!(zeros(T, src), dims; flags = fftwflags)
-    MultiplicationOperator(src, dest, plan; inplace = true)
+for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forward_fourier_operator, :FastFourierTransform, :FastFourierTransformFFTW, :fft, :fftw_operator, :fft_scalefactor),
+                                   (:backward_fourier_operator, :InverseFastFourierTransform, :InverseFastFourierTransformFFTW, :ifft, :ifftw_operator, :ifft_scalefactor))
+  # These are the generic fallbacks
+  @eval $transform{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
+  	$FastTransform(src, dest)
+  # But for some types we can use FFTW
+  for T in (:(Complex{Float32}), :(Complex{Float64}))
+  	@eval $transform(src, dest, ::Type{$(T)}; options...) =
+  		$FFTWTransform(src, dest; options...)
+  end
+
+  # Now the generic implementation, based on using fft and ifft
+  @eval function $FastTransform(src, dest)
+      ELT = op_eltype(src, dest)
+      s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
+      t_op = FunctionOperator(src, dest, $fun)
+
+      s_op * t_op
+  end
+
+  # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
+  # in order to have a unitary transform. Additional scaling is done in the _pre and
+  # _post routines.
+  # Note that we choose to use bfft, an unscaled inverse fft.
+  @eval function $FFTWTransform(src::FunctionSet, dest::FunctionSet,
+      dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+
+      t_op = $op(src, dest, dims, fftwflags)
+      # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
+      s_op = fftw_scaling_operator(dest)
+      s_op * t_op
+  end
 end
 
-# We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
-# in order to have a unitary transform. Additional scaling is done in the _pre and
-# _post routines.
-function FastFourierTransformFFTW(src::FunctionSet, dest::FunctionSet,
-    dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
+fft_scalefactor{ELT}(src, ::Type{ELT}) = 1/sqrt(ELT(length(src)))
 
-    t_op = fftw_operator(src, dest, dims, fftwflags)
-    # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
-    s_op = fftw_scaling_operator(dest)
-    s_op * t_op
-end
-
-# Note that we choose to use bfft, an unscaled inverse fft.
-function InverseFastFourierTransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
-    t_op = ifftw_operator(src, dest, dims, fftwflags)
-    # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
-    s_op = fftw_scaling_operator(dest)
-    s_op * t_op
-end
+ifft_scalefactor{ELT}(src, ::Type{ELT}) = sqrt(ELT(length(src)))
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific FFT-plans
@@ -92,25 +114,7 @@ inv(fun::typeof(fft)) = ifft
 inv(fun::typeof(ifft)) = fft
 
 
-# Now the generic implementation, based on using fft and ifft
 
-function FastFourierTransform(src, dest)
-    ELT = op_eltype(src, dest)
-    scalefactor = 1/sqrt(ELT(length(src)))
-    s_op = ScalingOperator(dest, dest, scalefactor)
-    t_op = FunctionOperator(src, dest, fft)
-
-    s_op * t_op
-end
-
-function InverseFastFourierTransform(src, dest)
-    ELT = op_eltype(src, dest)
-    scalefactor = sqrt(ELT(length(src)))
-    s_op = ScalingOperator(dest, dest, scalefactor)
-    t_op = FunctionOperator(src, dest, ifft)
-
-    s_op * t_op
-end
 
 
 

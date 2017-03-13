@@ -172,7 +172,7 @@ function rescale(s::FunctionSet1d, a, b)
     end
 end
 
-"Preserve Tensor Product Structure"
+# "Preserve Tensor Product Structure"
 function rescale{N}(s::TensorProductSet, a::SVector{N}, b::SVector{N})
     scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
@@ -188,3 +188,16 @@ function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
     (mset,mcoef) = (*)(superset(s1),superset(s2),coef_src1, coef_src2)
     (MappedSet(mset, mapping(s1)), mcoef)
 end
+
+Gram(s::MappedSet; options...) = wrap_operator(s, s, Gram(superset(s), mapping(s); options...))
+
+Gram(s::FunctionSet, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
+
+dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...) =
+    dot(superset(s), mapping(s), f1, f2, nodes; options...)
+
+dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
+    jacobian(map, nothing)*dot(s, x->f1(forward_map(map,x)), x->f2(forward_map(map,x)), inverse_map(map,nodes); options...)
+
+native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
+native_nodes(s::FunctionSet, map::AffineMap) = forward_map(map, native_nodes(s))

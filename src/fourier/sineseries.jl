@@ -39,13 +39,13 @@ has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n
 
-left(b::SineSeries) = 0
+left{T}(b::SineSeries{T}) = T(0)
 left(b::SineSeries, idx) = left(b)
 
-right(b::SineSeries) = 1
+right{T}(b::SineSeries{T}) = T(1)
 right(b::SineSeries, idx) = right(b)
 
-period(b::SineSeries, idx) = 2
+period{T}(b::SineSeries{T}, idx) = T(2)
 
 grid{T}(b::SineSeries{T}) = EquispacedGrid(b.n, T(0), T(1))
 
@@ -74,3 +74,5 @@ function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, c
     end
     coef_dest
 end
+
+Gram{T}(b::SineSeries{T}; options...) = ScalingOperator(b, b ,T(1)/2)
