@@ -47,7 +47,16 @@ has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid
     compatible_grid(b, grid)
 
 compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =
-    (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
+    periodic_compatible_grid(b, grid)
+
+function periodic_compatible_grid(b::FunctionSet, grid::AbstractEquispacedGrid)
+  l1 = length(b)
+  l2 = length(grid)
+  l1 > l2 && ((l2,l1) = (l1, l2))
+  n = l2/l1
+  nInt = round(Int, n)
+  (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && isdyadic(nInt) && (n≈nInt)
+end
 
 native_nodes{T}(b::PeriodicSetOfTranslates{T}) = [T(k*stepsize(b)) for k in 0:length(b)]
 
@@ -192,7 +201,7 @@ function extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTra
   for k in 1:K+2
     c[k] = binomial(K+1, k-1)
   end
-  T(1)/(1<<(degree(s1)))*CirculantOperator(s2, s2, c)*ExpandOperator(s1, s2, 1, 2)
+  T(1)/(1<<(degree(s1)))*CirculantOperator(s2, c)*ExpandOperator(s1, s2, 1, 2)
 
 end
 
@@ -201,5 +210,23 @@ function restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineT
     @assert length(s1) == 2*length(s2)
     t = zeros(s2)
     t[1] = 1
-    SelectOperator(s1,s2,1,2)*CirculantOperator(s1, s1, matrix(extension_operator(s2, s1; options...))'\t)'
+    SelectOperator(s1,s2,1,2)*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
+    # inv(evaluation_operator(s2; options...))*evaluation_operator(s1, grid(s2); options...)
+end
+
+function grid_evaluation_operator(set::PeriodicSetOfTranslates, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
+  if periodic_compatible_grid(set, grid)
+    lg = length(grid)
+    ls = length(set)
+    if lg == ls
+      return CirculantOperator(set, dgs, sample(grid, fun(set)); options...)
+    elseif lg > ls
+      return CirculantOperator(dgs, dgs, sample(grid, fun(set)); options...)*ExpandOperator(set, dgs, 1, Int(lg/ls))
+    elseif lg < ls && has_extension(grid)
+      return SelectOperator(set, dgs, 1, Int(ls/lg))*CirculantOperator(set, set, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
+    else
+      return default_evaluation_operator(set, dgs; options...)
+    end
+  end
+  default_evaluation_operator(set, dgs; options...)
 end

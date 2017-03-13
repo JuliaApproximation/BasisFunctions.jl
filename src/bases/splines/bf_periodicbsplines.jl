@@ -21,7 +21,6 @@ left{K,T}(::PeriodicBSplineBasis{K,T}) = real(T)(0)
 
 right{K,T}(::PeriodicBSplineBasis{K,T}) = real(T)(1)
 
-include("util/bsplines.jl")
 
 PeriodicBSplineBasis{T}(n::Int, K::Int, ::Type{T} = Float64; options...) =  PeriodicBSplineBasis{K,T}(n, K, T; options...)
 

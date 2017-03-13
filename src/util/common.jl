@@ -48,3 +48,5 @@ function insert_at(a::Vector, idx, b)
         [b..., a...]
     end
 end
+
+isdyadic(n::Int) = n == 1<<round(Int, log2(n))

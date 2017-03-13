@@ -47,6 +47,10 @@ EquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = EquispacedGrid{T}(n, a
 
 similar_grid(g::EquispacedGrid, a, b, T) = EquispacedGrid{T}(length(g), a, b)
 
+has_extension(::EquispacedGrid) = true
+
+extend{T}(g::EquispacedGrid{T}, factor::Int) = EquispacedGrid{T}(factor*g.n-1, g.a, g.b)
+
 stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
@@ -71,6 +75,10 @@ PeriodicEquispacedGrid{T}(n::Int, ::Type{T} = Float64) = PeriodicEquispacedGrid{
 PeriodicEquispacedGrid{T}(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) = PeriodicEquispacedGrid{T}(n, a, b)
 
 similar_grid(g::PeriodicEquispacedGrid, a, b, T) = PeriodicEquispacedGrid{T}(length(g), a, b)
+
+has_extension(::PeriodicEquispacedGrid) = true
+
+extend{T}(g::PeriodicEquispacedGrid{T}, factor::Int) = PeriodicEquispacedGrid{T}(factor*g.n, g.a, g.b)
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 
@@ -101,6 +109,10 @@ DyadicPeriodicEquispacedGrid{T}(l, a, b, ::Type{T} = typeof((b-a)/l)) = DyadicPe
 PeriodicEquispacedGrid{T}(g::DyadicPeriodicEquispacedGrid{T}) = PeriodicEquispacedGrid{T}(length(g), g.a, g.b)
 
 similar_grid(g::DyadicPeriodicEquispacedGrid, a, b, T) = DyadicPeriodicEquispacedGrid{T}(g.l, a, b)
+
+has_extension(::DyadicPeriodicEquispacedGrid) = true
+
+extend{T}(g::DyadicPeriodicEquispacedGrid{T}, factor::Int) = DyadicPeriodicEquispacedGrid{T}(factor*g.n, g.a, g.b)
 
 stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
 

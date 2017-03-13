@@ -77,7 +77,7 @@ function test_translatedbsplines(T)
   @test !BasisFunctions.compatible_grid(b, MidpointEquispacedGrid(n,0.1,1))
   @test !BasisFunctions.compatible_grid(b, MidpointEquispacedGrid(n,0,1.1))
 
-
+  # Test extension_operator and invertability of restriction_operator w.r.t. extension_operator.
   n = 8
   for degree in 0:3
     b = BSplineTranslatesBasis(n, degree, T)
@@ -94,13 +94,30 @@ function test_translatedbsplines(T)
     z2 = L2*e
     @test maximum(abs.(z-z2)) < tol
   end
+
+
+
+  for K in 0:3
+    for s2 in 5:6
+      s1 = s2<<1
+      b1 = BSplineTranslatesBasis(s1,K)
+      b2 = BSplineTranslatesBasis(s2,K)
+
+      e1 = random_expansion(b1)
+      e2 = random_expansion(b2)
+
+      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+    end
+  end
 end
 
 # exit()
 # using Base.Test
 # using BasisFunctions
-# @testset begin test_translatedbsplines(BigFloat) end
-
+# @testset begin test_translatedbsplines(Float64) end
 
 
 # using Plots

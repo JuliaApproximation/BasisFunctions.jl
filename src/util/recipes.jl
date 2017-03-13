@@ -83,16 +83,7 @@ end
     end
     nothing
 end
-@recipe function f(F::WaveletBasis; plot_complex = false, n=200)
-    grid = plotgrid(F,n)
-    for i in eachindex(F)
-        @series begin
-            vals = F[i](grid)
-            grid, postprocess(F[i],grid,vals)
-        end
-    end
-    nothing
-end
+
 #
 # For regular SetExpansions, no postprocessing is needed
 postprocess(S::FunctionSet, grid, vals) = vals
@@ -107,8 +98,6 @@ plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),le
 plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])⊗rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
 
 plotgrid{S,M,T}(s::MappedSet1d{S,M,T}, n) = apply_map(plotgrid(superset(s), n),mapping(s))
-
-plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), left(b), right(b))
 
 ## Split complex plots in real and imaginary parts
 # 1D

@@ -39,11 +39,11 @@ import Base: broadcast
 
 import Base.LinAlg: dot
 
-import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
-import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
-import Wavelets.Sequences: support
-import Wavelets.Util: isdyadic
+# import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+# import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
+# import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
+# import Wavelets.Sequences: support
+# import Wavelets.Util: isdyadic
 
 
 
@@ -76,7 +76,7 @@ export MappedGrid, mapped_grid, apply_map
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
-# from sets/functionset.jl
+# from bases/sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
@@ -93,19 +93,19 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
 export moment
 export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
 
-# from sets/subsets.jl
+# from bases/sets/subsets.jl
 export FunctionSubSet, indices
 
-# from sets/tensorproductset.jl
+# from bases/sets/tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
 
-# from sets/derived_set.jl
+# from bases/sets/derived_set.jl
 export DerivedSet
 
-# from sets/mapped_set.jl
+# from bases/sets/mapped_set.jl
 export MappedSet, mapped_set, mapping, superset, rescale
 
-#from expansions.jl
+#from bases/sets/expansions.jl
 export SetExpansion, TensorProductExpansion, coefficients, set, roots,
         random_expansion, differentiate, antidifferentiate, call_set_expansion,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
@@ -171,37 +171,38 @@ export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
-# from sets/weighted_set.jl
+# from bases/sets/weighted_set.jl
 export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
     weightfunction, weightfun_scaling_operator
 
-# from sets/composite_set.jl
-export tail
 
-# from sets/multiple_set.jl
+# from bases/sets/composite_set.jl
+export tail
+# from bases/sets/multiple_set.jl
+
 export MultiSet, multiset, ⊕
 
-# from sets/piecewise_set.jl
+# from bases/sets/piecewise_set.jl
 export PiecewiseSet
 
-# from sets/operated_set.jl
+# from bases/sets/operated_set.jl
 export OperatedSet, derivative
 
-# from sets/euclidean.jl
+# from bases/sets/euclidean.jl
 export Cn, Rn
 
-# from fourier/fourier.jl
+# from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
     fourier_basis_even, fourier_basis_odd
 
-# from fourier/(co)sineseries.jl
+# from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries
 
 
-# from poly/chebyshev.jl
+# from bases/poly/chebyshev.jl
 export ChebyshevBasis, ChebyshevBasisSecondKind,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
@@ -214,16 +215,16 @@ export plotgrid, postprocess
 #from util/MultiArray.jl
 export MultiArray
 
-# from poly/polynomials.jl and friends
+# from bases/poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 
-# from bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis
-# from bf_splines.jl
+# # from bases/wavelets/bf_wavelets.jl
+# export DaubechiesWaveletBasis, CDFWaveletBasis
+# from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-# from bf_periodicbsplines.jl
+# from bases/splines/bf_periodicbsplines.jl
 export PeriodicBSplineBasis
-# from set_of_translates.jl
+# from bases/translates/set_of_translates.jl
 export CompactPeriodicSetOfTranslates, BSplineTranslatesBasis
 
 export degree, interval
@@ -245,7 +246,7 @@ include("grid/grid.jl")
 include("grid/tensorproductgrid.jl")
 include("grid/derived_grid.jl")
 
-include("sets/functionset.jl")
+include("bases/sets/functionset.jl")
 
 include("operator/operator.jl")
 include("operator/composite_operator.jl")
@@ -256,11 +257,11 @@ include("grid/intervalgrids.jl")
 include("grid/scattered_grid.jl")
 include("grid/subgrid.jl")
 
-include("sets/derived_set.jl")
-include("sets/tensorproductset.jl")
-include("sets/mapped_set.jl")
+include("bases/sets/derived_set.jl")
+include("bases/sets/tensorproductset.jl")
+include("bases/sets/mapped_set.jl")
 
-include("sets/euclidean.jl")
+include("bases/sets/euclidean.jl")
 
 include("operator/dimop.jl")
 
@@ -272,41 +273,42 @@ include("operator/circulant_operator.jl")
 
 
 
-include("expansions.jl")
+include("bases/sets/expansions.jl")
 
 
 include("tensorproducts.jl")
 
 include("generic/generic_operators.jl")
 
-include("sets/subsets.jl")
-include("sets/composite_set.jl")
-include("sets/multiple_set.jl")
-include("sets/piecewise_set.jl")
-include("sets/operated_set.jl")
-include("sets/weighted_set.jl")
+include("bases/sets/subsets.jl")
+include("bases/sets/composite_set.jl")
+include("bases/sets/multiple_set.jl")
+include("bases/sets/piecewise_set.jl")
+include("bases/sets/operated_set.jl")
+include("bases/sets/weighted_set.jl")
 
 
-include("fourier/fouriertransforms.jl")
-include("fourier/fourier.jl")
-include("fourier/cosineseries.jl")
-include("fourier/sineseries.jl")
+include("bases/fourier/fouriertransforms.jl")
+include("bases/fourier/fourier.jl")
+include("bases/fourier/cosineseries.jl")
+include("bases/fourier/sineseries.jl")
 
-include("bf_splines.jl")
+include("bases/splines/bf_splines.jl")
 
-include("bf_periodicbsplines.jl")
+include("util/bsplines.jl")
+include("bases/splines/bf_periodicbsplines.jl")
 
-include("set_of_translates.jl")
+include("bases/translates/set_of_translates.jl")
 
-include("bf_wavelets.jl")
+# include("bases/wavelets/bf_wavelets.jl")
 
-include("poly/polynomials.jl")
+include("bases/poly/polynomials.jl")
 
-include("poly/chebyshev.jl")
-include("poly/legendre.jl")
-include("poly/jacobi.jl")
-include("poly/laguerre.jl")
-include("poly/hermite.jl")
+include("bases/poly/chebyshev.jl")
+include("bases/poly/legendre.jl")
+include("bases/poly/jacobi.jl")
+include("bases/poly/laguerre.jl")
+include("bases/poly/hermite.jl")
 
 include("util/recipes.jl")
 

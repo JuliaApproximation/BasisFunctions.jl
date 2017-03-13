@@ -183,3 +183,17 @@ promote_eltype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
 instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)
 
 is_compatible{P,Q,T1,T2}(src1::CDFWaveletBasis{P,Q,T1}, src2::CDFWaveletBasis{P,Q,T2}) = true
+
+@recipe function f(F::WaveletBasis; plot_complex = false, n=200)
+    grid = plotgrid(F,n)
+    for i in eachindex(F)
+        @series begin
+            vals = F[i](grid)
+            grid, postprocess(F[i],grid,vals)
+        end
+    end
+    nothing
+end
+
+
+plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), left(b), right(b))
