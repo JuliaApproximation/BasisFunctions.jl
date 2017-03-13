@@ -150,9 +150,9 @@ function grid_evaluation_operator(set::PeriodicSetOfTranslates, dgs::DiscreteGri
     if lg == ls
       return CirculantOperator(set, dgs, sample(grid, fun(set)); options...)
     elseif lg > ls
-      return CirculantOperator(dgs, dgs, sample(grid, fun(set)); options...)*ExpandOperator(set, dgs, 1, Int(lg/ls))
+      return CirculantOperator(dgs, dgs, sample(grid, fun(set)); options...)*IndexExtensionOperator(set, dgs, 1:Int(lg/ls):length(dgs))
     elseif lg < ls && has_extension(grid)
-      return SelectOperator(set, dgs, 1, Int(ls/lg))*CirculantOperator(set, set, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
+      return IndexRestrictionOperator(set, dgs, 1:Int(ls/lg):length(set))*CirculantOperator(set, set, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
     else
       return default_evaluation_operator(set, dgs; options...)
     end
