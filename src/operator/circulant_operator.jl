@@ -33,10 +33,14 @@ immutable SelectOperator{T} <: AbstractOperator{T}
   m       :: Int
 end
 
-SelectOperator{N,T}(src::FunctionSet{N,T}, dest::FunctionSet{N,T}, offset::Int=1, m::Int=2) =
-    SelectOperator{T}(src, dest, offset, m)
+function SelectOperator{N,T}(src::FunctionSet{N,T}, dest::FunctionSet{N,T}, offset::Int=1, m::Int=2)
+  @assert length(src) >= length(dest)
+  SelectOperator{T}(src, dest, offset, m)
+end
 
 SelectOperator(src::FunctionSet, offset::Int=1, m::Int=2) = SelectOperator(src, resize(src, length(src)>>1), offset, m)
+
+SelectOperator{T}(s1::Int, s2::Int, offset::Int=1, m::Int=2, ::Type{T}= Float64) = SelectOperator(Rn{T}(s1),Rn{T}(s2), offset, m)
 
 function BasisFunctions.apply!(op::SelectOperator, coef_dest, coef_src)
   for i in 1:length(coef_dest)
@@ -58,6 +62,8 @@ ExpandOperator{N,T}(src::FunctionSet{N,T}, dest::FunctionSet{N,T}, offset::Int=1
     ExpandOperator{T}(src, dest, offset, m)
 
 ExpandOperator(src::FunctionSet, offset::Int=1, m::Int=2) = ExpandOperator(src, resize(src, length(src)<<1), offset, m)
+
+ExpandOperator{T}(s1::Int, s2::Int, offset::Int=1, m::Int=2, ::Type{T}= Float64) = ExpandOperator(Rn{T}(s1),Rn{T}(s2), offset, m)
 
 function BasisFunctions.apply!(op::ExpandOperator, coef_dest, coef_src)
   coef_dest[:] = 0

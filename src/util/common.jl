@@ -55,3 +55,5 @@ end
 @generated function tuple_length{T <: Tuple}(::Type{T})
     :($length(T.parameters))
 end
+
+isdyadic(n::Int) = n == 1<<round(Int, log2(n))
