@@ -110,9 +110,9 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
         random_expansion, differentiate, antidifferentiate, call_set_expansion,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
-# from operator/operators.jl
+# from operator/operator.jl
 export AbstractOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!
+        apply, apply_multiple, apply_inplace!, ConcreteDerivedOperator
 export matrix, diagonal, is_diagonal, is_inplace
 
 # from operator/composite_operator.jl
@@ -124,7 +124,9 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
 # from operator/circulant_operator.jl
-export CirculantOperator, SelectOperator, ExpandOperator, ConcreteDerivedOperator, PseudoDiagonalOperator
+export CirculantOperator
+# from operator/pseudo_diagonal.jl
+export PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_set, full_transform_operator,
@@ -178,8 +180,8 @@ export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
 
 # from bases/sets/composite_set.jl
 export tail
-# from bases/sets/multiple_set.jl
 
+# from bases/sets/multiple_set.jl
 export MultiSet, multiset, ⊕
 
 # from bases/sets/piecewise_set.jl
@@ -225,7 +227,9 @@ export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, Sp
 # from bases/splines/bf_periodicbsplines.jl
 export PeriodicBSplineBasis
 # from bases/translates/set_of_translates.jl
-export CompactPeriodicSetOfTranslates, BSplineTranslatesBasis
+export CompactPeriodicSetOfTranslates
+# from bases/translates/translates_of_bsplines.jl
+export BSplineTranslatesBasis
 
 export degree, interval
 
@@ -270,6 +274,7 @@ include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/circulant_operator.jl")
+include("operator/pseudo_diagonal.jl")
 
 
 
@@ -299,6 +304,7 @@ include("util/bsplines.jl")
 include("bases/splines/bf_periodicbsplines.jl")
 
 include("bases/translates/set_of_translates.jl")
+include("bases/translates/translates_of_bsplines.jl")
 
 # include("bases/wavelets/bf_wavelets.jl")
 
