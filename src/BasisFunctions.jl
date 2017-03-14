@@ -273,8 +273,8 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/circulant_operator.jl")
 include("operator/pseudo_diagonal.jl")
+include("operator/circulant_operator.jl")
 
 
 

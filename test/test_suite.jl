@@ -201,6 +201,9 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("test complexify/realify operator",80))" begin
       test_complexify_operator(T)
     end
+    @testset "$(rpad("test circulant operator",80))" begin
+      test_circulant_operator(T)
+    end
 
     delimit("Generic interfaces")
 
