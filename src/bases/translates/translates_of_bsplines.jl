@@ -64,32 +64,21 @@ function _binomial_circulant{K,T}(s::BSplineTranslatesBasis{K,T})
 end
 
 # The calculation done in this function is equivalent to finding the pseudoinverse of the extension_operator.
-# TODO find out why exactly.
 function restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
     @assert length(s1) == 2*length(s2)
-    # t = zeros(s2)
-    # t[1] = 1
-    # IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
     r = BasisFunctions._binomial_circulant(s1)
     e = BasisFunctions.eigenvalues(r)
     n = length(e)
     d = similar(e)
-    d[1] = T(2)/e[1]
-    d[n>>1+1] = 0
-    iseven(n>>1) && (d[n>>2+1] = 1/e[n>>2+1]; d[n-n>>2+1] = 1/e[n-n>>2+1])
-    n>>2
-    I = 2:n>>2
-    quarter = n>>2
-    isodd(n>>1) && (quarter = n>>2+1)
-    for i in 2:quarter
-      x = e[i]
-      y = e[n>>1+2-i]
-      a = 2*(abs(x)^2)/(abs(y)^2+abs(x)^2)
-      d[i] = a/x
-      d[n>>1+2-i] = (2-a)/y
-      d[n+2-i] = conj(a/x)
-      d[n>>1+i] = conj((2-a)/y)
+    eabs = map(abs, e)
+    for i in 1:n>>1
+      a = 2*(eabs[i]^2)/(eabs[i+n>>1]^2+eabs[i]^2)
+      d[i] = a
+      d[i+n>>1] = (2-a)
     end
+    d = d ./ e
+    d[map(isnan,d)] = 0
+
     IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, s1, PseudoDiagonalOperator(d))
 end
 
