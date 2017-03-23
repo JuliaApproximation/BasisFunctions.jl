@@ -1,19 +1,65 @@
 # translates_of_bsplines.jl
+abstract PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+
+degree{K}(b::PeriodicBSplineBasis{K}) = K
+
+Gram(b::PeriodicBSplineBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
+
+function _binomial_circulant{K,T}(s::PeriodicBSplineBasis{K,T})
+  c = zeros(T, length(s))
+  for k in 1:K+2
+    c[k] = binomial(K+1, k-1)
+  end
+  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+end
+
+function bspline_extension_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+  @assert 2*length(s1) == length(s2)
+  _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
+end
+
+# The calculation done in this function is equivalent to finding the pseudoinverse of the extension_operator.
+function bspline_restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+    @assert length(s1) == 2*length(s2)
+    r = BasisFunctions._binomial_circulant(s1)
+    e = BasisFunctions.eigenvalues(r)
+    n = length(e)
+    d = similar(e)
+    eabs = map(abs, e)
+    for i in 1:n>>1
+      a = 2*(eabs[i]^2)/(eabs[i+n>>1]^2+eabs[i]^2)
+      d[i] = a
+      d[i+n>>1] = (2-a)
+    end
+    d = d ./ e
+    d[map(isnan,d)] = 0
+
+    IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, s1, PseudoDiagonalOperator(d))
+end
+
+# TODO check the properties of this one
+function bspline_restriction_operator2{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+    @assert length(s1) == 2*length(s2)
+    inv(evaluation_operator(s2; options...))*evaluation_operator(s1, grid(s2); options...)
+end
+
+# function restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+#     @assert length(s1) == 2*length(s2)
+#     t = zeros(s2)
+#     t[1] = 1
+#     IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
+# end
+
 """
   Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
-immutable BSplineTranslatesBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
   fun             :: Function
 end
 
-degree{K}(b::BSplineTranslatesBasis{K}) = K
-# BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-#     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->sqrt(T(n))*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
-# BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-#     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->T(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
 
@@ -30,7 +76,6 @@ set_promote_eltype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTr
 
 resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, degree(b), T)
 
-Gram(b::BSplineTranslatesBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
 # TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
 compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) = iseven(K) &&
@@ -42,45 +87,23 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function restriction_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
+# TODO  can be added to PeriodicBSplineBasis in julia 0.6
+# extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
+extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
+    bspline_extension_operator(s1, s2; options...)
 
-function extension_operator(::BSplineTranslatesBasis, ::BSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
-
-function extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
-  @assert 2*length(s1) == length(s2)
-  c = zeros(T, length(s2))
-  for k in 1:K+2
-    c[k] = binomial(K+1, k-1)
-  end
-  T(1)/(1<<(degree(s1)))*CirculantOperator(s2, c)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
-
-end
-
-function restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...)
-    @assert length(s1) == 2*length(s2)
-    t = zeros(s2)
-    t[1] = 1
-    IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
-end
-
+restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
+    bspline_restriction_operator(s1, s2; options...)
 
 """
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
-immutable SymBSplineTranslatesBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+immutable SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
   fun             :: Function
 end
-
-degree{K}(b::SymBSplineTranslatesBasis{K}) = K
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, T))
@@ -98,31 +121,10 @@ set_promote_eltype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSp
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
-Gram(b::SymBSplineTranslatesBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
+# TODO  can be added to PeriodicBSplineBasis in julia 0.6
+# extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
+extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
+    bspline_extension_operator(s1, s2; options...)
 
-function restriction_operator(::SymBSplineTranslatesBasis, ::SymBSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
-
-function extension_operator(::SymBSplineTranslatesBasis, ::SymBSplineTranslatesBasis; options...)
-  println("Method does not exists for splines of different degrees")
-  throw(InexactError())
-end
-
-function extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...)
-  @assert 2*length(s1) == length(s2)
-  c = zeros(T, length(s2))
-  for k in 1:K+2
-    c[k] = binomial(K+1, k-1)
-  end
-  T(1)/(1<<(degree(s1)))*CirculantOperator(s2, c)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
-
-end
-
-function restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...)
-    @assert length(s1) == 2*length(s2)
-    t = zeros(s2)
-    t[1] = 1
-    IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
-end
+restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
+    bspline_restriction_operator(s1, s2; options...)

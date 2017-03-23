@@ -228,7 +228,7 @@ abstract DerivedOperator{T} <: AbstractOperator{T}
 
 superoperator(op::DerivedOperator) = op.superoperator
 
-for op in (:src, :dest, :is_inplace, :is_diagonal, :inv, :ctranspose, :diagonal, :unsafe_diagonal)
+for op in (:src, :dest, :is_inplace, :is_diagonal, :diagonal, :unsafe_diagonal)
 	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 
@@ -242,6 +242,10 @@ end
 
 for op in (:unsafe_getindex,)
 	@eval $op(operator::DerivedOperator, i, j) = $op(superoperator(operator), i, j)
+end
+
+for op in (:inv, :ctranspose,)
+	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 
 immutable ConcreteDerivedOperator{T} <: DerivedOperator{T}

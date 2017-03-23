@@ -110,11 +110,15 @@ function test_translatedbsplines(T)
       @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
       @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
       @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+
+      mr = matrix(restriction_operator(b1, b2))
+      me = matrix(extension_operator(b2, b1))
+      pinvme = pinv(me)
+      r = rand(size(pinvme,2))
+      @test pinvme*r ≈ mr*r
     end
   end
 
-  @test_throws InexactError restriction_operator(BSplineTranslatesBasis(4,0),BSplineTranslatesBasis(2,1))
-  @test_throws InexactError extension_operator(BSplineTranslatesBasis(2,0),BSplineTranslatesBasis(4,1))
   @test_throws AssertionError restriction_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(3,0))
   @test_throws AssertionError extension_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(6,0))
 end
@@ -122,7 +126,7 @@ end
 # exit()
 # using Base.Test
 # using BasisFunctions
-# @testset begin test_translatedbsplines(Float64) end
+# @testset begin test_translatedbsplines(BigFloat) end
 
 # using Plots
 # using BasisFunctions
