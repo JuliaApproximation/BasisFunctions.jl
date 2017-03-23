@@ -5,20 +5,12 @@ degree{K}(b::PeriodicBSplineBasis{K}) = K
 
 Gram(b::PeriodicBSplineBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
 
-function _binomial_circulant{K,T}(s::PeriodicBSplineBasis{K,T})
-  c = zeros(T, length(s))
-  for k in 1:K+2
-    c[k] = binomial(K+1, k-1)
-  end
-  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
-end
-
 function bspline_extension_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
   @assert 2*length(s1) == length(s2)
   _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
 end
 
-# The calculation done in this function is equivalent to finding the pseudoinverse of the extension_operator.
+# The calculation done in this function is equivalent to finding the pseudoinverse of the bspline_extension_operator.
 function bspline_restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
     @assert length(s1) == 2*length(s2)
     r = BasisFunctions._binomial_circulant(s1)
@@ -63,6 +55,8 @@ end
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
 
+name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
+
 left_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T}) = T(0)
 
 right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T}) = stepsize(b)*(degree(b)+1)
@@ -87,7 +81,15 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-# TODO  can be added to PeriodicBSplineBasis in julia 0.6
+function _binomial_circulant{K,T}(s::BSplineTranslatesBasis{K,T})
+  c = zeros(T, length(s))
+  for k in 1:K+2
+    c[k] = binomial(K+1, k-1)
+  end
+  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+end
+
+# TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
 # extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
 extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
     bspline_extension_operator(s1, s2; options...)
@@ -97,6 +99,8 @@ restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslates
 
 """
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
+
+  There degree should be odd to use extension or restriction.
 """
 immutable SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   n               :: Int
@@ -107,6 +111,8 @@ end
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, T))
+
+name(b::SymBSplineTranslatesBasis) = name(typeof(b))*" (symmetric B spline of degree $(degree(b)))"
 
 left_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T}) = -right_of_compact_function(b)
 
@@ -121,7 +127,21 @@ set_promote_eltype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSp
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
-# TODO  can be added to PeriodicBSplineBasis in julia 0.6
+function _binomial_circulant{K,T}(s::SymBSplineTranslatesBasis{K,T})
+  if iseven(degree(s))
+    warn("Extension and restriction work with odd degrees only.")
+    throw(MethodError())
+  end
+  c = zeros(T, length(s))
+  c[1] = binomial(K+1, (K+1)>>1)
+  for (i,k) in enumerate((K+1)>>1+1:K+1)
+    c[i+1] = binomial(K+1, k)
+    c[end+1-i] = binomial(K+1, k)
+  end
+  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+end
+
+# TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
 # extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
 extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
     bspline_extension_operator(s1, s2; options...)

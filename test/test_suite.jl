@@ -208,7 +208,8 @@ for T in (Float64, BigFloat,)
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries, BSplineTranslatesBasis)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+            BSplineTranslatesBasis, SymBSplineTranslatesBasis,)
     #  SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #          LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -279,8 +280,15 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
 
+    @testset "$(rpad("Periodic translate expansions",80))"begin
+        test_generic_periodicbsplinebasis(T) end
+
     @testset "$(rpad("Translates of B spline expansions",80))"begin
         test_translatedbsplines(T) end
+
+    @testset "$(rpad("Translates of B spline expansions",80))"begin
+        test_translatedsymmetricbsplines(T) end
+
 
 end # for T in...
 delimit("Test DCTI")

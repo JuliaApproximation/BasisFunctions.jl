@@ -9,7 +9,9 @@ is_biorthogonal(::SetOfTranslates) = true
 
 is_basis(::SetOfTranslates) = true
 
-name(b::SetOfTranslates) = "Set of translates of a function"
+name{B<:SetOfTranslates}(::Type{B}) = "Set of translates of a function"
+
+name(b::SetOfTranslates) = name(typeof(b))
 
 fun(b::SetOfTranslates) = b.fun
 
@@ -138,7 +140,7 @@ function right_of_compact_function end
 overlapping_elements(b::CompactPeriodicSetOfTranslates, x) =
   floor(Int, (x-right_of_compact_function(b))/stepsize(b)):ceil(Int, (x-left_of_compact_function(b))/stepsize(b))
 
-left{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int) ::T = native_index(b, j) * stepsize(b) - left_of_compact_function(b)
+left{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int) ::T = native_index(b, j) * stepsize(b) + left_of_compact_function(b)
 
 right{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int)::T = left(b, j) + length_compact_support(b)
 
