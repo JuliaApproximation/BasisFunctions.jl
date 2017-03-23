@@ -224,8 +224,6 @@ export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 # export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-# from bases/splines/bf_periodicbsplines.jl
-export PeriodicBSplineBasis
 # from bases/translates/set_of_translates.jl
 export CompactPeriodicSetOfTranslates
 # from bases/translates/translates_of_bsplines.jl
@@ -301,7 +299,6 @@ include("bases/fourier/sineseries.jl")
 include("bases/splines/bf_splines.jl")
 
 include("util/bsplines.jl")
-include("bases/splines/bf_periodicbsplines.jl")
 
 include("bases/translates/set_of_translates.jl")
 include("bases/translates/translates_of_bsplines.jl")

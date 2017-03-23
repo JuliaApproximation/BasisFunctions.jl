@@ -251,7 +251,7 @@ function test_multidiagonal_operators(T)
 end
 
 function test_complexify_operator(T)
-  for SRC in (PeriodicBSplineBasis(11, 2, T), PeriodicBSplineBasis(11, 2, complex(T)))
+  for SRC in (BSplineTranslatesBasis(11, 2, T), BSplineTranslatesBasis(11, 2, complex(T)))
     op = ComplexifyOperator(SRC)
     DEST = dest(op)
     ELT = eltype(op)

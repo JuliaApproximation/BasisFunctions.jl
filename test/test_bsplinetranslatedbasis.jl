@@ -112,13 +112,17 @@ function test_translatedbsplines(T)
       @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
     end
   end
+
+  @test_throws InexactError restriction_operator(BSplineTranslatesBasis(4,0),BSplineTranslatesBasis(2,1))
+  @test_throws InexactError extension_operator(BSplineTranslatesBasis(2,0),BSplineTranslatesBasis(4,1))
+  @test_throws AssertionError restriction_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(3,0))
+  @test_throws AssertionError extension_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(6,0))
 end
 
 # exit()
 # using Base.Test
 # using BasisFunctions
 # @testset begin test_translatedbsplines(Float64) end
-
 
 # using Plots
 # using BasisFunctions
@@ -136,3 +140,4 @@ end
 # f = map(x->BasisFunctions.eval_expansion(b,ones(n),x),t)
 # # f = map(x->BasisFunctions.eval_expansion(b,[1,0,0,0,0,0,0,0,0,0],x),t)
 # plot!(t,f,ylims=[-n,2n])
+#

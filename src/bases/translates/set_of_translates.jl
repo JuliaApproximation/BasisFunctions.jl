@@ -37,7 +37,7 @@ right(set::PeriodicSetOfTranslates, j::Int) = right(set)
 
 has_grid(::PeriodicSetOfTranslates) = true
 
-# grid(set::PeriodicSetOfTranslates) = MidpointEquispacedGrid(length(set), left(set), right(set))
+grid(set::PeriodicSetOfTranslates) = PeriodicEquispacedGrid(length(set), left(set), right(set))
 
 period{T}(set::PeriodicSetOfTranslates{T}) = T(right(set)-left(set))
 
@@ -67,6 +67,23 @@ end
 function transform_to_grid(src::PeriodicSetOfTranslates, dest, grid; options...)
   @assert compatible_grid(src, grid)
   CirculantOperator(src, dest, sample(grid, fun(src)); options...)
+end
+
+function grid_evaluation_operator(set::PeriodicSetOfTranslates, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
+  if periodic_compatible_grid(set, grid)
+    lg = length(grid)
+    ls = length(set)
+    if lg == ls
+      return CirculantOperator(set, dgs, sample(grid, fun(set)); options...)
+    elseif lg > ls
+      return CirculantOperator(dgs, dgs, sample(grid, fun(set)); options...)*IndexExtensionOperator(set, dgs, 1:Int(lg/ls):length(dgs))
+    elseif lg < ls && has_extension(grid)
+      return IndexRestrictionOperator(set, dgs, 1:Int(ls/lg):length(set))*CirculantOperator(set, set, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
+    else
+      return default_evaluation_operator(set, dgs; options...)
+    end
+  end
+  default_evaluation_operator(set, dgs; options...)
 end
 
 "Return the index of the interval between two knots in which x lies, starting from index 0."
@@ -101,25 +118,46 @@ function dualgramcolumn{T}(primalgramcolumn::Array{T,1})
     real(ifft(Diagonal(d)*fft(e1)))
 end
 
+
 """
   Set consisting of n translates of a compact and periodic function.
 
-  The support of the function is [0,c], where c∈R and 0 < c < p,
-  where p is the period of the function.
+  The support of the function is [c_1,c_2], where c_1, c_2 ∈R, c_2-c_1 <= p, 0 ∈ [c_1,c_2],
+  and p is the period of the function.
 """
 abstract CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T}
 
 """
   Length of the function of a CompactPeriodicSetOfTranslates.
 """
-function length_compact_support end
+length_compact_support{T}(b::CompactPeriodicSetOfTranslates{T})::T = right_of_compact_function(b)-left_of_compact_function(b)
 
-left(b::CompactPeriodicSetOfTranslates, j::Int) = native_index(b, j) * stepsize(b)
+function left_of_compact_function end
+function right_of_compact_function end
 
-right(b::CompactPeriodicSetOfTranslates, j::Int) = left(b, j) + length_compact_support(b)
+overlapping_elements(b::CompactPeriodicSetOfTranslates, x) =
+  floor(Int, (x-right_of_compact_function(b))/stepsize(b)):ceil(Int, (x-left_of_compact_function(b))/stepsize(b))
 
-# return whether x lays in the support of the idxth element of set. x should lay in the support of the set.
-function in_support{K}(set::CompactPeriodicSetOfTranslates{K}, idx::Int, x)
+left{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int) ::T = native_index(b, j) * stepsize(b) - left_of_compact_function(b)
+
+right{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int)::T = left(b, j) + length_compact_support(b)
+
+in_support(set::CompactPeriodicSetOfTranslates, idx::Int, x) =
+    in_compact_support(set, idx, x)
+
+eval_element(b::CompactPeriodicSetOfTranslates, idx::Int, x) =
+    eval_compact_element(b, idx, x)
+
+eval_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, coef, x::T) =
+    eval_compact_expansion(b, coef, x)
+
+function eval_compact_element{T}(b::CompactPeriodicSetOfTranslates{T}, idx::Int, x)
+  !in_support(b, idx, x) ?
+  T(0) :
+  fun(b)(T(x)-native_index(b, idx)*stepsize(b))
+end
+
+function in_compact_support(set::CompactPeriodicSetOfTranslates, idx::Int, x)
 	per = period(set)
 	A = left(set) <= x <= right(set)
 	B = (left(set, idx) <= x <= right(set, idx)) || (left(set, idx) <= x-per <= right(set, idx)) ||
@@ -127,35 +165,11 @@ function in_support{K}(set::CompactPeriodicSetOfTranslates{K}, idx::Int, x)
 	A && B
 end
 
-eval_element{T}(b::CompactPeriodicSetOfTranslates{T}, idx::Int, x) = !in_support(b, idx, x) ?
-  T(0) :
-  fun(b)(T(x)-native_index(b, idx)*stepsize(b))
-
-function eval_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, coef, x::T)
-	i = interval(b, x)
-	n = length(b)
+function eval_compact_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, coef, x::T)
 	z = zero(T)
-  nointervals = ceil(Int, length_compact_support(b)/stepsize(b))
-	for idxn = i-nointervals:i
-		idx = linear_index(b, mod(idxn,n))
+	for idxn = overlapping_elements(b, x)
+		idx = linear_index(b, mod(idxn,length(b)))
 		z = z + coef[idx] * eval_element(b, idx, x)
 	end
 	z
-end
-
-function grid_evaluation_operator(set::PeriodicSetOfTranslates, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
-  if periodic_compatible_grid(set, grid)
-    lg = length(grid)
-    ls = length(set)
-    if lg == ls
-      return CirculantOperator(set, dgs, sample(grid, fun(set)); options...)
-    elseif lg > ls
-      return CirculantOperator(dgs, dgs, sample(grid, fun(set)); options...)*IndexExtensionOperator(set, dgs, 1:Int(lg/ls):length(dgs))
-    elseif lg < ls && has_extension(grid)
-      return IndexRestrictionOperator(set, dgs, 1:Int(ls/lg):length(set))*CirculantOperator(set, set, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
-    else
-      return default_evaluation_operator(set, dgs; options...)
-    end
-  end
-  default_evaluation_operator(set, dgs; options...)
 end

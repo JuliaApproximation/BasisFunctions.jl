@@ -5,8 +5,12 @@ export evaluate_Bspline, evaluate_periodic_Bspline, Degree
 
 # Implementation of cardinal B splines of degree N
 typealias Degree{N} Val{N}
+function evaluate_symmetric_periodic_Bspline(N::Int, x, period, T::Type)
+  evaluate_periodic_Bspline(N, x+T(N+1)/2, period, T)
+end
 
 function evaluate_periodic_Bspline(N::Int, x, period, T::Type)
+  @assert period > 0
   x -= period*fld(x, period)
   x >= period && (x -= period)
   @assert(0<= x < period)

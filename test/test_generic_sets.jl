@@ -20,7 +20,6 @@ suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
 # Make a simple periodic function for Fourier
 suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(set::PeriodicBSplineBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::BSplineTranslatesBasis) =  x->1/(10+cos(2*pi*x))
 suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
 
@@ -113,7 +112,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: PeriodicBSplineBasis || typeof(basis) <: BSplineTranslatesBasis)
+    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BSplineTranslatesBasis)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
             @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))
@@ -405,7 +404,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         f = suitable_function(basis)
         e = SetExpansion(basis, A*f)
         x = random_point_in_domain(basis)
-        
+
         # We choose a fairly large error, because the ndof's can be very small.
         # We don't want to test convergence, only that something terrible did
         # not happen, so an error of 1e-3 will do.
