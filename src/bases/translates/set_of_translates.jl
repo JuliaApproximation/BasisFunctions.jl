@@ -29,9 +29,9 @@ has_unitary_transform(::SetOfTranslates) = false
 """
 abstract PeriodicSetOfTranslates{T} <: SetOfTranslates{T}
 
-left{T}(set::PeriodicSetOfTranslates{T}) = real(T)(set.a)
+left{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.a)
 
-right{T}(set::PeriodicSetOfTranslates{T}) = real(T)(set.b)
+right{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.b)
 
 left(set::PeriodicSetOfTranslates, j::Int) = left(set)
 
@@ -41,9 +41,9 @@ has_grid(::PeriodicSetOfTranslates) = true
 
 grid(set::PeriodicSetOfTranslates) = PeriodicEquispacedGrid(length(set), left(set), right(set))
 
-period{T}(set::PeriodicSetOfTranslates{T}) = T(right(set)-left(set))
+period{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(right(set)-left(set))
 
-stepsize{T}(set::PeriodicSetOfTranslates{T}) = T(period(set)/length(set))
+stepsize{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(period(set)/length(set))
 
 has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid) =
     compatible_grid(b, grid)
@@ -60,7 +60,7 @@ function periodic_compatible_grid(b::FunctionSet, grid::AbstractEquispacedGrid)
   (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && isdyadic(nInt) && (n≈nInt)
 end
 
-native_nodes{T}(b::PeriodicSetOfTranslates{T}) = [T(k*stepsize(b)) for k in 0:length(b)]
+native_nodes{T}(b::PeriodicSetOfTranslates{T}) = [real(T)(k*stepsize(b)) for k in 0:length(b)]
 
 function transform_from_grid(src, dest::PeriodicSetOfTranslates, grid; options...)
 	inv(transform_to_grid(dest, src, grid; options...))
@@ -88,16 +88,15 @@ function grid_evaluation_operator(set::PeriodicSetOfTranslates, dgs::DiscreteGri
   default_evaluation_operator(set, dgs; options...)
 end
 
-"Return the index of the interval between two knots in which x lies, starting from index 0."
-interval(b::PeriodicSetOfTranslates, x) = round(Int, floor( (x-left(b))/stepsize(b) ))
+eval_element{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x::Real) = fun(b)(real(T)(x)-native_index(b, idx)*stepsize(b))
 
-eval_element{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x) = fun(T(x)-native_index(b, idx)*stepsize(b))
+eval_dualelement{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(b),native_index(b, idx)), x)
 
-eval_dualelement{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x) = eval_expansion(b, circshift(dualgramcolumn(b),native_index(b, idx)), x)
+Gram(b::PeriodicSetOfTranslates; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...))
 
-grammatrix(b::PeriodicSetOfTranslates) = full(Circulant(primalgramcolumn(b)))
+grammatrix(b::PeriodicSetOfTranslates; options...) = matrix(Gram(b; options...))
 
-dualgrammatrix(b::PeriodicSetOfTranslates) = full(Circulant(dualgramcolumn(b)))
+dualgrammatrix(b::PeriodicSetOfTranslates; options...) = matrix(inv(Gram(b; options...)))
 
 # All inner products between elements of PeriodicSetOfTranslates are known by the first column of the (circulant) gram matrix.
 function primalgramcolumn{T}(set::PeriodicSetOfTranslates{T}; options...)
@@ -109,17 +108,12 @@ function primalgramcolumn{T}(set::PeriodicSetOfTranslates{T}; options...)
   result
 end
 
-dualgramcolumn(set::PeriodicSetOfTranslates; options...) =
-    dualgramcolumn(primalgramcolumn(set; options...))
-
-# The inverse of a circulant matrix is calculated in O(n logn) by use of an fft.
-function dualgramcolumn{T}(primalgramcolumn::Array{T,1})
-    n = length(primalgramcolumn)
-    e1 = zeros(T,n); e1[1] = 1;
-    d = 1./fft(primalgramcolumn)
-    real(ifft(Diagonal(d)*fft(e1)))
+function dualgramcolumn(set::PeriodicSetOfTranslates; options...)
+  G = inv(Gram(set; options...))
+  e = zeros(eltype(G),size(G,1))
+  e[1] = 1
+  real(G*e)
 end
-
 
 """
   Set consisting of n translates of a compact and periodic function.
@@ -132,7 +126,7 @@ abstract CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T}
 """
   Length of the function of a CompactPeriodicSetOfTranslates.
 """
-length_compact_support{T}(b::CompactPeriodicSetOfTranslates{T})::T = right_of_compact_function(b)-left_of_compact_function(b)
+length_compact_support{T}(b::CompactPeriodicSetOfTranslates{T})::real(T) = right_of_compact_function(b)-left_of_compact_function(b)
 
 function left_of_compact_function end
 function right_of_compact_function end
@@ -140,26 +134,26 @@ function right_of_compact_function end
 overlapping_elements(b::CompactPeriodicSetOfTranslates, x) =
   floor(Int, (x-right_of_compact_function(b))/stepsize(b)):ceil(Int, (x-left_of_compact_function(b))/stepsize(b))
 
-left{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int) ::T = native_index(b, j) * stepsize(b) + left_of_compact_function(b)
+left{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int) ::real(T) = native_index(b, j) * stepsize(b) + left_of_compact_function(b)
 
-right{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int)::T = left(b, j) + length_compact_support(b)
+right{T}(b::CompactPeriodicSetOfTranslates{T}, j::Int)::real(T) = left(b, j) + length_compact_support(b)
 
-in_support(set::CompactPeriodicSetOfTranslates, idx::Int, x) =
+in_support(set::CompactPeriodicSetOfTranslates, idx::Int, x::Real) =
     in_compact_support(set, idx, x)
 
-eval_element(b::CompactPeriodicSetOfTranslates, idx::Int, x) =
+eval_element(b::CompactPeriodicSetOfTranslates, idx::Int, x::Real) =
     eval_compact_element(b, idx, x)
 
-eval_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, coef, x::T) =
+eval_expansion(b::CompactPeriodicSetOfTranslates, coef, x::Real) =
     eval_compact_expansion(b, coef, x)
 
-function eval_compact_element{T}(b::CompactPeriodicSetOfTranslates{T}, idx::Int, x)
+function eval_compact_element{T}(b::CompactPeriodicSetOfTranslates{T}, idx::Int, x::Real)
   !in_support(b, idx, x) ?
-  T(0) :
-  fun(b)(T(x)-native_index(b, idx)*stepsize(b))
+  real(T)(0) :
+  fun(b)(real(T)(x)-native_index(b, idx)*stepsize(b))
 end
 
-function in_compact_support(set::CompactPeriodicSetOfTranslates, idx::Int, x)
+function in_compact_support(set::CompactPeriodicSetOfTranslates, idx::Int, x::Real)
 	per = period(set)
 	A = left(set) <= x <= right(set)
 	B = (left(set, idx) <= x <= right(set, idx)) || (left(set, idx) <= x-per <= right(set, idx)) ||

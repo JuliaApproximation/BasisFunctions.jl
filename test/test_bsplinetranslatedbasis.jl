@@ -216,9 +216,26 @@ function test_translatedsymmetricbsplines(T)
   @test_throws MethodError extension_operator(SymBSplineTranslatesBasis(3,0), SymBSplineTranslatesBasis(6,0))
 end
 
+function test_orthonormalsplinebasis(T)
+  b = OrthonormalSplineBasis(5,2,Float64)
+  b = OrthonormalSplineBasis(5,2,T)
+  @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized)"
+  @test instantiate(OrthonormalSplineBasis,5)==OrthonormalSplineBasis(5,3)
+
+  G = sqrt(DualGram(b.superset))
+  e = zeros(eltype(G),size(G,1))
+  e[1] = 1
+  @test b.coefficients ≈ G*e
+
+  d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
+  @test d ≈ zeros(T,d)
+  @test typeof(Gram(b)) <: IdentityOperator
+end
+
 # exit()
 # using Base.Test
 # using BasisFunctions
+# @testset begin test_orthonormalsplinebasis(BigFloat) end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end
 # @testset begin test_generic_periodicbsplinebasis(Float64) end

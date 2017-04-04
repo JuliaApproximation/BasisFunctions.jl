@@ -227,7 +227,7 @@ export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, Sp
 # from bases/translates/set_of_translates.jl
 export CompactPeriodicSetOfTranslates
 # from bases/translates/translates_of_bsplines.jl
-export BSplineTranslatesBasis, SymBSplineTranslatesBasis
+export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis
 
 export degree, interval
 

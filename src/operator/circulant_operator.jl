@@ -16,7 +16,7 @@ function CirculantOperator{N,ELT <: Real}(src::FunctionSet{N,ELT}, dest::Functio
     CirculantOperator(src, dest, D; options...)
 end
 
-function CirculantOperator{N,ELT <: Complex}(complex_src::FunctionSet{N,ELT}, complex_dest::FunctionSet{N,ELT}, firstcolumn::AbstractVector{ELT}; options...)
+function CirculantOperator{N,ELT <: Complex}(complex_src::FunctionSet{N,ELT}, complex_dest::FunctionSet{N,ELT}, firstcolumn::AbstractVector; options...)
     D = PseudoDiagonalOperator(complex_src, complex_dest,fftw_operator(complex_src,complex_dest,1:1,FFTW.MEASURE)*firstcolumn)
     CirculantOperator(complex_src, complex_dest, D; options...)
 end
@@ -50,6 +50,8 @@ eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
 
 op_promote_eltype{ELT,S}(op::CirculantOperator{ELT}, ::Type{S}) =
     CirculantOperator(set_promote_eltype(src(op), S), set_promote_eltype(dest(op), S), op_promote_eltype(op.eigenvaluematrix, complex(S)))
+
+Base.sqrt{T}(c::CirculantOperator{T})= CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(sqrt.(eigenvalues(c))))
 
 for op in (:inv, :ctranspose)
   @eval $op{T}(C::CirculantOperator{T}) = CirculantOperator{T}($op(superoperator(C)), $op(C.eigenvaluematrix))

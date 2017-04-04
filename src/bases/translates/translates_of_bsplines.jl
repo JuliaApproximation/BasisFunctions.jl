@@ -30,10 +30,10 @@ function bspline_restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::Pe
 end
 
 # TODO check the properties of this one
-function bspline_restriction_operator2{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
-    @assert length(s1) == 2*length(s2)
-    inv(evaluation_operator(s2; options...))*evaluation_operator(s1, grid(s2); options...)
-end
+# function bspline_restriction_operator2{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+#     @assert length(s1) == 2*length(s2)
+#     inv(evaluation_operator(s2; options...))*evaluation_operator(s1, grid(s2); options...)
+# end
 
 # function restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
 #     @assert length(s1) == 2*length(s2)
@@ -53,13 +53,13 @@ immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
 end
 
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, T))
+    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
 
-left_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T}) = T(0)
+left_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = real(T)(0)
 
-right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T}) = stepsize(b)*(degree(b)+1)
+right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = stepsize(b)*real(T)(degree(b)+1)
 
 
 =={K1,K2,T1,T2}(b1::BSplineTranslatesBasis{K1,T1}, b2::BSplineTranslatesBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1)==length(b2)
@@ -110,13 +110,13 @@ immutable SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
 end
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, T))
+    SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::SymBSplineTranslatesBasis) = name(typeof(b))*" (symmetric B spline of degree $(degree(b)))"
 
-left_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T}) = -right_of_compact_function(b)
+left_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T})::real(T) = -right_of_compact_function(b)
 
-right_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T}) = stepsize(b)*(degree(b)+1)/2
+right_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T})::real(T) = stepsize(b)*real(T)((degree(b)+1))/2
 
 
 =={K1,K2,T1,T2}(b1::SymBSplineTranslatesBasis{K1,T1}, b2::SymBSplineTranslatesBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1)==length(b2)
@@ -148,3 +148,41 @@ extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTransl
 
 restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
     bspline_restriction_operator(s1, s2; options...)
+
+
+"""
+  Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
+
+  There degree should be odd to use extension or restriction.
+"""
+immutable OrthonormalSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
+  superset     ::    BSplineTranslatesBasis{K,T}
+  coefficients ::    Array{T,1}
+  function OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T})
+    A = sqrt(DualGram(b))
+    e = zeros(size(A,1))
+    e[1] = 1
+    new(b, A*e)
+  end
+end
+
+for op in (:degree, :length, :left, :right, :has_grid, :period, :stepsize, :native_nodes)
+  @eval $op(b::OrthonormalSplineBasis) = $op(b.superset)
+end
+
+=={K1,K2,T1,T2}(b1::OrthonormalSplineBasis{K1,T1}, b2::OrthonormalSplineBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1.superset)==length(b2.superset)
+
+OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
+    OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T))
+
+name(b::OrthonormalSplineBasis) = name(b.superset)*" (orthonormalized)"
+
+instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalSplineBasis(n,3,T)
+
+set_promote_eltype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
+
+function fun(b::OrthonormalSplineBasis)
+  x->eval_expansion(b.superset, real(b.coefficients), BasisFunctions.Cardinal_b_splines.periodize(x, period(b.superset)))
+end
+
+Gram(b::OrthonormalSplineBasis) = IdentityOperator(b, b)
