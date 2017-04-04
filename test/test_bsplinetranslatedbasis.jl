@@ -230,6 +230,23 @@ function test_orthonormalsplinebasis(T)
   d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
   @test d ≈ zeros(T,d)
   @test typeof(Gram(b)) <: IdentityOperator
+
+  n = 8
+  for degree in 0:3
+    b = OrthonormalSplineBasis(n, degree, T)
+    basis_ext = extend(b)
+    r = restriction_operator(basis_ext, b)
+    e = extension_operator(b, basis_ext)
+    @test eye(n) ≈ matrix(r*e)
+
+    grid_ext = grid(basis_ext)
+    L = evaluation_operator(b, grid_ext)
+    e = random_expansion(b)
+    z = L*e
+    L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
+    z2 = L2*e
+    @test 1+maximum(abs.(z-z2)) ≈ T(1)
+  end
 end
 
 # exit()

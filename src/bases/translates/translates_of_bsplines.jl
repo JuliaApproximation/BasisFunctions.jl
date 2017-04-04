@@ -159,14 +159,13 @@ immutable OrthonormalSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
   function OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T})
-    A = sqrt(DualGram(b))
-    e = zeros(size(A,1))
+    e = zeros(b)
     e[1] = 1
-    new(b, A*e)
+    new(b, orthonormalize_matrix(b)*e)
   end
 end
 
-for op in (:degree, :length, :left, :right, :has_grid, :period, :stepsize, :native_nodes)
+for op in (:degree, :length, :left, :right, :has_grid, :period, :stepsize, :native_nodes, :coefficients)
   @eval $op(b::OrthonormalSplineBasis) = $op(b.superset)
 end
 
@@ -181,8 +180,19 @@ instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalS
 
 set_promote_eltype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
 
+resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
+
 function fun(b::OrthonormalSplineBasis)
   x->eval_expansion(b.superset, real(b.coefficients), BasisFunctions.Cardinal_b_splines.periodize(x, period(b.superset)))
 end
 
 Gram(b::OrthonormalSplineBasis) = IdentityOperator(b, b)
+
+orthonormalize_matrix(b::OrthonormalSplineBasis; options...) = wrap_operator(b.superset, b, sqrt(Gram(b.superset; options...)))
+orthonormalize_matrix(b::BSplineTranslatesBasis; options...) = sqrt(DualGram(b; options...))
+
+extension_operator{K,T}(s1::OrthonormalSplineBasis{K,T}, s2::OrthonormalSplineBasis{K,T}; options...) =
+    wrap_operator(s1, s2, orthonormalize_matrix(s2; options...)*extension_operator(s1.superset, s2.superset)*inv(orthonormalize_matrix(s1; options...)))
+
+restriction_operator{K,T}(s1::OrthonormalSplineBasis{K,T}, s2::OrthonormalSplineBasis{K,T}; options...) =
+    wrap_operator(s1, s2, orthonormalize_matrix(s2; options...)*restriction_operator(s1.superset, s2.superset)*inv(orthonormalize_matrix(s1; options...)))
