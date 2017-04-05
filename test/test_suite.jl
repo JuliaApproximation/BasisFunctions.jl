@@ -209,7 +209,7 @@ for T in (Float64, BigFloat,)
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
             LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,)
+            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,InterpolatingSplineBasis,)
     #  SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #          LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -286,7 +286,8 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("Translates of B spline expansions",80))"begin
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
-        test_orthonormalsplinebasis(T) end
+        test_orthonormalsplinebasis(T)
+        test_interpolatingsplinebasis(T) end
 
 
 

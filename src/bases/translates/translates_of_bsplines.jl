@@ -151,9 +151,7 @@ restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTran
 
 
 """
-  Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
-
-  There degree should be odd to use extension or restriction.
+  Basis consisting of orthonormal basis function in the spline space of degree K.
 """
 immutable OrthonormalSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
   superset     ::    BSplineTranslatesBasis{K,T}
@@ -165,7 +163,7 @@ immutable OrthonormalSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
   end
 end
 
-for op in (:degree, :length, :left, :right, :has_grid, :period, :stepsize, :native_nodes, :coefficients)
+for op in (:degree, :length, :left, :right, :has_grid, :grid, :period, :stepsize, :native_nodes, :coefficients)
   @eval $op(b::OrthonormalSplineBasis) = $op(b.superset)
 end
 
@@ -196,3 +194,48 @@ extension_operator{K,T}(s1::OrthonormalSplineBasis{K,T}, s2::OrthonormalSplineBa
 
 restriction_operator{K,T}(s1::OrthonormalSplineBasis{K,T}, s2::OrthonormalSplineBasis{K,T}; options...) =
     wrap_operator(s1, s2, orthonormalize_matrix(s2; options...)*restriction_operator(s1.superset, s2.superset)*inv(orthonormalize_matrix(s1; options...)))
+
+"""
+  Basis consisting interpolating basis functions in the spline space of degree K.
+
+  Interpolating is meant with respect the default grid of the basis.
+"""
+immutable InterpolatingSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
+  superset     ::    BSplineTranslatesBasis{K,T}
+  coefficients ::    Array{T,1}
+  function InterpolatingSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T})
+    e = zeros(b)
+    e[1] = 1
+    new(b, interpolating_matrix(b)*e)
+  end
+end
+
+for op in (:degree, :length, :left, :right, :has_grid, :grid, :period, :stepsize, :native_nodes, :coefficients)
+  @eval $op(b::InterpolatingSplineBasis) = $op(b.superset)
+end
+
+=={K1,K2,T1,T2}(b1::InterpolatingSplineBasis{K1,T1}, b2::InterpolatingSplineBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1.superset)==length(b2.superset)
+
+InterpolatingSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
+    InterpolatingSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T))
+
+name(b::InterpolatingSplineBasis) = name(b.superset)*" (interpolating)"
+
+instantiate{T}(::Type{InterpolatingSplineBasis}, n::Int, ::Type{T}) = InterpolatingSplineBasis(n,3,T)
+
+set_promote_eltype{K,T,S}(b::InterpolatingSplineBasis{K,T}, ::Type{S}) = InterpolatingSplineBasis(length(b),K, S)
+
+resize{K,T}(b::InterpolatingSplineBasis{K,T}, n::Int) = InterpolatingSplineBasis(n, degree(b), T)
+
+function fun(b::InterpolatingSplineBasis)
+  x->eval_expansion(b.superset, real(b.coefficients), BasisFunctions.Cardinal_b_splines.periodize(x, period(b.superset)))
+end
+
+interpolating_matrix(b::InterpolatingSplineBasis) = wrap_operator(b.superset, b, evaluation_operator(b.superset))
+interpolating_matrix(b::BSplineTranslatesBasis) = inv(evaluation_operator(b))
+
+extension_operator{K,T}(s1::InterpolatingSplineBasis{K,T}, s2::InterpolatingSplineBasis{K,T}; options...) =
+    wrap_operator(s1, s2, interpolating_matrix(s2)*extension_operator(s1.superset, s2.superset)*inv(interpolating_matrix(s1)))
+
+restriction_operator{K,T}(s1::InterpolatingSplineBasis{K,T}, s2::InterpolatingSplineBasis{K,T}; options...) =
+    wrap_operator(s1, s2, interpolating_matrix(s2)*restriction_operator(s1.superset, s2.superset)*inv(interpolating_matrix(s1)))

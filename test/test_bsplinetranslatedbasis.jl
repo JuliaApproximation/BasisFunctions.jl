@@ -228,7 +228,7 @@ function test_orthonormalsplinebasis(T)
   @test b.coefficients ≈ G*e
 
   d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
-  @test d ≈ zeros(T,d)
+  @test d ≈ e
   @test typeof(Gram(b)) <: IdentityOperator
 
   n = 8
@@ -249,9 +249,40 @@ function test_orthonormalsplinebasis(T)
   end
 end
 
+function test_interpolatingsplinebasis(T)
+  b = InterpolatingSplineBasis(5,2,Float64)
+  b = InterpolatingSplineBasis(5,2,T)
+  @test name(b) == "Set of translates of a function (B spline of degree 2) (interpolating)"
+  @test instantiate(InterpolatingSplineBasis,5)==InterpolatingSplineBasis(5,3)
+
+  E = evaluation_operator(b)
+  e = zeros(eltype(E),size(E,1))
+  e[1] = 1
+  @test E*e ≈ e
+  @test typeof(E) <: CirculantOperator
+
+  n = 8
+  for degree in 0:3
+    b = InterpolatingSplineBasis(n, degree, T)
+    basis_ext = extend(b)
+    r = restriction_operator(basis_ext, b)
+    e = extension_operator(b, basis_ext)
+    @test eye(n) ≈ matrix(r*e)
+
+    grid_ext = grid(basis_ext)
+    L = evaluation_operator(b, grid_ext)
+    e = random_expansion(b)
+    z = L*e
+    L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
+    z2 = L2*e
+    @test 1+maximum(abs.(z-z2)) ≈ T(1)
+  end
+end
+
 # exit()
 # using Base.Test
 # using BasisFunctions
+# @testset begin test_interpolatingsplinebasis(Float64) end
 # @testset begin test_orthonormalsplinebasis(BigFloat) end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end
