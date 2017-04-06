@@ -52,7 +52,8 @@ immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   fun             :: Function
 end
 
-BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
+BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
+    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
     BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
