@@ -287,7 +287,9 @@ for T in (Float64, BigFloat,)
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
         test_orthonormalsplinebasis(T)
-        test_interpolatingsplinebasis(T) end
+        test_interpolatingsplinebasis(T)
+        test_dualsplinebasis(T)
+      end
 
 
 

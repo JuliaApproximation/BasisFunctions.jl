@@ -225,7 +225,7 @@ function test_orthonormalsplinebasis(T)
   G = sqrt(DualGram(b.superset))
   e = zeros(eltype(G),size(G,1))
   e[1] = 1
-  @test b.coefficients ≈ G*e
+  @test BasisFunctions.coeffs(b) ≈ G*e
 
   d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
   @test d ≈ e
@@ -279,11 +279,26 @@ function test_interpolatingsplinebasis(T)
   end
 end
 
+function test_dualsplinebasis(T)
+  n = 10; degree = 2;
+  tol = max(sqrt(eps(real(T))), 1e-16)
+  b = BSplineTranslatesBasis(n,degree)
+  bb = BasisFunctions.dual(b; reltol=tol, abstol=tol)
+  @test dual(bb) == b
+  e = coefficients(random_expansion(b))
+  @test Gram(b; abstol=tol, reltol=tol)*e ≈ DualGram(bb; abstol=tol, reltol=tol)*e
+  @test Gram(bb; abstol=tol, reltol=tol)*e ≈ DualGram(b; abstol=tol, reltol=tol)*e
+  @test BasisFunctions.dualgramcolumn(b; reltol=tol, abstol=tol) ≈ BasisFunctions.coeffs(bb)
+  @test quadgk(x->b[1](x)*bb[1](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+  @test quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+end
+
 # exit()
 # using Base.Test
 # using BasisFunctions
+# @testset begin test_dualsplinebasis(Float64) end
 # @testset begin test_interpolatingsplinebasis(Float64) end
-# @testset begin test_orthonormalsplinebasis(BigFloat) end
+# @testset begin test_orthonormalsplinebasis(Float64) end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end
 # @testset begin test_generic_periodicbsplinebasis(Float64) end
