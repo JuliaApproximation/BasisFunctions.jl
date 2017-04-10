@@ -209,7 +209,7 @@ for T in (Float64, BigFloat,)
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
             LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,InterpolatingSplineBasis,)
+            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,DiscreteOrthonormalSplineBasis,)
     #  SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #          LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
