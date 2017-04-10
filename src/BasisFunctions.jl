@@ -91,7 +91,6 @@ export has_transform, has_unitary_transform, has_extension, has_derivative, has_
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment
-export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
 
 # from bases/sets/subsets.jl
 export FunctionSubSet, indices
@@ -134,6 +133,9 @@ export transform_operator, transform_set, full_transform_operator,
     transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
     transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
     transform_operators
+# from generic/gram.jl
+export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
+export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -249,6 +251,7 @@ include("grid/tensorproductgrid.jl")
 include("grid/derived_grid.jl")
 
 include("bases/sets/functionset.jl")
+include("generic/gram.jl")
 
 include("operator/operator.jl")
 include("operator/composite_operator.jl")

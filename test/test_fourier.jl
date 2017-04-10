@@ -178,4 +178,16 @@ function test_fourier_series(T)
     @test abs((e*e2)(T(x0))-f(x0)*f2(x0)) < sqrt(eps(T))
     @test abs((e+2*e2)(T(x0))-(f(x0)+2*f2(x0))) < sqrt(eps(T))
     @test abs((3*e-e2)(T(x0))-(3*f(x0)-f2(x0))) < sqrt(eps(T))
+
+    # Discrete Gram
+    b = FourierBasis(11)
+
+    G = DiscreteGram(b)
+    DG = DiscreteDualGram(b)
+    MG = DiscreteMixedGram(b)
+
+    e = coefficients(random_expansion(b))
+    @test G*e ≈ e
+    @test DG*e ≈ e
+    @test MG*e ≈ e
 end
