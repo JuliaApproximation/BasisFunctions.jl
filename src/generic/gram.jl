@@ -114,7 +114,7 @@ dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options.
 ## Discrete Gram operators
 ##########################
 # E'E/N
-DiscreteGram{N,T}(b::FunctionSet{N,T}, g=grid(b)) = (1/T(length(b)))*evaluation_operator(b, g)'*evaluation_operator(b, g)
+DiscreteGram{N,T}(b::FunctionSet{N,T}, g=grid(b)) = (1/real(T)(length(b)))*evaluation_operator(b, g)'*evaluation_operator(b, g)
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}
 DiscreteDualGram{N,T}(b::FunctionSet{N,T}, g=grid(b)) = inv(DiscreteGram(b, g))
 # Ẽ'E/N

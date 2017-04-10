@@ -123,6 +123,28 @@ function test_translatedbsplines(T)
     end
   end
 
+  for K in 0:3
+    for s2 in 5:6
+      s1 = s2<<1
+      b1 = BSplineTranslatesBasis(s1,K; scaled=true)
+      b2 = BSplineTranslatesBasis(s2,K; scaled=true)
+
+      e1 = random_expansion(b1)
+      e2 = random_expansion(b2)
+
+      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
+      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+
+      mr = matrix(restriction_operator(b1, b2))
+      me = matrix(extension_operator(b2, b1))
+      pinvme = pinv(me)
+      r = rand(size(pinvme,2))
+      @test pinvme*r ≈ mr*r
+    end
+  end
+
   @test_throws AssertionError restriction_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(3,0))
   @test_throws AssertionError extension_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(6,0))
 end
@@ -249,21 +271,21 @@ function test_orthonormalsplinebasis(T)
   end
 end
 
-function test_interpolatingsplinebasis(T)
-  b = InterpolatingSplineBasis(5,2,Float64)
-  b = InterpolatingSplineBasis(5,2,T)
-  @test name(b) == "Set of translates of a function (B spline of degree 2) (interpolating)"
-  @test instantiate(InterpolatingSplineBasis,5)==InterpolatingSplineBasis(5,3)
+function test_discrete_orthonormalsplinebasis(T)
+  b = DiscreteOrthonormalSplineBasis(5,2,Float64)
+  b = DiscreteOrthonormalSplineBasis(5,2,T)
+  @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized, discrete)"
+  @test instantiate(DiscreteOrthonormalSplineBasis,5)==DiscreteOrthonormalSplineBasis(5,3)
 
   E = evaluation_operator(b)
   e = zeros(eltype(E),size(E,1))
   e[1] = 1
-  @test E*e ≈ e
+  @test (E'*E*e) ≈ 5*e
   @test typeof(E) <: CirculantOperator
 
   n = 8
   for degree in 0:3
-    b = InterpolatingSplineBasis(n, degree, T)
+    b = DiscreteOrthonormalSplineBasis(n, degree, T)
     basis_ext = extend(b)
     r = restriction_operator(basis_ext, b)
     e = extension_operator(b, basis_ext)
@@ -297,7 +319,7 @@ end
 # using Base.Test
 # using BasisFunctions
 # @testset begin test_dualsplinebasis(Float64) end
-# @testset begin test_interpolatingsplinebasis(Float64) end
+# @testset begin test_discrete_orthonormalsplinebasis(BigFloat) end
 # @testset begin test_orthonormalsplinebasis(Float64) end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end

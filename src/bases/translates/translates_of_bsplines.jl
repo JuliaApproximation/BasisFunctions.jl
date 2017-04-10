@@ -45,7 +45,7 @@ end
 """
   Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
-immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
+immutable BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
@@ -53,8 +53,8 @@ immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
 end
 
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
-    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
-    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
+    BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
+    BSplineTranslatesBasis{DEGREE,T,false}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
 
@@ -82,12 +82,16 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function _binomial_circulant{K,T}(s::BSplineTranslatesBasis{K,T})
+function _binomial_circulant{K,T,SCALED}(s::BSplineTranslatesBasis{K,T,SCALED})
   c = zeros(T, length(s))
   for k in 1:K+2
     c[k] = binomial(K+1, k-1)
   end
-  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+  if SCALED
+    sqrt(T(2))/(1<<(degree(s)))*CirculantOperator(s, c)
+  else
+    T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+  end
 end
 
 # TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
@@ -182,30 +186,31 @@ change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B};
 
 
 """
-  Basis consisting interpolating basis functions in the spline space of degree K.
-
-  Interpolating is meant with respect the default grid of the basis.
+  Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
 """
-immutable InterpolatingSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+immutable DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
-  InterpolatingSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) =
-      new(b, coeffs_in_other_basis(b, InterpolatingSplineBasis; options...))
+  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) =
+    new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; options...))
 end
-degree{K,T}(::InterpolatingSplineBasis{K,T}) = K
 
-superset(b::InterpolatingSplineBasis) = b.superset
-coeffs(b::InterpolatingSplineBasis) = b.coefficients
+degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
-InterpolatingSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    InterpolatingSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T))
+superset(b::DiscreteOrthonormalSplineBasis) = b.superset
+coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
 
-name(b::InterpolatingSplineBasis) = name(b.superset)*" (interpolating)"
+DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
+    DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
 
-instantiate{T}(::Type{InterpolatingSplineBasis}, n::Int, ::Type{T}) = InterpolatingSplineBasis(n,3,T)
+name(b::DiscreteOrthonormalSplineBasis) = name(b.superset)*" (orthonormalized, discrete)"
 
-set_promote_eltype{K,T,S}(b::InterpolatingSplineBasis{K,T}, ::Type{S}) = InterpolatingSplineBasis(length(b),K, S)
+instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
 
-resize{K,T}(b::InterpolatingSplineBasis{K,T}, n::Int) = InterpolatingSplineBasis(n, degree(b), T)
+set_promote_eltype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
 
-change_of_basis{B<:InterpolatingSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = inv(evaluation_operator(b))
+resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T)
+
+DiscreteGram(b::DiscreteOrthonormalSplineBasis) = IdentityOperator(b, b)
+
+change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(b; options...))
