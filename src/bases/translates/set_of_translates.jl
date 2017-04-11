@@ -94,6 +94,9 @@ eval_dualelement{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x::Real) = eval_exp
 
 Gram(b::PeriodicSetOfTranslates; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...))
 
+DiscreteGram{T}(b::PeriodicSetOfTranslates{T}; oversampling = 1) =
+    CirculantOperator((1/real(T)(length(b)))*evaluation_operator(b, grid(resize(b, oversampling*length(b))))'*evaluation_operator(b, grid(resize(b, oversampling*length(b)))))
+
 grammatrix(b::PeriodicSetOfTranslates; options...) = matrix(Gram(b; options...))
 
 dualgrammatrix(b::PeriodicSetOfTranslates; options...) = matrix(inv(Gram(b; options...)))

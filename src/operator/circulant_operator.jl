@@ -46,6 +46,15 @@ CirculantOperator{ELT}(src::FunctionSet, firstcolumn::AbstractVector{ELT}; optio
 CirculantOperator{T <: Real}(firstcolumn::AbstractVector{T}; options...) = CirculantOperator(Rn{T}(length(firstcolumn)), firstcolumn; options...)
 CirculantOperator{T <: Complex}(firstcolumn::AbstractVector{T}; options...) = CirculantOperator(Cn{T}(length(firstcolumn)), firstcolumn; options...)
 
+function CirculantOperator{T}(op::AbstractOperator{T})
+  e = zeros(T, size(op,1))
+  e[1] = 1
+  C = CirculantOperator(src(op), dest(op), op*e)
+  e = map(T,rand(size(op,1)))
+  @assert C*e≈op*e
+  C
+end
+
 eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
 
 op_promote_eltype{ELT,S}(op::CirculantOperator{ELT}, ::Type{S}) =

@@ -36,6 +36,7 @@ include("test_chebyshev.jl")
 include("test_bsplinetranslatedbasis.jl")
 include("test_maps.jl")
 include("test_DCTI.jl")
+include("test_gram.jl")
 
 
 
@@ -265,6 +266,10 @@ for T in (Float64, BigFloat,)
       symmetricbsplinestest(T)
     end
 
+    delimit("Gram")
+    @testset "$(rpad("Gram functionality",80))" begin
+      discrete_gram_test(T)
+    end
     delimit("Test Maps")
     @testset "$(rpad("Maps",80))" begin
         test_maps(T) end

@@ -149,6 +149,12 @@ function gramdiagonal!{T}(result, ::ChebyshevBasis{T}; options...)
   end
 end
 
+function DiscreteGram{T}(b::ChebyshevBasis{T}; oversampling=1)
+  d = T(1/2)*ones(T,length(b))
+  d[1] = 1
+  DiagonalOperator(b, b, oversampling*d)
+end
+
 ################################################################
 # Methods to transform from ChebyshevBasis to ChebyshevNodeGrid
 ###############################################################

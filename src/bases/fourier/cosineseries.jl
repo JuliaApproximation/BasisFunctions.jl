@@ -84,3 +84,9 @@ function Gram{T}(b::CosineSeries{T}; options...)
   diag[1] = 1
   DiagonalOperator(b, b, diag)
 end
+
+function DiscreteGram{T}(b::CosineSeries{T}; oversampling=1)
+  diag = oversampling*ones(T,length(b))/2
+  diag[1] = oversampling
+  DiagonalOperator(b, b, diag)
+end

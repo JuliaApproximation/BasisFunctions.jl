@@ -21,7 +21,7 @@ DiscreteGridSpace(set::FunctionSet) = DiscreteGridSpace(grid(set), eltype(set))
 
 set_promote_eltype{G,N,T,S}(s::DiscreteGridSpace{G,N,T}, ::Type{S}) = DiscreteGridSpace(s.grid, S)
 
-resize{G,N,T}(s::DiscreteGridSpace{G,N,T}, n) = DiscreteGridSpace(resize(grid(s), n), T)
+# resize{G,N,T}(s::DiscreteGridSpace{G,N,T}, n) = DiscreteGridSpace(resize(grid(s), n), T)
 
 similar(dgs::DiscreteGridSpace, grid::AbstractGrid) = DiscreteGridSpace(grid, eltype(dgs))
 

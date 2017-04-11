@@ -92,8 +92,9 @@ dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options.
 ## Discrete Gram operators
 ##########################
 # E'E/N
-DiscreteGram{N,T}(b::FunctionSet{N,T}, g=grid(b)) = (1/real(T)(length(b)))*evaluation_operator(b, g)'*evaluation_operator(b, g)
+DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) =
+    (1/real(T)(length(b)))*evaluation_operator(b, grid(resize(b, oversampling*length(b))))'*evaluation_operator(b, grid(resize(b, oversampling*length(b))))
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}
-DiscreteDualGram{N,T}(b::FunctionSet{N,T}, g=grid(b)) = inv(DiscreteGram(b, g))
+DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = inv(DiscreteGram(b; oversampling=oversampling))
 # Ẽ'E/N
-DiscreteMixedGram(b::FunctionSet, g=grid(b)) = IdentityOperator(b,b)
+DiscreteMixedGram(b::FunctionSet; oversampling=1) = IdentityOperator(b,b)
