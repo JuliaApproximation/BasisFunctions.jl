@@ -159,6 +159,9 @@ end
 grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
     wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
 
+grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
+
 dot(set::DerivedSet, f1::Function, f2::Function, nodes::Array=native_nodes(superset(set)); options...) =
     dot(superset(set), f1, f2, nodes; options...)
 
