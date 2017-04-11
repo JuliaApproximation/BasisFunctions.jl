@@ -29,20 +29,12 @@ DualGram(b::FunctionSet; options...) = DualGram(b, is_biorthogonal(b)? Val{true}
 
 DualGram(b::FunctionSet, ::Type{Val{true}}; options...) = inv(Gram(b; options...))
 
-
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
 MixedGram(b::FunctionSet; options...) = MixedGram(b, is_biorthogonal(b)? Val{true}: Val{false}; options...)
 
 MixedGram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
-
-"""
-The gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
-"""
-grammatrix(b) = grammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
-
-grammatrix(b::FunctionSet, ::Type{Val{true}}) = eye(length(b))
 
 function grammatrix!(result, b::FunctionSet; options...)
   for i in 1:size(result,1)
@@ -63,20 +55,6 @@ function gramdiagonal!(result, b::FunctionSet; options...)
   end
   result
 end
-
-"""
-The dual gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
-"""
-dualgrammatrix(b) = dualgrammatrix(b, is_orthonormal(b)? Val{true}: Val{false})
-
-dualgrammatrix(b, ::Type{Val{true}}) = grammatrix(b)
-
-"""
-The mixed gram matrix A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
-"""
-mixedgrammatrix(b) = mixedgrammatrix(b, is_biorthogonal(b) ? Val{true}: Val{false})
-mixedgrammatrix(b, ::Type{Val{true}}) = eye(length(b))
-
 
 ################################################################################################
 ## Take inner products between function and basisfunctions. Used in continous approximation case.

@@ -190,4 +190,13 @@ function test_fourier_series(T)
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e
+
+    G = Gram(b)
+    DG = DualGram(b)
+    MG = MixedGram(b)
+
+    e = coefficients(random_expansion(b))
+    @test G*e ≈ e
+    @test DG*e ≈ e
+    @test MG*e ≈ e
 end
