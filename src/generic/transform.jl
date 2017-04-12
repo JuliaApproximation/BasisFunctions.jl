@@ -78,3 +78,4 @@ function full_transform_operator(sets::FunctionSet...; options...)
     Pre,T,Post = transform_operators(sets...; options...)
     Post * T * Pre
 end
+

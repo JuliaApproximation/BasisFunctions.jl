@@ -218,7 +218,7 @@ export plotgrid, postprocess
 export MultiArray
 
 # from bases/poly/polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis, RationalBasis
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -315,6 +315,8 @@ include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
+include("bases/poly/rational.jl")
+
 
 include("util/recipes.jl")
 
