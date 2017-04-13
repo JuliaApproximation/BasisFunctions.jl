@@ -227,7 +227,7 @@ export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bases/translates/set_of_translates.jl
-export CompactPeriodicSetOfTranslates, dual
+export CompactPeriodicSetOfTranslates, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
 

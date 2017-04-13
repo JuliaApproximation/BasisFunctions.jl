@@ -120,9 +120,12 @@ function dualgramcolumn(set::PeriodicSetOfTranslates; options...)
   real(G*e)
 end
 
-function dual(set::PeriodicSetOfTranslates; options...)
+dual(set::PeriodicSetOfTranslates; options...) =
   DualPeriodicSetOfTranslates(set; options...)
-end
+
+discrete_dual(set::PeriodicSetOfTranslates; options...) =
+  DiscreteDualPeriodicSetOfTranslates(set; options...)
+
 """
   Set consisting of n translates of a compact and periodic function.
 
@@ -230,3 +233,28 @@ coeffs(b::DualPeriodicSetOfTranslates) = b.coeffs
 dual(b::DualPeriodicSetOfTranslates; options...) = superset(b)
 
 Gram(b::DualPeriodicSetOfTranslates; options...) = inv(Gram(superset(b); options...))
+
+"""
+  Set representing the dual basis with respect to a discrete norm on the oversampled grid.
+"""
+immutable DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
+  superset  :: PeriodicSetOfTranslates{T}
+  coeffs    :: Array{T,1}
+
+  oversampling  :: T
+end
+
+function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; oversampling=1, options...)
+  DiscreteDualPeriodicSetOfTranslates{eltype(set)}(set, coeffs_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
+end
+
+superset(b::DiscreteDualPeriodicSetOfTranslates) = b.superset
+coeffs(b::DiscreteDualPeriodicSetOfTranslates) = b.coeffs
+
+dual(b::DiscreteDualPeriodicSetOfTranslates; options...) = superset(b)
+
+change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(b; options...)
+
+resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=b.oversampling)
+
+set_promote_eltype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_eltype(dual(b), S); oversampling=b.oversampling)

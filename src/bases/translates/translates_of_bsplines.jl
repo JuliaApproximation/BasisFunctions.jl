@@ -191,14 +191,19 @@ change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B};
 immutable DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
-  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) =
-    new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; options...))
+
+  oversampling ::   T
+  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=1, options...) =
+    new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
 end
 
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
 superset(b::DiscreteOrthonormalSplineBasis) = b.superset
 coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+
+==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
+    superset(b1)==superset(b2) && coeffs(b1) ≈ coeffs(b2) && b1.oversampling == b2.oversampling
 
 DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
@@ -209,8 +214,8 @@ instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = Disc
 
 set_promote_eltype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
 
-resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T)
+resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=b.oversampling)
 
-DiscreteGram(b::DiscreteOrthonormalSplineBasis) = IdentityOperator(b, b)
+# DiscreteGram(b::DiscreteOrthonormalSplineBasis; oversampling=b.oversampling) = IdentityOperator(b, b)
 
 change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(b; options...))

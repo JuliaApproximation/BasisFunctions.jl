@@ -294,6 +294,7 @@ for T in (Float64, BigFloat,)
         test_orthonormalsplinebasis(T)
         test_discrete_orthonormalsplinebasis(T)
         test_dualsplinebasis(T)
+        test_discrete_dualsplinebasis(T)
       end
 
 

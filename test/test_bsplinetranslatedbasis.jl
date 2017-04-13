@@ -299,6 +299,13 @@ function test_discrete_orthonormalsplinebasis(T)
     z2 = L2*e
     @test 1+maximum(abs.(z-z2)) ≈ T(1)
   end
+  for dgr in 0:4, oversampling in 1:4, n in 10:11
+    b = DiscreteOrthonormalSplineBasis(n,dgr,T; oversampling=oversampling)
+
+    e = zeros(T,n); e[1] = 1
+    @test sqrt(DiscreteDualGram(BSplineTranslatesBasis(n,dgr,T); oversampling=oversampling))*e≈BasisFunctions.coeffs(b)
+    @test DiscreteGram(b; oversampling=oversampling)*e≈e
+  end
 end
 
 function test_dualsplinebasis(T)
@@ -315,11 +322,34 @@ function test_dualsplinebasis(T)
   @test quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
 end
 
+function test_discrete_dualsplinebasis(T)
+  for degree in 0:4, n in 10:11, oversampling=1:3
+    b = BSplineTranslatesBasis(n,degree, T)
+    d = discrete_dual(b; oversampling=oversampling)
+
+    e = zeros(T,n); e[1] = 1
+    @test DiscreteDualGram(b; oversampling=oversampling)*e≈BasisFunctions.coeffs(d)
+    E1 = matrix(discrete_dual_evaluation_operator(b; oversampling=oversampling))
+    oss = []
+    # For even degrees points on a coarse grid do not overlap with those on e fine grid.
+    if isodd(degree)
+      oss = [1, oversampling]
+    else
+      oss = [oversampling,]
+    end
+    for os in oss
+      E2 = matrix(evaluation_operator(d; oversampling = os))
+      E2test = E1[1:Int(oversampling/os):end,:]
+      @test E2test*e ≈ E2*e
+    end
+  end
+end
+
 # exit()
 # using Base.Test
 # using BasisFunctions
 # @testset begin test_dualsplinebasis(Float64) end
-# @testset begin test_discrete_orthonormalsplinebasis(BigFloat) end
+# @testset begin test_discrete_orthonormalsplinebasis(Float64) end
 # @testset begin test_orthonormalsplinebasis(Float64) end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end

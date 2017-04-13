@@ -102,9 +102,5 @@ DiscreteGram{N,T}(b::FunctionSet{N,T}, grid::AbstractGrid) = (1/real(T)(length(g
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
 DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = inv(DiscreteGram(b; oversampling=oversampling))
 
-DiscreteDualGram(b::FunctionSet, grid::AbstractGrid) = inv(DiscreteGram(b, grid))
-
 # Ẽ'E/N
 DiscreteMixedGram(b::FunctionSet; oversampling=1) = IdentityOperator(b,b)
-
-DiscreteMixedGram(b::FunctionSet, grid::AbstractGrid) = IdentityOperator(b,b)
