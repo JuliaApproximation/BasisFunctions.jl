@@ -68,7 +68,7 @@ for op in (:size, :element)
     @eval $op(s::DerivedSet, i) = $op(superset(s), i)
 end
 
-approx_length(s::DerivedSet, n) = approx_length(superset(s), n)
+approx_length(s::DerivedSet, n::Int) = approx_length(superset(s), n)
 
 apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
 

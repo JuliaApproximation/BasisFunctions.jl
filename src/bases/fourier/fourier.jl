@@ -326,4 +326,4 @@ Gram(b::FourierBasisOdd; options...) = IdentityOperator(b, b)
 
 Gram{T}(b::FourierBasisEven{T}; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)
 
-DiscreteGram(b::FourierBasis; oversampling=1) = ScalingOperator(b,b,oversampling)
+DiscreteGram(b::FourierBasis; oversampling=1) = IdentityOperator(b,b)

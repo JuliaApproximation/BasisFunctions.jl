@@ -144,7 +144,7 @@ export extension_operator, default_extension_operator, extension_size, extend,
 
 # from generic/evaluation.jl
 export evaluation_operator, grid_evaluation_operator, default_evaluation_operator,
-    evaluation_matrix
+    evaluation_matrix, discrete_dual_evaluation_operator
 
 # from generic/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix

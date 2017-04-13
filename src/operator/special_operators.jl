@@ -342,6 +342,7 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
     coef_dest
 end
 
+ctranspose(op::SolverOperator) = warn("not implemented")
 
 """
 A FunctionOperator applies a given function to the set of coefficients and

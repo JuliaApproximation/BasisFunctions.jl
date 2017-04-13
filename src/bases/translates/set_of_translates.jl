@@ -51,6 +51,8 @@ has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid
 compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =
     periodic_compatible_grid(b, grid)
 
+approx_length(b::PeriodicSetOfTranslates, n::Int) = ceil(Int,n/length(b))*length(b)
+
 function periodic_compatible_grid(b::FunctionSet, grid::AbstractEquispacedGrid)
   l1 = length(b)
   l2 = length(grid)
@@ -94,8 +96,8 @@ eval_dualelement{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x::Real) = eval_exp
 
 Gram(b::PeriodicSetOfTranslates; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...))
 
-DiscreteGram{T}(b::PeriodicSetOfTranslates{T}; oversampling = 1) =
-    CirculantOperator((1/real(T)(length(b)))*evaluation_operator(b, grid(resize(b, oversampling*length(b))))'*evaluation_operator(b, grid(resize(b, oversampling*length(b)))))
+DiscreteGram{T}(b::PeriodicSetOfTranslates{T}, grid::AbstractGrid) =
+    CirculantOperator((1/real(T)(length(grid)))*evaluation_operator(b, grid)'*evaluation_operator(b, grid))
 
 grammatrix(b::PeriodicSetOfTranslates; options...) = matrix(Gram(b; options...))
 

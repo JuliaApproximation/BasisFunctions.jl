@@ -23,8 +23,8 @@ function evaluation_matrix!(a::AbstractMatrix, set::FunctionSet, pts)
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
-evaluation_operator(set::FunctionSet; options...) =
-    evaluation_operator(set, grid(set); options...)
+evaluation_operator(set::FunctionSet; oversampling=1, options...) =
+    evaluation_operator(set, oversampled_grid(set, oversampling); options...)
 
 # Convert a grid to a DiscreteGridSpace
 evaluation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
@@ -83,3 +83,7 @@ function grid_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace, subg
         default_evaluation_operator(set, dgs; options...)
     end
 end
+
+# By default we evaluate on the associated grid (if any, otherwise this gives an error)
+discrete_dual_evaluation_operator(set::FunctionSet; oversampling=1, options...) =
+    grid_evaluation_operator(set, gridspace(set, oversampled_grid(set, oversampling)), oversampled_grid(set, oversampling); options...)*DiscreteDualGram(set; oversampling=oversampling)

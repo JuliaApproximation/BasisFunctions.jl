@@ -91,10 +91,20 @@ dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options.
 ##########################
 ## Discrete Gram operators
 ##########################
+oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, approx_length(b, basis_oversampling(b, oversampling)*length(b))))
+
+basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 # E'E/N
-DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) =
-    (1/real(T)(length(b)))*evaluation_operator(b, grid(resize(b, oversampling*length(b))))'*evaluation_operator(b, grid(resize(b, oversampling*length(b))))
-# Ẽ'Ẽ/N and since Ẽ = NE^{-1}
+DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = DiscreteGram(b, oversampled_grid(b, oversampling))
+
+DiscreteGram{N,T}(b::FunctionSet{N,T}, grid::AbstractGrid) = (1/real(T)(length(grid)))*evaluation_operator(b, grid)'*evaluation_operator(b, grid)
+
+# Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
 DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = inv(DiscreteGram(b; oversampling=oversampling))
+
+DiscreteDualGram(b::FunctionSet, grid::AbstractGrid) = inv(DiscreteGram(b, grid))
+
 # Ẽ'E/N
 DiscreteMixedGram(b::FunctionSet; oversampling=1) = IdentityOperator(b,b)
+
+DiscreteMixedGram(b::FunctionSet, grid::AbstractGrid) = IdentityOperator(b,b)

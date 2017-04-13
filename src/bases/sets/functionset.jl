@@ -251,7 +251,8 @@ approximate_native_size(s::FunctionSet, size_l) = size_l
 linear_size(s::FunctionSet, size_n) = size_n
 
 "Suggest a suitable size, close to n, to resize the given function set."
-approx_length(s::FunctionSet, n) = n
+approx_length(s::FunctionSet, n::Int) = n
+approx_length(s::FunctionSet, n::Real) = approx_length(s, round(Int,n))
 
 # Default set of linear indices: from 1 to length(s)
 # Default algorithms assume this indexing for the basis functions, and the same
