@@ -52,7 +52,7 @@ import Base.LinAlg: dot
 # from maps/maps.jl
 export AbstractMap, AffineMap, DiagonalMap, IdentityMap, CompositeMap, CartToPolarMap, PolarToCartMap
 export forward_map, inverse_map, jacobian, linearize
-export translation, linear_map, interval_map, scaling_map
+export translation, rotation, linear_map, interval_map, scaling_map
 export is_linear
 
 # from maps/partition.jl
