@@ -91,16 +91,27 @@ dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options.
 ##########################
 ## Discrete Gram operators
 ##########################
-oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, approx_length(b, basis_oversampling(b, oversampling)*length(b))))
+oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
+
+length_oversampled_grid(b::FunctionSet, oversampling::Real)::Int = approx_length(b, basis_oversampling(b, oversampling)*length(b))
 
 basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
-# E'E/N
-DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = DiscreteGram(b, oversampled_grid(b, oversampling))
 
-DiscreteGram{N,T}(b::FunctionSet{N,T}, grid::AbstractGrid) = (1/real(T)(length(grid)))*evaluation_operator(b, grid)'*evaluation_operator(b, grid)
+default_oversampling(b::FunctionSet) = 1
+# E'E/N
+DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = default_oversampling(b)) =
+  1/real(T)(discrete_gram_scaling(b, oversampling))*UnNormalizedGram(b, oversampling)
+
+function UnNormalizedGram{N,T}(b::FunctionSet{N,T}, oversampling = 1)
+  grid = oversampled_grid(b, oversampling)
+  evaluation_operator(b, grid)'*evaluation_operator(b, grid)
+end
+
+# discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length_oversampled_grid(b, oversampling)
+discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length(b)
 
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
-DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = 1) = inv(DiscreteGram(b; oversampling=oversampling))
+DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = default_oversampling(b)) = inv(DiscreteGram(b; oversampling=oversampling))
 
 # Ẽ'E/N
-DiscreteMixedGram(b::FunctionSet; oversampling=1) = IdentityOperator(b,b)
+DiscreteMixedGram(b::FunctionSet; oversampling=default_oversampling(b)) = IdentityOperator(b,b)

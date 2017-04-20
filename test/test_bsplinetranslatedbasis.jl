@@ -348,6 +348,8 @@ end
 # exit()
 # using Base.Test
 # using BasisFunctions
+# @testset begin test_discrete_dualsplinebasis(Float64) end
+
 # @testset begin test_dualsplinebasis(Float64) end
 # @testset begin test_discrete_orthonormalsplinebasis(Float64) end
 # @testset begin test_orthonormalsplinebasis(Float64) end

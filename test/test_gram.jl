@@ -10,7 +10,7 @@ function discrete_gram_test(T)
     for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries,BSplineTranslatesBasis,)
       basis = instantiate(B, n, T)
       grid = BasisFunctions.oversampled_grid(basis,oversampling)
-      @test DiscreteGram(basis; oversampling=oversampling)*e ≈ evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis, grid)*e/length(grid)
+      @test DiscreteGram(basis; oversampling=oversampling)*e ≈ evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis, grid)*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
     end
   end
   for n in (10,11)
@@ -21,8 +21,8 @@ function discrete_gram_test(T)
       @test n*(inv(evaluation_operator(basis; oversampling=oversampling))')*e ≈ discrete_dual_evaluation_operator(basis, oversampling=oversampling)*e
       for oversampling in 1:4
         grid = BasisFunctions.oversampled_grid(basis, oversampling)
-        @test DiscreteDualGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'discrete_dual_evaluation_operator(basis; oversampling=oversampling))*e/length(grid)
-        @test DiscreteMixedGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis; oversampling=oversampling))*e/length(grid)
+        @test DiscreteDualGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'discrete_dual_evaluation_operator(basis; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis,oversampling))
+        @test DiscreteMixedGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
       end
     end
   end
@@ -33,4 +33,4 @@ end
 # using Base.Test
 # #
 # @testset begin discrete_gram_test(Float64) end
-# #
+#

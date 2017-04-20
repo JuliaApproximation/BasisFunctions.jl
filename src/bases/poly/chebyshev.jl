@@ -149,9 +149,9 @@ function gramdiagonal!{T}(result, ::ChebyshevBasis{T}; options...)
   end
 end
 
-function DiscreteGram{T}(b::ChebyshevBasis{T}; oversampling=1)
-  d = T(1/2)*ones(T,length(b))
-  d[1] = 1
+function UnNormalizedGram{T}(b::ChebyshevBasis{T}, oversampling)
+  d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
+  d[1] = length_oversampled_grid(b, oversampling)
   DiagonalOperator(b, b, d)
 end
 

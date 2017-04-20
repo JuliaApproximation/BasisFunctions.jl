@@ -96,8 +96,10 @@ eval_dualelement{T}(b::PeriodicSetOfTranslates{T}, idx::Int, x::Real) = eval_exp
 
 Gram(b::PeriodicSetOfTranslates; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...))
 
-DiscreteGram{T}(b::PeriodicSetOfTranslates{T}, grid::AbstractGrid) =
-    CirculantOperator((1/real(T)(length(grid)))*evaluation_operator(b, grid)'*evaluation_operator(b, grid))
+function UnNormalizedGram{T}(b::PeriodicSetOfTranslates{T}, oversampling = 1)
+  grid = oversampled_grid(b, oversampling)
+  CirculantOperator(evaluation_operator(b, grid)'*evaluation_operator(b, grid))
+end
 
 grammatrix(b::PeriodicSetOfTranslates; options...) = matrix(Gram(b; options...))
 
@@ -244,17 +246,19 @@ immutable DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicS
   oversampling  :: T
 end
 
-function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; oversampling=1, options...)
+function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; oversampling=default_oversampling(set), options...)
   DiscreteDualPeriodicSetOfTranslates{eltype(set)}(set, coeffs_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
 end
 
 superset(b::DiscreteDualPeriodicSetOfTranslates) = b.superset
 coeffs(b::DiscreteDualPeriodicSetOfTranslates) = b.coeffs
 
+default_oversampling(b::DiscreteDualPeriodicSetOfTranslates) = b.oversampling
+
 dual(b::DiscreteDualPeriodicSetOfTranslates; options...) = superset(b)
 
 change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(b; options...)
 
-resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=b.oversampling)
+resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 
-set_promote_eltype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_eltype(dual(b), S); oversampling=b.oversampling)
+set_promote_eltype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_eltype(dual(b), S); oversampling=default_oversampling(b))
