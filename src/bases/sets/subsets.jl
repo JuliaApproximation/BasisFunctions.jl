@@ -6,6 +6,9 @@ checkbounds(set::FunctionSet, idx::Range) =
 checkbounds(set::FunctionSet, idx::CartesianRange) =
     (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
 
+checkbounds(set::FunctionSet, idx::Array) =
+    (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
+
 
 """
 A FunctionSubSet is a subset of a function set. It is characterized by the
@@ -85,6 +88,9 @@ end
 grid(s::FunctionSubSet) = grid(set(s))
 
 apply_map(s::FunctionSubSet, map) = FunctionSubSet(apply_map(set(s), map), indices(s))
+
+in_support(s::FunctionSubSet, i, x) =
+    has_single_index(s) ? in_support(set(s), s.idx, x) : in_support(set(s), s.idx[i], x)
 
 eval_element(s::FunctionSubSet, i, x) =
     has_single_index(s) ? eval_element(s.set, s.idx, x) : eval_element(s.set, s.idx[i], x)
