@@ -51,7 +51,7 @@ isodd(b::FourierBasis) = ~iseven(b)
 
 is_basis(b::FourierBasis) = true
 is_orthogonal(b::FourierBasis) = true
-is_orthonormal(b::FourierBasis) = true
+is_orthonormal(b::FourierBasisOdd) = true
 is_biorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
@@ -322,6 +322,6 @@ end
 dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-Gram(b::FourierBasisOdd; options...) = IdentityOperator(b, b)
-
 Gram{T}(b::FourierBasisEven{T}; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)
+
+UnNormalizedGram(b::FourierBasis, oversampling) = ScalingOperator(b, b, length_oversampled_grid(b, oversampling))

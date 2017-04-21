@@ -5,11 +5,20 @@ export evaluate_Bspline, evaluate_periodic_Bspline, Degree
 
 # Implementation of cardinal B splines of degree N
 typealias Degree{N} Val{N}
+function evaluate_symmetric_periodic_Bspline{T<:Real}(N::Int, x::Real, period::Real, ::Type{T})
+  evaluate_periodic_Bspline(N, x+T(N+1)/2, period, T)
+end
 
-function evaluate_periodic_Bspline(N::Int, x, period, T::Type)
+function periodize(x::Real, period::Real)
   x -= period*fld(x, period)
   x >= period && (x -= period)
   @assert(0<= x < period)
+  x
+end
+
+function evaluate_periodic_Bspline{T<:Real}(N::Int, x::Real, period::Real, ::Type{T})
+  @assert period > 0
+  x = periodize(x, period)
   res = T(0)
   for k in 0:floor(Int, (N+1-x)/period)
     res += evaluate_Bspline(N, x+period*k, T)
@@ -17,16 +26,16 @@ function evaluate_periodic_Bspline(N::Int, x, period, T::Type)
   res
 end
 
-evaluate_Bspline(N::Int, x, T::Type) = evaluate_Bspline(Degree{N}, x, T)
+evaluate_Bspline{T<:Real}(N::Int, x::Real, ::Type{T}) = evaluate_Bspline(Degree{N}, x, T)
 
-function evaluate_Bspline{N}(::Type{Degree{N}}, x, T::Type)
+function evaluate_Bspline{N}(::Type{Degree{N}}, x::Real, T::Type)
   T(x)/T(N)*evaluate_Bspline(Degree{N-1}, x, T) +
       (T(N+1)-T(x))/T(N)*evaluate_Bspline(Degree{N-1}, x-1, T)
 end
 
-evaluate_Bspline(::Type{Degree{0}}, x, T::Type) = (0 <= x < 1) ? T(1) : T(0)
+evaluate_Bspline{T<:Real}(::Type{Degree{0}}, x::Real, ::Type{T}) = (0 <= x < 1) ? T(1) : T(0)
 
-function evaluate_Bspline(::Type{Degree{1}}, x, T::Type)
+function evaluate_Bspline{T<:Real}(::Type{Degree{1}}, x::Real, ::Type{T})
   if (0 <= x < 1)
     return T(x)
   elseif (1 <= x < 2)
@@ -36,7 +45,7 @@ function evaluate_Bspline(::Type{Degree{1}}, x, T::Type)
   end
 end
 
-@eval function evaluate_Bspline(::Type{Degree{2}}, x, T::Type)
+@eval function evaluate_Bspline{T<:Real}(::Type{Degree{2}}, x::Real, ::Type{T})
   if (0 <= x < 1)
     return @evalpoly(T(x),T(0), T(0), T(1/2))
   elseif (1 <= x < 2)
@@ -48,7 +57,7 @@ end
   end
 end
 
-@eval function evaluate_Bspline(::Type{Degree{3}}, x, T::Type)
+@eval function evaluate_Bspline{T<:Real}(::Type{Degree{3}}, x::Real, ::Type{T})
   if (0 <= x < 1)
     return @evalpoly(T(x), T(0), T(0), T(0), T(1//6))
   elseif (1 <= x < 2)
@@ -62,7 +71,7 @@ end
   end
 end
 
-@eval function evaluate_Bspline(::Type{Degree{4}}, x, T::Type)
+@eval function evaluate_Bspline{T<:Real}(::Type{Degree{4}}, x::Real, ::Type{T})
   if (0 <= x < 1)
     return @evalpoly(T(x), T(0), T(0), T(0), T(0), T(1//24))
   elseif (1 <= x < 2)

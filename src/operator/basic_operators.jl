@@ -331,8 +331,12 @@ inv(op::RealifyOperator) = ComplexifyOperator(dest(op),src(op))
 is_diagonal(::RealifyOperator) = true
 ctranspose(op::RealifyOperator) = inv(op)
 function apply!(op::RealifyOperator, coef_dest, coef_src)
+  exact = true
   for i in eachindex(coef_src)
       coef_dest[i] = real(coef_src[i])
-      @assert abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op))))
+      if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
+        exact =  false
+      end
   end
+  !exact && (warn("Realify operator can not realify exactly."))
 end

@@ -19,6 +19,7 @@ function test_generic_operators(T)
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
         ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
         ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
+        ["Circulant operator", CirculantOperator(b2, map(T, rand(length(b2))))],
     ]
 
     for ops in operators
@@ -251,7 +252,7 @@ function test_multidiagonal_operators(T)
 end
 
 function test_complexify_operator(T)
-  for SRC in (PeriodicBSplineBasis(11, 2, T), PeriodicBSplineBasis(11, 2, complex(T)))
+  for SRC in (BSplineTranslatesBasis(11, 2, T), BSplineTranslatesBasis(11, 2, complex(T)))
     op = ComplexifyOperator(SRC)
     DEST = dest(op)
     ELT = eltype(op)
@@ -279,9 +280,45 @@ function test_complexify_operator(T)
   end
 end
 
+function test_circulant_operator(ELT)
+  n = 20
+  for T in (ELT, complex(ELT))
+    e1 = zeros(T,n); e1[1] = 1
+    c = map(T, rand(n))
+    C = CirculantOperator(c)
+    m = matrix(C)
+    for i in 1:n
+      @test m[:,i] ≈ circshift(c,i-1)
+    end
+    invC = inv(C)
+    @test BasisFunctions.eigenvalues(invC).*BasisFunctions.eigenvalues(C) ≈ ones(T,n)
+    @test m'*e1 ≈ C'*e1
+
+    sumC = invC+C
+    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+    @test sumC*e1 ≈ m[:,1] + matrix(invC)[:,1]
+
+    subC = invC-C
+    @test (typeof(subC) <:BasisFunctions.CirculantOperator)
+    @test subC*e1 ≈ -m[:,1] + matrix(invC)[:,1]
+
+    mulC = invC*C
+    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+    @test mulC*e1 ≈ (m*matrix(invC))[:,1]
+
+    mulC = 2*C
+    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+    @test mulC*e1 ≈ 2*C*e1
+
+    mulC = C*2
+    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+    @test mulC*e1 ≈ 2*C*e1
+  end
+end
+
 function test_invertible_operators(T)
     for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}), ChebyshevBasis(10,T))
-        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),ComplexifyOperator(SRC),RealifyOperator(SRC))
+        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),ComplexifyOperator(SRC),RealifyOperator(SRC), CirculantOperator(map(T,rand(10))), CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place

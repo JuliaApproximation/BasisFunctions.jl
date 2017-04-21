@@ -28,14 +28,15 @@ end
 
 include("test_generic_sets.jl")
 include("test_generic_grids.jl")
+include("test_bsplines.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
-include("test_periodicbsplines.jl")
 include("test_bsplinetranslatedbasis.jl")
 include("test_maps.jl")
 include("test_DCTI.jl")
+include("test_gram.jl")
 
 
 
@@ -201,12 +202,15 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("test complexify/realify operator",80))" begin
       test_complexify_operator(T)
     end
+    @testset "$(rpad("test circulant operator",80))" begin
+      test_circulant_operator(T)
+    end
 
     delimit("Generic interfaces")
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
-            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries, PeriodicBSplineBasis)
-    # SETS = (FourierBasis, PeriodicBSplineBasis)
+            LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,DiscreteOrthonormalSplineBasis,)
     #  SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #          LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -219,17 +223,17 @@ for T in (Float64, BigFloat,)
 
             test_generic_set_interface(basis, SET)
     end
-    SETS = (BSplineTranslatesBasis,)
-    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (50,51)
-        # Choose an odd and even number of degrees of freedom
-            basis = instantiate(SET, n, T)
+    # SETS = (BSplineTranslatesBasis,)
+    # @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (50,51)
+    #     # Choose an odd and even number of degrees of freedom
+    #         basis = instantiate(SET, n, T)
 
-            @test length(basis) == n
-            @test numtype(basis) == T
-            @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
-
-            test_generic_set_interface(basis, SET)
-    end
+    #         @test length(basis) == n
+    #         @test numtype(basis) == T
+    #         @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
+    #
+    #         test_generic_set_interface(basis, SET)
+    # end
 
     # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
@@ -251,7 +255,21 @@ for T in (Float64, BigFloat,)
     delimit("Test Grids")
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
+    delimit("Test B splines")
+    @testset "$(rpad("Elementary properties",80))" begin
+      elementarypropsofsplinetest(T)
+    end
+    @testset "$(rpad("periodic B splines",80))"  begin
+      periodicbsplinetest(T)
+    end
+    @testset "$(rpad("symmetric B splines",80))"  begin
+      symmetricbsplinestest(T)
+    end
 
+    delimit("Gram")
+    @testset "$(rpad("Gram functionality",80))" begin
+      discrete_gram_test(T)
+    end
     delimit("Test Maps")
     @testset "$(rpad("Maps",80))" begin
         test_maps(T) end
@@ -267,11 +285,19 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
 
-    @testset "$(rpad("Periodic B spline expansions",80))" begin
-        test_periodicbsplines(T) end
+    @testset "$(rpad("Periodic translate expansions",80))"begin
+        test_generic_periodicbsplinebasis(T) end
 
     @testset "$(rpad("Translates of B spline expansions",80))"begin
-        test_translatedbsplines(T) end
+        test_translatedbsplines(T)
+        test_translatedsymmetricbsplines(T)
+        test_orthonormalsplinebasis(T)
+        test_discrete_orthonormalsplinebasis(T)
+        test_dualsplinebasis(T)
+        test_discrete_dualsplinebasis(T)
+      end
+
+
 
 end # for T in...
 delimit("Test DCTI")

@@ -84,3 +84,9 @@ function Gram{T}(b::CosineSeries{T}; options...)
   diag[1] = 1
   DiagonalOperator(b, b, diag)
 end
+
+function UnNormalizedGram{T}(b::CosineSeries{T}, oversampling)
+  d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
+  d[1] = length_oversampled_grid(b, oversampling)
+  DiagonalOperator(b, b, d)
+end

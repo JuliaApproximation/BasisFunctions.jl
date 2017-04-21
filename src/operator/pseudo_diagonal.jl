@@ -32,6 +32,11 @@ function inv{T}(op::PseudoDiagonalOperator{T})
   PseudoDiagonalOperator(DiagonalOperator(dest(op), src(op), diag), tolerance(op))
 end
 
+function ctranspose{T}(op::PseudoDiagonalOperator{T})
+  PseudoDiagonalOperator(ctranspose(superoperator(op)), tolerance(op))
+end
+
+
 (*)(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), diagonal(op1) .* diagonal(op2), tolerance(op1, op2))
 (*)(op1::ScalingOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), scalar(op1) * diagonal(op2), tolerance(op2))
 (*)(op2::PseudoDiagonalOperator, op1::ScalingOperator) = op1 * op2

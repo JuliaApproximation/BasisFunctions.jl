@@ -68,7 +68,7 @@ for op in (:size, :element)
     @eval $op(s::DerivedSet, i) = $op(superset(s), i)
 end
 
-approx_length(s::DerivedSet, n) = approx_length(superset(s), n)
+approx_length(s::DerivedSet, n::Int) = approx_length(superset(s), n)
 
 apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
 
@@ -157,6 +157,9 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
 end
 
 grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
+
+grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
     wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
 
 dot(set::DerivedSet, f1::Function, f2::Function, nodes::Array=native_nodes(superset(set)); options...) =
