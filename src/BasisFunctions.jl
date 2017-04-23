@@ -93,7 +93,7 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
 export moment
 
 # from bases/sets/subsets.jl
-export FunctionSubSet, indices
+export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
 
 # from bases/sets/tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
