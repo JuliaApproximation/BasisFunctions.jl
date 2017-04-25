@@ -64,6 +64,7 @@ export split_interval
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
+export Point
 export dim, left, right, range, sample
 
 # from grid/subgrid.jl

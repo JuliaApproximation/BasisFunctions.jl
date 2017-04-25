@@ -8,6 +8,8 @@ typealias AbstractGrid2d{T} AbstractGrid{2,T}
 typealias AbstractGrid3d{T} AbstractGrid{3,T}
 typealias AbstractGrid4d{T} AbstractGrid{4,T}
 
+typealias Point{N,T} SVector{N,T}
+
 ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
 ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))
 ndims{N,T}(::AbstractGrid{N,T}) = N
@@ -18,7 +20,7 @@ numtype{G <: AbstractGrid}(::Type{G}) = numtype(supertype(G))
 
 # The element type of a grid is the type returned by getindex.
 eltype{T}(::Type{AbstractGrid{1,T}}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = SVector{N,T}
+eltype{N,T}(::Type{AbstractGrid{N,T}}) = Point{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)
