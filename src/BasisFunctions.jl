@@ -151,7 +151,7 @@ export interpolation_operator, default_interpolation_operator, interpolation_mat
 export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
-export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator
+export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
 
 # from generic/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_set,
