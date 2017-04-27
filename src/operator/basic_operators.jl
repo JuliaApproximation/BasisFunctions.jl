@@ -86,7 +86,7 @@ end
 
 # Extra definition for out-of-place version to avoid making an intermediate copy
 function apply!(op::ScalingOperator, coef_dest, coef_src)
-    for i in eachindex(coef_src)
+    for i in eachindex(coef_src, coef_dest)
         # Can we assume that coef_dest and coef_src can both be indexed by i?
         # TODO: do we need eachindex(coef_src, coef_dest)?
         coef_dest[i] = op.scalar * coef_src[i]

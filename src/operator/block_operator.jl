@@ -103,15 +103,25 @@ function apply!(op::BlockOperator, coef_dest, coef_src)
     elseif is_columnlike(op)
         apply_columnoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
     else
-        apply_blockoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
+        apply_block_operator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
     end
     coef_dest
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::AbstractVector, scratch_src, scratch_dest)
     delinearize_coefficients!(scratch_src, coef_src)
-    apply_block_operator(op, scratch_dest, scratch_src, scratch_src, scratch_dest)
+    apply_block_operator!(op, scratch_dest, scratch_src, scratch_src, scratch_dest)
     linearize_coefficients!(coef_dest, scratch_dest)
+end
+
+function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::MultiArray, scratch_src, scratch_dest)
+    apply_block_operator!(op, scratch_dest, coef_src, scratch_src, scratch_dest)
+    linearize_coefficients!(coef_dest, scratch_dest)
+end
+
+function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::AbstractVector, scratch_src, scratch_dest)
+    delinearize_coefficients!(scratch_src, coef_src)
+    apply_block_operator!(op, coef_dest, scratch_src, scratch_src, scratch_dest)
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::MultiArray, scratch_src, scratch_dest)

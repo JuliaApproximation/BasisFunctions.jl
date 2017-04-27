@@ -113,3 +113,17 @@ restriction_operator(s1::FunctionSet; options...) =
 ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
 
 ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
+
+# Transforming between functionsets with the same type is the same as restricting
+has_transform{S<:FunctionSet}(src::S,dest::S)=true
+
+function transform_operator{S<:FunctionSet}(src::S,dest::S)
+    if length(src)>length(dest)
+        return Restriction(src,dest)
+    elseif length(src)<length(dest)
+        return Extension(src,dest)
+    else
+        return Identity(src)
+    end
+end
+        
