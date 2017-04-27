@@ -49,13 +49,16 @@ similar_grid(g::EquispacedGrid, a, b, T) = EquispacedGrid{T}(length(g), a, b)
 
 has_extension(::EquispacedGrid) = true
 
-extend{T}(g::EquispacedGrid{T}, factor::Int) = EquispacedGrid{T}(factor*g.n-1, g.a, g.b)
+resize{T}(g::EquispacedGrid{T}, n::Int) = EquispacedGrid(n, g.a, g.b)
+
+extend{T}(g::EquispacedGrid{T}, factor::Int) = resize(g, factor*g.n-1)
 
 stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
 # (What about more general ranges?)
 convert{T}(::Type{BasisFunctions.EquispacedGrid{T}}, x::LinSpace{T}) = EquispacedGrid{T}(length(x), first(x), last(x))
+
 
 
 """
@@ -78,7 +81,9 @@ similar_grid(g::PeriodicEquispacedGrid, a, b, T) = PeriodicEquispacedGrid{T}(len
 
 has_extension(::PeriodicEquispacedGrid) = true
 
-extend{T}(g::PeriodicEquispacedGrid{T}, factor::Int) = PeriodicEquispacedGrid{T}(factor*g.n, g.a, g.b)
+resize{T}(g::PeriodicEquispacedGrid{T}, n::Int) = PeriodicEquispacedGrid(n, g.a, g.b)
+
+extend{T}(g::PeriodicEquispacedGrid{T}, factor::Int) = resize(g, factor*g.n)
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 
@@ -112,7 +117,9 @@ similar_grid(g::DyadicPeriodicEquispacedGrid, a, b, T) = DyadicPeriodicEquispace
 
 has_extension(::DyadicPeriodicEquispacedGrid) = true
 
-extend{T}(g::DyadicPeriodicEquispacedGrid{T}, factor::Int) = DyadicPeriodicEquispacedGrid{T}(factor*g.n, g.a, g.b)
+resize{T}(g::DyadicPeriodicEquispacedGrid{T}, n::Int) = DyadicPeriodicEquispacedGrid(n, g.a, g.b)
+
+extend{T}(g::DyadicPeriodicEquispacedGrid{T}, factor::Int) = resize(g, factor*g.n)
 
 stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
 
@@ -140,6 +147,8 @@ MidpointEquispacedGrid{T}(n, ::Type{T} = Float64) = MidpointEquispacedGrid{T}(n)
 MidpointEquispacedGrid{T}(n, a, b, ::Type{T} = typeof((b-a)/n)) = MidpointEquispacedGrid{T}(n, a, b)
 
 similar_grid(g::MidpointEquispacedGrid, a, b, T) = MidpointEquispacedGrid{T}(length(g), a, b)
+
+resize{T}(g::MidpointEquispacedGrid{T}, n::Int) = MidpointEquispacedGrid(n, g.a, g.b)
 
 unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsize(g)
 

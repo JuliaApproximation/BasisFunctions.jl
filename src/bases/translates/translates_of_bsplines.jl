@@ -45,15 +45,16 @@ end
 """
   Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
-immutable BSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
+immutable BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
   fun             :: Function
 end
 
-BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    BSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
+BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
+    BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
+    BSplineTranslatesBasis{DEGREE,T,false}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
 
@@ -81,12 +82,16 @@ grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function _binomial_circulant{K,T}(s::BSplineTranslatesBasis{K,T})
+function _binomial_circulant{K,T,SCALED}(s::BSplineTranslatesBasis{K,T,SCALED})
   c = zeros(T, length(s))
   for k in 1:K+2
     c[k] = binomial(K+1, k-1)
   end
-  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+  if SCALED
+    sqrt(T(2))/(1<<(degree(s)))*CirculantOperator(s, c)
+  else
+    T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+  end
 end
 
 # TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
@@ -149,31 +154,23 @@ extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTransl
 restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
     bspline_restriction_operator(s1, s2; options...)
 
-
 """
-  Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
-
-  There degree should be odd to use extension or restriction.
+  Basis consisting of orthonormal basis function in the spline space of degree K.
 """
-immutable OrthonormalSplineBasis{K,T} <: PeriodicSetOfTranslates{T}
+immutable OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
-  function OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T})
-    A = sqrt(DualGram(b))
-    e = zeros(size(A,1))
-    e[1] = 1
-    new(b, A*e)
-  end
+  OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) =
+    new(b, coeffs_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
 
-for op in (:degree, :length, :left, :right, :has_grid, :period, :stepsize, :native_nodes)
-  @eval $op(b::OrthonormalSplineBasis) = $op(b.superset)
-end
+degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
-=={K1,K2,T1,T2}(b1::OrthonormalSplineBasis{K1,T1}, b2::OrthonormalSplineBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1.superset)==length(b2.superset)
+superset(b::OrthonormalSplineBasis) = b.superset
+coeffs(b::OrthonormalSplineBasis) = b.coefficients
 
-OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T))
+OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
+    OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
 
 name(b::OrthonormalSplineBasis) = name(b.superset)*" (orthonormalized)"
 
@@ -181,8 +178,43 @@ instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalS
 
 set_promote_eltype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
 
-function fun(b::OrthonormalSplineBasis)
-  x->eval_expansion(b.superset, real(b.coefficients), BasisFunctions.Cardinal_b_splines.periodize(x, period(b.superset)))
-end
+resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
 
 Gram(b::OrthonormalSplineBasis) = IdentityOperator(b, b)
+
+change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DualGram(b; options...))
+
+
+"""
+  Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
+"""
+immutable DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+  superset     ::    BSplineTranslatesBasis{K,T}
+  coefficients ::    Array{T,1}
+
+  oversampling ::   T
+  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) =
+    new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
+end
+
+degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
+
+superset(b::DiscreteOrthonormalSplineBasis) = b.superset
+coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
+
+==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
+    superset(b1)==superset(b2) && coeffs(b1) ≈ coeffs(b2) && default_oversampling(b1) == default_oversampling(b2)
+
+DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
+    DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
+
+name(b::DiscreteOrthonormalSplineBasis) = name(superset(b))*" (orthonormalized, discrete)"
+
+instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
+
+set_promote_eltype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
+
+resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
+
+change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(b; options...))

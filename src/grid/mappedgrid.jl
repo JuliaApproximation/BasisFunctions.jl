@@ -35,6 +35,8 @@ for op in (:left, :right)
 	@eval $op(g::MappedGrid1d) = forward_map(g.map, $op(grid(g)))
 end
 
+resize(g::MappedGrid, n::Int) = apply_map(resize(grid(g), n), mapping(g))
+
 # This is necessary for mapped tensorproductgrids etc.
 linear_index(g::MappedGrid, idx) = linear_index(g.grid, idx)
 

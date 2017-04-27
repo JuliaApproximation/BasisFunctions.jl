@@ -36,6 +36,7 @@ include("test_chebyshev.jl")
 include("test_bsplinetranslatedbasis.jl")
 include("test_maps.jl")
 include("test_DCTI.jl")
+include("test_gram.jl")
 
 
 
@@ -209,7 +210,7 @@ for T in (Float64, BigFloat,)
 
     SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
             LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,)
+            BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,DiscreteOrthonormalSplineBasis,)
     #  SETS = (FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
     #          LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries)
     @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
@@ -265,6 +266,10 @@ for T in (Float64, BigFloat,)
       symmetricbsplinestest(T)
     end
 
+    delimit("Gram")
+    @testset "$(rpad("Gram functionality",80))" begin
+      discrete_gram_test(T)
+    end
     delimit("Test Maps")
     @testset "$(rpad("Maps",80))" begin
         test_maps(T) end
@@ -286,7 +291,11 @@ for T in (Float64, BigFloat,)
     @testset "$(rpad("Translates of B spline expansions",80))"begin
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
-        test_orthonormalsplinebasis(T) end
+        test_orthonormalsplinebasis(T)
+        test_discrete_orthonormalsplinebasis(T)
+        test_dualsplinebasis(T)
+        test_discrete_dualsplinebasis(T)
+      end
 
 
 
