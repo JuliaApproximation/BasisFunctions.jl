@@ -3,13 +3,13 @@
 """
 A TensorProductSet is itself a set: the tensor product of a number of sets.
 
-immutable TensorProductSet{TS,N,T} <: FunctionSet{N,T}
+struct TensorProductSet{TS,N,T} <: FunctionSet{N,T}
 
 Parameters:
 - TS is a tuple of types, representing the (possibly different) types of the sets.
 - N is the total dimension of the corresponding space and T the numeric type.
 """
-immutable TensorProductSet{TS,N,T} <: FunctionSet{N,T}
+struct TensorProductSet{TS,N,T} <: FunctionSet{N,T}
     sets   ::  TS
 end
 

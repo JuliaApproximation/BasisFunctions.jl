@@ -1,7 +1,7 @@
 # hermite.jl
 
 "A Hermite polynomial basis."
-immutable HermiteBasis{T} <: OPS{T}
+struct HermiteBasis{T} <: OPS{T}
     n           ::  Int
 end
 

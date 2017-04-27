@@ -7,16 +7,16 @@ module Slices
 
 export eachslice, joint, view
 
-abstract SliceIterator{N}
+abstract type SliceIterator{N} end
 
-immutable SliceIteratorCartesian{N} <: SliceIterator{N}
+struct SliceIteratorCartesian{N} <: SliceIterator{N}
     range   ::  CartesianRange{CartesianIndex{N}}
     dim     ::  Int
     len     ::  Int
 end
 
 
-immutable SliceIteratorLinear{N} <: SliceIterator{N}
+struct SliceIteratorLinear{N} <: SliceIterator{N}
     range   ::  CartesianRange{CartesianIndex{N}}
     dim     ::  Int
     strides ::  NTuple{N,Int}
@@ -25,15 +25,15 @@ immutable SliceIteratorLinear{N} <: SliceIterator{N}
 end
 
 
-abstract SliceIndex
+abstract type SliceIndex end
 
-immutable SliceIndexCartesian{N} <: SliceIndex
+struct SliceIndexCartesian{N} <: SliceIndex
     cartidx ::  CartesianIndex{N}
     dim     ::  Int
     len     ::  Int
 end
 
-immutable SliceIndexLinear{N} <: SliceIndex
+struct SliceIndexLinear{N} <: SliceIndex
     cartidx ::  CartesianIndex{N}
     offset  ::  Int
     stride  ::  Int
@@ -124,14 +124,14 @@ end
 strides{N}(siz::NTuple{N,Int}) = (strides(siz[1:N-1])..., stride(siz,N))
 
 
-eachslice(a::AbstractArray, dim) = eachslice(Base.linearindexing(a), a, dim)
+eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
 
 # Type inference does not work with the N-1 argument below:
 #eachslice{T,N}(a::AbstractArray{T,N}, dim) =
 #    SliceIterator(CartesianRange(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
 
 # So we do a generated function for the time being:
-@generated function eachslice{T,N}(::Base.LinearSlow, a::AbstractArray{T,N}, dim)
+@generated function eachslice{T,N}(::Base.IndexCartesian, a::AbstractArray{T,N}, dim)
     one_tuple = onetuple(Val{N-1})
     quote
         SliceIteratorCartesian(
@@ -141,7 +141,7 @@ eachslice(a::AbstractArray, dim) = eachslice(Base.linearindexing(a), a, dim)
     end
 end
 
-@generated function eachslice{T,N}(::Base.LinearFast, a::AbstractArray{T,N}, dim)
+@generated function eachslice{T,N}(::Base.IndexLinear, a::AbstractArray{T,N}, dim)
     one_tuple = onetuple(Val{N-1})
     quote
         SliceIteratorLinear(
@@ -200,7 +200,7 @@ end
 
 
 
-immutable JointIterator{I1,I2}
+struct JointIterator{I1,I2}
     iter1   ::  I1
     iter2   ::  I2
 end
@@ -217,8 +217,8 @@ end
 
 Base.done(it::JointIterator, state) = done(it.iter1, state[1]) || done(it.iter2, state[2])
 
-Base.sub(a::AbstractArray, sidx::SliceIndexLinear) =
-    sub(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)
+Base.view(a::AbstractArray, sidx::SliceIndexLinear) =
+    view(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)
 
 
 import ArrayViews: view

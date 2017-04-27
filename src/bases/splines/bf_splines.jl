@@ -1,7 +1,7 @@
 # bf_splines.jl
 
 
-typealias SplineDegree{K} Val{K}
+SplineDegree{K} = Val{K}
 
 
 spline_eval(::Type{SplineDegree{0}}, i, x, a, b, h) = (x >= a+i*h) && (x < a + (i+1)*h) ? 1 : 0
@@ -10,10 +10,10 @@ spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) *
 
 
 # Splines of degree K (with equispaced knots only...)
-abstract SplineBasis{K,T} <: FunctionSet1d{T}
+abstract type SplineBasis{K,T} <: FunctionSet1d{T} end
 
 is_biorthogonal(::SplineBasis) = true
- 
+
 "The degree of the splines."
 degree{K}(b::SplineBasis{K}) = K
 
@@ -37,12 +37,12 @@ knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
 """
 The full space of piecewise polynomials of degree K on n subintervals of [a,b].
 """
-immutable FullSplineBasis{K,T} <: SplineBasis{K,T}
+struct FullSplineBasis{K,T} <: SplineBasis{K,T}
 	n		::	Int
 	a		::	T
 	b		::	T
 
-	FullSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
+	FullSplineBasis{K,T}(n, a = -one(T), b = one(T)) where {K,T} = new(n, a, b)
 end
 
 name(b::FullSplineBasis) = "Full splines of degree $(degree(b))"
@@ -91,13 +91,15 @@ end
 
 
 # Natural splines of degree K
-immutable NaturalSplineBasis{K,T} <: SplineBasis{K,T}
+struct NaturalSplineBasis{K,T} <: SplineBasis{K,T}
 	n		::	Int
 	a		::	T
 	b		::	T
 
-	NaturalSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
+	NaturalSplineBasis{K,T}(n, a = -one(T), b = one(T)) where {K,T} = new(n, a, b)
 end
+
+
 
 name(b::NaturalSplineBasis) = "Natural splines of degree $(degree(b))"
 
@@ -134,12 +136,12 @@ eval_element{K,T}(b::NaturalSplineBasis{K,T}, idx::Int, x) = error("Natural spli
 """
 Periodic splines of degree K.
 """
-immutable PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
+struct PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
 	n		::	Int
 	a		::	T
 	b		::	T
 
-	PeriodicSplineBasis(n, a = -one(T), b = one(T)) = new(n, a, b)
+	PeriodicSplineBasis{K,T}(n, a = -one(T), b = one(T)) where {K,T} = new(n, a, b)
 end
 
 name(b::PeriodicSplineBasis) = "Periodic splines of degree $(degree(b))"

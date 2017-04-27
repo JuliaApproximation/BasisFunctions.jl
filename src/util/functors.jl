@@ -5,7 +5,7 @@
 # type system. The approach in Calculus scales much better.
 
 "AbstractFunction is the supertype of all functors."
-abstract AbstractFunction
+abstract type AbstractFunction end
 
 isreal(f::AbstractFunction) = true
 
@@ -14,7 +14,7 @@ has_derivative(f::AbstractFunction) = true
 has_derivative(f::Function) = false
 
 "The function x^α"
-immutable PowerFunction{T} <: AbstractFunction
+struct PowerFunction{T} <: AbstractFunction
     α   ::  T
 end
 
@@ -26,7 +26,7 @@ derivative(f::PowerFunction) = f.α * PowerFunction(f.α-1)
 
 
 "Functor for the logarithmic function."
-immutable Log <: AbstractFunction
+struct Log <: AbstractFunction
 end
 
 name(f::Log, arg = "x") = "log($(arg))"
@@ -37,7 +37,7 @@ derivative(f::Log) = PowerFunction(-1)
 
 
 "Functor for the exponential function."
-immutable Exp <: AbstractFunction
+struct Exp <: AbstractFunction
 end
 
 name(f::Exp, arg = "x") = "exp($(arg))"
@@ -48,7 +48,7 @@ derivative(f::Exp) = f
 
 
 "Functor for the cosine function."
-immutable Cos <: AbstractFunction
+struct Cos <: AbstractFunction
 end
 
 name(f::Cos, arg = "x") = "cos($(arg))"
@@ -57,7 +57,7 @@ name(f::Cos, arg = "x") = "cos($(arg))"
 
 
 "Functor for the sine function."
-immutable Sin <: AbstractFunction
+struct Sin <: AbstractFunction
 end
 
 name(f::Sin, arg = "x") = "sin($(arg))"
@@ -71,7 +71,7 @@ derivative(f::Sin) = Cos()
 
 
 "A ScaledFunction represents a scalar times a function."
-immutable ScaledFunction{F <: AbstractFunction,T} <: AbstractFunction
+struct ScaledFunction{F <: AbstractFunction,T} <: AbstractFunction
     f   ::  F
     a   ::  T
 end
@@ -92,7 +92,7 @@ isreal(f::ScaledFunction) = isreal(f.f) && isreal(f.a)
 
 
 "A DilatedFunction represents f(a*x) where a is a scalar."
-immutable DilatedFunction{F,T} <: AbstractFunction
+struct DilatedFunction{F,T} <: AbstractFunction
     f   ::  F
     a   ::  T
 end
@@ -109,7 +109,7 @@ isreal(f::DilatedFunction) = isreal(f.f) && isreal(f.a)
 
 
 "A CombinedFunction represents f op g, where op can be any binary operator."
-immutable CombinedFunction{F,G,OP} <: AbstractFunction
+struct CombinedFunction{F,G,OP} <: AbstractFunction
     f   ::  F
     g   ::  G
     # op is supposed to be a type that can be called with two arguments
@@ -145,7 +145,7 @@ isreal(f::CombinedFunction) = isreal(f.f) && isreal(f.g)
 
 
 "A CompositeFunction represents f(g(x))."
-immutable CompositeFunction{F,G} <: AbstractFunction
+struct CompositeFunction{F,G} <: AbstractFunction
     f   ::  F
     g   ::  G
 end
@@ -162,7 +162,7 @@ isreal(f::CompositeFunction) = isreal(f.f) && isreal(f.g)
 
 
 "The identity function"
-immutable IdentityFunction <: AbstractFunction
+struct IdentityFunction <: AbstractFunction
 end
 
 (f::IdentityFunction)(x) = x
@@ -174,7 +174,7 @@ derivative(f::IdentityFunction) = ConstantFunction()
 ^(f::IdentityFunction, α::Int) = PowerFunction(α)
 
 "The constant function 1"
-immutable ConstantFunction <: AbstractFunction
+struct ConstantFunction <: AbstractFunction
 end
 
 (f::ConstantFunction)(x) = one(x)

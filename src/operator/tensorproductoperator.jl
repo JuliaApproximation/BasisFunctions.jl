@@ -4,9 +4,9 @@
 """
 A TensorProductOperator represents the tensor product of other operators.
 
-immutable TensorProductOperator{ELT} <: AbstractOperator{ELT}
+struct TensorProductOperator{ELT} <: AbstractOperator{ELT}
 """
-immutable TensorProductOperator{ELT} <: AbstractOperator{ELT}
+struct TensorProductOperator{ELT} <: AbstractOperator{ELT}
     src             ::  FunctionSet
     dest            ::  FunctionSet
     operators

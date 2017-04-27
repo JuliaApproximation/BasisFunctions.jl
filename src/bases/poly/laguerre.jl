@@ -1,7 +1,7 @@
 # laguerre.jl
 
 "A Laguerre polynomial basis"
-immutable LaguerreBasis{S,T} <: OPS{T}
+struct LaguerreBasis{S,T} <: OPS{T}
     n       ::  Int
     α       ::  S
 end

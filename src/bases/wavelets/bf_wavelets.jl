@@ -1,6 +1,6 @@
 # bf_wavelets.jl
 
-abstract WaveletBasis{T} <: FunctionSet1d{T}
+abstract type WaveletBasis{T} <: FunctionSet1d{T} end
 
 dyadic_length(b::WaveletBasis) = b.L
 
@@ -144,16 +144,16 @@ function eval_set_element!(result, set::WaveletBasis, idx, grid::DyadicPeriodicE
   end
 end
 
-abstract OrthogonalWaveletBasis{T} <: WaveletBasis{T}
+abstract type OrthogonalWaveletBasis{T} <: WaveletBasis{T} end
 
 is_basis(b::OrthogonalWaveletBasis) = true
 is_orthogonal(b::OrthogonalWaveletBasis) = true
 
-abstract BiorthogonalWaveletBasis{T} <: WaveletBasis{T}
+abstract type BiorthogonalWaveletBasis{T} <: WaveletBasis{T} end
 
 is_basis(b::BiorthogonalWaveletBasis) = true
 
-immutable DaubechiesWaveletBasis{P,T} <: OrthogonalWaveletBasis{T}
+struct DaubechiesWaveletBasis{P,T} <: OrthogonalWaveletBasis{T}
   w   ::    DaubechiesWavelet{P,T}
   L   ::    Int
 end
@@ -169,7 +169,7 @@ instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWavelet
 is_compatible{P,T1,T2}(src1::DaubechiesWaveletBasis{P,T1}, src2::DaubechiesWaveletBasis{P,T2}) = true
 
 # TODO ensure that only bases with existing CDFwavelets are built
-immutable CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
+struct CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
   w   ::    CDFWavelet{P,Q,T}
   L   ::    Int
 end

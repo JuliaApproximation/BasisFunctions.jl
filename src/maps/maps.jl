@@ -3,7 +3,7 @@
 """
 A map is any transformation of the form y = f(x).
 """
-abstract AbstractMap
+abstract type AbstractMap end 
 
 inverse_map(map::AbstractMap, y) = forward_map(inv(map), y)
 
@@ -41,7 +41,7 @@ is_compatible(m1::AbstractMap, m2::AbstractMap) = m1==m2
 """
 The identity map.
 """
-immutable IdentityMap <: AbstractMap
+struct IdentityMap <: AbstractMap
 end
 
 (m::IdentityMap)(x) = forward_map(m, x)
@@ -70,7 +70,7 @@ A Cartesion to Polar map. First dimension is interpreted as angle in radians, se
 A square [-1,1]x[-1,1] is mapped to the unit circle
 
 """
-immutable CartToPolarMap <: AbstractMap
+struct CartToPolarMap <: AbstractMap
 end
 
 (m::CartToPolarMap)(x) = forward_map(m, x)
@@ -81,12 +81,12 @@ inv(map::CartToPolarMap) = PolarToCartMap()
 
 is_linear(map::CartToPolarMap) = false
 
- 
+
 """
 A Polar to Cartesian map. The angle is mapped to the first dimension, radius to the second.
 The unit circle is mapped to a square [-1,1]x[-1,1]
 """
-immutable PolarToCartMap <: AbstractMap
+struct PolarToCartMap <: AbstractMap
 end
 
 (m::PolarToCartMap)(x) = forward_map(m, x)
@@ -97,7 +97,7 @@ inv(map::PolarToCartMap) = CartToPolarMap()
 
 is_linear(map::PolarToCartMap) = false
 
- 
+
 
 include("affine_map.jl")
 include("diagonal_map.jl")
@@ -106,7 +106,7 @@ include("diagonal_map.jl")
 """
 The composition of several maps.
 """
-immutable CompositeMap{MAPS} <: AbstractMap
+struct CompositeMap{MAPS} <: AbstractMap
     maps    ::  MAPS
 end
 

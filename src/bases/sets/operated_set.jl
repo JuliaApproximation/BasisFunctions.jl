@@ -5,14 +5,14 @@ An OperatedSet represents a set that is acted on by an operator, for example the
 The OperatedSet has the dimension of the source set of the operator, but each basis function
 is acted on by the operator.
 """
-immutable OperatedSet{T} <: FunctionSet{1,T}
+struct OperatedSet{T} <: FunctionSet{1,T}
     "The operator that acts on the set"
     op          ::  AbstractOperator{T}
 
     scratch_src
     scratch_dest
 
-    function OperatedSet(op::AbstractOperator)
+    function OperatedSet{T}(op::AbstractOperator) where T
         scratch_src = zeros(T, src(op))
         scratch_dest = zeros(T, dest(op))
         new(op, scratch_src, scratch_dest)

@@ -16,7 +16,7 @@ Source and destination should at least implement the following:
 
 The element type (eltype) should be equal for src and dest.
 """
-abstract AbstractOperator{ELT}
+abstract type AbstractOperator{ELT} end
 
 eltype{ELT}(::AbstractOperator{ELT}) = ELT
 eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
@@ -145,7 +145,7 @@ end
 collect(op::AbstractOperator) = matrix(op)
 
 function matrix(op::AbstractOperator)
-    a = Array(eltype(op), size(op))
+    a = Array{eltype(op)}(size(op))
     matrix!(op, a)
 end
 
@@ -224,7 +224,7 @@ function inv_diagonal(op::AbstractOperator)
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
 
-abstract DerivedOperator{T} <: AbstractOperator{T}
+abstract type DerivedOperator{T} <: AbstractOperator{T} end
 
 superoperator(op::DerivedOperator) = op.superoperator
 
@@ -248,7 +248,7 @@ for op in (:inv, :ctranspose,)
 	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 
-immutable ConcreteDerivedOperator{T} <: DerivedOperator{T}
+struct ConcreteDerivedOperator{T} <: DerivedOperator{T}
 	superoperator		:: AbstractOperator{T}
 end
 

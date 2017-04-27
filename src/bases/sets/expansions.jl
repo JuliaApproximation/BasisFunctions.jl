@@ -8,11 +8,11 @@ Parameters:
 - S is the function set.
 - C is the type of the expansion coefficients
 """
-immutable SetExpansion{S,C}
+struct SetExpansion{S,C}
     set             ::  S
     coefficients    ::  C
 
-    function SetExpansion(set, coefficients)
+    function SetExpansion{S,C}(set, coefficients) where {S,C}
         @assert length(set) == length(coefficients)
         # @assert eltype(set) == eltype(coefficients)
         new(set, coefficients)
@@ -148,6 +148,8 @@ split_interval(s::SetExpansion, x) = SetExpansion(split_interval_expansion(set(s
 is_compatible{S<:FunctionSet}(s1::S, s2::S) = true
 is_compatible(s1::FunctionSet, s2::FunctionSet) = false
 
+Base.broadcast(abs, set::SetExpansion) = abs.(coefficients(set))
+
 for op in (:+, :-)
     @eval function ($op)(s1::SetExpansion, s2::SetExpansion)
         # First check if the FunctionSets are arithmetically compatible
@@ -176,7 +178,6 @@ end
 
 (*)(a::Number, e::SetExpansion) = SetExpansion(set(e), a*coefficients(e))
 (*)(e::SetExpansion, a::Number) = a*e
-
 
 function apply(op::AbstractOperator, e::SetExpansion)
     @assert set(e) == src(op)

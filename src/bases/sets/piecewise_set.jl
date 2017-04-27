@@ -4,15 +4,16 @@
 A PiecewiseSet has a function set for each piece in a partition. Its representation
 is a MultiArray containing the expansions of all sets combined.
 """
-immutable PiecewiseSet{P <: Partition,SETS,N,T} <: CompositeSet{N,T}
+struct PiecewiseSet{P <: Partition,SETS,N,T} <: CompositeSet{N,T}
     sets        ::  SETS
     offsets     ::  Array{Int,1}
     partition   ::  P
 
-    function PiecewiseSet(sets, partition)
+    function PiecewiseSet{P,SETS,N,T}(sets, partition) where {P <: Partition,SETS,N,T}
         offsets = compute_offsets(sets)
         new(sets, offsets, partition)
     end
+
 end
 
 # Make a PiecewiseSet by scaling one set to each of the elements of the partition

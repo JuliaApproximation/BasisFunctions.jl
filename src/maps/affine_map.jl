@@ -20,7 +20,7 @@ other valid cases:
 * `a` is a scalar and `b` is a vector
 * `a` is a matrix and `b` is exactly 0
 """
-immutable AffineMap{TA,TB} <: AbstractMap
+struct AffineMap{TA,TB} <: AbstractMap
     # The fields a and b define the forward map y = a*x+b
     a   ::  TA
     b   ::  TB

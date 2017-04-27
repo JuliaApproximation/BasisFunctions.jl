@@ -52,20 +52,20 @@ function test_generic_operator_interface(op, T)
     v1 = zeros(ELT, dest(op))
     apply!(op, v1, r)
     v2 = m*r
-    @test maximum(abs(v1-v2)) < 10*sqrt(eps(T))
+    @test maximum(abs.(v1-v2)) < 10*sqrt(eps(T))
 
     # Verify claim to be in-place
     if is_inplace(op)
         v3 = copy(r)
         apply_inplace!(op, v3)
-        @test maximum(abs(v3-v2)) < 10*sqrt(eps(T))
+        @test maximum(abs.(v3-v2)) < 10*sqrt(eps(T))
     end
 
     # Verify that coef_src is not altered when applying out-of-place
     r2 = copy(r)
     v = zeros(ELT, dest(op))
     apply!(op, v, r)
-    @test maximum(abs(r-r2)) < eps(T)
+    @test maximum(abs.(r-r2)) < eps(T)
 
     # Test claim to be diagonal
     if is_diagonal(op)
@@ -106,8 +106,8 @@ function test_generic_operator_interface(op, T)
             m2 = matrix(inv_op)
             I1 = eye(ELT, length(src(op)))
             I2 = eye(ELT, length(dest(op)))
-            @test maximum(abs(m2*m - I1)) < 10*sqrt(eps(T))
-            @test maximum(abs(m*m2 - I2)) < 10*sqrt(eps(T))
+            @test maximum(abs.(m2*m - I1)) < 10*sqrt(eps(T))
+            @test maximum(abs.(m*m2 - I2)) < 10*sqrt(eps(T))
         end
     catch MethodError
         # Inverse was not defined
@@ -120,7 +120,7 @@ function test_generic_operator_interface(op, T)
             @test src(ct_op) == dest(op)
             @test dest(ct_op) == src(op)
             m2 = matrix(ct_op)
-            @test maximum(abs(m' - m2)) < 10*sqrt(eps(T))
+            @test maximum(abs.(m' - m2)) < 10*sqrt(eps(T))
         end
     catch MethodError
         # transpose was not defined
@@ -160,9 +160,9 @@ function test_tensor_operators(T)
         c_manual[i,:] = result2
     end
 
-    @test sum(abs(c_tp-c_manual)) + 1 ≈ 1
-    @test sum(abs(c_dim-c_manual)) + 1 ≈ 1
-    @test sum(abs(c_tp-c_dim)) + 1 ≈ 1
+    @test sum(abs.(c_tp-c_manual)) + 1 ≈ 1
+    @test sum(abs.(c_dim-c_manual)) + 1 ≈ 1
+    @test sum(abs.(c_tp-c_dim)) + 1 ≈ 1
 end
 
 
@@ -178,23 +178,23 @@ function test_diagonal_operators(T)
               coef_src = map(eltype(src(Op)),rand(size(src(Op))))
               coef_dest_m = m * coef_src
               coef_dest = apply!(Op, coef_src)
-              @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+              @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             end
             # Test out-of-place
             coef_src = map(eltype(src(Op)),rand(size(src(Op))))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
-            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test inverse
             I = inv(Op)
-            @test (sum(abs(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
-            @test (sum(abs((I*Op)*coef_src-coef_src))) + 1 ≈ 1
+            @test (sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
+            @test (sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
             # Test transposes
-            @test (sum(abs(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
+            @test (sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
             # Test Sum
-            @test (sum(abs((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
             # Test Equivalence to diagonal operator
-            @test (sum(abs(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
+            @test (sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
             @test is_diagonal(2*Op)
             @test is_diagonal(Op')
@@ -223,7 +223,7 @@ function test_multidiagonal_operators(T)
         m = matrix(Op)
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)
         coef_dest = linearize_coefficients(MSet,apply!(Op, coef_src))
-        @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+        @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
         # Test out-of-place
         coef_src = zeros(eltype(MSet),MSet)
         for i in eachindex(coef_src)
@@ -231,7 +231,7 @@ function test_multidiagonal_operators(T)
         end
         coef_dest = linearize_coefficients(MSet,apply(Op, coef_src))
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)
-        @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+        @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
 
         # Test inverse
         I = inv(Op)
@@ -325,15 +325,15 @@ function test_invertible_operators(T)
             coef_src = map(eltype(SRC),rand(size(src(Op))))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
-            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test inverse
             I = inv(Op)
-            @test (sum(abs(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
-            @test (sum(abs((I*Op)*coef_src-coef_src))) + 1 ≈ 1
+            @test (sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
+            @test (sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
             # Test transposes
-            @test (sum(abs(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
+            @test (sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
             # Test Sum
-            @test (sum(abs((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
         end
     end
 end
@@ -348,11 +348,11 @@ function test_noninvertible_operators(T)
             coef_src = map(eltype(SRC),rand(size(src(Op))))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
-            @test sum(abs(coef_dest-coef_dest_m)) + 1 ≈ 1
+            @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test transposes
-            @test (sum(abs(m'-matrix(Op')))) + 1 ≈ 1
+            @test (sum(abs.(m'-matrix(Op')))) + 1 ≈ 1
             # Test Sum
-            @test (sum(abs((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
         end
     end
 end

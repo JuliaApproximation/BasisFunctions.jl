@@ -10,7 +10,7 @@ destination of the operator is not necessarily a multiset.
 A BlockOperator is column-like if it only has one column of blocks. In that case,
 the source set of the operator is not necessarily a multiset.
 """
-immutable BlockOperator{ELT} <: AbstractOperator{ELT}
+struct BlockOperator{ELT} <: AbstractOperator{ELT}
     operators   ::  Array{AbstractOperator{ELT}, 2}
     src         ::  FunctionSet
     dest        ::  FunctionSet
@@ -21,7 +21,7 @@ immutable BlockOperator{ELT} <: AbstractOperator{ELT}
     scratch_src
     scratch_dest
 
-    function BlockOperator(operators, src, dest)
+    function BlockOperator{ELT}(operators, src, dest) where ELT
         scratch_src = zeros(ELT, src)
         scratch_dest = zeros(ELT, dest)
         new(operators, src, dest, scratch_src, scratch_dest)
@@ -176,7 +176,7 @@ ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
 A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
-immutable BlockDiagonalOperator{ELT} <: AbstractOperator{ELT}
+struct BlockDiagonalOperator{ELT} <: AbstractOperator{ELT}
     operators   ::  Array{AbstractOperator{ELT}, 1}
     src         ::  FunctionSet
     dest        ::  FunctionSet

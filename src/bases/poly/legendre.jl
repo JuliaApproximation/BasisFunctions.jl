@@ -3,7 +3,7 @@
 """
 A basis of Legendre polynomials on the interval [-1,1].
 """
-immutable LegendreBasis{T} <: OPS{T}
+struct LegendreBasis{T} <: OPS{T}
     n           ::  Int
 end
 

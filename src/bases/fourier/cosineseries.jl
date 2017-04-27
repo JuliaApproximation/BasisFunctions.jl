@@ -8,10 +8,10 @@
 """
 Cosine series on the interval [0,1].
 """
-immutable CosineSeries{T} <: FunctionSet1d{T}
+struct CosineSeries{T} <: FunctionSet1d{T}
     n           ::  Int
-
-    CosineSeries(n) = new(n)
+    # TODO
+    # CosineSeries(n) = new(n)
 end
 
 name(b::CosineSeries) = "Cosine series"

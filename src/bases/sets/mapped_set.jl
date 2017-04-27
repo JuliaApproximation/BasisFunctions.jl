@@ -5,16 +5,16 @@ A MappedSet has a set and a map. The domain of the set is mapped to a different
 one. Evaluating the MappedSet in a point uses the inverse map to evaluate the
 underlying set in the corresponding point.
 """
-immutable MappedSet{S,M,N,T} <: DerivedSet{N,T}
+struct MappedSet{S,M,N,T} <: DerivedSet{N,T}
     superset    ::  S
     map         ::  M
 
-    function MappedSet(set::FunctionSet{N,T}, map)
+    function MappedSet{S,M,N,T}(set::FunctionSet{N,T}, map) where {S,M,N,T}
         new(set, map)
     end
 end
 
-typealias MappedSet1d{S,M,T} MappedSet{S,M,1,T}
+MappedSet1d{S,M,T} = MappedSet{S,M,1,T}
 
 MappedSet{N,T}(set::FunctionSet{N,T}, map::AbstractMap) =
     MappedSet{typeof(set),typeof(map),N,T}(set, map)

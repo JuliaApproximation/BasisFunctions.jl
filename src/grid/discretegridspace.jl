@@ -3,15 +3,15 @@
 """
 A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
 """
-immutable DiscreteGridSpace{G,N,T} <: FunctionSet{N,T}
+struct DiscreteGridSpace{G,N,T} <: FunctionSet{N,T}
 	# TODO: remove the G parameter and leave grid untyped.
 	# Currently, this clashes with dispatch on Extension in FrameFun's subgrid.jl
 	grid		::	G
 
-	DiscreteGridSpace(grid::AbstractGrid{N}) = new(grid)
+	DiscreteGridSpace{G,N,T}(grid::AbstractGrid{N}) where {G,N,T} = new(grid)
 end
 
-typealias DiscreteGridSpace1d{G,ELT} DiscreteGridSpace{G,1,ELT}
+DiscreteGridSpace1d{G,ELT} = DiscreteGridSpace{G,1,ELT}
 
 name(s::DiscreteGridSpace) = "A discrete grid space"
 

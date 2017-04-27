@@ -36,13 +36,13 @@ possible. Linear indexing is used to convert representations into a form suitabl
 for linear algebra: expansions turn into vectors, and linear operators turn into
 matrices.
 """
-abstract FunctionSet{N,T}
+abstract type FunctionSet{N,T} end
 
 
 # Useful abstraction for special cases
-typealias FunctionSet1d{T} FunctionSet{1,T}
-typealias FunctionSet2d{T} FunctionSet{2,T}
-typealias FunctionSet3d{T} FunctionSet{3,T}
+FunctionSet1d{T} = FunctionSet{1,T}
+FunctionSet2d{T} = FunctionSet{2,T}
+FunctionSet3d{T} = FunctionSet{3,T}
 
 "The dimension of the set."
 ndims{N,T}(::FunctionSet{N,T}) = N
@@ -174,7 +174,7 @@ zeros(T::Type, s::FunctionSet) = zeros(T, size(s))
 # should be wrapped in a different type. That is the purpose of NativeIndex.
 # Concrete types with a meaningful name can inherit from this abstract type.
 # If the native index is not an integer, then no wrapping is necessary.
-abstract NativeIndex
+abstract type NativeIndex end
 
 # We assume that the index is stored in the 'index' field
 index(idxn::NativeIndex) = idxn.index

@@ -1,27 +1,27 @@
 # euclidean.jl
 
-abstract DiscreteVectorSpace{T} <: FunctionSet{1,T}
+abstract type DiscreteVectorSpace{T} <: FunctionSet{1,T} end
 
 length(b::DiscreteVectorSpace) = b.n
 
-immutable DiscreteSet{T} <: FunctionSet{T}
+immutable DiscreteSet{N,T} <: FunctionSet{N,T}
     n   ::  Int
 end
 
 length(s::DiscreteSet) = s.n
 
-isreal{T}(s::DiscreteSet{T}) = isreal(T)
+isreal{N,T}(s::DiscreteSet{N,T}) = isreal(T)
 
-set_promote_eltype{T,S}(set::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(set))
+set_promote_eltype{N,T,S}(set::DiscreteSet{N,T}, ::Type{S}) = DiscreteSet{N,S}(length(set))
 
-resize{T}(s::DiscreteSet{T}, n) = DiscreteSet{T}(n)
+resize{N,T}(s::DiscreteSet{N,T}, n) = DiscreteSet{N,T}(n)
 
-immutable Rn{T} <: DiscreteVectorSpace{T}
+struct Rn{T} <: DiscreteVectorSpace{T}
     n   ::  Int
 end
 
 
-immutable Cn{T} <: DiscreteVectorSpace{T}
+struct Cn{T} <: DiscreteVectorSpace{T}
     n   ::  Int
 end
 

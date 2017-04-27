@@ -3,15 +3,18 @@
 """
 The identity operator between two (possibly different) function sets.
 """
-immutable IdentityOperator{T} <: AbstractOperator{T}
+struct IdentityOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 
-    function IdentityOperator(src, dest)
+    function IdentityOperator{T}(src, dest) where T
         @assert length(src) == length(dest)
         new(src, dest)
     end
 end
+
+
+
 
 IdentityOperator{N1,N2,T}(src::FunctionSet{N1,T}, dest::FunctionSet{N2,T}) =
     IdentityOperator{T}(src, dest)
@@ -47,12 +50,12 @@ apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 """
 A ScalingOperator is the identity operator up to a scaling.
 """
-immutable ScalingOperator{T} <: AbstractOperator{T}
+struct ScalingOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     scalar  ::  T
 
-    function ScalingOperator(src, dest, scalar)
+    function ScalingOperator{T}(src, dest, scalar) where T
         @assert length(src) == length(dest)
         new(src, dest, scalar)
     end
@@ -119,7 +122,7 @@ unsafe_getindex{T}(op::ScalingOperator{T}, i, j) = i == j ? convert(T, op.scalar
 
 
 "The zero operator maps everything to zero."
-immutable ZeroOperator{T} <: AbstractOperator{T}
+struct ZeroOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 end
@@ -162,7 +165,7 @@ Several other operators can be converted into a diagonal matrix, and this
 conversion happens automatically when such operators are combined into a composite
 operator.
 """
-immutable DiagonalOperator{ELT} <: AbstractOperator{ELT}
+struct DiagonalOperator{ELT} <: AbstractOperator{ELT}
     src         ::  FunctionSet
     dest        ::  FunctionSet
     # We store the diagonal in a vector
@@ -287,15 +290,17 @@ A ComplexifyOperator converts real numbers to their complex counterparts.
 
 A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
 """
-immutable ComplexifyOperator{T} <: AbstractOperator{T}
+struct ComplexifyOperator{T} <: AbstractOperator{T}
   src   ::  FunctionSet
   dest  ::  FunctionSet
-  function ComplexifyOperator(src, dest)
+
+  function ComplexifyOperator{T}(src, dest) where T
     @assert length(src) == length(dest)
     @assert complex(eltype(src)) == eltype(dest)
     new(src, dest)
   end
 end
+
 ComplexifyOperator(src::FunctionSet, dest::FunctionSet) = ComplexifyOperator{eltype(src)}(src, dest)
 ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, promote_eltype(src,complex(eltype(src))))
 ComplexifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
@@ -315,15 +320,17 @@ A RealifyOperator converts complex numbers to their real counterparts.
 If the complex numbers should have no significant imaginary part.
 A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
 """
-immutable RealifyOperator{T} <: AbstractOperator{T}
+struct RealifyOperator{T} <: AbstractOperator{T}
   src   ::  FunctionSet
   dest  ::  FunctionSet
-  function RealifyOperator(src, dest)
+
+  function RealifyOperator{T}(src, dest) where T
     @assert length(src) == length(dest)
     @assert real(eltype(src)) == eltype(dest)
     new(src, dest)
   end
 end
+
 RealifyOperator(src::FunctionSet, dest::FunctionSet) = RealifyOperator{eltype(dest)}(src, dest)
 RealifyOperator(src::FunctionSet) = RealifyOperator(src, set_promote_eltype(src,real(eltype(src))))
 RealifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)

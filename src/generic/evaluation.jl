@@ -8,7 +8,7 @@
 # (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
     T = promote_type(eltype(set), numtype(pts))
-    a = Array(T, length(pts), length(set))
+    a = Array{T}(length(pts), length(set))
     evaluation_matrix!(a, set, pts)
 end
 

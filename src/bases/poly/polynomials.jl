@@ -1,11 +1,11 @@
 # polynomials.jl
 
 
-abstract PolynomialBasis{T} <: FunctionSet1d{T}
+abstract type PolynomialBasis{T} <: FunctionSet1d{T} end
 
 # The native index of a polynomial basis is the degree, which starts from 0 rather
 # than from 1. Since it is an integer, it is wrapped in a different type.
-immutable PolynomialDegree <: NativeIndex
+struct PolynomialDegree <: NativeIndex
 	index	::	Int
 end
 
@@ -25,9 +25,9 @@ end
 
 
 
-abstract OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
+abstract type OrthogonalPolynomialBasis{T} <: PolynomialBasis{T} end
 
-typealias OPS{T} OrthogonalPolynomialBasis{T}
+OPS{T} = OrthogonalPolynomialBasis{T}
 
 
 is_orthogonal(b::OPS) = true
@@ -95,7 +95,7 @@ has_extension(b::OPS) = true
 #######################
 
 # A basis of the monomials x^i
-immutable MonomialBasis{T} <: PolynomialBasis{T}
+struct MonomialBasis{T} <: PolynomialBasis{T}
     n   ::  Int
 end
 
@@ -137,7 +137,7 @@ eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
-immutable UltrasphericalBasis{T} <: OPS{T}
+struct UltrasphericalBasis{T} <: OPS{T}
 	n		::	Int
 	alpha	::	T
 end

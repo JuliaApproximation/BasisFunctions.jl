@@ -29,7 +29,7 @@ The differences between this type and an Array of Array's are:
 an inner array.
 These differences have motivated this special purpose type.
 """
-immutable MultiArray{A,ELT}
+struct MultiArray{A,ELT}
     # The underlying data is usually an array of arrays, but may be more general.
     # At the least, it is an indexable set that supports a linear index.
     arrays  ::  A
@@ -37,10 +37,9 @@ immutable MultiArray{A,ELT}
     # The linear index for the i-th subarray starts at offsets[i]+1.
     offsets ::  Array{Int,1}
 
-    function MultiArray(arrays)
-        new(arrays, compute_offsets(arrays))
-    end
+    MultiArray{A,ELT}(arrays) where {A,ELT} = new(arrays, compute_offsets(arrays))
 end
+
 
 function MultiArray(arrays, ELT = eltype(arrays[1]))
     for array in arrays
@@ -108,7 +107,7 @@ end
 ##########################
 
 # We introduce this type in order to support eachindex for MultiArray's below
-immutable MultiArrayIndexIterator{A,ELT}
+struct MultiArrayIndexIterator{A,ELT}
     array   ::  MultiArray{A,ELT}
 end
 
@@ -157,7 +156,7 @@ done(it::MultiArrayIndexIterator, state) = (state[1]==composite_length(it.array)
 
 length(it::MultiArrayIndexIterator) = length(it.array)
 
-typealias ArrayOfArray{T} Array{Array{T,1},1}
+ArrayOfArray{T} = Array{Array{T,1},1}
 
 # Our iterator can be simpler when the element sets are vectors in an array
 # Strictly speaking we can do even better, since we don't need the full array in the
@@ -231,10 +230,21 @@ function fill!(a::MultiArray, val)
     end
 end
 
-for op in (:+, :*, :-, :/, :.*, :.+, :.-, :./, :.\, :.^, :.÷)
+# for op in (:+, :*, :-, :/, :.*, :.+, :.-, :./, :.\, :.^, :.÷)
+#     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
+#     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])
+#     @eval $op(a::MultiArray, b::Number) = MultiArray([$op(array, b) for array in a.arrays])
+# end
+for op in (:+, :*, :-, :/)
     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])
     @eval $op(a::MultiArray, b::Number) = MultiArray([$op(array, b) for array in a.arrays])
+end
+
+for op in (:*, :+, :-, :/, :\, :^, :÷)
+    @eval broadcast(::typeof($op), a::MultiArray, b::MultiArray) = MultiArray([broadcast($op, a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
+    @eval broadcast(::typeof($op), a::Number, b::MultiArray) = MultiArray([broadcast($op, a, array) for array in b.arrays])
+    @eval broadcast(::typeof($op), a::MultiArray, b::Number) = MultiArray([broadcast($op, array, b) for array in a.arrays])
 end
 
 for op in (:≈,)

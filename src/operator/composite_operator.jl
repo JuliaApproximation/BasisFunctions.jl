@@ -5,7 +5,7 @@ A CompositeOperator consists of a sequence of operators that are applied
 consecutively.
 Memory is allocated at creation time to hold intermediate results.
 """
-immutable CompositeOperator{ELT} <: AbstractOperator{ELT}
+struct CompositeOperator{ELT} <: AbstractOperator{ELT}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).

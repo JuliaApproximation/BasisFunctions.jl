@@ -359,20 +359,20 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         x = coefficients(random_expansion(tbasis))
         e = SetExpansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
-        @test maximum(abs(e(g)-x)) < sqrt(eps(T))
+        @test maximum(abs.(e(g)-x)) < sqrt(eps(T))
         # - try evaluation using transform+pre/post-normalization
         e = random_expansion(basis)
         x1 = (post2*it*pre2)*coefficients(e)
         x2 = e(grid(basis))
-        @test maximum(abs(x1-x2)) < sqrt(eps(T))
+        @test maximum(abs.(x1-x2)) < sqrt(eps(T))
 
         # Verify the transposes and inverses
         if has_unitary_transform(basis)
-          @test maximum(abs( (t' * t)*x-x)) < sqrt(eps(T))
-          @test maximum(abs( (it' * it)*x-x)) < sqrt(eps(T))
-          @test maximum(abs( (inv(t) * t)*x-x)) < sqrt(eps(T))
-          @test maximum(abs( (inv(it) * it)*x-x)) < sqrt(eps(T))
-          @test maximum(abs( (it * t)*x-x)) < sqrt(eps(T))
+          @test maximum(abs.( (t' * t)*x-x)) < sqrt(eps(T))
+          @test maximum(abs.( (it' * it)*x-x)) < sqrt(eps(T))
+          @test maximum(abs.( (inv(t) * t)*x-x)) < sqrt(eps(T))
+          @test maximum(abs.( (inv(it) * it)*x-x)) < sqrt(eps(T))
+          @test maximum(abs.( (it * t)*x-x)) < sqrt(eps(T))
         end
 
 
@@ -388,7 +388,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             x[i] = rand()
         end
         e = SetExpansion(basis, I*x)
-        @test maximum(abs(e(g)-x)) < 100sqrt(eps(T))
+        @test maximum(abs.(e(g)-x)) < 100sqrt(eps(T))
     end
 
     ## Test evaluation operator
@@ -396,7 +396,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     E = evaluation_operator(basis, g)
     e = random_expansion(basis)
     y = E*e
-    @test maximum([abs(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
+    @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
 
     ## Test approximation operator
     if supports_approximation(basis)
@@ -408,7 +408,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         # We choose a fairly large error, because the ndof's can be very small.
         # We don't want to test convergence, only that something terrible did
         # not happen, so an error of 1e-3 will do.
-        @test abs(e(x)-f(x...)) < 1e-3
+        @test abs.(e(x)-f(x...)) < 1e-3
 
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.

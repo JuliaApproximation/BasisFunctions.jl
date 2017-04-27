@@ -20,20 +20,22 @@ A tensor product operation can be implemented as a sequence of DimensionOperator
 # 2: use sub
 # 3: use ArrayViews.view
 # The first is the default.
-immutable DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
+struct DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
     src             ::  FunctionSet
     dest            ::  FunctionSet
     op              ::  AbstractOperator{ELT}
     dim             ::  Int
     scratch_src     ::  AbstractArray{ELT}
     scratch_dest    ::  AbstractArray{ELT}
-
-    function DimensionOperator(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int)
+    
+    function DimensionOperator{VIEW,ELT}(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int) where {VIEW,ELT}
         scratch_src = zeros(eltype(op), src(op))
         scratch_dest = zeros(eltype(op), dest(op))
         new(set_src, set_dest, op, dim, scratch_src, scratch_dest)
     end
 end
+
+
 
 DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype) =
     DimensionOperator{viewtype,eltype(op)}(src, dest, op, dim)

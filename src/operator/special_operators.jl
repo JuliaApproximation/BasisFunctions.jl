@@ -3,13 +3,13 @@
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
-immutable CoefficientScalingOperator{T} <: AbstractOperator{T}
+struct CoefficientScalingOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     index   ::  Int
     scalar  ::  T
 
-    function CoefficientScalingOperator(src, dest, index, scalar)
+    function CoefficientScalingOperator{T}(src, dest, index, scalar) where T
         @assert length(src) == length(dest)
         new(src, dest, index, scalar)
     end
@@ -71,17 +71,24 @@ operator are correct, for example if a derived set returns an operator of the em
 This operator can be wrapped to make sure it has the right source and destination sets, i.e.
 its source and destination would correspond to the derived set, and not to the embedded set.
 """
-immutable WrappedOperator{OP,T} <: AbstractOperator{T}
+struct WrappedOperator{OP,T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     op      ::  OP
 
-    function WrappedOperator(src, dest, op)
+    function WrappedOperator{OP,T}(src, dest, op) where {OP,T}
         @assert size(op,1) == length(dest)
         @assert size(op,2) == length(src)
 
         new(src, dest, op)
     end
+end
+
+function WrappedOperator{T}(src, dest, op) where T
+    @assert size(op,1) == length(dest)
+    @assert size(op,2) == length(src)
+
+    new(src, dest, op)
 end
 
 function WrappedOperator(src, dest, op::AbstractOperator)
@@ -138,12 +145,12 @@ simplify(op::WrappedOperator) = op.op
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.
 """
-immutable IndexRestrictionOperator{I,T} <: AbstractOperator{T}
+struct IndexRestrictionOperator{I,T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
     subindices  ::  I
 
-    function IndexRestrictionOperator(src, dest, subindices)
+    function IndexRestrictionOperator{I,T}(src, dest, subindices) where {I,T}
         # Verify the lenght of subindices, but only if its length is defined
         if Base.iteratorsize(subindices) != Base.SizeUnknown()
             @assert length(dest) == length(subindices)
@@ -178,12 +185,12 @@ op_promote_eltype{I,T,S}(op::IndexRestrictionOperator{I,T}, ::Type{S}) =
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
 """
-immutable IndexExtensionOperator{I,T} <: AbstractOperator{T}
+struct IndexExtensionOperator{I,T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
     subindices  ::  I
 
-    function IndexExtensionOperator(src, dest, subindices)
+    function IndexExtensionOperator{I,T}(src, dest, subindices) where {I,T}
         @assert length(src) == length(subindices)
         @assert length(dest) >= length(src)
         new(src, dest, subindices)
@@ -225,12 +232,12 @@ otherwise it is not in-place.
 An alias MatrixOperator is provided, for which type parameter ARRAY equals
 Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
-immutable MultiplicationOperator{ARRAY,INPLACE,T} <: AbstractOperator{T}
+struct MultiplicationOperator{ARRAY,INPLACE,T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     object  ::  ARRAY
 
-    function MultiplicationOperator(src, dest, object)
+    function MultiplicationOperator{ARRAY,INPLACE,T}(src, dest, object) where {ARRAY,INPLACE,T}
         # @assert size(object,1) == length(dest)
         # @assert size(object,2) == length(src)
         new(src, dest, object)
@@ -241,7 +248,7 @@ object(op::MultiplicationOperator) = op.object
 
 # An MatrixOperator is defined by an actual matrix, i.e. the parameter
 # ARRAY is Array{T,2}.
-typealias MatrixOperator{T} MultiplicationOperator{Array{T,2},false,T}
+MatrixOperator{T} = MultiplicationOperator{Array{T,2},false,T}
 
 function MultiplicationOperator(src::FunctionSet, dest::FunctionSet, object; inplace = false)
     T = promote_type(eltype(object), op_eltype(src,dest))
@@ -324,7 +331,7 @@ A SolverOperator wraps around a solver that is used when the SolverOperator is a
 should implement the \ operator.
 Examples include a QR or SVD factorization, or a dense matrix.
 """
-immutable SolverOperator{Q,ELT} <: AbstractOperator{ELT}
+struct SolverOperator{Q,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     solver  ::  Q
@@ -348,7 +355,7 @@ ctranspose(op::SolverOperator) = warn("not implemented")
 A FunctionOperator applies a given function to the set of coefficients and
 returns the result.
 """
-immutable FunctionOperator{F,ELT} <: AbstractOperator{ELT}
+struct FunctionOperator{F,ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
     fun     ::  F
@@ -379,7 +386,7 @@ inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), in
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
-immutable UnevenSignFlipOperator{ELT} <: AbstractOperator{ELT}
+struct UnevenSignFlipOperator{ELT} <: AbstractOperator{ELT}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 end
@@ -407,14 +414,14 @@ diagonal{ELT}(op::UnevenSignFlipOperator{ELT}) = ELT[-(-1)^i for i in 1:length(s
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-immutable OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,S} <: AbstractOperator{ELT}
+struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,S} <: AbstractOperator{ELT}
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  ELT
     val2        ::  ELT
     scratch     ::  S
 
-    function OperatorSum(op1, op2, val1, val2, scratch)
+    function OperatorSum{OP1,OP2,ELT,S}(op1::OP1, op2::OP2, val1::ELT, val2::ELT, scratch::S) where {OP1 <: AbstractOperator,OP2 <: AbstractOperator,ELT,S}
         # We don't enforce that source and destination of op1 and op2 are the same, but at least
         # their sizes must match.
         @assert size(src(op1)) == size(src(op2))
@@ -477,7 +484,7 @@ a Vector with the length of the set. For example, one can not apply a matrix
 to a non-arraylike representation, hence the representation has to be linearized
 first.
 """
-immutable LinearizationOperator{ELT} <: AbstractOperator{ELT}
+struct LinearizationOperator{ELT} <: AbstractOperator{ELT}
     src         ::  FunctionSet
     dest        ::  FunctionSet
 end
@@ -492,7 +499,7 @@ is_diagonal(op::LinearizationOperator) = true
 
 
 "The inverse of a LinearizationOperator."
-immutable DelinearizationOperator{T} <: AbstractOperator{T}
+struct DelinearizationOperator{T} <: AbstractOperator{T}
     src         ::  FunctionSet
     dest        ::  FunctionSet
 end

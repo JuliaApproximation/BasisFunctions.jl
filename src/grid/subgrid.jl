@@ -1,6 +1,6 @@
 # subgrid.jl
 
-abstract AbstractSubGrid{N,T} <: AbstractGrid{N,T}
+abstract type AbstractSubGrid{N,T} <: AbstractGrid{N,T} end
 
 supergrid(g::AbstractSubGrid) = g.supergrid
 
@@ -8,11 +8,11 @@ supergrid(g::AbstractSubGrid) = g.supergrid
 An IndexSubGrid is a subgrid corresponding to a certain range of indices of the
 underlying grid.
 """
-immutable IndexSubGrid{G,I,N,T} <: AbstractSubGrid{N,T}
+struct IndexSubGrid{G,I,N,T} <: AbstractSubGrid{N,T}
 	supergrid  :: G
 	subindices :: I
 
-	function IndexSubGrid(supergrid::AbstractGrid{N,T}, subindices)
+	function IndexSubGrid{G,I,N,T}(supergrid::AbstractGrid{N,T}, subindices) where {G,I,N,T}
 		@assert length(subindices) <= length(supergrid)
 
 		new(supergrid, subindices)

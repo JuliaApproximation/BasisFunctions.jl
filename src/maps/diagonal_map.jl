@@ -4,7 +4,7 @@
 A diagonal map acts on each of the components of x separately:
 y = f(x) becomes y_i = f_i(x_i)
 """
-immutable DiagonalMap{N,MAPS} <: AbstractMap
+struct DiagonalMap{N,MAPS} <: AbstractMap
     # maps has an indexable and iterable type, for example a tuple of maps
     maps    ::  MAPS
 end

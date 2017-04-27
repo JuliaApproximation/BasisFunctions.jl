@@ -20,7 +20,7 @@ The concrete subtypes differ in what evaluation means. Examples include:
 subsets
 - PiecewiseSet, where evaluation depends on the location of the evaluation point
 """
-abstract CompositeSet{N,T} <: FunctionSet{N,T}
+abstract type CompositeSet{N,T} <: FunctionSet{N,T} end
 
 # We assume that every subset has an indexable field called sets
 is_composite(set::CompositeSet) = true
@@ -76,7 +76,7 @@ getindex(set::CompositeSet, idx::Tuple{Int,Any}) = getindex(set, idx[1], idx[2])
 
 getindex(set::CompositeSet, i, j) = set.sets[i][j]
 
-typealias MultiLinearIndex{N} NTuple{N,Int}
+MultiLinearIndex{N} = NTuple{N,Int}
 
 function multilinear_index(set::CompositeSet, idx::Int)
     i = 0

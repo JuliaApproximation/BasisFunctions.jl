@@ -11,11 +11,11 @@ checkbounds(set::FunctionSet, idx::CartesianRange) =
 A FunctionSubSet is a subset of a function set. It is characterized by the
 underlying larger set, and a collection of indices into that set.
 """
-immutable FunctionSubSet{SET, IDX, N, T} <: FunctionSet{N,T}
+struct FunctionSubSet{SET, IDX, N, T} <: FunctionSet{N,T}
     set ::  SET
     idx ::  IDX
-
-    function FunctionSubSet(set::FunctionSet{N,T}, idx::IDX)
+    
+    function FunctionSubSet{SET, IDX, N, T}(set::FunctionSet{N,T}, idx::IDX) where {SET, IDX, N, T}
         checkbounds(set, idx)
         new(set, idx)
     end

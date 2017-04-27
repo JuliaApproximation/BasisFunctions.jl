@@ -3,13 +3,13 @@
 """
 A TensorProductGrid represents the tensor product of other grids.
 
-immutable TensorProductGrid{TG,N,T} <: AbstractGrid{N,T}
+struct TensorProductGrid{TG,N,T} <: AbstractGrid{N,T}
 
 Parameters:
 - Parameter TG is a tuple of (grid) types.
 - Parametes N and T are the total dimension and numeric type of this grid.
 """
-immutable TensorProductGrid{TG,N,T} <: AbstractGrid{N,T}
+struct TensorProductGrid{TG,N,T} <: AbstractGrid{N,T}
 	grids	::	TG
 end
 

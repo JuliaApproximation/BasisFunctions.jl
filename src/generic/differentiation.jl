@@ -11,7 +11,7 @@ differentiation operators, with different result sets.
 For example, an expansion of Chebyshev polynomials up to degree n may map to polynomials up to degree n,
 or to polynomials up to degree n-1.
 """
-immutable Differentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct Differentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
@@ -51,7 +51,7 @@ The antidifferentiation operator of a set maps an expansion in the set to an exp
 antiderivative. The result of this operation may be an expansion in a different set. A function set
 can have different antidifferentiation operators, with different result sets.
 """
-immutable AntiDifferentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct AntiDifferentiation{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int

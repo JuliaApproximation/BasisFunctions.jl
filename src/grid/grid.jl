@@ -1,12 +1,12 @@
 # grid.jl
 
 "AbstractGrid is the supertype of all grids."
-abstract AbstractGrid{N,T}
+abstract type AbstractGrid{N,T} end
 
-typealias AbstractGrid1d{T} AbstractGrid{1,T}
-typealias AbstractGrid2d{T} AbstractGrid{2,T}
-typealias AbstractGrid3d{T} AbstractGrid{3,T}
-typealias AbstractGrid4d{T} AbstractGrid{4,T}
+AbstractGrid1d{T} = AbstractGrid{1,T}
+AbstractGrid2d{T} = AbstractGrid{2,T}
+AbstractGrid3d{T} = AbstractGrid{3,T}
+AbstractGrid4d{T} = AbstractGrid{4,T}
 
 ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
 ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))

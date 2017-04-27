@@ -12,15 +12,17 @@ is the native representation of the corresponding element of the multiset.
 Evaluation of an expansion at a point is defined by summing the evaluation of all
 functions in the set at that point.
 """
-immutable MultiSet{SETS,N,T} <: CompositeSet{N,T}
+struct MultiSet{SETS,N,T} <: CompositeSet{N,T}
     sets    ::  SETS
     offsets ::  Array{Int,1}
-
-    function MultiSet(sets)
+    
+    function MultiSet{SETS,N,T}(sets) where {SETS,N,T}
         offsets = compute_offsets(sets)
         new(sets, offsets)
     end
 end
+
+
 
 # Is this constructor type-stable? Probably not, even if T is given, because
 # of the use of ndims below.

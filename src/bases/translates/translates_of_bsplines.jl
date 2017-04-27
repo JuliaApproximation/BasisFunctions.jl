@@ -1,5 +1,5 @@
 # translates_of_bsplines.jl
-abstract PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T} end
 
 degree{K}(b::PeriodicBSplineBasis{K}) = K
 
@@ -45,7 +45,7 @@ end
 """
   Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
-immutable BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
+struct BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
@@ -107,7 +107,7 @@ restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslates
 
   There degree should be odd to use extension or restriction.
 """
-immutable SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
+struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   n               :: Int
   a               :: T
   b               :: T
@@ -157,12 +157,15 @@ restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTran
 """
   Basis consisting of orthonormal basis function in the spline space of degree K.
 """
-immutable OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
-  OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) =
+  
+  OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
     new(b, coeffs_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
+
+
 
 degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
@@ -188,14 +191,17 @@ change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B};
 """
   Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
 """
-immutable DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
 
   oversampling ::   T
-  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) =
+
+  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) where {K,T} =
     new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
+
 end
+
 
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 

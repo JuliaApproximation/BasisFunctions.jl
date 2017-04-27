@@ -2,7 +2,7 @@
 
 
 "An AbstractIntervalGrid is a grid that is defined on an interval, i.e. it is connected."
-abstract AbstractIntervalGrid{T} <: AbstractGrid1d{T}
+abstract type AbstractIntervalGrid{T} <: AbstractGrid1d{T} end
 
 # Some default implementations for interval grids follow
 left(g::AbstractIntervalGrid) = g.a
@@ -13,7 +13,7 @@ length(g::AbstractIntervalGrid) = g.n
 # Now the stepsize is recomputed with every call to getindex.
 
 "An equispaced grid has equispaced points, and therefore it has a stepsize."
-abstract AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
+abstract type AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T} end
 
 range(g::AbstractEquispacedGrid) = range(left(g), stepsize(g), length(g))
 
@@ -33,12 +33,12 @@ mapped_grid(g::AbstractEquispacedGrid, map::AffineMap) =
 An equispaced grid with n points on an interval [a,b], including the endpoints.
 It has stepsize (b-a)/(n-1).
 """
-immutable EquispacedGrid{T} <: AbstractEquispacedGrid{T}
+struct EquispacedGrid{T} <: AbstractEquispacedGrid{T}
     n   ::  Int
     a   ::  T
     b   ::  T
 
-    EquispacedGrid(n::Int, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
+    EquispacedGrid{T}(n::Int, a = -one(T), b = one(T)) where T = (@assert a < b; new(n, a, b))
 end
 
 EquispacedGrid{T}(n, ::Type{T} = Float64) = EquispacedGrid{T}(n)
@@ -65,12 +65,12 @@ convert{T}(::Type{BasisFunctions.EquispacedGrid{T}}, x::LinSpace{T}) = Equispace
 A periodic equispaced grid is an equispaced grid that omits the right endpoint.
 It has stepsize (b-a)/n.
 """
-immutable PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+struct PeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     n   ::  Int
     a   ::  T
     b   ::  T
 
-    PeriodicEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
+    PeriodicEquispacedGrid{T}(n, a = -one(T), b = one(T)) where T = (@assert a < b; new(n, a, b))
 end
 
 PeriodicEquispacedGrid{T}(n::Int, ::Type{T} = Float64) = PeriodicEquispacedGrid{T}(n)
@@ -95,12 +95,12 @@ stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 A dyadic periodic equispaced grid is an equispaced grid that omits the right endpoint and length 2^l.
 It has stepsize (b-a)/n.
 """
-immutable DyadicPeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+struct DyadicPeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     l   ::  Int
     a   ::  T
     b   ::  T
 
-    DyadicPeriodicEquispacedGrid(l, a = zero(T), b = one(T)) = (@assert a < b; new(l, a, b))
+    DyadicPeriodicEquispacedGrid{T}(l, a = zero(T), b = one(T)) where T = (@assert a < b; new(l, a, b))
 end
 
 dyadic_length(g::DyadicPeriodicEquispacedGrid) = g.l
@@ -134,12 +134,12 @@ A MidpointEquispaced grid is an equispaced grid with grid points in the centers 
 subintervals. In other words, this is a DCT-II grid.
 It has stepsize (b-a)/n.
 """
-immutable MidpointEquispacedGrid{T} <: AbstractEquispacedGrid{T}
+struct MidpointEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     n   ::  Int
     a   ::  T
     b   ::  T
 
-    MidpointEquispacedGrid(n, a = -one(T), b = one(T)) = (@assert a < b; new(n, a, b))
+    MidpointEquispacedGrid{T}(n, a = -one(T), b = one(T)) where T = (@assert a < b; new(n, a, b))
 end
 
 MidpointEquispacedGrid{T}(n, ::Type{T} = Float64) = MidpointEquispacedGrid{T}(n)
@@ -154,11 +154,11 @@ unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsiz
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
-immutable ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
+struct ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-typealias ChebyshevGrid ChebyshevNodeGrid
+ChebyshevGrid = ChebyshevNodeGrid
 
 ChebyshevNodeGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevNodeGrid{T}(n)
 
@@ -169,11 +169,11 @@ right{T}(g::ChebyshevNodeGrid{T}) = one(T)
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex{T}(g::ChebyshevNodeGrid{T}, i) = T(-1)*cos((i-1/2) * T(pi) / (g.n) )
 
-immutable ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
+struct ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-typealias ChebyshevPointsOfTheSecondKind ChebyshevExtremaGrid
+ChebyshevPointsOfTheSecondKind = ChebyshevExtremaGrid
 
 ChebyshevExtremaGrid{T}(n::Int, ::Type{T} = Float64) = ChebyshevExtremaGrid{T}(n)
 

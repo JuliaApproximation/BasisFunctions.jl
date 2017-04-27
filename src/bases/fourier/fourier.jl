@@ -12,14 +12,14 @@ implementation. The frequencies k are in the following order:
 Parameter EVEN is true if the length of the corresponding Fourier series is
 even. In that case, the largest frequency function in the set is a cosine.
 """
-immutable FourierBasis{EVEN,T} <: FunctionSet1d{T}
+struct FourierBasis{EVEN,T} <: FunctionSet1d{T}
 	n			::	Int
 
-	FourierBasis(n) = (@assert iseven(n)==EVEN; new(n))
+	FourierBasis{EVEN,T}(n) where {EVEN,T} = (@assert iseven(n)==EVEN; new(n))
 end
 
-typealias FourierBasisEven{T} FourierBasis{true,T}
-typealias FourierBasisOdd{T} FourierBasis{false,T}
+FourierBasisEven{T} = FourierBasis{true,T}
+FourierBasisOdd{T} = FourierBasis{false,T}
 
 name(b::FourierBasis) = "Fourier series"
 
@@ -97,7 +97,7 @@ frequency2idx(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
 
 # The native index of a FourierBasis is the frequency. Since that is an integer,
 # it is wrapped in a different type.
-immutable FourierFrequency <: NativeIndex
+struct FourierFrequency <: NativeIndex
 	index	::	Int
 end
 native_index(b::FourierBasis, idx::Int) = FourierFrequency(idx2frequency(b, idx))

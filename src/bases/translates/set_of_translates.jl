@@ -1,7 +1,7 @@
 """
   Set consisting of translates of a function.
 """
-abstract SetOfTranslates{T} <: FunctionSet1d{T}
+abstract type SetOfTranslates{T} <: FunctionSet1d{T} end
 
 length(set::SetOfTranslates) = set.n
 
@@ -27,7 +27,7 @@ has_unitary_transform(::SetOfTranslates) = false
   The set can be written as ``\left\{T_k f\right\}_{k=0}^n``, where ``T_k f(x) = f(x-p/n)``.
   ``p`` is the period of the set, ``n`` is the number of elements.
 """
-abstract PeriodicSetOfTranslates{T} <: SetOfTranslates{T}
+abstract type PeriodicSetOfTranslates{T} <: SetOfTranslates{T} end
 
 left{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.a)
 
@@ -134,7 +134,7 @@ discrete_dual(set::PeriodicSetOfTranslates; options...) =
   The support of the function is [c_1,c_2], where c_1, c_2 ∈R, c_2-c_1 <= p, 0 ∈ [c_1,c_2],
   and p is the period of the function.
 """
-abstract CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T}
+abstract type CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T} end
 
 """
   Length of the function of a CompactPeriodicSetOfTranslates.
@@ -188,7 +188,7 @@ end
 
   `f(x) = ∑ coeffs(set)[k] * supserset(set)[k](x)`
 """
-abstract LinearCombinationOfPeriodicSetOfTranslates{PSoT<:PeriodicSetOfTranslates, T} <: PeriodicSetOfTranslates{T}
+abstract type LinearCombinationOfPeriodicSetOfTranslates{PSoT<:PeriodicSetOfTranslates, T} <: PeriodicSetOfTranslates{T} end
 
 for op in (:length, :left, :right, :has_grid, :grid)
   @eval $op(b::LinearCombinationOfPeriodicSetOfTranslates) = $op(superset(b))
@@ -220,7 +220,7 @@ restriction_operator{B,T}(s1::LinearCombinationOfPeriodicSetOfTranslates{B,T}, s
 """
   Set representing the dual basis.
 """
-immutable DualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
+struct DualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
   superset  :: PeriodicSetOfTranslates{T}
   coeffs    :: Array{T,1}
 end
@@ -239,7 +239,7 @@ Gram(b::DualPeriodicSetOfTranslates; options...) = inv(Gram(superset(b); options
 """
   Set representing the dual basis with respect to a discrete norm on the oversampled grid.
 """
-immutable DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
+struct DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
   superset  :: PeriodicSetOfTranslates{T}
   coeffs    :: Array{T,1}
 

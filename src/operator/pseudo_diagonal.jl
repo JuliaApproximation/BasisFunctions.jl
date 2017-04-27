@@ -1,5 +1,5 @@
 # pseudo_diagonal.jl
-immutable PseudoDiagonalOperator{T} <: DerivedOperator{T}
+struct PseudoDiagonalOperator{T} <: DerivedOperator{T}
   superoperator   :: DiagonalOperator{T}
   tolerance       :: Real
 end

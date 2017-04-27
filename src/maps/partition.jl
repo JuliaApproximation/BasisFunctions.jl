@@ -10,14 +10,14 @@ effectively creating a piecewise function.
 
 The pieces of a partition have an index ranging from 1 to length(partition).
 """
-abstract Partition
+abstract type Partition end
 
 """
 A PartitionPiece represents a piece of a partition - it essentially combines
 a partition and an index into that partition. It is constructed by indexing
 a partition.
 """
-immutable PartitionPiece{P <: Partition,I}
+struct PartitionPiece{P <: Partition,I}
     part    ::  P
     idx     ::  I
 end
@@ -51,7 +51,7 @@ interval is ``[t_0,t_n]``. The subintervals always contain the right endpoint, i
 the first subinterval is ``[t_0,t_1]``, the second is the halfopen interval
 ``(t_1,t_2]`` and so on until the n-th interval ``(t_{n-1},t_n]``.
 """
-immutable PiecewiseInterval{T} <: Partition
+struct PiecewiseInterval{T} <: Partition
     points  ::  Array{T,1}
 end
 

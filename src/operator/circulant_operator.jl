@@ -5,7 +5,7 @@ Several other operators can be converted into a circulant matrix, and this
 conversion happens automatically when such operators are combined into a composite
 operator.
 """
-immutable CirculantOperator{T} <: DerivedOperator{T}
+struct CirculantOperator{T} <: DerivedOperator{T}
   superoperator   :: AbstractOperator
 
   eigenvaluematrix  :: PseudoDiagonalOperator

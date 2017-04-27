@@ -72,7 +72,7 @@ function project!(result, b, f::Function; options...)
 end
 
 function dot{T}(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verbose=false, options...)
-    (I,e) = quadgk(x->f(x), nodes...; reltol=reltol, abstol=abstol)
+    (I,e) = QuadGK.quadgk(x->f(x), nodes...; reltol=reltol, abstol=abstol)
     (e > sqrt(reltol) && verbose) && (warn("Dot product did not converge"))
     I
 end

@@ -1,13 +1,15 @@
 # jacobi.jl
 
 # A basis of Jacobi polynomials on the interval [-1,1]
-immutable JacobiBasis{S,T} <: OPS{T}
+struct JacobiBasis{S,T} <: OPS{T}
     n       ::  Int
     α       ::  S
     β       ::  S
-
-    JacobiBasis(n, α = zero(T), β = zero(T)) = new(n, α, β)
+    
+    JacobiBasis{S,T}(n, α = zero(T), β = zero(T)) where {S,T} = new(n, α, β)
 end
+
+
 
 name(b::JacobiBasis) = "Jacobi OPS"
 

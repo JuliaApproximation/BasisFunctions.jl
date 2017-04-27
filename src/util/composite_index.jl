@@ -12,7 +12,7 @@ For example, the composite indices of (1:5,1:3) are:
 In contrast, the Flatten iterator in Base would yield:
 1, 2, 3, 4, 5, 1, 2, 3
 """
-immutable CompositeIndexIterator{L}
+struct CompositeIndexIterator{L}
     lengths ::  L
 end
 

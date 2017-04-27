@@ -8,10 +8,8 @@
 """
 Sine series on the interval [0,1].
 """
-immutable SineSeries{T} <: FunctionSet1d{T}
+struct SineSeries{T} <: FunctionSet1d{T}
     n           ::  Int
-
-    SineSeries(n) = new(n)
 end
 
 name(b::SineSeries) = "Sine series"

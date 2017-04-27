@@ -9,13 +9,11 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval [-1,1].
 """
-immutable ChebyshevBasis{T} <: OPS{T}
+struct ChebyshevBasis{T} <: OPS{T}
     n			::	Int
-
-    ChebyshevBasis(n) = new(n)
 end
 
-typealias ChebyshevBasisFirstKind{T} ChebyshevBasis{T}
+ChebyshevBasisFirstKind{T} = ChebyshevBasis{T}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
@@ -276,7 +274,7 @@ end
 ############################################
 
 "A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
-immutable ChebyshevBasisSecondKind{T} <: OPS{T}
+struct ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
 

@@ -1,7 +1,7 @@
 # scattered_grid.jl
 
 "A grid corresponding to an unstructured collection of points."
-immutable ScatteredGrid{N,ELT,T} <: AbstractGrid{N,T}
+struct ScatteredGrid{N,ELT,T} <: AbstractGrid{N,T}
     points     ::  Array{ELT,1}
 end
 

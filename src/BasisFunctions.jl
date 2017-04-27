@@ -10,6 +10,7 @@ using ArrayViews
 using StaticArrays
 using RecipesBase
 using SpecialMatrices
+using QuadGK
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
@@ -29,7 +30,7 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 
-import Base: show, showcompact, call, convert, similar
+import Base: show, showcompact, convert, similar#,call
 
 import Base: dct, idct
 

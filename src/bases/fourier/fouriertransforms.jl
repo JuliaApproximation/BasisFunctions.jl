@@ -77,8 +77,8 @@ ifft_scalefactor{ELT}(src, ::Type{ELT}) = sqrt(ELT(length(src)))
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific FFT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-typealias FFTPLAN{T,N} Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
-typealias IFFTPLAN{T,N} Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
+FFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
+IFFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
 
 dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
     dim, object::FFTPLAN; options...) =
@@ -151,9 +151,9 @@ end
 # We have to know the precise type of the DCT plan in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific DCT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-typealias DCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,5,true}
-typealias IDCTPLAN{T} Base.DFT.FFTW.DCTPlan{T,4,true}
-typealias DCTIPLAN{T} Base.DFT.FFTW.r2rFFTWPlan{T,(3,),false,1}
+DCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,5,true}
+IDCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,4,true}
+DCTIPLAN{T} = Base.DFT.FFTW.r2rFFTWPlan{T,(3,),false,1}
 
 for (plan, transform, invtransform) in (
       (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),

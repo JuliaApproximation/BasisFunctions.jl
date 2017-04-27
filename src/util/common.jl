@@ -14,8 +14,8 @@ tolerance{T <: Real}(::Type{Complex{T}}) = tolerance(T)
 
 
 # Convenience definitions for the implementation of traits
-typealias True Val{true}
-typealias False Val{false}
+const True = Val{true}
+const False = Val{false}
 
 
 function copy!(dest, src)

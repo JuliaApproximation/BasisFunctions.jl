@@ -5,7 +5,7 @@ A DerivedSet is a set that derives from an underlying set. The abstract type
 derived sets implements a lot of the interface of a function set by delegating
 to the underlying set.
 """
-abstract DerivedSet{N,T} <: FunctionSet{N,T}
+abstract type DerivedSet{N,T} <: FunctionSet{N,T} end
 
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
@@ -173,7 +173,7 @@ dot(set::DerivedSet, f1::Function, f2::Function, nodes::Array=native_nodes(super
 For testing purposes we define a concrete subset of DerivedSet. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
-immutable ConcreteDerivedSet{N,T} <: DerivedSet{N,T}
+struct ConcreteDerivedSet{N,T} <: DerivedSet{N,T}
     superset ::  FunctionSet{N,T}
 end
 

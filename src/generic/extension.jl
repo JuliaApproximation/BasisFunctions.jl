@@ -21,7 +21,7 @@
 #
 # apply!(op::Extension, s1::SomeSet, s2::SomeSet, coef_dest, coef_src) = ...
 
-immutable Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
@@ -57,7 +57,7 @@ extension_operator(s1::FunctionSet; options...) =
     extension_operator(s1, extend(s1); options...)
 
 
-immutable Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
