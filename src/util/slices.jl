@@ -220,10 +220,4 @@ Base.done(it::JointIterator, state) = done(it.iter1, state[1]) || done(it.iter2,
 Base.view(a::AbstractArray, sidx::SliceIndexLinear) =
     view(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)
 
-
-import ArrayViews: view
-
-view(a::AbstractArray, sidx::SliceIndexLinear) =
-    view(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)
-
 end # module
