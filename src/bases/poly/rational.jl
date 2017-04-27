@@ -1,7 +1,7 @@
 immutable RationalBasis{T} <: FunctionSet1d{T}
     roots :: AbstractArray{T}
 
-    RationalBasis(roots) = new(roots)
+    RationalBasis{T}(roots) where T = new(roots)
 end
 RationalBasis{T}(roots::AbstractArray{T}) = RationalBasis{T}(roots)
 
