@@ -30,6 +30,10 @@ evaluation_operator(set::FunctionSet; oversampling=default_oversampling(set), op
 evaluation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
     evaluation_operator(set, gridspace(set, grid); options...)
 
+# Convert a linear range to an equispaced grid
+evaluation_operator(set::FunctionSet, r::LinSpace; options...) =
+    evaluation_operator(set, EquispacedGrid(r))
+
 # For easier dispatch, if the destination is a DiscreteGridSpace we add the grid as parameter
 evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...) =
     grid_evaluation_operator(set, dgs, grid(dgs); options...)
