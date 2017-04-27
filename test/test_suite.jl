@@ -168,10 +168,8 @@ for T in [Float64, BigFloat]
 
 end # for T in...
 delimit("Test DCTI")
-@testset "$(rpad("evaluation",80))" begin
-test_full_transform_extremagrid() end
-@testset "$(rpad("inverse",80))" begin
-test_inverse_transform_extremagrid() end
+@testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
+@testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
 println()
 println(" All tests passed!")
 end # module

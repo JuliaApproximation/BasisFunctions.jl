@@ -1,9 +1,5 @@
 using StaticArrays
-########
-# Auxiliary functions
-########
 
-const show_timings = false
 function delimit(s::AbstractString)
     println("############")
     println("# ",s)
