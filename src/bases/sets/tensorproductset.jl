@@ -175,7 +175,7 @@ _eval_element_native{TS}(s::TensorProductSet{TS,4}, sets, i, x) =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3]) * eval_element(sets[4], i[4], x[4])
 
 # Generic implementation, slightly slower
-_eval_element_native{N}(s::TensorProductSet, sets, i::NTuple{N}, x::SVector{N}) =
+_eval_element_native(s::TensorProductSet, sets, i, x) =
     reduce(*, map(eval_element, sets, i, x))
 
 
