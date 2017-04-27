@@ -145,6 +145,13 @@ end
 grid_evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
     block_row_operator( AbstractOperator{eltype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
+## Avoid ambiguity
+grid_evaluation_operator(set::MultiSet, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
+    block_row_operator( AbstractOperator{eltype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
+
 ## Rescaling
 
 apply_map(s::MultiSet, m) = multiset(map( t-> apply_map(t, m), elements(s)))
+
+## Projecting
+project(s::MultiSet, f::Function; options...) = MultiArray([project(el, f; options...) for el in elements(s)])

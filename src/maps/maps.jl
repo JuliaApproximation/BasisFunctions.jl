@@ -145,6 +145,17 @@ end
 
 translation{N,T}(x::SVector{N,T}) = AffineMap(eye(SMatrix{N,N,T}), x)
 
+ 
+# General rotational maps
+
+# Rotation in positive direction
+rotationmatrix(theta) = SMatrix{2,2}([cos(theta) -sin(theta); sin(theta) cos(theta)])
+# Rotation about X-axis (phi), Y-axis (theta) and Z-axis (psi)
+rotationmatrix(phi,theta,psi) =
+ SMatrix{3,3}([cos(theta)*cos(psi) cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi) sin(phi)*sin(psi)-cos(phi)*sin(theta)*cos(psi); -cos(theta)*sin(psi) cos(phi)*cos(psi)-sin(phi)*sin(theta)*sin(psi) sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi); sin(theta) -sin(phi)*cos(theta) cos(phi)*cos(theta)])
+ 
+ rotation(theta) = AffineMap(rotationmatrix(theta))
+ rotation(phi, theta, psi) = AffineMap(rotationmatrix(phi,theta,psi))
 
 ########################
 # Arithmetic

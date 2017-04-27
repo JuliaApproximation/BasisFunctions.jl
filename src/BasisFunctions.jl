@@ -53,7 +53,7 @@ import Base.LinAlg: dot
 # from maps/maps.jl
 export AbstractMap, AffineMap, DiagonalMap, IdentityMap, CompositeMap, CartToPolarMap, PolarToCartMap
 export forward_map, inverse_map, jacobian, linearize
-export translation, linear_map, interval_map, scaling_map
+export translation, rotation, linear_map, interval_map, scaling_map
 export is_linear
 
 # from maps/partition.jl
@@ -154,7 +154,7 @@ export interpolation_operator, default_interpolation_operator, interpolation_mat
 export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
-export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator
+export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
 
 # from generic/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_set,
@@ -221,7 +221,7 @@ export plotgrid, postprocess
 export MultiArray
 
 # from bases/poly/polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis, RationalBasis
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -316,6 +316,8 @@ include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
+include("bases/poly/rational.jl")
+
 
 include("util/recipes.jl")
 
