@@ -57,7 +57,7 @@ SETS = [FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
         LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
         BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,DiscreteOrthonormalSplineBasis]
 
-for T in [Float64,]
+for T in [Float64,BigFloat]
     println()
     delimit("T is $T", )
     delimit("Operators")
