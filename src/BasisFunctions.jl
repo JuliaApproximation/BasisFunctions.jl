@@ -1,12 +1,12 @@
 # BasisFunctions
 
-__precompile__()
+# __precompile__()
 
 module BasisFunctions
 
 using FastTransforms
 
-using ArrayViews
+# using ArrayViews
 using StaticArrays
 using RecipesBase
 using SpecialMatrices

@@ -307,7 +307,7 @@ function test_discrete_orthonormalsplinebasis(T)
     @test DiscreteGram(b; oversampling=oversampling)*e≈e
   end
 end
-
+using QuadGK
 function test_dualsplinebasis(T)
   n = 10; degree = 2;
   tol = max(sqrt(eps(real(T))), 1e-16)
@@ -318,8 +318,8 @@ function test_dualsplinebasis(T)
   @test Gram(b; abstol=tol, reltol=tol)*e ≈ DualGram(bb; abstol=tol, reltol=tol)*e
   @test Gram(bb; abstol=tol, reltol=tol)*e ≈ DualGram(b; abstol=tol, reltol=tol)*e
   @test BasisFunctions.dualgramcolumn(b; reltol=tol, abstol=tol) ≈ BasisFunctions.coeffs(bb)
-  @test quadgk(x->b[1](x)*bb[1](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
-  @test quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+  @test QuadGK.quadgk(x->b[1](x)*bb[1](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+  @test QuadGK.quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
 end
 
 function test_discrete_dualsplinebasis(T)

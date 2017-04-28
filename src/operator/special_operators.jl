@@ -490,7 +490,7 @@ struct LinearizationOperator{ELT} <: AbstractOperator{ELT}
 end
 
 LinearizationOperator(src::FunctionSet, ELT = eltype(src)) =
-    LinearizationOperator{ELT}(src, DiscreteSet{ELT}(length(src)))
+    LinearizationOperator{ELT}(src, DiscreteSet{ndims(src),ELT}(length(src)))
 
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)

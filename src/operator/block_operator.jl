@@ -41,7 +41,7 @@ end
 # sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
 function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::FunctionSet...)
     ELT = promote_type(eltype(op1), eltype(op2))
-    operators = Array(AbstractOperator{ELT}, 1, 2)
+    operators = Array{AbstractOperator{ELT}}(1, 2)
     operators[1] = op1
     operators[2] = op2
     BlockOperator(operators, sets...)
@@ -49,14 +49,14 @@ end
 
 function block_row_operator{OP <: AbstractOperator}(ops::Array{OP, 1}, sets::FunctionSet...)
     ELT = eltype(ops[1])
-    operators = Array(AbstractOperator{ELT}, 1, length(ops))
+    operators = Array{AbstractOperator{ELT}}(1, length(ops))
     operators[:] = ops
     BlockOperator(operators, sets...)
 end
 
 function block_column_operator(op1::AbstractOperator, op2::AbstractOperator)
     ELT = promote_type(eltype(op1), eltype(op2))
-    operators = Array(AbstractOperator{ELT}, 2, 1)
+    operators = Array{AbstractOperator{ELT}}(2, 1)
     operators[1] = op1
     operators[2] = op2
     BlockOperator(operators)
@@ -64,7 +64,7 @@ end
 
 function block_column_operator{OP <: AbstractOperator}(ops::Array{OP, 1})
     ELT = eltype(ops[1])
-    operators = Array(AbstractOperator{ELT}, length(ops), 1)
+    operators = Array{AbstractOperator{ELT}}(length(ops), 1)
     operators[:] = ops
     BlockOperator(operators)
 end

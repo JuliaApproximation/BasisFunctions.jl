@@ -1,3 +1,4 @@
+using QuadGK
 function elementarypropsofsplinetest(T)
   T = real(T)
   tol = sqrt(eps(T))
@@ -6,19 +7,19 @@ function elementarypropsofsplinetest(T)
     f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N-1, x, Float64)
     # Integral should be 1
     if !(T <: BigFloat)
-      I,e = quadgk(f, 0, N, reltol = tol)
+      I,e = QuadGK.quadgk(f, 0, N, reltol = tol)
       @test I≈T(1)
     end
     # Infinite summation of shifted versions is 1
     xx = linspace(T(N-1), T(N), S)[1:end-1]
-    g = zeros(T,xx)
+    g = zeros(T,length(xx))
     for k in 0:N-1
       g += map(x->f(x-k), xx)
     end
-    @test g ≈ ones(T,g)  # (norm(g-1) < tol)
+    @test g ≈ ones(T,length(g))  # (norm(g-1) < tol)
     # Two scale relation
     x = linspace(T(-1), T(N+1), S)
-    g = zeros(T,x)
+    g = zeros(T,length(x))
     for k in 0:N
       g += T(binomial(N,k))*map(x->f(2x-k), x)
     end

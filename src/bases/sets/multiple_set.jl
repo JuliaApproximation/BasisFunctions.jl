@@ -15,7 +15,7 @@ functions in the set at that point.
 struct MultiSet{SETS,N,T} <: CompositeSet{N,T}
     sets    ::  SETS
     offsets ::  Array{Int,1}
-    
+
     function MultiSet{SETS,N,T}(sets) where {SETS,N,T}
         offsets = compute_offsets(sets)
         new(sets, offsets)

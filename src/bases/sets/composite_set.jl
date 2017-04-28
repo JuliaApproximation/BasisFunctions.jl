@@ -37,7 +37,7 @@ tail(set::CompositeSet) = composite_length(set) == 2 ? element(set, 2) : element
 compute_offsets(sets::Array) = [0; cumsum(map(length, sets))]
 
 # Convert a tuple to an array in order to use cumsum like above
-compute_offsets(sets::NTuple) = compute_offsets([set for set in sets])
+compute_offsets{N}(sets::NTuple{N,Any}) = compute_offsets([set for set in sets])
 
 # Implement equality in terms of equality of the elements.
 ==(s1::CompositeSet, s2::CompositeSet) = (elements(s1) == elements(s2))
