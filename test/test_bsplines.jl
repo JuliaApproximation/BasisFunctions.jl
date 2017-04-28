@@ -4,7 +4,7 @@ function elementarypropsofsplinetest(T)
   tol = sqrt(eps(T))
   S = 20
   for N in 1:10
-    f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N-1, x, Float64)
+    f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N-1, x, T)
     # Integral should be 1
     if !(T <: BigFloat)
       I,e = QuadGK.quadgk(f, 0, N, reltol = tol)

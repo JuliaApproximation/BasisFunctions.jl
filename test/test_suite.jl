@@ -2,13 +2,8 @@
 #####################
 # All multidimensional testing is renoved since StaticArrays doesnt work
 # denoted by MULTIDIMENSIONAL
+# check also methods in util_functions.jl
 ####################
-
-
-
-
-
-
 module test_suite
 
 using Base.Test
