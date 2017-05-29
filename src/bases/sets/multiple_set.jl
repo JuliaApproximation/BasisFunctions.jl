@@ -91,7 +91,7 @@ function subset(s::MultiSet, idx::OrdinalRange{Int})
     if i1[1] == i2[1]
         subset(element(s, i1[1]), i1[2]:step(idx):i2[2])
     else
-        FunctionSubSet(s, idx)
+        LargeSubset(s, idx)
     end
 end
 

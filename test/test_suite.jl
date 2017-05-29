@@ -120,7 +120,13 @@ function test_derived_sets(T)
     end
 
     @testset "$(rpad("A simple subset",80))" begin
-    test_generic_set_interface(b1[2:6]) end
+        # a large subset
+        test_generic_set_interface(b1[2:6])
+        # a small subset
+        test_generic_set_interface(b1[[2,3,4]])
+        # a singleton subset
+        test_generic_set_interface(b1[2])
+    end
 
     @testset "$(rpad("Operated sets",80))" begin
     test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end

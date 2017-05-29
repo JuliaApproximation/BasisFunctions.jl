@@ -64,6 +64,7 @@ export split_interval
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
+export Point
 export dim, left, right, range, sample
 
 # from grid/subgrid.jl
@@ -93,7 +94,7 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
 export moment
 
 # from bases/sets/subsets.jl
-export FunctionSubSet, indices
+export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
 
 # from bases/sets/tensorproductset.jl
 export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
