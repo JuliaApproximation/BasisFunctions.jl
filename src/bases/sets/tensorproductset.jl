@@ -212,32 +212,26 @@ end
 getindex(s::TensorProductSet, idx::CartesianIndex) = getindex(s, idx.I)
 
 
-# Routine for linear indices: convert into multilinear index
-eval_element(s::TensorProductSet, i::Int, x) = eval_element_native(s, multilinear_index(s, i), x)
-
-# For any other type of index: assume it is a native one.
-eval_element(s::TensorProductSet, i, x) = eval_element_native(s, i, x)
-
-# We have to pass on the elements of s as an extra argument in order to avoid
+# We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
-eval_element_native(s::TensorProductSet, i, x) = _eval_element_native(s, elements(s), i, x)
+eval_element(set::TensorProductSet, idx, x) = _eval_element(set, elements(set), indexable_index(set, idx), x)
 
 # For now, we assume that each set in the tensor product is a 1D set.
 # This may not always be the case.
-_eval_element_native{TS}(s::TensorProductSet{TS,1}, sets, i, x) =
+_eval_element{TS}(set::TensorProductSet{TS,1}, sets, i, x) =
     eval_element(sets[1], i[1], x[1])
 
-_eval_element_native{TS}(s::TensorProductSet{TS,2}, sets, i, x) =
+_eval_element{TS}(set::TensorProductSet{TS,2}, sets, i, x) =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2])
 
-_eval_element_native{TS}(s::TensorProductSet{TS,3}, sets, i, x) =
+_eval_element{TS}(set::TensorProductSet{TS,3}, sets, i, x) =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3])
 
-_eval_element_native{TS}(s::TensorProductSet{TS,4}, sets, i, x) =
+_eval_element{TS}(set::TensorProductSet{TS,4}, sets, i, x) =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3]) * eval_element(sets[4], i[4], x[4])
 
 # Generic implementation, slightly slower
-_eval_element_native(s::TensorProductSet, sets, i, x) =
+_eval_element(s::TensorProductSet, sets, i, x) =
     reduce(*, map(eval_element, sets, i, x))
 
 
