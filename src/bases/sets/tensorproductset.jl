@@ -20,6 +20,8 @@ element(set::TensorProductSet, j::Int) = set.sets[j]
 element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)
 composite_length{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
 
+clength = composite_length
+
 function TensorProductSet(set::FunctionSet)
     warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
     set
@@ -49,6 +51,8 @@ end
 #   is a linear index for the corresponding element of the set
 # - Native index: any other tuple type. Each element is the native index of the
 #   corresponding element of the set.
+# The storage of a product set is an array, and it can be indexed using either a
+# linear index or a multilinear (cartesian) index.
 #
 # We define some conversion routines below.
 
@@ -78,11 +82,14 @@ native_index{N}(s::TensorProductSet, idx::NTuple{N,Int}) = map(native_index, ele
 # - Assume that another kind of tuple is the native index
 native_index(s::TensorProductSet, idx::Tuple) = idx
 # - From a linear index
-native_index(s::TensorProductSet, idx::Int) = native_index(multilinear_index(s, idx))
+native_index(s::TensorProductSet, idx::Int) = native_index(s, multilinear_index(s, idx))
 
 # Convert an index into an index that is indexable, with length equal to the length of the product set
-indexable_index(set::TensorProductSet, idx::Tuple) = idx
+# - we convert a linear index into a multilinear one
 indexable_index(set::TensorProductSet, idx::Int) = multilinear_index(set, idx)
+# - for a tuple we don't need to do anything
+indexable_index(set::TensorProductSet, idx::Tuple) = idx
+# - we catch a CartesianIndex and convert it to multilinear as well
 indexable_index(set::TensorProductSet, idx::CartesianIndex) = multilinear_index(set, idx)
 
 
@@ -108,14 +115,25 @@ set_promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
 resize(s::TensorProductSet, n::Int) = resize(s, approx_length(s, n))
 
-nested_vector{TS,N,T}(set::TensorProductSet{TS,N,T}, x::SVector{N}) = x
+
+# nested_vector{TS}(set::TensorProductSet{TS}, x) = _nested_vector(TS, set, x)
+#
+# _nested_vector{A}(::Type{Tuple{A}}, set, x::SVector{1}) = x
+# _nested_vector{A}(::Type{Tuple{A}}, set, x::Number) = x
+#
+# _nested_vector{A,B}(::Type{Tuple{A,B},2,T}, x::SVector{2}) = x
+# _nested_vector{A,B,C}(::Type{Tuple{A,B,C},3,T}, x::SVector{3}) = x
+# _nested_vector{A,B,C,D}(::Type{Tuple{A,B,C,D},4,T}, x::SVector{4}) = x
+
 
 # Delegate in_support to _in_support with the composing sets as extra arguments,
 # in order to avoid extra memory allocation.
-in_support(set::TensorProductSet, idx, x) = _in_support(set, elements(set), indexable_index(idx), x)
+in_support(set::TensorProductSet, idx, x) =
+    _in_support(set, elements(set), indexable_index(set, idx), x)
 
 # This line is a bit slower than the lines below:
 _in_support(::TensorProductSet, sets, idx, x) = reduce(&, map(in_support, sets, idx, x))
+# Cases of elements of the set with dimension larger than 1 are not working yet
 
 # That is why we handcode a few cases:
 _in_support(::TensorProductSet, sets, idx::NTuple{1,Int}, x) =

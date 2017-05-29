@@ -37,9 +37,9 @@ function TensorProductOperator(operators...)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
     # storage to hold a vector for source and destination for each operator
-    src_scratch_array = [zeros(ELT, size(src(operators[j]))) for j=1:L]
+    src_scratch_array = [zeros(src(operators[j])) for j=1:L]
     src_scratch = (src_scratch_array...)
-    dest_scratch_array = [zeros(ELT, size(dest(operators[j]))) for j=1:L]
+    dest_scratch_array = [zeros(dest(operators[j])) for j=1:L]
     dest_scratch = (dest_scratch_array...)
     TensorProductOperator{ELT}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
@@ -99,7 +99,7 @@ function apply_tensor!{A,B}(op, coef_dest, coef_src, operators::Tuple{A,B}, scra
     # println("op1: ", size(op1))
     # println("op2: ", size(op2))
     # println("intermediate: ", size(intermediate))
-
+    #
     for j in eachindex(src2)
         for i in eachindex(src1)
             src1[i] = coef_src[i,j]

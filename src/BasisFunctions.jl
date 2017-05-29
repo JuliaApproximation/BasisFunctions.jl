@@ -98,7 +98,7 @@ export moment
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
 
 # from bases/sets/tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length
+export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length, clength
 
 # from bases/sets/derived_set.jl
 export DerivedSet
