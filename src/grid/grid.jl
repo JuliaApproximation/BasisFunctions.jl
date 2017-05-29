@@ -8,6 +8,8 @@ AbstractGrid2d{T} = AbstractGrid{2,T}
 AbstractGrid3d{T} = AbstractGrid{3,T}
 AbstractGrid4d{T} = AbstractGrid{4,T}
 
+Point{N,T} = SVector{N,T}
+
 ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
 ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))
 ndims{N,T}(::AbstractGrid{N,T}) = N
@@ -18,7 +20,7 @@ numtype{G <: AbstractGrid}(::Type{G}) = numtype(supertype(G))
 
 # The element type of a grid is the type returned by getindex.
 eltype{T}(::Type{AbstractGrid{1,T}}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = SVector{N,T}
+eltype{N,T}(::Type{AbstractGrid{N,T}}) = Point{N,T}
 eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)
@@ -78,15 +80,19 @@ done(g::AbstractGrid, state) = done(state[1], state[2])
 "Sample the function f on the given grid."
 sample(g::AbstractGrid, f, ELT = numtype(g)) = sample!(zeros(ELT, size(g)), g, f)
 
-# We use a generated function to avoid the overhead of splatting when we
-# evaluate f with several arguments
-@generated function sample!(result, g::AbstractGrid, f)
-	xargs = [:(x[$d]) for d = 1:ndims(g)]
-	quote
-		for i in eachindex(g)
-			x = g[i]
-			result[i] = f($(xargs...))
-		end
-		result
+# We don't want to assume that f can be called with a vector argument.
+# In order to avoid the overhead of splatting, we capture a number of special cases
+call_function_with_vector(f, x::Number) = f(x)
+call_function_with_vector(f, x::SVector{1}) = f(x[1])
+call_function_with_vector(f, x::SVector{2}) = f(x[1], x[2])
+call_function_with_vector(f, x::SVector{3}) = f(x[1], x[2], x[3])
+call_function_with_vector(f, x::SVector{4}) = f(x[1], x[2], x[3], x[4])
+call_function_with_vector{N}(f, x::SVector{N}) = f(x...)
+call_function_with_vector(f, x::AbstractVector) = f(x...)
+
+function sample!(result, g::AbstractGrid, f)
+	for i in eachindex(g)
+		result[i] = call_function_with_vector(f, g[i])
 	end
+	result
 end

@@ -88,8 +88,8 @@ end
 # For regular SetExpansions, no postprocessing is needed
 postprocess(S::FunctionSet, grid, vals) = vals
 
-# For FunctionSubSets, revert to the underlying FunctionSet for postprocessing
-postprocess(S::FunctionSubSet, grid, vals) = postprocess(set(S), grid, vals)
+# For function subsets, revert to the underlying FunctionSet for postprocessing
+postprocess(S::Subset, grid, vals) = postprocess(superset(S), grid, vals)
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution

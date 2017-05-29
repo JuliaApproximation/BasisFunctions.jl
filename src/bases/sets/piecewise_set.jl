@@ -79,7 +79,7 @@ end
 # that is outside its support. In order to get that behaviour, we need to retain
 # the PiecewiseSet.
 # Perhaps this should change, and any function should be zero outside its support.
-getindex(set::PiecewiseSet, i, j) = FunctionSubSet(set, (i,j))
+getindex(set::PiecewiseSet, i, j) = subset(set, (i,j))
 
 function eval_element(set::PiecewiseSet, idx::Tuple{Int,Any}, x)
     x ∈ set.partition[idx[1]] ? eval_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))

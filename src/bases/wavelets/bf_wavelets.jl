@@ -15,7 +15,7 @@ function subset(b::WaveletBasis, idx::OrdinalRange)
   if (step(idx)==1) && (first(idx) == 1) && isdyadic(last(idx))
     resize(b, last(idx))
   else
-    FunctionSubSet(b,idx)
+    subset(b,idx)
   end
 end
 

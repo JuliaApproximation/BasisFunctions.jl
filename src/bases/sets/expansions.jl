@@ -60,6 +60,7 @@ setindex!(e::SetExpansion, v, i...) = (e.coefficients[i...] = v)
 (e::SetExpansion)(x, y) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y))
 (e::SetExpansion)(x, y, z) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y, z))
 (e::SetExpansion)(x, y, z, t) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y, z, t))
+(e::SetExpansion)(x, y, z, t, u...) = call_set_expansion(e, set(e), coefficients(e), SVector(x, y, z, t, u...))
 
 call_set_expansion(e::SetExpansion, set::FunctionSet, coefficients, x) =
     eval_expansion(set, coefficients, x)
@@ -74,9 +75,9 @@ function antidifferentiate(e::SetExpansion, order=1)
     SetExpansion(dest(op), apply(op,e.coefficients))
 end
 
-broadcast(e::SetExpansion, grid::AbstractGrid) = eval_expansion(set(e), coefficients(e), grid)
+Base.broadcast(e::SetExpansion, grid::AbstractGrid) = eval_expansion(set(e), coefficients(e), grid)
 
-broadcast{T}(e::SetExpansion, x::LinSpace{T}) = broadcast(e, convert(EquispacedGrid{T}, x))
+Base.broadcast{T}(e::SetExpansion, x::LinSpace{T}) = broadcast(e, EquispacedGrid(x))
 
 # Shorthands for partial derivatives
 ∂x(f::SetExpansion) = differentiate(f, 1, 1)

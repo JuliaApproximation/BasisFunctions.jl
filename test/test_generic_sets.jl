@@ -8,11 +8,16 @@ supports_approximation(s::LaguerreBasis) = false
 supports_approximation(s::HermiteBasis) = false
 
 # It is difficult to do approximation in subsets generically
-supports_approximation(s::FunctionSubSet) = false
+supports_approximation(s::Subset) = false
 supports_approximation(s::OperatedSet) = false
 
 supports_approximation(s::TensorProductSet) =
     reduce(&, map(supports_approximation, elements(s)))
+
+supports_interpolation(s::FunctionSet) = is_basis(s)
+
+# disable for now
+supports_interpolation(s::SingletonSubset) = false
 
 # Pick a simple function to approximate
 suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
@@ -32,7 +37,8 @@ function suitable_interpolation_grid(basis::FunctionSet)
         grid(basis)
     else
         T = numtype(basis)
-        EquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
+        # A midpoint grid avoids duplication of the endpoints for a periodic basis
+        MidpointEquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
     end
 end
 
@@ -212,7 +218,13 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
     for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, T(0.5))) ]
-        for idx in [1 2 n>>1 n-1 n]
+        if length(basis) > 1
+            indices = [1 2 n>>1 n-1 n]
+        else
+            # For a singleton subset we can only use index 1
+            indices = 1
+        end
+        for idx in indices
             z = eval_set_element(basis, idx, x)
             types_correct = types_correct & (typeof(z) == ELT)
         end
@@ -380,7 +392,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
 
     ## Test interpolation operator on a suitable interpolation grid
-    if is_basis(basis)
+    if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(basis, g)
         x = zeros(ELT, size(basis))

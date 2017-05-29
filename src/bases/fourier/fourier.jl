@@ -112,6 +112,11 @@ eval_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
 	(idx == nhalf(b)+1	?  cos(x * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(x * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
+function eval_derivative{T}(b::FourierBasisOdd{T}, idx::Int, x)
+	arg = 2*T(pi)*1im*idx2frequency(b, idx)
+	arg * exp(arg * x)
+end
+
 moment{EVEN,T}(b::FourierBasis{EVEN,T}, idx) = idx == 1 ? T(2) : T(0)
 
 extension_size(b::FourierBasisEven) = 2*length(b)

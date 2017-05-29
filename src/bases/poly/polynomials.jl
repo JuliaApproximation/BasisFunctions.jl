@@ -19,7 +19,7 @@ function subset(b::PolynomialBasis, idx::OrdinalRange)
     if (step(idx) == 1) && (first(idx) == 1) && (last(idx) <= length(b))
         resize(b, last(idx))
     else
-        FunctionSubSet(b, idx)
+        subset(b, idx)
     end
 end
 

@@ -41,7 +41,53 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
 
+## Indices
+
+# A tensor product set s has three types of indices:
+# - Linear index: this is an Int, ranging from 1 to length(s)
+# - Multilinear index: tuple of Ints, or CartesianIndex. Each element of the tuple
+#   is a linear index for the corresponding element of the set
+# - Native index: any other tuple type. Each element is the native index of the
+#   corresponding element of the set.
+#
+# We define some conversion routines below.
+
+# Convert the given index to a linear index.
+# - If it is an Int, it already is a linear index
+linear_index(s::TensorProductSet, i::Int) = i
+# - If the argument is a tuple of integers or a CartesianIndex, then it is
+#   a multilinear index.
+linear_index{N}(s::TensorProductSet, i::NTuple{N,Int}) = sub2ind(size(s), i...)
+linear_index(s::TensorProductSet, i::CartesianIndex) = sub2ind(size(s), i.I...)
+# - If its type is anything else, it may be a tuple of native indices
+linear_index(s::TensorProductSet, idxn::Tuple) = linear_index(s, map(linear_index, elements(s), idxn))
+
+# Convert the given index to a multilinear index.
+# - A tuple of Int's is already a multilinear index
+multilinear_index{N}(s::TensorProductSet, idx::NTuple{N,Int}) = idx
+# - From linear index to multilinear
+multilinear_index(s::TensorProductSet, idx::Int) = ind2sub(size(s), idx)
+# - Convert a CartesianIndex to a tuple (! this uses CartesianIndex internals currently)
+multilinear_index(s::TensorProductSet, idx::CartesianIndex) = idx.I
+# - From any other tuple
+multilinear_index(s::TensorProductSet, idx::Tuple) = map(linear_index, elements(s), idx)
+
+# Convert the given index to a native index.
+# - From a multilinear index
+native_index{N}(s::TensorProductSet, idx::NTuple{N,Int}) = map(native_index, elements(s), idx)
+# - Assume that another kind of tuple is the native index
+native_index(s::TensorProductSet, idx::Tuple) = idx
+# - From a linear index
+native_index(s::TensorProductSet, idx::Int) = native_index(multilinear_index(s, idx))
+
+# Convert an index into an index that is indexable, with length equal to the length of the product set
+indexable_index(set::TensorProductSet, idx::Tuple) = idx
+indexable_index(set::TensorProductSet, idx::Int) = multilinear_index(set, idx)
+indexable_index(set::TensorProductSet, idx::CartesianIndex) = multilinear_index(set, idx)
+
+
 ## Feature methods
+
 for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
@@ -62,10 +108,11 @@ set_promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
 resize(s::TensorProductSet, n::Int) = resize(s, approx_length(s, n))
 
-in_support(set::TensorProductSet, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
+nested_vector{TS,N,T}(set::TensorProductSet{TS,N,T}, x::SVector{N}) = x
 
-# We pass elements(set) as an extra argument in order to avoid extra memory allocation
-in_support(set::TensorProductSet, idx, x) = _in_support(set, elements(set), idx, x)
+# Delegate in_support to _in_support with the composing sets as extra arguments,
+# in order to avoid extra memory allocation.
+in_support(set::TensorProductSet, idx, x) = _in_support(set, elements(set), indexable_index(idx), x)
 
 # This line is a bit slower than the lines below:
 _in_support(::TensorProductSet, sets, idx, x) = reduce(&, map(in_support, sets, idx, x))
@@ -82,9 +129,6 @@ _in_support(::TensorProductSet, sets, idx::NTuple{3,Int}, x) =
 
 _in_support(::TensorProductSet, sets, idx::NTuple{4,Int}, x) =
     in_support(sets[1], idx[1], x[1]) && in_support(sets[2], idx[2], x[2]) && in_support(sets[3], idx[3], x[3]) && in_support(sets[4], idx[4], x[4])
-
-# Convert a CartesianIndex to a tuple so that we can use the implementation above
-in_support(set::TensorProductSet, idx::CartesianIndex, x) = in_support(set, idx.I, x)
 
 function approx_length(s::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
@@ -179,22 +223,53 @@ _eval_element_native(s::TensorProductSet, sets, i, x) =
     reduce(*, map(eval_element, sets, i, x))
 
 
-# A multilinear index of a set is a tuple consisting of linear indices of
-# each of the subsets. Its type is a tuple of integers.
-multilinear_index(s::TensorProductSet, idx::Int) = ind2sub(size(s), idx)
-# In contrast, the native index is a tuple consisting of native indices of each
-# of the subsets. Its type depends on the type of the native indices.
-function native_index(s::TensorProductSet, idx::Int)
-    # Compute multilinear index first
-    idx_ml = multilinear_index(s, idx)
-    # Map each linear index to a native index
-    map(native_index, elements(s), idx_ml)
+
+
+
+"Return a list of all tensor product indices (1:s+1)^n."
+index_set_tensorproduct(s,n) = CartesianRange(CartesianIndex(fill(1,n)...), CartesianIndex(fill(s+1,n)...))
+
+"Return a list of all indices of total degree at most s, in n dimensions."
+function index_set_total_degree(s, n)
+    # We make a list of arrays because that is easier
+    I = _index_set_total_degree(s, n)
+    # and then we convert to tuples
+    [tuple((1+i)...) for i in I]
 end
 
-# Convert to linear index. If the argument is a tuple of integers, it can be assumed to
-# be a multilinear index. Same for CartesianIndex.
-linear_index{N}(s::TensorProductSet, i::NTuple{N,Int}) = sub2ind(size(s), i...)
-linear_index(s::TensorProductSet, i::CartesianIndex) = sub2ind(size(s), i.I...)
+function _index_set_total_degree(s, n)
+    if n == 1
+        I = [[i] for i in 0:s]
+    else
+        I = Array(Array{Int,1},0)
+        I_rec = _index_set_total_degree(s, n-1)
+        for idx in I_rec
+            for m in 0:s-sum(abs(idx))
+                push!(I, [idx...; m])
+            end
+        end
+        I
+    end
+end
 
-# If its type is anything else, it may be a tuple of native indices
-linear_index(s::TensorProductSet, idxn::Tuple) = linear_index(s, map(linear_index, elements(s), idxn))
+"Return a list of all indices in an n-dimensional hyperbolic cross."
+function index_set_hyperbolic_cross(s, n, α = 1)
+    I = _index_set_hyperbolic_cross(s, n, α)
+    [tuple((1+i)...) for i in I]
+end
+
+function _index_set_hyperbolic_cross(s, n, α = 1)
+    if n == 1
+        smax = floor(Int, s^(1/α))-1
+        I = [[i] for i in 0:smax]
+    else
+        I = Array(Array{Int,1},0)
+        I_rec = _index_set_total_degree(s, n-1)
+        for idx in I_rec
+            for m in 0:floor(Int,s^(1/α)/prod(1+abs(idx)))-1
+                push!(I, [idx...; m])
+            end
+        end
+        I
+    end
+end
