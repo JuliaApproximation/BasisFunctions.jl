@@ -71,17 +71,17 @@ apply!(op::TensorProductOperator, coef_dest, coef_src) =
 apply_inplace!(op::TensorProductOperator, coef_srcdest) =
     apply_inplace_tensor!(op, coef_srcdest, op.operators, op.src_scratch)
 
-function apply_tensor!(op, coef_dest, coef_src, operators::NTuple{1}, scratch, src_scratch, dest_scratch)
+function apply_tensor!{A}(op, coef_dest, coef_src, operators::Tuple{A}, scratch, src_scratch, dest_scratch)
     println("One-element TensorProductOperators should not exist!")
     apply!(operators[1], coef_dest, coef_src)
 end
 
-function apply_inplace_tensor!(op, coef_srcdest, operators::NTuple{1}, src_scratch)
+function apply_inplace_tensor!{A}(op, coef_srcdest, operators::Tuple{A}, src_scratch)
     println("One-element TensorProductOperators should not exist!")
     apply!(operators[1], coef_srcdest)
 end
 
-function apply_tensor!(op, coef_dest, coef_src, operators::NTuple{2}, scratch, src_scratch, dest_scratch)
+function apply_tensor!{A,B}(op, coef_dest, coef_src, operators::Tuple{A,B}, scratch, src_scratch, dest_scratch)
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     dest1 = dest_scratch[1]
@@ -121,7 +121,7 @@ function apply_tensor!(op, coef_dest, coef_src, operators::NTuple{2}, scratch, s
     coef_dest
 end
 
-function apply_inplace_tensor!(op, coef_srcdest, operators::NTuple{2}, src_scratch)
+function apply_inplace_tensor!{A,B}(op, coef_srcdest, operators::Tuple{A,B}, src_scratch)
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     op1 = operators[1]
@@ -148,7 +148,7 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::NTuple{2}, src_scrat
     coef_srcdest
 end
 
-function apply_tensor!(op, coef_dest, coef_src, operators::NTuple{3}, scratch, src_scratch, dest_scratch)
+function apply_tensor!{A,B,C}(op, coef_dest, coef_src, operators::Tuple{A,B,C}, scratch, src_scratch, dest_scratch)
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     src3 = src_scratch[3]
@@ -207,7 +207,7 @@ function apply_tensor!(op, coef_dest, coef_src, operators::NTuple{3}, scratch, s
     coef_dest
 end
 
-function apply_inplace_tensor!(op, coef_srcdest, operators::NTuple{3}, src_scratch)
+function apply_inplace_tensor!{A,B,C}(op, coef_srcdest, operators::Tuple{A,B,C}, src_scratch)
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     src3 = src_scratch[3]
