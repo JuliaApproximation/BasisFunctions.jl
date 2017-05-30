@@ -52,7 +52,7 @@ end
 element(s::DiscreteGridSpace, i) = _element(s, i, grid(s))
 _element(s::DiscreteGridSpace, i, grid) = DiscreteGridSpace(element(grid, i), eltype(s))
 
-composite_length(s::DiscreteGridSpace) = composite_length(grid(s))
+nb_elements(s::DiscreteGridSpace) = nb_elements(grid(s))
 
 elements(s::DiscreteGridSpace) = map(t->DiscreteGridSpace(t, eltype(s)), elements(grid(s)))
 

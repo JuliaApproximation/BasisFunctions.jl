@@ -4,12 +4,13 @@
 
 module BasisFunctions
 
-using FastTransforms
-
 using StaticArrays
 using RecipesBase
-using SpecialMatrices
 using QuadGK
+
+using SpecialMatrices
+using FastTransforms
+using Domains
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
@@ -46,14 +47,20 @@ import Base.LinAlg: dot
 # import Wavelets.Util: isdyadic
 
 
+## Imports from Domains
 
-## Exports
+import Domains: is_compatible
 
-# from maps/maps.jl
-export AbstractMap, AffineMap, DiagonalMap, IdentityMap, CompositeMap, CartToPolarMap, PolarToCartMap
-export forward_map, inverse_map, jacobian, linearize
-export translation, rotation, linear_map, interval_map, scaling_map
-export is_linear
+import Domains: left, right
+
+# composite type interface
+import Domains: element, elements, nb_elements
+# tensor product utility functions
+import Domains: tensorproduct, ⊗
+
+
+
+## Exhaustive list of exports
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -97,7 +104,7 @@ export moment
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
 
 # from bases/sets/tensorproductset.jl
-export TensorProductSet, tensorproduct, ⊗, element, elements, composite_length, clength
+export TensorProductSet
 
 # from bases/sets/derived_set.jl
 export DerivedSet
@@ -244,7 +251,6 @@ include("util/multiarray.jl")
 include("util/slices.jl")
 include("util/functors.jl")
 
-include("maps/maps.jl")
 include("maps/partition.jl")
 
 include("grid/grid.jl")

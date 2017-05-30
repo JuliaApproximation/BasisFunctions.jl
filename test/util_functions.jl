@@ -1,4 +1,3 @@
-using StaticArrays
 
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
 function point_in_domain(basis::FunctionSet, scalar)

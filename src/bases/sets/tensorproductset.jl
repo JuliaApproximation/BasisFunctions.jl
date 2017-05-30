@@ -18,9 +18,7 @@ is_composite(set::TensorProductSet) = true
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
 element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)
-composite_length{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
-
-clength = composite_length
+nb_elements{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
 
 function TensorProductSet(set::FunctionSet)
     warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
@@ -152,7 +150,7 @@ function approx_length(s::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
     N = ndims(s)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(element(s, j), m^ndims(s, j)) for j in 1:composite_length(s)]...)
+    tuple([approx_length(element(s, j), m^ndims(s, j)) for j in 1:nb_elements(s)]...)
 end
 
 extension_size(s::TensorProductSet) = map(extension_size, elements(s))
@@ -168,20 +166,20 @@ size(s::TensorProductSet, j::Int) = length(s.sets[j])
 
 length(s::TensorProductSet) = prod(size(s))
 
-getindex(s::TensorProductSet, ::Colon, i::Int) = (@assert composite_length(s)==2; element(s,1))
-getindex(s::TensorProductSet, i::Int, ::Colon) = (@assert composite_length(s)==2; element(s,2))
-getindex(s::TensorProductSet, ::Colon, ::Colon) = (@assert composite_length(s)==2; s)
+getindex(s::TensorProductSet, ::Colon, i::Int) = (@assert nb_elements(s)==2; element(s,1))
+getindex(s::TensorProductSet, i::Int, ::Colon) = (@assert nb_elements(s)==2; element(s,2))
+getindex(s::TensorProductSet, ::Colon, ::Colon) = (@assert nb_elements(s)==2; s)
 
-getindex(s::TensorProductSet, ::Colon, i::Int, j::Int) = (@assert composite_length(s)==3; element(s,1))
-getindex(s::TensorProductSet, i::Int, ::Colon, j::Int) = (@assert composite_length(s)==3; element(s,2))
-getindex(s::TensorProductSet, i::Int, j::Int, ::Colon) = (@assert composite_length(s)==3; element(s,3))
+getindex(s::TensorProductSet, ::Colon, i::Int, j::Int) = (@assert nb_elements(s)==3; element(s,1))
+getindex(s::TensorProductSet, i::Int, ::Colon, j::Int) = (@assert nb_elements(s)==3; element(s,2))
+getindex(s::TensorProductSet, i::Int, j::Int, ::Colon) = (@assert nb_elements(s)==3; element(s,3))
 getindex(s::TensorProductSet, ::Colon, ::Colon, i::Int) =
-    (@assert composite_length(s)==3; TensorProductSet(element(s,1),element(s,2)))
+    (@assert nb_elements(s)==3; TensorProductSet(element(s,1),element(s,2)))
 getindex(s::TensorProductSet, ::Colon, i::Int, ::Colon) =
-    (@assert composite_length(s)==3; TensorProductSet(element(s,1),element(s,3)))
+    (@assert nb_elements(s)==3; TensorProductSet(element(s,1),element(s,3)))
 getindex(s::TensorProductSet, i::Int, ::Colon, ::Colon) =
-    (@assert composite_length(s)==3; TensorProductSet(element(s,2),element(s,3)))
-getindex(s::TensorProductSet, ::Colon, ::Colon, ::Colon) = (@assert composite_length(s)==3; s)
+    (@assert nb_elements(s)==3; TensorProductSet(element(s,2),element(s,3)))
+getindex(s::TensorProductSet, ::Colon, ::Colon, ::Colon) = (@assert nb_elements(s)==3; s)
 
 
 grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
@@ -190,12 +188,12 @@ grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
 # The methods below follow this convention.
 left(s::TensorProductSet) = SVector(map(left, elements(s)))
-left{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
+left{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
 #left(b::TensorProductSet, idx::Int, j) = left(b, multilinear_index(b,j), j)
 #left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
 right(s::TensorProductSet) = SVector(map(right, elements(s)))
-right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:composite_length(s)])
+right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
 #right(b::TensorProductSet, j::Int) = right(element(b,j))
 #right(b::TensorProductSet, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])

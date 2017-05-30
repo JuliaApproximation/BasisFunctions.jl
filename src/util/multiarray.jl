@@ -52,7 +52,7 @@ eltype{A,ELT}(::Type{MultiArray{A,ELT}}) = ELT
 
 element(a::MultiArray, i) = a.arrays[i]
 elements(a::MultiArray) = a.arrays
-composite_length(a::MultiArray) = length(a.arrays)
+
 similar_multiarray(a::MultiArray) = MultiArray(elements(a))
 
 length(a::MultiArray) = a.offsets[end]
@@ -119,7 +119,7 @@ eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
 
 
 function eachindex(s1::MultiArray, s2::MultiArray)
-    @assert composite_length(s1) == composite_length(s2)
+    @assert nb_elements(s1) == nb_elements(s2)
     @assert length(s1) == length(s2)
     eachindex(s1)
 end
@@ -143,7 +143,7 @@ end
 function next(it::MultiArrayIndexIterator, state)
     i, sub_iterator, sub_iterator_state = state
     sub_index, sub_nextstate = next(sub_iterator, sub_iterator_state)
-    if done(sub_iterator, sub_nextstate) && (i < composite_length(it.array))
+    if done(sub_iterator, sub_nextstate) && (i < nb_elements(it.array))
         next_sub_iterator = eachindex(element(it.array, i+1))
         next_state = (i+1, next_sub_iterator, start(next_sub_iterator))
     else
@@ -152,7 +152,7 @@ function next(it::MultiArrayIndexIterator, state)
     ((i,sub_index), next_state)
 end
 
-done(it::MultiArrayIndexIterator, state) = (state[1]==composite_length(it.array)) && done(state[2], state[3])
+done(it::MultiArrayIndexIterator, state) = (state[1]==nb_elements(it.array)) && done(state[2], state[3])
 
 length(it::MultiArrayIndexIterator) = length(it.array)
 
@@ -174,7 +174,7 @@ function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)
     (state, nextstate)
 end
 
-done{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) = state[1] > composite_length(it.array)
+done{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) = state[1] > nb_elements(it.array)
 
 # Support linear indexing too
 getindex(a::MultiArray, idx::Int) = getindex(a, multilinear_index(a, idx))

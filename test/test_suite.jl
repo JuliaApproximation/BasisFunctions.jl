@@ -3,6 +3,8 @@ module test_suite
 
 using Base.Test
 srand(1234)
+using StaticArrays
+using Domains
 using BasisFunctions
 
 BF = BasisFunctions
@@ -22,7 +24,6 @@ include("test_ops.jl")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
 include("test_bsplinetranslatedbasis.jl")
-include("test_maps.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
 
@@ -124,10 +125,6 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("Gram functionality",80))" begin
       discrete_gram_test(T)
     end
-
-    delimit("Test Maps")
-    @testset "$(rpad("Maps",80))" begin
-        test_maps(T) end
 
     delimit("Check evaluations, interpolations, extensions, setexpansions")
 

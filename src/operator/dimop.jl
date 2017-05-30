@@ -27,7 +27,7 @@ struct DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
     dim             ::  Int
     scratch_src     ::  AbstractArray{ELT}
     scratch_dest    ::  AbstractArray{ELT}
-    
+
     function DimensionOperator{VIEW,ELT}(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int) where {VIEW,ELT}
         scratch_src = zeros(eltype(op), src(op))
         scratch_dest = zeros(eltype(op), dest(op))
@@ -113,7 +113,7 @@ end
 
 
 "Replace the j-th set of a tensor product set with a different one."
-replace(tpset::TensorProductSet, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:composite_length(tpset)]...)
+replace(tpset::TensorProductSet, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:nb_elements(tpset)]...)
 
 inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)

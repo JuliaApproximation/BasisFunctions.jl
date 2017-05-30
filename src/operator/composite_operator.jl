@@ -21,7 +21,6 @@ end
 # Generic functions for composite types:
 elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
-composite_length(op::CompositeOperator) = length(op.operators)
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))

@@ -17,7 +17,6 @@ end
 elements(grid::TensorProductGrid) = grid.grids
 element(grid::TensorProductGrid, j::Int) = grid.grids[j]
 element(grid::TensorProductGrid, range::Range) = tensorproduct(grid.grids[range]...)
-composite_length(grid::TensorProductGrid) = length(elements(grid))
 
 # Disallow tensor products of a single grid
 function TensorProductGrid(grid::AbstractGrid)

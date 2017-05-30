@@ -98,9 +98,9 @@ evaluation_operator(set::PiecewiseSet, dgs::DiscreteGridSpace; options...) =
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseSet, s2::PiecewiseSet, order; options...)
-        @assert composite_length(s1) == composite_length(s2)
+        @assert nb_elements(s1) == nb_elements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:composite_length(s1)], s1, s2)
+        BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
     end
 end
 
@@ -163,12 +163,12 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
     C = eltype(coefficients.arrays)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
-    # Technicalities arise when i is 1 or i equals the composite_length of the set
+    # Technicalities arise when i is 1 or i equals the nb_elements of the set
     local sets, coefs
     old_sets = elements(set)
     old_coef = elements(coefficients)
     if i > 1
-        if i < composite_length(set)
+        if i < nb_elements(set)
             # We retain the old elements before and after the new ones
             sets = S[old_sets[1:i-1]..., element(split_set, 1), element(split_set, 2), old_sets[i+1:end]...]
             coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
@@ -186,12 +186,12 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
 end
 
 function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set); options...)
-  idxn = native_index(set, f1)
-  b = set.sets[idxn[1]]
+    idxn = native_index(set, f1)
+    b = set.sets[idxn[1]]
 
-  dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
+    dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
 end
 
 function Gram(set::PiecewiseSet; options...)
-    BlockDiagonalOperator(AbstractOperator{eltype(set)}[Gram(element(set,i); options...) for i in 1:composite_length(set)], set, set)
+    BlockDiagonalOperator(AbstractOperator{eltype(set)}[Gram(element(set,i); options...) for i in 1:nb_elements(set)], set, set)
 end

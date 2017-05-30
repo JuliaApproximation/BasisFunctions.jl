@@ -26,12 +26,12 @@ abstract type CompositeSet{N,T} <: FunctionSet{N,T} end
 is_composite(set::CompositeSet) = true
 elements(set::CompositeSet) = set.sets
 element(set::CompositeSet, j::Int) = set.sets[j]
-composite_length(set::CompositeSet) = length(set.sets)
+
 # For a generic implementation of range indexing, we need a 'similar_set' function
 # to create a new set of the same type as the given set.
 element(set::CompositeSet, range::Range) = similar_set(set, set.sets[range])
 
-tail(set::CompositeSet) = composite_length(set) == 2 ? element(set, 2) : element(set, 2:composite_length(set))
+tail(set::CompositeSet) = nb_elements(set) == 2 ? element(set, 2) : element(set, 2:nb_elements(set))
 
 # We compute offsets of the individual sets using a cumulative sum
 compute_offsets(sets::Array) = [0; cumsum(map(length, sets))]
@@ -127,7 +127,7 @@ extension_size(set::CompositeSet) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
     @eval $op(s1::CompositeSet, s2::CompositeSet; options...) =
-        BlockDiagonalOperator( AbstractOperator{eltype(s1)}[$op(element(s1,i),element(s2,i); options...) for i in 1:composite_length(s1)], s1, s2)
+        BlockDiagonalOperator( AbstractOperator{eltype(s1)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
 end
 
 # Calling and evaluation

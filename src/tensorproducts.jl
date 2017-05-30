@@ -1,12 +1,8 @@
 # tensorproducts.jl
 
-# Use \otimes as notation for tensor product.
-⊗(args...) = tensorproduct(args...)
-
 # All tensor products are created using the generic 'tensorproduct' function.
 # This function calls a suitable constructor for the tensor product.
 
-tensorproduct() = nothing
 for (BaseType,TPType) in [(:AbstractOperator,:TensorProductOperator),
            (:FunctionSet,:TensorProductSet),
            (:AbstractGrid, :TensorProductGrid)]
@@ -27,29 +23,6 @@ function basetype(tp)
     promote_type(map(typeof, elements(tp))...)
 end
 
-
-# Flatten a sequence of elements that may be recursively composite
-# For example: a TensorProductSet of TensorProductSets will yield a list of each of the
-# individual sets, like the leafs of a tree structure.
-function flatten{T}(::Type{T}, elements::Array, BaseType = Any)
-    flattened = BaseType[]
-    for element in elements
-        append_flattened!(T, flattened, element)
-    end
-    flattened
-end
-
-flatten{T}(::Type{T}, elements...) = tuple(flatten(T, [el for el in elements])...)
-
-function append_flattened!{T}(::Type{T}, flattened::Vector, element::T)
-    for el in elements(element)
-        append_flattened!(T, flattened, el)
-    end
-end
-
-function append_flattened!{T}(::Type{T}, flattened::Vector, element)
-    append!(flattened, [element])
-end
 
 # The routines below seem to fail in Julia 0.4.5. The compiler goes in an
 # infinite loop in apply_composite! Should be fixed in 0.5. See #10340:
