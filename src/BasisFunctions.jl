@@ -6,7 +6,6 @@ module BasisFunctions
 
 using FastTransforms
 
-# using ArrayViews
 using StaticArrays
 using RecipesBase
 using SpecialMatrices

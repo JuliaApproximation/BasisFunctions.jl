@@ -56,6 +56,10 @@ linear_index(b::CosineSeries, idxn::Int) = idxn+1
 
 eval_element{T}(b::CosineSeries{T}, idx::Int, x) = cos(x * T(pi) * (idx-1))
 
+function eval_element_derivative{T}(b::CosineSeries{T}, idx::Int, x)
+    arg = T(pi) * (idx-1)
+    -arg * sin(arg * x)
+end
 
 function apply!(op::Extension, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)
     @assert length(dest) > length(src)

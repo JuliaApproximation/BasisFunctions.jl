@@ -50,6 +50,10 @@ grid{T}(b::SineSeries{T}) = EquispacedGrid(b.n, T(0), T(1))
 
 eval_element{T}(b::SineSeries{T}, idx::Int, x) = sin(x * T(pi) * idx)
 
+function eval_element_derivative{T}(b::SineSeries{T}, idx::Int, x)
+    arg = T(pi) * idx
+    arg * cos(arg * x)
+end
 
 function apply!(op::Extension, dest::SineSeries, src::SineSeries, coef_dest, coef_src)
     @assert length(dest) > length(src)
