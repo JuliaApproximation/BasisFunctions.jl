@@ -30,7 +30,7 @@ import Base: isreal, iseven, isodd
 
 import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 
-import Base: show, showcompact, convert, similar#,call
+import Base: show, showcompact, convert, similar
 
 import Base: dct, idct
 
@@ -51,7 +51,7 @@ import Base.LinAlg: dot
 
 import Domains: is_compatible
 
-import Domains: left, right
+import Domains: leftendpoint, rightendpoint
 
 # composite type interface
 import Domains: element, elements, nb_elements
