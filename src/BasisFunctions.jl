@@ -57,6 +57,7 @@ import Domains: leftendpoint, rightendpoint
 import Domains: element, elements, nb_elements
 # tensor product utility functions
 import Domains: tensorproduct, ⊗
+import Domains: mapping
 
 
 
