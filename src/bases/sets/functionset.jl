@@ -36,7 +36,8 @@ possible. Linear indexing is used to convert representations into a form suitabl
 for linear algebra: expansions turn into vectors, and linear operators turn into
 matrices.
 """
-abstract type FunctionSet{N,T} end
+abstract type FunctionSet{N,T}
+end
 
 
 # Useful abstraction for special cases

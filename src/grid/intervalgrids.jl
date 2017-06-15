@@ -27,7 +27,7 @@ similar_grid(g::AbstractEquispacedGrid, a, b) =
 rescale(g::AbstractEquispacedGrid, a, b) = similar_grid(g, a, b)
 
 mapped_grid(g::AbstractEquispacedGrid, map::AffineMap) =
-    similar_grid(g, forward_map(map, left(g)), forward_map(map, right(g)))
+    similar_grid(g, applymap(map, left(g)), applymap(map, right(g)))
 
 """
 An equispaced grid with n points on an interval [a,b], including the endpoints.

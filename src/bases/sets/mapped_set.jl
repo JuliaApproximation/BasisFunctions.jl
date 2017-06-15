@@ -30,15 +30,15 @@ mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
 
-has_derivative(s::MappedSet) = has_derivative(superset(s)) && is_linear(mapping(s))
-has_antiderivative(s::MappedSet) = has_antiderivative(superset(s)) && is_linear(mapping(s))
+has_derivative(s::MappedSet) = has_derivative(superset(s)) && islinear(mapping(s))
+has_antiderivative(s::MappedSet) = has_antiderivative(superset(s)) && islinear(mapping(s))
 
 grid(s::MappedSet) = _grid(s, superset(s), mapping(s))
 _grid(s::MappedSet1d, set, map) = mapped_grid(grid(set), map)
 
 for op in (:left, :right)
-    @eval $op(s::MappedSet1d) = forward_map( mapping(s), $op(superset(s)) )
-    @eval $op(s::MappedSet1d, idx) = forward_map( mapping(s), $op(superset(s), idx) )
+    @eval $op(s::MappedSet1d) = applymap( mapping(s), $op(superset(s)) )
+    @eval $op(s::MappedSet1d, idx) = applymap( mapping(s), $op(superset(s), idx) )
 end
 
 name(s::MappedSet) = _name(s, superset(s), mapping(s))
@@ -47,13 +47,13 @@ _name(s::MappedSet1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(ri
 
 isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
 
-eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, inverse_map(mapping(s),y))
+eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, apply_inverse(mapping(s),y))
 
-eval_expansion(s::MappedSet, coef, y::Number) = eval_expansion(superset(s), coef, inverse_map(mapping(s),y))
+eval_expansion(s::MappedSet, coef, y::Number) = eval_expansion(superset(s), coef, apply_inverse(mapping(s),y))
 
 #eval_expansion(s::MappedSet, coef, grid::AbstractGrid) = eval_expansion(superset(s), coef, apply_map(grid, inv(mapping(s))))
 
-in_support(set::MappedSet, idx, y) = in_support(superset(set), idx, inverse_map(mapping(set), y))
+in_support(set::MappedSet, idx, y) = in_support(superset(set), idx, apply_inverse(mapping(set), y))
 
 is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superset(s1),superset(s2))
 
@@ -134,18 +134,18 @@ end
 
 for op in (:derivative_set, :antiderivative_set)
     @eval $op(s::MappedSet1d, order::Int; options...) =
-        (@assert is_linear(mapping(s)); apply_map( $op(superset(s), order; options...), mapping(s) ))
+        (@assert islinear(mapping(s)); apply_map( $op(superset(s), order; options...), mapping(s) ))
 end
 
 function differentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
-    @assert is_linear(mapping(s1))
+    @assert islinear(mapping(s1))
     D = differentiation_operator(superset(s1), superset(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order))
     wrap_operator( s1, s2, S*D )
 end
 
 function antidifferentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
-    @assert is_linear(mapping(s1))
+    @assert islinear(mapping(s1))
     D = antidifferentiation_operator(superset(s1), superset(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order))
     wrap_operator( s1, s2, S*D )
@@ -197,7 +197,7 @@ dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); opti
     dot(superset(s), mapping(s), f1, f2, nodes; options...)
 
 dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
-    jacobian(map, nothing)*dot(s, x->f1(forward_map(map,x)), x->f2(forward_map(map,x)), inverse_map(map,nodes); options...)
+    jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_inverse(map,nodes); options...)
 
 native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
-native_nodes(s::FunctionSet, map::AffineMap) = forward_map(map, native_nodes(s))
+native_nodes(s::FunctionSet, map::AffineMap) = applymap(map, native_nodes(s))

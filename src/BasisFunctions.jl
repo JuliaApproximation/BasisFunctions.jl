@@ -14,6 +14,7 @@ using Domains
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈
+import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen
 
@@ -49,9 +50,10 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
-import Domains: is_compatible
-
-import Domains: leftendpoint, rightendpoint
+# For intervals
+import Domains: interval, leftendpoint, rightendpoint
+# For maps
+import Domains: matrix, vector
 
 # composite type interface
 import Domains: element, elements, nb_elements
@@ -251,6 +253,7 @@ include("util/composite_index.jl")
 include("util/multiarray.jl")
 include("util/slices.jl")
 include("util/functors.jl")
+include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
 

@@ -19,7 +19,7 @@ MappedGrid{N,T}(grid::AbstractGrid{N,T}, map::AbstractMap) =
 mapped_grid(grid::AbstractGrid, map::AbstractMap) = MappedGrid(grid, map)
 
 # avoid multiple mappings
-mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(grid(g), map*mapping(g))
+mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(grid(g), map∘mapping(g))
 
 # Convenience function, similar to apply_map for FunctionSet's
 apply_map(grid::AbstractGrid, map::AbstractMap) = mapped_grid(grid, map)
@@ -32,7 +32,7 @@ for op in (:length, :size, :eachindex)
 end
 
 for op in (:left, :right)
-	@eval $op(g::MappedGrid1d) = forward_map(g.map, $op(grid(g)))
+	@eval $op(g::MappedGrid1d) = applymap(g.map, $op(grid(g)))
 end
 
 resize(g::MappedGrid, n::Int) = apply_map(resize(grid(g), n), mapping(g))
@@ -42,7 +42,7 @@ linear_index(g::MappedGrid, idx) = linear_index(g.grid, idx)
 
 native_index(g::MappedGrid, idx) = native_index(g.grid, idx)
 
-unsafe_getindex(g::MappedGrid, idx) = forward_map(g.map, g.grid[idx])
+unsafe_getindex(g::MappedGrid, idx) = applymap(g.map, g.grid[idx])
 
 
 function rescale(g::AbstractGrid1d, a, b)
