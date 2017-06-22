@@ -57,7 +57,7 @@ end
 
 function test_spline_integration()
   T = Float64
-  for N in 0:4
+  for N in 0:8
     @test BasisFunctions.Cardinal_b_splines.squared_spline_integral(N) == BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,0)
     for t in 0:4
       f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N,x,T)

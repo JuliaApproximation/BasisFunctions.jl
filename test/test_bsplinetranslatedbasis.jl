@@ -43,7 +43,14 @@ end
 function test_translatedbsplines(T)
   tol = sqrt(eps(real(T)))
   n = 5
+  bb = BSplineTranslatesBasis(n,1, T;scaled=true)
+  b = BSplineTranslatesBasis(n,1, T)
+  e = rand(n)
+  @test norm(Gram(b)*e-Gram(bb)*e/n) < tol
+
+
   b = BSplineTranslatesBasis(n,3, T)
+
   @test BasisFunctions.name(b) == "Set of translates of a function (B spline of degree 3)"
 
   @test left(b,1)≈ 0
@@ -153,7 +160,13 @@ end
 function test_translatedsymmetricbsplines(T)
   tol = sqrt(eps(real(T)))
   n = 5
+
+  b = SymBSplineTranslatesBasis(n,1,T)
+  bb = BSplineTranslatesBasis(n,1,T)
+  @test norm((Gram(b)-Gram(bb))*rand(n)) < tol
+
   b = SymBSplineTranslatesBasis(n,3, T)
+
   @test BasisFunctions.name(b) == "Set of translates of a function (symmetric B spline of degree 3)"
 
 
@@ -349,7 +362,7 @@ end
 # using Base.Test
 # using BasisFunctions
 # @testset begin test_discrete_dualsplinebasis(Float64) end
-
+#
 # @testset begin test_dualsplinebasis(Float64) end
 # @testset begin test_discrete_orthonormalsplinebasis(Float64) end
 # @testset begin test_orthonormalsplinebasis(Float64) end
