@@ -272,7 +272,7 @@ for T in (Float64, BigFloat,)
       symmetricbsplinestest(T)
     end
     @testset "$(rpad("integration of B splines",80))"  begin
-      test_spline_integration(T)
+      test_spline_integration()
     end
 
     delimit("Gram")
