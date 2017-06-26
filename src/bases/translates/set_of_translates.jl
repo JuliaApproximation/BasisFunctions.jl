@@ -110,10 +110,14 @@ function primalgramcolumn{T}(set::PeriodicSetOfTranslates{T}; options...)
   n = length(set)
   result = zeros(real(T), n)
   for i in 1:length(result)
-    result[i] = dot(set, 1, i; options...)
+    result[i] = primalgramcolumnelement(set, i; options...)
   end
   result
 end
+
+primalgramcolumnelement{T}(set::PeriodicSetOfTranslates{T}, i::Int; options...)  = defaultprimalgramcolumnelement(set, i; options...)
+
+defaultprimalgramcolumnelement{T}(set::FunctionSet1d{T}, i::Int; options...)  = dot(set, 1, i; options...)
 
 function dualgramcolumn(set::PeriodicSetOfTranslates; options...)
   G = inv(Gram(set; options...))

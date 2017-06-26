@@ -94,6 +94,27 @@ function _binomial_circulant{K,T,SCALED}(s::BSplineTranslatesBasis{K,T,SCALED})
   end
 end
 
+function primalgramcolumnelement{K,T,SCALED}(set::BSplineTranslatesBasis{K,T,SCALED}, i::Int; options...)
+  r = 0
+  if length(set) <= 2degree(set)+1
+    return defaultprimalgramcolumnelement(set, i; options...)
+  else
+    if i==1
+      r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+    elseif 1 < i <= degree(set)+1
+      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+    elseif i > length(set)-degree(set)
+      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(set)-i+1)
+    end
+  end
+  if SCALED
+    T(r)
+  else
+    T(r)/length(set)
+  end
+end
+
+
 # TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
 # extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
 extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
@@ -144,6 +165,22 @@ function _binomial_circulant{K,T}(s::SymBSplineTranslatesBasis{K,T})
     c[end+1-i] = binomial(K+1, k)
   end
   T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+end
+
+function testprimalgramcolumnelement{K,T}(set::SymBSplineTranslatesBasis{K,T}, i::Int; options...)
+  r = 0
+  if length(set) <= 2degree(set)+1
+    return defaultprimalgramcolumnelement(set, i; options...)
+  else
+    if i==1
+      r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+    elseif 1 < i <= degree(set)+1
+      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+    elseif i > length(set)-degree(set)
+      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(set)-i+1)
+    end
+  end
+  T(r)/length(set)
 end
 
 # TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6

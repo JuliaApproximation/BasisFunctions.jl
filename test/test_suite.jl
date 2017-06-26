@@ -120,6 +120,9 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("symmetric B splines",80))"  begin
       symmetricbsplinestest(T)
     end
+    @testset "$(rpad("integration of B splines",80))"  begin
+      test_spline_integration()
+    end
 
     delimit("Gram")
     @testset "$(rpad("Gram functionality",80))" begin

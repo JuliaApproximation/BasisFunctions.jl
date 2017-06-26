@@ -2,6 +2,40 @@
 module Cardinal_b_splines
 
 export evaluate_Bspline, evaluate_periodic_Bspline, Degree
+"""
+  Calculates ∫[B_N(x)]^2, with B_N the cardinal bspline of degree N
+"""
+function squared_spline_integral(N::Int)
+  m = N+1
+  if m > 7
+    m = BigInt(m)
+  end
+  sum(binomial(2m,k)*(-1)^k*(2*(m-k))^(2m-1) for k in 0:m-1)//(2^(2m-1)*factorial(2m-1))
+end
+
+"""
+  Calculates ∫ B_m(x) B_m(x-t), with B_m the cardinal bspline of degree m
+"""
+function shifted_spline_integral(m::Int,t::Int)
+  @assert t >= 0
+  I = 0
+  if m > 7
+    m = BigInt(m)
+    I = BigInt(0)
+  end
+  for k in 0:m+1
+    for j in 0:m+1
+      if j <= k-t
+        I = I + (-1)^(j+k)*binomial(m+1,k)*binomial(m+1,j)*
+        sum(binomial(m,i)*(k-j-t)^(m-i)*(m+1-k)^(i+m+1)//(i+m+1) for i in 0:m)
+      else
+        I = I + (-1)^(j+k)*binomial(m+1,k)*binomial(m+1,j)*
+        sum(binomial(m,i)*(t+j-k)^(m-i)*(m+1-j-t)^(i+m+1)//(i+m+1) for i in 0:m)
+      end
+    end
+  end
+  I//(factorial(m)^2)
+end
 
 # Implementation of cardinal B splines of degree N
 Degree{N} = Val{N}
