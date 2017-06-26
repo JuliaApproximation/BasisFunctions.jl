@@ -44,9 +44,9 @@ dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); 
 		# To avoid difficult points at the ends of the domain.
 		dot(x->weight(set,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 
-clip{T<:Real}(a::T, low::T, up::T) = min(max(low, a), up)
+clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
 
-function clip_and_cut{T<:Real}(a::Array{T,1}, low::T, up::T)
+function clip_and_cut{T<:Real}(a::Array{T,1}, low, up)
 	clipped = clip.(a,low, up)
 	t = clipped[1]
 	s = 1
