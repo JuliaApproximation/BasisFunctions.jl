@@ -62,14 +62,14 @@ function test_spline_integration()
     @test BasisFunctions.Cardinal_b_splines.squared_spline_integral(N) == BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,0)
     for t in 0:4
       f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N,x,T)
-      @test abs(quadgk(x->f(x)*f(x+t),(-N-2:N+2)..., reltol=sqrt(eps(T)))[1]-BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,t))<10*sqrt(eps(T))
+      @test abs(QuadGK.quadgk(x->f(x)*f(x+t),(-N-2:N+2)..., reltol=sqrt(eps(T)))[1]-BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,t))<10*sqrt(eps(T))
     end
   end
 end
 # using BasisFunctions
 # using Base.Test
 # P = 80
-# T = BigFloat
+# T = Float64
 # @testset "$(rpad("Elementary properties",P))" begin
 #   elementarypropsofsplinetest(T)
 # end
