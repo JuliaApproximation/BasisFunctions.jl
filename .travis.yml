@@ -2,9 +2,6 @@ language: julia
 matrix:
   include:
     - julia: "0.6"
-    - julia: "0.5"
-  allow_failures:
-    - julia: "0.5"
 
 notifications:
   email: false
