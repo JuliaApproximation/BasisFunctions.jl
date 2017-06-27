@@ -18,7 +18,7 @@ end
     grid = plotgrid(set(S), n)
     # Determine the return type so we know where to sample
     origvals = sample(grid, target, eltype(S))
-    vals = abs(origvals - S(grid))
+    vals = abs.(origvals - S(grid))
     set(S), grid, postprocess(set(S), grid, vals)
 end
 # 1D error plot
