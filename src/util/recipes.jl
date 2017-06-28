@@ -35,7 +35,7 @@ end
 @recipe function f(S::FunctionSet{2}, grid::AbstractGrid, vals)
     title --> "Error (log)"
     seriestype --> :heatmap
-    grid, log10(real(vals))
+    grid, log10.(real(vals))
 end
 
 
@@ -101,7 +101,7 @@ plotgrid{S,M,T}(s::MappedSet1d{S,M,T}, n) = apply_map(plotgrid(superset(s), n),m
 
 ## Split complex plots in real and imaginary parts
 # 1D
-@recipe function f{S<:Real,T<:Complex}(A::Array{S},B::Array{T})
+@recipe function f{S<:Real, T<:Real}(A::AbstractArray{S}, B::Array{Complex{T}})
     # Force double layout
     layout := 2
     # Legend is useless here
