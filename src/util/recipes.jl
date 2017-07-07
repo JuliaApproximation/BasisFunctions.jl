@@ -95,9 +95,9 @@ postprocess(S::Subset, grid, vals) = postprocess(superset(S), grid, vals)
 # Always plot on equispaced grids for the best plotting resolution
 plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S),right(S))
 
-plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])⊗rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
+plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])×rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
 
-plotgrid{S,M,T}(s::MappedSet1d{S,M,T}, n) = apply_map(plotgrid(superset(s), n),mapping(s))
+plotgrid{S,M,T}(s::MappedSet1d{S,M,T}, n) = apply_map(plotgrid(superset(s), n), mapping(s))
 
 ## Split complex plots in real and imaginary parts
 # 1D
