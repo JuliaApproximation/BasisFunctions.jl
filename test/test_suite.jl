@@ -15,9 +15,9 @@ const show_timings = false
 ##########
 
 include("util_functions.jl")
+include("test_generic_grids.jl")
 include("test_generic_sets.jl")
 include("test_derived_set.jl")
-include("test_generic_grids.jl")
 include("test_bsplines.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")

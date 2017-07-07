@@ -45,10 +45,10 @@ apply_map(s::DiscreteGridSpace, map) = DiscreteGridSpace(apply_map(grid(s), map)
 
 function tensorproduct(s::DiscreteGridSpace...)
 	ELT = promote_type(map(eltype, s)...)
-	DiscreteGridSpace(tensorproduct(map(grid,s)...), ELT)
+	DiscreteGridSpace(cartesianproduct(map(grid, s)...), ELT)
 end
 
-# Implement composite interface for spaces with a tensorproductgrid
+# Implement composite interface for spaces with a productgrid
 element(s::DiscreteGridSpace, i) = _element(s, i, grid(s))
 _element(s::DiscreteGridSpace, i, grid) = DiscreteGridSpace(element(grid, i), eltype(s))
 

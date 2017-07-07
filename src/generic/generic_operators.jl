@@ -50,7 +50,7 @@ include("differentiation.jl")
 # Furthermore, sometimes the transform of a set is equal to the transform of an
 # underlying set. Examples include MappedSet's and other DerivedSet's.
 #
-# For the transform involving a TensorProductSet and a TensorProductGrid, we proceed
+# For the transform involving a TensorProductSet and a ProductGrid, we proceed
 # as follows:
 # - all combinations (set,grid) are simplified, where set and grid range over the
 #   elements of the tensor products
@@ -72,12 +72,12 @@ simplify_transform_pair(set::FunctionSet, grid::AbstractGrid) = (set,grid)
 
 # A simplification of a tensor product set invokes the simplification on each
 # of its elements.
-function simplify_transform_pair(set::TensorProductSet, grid::TensorProductGrid)
+function simplify_transform_pair(set::TensorProductSet, grid::ProductGrid)
     # The line below took a while to write. The problem is simplify_transform_pair
     # returns a tuple. Zip takes a list of tuples and creates two lists out of it.
     set_elements, grid_elements =
         zip(map(simplify_transform_pair, elements(set), elements(grid))...)
-    TensorProductSet(set_elements...), TensorProductGrid(grid_elements...)
+    TensorProductSet(set_elements...), ProductGrid(grid_elements...)
 end
 
 # For convenience, we implement a function that takes the three transform arguments,
@@ -106,7 +106,7 @@ for op in ( (:transform_from_grid, :s1, :s2),
     op_tensor = Symbol("$(op[1])_tensor")
 
     # Invoke the *_tensor function with additional basetype arguments
-    @eval function $(op[1])(s1::DiscreteGridSpace, s2::TensorProductSet, grid::TensorProductGrid; options...)
+    @eval function $(op[1])(s1::DiscreteGridSpace, s2::TensorProductSet, grid::ProductGrid; options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
         operator = $(op_tensor)(basetype(simple_s2), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
@@ -123,7 +123,7 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_post, :s1, :s2))
     op_tensor = Symbol("$(op[1])_tensor")
 
-    @eval function $(op[1])(s1::TensorProductSet, s2::DiscreteGridSpace, grid::TensorProductGrid; options...)
+    @eval function $(op[1])(s1::TensorProductSet, s2::DiscreteGridSpace, grid::ProductGrid; options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
         operator = $(op_tensor)(basetype(simple_s1), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
@@ -141,7 +141,7 @@ for op in (:extension_operator, :restriction_operator,
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
 
-grid_evaluation_operator(set::TensorProductSet, dgs::DiscreteGridSpace, grid::TensorProductGrid; options...) =
+grid_evaluation_operator(set::TensorProductSet, dgs::DiscreteGridSpace, grid::ProductGrid; options...) =
     tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(set), elements(grid))...)
 
 for op in (:approximation_operator, )

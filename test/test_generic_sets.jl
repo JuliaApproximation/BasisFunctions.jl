@@ -43,7 +43,7 @@ function suitable_interpolation_grid(basis::FunctionSet)
 end
 
 suitable_interpolation_grid(basis::TensorProductSet) =
-    TensorProductGrid(map(suitable_interpolation_grid, elements(basis))...)
+    ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
 
 suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
 

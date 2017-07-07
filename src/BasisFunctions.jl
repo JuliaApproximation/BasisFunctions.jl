@@ -39,6 +39,8 @@ import Base: indices, normalize
 
 import Base: broadcast
 
+import Base: cross, ×
+
 import Base.LinAlg: dot
 
 # import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
@@ -57,8 +59,8 @@ import Domains: matrix, vector
 
 # composite type interface
 import Domains: element, elements, nb_elements
-# tensor product utility functions
-import Domains: tensorproduct, ⊗
+# cartesian product utility functions
+import Domains: cartesianproduct, ×
 import Domains: mapping
 
 
@@ -70,12 +72,20 @@ export PiecewiseInterval, Partition
 export partition
 export split_interval
 
+# from src/tensorproducts.jl
+export tensorproduct, ⊗
+
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
-        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid, DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
-        TensorProductGrid, AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid
+        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
+        DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
+        AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid,
+        ChebyshevNodeGrid, ChebyshevExtremaGrid
 export Point
 export dim, left, right, range, sample
+
+# from grid/productgrid.jl
+export ProductGrid
 
 # from grid/subgrid.jl
 export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
@@ -258,7 +268,7 @@ include("util/domain_extensions.jl")
 include("maps/partition.jl")
 
 include("grid/grid.jl")
-include("grid/tensorproductgrid.jl")
+include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
 
 include("bases/sets/functionset.jl")

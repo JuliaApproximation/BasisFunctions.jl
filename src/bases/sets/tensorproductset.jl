@@ -97,7 +97,7 @@ for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductSet) = reduce(&, map($op, elements(s)))
 end
 
-has_grid_transform(s::TensorProductSet, dgs, grid::TensorProductGrid) =
+has_grid_transform(s::TensorProductSet, dgs, grid::ProductGrid) =
     reduce(&, map(has_transform, elements(s), elements(grid)))
 
 has_grid_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
@@ -182,7 +182,7 @@ getindex(s::TensorProductSet, i::Int, ::Colon, ::Colon) =
 getindex(s::TensorProductSet, ::Colon, ::Colon, ::Colon) = (@assert nb_elements(s)==3; s)
 
 
-grid(s::TensorProductSet) = TensorProductGrid(map(grid, elements(s))...)
+grid(s::TensorProductSet) = ProductGrid(map(grid, elements(s))...)
 #grid(b::TensorProductSet, j::Int) = grid(element(b,j))
 
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.

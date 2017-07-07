@@ -1,5 +1,29 @@
 # tensorproducts.jl
 
+"""
+Create a tensor product of the supplied arguments.
+
+The function `tensorproduct` applies some simplifications and does not necessarily
+return a Product type.
+
+A `tensorproduct(a)` with just a single element returns `a`.
+
+For integer `n`, `tensorproduct(a, n)` becomes `tensorproduct(a, a, ..., a)`.
+A type-safe variant is `tensorproduct(a, Val{N})`.
+"""
+tensorproduct() = nothing
+
+# Don't create a tensor product of just one element
+tensorproduct(a::Tuple) = tensorproduct(a...)
+tensorproduct(a) = a
+
+# Create a tensor product with n times the same element
+tensorproduct(a, n::Int) = tensorproduct(ntuple(t->a, n)...)
+
+tensorproduct(a, ::Type{Val{N}}) where {N} = tensorproduct(ntuple(t->a, Val{N})...)
+
+# Use \otimes as notation for tensor product.
+⊗ = tensorproduct
 
 # Flatten a sequence of elements that may be recursively composite
 # For example: a ProductDomain of ProductDomains will yield a list of each of the
@@ -28,14 +52,23 @@ end
 # This function calls a suitable constructor for the tensor product.
 
 for (BaseType,TPType) in [(:AbstractOperator,:TensorProductOperator),
-           (:FunctionSet,:TensorProductSet),
-           (:AbstractGrid, :TensorProductGrid)]
+           (:FunctionSet,:TensorProductSet)]
     # In order to avoid strange nested structures, we flatten the arguments
     @eval tensorproduct(args::$BaseType...) = $TPType(flatten($TPType, args...)...)
     @eval tensorproduct(arg::$BaseType, n::Int) = tensorproduct([arg for i in 1:n]...)
     # Disallow tensor products with just one argument
     @eval tensorproduct(arg::$BaseType) = arg
 
+end
+
+for (BaseType,TPType) in [ (:AbstractGrid, :ProductGrid)]
+    # Override × for grids
+    @eval cross(args::$BaseType...) = cartesianproduct(args...)
+    # In order to avoid strange nested structures, we flatten the arguments
+    @eval cartesianproduct(args::$BaseType...) = $TPType(flatten($TPType, args...)...)
+    @eval cartesianproduct(arg::$BaseType, n::Int) = cartesianproduct([arg for i in 1:n]...)
+    # Disallow cartesian products with just one argument
+    @eval cartesianproduct(arg::$BaseType) = arg
 end
 
 function is_homogeneous(tp)

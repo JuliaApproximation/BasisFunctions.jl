@@ -73,8 +73,8 @@ function test_grids(T)
     b = T(3.5)
     g1 = EquispacedGrid(len, a, b)
     g2 = PeriodicEquispacedGrid(len, a-1, b+1)
-    g3 = g1 ⊗ g2
-    g4 = g1 ⊗ g3
+    g3 = g1 × g2
+    g4 = g1 × g3
 
     test_generic_grid(g1)
     test_generic_grid(g2)
@@ -122,7 +122,7 @@ function test_grids(T)
     len = 120
     g1 = PeriodicEquispacedGrid(len, -one(T), one(T))
     g2 = EquispacedGrid(len, -one(T), one(T))
-    g = g1 ⊗ g2
+    g = g1 × g2
     @test length(g) == length(g1) * length(g2)
     @test size(g) == (length(g1),length(g2))
 
@@ -141,7 +141,7 @@ function test_grids(T)
     @test s ≈ -len
 
     # Test a tensor of a tensor
-    g3 = g ⊗ g2
+    g3 = g × g2
     idx1 = 5
     idx2 = 7
     idx3 = 4

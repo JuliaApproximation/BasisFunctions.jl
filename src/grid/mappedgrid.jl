@@ -52,7 +52,7 @@ end
 
 
 # Preserve tensor product structure
-function rescale{N}(g::TensorProductGrid, a::SVector{N}, b::SVector{N})
+function rescale{N}(g::ProductGrid, a::SVector{N}, b::SVector{N})
 	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:N]
-	TensorProductGrid(scaled_grids...)
+	ProductGrid(scaled_grids...)
 end
