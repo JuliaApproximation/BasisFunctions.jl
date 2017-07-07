@@ -25,49 +25,49 @@ for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
     # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
     @eval $op(src::FunctionSet, dest::FunctionSet, dims, fftwflags) = $op(src, dest, eltype(dest), dims, fftwflags)
     # In the default case apply fft or ifft
-    @eval $op{T <: AbstractFloat}(src::FunctionSet, dest::FunctionSet, ::Type{Complex{T}}, dims, fftwflags) =
-      FunctionOperator(src, dest, $f)
+    @eval $op(src::FunctionSet, dest::FunctionSet, ::Type{Complex{T}}, dims, fftwflags) where {T} =
+        FunctionOperator(src, dest, $f)
     # When possible apply the fast FFTW operator
     for T in (:(Complex{Float32}), :(Complex{Float64}))
     	@eval function $op(src::FunctionSet, dest::FunctionSet, ::Type{$(T)}, dims, fftwflags)
-          plan = $plan_(zeros($T, dest), dims; flags = fftwflags)
-          MultiplicationOperator(src, dest, plan; inplace = true)
-      end
+            plan = $plan_(zeros($T, dest), dims; flags = fftwflags)
+            MultiplicationOperator(src, dest, plan; inplace = true)
+        end
     end
 end
 
 for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forward_fourier_operator, :FastFourierTransform, :FastFourierTransformFFTW, :fft, :fftw_operator, :fft_scalefactor),
                                    (:backward_fourier_operator, :InverseFastFourierTransform, :InverseFastFourierTransformFFTW, :ifft, :ifftw_operator, :ifft_scalefactor))
-  # These are the generic fallbacks
-  @eval $transform{T <: AbstractFloat}(src, dest, ::Type{Complex{T}}; options...) =
-  	$FastTransform(src, dest)
-  # But for some types we can use FFTW
-  for T in (:(Complex{Float32}), :(Complex{Float64}))
-  	@eval $transform(src, dest, ::Type{$(T)}; options...) =
-  		$FFTWTransform(src, dest; options...)
-  end
+    # These are the generic fallbacks
+    @eval $transform(src, dest, ::Type{Complex{T}}; options...) where {T} =
+        $FastTransform(src, dest)
+    # But for some types we can use FFTW
+    for T in (:(Complex{Float32}), :(Complex{Float64}))
+        @eval $transform(src, dest, ::Type{$(T)}; options...) =
+  		    $FFTWTransform(src, dest; options...)
+    end
 
-  # Now the generic implementation, based on using fft and ifft
-  @eval function $FastTransform(src, dest)
-      ELT = op_eltype(src, dest)
-      s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
-      t_op = FunctionOperator(src, dest, $fun)
+    # Now the generic implementation, based on using fft and ifft
+    @eval function $FastTransform(src, dest)
+        ELT = op_eltype(src, dest)
+        s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
+        t_op = FunctionOperator(src, dest, $fun)
 
-      s_op * t_op
-  end
+        s_op * t_op
+    end
 
-  # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
-  # in order to have a unitary transform. Additional scaling is done in the _pre and
-  # _post routines.
-  # Note that we choose to use bfft, an unscaled inverse fft.
-  @eval function $FFTWTransform(src::FunctionSet, dest::FunctionSet,
-      dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+    # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
+    # in order to have a unitary transform. Additional scaling is done in the _pre and
+    # _post routines.
+    # Note that we choose to use bfft, an unscaled inverse fft.
+    @eval function $FFTWTransform(src::FunctionSet, dest::FunctionSet,
+        dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
 
-      t_op = $op(src, dest, dims, fftwflags)
-      # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
-      s_op = fftw_scaling_operator(dest)
-      s_op * t_op
-  end
+        t_op = $op(src, dest, dims, fftwflags)
+        # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
+        s_op = fftw_scaling_operator(dest)
+        s_op * t_op
+    end
 end
 
 fft_scalefactor{ELT}(src, ::Type{ELT}) = 1/sqrt(ELT(length(src)))
