@@ -4,11 +4,11 @@
 A MappedGrid consists of a grid and a map. Each grid point of the mapped grid
 is the map of the corresponding point of the underlying grid.
 """
-struct MappedGrid{G,M,N,T} <: AbstractGrid{N,T}
+struct MappedGrid{G,M,T} <: AbstractGrid{T}
 	grid	::	G
 	map		::	M
 
-	MappedGrid{G,M,N,T}(grid::AbstractGrid{N,T}, map) where {G,M,N,T}= new(grid, map)
+	MappedGrid{G,M,T}(grid::AbstractGrid{T}, map) where {G,M,T} = new(grid, map)
 end
 
 MappedGrid1d{G,M,T} = MappedGrid{G,M,1,T}

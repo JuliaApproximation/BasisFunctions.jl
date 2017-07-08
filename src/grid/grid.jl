@@ -1,28 +1,16 @@
 # grid.jl
 
 "AbstractGrid is the supertype of all grids."
-abstract type AbstractGrid{N,T}
+abstract type AbstractGrid{T}
 end
 
-AbstractGrid1d{T} = AbstractGrid{1,T}
-AbstractGrid2d{T} = AbstractGrid{2,T}
-AbstractGrid3d{T} = AbstractGrid{3,T}
-AbstractGrid4d{T} = AbstractGrid{4,T}
+const AbstractGrid1d{T <: Number} = AbstractGrid{T}
 
 Point{N,T} = SVector{N,T}
 
-ndims{N,T}(::Type{AbstractGrid{N,T}}) = N
-ndims{G <: AbstractGrid}(::Type{G}) = ndims(supertype(G))
-ndims{N,T}(::AbstractGrid{N,T}) = N
-
-numtype{N,T}(::AbstractGrid{N,T}) = T
-numtype{N,T}(::Type{AbstractGrid{N,T}}) = T
-numtype{G <: AbstractGrid}(::Type{G}) = numtype(supertype(G))
-
 # The element type of a grid is the type returned by getindex.
-eltype{T}(::Type{AbstractGrid{1,T}}) = T
-eltype{N,T}(::Type{AbstractGrid{N,T}}) = Point{N,T}
-eltype{G <: AbstractGrid}(::Type{G}) = eltype(supertype(G))
+eltype(::Type{AbstractGrid{T}}) where {T} = T
+eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 
 size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)
@@ -39,11 +27,14 @@ checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsE
 # If the given argument is not an integer, we convert to a linear index
 checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idxn))
 
-# Catch indexing of 1d grids with CartesianIndex
-getindex(g::AbstractGrid1d, idx::CartesianIndex{1}) = getindex(g, idx[1])
+# For convenience, catch indexing of 1d grids with CartesianIndex or 1-element tuple
+getindex(g::AbstractGrid1d, idx::Union{CartesianIndex{1},Tuple{Int}}) = getindex(g, idx[1])
 
 # Pack a list of integers into a tuple
-getindex(g::AbstractGrid, idx1::Int, idx2::Int, indices::Int...) = getindex(g, (idx1,idx2,indices...))
+getindex(g::AbstractGrid, idx1, idx2) = getindex(g, (idx1, idx2))
+getindex(g::AbstractGrid, idx1, idx2, idx3) = getindex(g, (idx1, idx2, idx3))
+getindex(g::AbstractGrid, idx1, idx2, idx3, idx4) = getindex(g, (idx1, idx2, idx3, idx4))
+getindex(g::AbstractGrid, idx1, idx2, idx3, idx4, indices...) = getindex(g, (idx1, idx2, idx3, idx4, indices...))
 
 function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)

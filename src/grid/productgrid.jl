@@ -3,13 +3,13 @@
 """
 A ProductGrid represents the cartesian product of other grids.
 
-struct ProductGrid{TG,N,T} <: AbstractGrid{N,T}
+`struct ProductGrid{TG,T} <: AbstractGrid{T}`
 
 Parameters:
-- Parameter TG is a tuple of (grid) types.
-- Parametes N and T are the total dimension and numeric type of this grid.
+- TG is a tuple of (grid) types
+- T is the element type of the grid
 """
-struct ProductGrid{TG,N,T} <: AbstractGrid{N,T}
+struct ProductGrid{TG,T} <: AbstractGrid{T}
 	grids	::	TG
 end
 
@@ -33,11 +33,11 @@ ndims(g::ProductGrid, j::Int) = ndims(element(g,j))
 
 length(g::ProductGrid) = prod(size(g))
 
-left(g::ProductGrid) = SVector(map(left, g.grids))
-left(g::ProductGrid, j) = left(g.grids[j])
-
-right(g::ProductGrid) = SVector(map(right, g.grids))
-right(g::ProductGrid, j) = right(g.grids[j])
+# left(g::ProductGrid) = SVector(map(left, g.grids))
+# left(g::ProductGrid, j) = left(g.grids[j])
+#
+# right(g::ProductGrid) = SVector(map(right, g.grids))
+# right(g::ProductGrid, j) = right(g.grids[j])
 
 # Convert to linear index. If the argument is a tuple of integers, it can be assumed to
 # be a multilinear index. Same for CartesianIndex.
