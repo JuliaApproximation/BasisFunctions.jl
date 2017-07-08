@@ -65,7 +65,7 @@ has_extension(b::FourierBasis) = true
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 compatible_grid(set::FourierBasis, grid::PeriodicEquispacedGrid) =
-	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
+	(1+(left(set) - leftendpoint(grid))≈1) && (1+(right(set) - rightendpoint(grid))≈1) && (length(set)==length(grid))
 # - Any non-periodic grid is not compatible
 compatible_grid(set::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
@@ -276,8 +276,8 @@ end
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
 function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options...)
-	a = left(grid)
-	b = right(grid)
+	a = leftendpoint(grid)
+	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
 	if (a > 0) || (b < 1)
 		# We are dealing with a subgrid. The main question is: if we extend it

@@ -8,14 +8,16 @@ struct DiscreteGridSpace{G,N,T} <: FunctionSet{N,T}
 	# Currently, this clashes with dispatch on Extension in FrameFun's subgrid.jl
 	grid		::	G
 
-	DiscreteGridSpace{G,N,T}(grid::AbstractGrid{N}) where {G,N,T} = new(grid)
+	DiscreteGridSpace{G,N,T}(grid::AbstractGrid) where {G,N,T} = new(grid)
 end
 
-DiscreteGridSpace1d{G,ELT} = DiscreteGridSpace{G,1,ELT}
+const DiscreteGridSpace1d{G,T} = DiscreteGridSpace{G,1,T}
 
 name(s::DiscreteGridSpace) = "A discrete grid space"
 
-DiscreteGridSpace{N,T}(grid::AbstractGrid{N,T}, ELT = T) = DiscreteGridSpace{typeof(grid),N,ELT}(grid)
+DiscreteGridSpace(grid::AbstractGrid{SVector{N,T}}, ELT = T) where {N,T} = DiscreteGridSpace{typeof(grid),N,ELT}(grid)
+
+DiscreteGridSpace(grid::AbstractGrid{T}, ELT = T) where {T <: Number} = DiscreteGridSpace{typeof(grid),1,ELT}(grid)
 
 DiscreteGridSpace(set::FunctionSet) = DiscreteGridSpace(grid(set), eltype(set))
 

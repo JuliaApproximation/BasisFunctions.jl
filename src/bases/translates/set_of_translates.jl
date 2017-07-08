@@ -59,7 +59,7 @@ function periodic_compatible_grid(b::FunctionSet, grid::AbstractEquispacedGrid)
   l1 > l2 && ((l2,l1) = (l1, l2))
   n = l2/l1
   nInt = round(Int, n)
-  (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && isdyadic(nInt) && (n≈nInt)
+  (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && isdyadic(nInt) && (n≈nInt)
 end
 
 native_nodes{T}(b::PeriodicSetOfTranslates{T}) = [real(T)(k*stepsize(b)) for k in 0:length(b)]

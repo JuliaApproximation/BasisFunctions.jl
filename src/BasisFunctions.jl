@@ -82,7 +82,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid,
         ChebyshevNodeGrid, ChebyshevExtremaGrid
 export Point
-export dim, left, right, range, sample
+export leftendpoint, rightendpoint, range, sample
 
 # from grid/productgrid.jl
 export ProductGrid

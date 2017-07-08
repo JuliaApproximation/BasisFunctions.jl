@@ -161,14 +161,14 @@ function test_grids(T)
     # Does mapped_grid simplify?
     mg2 = mapped_grid(PeriodicEquispacedGrid(30, T(0), T(1)), m)
     @test typeof(mg2) <: PeriodicEquispacedGrid
-    @test left(mg2) ≈ T(2)
-    @test right(mg2) ≈ T(3)
+    @test leftendpoint(mg2) ≈ T(2)
+    @test rightendpoint(mg2) ≈ T(3)
 
     # Apply a second map and check whether everything simplified
     m2 = interval_map(T(2), T(3), T(4), T(5))
     mg3 = mapped_grid(mg1, m2)
-    @test left(mg3) ≈ T(4)
-    @test right(mg3) ≈ T(5)
+    @test leftendpoint(mg3) ≈ T(4)
+    @test rightendpoint(mg3) ≈ T(5)
     @test typeof(grid(mg3)) <: PeriodicEquispacedGrid
 
     # Scattered grid

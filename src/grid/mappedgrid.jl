@@ -11,10 +11,8 @@ struct MappedGrid{G,M,T} <: AbstractGrid{T}
 	MappedGrid{G,M,T}(grid::AbstractGrid{T}, map) where {G,M,T} = new(grid, map)
 end
 
-MappedGrid1d{G,M,T} = MappedGrid{G,M,1,T}
-
-MappedGrid{N,T}(grid::AbstractGrid{N,T}, map::AbstractMap) =
-	MappedGrid{typeof(grid),typeof(map),N,T}(grid, map)
+MappedGrid(grid::AbstractGrid{T}, map::AbstractMap) where {T} =
+	MappedGrid{typeof(grid),typeof(map),T}(grid, map)
 
 mapped_grid(grid::AbstractGrid, map::AbstractMap) = MappedGrid(grid, map)
 
@@ -29,10 +27,6 @@ mapping(g::MappedGrid) = g.map
 
 for op in (:length, :size, :eachindex)
 	@eval $op(g::MappedGrid) = $op(grid(g))
-end
-
-for op in (:left, :right)
-	@eval $op(g::MappedGrid1d) = applymap(g.map, $op(grid(g)))
 end
 
 resize(g::MappedGrid, n::Int) = apply_map(resize(grid(g), n), mapping(g))
@@ -52,7 +46,7 @@ end
 
 
 # Preserve tensor product structure
-function rescale{N}(g::ProductGrid, a::SVector{N}, b::SVector{N})
+function rescale(g::ProductGrid, a::SVector{N}, b::SVector{N}) where {N}
 	scaled_grids = [ rescale(grid(g,i), a[i], b[i]) for i in 1:N]
 	ProductGrid(scaled_grids...)
 end

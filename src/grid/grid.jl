@@ -12,6 +12,13 @@ Point{N,T} = SVector{N,T}
 eltype(::Type{AbstractGrid{T}}) where {T} = T
 eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 
+ndims(::AbstractGrid{T}) where {T <: Number} = 1
+ndims(::AbstractGrid{SVector{N,T}}) where {N,T} = N
+
+numtype(::AbstractGrid{T}) where {T <: Number} = T
+numtype(::AbstractGrid{SVector{N,T}}) where {N,T} = T
+
+
 size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)
 

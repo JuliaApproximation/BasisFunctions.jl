@@ -24,7 +24,12 @@ function ProductGrid(grid::AbstractGrid)
 	grid
 end
 
-ProductGrid(grids...) = ProductGrid{typeof(grids),sum(map(ndims, grids)),numtype(grids[1])}(grids)
+function ProductGrid(grids...)
+	TG = typeof(grids)
+	T1 = Tuple{map(eltype, grids)...}
+	T2 = Domains.simplify_product_eltype(T1)
+	ProductGrid{typeof(grids),T2}(grids)
+end
 
 size(g::ProductGrid) = map(length, g.grids)
 size(g::ProductGrid, j::Int) = length(g.grids[j])

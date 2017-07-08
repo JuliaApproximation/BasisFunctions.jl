@@ -1,5 +1,6 @@
 # translates_of_bsplines.jl
-abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T} end
+abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+end
 
 degree{K}(b::PeriodicBSplineBasis{K}) = K
 
@@ -74,9 +75,9 @@ resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, 
 # TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
 compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) = iseven(K) &&
-    (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
+    (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
 compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) = isodd(K) &&
-    (1+(left(b) - left(grid))≈1) && (1+(right(b) - right(grid))≈1) && (length(b)==length(grid))
+    (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
 # we use a PeriodicEquispacedGrid in stead
 grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
@@ -197,7 +198,7 @@ restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTran
 struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
   superset     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
-  
+
   OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
     new(b, coeffs_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
