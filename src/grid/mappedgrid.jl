@@ -29,6 +29,10 @@ for op in (:length, :size, :eachindex)
 	@eval $op(g::MappedGrid) = $op(grid(g))
 end
 
+for op in (:leftendpoint, :rightendpoint)
+	@eval $op(g::MappedGrid1d) = applymap(g.map, $op(grid(g)))
+end
+
 resize(g::MappedGrid, n::Int) = apply_map(resize(grid(g), n), mapping(g))
 
 # This is necessary for mapped tensorproductgrids etc.
