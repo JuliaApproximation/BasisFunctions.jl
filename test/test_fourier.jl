@@ -26,8 +26,8 @@ function test_fourier_series(T)
 
     g = grid(fb)
     @test typeof(g) <: PeriodicEquispacedGrid
-    @test left(g) ≈ a
-    @test right(g) ≈ b
+    @test leftendpoint(g) ≈ a
+    @test rightendpoint(g) ≈ b
     @test length(g) == length(fb)
 
     # Take a random point in the domain

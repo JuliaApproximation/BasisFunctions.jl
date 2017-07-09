@@ -11,6 +11,8 @@ struct MappedGrid{G,M,T} <: AbstractGrid{T}
 	MappedGrid{G,M,T}(grid::AbstractGrid{T}, map) where {G,M,T} = new(grid, map)
 end
 
+const MappedGrid1d{G,M,T<:Number} = MappedGrid{G,M,T}
+
 MappedGrid(grid::AbstractGrid{T}, map::AbstractMap) where {T} =
 	MappedGrid{typeof(grid),typeof(map),T}(grid, map)
 
