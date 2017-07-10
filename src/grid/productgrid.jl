@@ -38,11 +38,11 @@ ndims(g::ProductGrid, j::Int) = ndims(element(g,j))
 
 length(g::ProductGrid) = prod(size(g))
 
-# left(g::ProductGrid) = SVector(map(left, g.grids))
-# left(g::ProductGrid, j) = left(g.grids[j])
-#
-# right(g::ProductGrid) = SVector(map(right, g.grids))
-# right(g::ProductGrid, j) = right(g.grids[j])
+leftendpoint(g::ProductGrid) = SVector(map(leftendpoint, g.grids))
+leftendpoint(g::ProductGrid, j) = leftendpoint(g.grids[j])
+
+rightendpoint(g::ProductGrid) = SVector(map(rightendpoint, g.grids))
+rightendpoint(g::ProductGrid, j) = rightendpoint(g.grids[j])
 
 # Convert to linear index. If the argument is a tuple of integers, it can be assumed to
 # be a multilinear index. Same for CartesianIndex.

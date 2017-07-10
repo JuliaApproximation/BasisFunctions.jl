@@ -40,17 +40,17 @@ end
 
 
 # Plot a vector of values on a 1D grid
-@recipe function f(grid::AbstractGrid{1}, vals)
+@recipe function f(grid::AbstractGrid1d, vals)
     size --> (800,400)
     collect(grid), vals
 end
 
 # Plot a matrix of values on a 2D equispaced grid
-@recipe function f(grid::AbstractGrid{2}, vals)
+@recipe function f(grid::AbstractGrid2d, vals)
     seriestype --> :surface
     size --> (500,400)
-    xrange = linspace(left(grid)[1],right(grid)[1],size(grid,1))
-    yrange = linspace(left(grid)[2],right(grid)[2],size(grid,2))
+    xrange = linspace(leftendpoint(grid)[1],rightendpoint(grid)[1],size(grid,1))
+    yrange = linspace(leftendpoint(grid)[2],rightendpoint(grid)[2],size(grid,2))
     xrange, yrange, vals'
 end
 
@@ -63,7 +63,7 @@ end
 end
 
 # Plot a 1D grid
-@recipe function f(grid::AbstractGrid{1})
+@recipe function f(grid::AbstractGrid1d)
     seriestype --> :scatter
     yticks --> []
     ylims --> [-1 1]

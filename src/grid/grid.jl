@@ -5,6 +5,8 @@ abstract type AbstractGrid{T}
 end
 
 const AbstractGrid1d{T <: Number} = AbstractGrid{T}
+# Todo: remove this one again, it is not sufficiently generic
+const AbstractGrid2d{T <: Number} = AbstractGrid{SVector{2,T}}
 
 Point{N,T} = SVector{N,T}
 
