@@ -18,17 +18,16 @@ ChebyshevBasisFirstKind{T} = ChebyshevBasis{T}
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 
-ChebyshevBasis{T}(n, ::Type{T} = Float64) = ChebyshevBasis{T}(n)
+ChebyshevBasis(n, ::Type{T} = Float64) where {T} = ChebyshevBasis{T}(n)
 
-ChebyshevBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( ChebyshevBasis(n,float(T)), a, b)
+ChebyshevBasis(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
+    rescale( ChebyshevBasis(n,float(T)), a, b)
 
 instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
-promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{promote_type(T,S)}(b.n)
+set_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
 
 resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
-
-set_promote_eltype{T,S}(b::ChebyshevBasis{T}, ::Type{S}) = ChebyshevBasis{S}(b.n)
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -39,20 +38,21 @@ has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevExtremaGrid) = length(b) =
 has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
 
 
-left(b::ChebyshevBasis) = -one(numtype(b))
+left(b::ChebyshevBasis) = -one(domaintype(b))
 left(b::ChebyshevBasis, idx) = left(b)
 
-right(b::ChebyshevBasis) = one(numtype(b))
+right(b::ChebyshevBasis) = one(domaintype(b))
 right(b::ChebyshevBasis, idx) = right(b)
 
-grid{T}(b::ChebyshevBasis{T}) = ChebyshevNodeGrid(b.n,numtype(b))
-secondgrid{T}(b::ChebyshevBasis{T}) = ChebyshevExtremaGrid(b.n,numtype(b))
+grid(b::ChebyshevBasis) = ChebyshevNodeGrid(b.n, domaintype(b))
+secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
+
 # extends the default definition at transform.jl
 transform_set(set::ChebyshevBasis; nodegrid=true, options...) =
     nodegrid ? DiscreteGridSpace(grid(set), eltype(set)) : DiscreteGridSpace(secondgrid(set), eltype(set))
 
 # The weight function
-weight{T}(b::ChebyshevBasis{T}, x) = 1/sqrt(1-T(x)^2)
+weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
 jacobi_α(b::ChebyshevBasis) = -1//2
@@ -78,7 +78,7 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 # recurence relation.
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function moment{T}(b::ChebyshevBasis{T}, idx::Int)
+function moment(b::ChebyshevBasis{T}, idx::Int) where {T}
     n = idx-1
     if n == 0
         T(2)
@@ -87,7 +87,7 @@ function moment{T}(b::ChebyshevBasis{T}, idx::Int)
     end
 end
 
-function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
+function apply!(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef) where {T}
     #	@assert period(dest)==period(src)
     n = length(src)
     tempc = coef[:]
@@ -118,7 +118,7 @@ function apply!{T}(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevB
     result
 end
 
-function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef)
+function apply!(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef) where {T}
     #	@assert period(dest)==period(src)
     tempc = zeros(T,length(result))
     tempc[1:length(src)] = coef[1:length(src)]
@@ -141,16 +141,16 @@ function apply!{T}(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::Chebys
     result
 end
 
-function gramdiagonal!{T}(result, ::ChebyshevBasis{T}; options...)
-  for i in 1:length(result)
-    i==1? result[i] = T(pi) : result[i] = T(pi)/2
-  end
+function gramdiagonal!(result, ::ChebyshevBasis{T}; options...) where {T}
+    for i in 1:length(result)
+        i==1? result[i] = T(pi) : result[i] = T(pi)/2
+    end
 end
 
-function UnNormalizedGram{T}(b::ChebyshevBasis{T}, oversampling)
-  d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
-  d[1] = length_oversampled_grid(b, oversampling)
-  DiagonalOperator(b, b, d)
+function UnNormalizedGram(b::ChebyshevBasis{T}, oversampling) where {T}
+    d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
+    d[1] = length_oversampled_grid(b, oversampling)
+    DiagonalOperator(b, b, d)
 end
 
 ################################################################
@@ -278,29 +278,30 @@ struct ChebyshevBasisSecondKind{T} <: OPS{T}
     n			::	Int
 end
 
-ChebyshevBasisSecondKind{T}(n, ::Type{T} = Float64) = ChebyshevBasisSecondKind{T}(n)
+ChebyshevBasisSecondKind(n, ::Type{T} = Float64) where {T} = ChebyshevBasisSecondKind{T}(n)
 
-instantiate{T}(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) = ChebyshevBasisSecondKind{T}(n)
+instantiate(::Type{ChebyshevBasisSecondKind}, n, ::Type{T}) where {T} = ChebyshevBasisSecondKind{T}(n)
 
-promote_eltype{T,S}(b::ChebyshevBasisSecondKind{T}, ::Type{S}) = ChebyshevBasisSecondKind{promote_type(T,S)}(b.n)
+set_promote_domaintype(b::ChebyshevBasisSecondKind, ::Type{S}) where {S} =
+    ChebyshevBasisSecondKind{S}(b.n)
 
 resize(b::ChebyshevBasisSecondKind, n) = ChebyshevBasisSecondKind(n, eltype(b))
 
 name(b::ChebyshevBasisSecondKind) = "Chebyshev series (second kind)"
 
 
-left{T}(b::ChebyshevBasisSecondKind{T}) = -one(T)
-left{T}(b::ChebyshevBasisSecondKind{T}, idx) = left(b)
+left(b::ChebyshevBasisSecondKind{T}) where {T} = -one(T)
+left(b::ChebyshevBasisSecondKind, idx) = left(b)
 
-right{T}(b::ChebyshevBasisSecondKind{T}) = one(T)
-right{T}(b::ChebyshevBasisSecondKind{T}, idx) = right(b)
+right(b::ChebyshevBasisSecondKind{T}) where {T} = one(T)
+right(b::ChebyshevBasisSecondKind, idx) = right(b)
 
-grid{T}(b::ChebyshevBasisSecondKind{T}) = ChebyshevNodeGrid{T}(b.n)
+grid(b::ChebyshevBasisSecondKind{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 
-Gram{T}(b::ChebyshevBasisSecondKind{T}; options...) = ScalingOperator(b, b, T(pi)/2)
+Gram(b::ChebyshevBasisSecondKind{T}; options...) where {T} = ScalingOperator(b, b, T(pi)/2)
 
 # The weight function
-weight{T}(b::ChebyshevBasisSecondKind{T}, x) = sqrt(1-T(x)^2)
+weight(b::ChebyshevBasisSecondKind{T}, x) where {T} = sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
 jacobi_α(b::ChebyshevBasisSecondKind) = 1//2

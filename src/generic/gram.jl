@@ -99,19 +99,20 @@ basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 
 default_oversampling(b::FunctionSet) = 1
 # E'E/N
-DiscreteGram{N,T}(b::FunctionSet{N,T}; oversampling = default_oversampling(b)) =
-  1/real(T)(discrete_gram_scaling(b, oversampling))*UnNormalizedGram(b, oversampling)
+DiscreteGram(b::FunctionSet; oversampling = default_oversampling(b)) =
+  1/discrete_gram_scaling(b, oversampling)*UnNormalizedGram(b, oversampling)
 
-function UnNormalizedGram{N,T}(b::FunctionSet{N,T}, oversampling = 1)
+function UnNormalizedGram(b::FunctionSet, oversampling = 1)
   grid = oversampled_grid(b, oversampling)
   evaluation_operator(b, grid)'*evaluation_operator(b, grid)
 end
 
 # discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length_oversampled_grid(b, oversampling)
-discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length(b)
+discrete_gram_scaling(b::FunctionSet, oversampling) = length(b)
 
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
-DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = default_oversampling(b)) = inv(DiscreteGram(b; oversampling=oversampling))
+DiscreteDualGram(b::FunctionSet; oversampling = default_oversampling(b)) =
+  inv(DiscreteGram(b; oversampling=oversampling))
 
 # Ẽ'E/N
 DiscreteMixedGram(b::FunctionSet; oversampling=default_oversampling(b)) = IdentityOperator(b,b)

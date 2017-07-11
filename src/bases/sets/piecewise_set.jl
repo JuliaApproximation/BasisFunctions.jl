@@ -4,12 +4,12 @@
 A PiecewiseSet has a function set for each piece in a partition. Its representation
 is a MultiArray containing the expansions of all sets combined.
 """
-struct PiecewiseSet{P <: Partition,SETS,N,T} <: CompositeSet{N,T}
+struct PiecewiseSet{P <: Partition,SETS,T} <: CompositeSet{T}
     sets        ::  SETS
     offsets     ::  Array{Int,1}
     partition   ::  P
 
-    function PiecewiseSet{P,SETS,N,T}(sets, partition) where {P <: Partition,SETS,N,T}
+    function PiecewiseSet{P,SETS,T}(sets, partition) where {P <: Partition,SETS,T}
         offsets = compute_offsets(sets)
         new(sets, offsets, partition)
     end
@@ -23,12 +23,12 @@ function PiecewiseSet(set::FunctionSet1d, partition::Partition, n = ones(length(
 end
 
 # Make a PiecewiseSet from a list of sets and a given partition
-function PiecewiseSet(sets, partition::Partition, T = eltype(sets[1]), N = ndims(sets[1]))
+function PiecewiseSet(sets, partition::Partition, T = domaintype(sets[1]))
     # Make sure that the sets are an indexable list of FunctionSet's
     @assert indexable_set(sets, FunctionSet)
     # TODO: We should check that the supports of the sets match the partition pieces
 
-    PiecewiseSet{typeof(partition),typeof(sets),N,T}(sets, partition)
+    PiecewiseSet{typeof(partition),typeof(sets),T}(sets, partition)
 end
 
 # Construct a piecewise set from a list of sets in 1d

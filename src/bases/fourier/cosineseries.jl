@@ -8,25 +8,23 @@
 """
 Cosine series on the interval [0,1].
 """
-struct CosineSeries{T} <: FunctionSet1d{T}
+struct CosineSeries{T} <: FunctionSet{T}
     n           ::  Int
-    # TODO
-    # CosineSeries(n) = new(n)
 end
 
 name(b::CosineSeries) = "Cosine series"
 
 
-CosineSeries{T}(n, ::Type{T} = Float64) = CosineSeries{T}(n)
+CosineSeries(n, ::Type{T} = Float64) where {T} = CosineSeries{T}(n)
 
-CosineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) =
+CosineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
     rescale( CosineSeries(n,float(T)), a, b)
 
-instantiate{T}(::Type{CosineSeries}, n, ::Type{T}) = CosineSeries{T}(n)
+instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
-set_promote_eltype{T,S}(b::CosineSeries{T}, ::Type{S}) = CosineSeries{S}(b.n)
+set_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
 
-resize(b::CosineSeries, n) = CosineSeries(n, eltype(b))
+resize(b::CosineSeries, n) = CosineSeries(n, domaintype(b))
 
 is_basis(b::CosineSeries) = true
 is_orthogonal(b::CosineSeries) = true
@@ -40,23 +38,23 @@ has_extension(b::CosineSeries) = true
 
 length(b::CosineSeries) = b.n
 
-left{T}(b::CosineSeries{T}) = T(0)
+left(b::CosineSeries{T}) where {T} = T(0)
 left(b::CosineSeries, idx) = left(b)
 
-right{T}(b::CosineSeries{T}) = T(1)
+right(b::CosineSeries{T}) where {T} = T(1)
 right(b::CosineSeries, idx) = right(b)
 
-period{T}(b::CosineSeries{T}, idx) = T(2)
+period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(numtype(b)), one(numtype(b)))
+grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(domaintype(b)), one(domaintype(b)))
 
 
 native_index(b::CosineSeries, idx::Int) = idx-1
 linear_index(b::CosineSeries, idxn::Int) = idxn+1
 
-eval_element{T}(b::CosineSeries{T}, idx::Int, x) = cos(x * T(pi) * (idx-1))
+eval_element(b::CosineSeries{T}, idx::Int, x) where {T} = cos(x * T(pi) * (idx-1))
 
-function eval_element_derivative{T}(b::CosineSeries{T}, idx::Int, x)
+function eval_element_derivative(b::CosineSeries{T}, idx::Int, x) where {T}
     arg = T(pi) * (idx-1)
     -arg * sin(arg * x)
 end
@@ -83,14 +81,14 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
     coef_dest
 end
 
-function Gram{T}(b::CosineSeries{T}; options...)
-  diag = ones(T,length(b))/2
-  diag[1] = 1
-  DiagonalOperator(b, b, diag)
+function Gram(b::CosineSeries{T}; options...) where {T}
+    diag = ones(T,length(b))/2
+    diag[1] = 1
+    DiagonalOperator(b, b, diag)
 end
 
-function UnNormalizedGram{T}(b::CosineSeries{T}, oversampling)
-  d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
-  d[1] = length_oversampled_grid(b, oversampling)
-  DiagonalOperator(b, b, d)
+function UnNormalizedGram(b::CosineSeries{T}, oversampling) where {T}
+    d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
+    d[1] = length_oversampled_grid(b, oversampling)
+    DiagonalOperator(b, b, d)
 end

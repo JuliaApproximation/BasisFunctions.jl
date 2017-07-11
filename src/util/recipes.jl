@@ -22,7 +22,7 @@ end
     set(S), grid, postprocess(set(S), grid, vals)
 end
 # 1D error plot
-@recipe function f(S::FunctionSet{1}, grid::AbstractGrid, vals)
+@recipe function f(S::FunctionSet1d, grid::AbstractGrid, vals)
     title --> "Error"
     legend --> false
     yscale --> :log10
@@ -32,7 +32,7 @@ end
     grid, vals
 end
 # 2D error plot
-@recipe function f(S::FunctionSet{2}, grid::AbstractGrid, vals)
+@recipe function f(S::FunctionSet2d, grid::AbstractGrid, vals)
     title --> "Error (log)"
     seriestype --> :heatmap
     grid, log10.(real(vals))
@@ -93,11 +93,11 @@ postprocess(S::Subset, grid, vals) = postprocess(superset(S), grid, vals)
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
-plotgrid(S::FunctionSet{1}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S),right(S))
+plotgrid(S::FunctionSet1d, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S),right(S))
 
-plotgrid(S::FunctionSet{2}, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])×rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
+plotgrid(S::FunctionSet2d, n) = rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[1],right(S)[1])×rescale(PeriodicEquispacedGrid(n,numtype(S)),left(S)[2],right(S)[2])
 
-plotgrid{S,M,T}(s::MappedSet1d{S,M,T}, n) = apply_map(plotgrid(superset(s), n), mapping(s))
+plotgrid(s::MappedSet1d, n) = apply_map(plotgrid(superset(s), n), mapping(s))
 
 ## Split complex plots in real and imaginary parts
 # 1D

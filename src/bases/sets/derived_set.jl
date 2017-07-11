@@ -5,7 +5,8 @@ A DerivedSet is a set that derives from an underlying set. The abstract type
 derived sets implements a lot of the interface of a function set by delegating
 to the underlying set.
 """
-abstract type DerivedSet{N,T} <: FunctionSet{N,T} end
+abstract type DerivedSet{T} <: FunctionSet{T}
+end
 
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
@@ -30,8 +31,8 @@ resize(s::DerivedSet, n) = similar_set(s, resize(superset(s),n))
 # To avoid ambiguity with a similar definition for abstract type FunctionSet:
 resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
 
-set_promote_eltype{N,T,S}(s::DerivedSet{N,T}, ::Type{S}) =
-    similar_set(s, promote_eltype(superset(s), S))
+set_promote_domaintype(s::DerivedSet{T}, ::Type{S}) where {T,S} =
+    similar_set(s, promote_domaintype(superset(s), S))
 
 # Delegation of properties
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
@@ -173,8 +174,8 @@ dot(set::DerivedSet, f1::Function, f2::Function, nodes::Array=native_nodes(super
 For testing purposes we define a concrete subset of DerivedSet. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
-struct ConcreteDerivedSet{N,T} <: DerivedSet{N,T}
-    superset ::  FunctionSet{N,T}
+struct ConcreteDerivedSet{T} <: DerivedSet{T}
+    superset ::  FunctionSet{T}
 end
 
 # Implementing similar_set is all it takes.

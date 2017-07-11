@@ -1,7 +1,8 @@
 # polynomials.jl
 
-
-abstract type PolynomialBasis{T} <: FunctionSet1d{T} end
+"PolynomialBasis is the abstract supertype of all univariate polynomials."
+abstract type PolynomialBasis{T} <: FunctionSet{T}
+end
 
 # The native index of a polynomial basis is the degree, which starts from 0 rather
 # than from 1. Since it is an integer, it is wrapped in a different type.
@@ -24,10 +25,11 @@ function subset(b::PolynomialBasis, idx::OrdinalRange)
 end
 
 
+"OrthogonalPolynomialBasis is the abstract supertype of all univariate orthogonal polynomials."
+abstract type OrthogonalPolynomialBasis{T} <: PolynomialBasis{T}
+end
 
-abstract type OrthogonalPolynomialBasis{T} <: PolynomialBasis{T} end
-
-OPS{T} = OrthogonalPolynomialBasis{T}
+const OPS{T} = OrthogonalPolynomialBasis{T}
 
 
 is_orthogonal(b::OPS) = true
@@ -40,13 +42,13 @@ antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
-dot{T}(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+dot(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) where {T} =
 		# To avoid difficult points at the ends of the domain.
 		dot(x->weight(set,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 
 clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
 
-function clip_and_cut{T<:Real}(a::Array{T,1}, low, up)
+function clip_and_cut(a::Array{T,1}, low, up) where {T <: Real}
 	clipped = clip.(a,low, up)
 	t = clipped[1]
 	s = 1
@@ -65,7 +67,7 @@ function clip_and_cut{T<:Real}(a::Array{T,1}, low, up)
 	clipped[s:e]
 end
 
-function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
+function apply!(op::Extension, dest::B, src::B, coef_dest, coef_src) where {B <: OPS}
     @assert length(dest) > length(src)
 
     for i = 1:length(src)
@@ -78,7 +80,7 @@ function apply!{B <: OPS}(op::Extension, dest::B, src::B, coef_dest, coef_src)
 end
 
 
-function apply!{B <: OPS}(op::Restriction, dest::B, src::B, coef_dest, coef_src)
+function apply!(op::Restriction, dest::B, src::B, coef_dest, coef_src) where {B <: OPS}
     @assert length(dest) < length(src)
 
     for i = 1:length(dest)

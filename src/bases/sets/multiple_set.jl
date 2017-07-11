@@ -12,11 +12,11 @@ is the native representation of the corresponding element of the multiset.
 Evaluation of an expansion at a point is defined by summing the evaluation of all
 functions in the set at that point.
 """
-struct MultiSet{SETS,N,T} <: CompositeSet{N,T}
+struct MultiSet{SETS,T} <: CompositeSet{T}
     sets    ::  SETS
     offsets ::  Array{Int,1}
 
-    function MultiSet{SETS,N,T}(sets) where {SETS,N,T}
+    function MultiSet{SETS,T}(sets) where {SETS,T}
         offsets = compute_offsets(sets)
         new(sets, offsets)
     end
@@ -29,18 +29,18 @@ end
 function MultiSet(sets, T)
     for set in sets
         # Is this the right check here?
-        @assert promote_type(eltype(set), T) == T
+        @assert promote_type(domaintype(set), T) == T
     end
-    MultiSet{typeof(sets),ndims(sets[1]),T}(sets)
+    MultiSet{typeof(sets),T}(sets)
 end
 
 function MultiSet(sets)
-    T = reduce(promote_type, map(eltype, sets))
-    MultiSet(map(s->promote_eltype(s,T), sets), T)
+    T = reduce(promote_type, map(domaintype, sets))
+    MultiSet(map(s->promote_domaintype(s,T), sets), T)
 end
 
 
-similar_set(set::MultiSet, sets, T = eltype(set)) = MultiSet(sets, T)
+similar_set(set::MultiSet, sets, T = domaintype(set)) = MultiSet(sets, T)
 
 multiset(set::FunctionSet) = set
 

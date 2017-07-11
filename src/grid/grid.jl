@@ -17,6 +17,7 @@ eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 ndims(::AbstractGrid{T}) where {T <: Number} = 1
 ndims(::AbstractGrid{SVector{N,T}}) where {N,T} = N
 
+# TODO: remvoe the numtype or disambiguate its meaning
 numtype(::AbstractGrid{T}) where {T <: Number} = T
 numtype(::AbstractGrid{SVector{N,T}}) where {N,T} = T
 

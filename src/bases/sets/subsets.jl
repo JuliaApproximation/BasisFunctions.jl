@@ -24,7 +24,7 @@ end
 A Subset is an abstract subset of a function set. It is characterized by the
 underlying larger set, and a collection of indices into that set.
 """
-abstract type Subset{N,T} <: FunctionSet{N,T}
+abstract type Subset{T} <: FunctionSet{T}
 end
 
 # We assume that the underlying set is stored in a field called superset
@@ -36,9 +36,8 @@ indices(s::Subset, i) = s.indices[i]
 
 # The concrete subset should implement `similar_subset`, a routine that
 # returns a subset of a similar type as itself, but with a different underlying set.
-set_promote_eltype{N,T}(s::Subset{N,T}, ::Type{T}) = s
-set_promote_eltype{N,T,S}(s::Subset{N,T}, ::Type{S}) =
-    similar_subset(s, promote_eltype(superset(s), S), indices(s))
+set_promote_domaintype{T,S}(s::Subset{T}, ::Type{S}) =
+    similar_subset(s, promote_domaintype(superset(s), S), indices(s))
 
 apply_map(s::Subset, map) = similar_subset(s, apply_map(superset(s), map), indices(s))
 
@@ -115,18 +114,18 @@ This often leads to an explicit extension to the full set, but it can take
 advantage of possible fast implementations for the underlying set. For large subsets
 this is more efficient than iterating over the individual elements.
 """
-struct LargeSubset{SET, IDX, N, T} <: Subset{N,T}
+struct LargeSubset{SET,IDX,T} <: Subset{T}
     superset    ::  SET
     indices     ::  IDX
 
-    function LargeSubset{SET,IDX,N,T}(set::FunctionSet{N,T}, idx::IDX) where {SET,IDX,N,T}
+    function LargeSubset{SET,IDX,T}(set::FunctionSet{T}, idx::IDX) where {SET,IDX,T}
         checkbounds(set, idx)
         new(set, idx)
     end
 end
 
-LargeSubset{N,T}(set::FunctionSet{N,T}, indices) =
-    LargeSubset{typeof(set),typeof(indices),N,T}(set, indices)
+LargeSubset(set::FunctionSet{T}, indices) where {T} =
+    LargeSubset{typeof(set),typeof(indices),T}(set, indices)
 
 similar_subset(s::LargeSubset, set, indices) = LargeSubset(set, indices)
 
@@ -180,18 +179,18 @@ The difference with a regular function subset is that operators on a small set
 are implemented by iterating explicitly over the indices, and not in terms of
 an operator on the full underlying set.
 """
-struct SmallSubset{SET,IDX,N,T} <: Subset{N,T}
+struct SmallSubset{SET,IDX,T} <: Subset{T}
     superset    ::  SET
     indices     ::  IDX
 
-    function SmallSubset{SET,IDX,N,T}(set::FunctionSet{N,T}, indices::IDX) where {SET,IDX,N,T}
+    function SmallSubset{SET,IDX,T}(set::FunctionSet{T}, indices::IDX) where {SET,IDX,T}
         checkbounds(set, indices)
         new(set, indices)
     end
 end
 
-SmallSubset{N,T}(set::FunctionSet{N,T}, indices) =
-    SmallSubset{typeof(set),typeof(indices),N,T}(set, indices)
+SmallSubset(set::FunctionSet{T}, indices) where {T} =
+    SmallSubset{typeof(set),typeof(indices),T}(set, indices)
 
 
 similar_subset(s::SmallSubset, set, indices) = SmallSubset(set, indices)
@@ -200,18 +199,18 @@ similar_subset(s::SmallSubset, set, indices) = SmallSubset(set, indices)
 """
 A SingletonSubset represent a single element from an underlying set.
 """
-struct SingletonSubset{SET,IDX,N,T} <: Subset{N,T}
+struct SingletonSubset{SET,IDX,T} <: Subset{T}
     superset    ::  SET
     index       ::  IDX
 
-    function SingletonSubset{SET,IDX,N,T}(set::FunctionSet{N,T}, index::IDX) where {SET,IDX,N,T}
+    function SingletonSubset{SET,IDX,T}(set::FunctionSet{T}, index::IDX) where {SET,IDX,T}
         checkbounds(set, index)
         new(set, index)
     end
 end
 
-SingletonSubset{N,T}(set::FunctionSet{N,T}, index) =
-    SingletonSubset{typeof(set),typeof(index),N,T}(set, index)
+SingletonSubset(set::FunctionSet{T}, index) where {T} =
+    SingletonSubset{typeof(set),typeof(index),T}(set, index)
 
 similar_subset(s::SingletonSubset, set, index) = SingletonSubset(set, index)
 

@@ -5,7 +5,7 @@ An OperatedSet represents a set that is acted on by an operator, for example the
 The OperatedSet has the dimension of the source set of the operator, but each basis function
 is acted on by the operator.
 """
-struct OperatedSet{T} <: FunctionSet{1,T}
+struct OperatedSet{T} <: FunctionSet{T}
     "The operator that acts on the set"
     op          ::  AbstractOperator{T}
 
@@ -32,7 +32,7 @@ dest(set::OperatedSet) = dest(set.op)
 
 operator(set::OperatedSet) = set.op
 
-set_promote_eltype{T,S}(set::OperatedSet{T}, ::Type{S}) = OperatedSet(promote_eltype(operator(set), S))
+set_promote_domaintype(set::OperatedSet, ::Type{S}) where {S} = OperatedSet(promote_eltype(operator(set), S))
 
 for op in (:left, :right, :length)
     @eval $op(set::OperatedSet) = $op(src(set))

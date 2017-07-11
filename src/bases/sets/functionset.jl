@@ -6,20 +6,18 @@
 ######################
 
 """
-A FunctionSet is any set of functions with a finite size. It is typically the
+A `FunctionSet` is any set of functions with a finite size. It is typically the
 truncation of an infinite set, but that need not be the case.
 
-A FunctionSet has a dimension N and a numeric type T. The dimension N corresponds
-to the number of variables of the basis functions. The numeric type T is the
-type of expansion coefficients corresponding to this set. This type can be wider
-than the native type of the set (BigFloat versus Float64 for example). For some
-function sets it is always complex.
+A `FunctionSet{T}` has domain type `T`. This type corresponds to the type of a
+domain in the `Domains.jl` package, and it is the type of the expected argument
+to the elements of the function set.
 
 Each function set is ordered. There is a one-to-one map between the integers
 1:length(s) and the elements of the set. This map defines the order of
 coefficients in a vector that represents a function expansion in the set.
 
-A FunctionSet has two types of indexing: native indexing and linear indexing.
+A `FunctionSet` has two types of indexing: native indexing and linear indexing.
 Linear indexing is used to order elements of the set into a vector, as explained
 above. Native indices are closer to the mathematical definitions of the basis
 functions. For example, a tensor product set consisting of M functions in the
@@ -36,39 +34,34 @@ possible. Linear indexing is used to convert representations into a form suitabl
 for linear algebra: expansions turn into vectors, and linear operators turn into
 matrices.
 """
-abstract type FunctionSet{N,T}
+abstract type FunctionSet{T}
 end
 
 
 # Useful abstraction for special cases
-FunctionSet1d{T} = FunctionSet{1,T}
-FunctionSet2d{T} = FunctionSet{2,T}
-FunctionSet3d{T} = FunctionSet{3,T}
+const FunctionSet1d{T <: Number} = FunctionSet{T}
+# Warning: not all 2d function sets have SVector{2,T} type, they could have (S,T) type
+const FunctionSet2d{T} = FunctionSet{SVector{2,T}}
+const FunctionSet3d{T} = FunctionSet{SVector{3,T}}
+const FunctionSet4d{T} = FunctionSet{SVector{4,T}}
 
-"The dimension of the set."
-ndims{N,T}(::FunctionSet{N,T}) = N
-ndims{N,T}(::Type{FunctionSet{N,T}}) = N
-ndims{S <: FunctionSet}(::Type{S}) = ndims(supertype(S))
 
-"The numeric type of the set is like the eltype of the set, but it is always real."
-numtype(s::FunctionSet) = real(eltype(s))
+"The type of the elements of the domain of the set."
+domaintype(::Type{FunctionSet{T}}) where {T} = T
+domaintype(::Type{S}) where {S <: FunctionSet} = domaintype(supertype(S))
+domaintype(set::FunctionSet) = domaintype(typeof(set))
+
+"The type of the elements of the codomain of the set."
+rangetype(::Type{S}) where {S <: FunctionSet} = domaintype(S)
+rangetype(set::FunctionSet) = rangetype(typeof(set))
+
+"The default type of the expansion coefficients in a function set."
+coefficient_type(::Type{S}) where {S <: FunctionSet} = codomaintype(S)
+coefficient_type(set::FunctionSet) = coefficient_type(typeof(set))
+
 
 "Property to indicate whether the functions in the set are real-valued (for real arguments)."
-isreal(s::FunctionSet) = isreal(one(eltype(s)))
-
-"""
-The eltype of a set is the typical numeric type of expansion coefficients. It is
-either NumT or Complex{NumT}, where NumT is the numeric type of the set.
-"""
-eltype{N,T}(::Type{FunctionSet{N,T}}) = T
-eltype{B <: FunctionSet}(::Type{B}) = eltype(supertype(B))
-
-# Convenience methods
-eltype(x, y) = promote_type(eltype(x), eltype(y))
-eltype(x, y, z) = promote_type(eltype(x), eltype(y), eltype(z))
-eltype(x, y, z, t) = promote_type(eltype(x), eltype(y), eltype(z), eltype(t))
-eltype(x...) = promote_type(map(eltype, x)...)
-
+isreal(s::FunctionSet) = isreal(rangetype(s))
 
 
 
@@ -110,41 +103,23 @@ This function is mainly used to create instances for testing purposes.
 """
 instantiate{S <: FunctionSet}(::Type{S}, n) = instantiate(S, n, Float64)
 
-"Promote the element type of the function set."
-promote_eltype{N,T,S}(s::FunctionSet{N,T}, ::Type{S}) = _promote_eltype(s, promote_type(T,S))
+"Promote the domain type of the function set."
+promote_domaintype(set::FunctionSet{T}, ::Type{T}) where {T} = set
+promote_domaintype(set::FunctionSet{T}, ::Type{S}) where {T,S} = set_promote_domaintype(set, S)
 
-# Subtypes should implement op_promote_eltype:
-# set_promote_eltype{N,T,S}(set::SomeSet{N,T}, ::Type{S}) = ...
-# They can assume that S is different from T, and that it is wider than T.
+promote_domaintype(set1::FunctionSet{T}, set2::FunctionSet{T}) where {T} = (set1,set2)
 
-_promote_eltype{N,T}(set::FunctionSet{N,T}, ::Type{T}) = set
-_promote_eltype{N,T,S}(set::FunctionSet{N,T}, ::Type{S}) =
-    set_promote_eltype(set, S)
-
-promote_eltype{N1,N2,T}(set1::FunctionSet{N1,T}, set2::FunctionSet{N2,T}) = (set1,set2)
-
-function promote_eltype{N1,N2,T,S}(set1::FunctionSet{N1,T}, set2::FunctionSet{N2,S})
-    ELT = promote_type(T,S)
-    promote_eltype(set1, ELT), promote_eltype(set2, ELT)
+function promote_domaintype(set1::FunctionSet{T}, set2::FunctionSet{S}) where {T,S}
+    U = promote_type(T,S)
+    promote_domaintype(set1, U), promote_domaintype(set2, U)
 end
 
-# Convenience function: promote both function sets to eltype T
-promote_eltypes{T}(::Type{T}, set1::FunctionSet, set2::FunctionSet) =
-    (promote_eltype(set1, T), promote_eltype(set2, T))
 
-
-widen(s::FunctionSet) = promote_eltype(s, widen(eltype(s)))
-
-promote{N,T}(set1::FunctionSet{N,T}, set2::FunctionSet{N,T}) = (set1,set2)
-
-function promote{N,T1,T2}(set1::FunctionSet{N,T1}, set2::FunctionSet{N,T2})
-    T = promote_type(T1,T2)
-    (promote_eltype(set1,T), promote_eltype(set2,T))
-end
+widen(s::FunctionSet) = promote_domaintype(s, widen(domaintype(s)))
 
 # similar returns a similar basis of a given size and numeric type
 # It can be implemented in terms of resize and promote_eltype.
-similar(s::FunctionSet, T::Type, n) = resize(promote_eltype(s, T), n)
+similar(s::FunctionSet, ::Type{T}, n) where {T} = resize(promote_domaintype(s, T), n)
 
 # Support resize of a 1D set with a tuple of a single element, so that one can
 # write statements of the form resize(s, size(some_set)) in all dimensions.
@@ -153,17 +128,20 @@ resize(s::FunctionSet1d, n::NTuple{1,Int}) = resize(s, n[1])
 """
 Return a set of zero coefficients in the native format of the set.
 """
-zeros(s::FunctionSet) = zeros(eltype(s), s)
+zeros(s::FunctionSet) = zeros(coefficient_type(s), s)
 
 function ones(s::FunctionSet)
     z = zeros(s)
-    z[:] = 1
+    for i in eachindex(z)
+        z[i] = 1
+    end
     z
 end
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multisets.
-zeros(T::Type, s::FunctionSet) = zeros(T, size(s))
+zeros(::Type{A}, s::FunctionSet) where {A} = zeros(A, size(s))
+
 
 ###########
 # Indexing
@@ -206,38 +184,25 @@ Convert the set of coefficients in the native format of the set to a linear list
 The order of the coefficients in this list is determined by the order of the
 elements in the set.
 """
-# We do nothing if the list of coefficiens is already linear and has the right
-# element type
-linearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_native::AbstractArray{T,1}) = copy(coef_native)
-
-# Otherwise: allocate memory for the linear set and call linearize_coefficients! to do the work
+# Allocate memory for the linear set and call linearize_coefficients! to do the work
 function linearize_coefficients(s::FunctionSet, coef_native)
-    coef_linear = zeros(eltype(s), length(s))
+    coef_linear = zeros(eltype(coef_native), length(s))
     linearize_coefficients!(s, coef_linear, coef_native)
 end
 
-# Default implementation
-function linearize_coefficients!(s::FunctionSet, coef_linear, coef_native)
-    for (i,j) in enumerate(eachindex(coef_native))
-        coef_linear[i] = coef_native[j]
-    end
-    coef_linear
-end
+linearize_coefficients!(s::FunctionSet, coef_linear::Vector, coef_native) =
+    copy!(coef_linear, coef_native)
 
 """
 Convert a linear set of coefficients back to the native representation of the set.
 """
-function delinearize_coefficients{N,T}(s::FunctionSet{N,T}, coef_linear::AbstractArray{T,1})
-    coef_native = zeros(s)
+function delinearize_coefficients(s::FunctionSet, coef_linear::AbstractVector{T}) where {T}
+    coef_native = zeros(eltype(coef_linear), s)
     delinearize_coefficients!(s, coef_native, coef_linear)
 end
 
-function delinearize_coefficients!(s::FunctionSet, coef_native, coef_linear)
-    for (i,j) in enumerate(eachindex(coef_native))
-        coef_native[j] = coef_linear[i]
-    end
-    coef_native
-end
+delinearize_coefficients!(s::FunctionSet, coef_native, coef_linear::Vector) =
+    copy!(coef_native, coef_linear)
 
 # Sets have a native size and a linear size. However, there is not necessarily a
 # bijection between the two. You can always convert a native size to a linear size,

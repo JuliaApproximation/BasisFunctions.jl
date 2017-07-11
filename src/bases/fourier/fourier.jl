@@ -1,9 +1,9 @@
 # fourier.jl
 
 """
-A Fourier basis on the interval [0,1]. The precise basis functions are:
-exp(2 π i k)
-with k ranging from -N to N for Fourier series of odd length 2N+1.
+A Fourier basis on the interval `[0,1]`. The precise basis functions are:
+`exp(2 π i k)`
+with `k` ranging from `-N` to `N` for Fourier series of odd length `2N+1`.
 
 The basis functions are ordered the way they are expected by a typical FFT
 implementation. The frequencies k are in the following order:
@@ -18,28 +18,32 @@ struct FourierBasis{EVEN,T} <: FunctionSet1d{T}
 	FourierBasis{EVEN,T}(n) where {EVEN,T} = (@assert iseven(n)==EVEN; new(n))
 end
 
-FourierBasisEven{T} = FourierBasis{true,T}
-FourierBasisOdd{T} = FourierBasis{false,T}
+const FourierBasisEven{T} = FourierBasis{true,T}
+const FourierBasisOdd{T} = FourierBasis{false,T}
 
 name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
-FourierBasis{T}(n, ::Type{T} = Float64) = FourierBasis{iseven(n),complex(float(T))}(n)
+FourierBasis(n, ::Type{T} = Float64) where {T} = FourierBasis{iseven(n),T}(n)
 
-FourierBasis{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale(FourierBasis(n, T), a, b)
+FourierBasis(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale(FourierBasis(n, T), a, b)
 
 # Typesafe methods for constructing a Fourier series with even length
-fourier_basis_even{T}(n, ::Type{T}) = FourierBasis{true,T}(n)
+fourier_basis_even(n, ::Type{T}) where {T} = FourierBasis{true,T}(n)
 
 # Typesafe method for constructing a Fourier series with odd length
-fourier_basis_odd{T}(n, ::Type{T}) = FourierBasis{false,T}(n)
+fourier_basis_odd(n, ::Type{T}) where {T} = FourierBasis{false,T}(n)
 
 
-instantiate{T}(::Type{FourierBasis}, n, ::Type{T}) = FourierBasis(n, T)
+instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis(n, T)
 
-set_promote_eltype{EVEN,T,S}(b::FourierBasis{EVEN,T}, ::Type{S}) = FourierBasis{EVEN,S}(b.n)
+set_promote_domaintype(b::FourierBasis{EVEN,T}, ::Type{S}) where {EVEN,T,S} = FourierBasis{EVEN,S}(b.n)
 
 resize(b::FourierBasis, n) = FourierBasis(n, eltype(b))
+
+# The rangetype of a Fourier series is complex, even when its domaintype T is real
+rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T <: Real} = Complex{T}
+rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T <: Complex} = T
 
 
 # Properties
@@ -74,15 +78,15 @@ has_grid_transform(b::FourierBasis, dgs, grid) = compatible_grid(b, grid)
 
 length(b::FourierBasis) = b.n
 
-left(b::FourierBasis) = zero(numtype(b))
+left(b::FourierBasis) = zero(domaintype(b))
 left(b::FourierBasis, idx) = left(b)
 
-right(b::FourierBasis) = one(numtype(b))
+right(b::FourierBasis) = one(domaintype(b))
 right(b::FourierBasis, idx) = right(b)
 
 period{EVEN,T}(b::FourierBasis{EVEN,T}) = T(1)
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), numtype(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), domaintype(b))
 
 nhalf(b::FourierBasis) = length(b)>>1
 
@@ -289,7 +293,7 @@ function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, gri
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			T = numtype(grid)
+			T = eltype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
 			super_dgs = gridspace(set, super_grid)
 			E = evaluation_operator(set, super_dgs; options...)

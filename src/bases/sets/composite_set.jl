@@ -20,7 +20,8 @@ The concrete subtypes differ in what evaluation means. Examples include:
 subsets
 - PiecewiseSet, where evaluation depends on the location of the evaluation point
 """
-abstract type CompositeSet{N,T} <: FunctionSet{N,T} end
+abstract type CompositeSet{T} <: FunctionSet{T}
+end
 
 # We assume that every subset has an indexable field called sets
 is_composite(set::CompositeSet) = true
@@ -37,7 +38,7 @@ tail(set::CompositeSet) = nb_elements(set) == 2 ? element(set, 2) : element(set,
 compute_offsets(sets::Array) = [0; cumsum(map(length, sets))]
 
 # Convert a tuple to an array in order to use cumsum like above
-compute_offsets{N}(sets::NTuple{N,Any}) = compute_offsets([set for set in sets])
+compute_offsets(sets::NTuple{N,Any}) where {N} = compute_offsets([set for set in sets])
 
 # Implement equality in terms of equality of the elements.
 ==(s1::CompositeSet, s2::CompositeSet) = (elements(s1) == elements(s2))
@@ -54,7 +55,7 @@ similar_set(set::CompositeSet, sets) = similar_set(set, sets, eltype(set))
 resize(set::CompositeSet, n) =
     similar_set(set, map( (s,l) -> resize(s, l), elements(set), n))
 
-set_promote_eltype{N,T,S}(set::CompositeSet{N,T}, ::Type{S}) =
+set_promote_domaintype(set::CompositeSet, ::Type{S}) where {S} =
     similar_set(set, map(s->promote_eltype(s, S), elements(set)), S)
 
 zeros(T::Type, set::CompositeSet) = MultiArray(map(s->zeros(T,s),elements(set)))

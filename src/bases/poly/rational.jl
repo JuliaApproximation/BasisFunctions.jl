@@ -1,9 +1,12 @@
+# rational.jl
+
 immutable RationalBasis{T} <: FunctionSet1d{T}
     roots :: AbstractArray{T}
 
-    RationalBasis{T}(roots) where T = new(roots)
+    RationalBasis{T}(roots) where {T} = new(roots)
 end
-RationalBasis{T}(roots::AbstractArray{T}) = RationalBasis{T}(roots)
+
+RationalBasis(roots::AbstractArray{T}) where {T} = RationalBasis{T}(roots)
 
 function eval_element(b::RationalBasis, idx::Int, x)
     degree=1

@@ -1,15 +1,17 @@
 # tensorproductset.jl
 
+product_domaintype(set::FunctionSet...) = Tuple{map(domaintype, set)...}
+
 """
 A TensorProductSet is itself a set: the tensor product of a number of sets.
 
-struct TensorProductSet{TS,N,T} <: FunctionSet{N,T}
+struct TensorProductSet{TS,T} <: FunctionSet{T}
 
 Parameters:
 - TS is a tuple of types, representing the (possibly different) types of the sets.
-- N is the total dimension of the corresponding space and T the numeric type.
+- T is the domain type.
 """
-struct TensorProductSet{TS,N,T} <: FunctionSet{N,T}
+struct TensorProductSet{TS,T} <: FunctionSet{T}
     sets   ::  TS
 end
 
@@ -18,20 +20,18 @@ is_composite(set::TensorProductSet) = true
 elements(set::TensorProductSet) = set.sets
 element(set::TensorProductSet, j::Int) = set.sets[j]
 element(s::TensorProductSet, range::Range) = tensorproduct(s.sets[range]...)
-nb_elements{TS}(s::TensorProductSet{TS}) = tuple_length(TS)
+nb_elements(s::TensorProductSet{TS}) where {TS} = tuple_length(TS)
 
 function TensorProductSet(set::FunctionSet)
     warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductSet.")
     set
 end
 
+# TODO: what should be the domaintype of the tensor product set?
 function TensorProductSet(sets::FunctionSet...)
-    ELT = promote_type(map(eltype,sets)...)
-    psets = map( s -> promote_eltype(s, ELT), sets)
-    TensorProductSet{typeof(psets),sum(map(ndims, psets)),ELT}(psets)
+    T = product_domaintype(sets...)
+    TensorProductSet{typeof(sets),T}(sets)
 end
-
-ndims(s::TensorProductSet, j::Int) = ndims(element(s, j))
 
 ^(s::FunctionSet, n::Int) = tensorproduct(s, n)
 
@@ -59,7 +59,7 @@ end
 linear_index(s::TensorProductSet, i::Int) = i
 # - If the argument is a tuple of integers or a CartesianIndex, then it is
 #   a multilinear index.
-linear_index{N}(s::TensorProductSet, i::NTuple{N,Int}) = sub2ind(size(s), i...)
+linear_index(s::TensorProductSet, i::NTuple{N,Int}) where {N} = sub2ind(size(s), i...)
 linear_index(s::TensorProductSet, i::CartesianIndex) = sub2ind(size(s), i.I...)
 # - If its type is anything else, it may be a tuple of native indices
 linear_index(s::TensorProductSet, idxn::Tuple) = linear_index(s, map(linear_index, elements(s), idxn))
@@ -107,8 +107,8 @@ for op in (:derivative_set, :antiderivative_set)
         TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end
 
-set_promote_eltype{S}(s::TensorProductSet, ::Type{S}) =
-    TensorProductSet(map(i -> promote_eltype(i,S), s.sets)...)
+set_promote_domaintype(s::TensorProductSet, ::Type{S}) where {S} =
+    TensorProductSet([promote_domaintype(element(s, i), S[i]) for i in 1:nb_elements(s)] )
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
 resize(s::TensorProductSet, n::Int) = resize(s, approx_length(s, n))
@@ -188,18 +188,18 @@ grid(s::TensorProductSet) = ProductGrid(map(grid, elements(s))...)
 # In general, left(f::FunctionSet, j::Int) returns the left of the jth function in the set, not the jth dimension.
 # The methods below follow this convention.
 left(s::TensorProductSet) = SVector(map(left, elements(s)))
-left{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
+# left(s::TensorProductSet, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
 #left(b::TensorProductSet, idx::Int, j) = left(b, multilinear_index(b,j), j)
 #left(b::TensorProductSet, idxt::NTuple, j) = left(b.sets[j], idxt[j])
 
 right(s::TensorProductSet) = SVector(map(right, elements(s)))
-right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
+# right{TS,N,T}(s::TensorProductSet{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
 #right(b::TensorProductSet, j::Int) = right(element(b,j))
 #right(b::TensorProductSet, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductSet, idxt::NTuple, j) = right(b.sets[j], idxt[j])
 
 
-@generated function eachindex{TS}(s::TensorProductSet{TS})
+@generated function eachindex(s::TensorProductSet{TS}) where {TS}
     LEN = tuple_length(TS)
     startargs = fill(1, LEN)
     stopargs = [:(size(s,$i)) for i=1:LEN]

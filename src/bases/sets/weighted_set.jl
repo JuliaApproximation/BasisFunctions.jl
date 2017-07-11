@@ -3,14 +3,12 @@
 """
 A WeightedSet represents some function f(x) times an existing set.
 """
-struct WeightedSet{N,T} <: DerivedSet{N,T}
-    superset    ::  FunctionSet{N,T}
+struct WeightedSet{T} <: DerivedSet{T}
+    superset    ::  FunctionSet{T}
     weightfun
 end
 
-WeightedSet1d{T} = WeightedSet{1,T}
-WeightedSet2d{T} = WeightedSet{2,T}
-WeightedSet3d{T} =  WeightedSet{3,T}
+const WeightedSet1d{T <: Number} = WeightedSet{T}
 
 weightfunction(set::WeightedSet) = set.weightfun
 

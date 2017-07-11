@@ -8,22 +8,22 @@
 """
 Sine series on the interval [0,1].
 """
-struct SineSeries{T} <: FunctionSet1d{T}
+struct SineSeries{T} <: FunctionSet{T}
     n           ::  Int
 end
 
 name(b::SineSeries) = "Sine series"
 
 
-SineSeries{T}(n, ::Type{T} = Float64) = SineSeries{T}(n)
+SineSeries(n, ::Type{T} = Float64) where {T} = SineSeries{T}(n)
 
-SineSeries{T}(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) = rescale( SineSeries(n,float(T)), a, b)
+SineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale( SineSeries(n,float(T)), a, b)
 
-instantiate{T}(::Type{SineSeries}, n, ::Type{T}) = SineSeries{T}(n)
+instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-set_promote_eltype{T,S}(b::SineSeries{T}, ::Type{S}) = SineSeries{S}(b.n)
+set_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
 
-resize(b::SineSeries, n) = SineSeries(n, eltype(b))
+resize(b::SineSeries, n) = SineSeries(n, domaintype(b))
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true
@@ -37,20 +37,20 @@ has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n
 
-left{T}(b::SineSeries{T}) = T(0)
+left(b::SineSeries{T}) where {T} = T(0)
 left(b::SineSeries, idx) = left(b)
 
-right{T}(b::SineSeries{T}) = T(1)
+right(b::SineSeries{T}) where {T} = T(1)
 right(b::SineSeries, idx) = right(b)
 
-period{T}(b::SineSeries{T}, idx) = T(2)
+period(b::SineSeries{T}, idx) where {T} = T(2)
 
-grid{T}(b::SineSeries{T}) = EquispacedGrid(b.n, T(0), T(1))
+grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
 
 
-eval_element{T}(b::SineSeries{T}, idx::Int, x) = sin(x * T(pi) * idx)
+eval_element(b::SineSeries{T}, idx::Int, x) where {T} = sin(x * T(pi) * idx)
 
-function eval_element_derivative{T}(b::SineSeries{T}, idx::Int, x)
+function eval_element_derivative(b::SineSeries{T}, idx::Int, x) where {T}
     arg = T(pi) * idx
     arg * cos(arg * x)
 end
@@ -77,4 +77,4 @@ function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, c
     coef_dest
 end
 
-Gram{T}(b::SineSeries{T}; options...) = ScalingOperator(b, b ,T(1)/2)
+Gram(b::SineSeries{T}; options...) where {T} = ScalingOperator(b, b ,T(1)/2)

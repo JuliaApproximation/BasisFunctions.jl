@@ -7,7 +7,7 @@ struct IdentityOperator{T} <: AbstractOperator{T}
     src     ::  FunctionSet
     dest    ::  FunctionSet
 
-    function IdentityOperator{T}(src, dest) where T
+    function IdentityOperator{T}(src, dest) where {T}
         @assert length(src) == length(dest)
         new(src, dest)
     end
@@ -16,13 +16,13 @@ end
 
 
 
-IdentityOperator{N1,N2,T}(src::FunctionSet{N1,T}, dest::FunctionSet{N2,T}) =
+function IdentityOperator(src::FunctionSet, dest::FunctionSet = src)
+    T = promote_type(rangetype(src), rangetype(dest))
     IdentityOperator{T}(src, dest)
+end
 
-IdentityOperator(src, dest = src) = IdentityOperator(promote_eltype(src,dest)...)
-
-op_promote_eltype{T,S}(op::IdentityOperator{T}, ::Type{S}) =
-    IdentityOperator{S}(promote_eltypes(S, src(op), dest(op))...)
+op_promote_eltype(op::IdentityOperator{T}, ::Type{S}) where {T,S} =
+    IdentityOperator{S}(src(op), dest(op))
 
 @add_properties(IdentityOperator, is_inplace, is_diagonal)
 
@@ -62,14 +62,14 @@ struct ScalingOperator{T} <: AbstractOperator{T}
 end
 
 function ScalingOperator(src::FunctionSet, dest::FunctionSet, scalar::Number)
-    T = promote_type(eltype(src), eltype(dest), typeof(scalar))
-    ScalingOperator{T}(promote_eltypes(T, src, dest)..., convert(T, scalar))
+    T = promote_type(rangetype(src), rangetype(dest), typeof(scalar))
+    ScalingOperator{T}(src, dest, convert(T, scalar))
 end
 
 ScalingOperator(src::FunctionSet, scalar::Number) = ScalingOperator(src, src, scalar)
 
 op_promote_eltype{T,S}(op::ScalingOperator{T}, ::Type{S}) =
-    ScalingOperator{S}(promote_eltypes(S, src(op), dest(op))..., convert(S, op.scalar))
+    ScalingOperator{S}(src(op), dest(op), convert(S, op.scalar))
 
 is_inplace(::ScalingOperator) = true
 is_diagonal(::ScalingOperator) = true
@@ -127,13 +127,13 @@ struct ZeroOperator{T} <: AbstractOperator{T}
     dest    ::  FunctionSet
 end
 
-ZeroOperator{N1,N2,T}(src::FunctionSet{N1,T}, dest::FunctionSet{N2,T}) =
+function ZeroOperator(src::FunctionSet, dest::FunctionSet = src)
+    T = promote_type(rangetype(src), rangetype(dest))
     ZeroOperator{T}(src, dest)
+end
 
-ZeroOperator(src, dest = src) = ZeroOperator(promote_eltype(src, dest)...)
-
-op_promote_eltype{T,S}(op::ZeroOperator{T}, ::Type{S}) =
-    ZeroOperator(promote_eltypes(S, op.src, op.dest)...)
+op_promote_eltype(op::ZeroOperator{T}, ::Type{S}) where {T,S} =
+    ZeroOperator{S}(src(op), dest(op))
 
 # We can only be in-place if the numbers of coefficients of src and dest match
 is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
@@ -178,7 +178,7 @@ DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(C
 DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
 
 op_promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
-    DiagonalOperator{S}(promote_eltypes(S, src(op), dest(op))..., convert(Array{S,1}, op.diagonal))
+    DiagonalOperator{S}(src(op), dest(op), convert(Array{S,1}, op.diagonal))
 
 diagonal(op::DiagonalOperator) = copy(op.diagonal)
 

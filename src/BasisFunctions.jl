@@ -60,7 +60,7 @@ import Domains: matrix, vector
 # composite type interface
 import Domains: element, elements, nb_elements
 # cartesian product utility functions
-import Domains: cartesianproduct, ×
+import Domains: cartesianproduct, ×, product_eltype
 import Domains: mapping
 
 
@@ -112,6 +112,9 @@ export has_transform, has_unitary_transform, has_extension, has_derivative, has_
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment
+
+# from bases/sets/span.jl
+export Span
 
 # from bases/sets/subsets.jl
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
@@ -272,6 +275,7 @@ include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
 
 include("bases/sets/functionset.jl")
+include("bases/sets/span.jl")
 include("generic/gram.jl")
 
 include("operator/operator.jl")
@@ -289,21 +293,21 @@ include("bases/sets/mapped_set.jl")
 
 include("bases/sets/euclidean.jl")
 
-include("operator/dimop.jl")
+# include("operator/dimop.jl")
 
 include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
-include("operator/tensorproductoperator.jl")
+# include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/pseudo_diagonal.jl")
-include("operator/circulant_operator.jl")
+# include("operator/circulant_operator.jl")
 
 
 
 include("bases/sets/expansions.jl")
 
 
-include("tensorproducts.jl")
+# include("tensorproducts.jl")
 
 include("generic/generic_operators.jl")
 
@@ -320,14 +324,14 @@ include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 
-include("bases/splines/bf_splines.jl")
+# include("bases/splines/bf_splines.jl")
 
-include("util/bsplines.jl")
+# include("util/bsplines.jl")
 
-include("bases/translates/set_of_translates.jl")
-include("bases/translates/translates_of_bsplines.jl")
+# include("bases/translates/set_of_translates.jl")
+# include("bases/translates/translates_of_bsplines.jl")
 
-# include("bases/wavelets/bf_wavelets.jl")
+# # include("bases/wavelets/bf_wavelets.jl")
 
 include("bases/poly/polynomials.jl")
 
