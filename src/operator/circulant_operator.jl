@@ -57,7 +57,7 @@ end
 eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
 
 op_promote_eltype{ELT,S}(op::CirculantOperator{ELT}, ::Type{S}) =
-    CirculantOperator(src(op), dest(op), op_promote_eltype(op.eigenvaluematrix, complex(S)))
+    CirculantOperator{S}(src(op), dest(op), op_promote_eltype(op.eigenvaluematrix, complex(S)))
 
 Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(sqrt.(eigenvalues(c))))
 

@@ -71,10 +71,10 @@ for T in [Float64,BigFloat]
         test_tensor_operators(T)
     end
     @testset "$(rpad("test complexify/realify operator",80))" begin
-      test_complexify_operator(T)
+        test_complexify_operator(T)
     end
     @testset "$(rpad("test circulant operator",80))" begin
-      test_circulant_operator(T)
+        test_circulant_operator(T)
     end
 
     delimit("Generic interfaces")
@@ -155,9 +155,12 @@ for T in [Float64,BigFloat]
 
 
 end # for T in...
+
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
 @testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
+
 println()
 println(" All tests passed!")
+
 end # module

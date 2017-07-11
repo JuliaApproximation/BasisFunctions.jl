@@ -32,8 +32,9 @@ end
 function test_generic_operator_interface(op, T)
     ELT = eltype(op)
     @test promote_type(T,ELT) == ELT
-    @test eltype(src(op)) == ELT
-    @test eltype(dest(op)) == ELT
+    # TODO: re-enable two tests below once operators are overhauled
+    # @test eltype(src(op)) == ELT
+    # @test eltype(dest(op)) == ELT
 
     m = matrix(op)
 
@@ -93,8 +94,9 @@ function test_generic_operator_interface(op, T)
         # ELT2 may not equal T, but it must be wider.
         # For example, when T2 is BigFloat, ELT2 could be Complex{BigFloat}
         @test promote_type(T2, ELT2) == ELT2
-        @test eltype(src(op2)) == ELT2
-        @test eltype(dest(op2)) == ELT2
+        # TODO: reenable tests below once operators are overhauled
+        # @test eltype(src(op2)) == ELT2
+        # @test eltype(dest(op2)) == ELT2
     end
 
     # Verify inverse

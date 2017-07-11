@@ -199,7 +199,7 @@ function diagonal(op::AbstractOperator)
         # Apply the operator: this extracts the diagonal because the operator is diagonal
         diagonal_native = apply(op, all_ones)
         # Convert to vector
-        linearize_coefficients(src(op), diagonal_native)
+        linearize_coefficients(dest(op), diagonal_native)
     else
 		# Compute the diagonal by calling unsafe_diagonal for each index
         [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]

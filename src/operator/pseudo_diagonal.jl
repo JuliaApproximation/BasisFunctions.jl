@@ -1,7 +1,8 @@
 # pseudo_diagonal.jl
+
 struct PseudoDiagonalOperator{T} <: DerivedOperator{T}
-  superoperator   :: DiagonalOperator{T}
-  tolerance       :: Real
+    superoperator   :: DiagonalOperator{T}
+    tolerance       :: Real
 end
 
 PseudoDiagonalOperator{T <: Real}(diagonal::AbstractVector{T}) = PseudoDiagonalOperator(Rn{T}(length(diagonal)), diagonal)
@@ -25,15 +26,15 @@ tolerance(op::PseudoDiagonalOperator) = op.tolerance
 tolerance(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = max(tolerance(op1), tolerance(op2))
 
 function inv{T}(op::PseudoDiagonalOperator{T})
-  diag = diagonal(op)
-  for i in 1:length(diag)
-    abs(diag[i]) < tolerance(op) ? diag[i] = T(0) : diag[i] = T(T(1)/diag[i])
-  end
-  PseudoDiagonalOperator(DiagonalOperator(dest(op), src(op), diag), tolerance(op))
+    diag = diagonal(op)
+    for i in 1:length(diag)
+        abs(diag[i]) < tolerance(op) ? diag[i] = T(0) : diag[i] = T(T(1)/diag[i])
+    end
+    PseudoDiagonalOperator(DiagonalOperator(dest(op), src(op), diag), tolerance(op))
 end
 
 function ctranspose{T}(op::PseudoDiagonalOperator{T})
-  PseudoDiagonalOperator(ctranspose(superoperator(op)), tolerance(op))
+    PseudoDiagonalOperator(ctranspose(superoperator(op)), tolerance(op))
 end
 
 
@@ -58,6 +59,8 @@ promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{ScalingOperator{T}})
 promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{ZeroOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
 
 promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{DiagonalOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
+
+
 ## CONVERSIONS
 
 convert{S,T}(::Type{PseudoDiagonalOperator{S}}, op::IdentityOperator{T}) =

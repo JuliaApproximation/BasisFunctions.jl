@@ -1,10 +1,13 @@
 # span.jl
 
+abstract type FunctionSpace
+end
+
 """
 The span of a function set is the set of all possible expansions in that set,
 with coefficients of a given type `A`.
 """
-struct Span{S,A}
+struct Span{S,A} <: FunctionSpace
     set ::  S
 end
 
