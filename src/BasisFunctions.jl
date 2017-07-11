@@ -293,21 +293,21 @@ include("bases/sets/mapped_set.jl")
 
 include("bases/sets/euclidean.jl")
 
-# include("operator/dimop.jl")
+include("operator/dimop.jl")
 
 include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
-# include("operator/tensorproductoperator.jl")
+include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/pseudo_diagonal.jl")
-# include("operator/circulant_operator.jl")
+include("operator/circulant_operator.jl")
 
 
 
 include("bases/sets/expansions.jl")
 
 
-# include("tensorproducts.jl")
+include("tensorproducts.jl")
 
 include("generic/generic_operators.jl")
 
@@ -324,12 +324,12 @@ include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 
-# include("bases/splines/bf_splines.jl")
+include("bases/splines/bf_splines.jl")
 
-# include("util/bsplines.jl")
+include("util/bsplines.jl")
 
-# include("bases/translates/set_of_translates.jl")
-# include("bases/translates/translates_of_bsplines.jl")
+include("bases/translates/set_of_translates.jl")
+include("bases/translates/translates_of_bsplines.jl")
 
 # # include("bases/wavelets/bf_wavelets.jl")
 

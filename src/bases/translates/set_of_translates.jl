@@ -1,7 +1,8 @@
 """
   Set consisting of translates of a function.
 """
-abstract type SetOfTranslates{T} <: FunctionSet1d{T} end
+abstract type SetOfTranslates{T} <: FunctionSet{T}
+end
 
 length(set::SetOfTranslates) = set.n
 
@@ -27,7 +28,8 @@ has_unitary_transform(::SetOfTranslates) = false
   The set can be written as ``\left\{T_k f\right\}_{k=0}^n``, where ``T_k f(x) = f(x-p/n)``.
   ``p`` is the period of the set, ``n`` is the number of elements.
 """
-abstract type PeriodicSetOfTranslates{T} <: SetOfTranslates{T} end
+abstract type PeriodicSetOfTranslates{T} <: SetOfTranslates{T}
+end
 
 left{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.a)
 

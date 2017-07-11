@@ -11,17 +11,17 @@ struct CirculantOperator{T} <: DerivedOperator{T}
   eigenvaluematrix  :: PseudoDiagonalOperator
 end
 
-function CirculantOperator{N,ELT <: Real}(src::FunctionSet{N,ELT}, dest::FunctionSet{N,ELT}, firstcolumn::AbstractVector{ELT}; options...)
+function CirculantOperator{ELT <: Real}(src::FunctionSet{ELT}, dest::FunctionSet{ELT}, firstcolumn::AbstractVector{ELT}; options...)
     D = PseudoDiagonalOperator(promote_eltype(src,complex(eltype(src))), promote_eltype(src,complex(eltype(dest))), fft(firstcolumn))
     CirculantOperator(src, dest, D; options...)
 end
 
-function CirculantOperator{N,ELT <: Complex}(complex_src::FunctionSet{N,ELT}, complex_dest::FunctionSet{N,ELT}, firstcolumn::AbstractVector; options...)
+function CirculantOperator{ELT <: Complex}(complex_src::FunctionSet{ELT}, complex_dest::FunctionSet{ELT}, firstcolumn::AbstractVector; options...)
     D = PseudoDiagonalOperator(complex_src, complex_dest,fftw_operator(complex_src,complex_dest,1:1,FFTW.MEASURE)*firstcolumn)
     CirculantOperator(complex_src, complex_dest, D; options...)
 end
 
-function CirculantOperator{N,T<:Real}(src::FunctionSet{N,T}, dest::FunctionSet{N,T}, D::PseudoDiagonalOperator; options...)
+function CirculantOperator{T<:Real}(src::FunctionSet{T}, dest::FunctionSet{T}, D::PseudoDiagonalOperator; options...)
   Csrc = ComplexifyOperator(src)
   Cdest = ComplexifyOperator(dest)
 
@@ -35,7 +35,7 @@ function CirculantOperator{N,T<:Real}(src::FunctionSet{N,T}, dest::FunctionSet{N
   CirculantOperator{T}(R*iF*D*F*Csrc, D)
 end
 
-function CirculantOperator{N,T<:Complex}(complex_src::FunctionSet{N,T}, complex_dest::FunctionSet{N,T}, D::PseudoDiagonalOperator; options...)
+function CirculantOperator{T<:Complex}(complex_src::FunctionSet{T}, complex_dest::FunctionSet{T}, D::PseudoDiagonalOperator; options...)
     F = forward_fourier_operator(complex_src, complex_src, eltype(complex_src); options...)
     iF = backward_fourier_operator(complex_dest, complex_dest, eltype(complex_dest); options...)
     CirculantOperator{T}(iF*D*F, D)

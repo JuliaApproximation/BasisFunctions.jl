@@ -10,12 +10,13 @@ spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) *
 
 
 # Splines of degree K (with equispaced knots only...)
-abstract type SplineBasis{K,T} <: FunctionSet1d{T} end
+abstract type SplineBasis{K,T} <: FunctionSet{T}
+end
 
 is_biorthogonal(::SplineBasis) = true
 
 "The degree of the splines."
-degree{K}(b::SplineBasis{K}) = K
+degree(b::SplineBasis{K}) where {K} = K
 
 left(b::SplineBasis) = b.a
 
@@ -27,7 +28,7 @@ interval(b::SplineBasis, x) = round(Int, floor( (x-left(b))/stepsize(b) ))
 is_basis(b::SplineBasis) = true
 
 # All splines have compact support
-has_compact_support{B <: SplineBasis}(::Type{B}) = True
+has_compact_support(::Type{B}) where {B <: SplineBasis} = True
 
 "Return the i-th knot of the spline, using native indices."
 knot(b::SplineBasis, idxn) = left(b) + idxn*stepsize(b)
