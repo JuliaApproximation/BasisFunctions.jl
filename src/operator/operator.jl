@@ -16,7 +16,8 @@ Source and destination should at least implement the following:
 
 The element type (eltype) should be equal for src and dest.
 """
-abstract type AbstractOperator{ELT} end
+abstract type AbstractOperator{ELT}
+end
 
 eltype{ELT}(::AbstractOperator{ELT}) = ELT
 eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT

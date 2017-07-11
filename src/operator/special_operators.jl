@@ -16,8 +16,8 @@ struct CoefficientScalingOperator{T} <: AbstractOperator{T}
 end
 
 function CoefficientScalingOperator(src::FunctionSet, dest::FunctionSet, index::Int, scalar::Number)
-    T = promote_type(eltype(src), eltype(dest), typeof(scalar))
-    CoefficientScalingOperator{T}(promote_eltype(src,T), promote_eltype(dest, T), index, convert(T,scalar))
+    T = promote_type(coefficient_type(src), coefficient_type(dest), typeof(scalar))
+    CoefficientScalingOperator{T}(src, dest, index, convert(T,scalar))
 end
 
 CoefficientScalingOperator(src::FunctionSet, index::Int, scalar::Number) =
@@ -27,8 +27,8 @@ index(op::CoefficientScalingOperator) = op.index
 
 scalar(op::CoefficientScalingOperator) = op.scalar
 
-op_promote_eltype{T,S}(op::CoefficientScalingOperator{T}, ::Type{S}) =
-    CoefficientScalingOperator{S}(promote_eltype(src(op),S), promote_eltype(dest(op),S), op.index, S(op.scalar))
+op_promote_eltype(op::CoefficientScalingOperator{T}, ::Type{S}) where {T,S} =
+    CoefficientScalingOperator{S}(op.src, op.dest, op.index, S(op.scalar))
 
 is_inplace(::CoefficientScalingOperator) = true
 is_diagonal(::CoefficientScalingOperator) = true
@@ -94,7 +94,7 @@ end
 function WrappedOperator(src, dest, op::AbstractOperator)
     T = promote_type(eltype(src), eltype(dest), eltype(op))
     promoted_op = promote_eltype(op, T)
-    WrappedOperator{typeof(promoted_op),T}(promote_eltype(src, T), promote_eltype(dest, T), promoted_op)
+    WrappedOperator{typeof(promoted_op),T}(src, dest, promoted_op)
 end
 
 """
@@ -120,8 +120,8 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-op_promote_eltype{OP,T,S}(op::WrappedOperator{OP,T}, ::Type{S}) =
-    WrappedOperator(promote_eltype(src(op), S), promote_eltype(dest(op), S), promote_eltype(op.op, S))
+op_promote_eltype(op::WrappedOperator{OP,T}, ::Type{S}) where {OP,T,S} =
+    WrappedOperator(src(op), dest(op), promote_eltype(op.op, S))
 
 operator(op::WrappedOperator) = op.op
 
@@ -162,7 +162,7 @@ end
 
 function IndexRestrictionOperator(src, dest, subindices)
     T = promote_type(eltype(src), eltype(dest))
-    IndexRestrictionOperator{typeof(subindices),T}(promote_eltype(src, T), promote_eltype(dest, T), subindices)
+    IndexRestrictionOperator{typeof(subindices),T}(src, dest, subindices)
 end
 
 subindices(op::IndexRestrictionOperator) = op.subindices
@@ -179,7 +179,7 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
 end
 
 op_promote_eltype{I,T,S}(op::IndexRestrictionOperator{I,T}, ::Type{S}) =
-    IndexRestrictionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
+    IndexRestrictionOperator{I,S}(op.src, op.dest, subindices(op))
 
 
 """
@@ -215,7 +215,7 @@ function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
 end
 
 op_promote_eltype{I,T,S}(op::IndexExtensionOperator{I,T}, ::Type{S}) =
-    IndexExtensionOperator{I,S}(promote_eltype(op.src, S), promote_eltype(op.dest, S), subindices(op))
+    IndexExtensionOperator{I,S}(op.src, op.dest, subindices(op))
 
 ctranspose(op::IndexRestrictionOperator) =
     IndexExtensionOperator(dest(op), src(op), subindices(op))

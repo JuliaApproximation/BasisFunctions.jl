@@ -56,9 +56,21 @@ rangetype(::Type{S}) where {S <: FunctionSet} = domaintype(S)
 rangetype(set::FunctionSet) = rangetype(typeof(set))
 
 "The default type of the expansion coefficients in a function set."
-coefficient_type(::Type{S}) where {S <: FunctionSet} = codomaintype(S)
+coefficient_type(::Type{S}) where {S <: FunctionSet} = rangetype(S)
 coefficient_type(set::FunctionSet) = coefficient_type(typeof(set))
 
+function eltype(set::FunctionSet)
+    println("Warning: calling eltype on a function set is deprecated. Use a span instead.")
+    coefficient_type(set)
+end
+
+function eltype(set1::FunctionSet, set2::FunctionSet)
+    promote_type(eltype(set1), eltype(set2))
+end
+
+# One can talk about dimensions for a set in Euclidean space
+ndims(::FunctionSet1d) = 1
+ndims(set::FunctionSet{SVector{N,T}}) where {N,T} = N
 
 "Property to indicate whether the functions in the set are real-valued (for real arguments)."
 isreal(s::FunctionSet) = isreal(rangetype(s))
@@ -114,6 +126,9 @@ function promote_domaintype(set1::FunctionSet{T}, set2::FunctionSet{S}) where {T
     promote_domaintype(set1, U), promote_domaintype(set2, U)
 end
 
+function promote_eltype(set::FunctionSet, args...)
+    error("Calling promote_eltype is deprecated.")
+end
 
 widen(s::FunctionSet) = promote_domaintype(s, widen(domaintype(s)))
 

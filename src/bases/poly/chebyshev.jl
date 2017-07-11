@@ -27,7 +27,7 @@ instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
 
 set_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
 
-resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, eltype(b))
+resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, domaintype(b))
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -49,7 +49,7 @@ secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
 
 # extends the default definition at transform.jl
 transform_set(set::ChebyshevBasis; nodegrid=true, options...) =
-    nodegrid ? DiscreteGridSpace(grid(set), eltype(set)) : DiscreteGridSpace(secondgrid(set), eltype(set))
+    nodegrid ? DiscreteGridSpace(grid(set), coefficient_type(set)) : DiscreteGridSpace(secondgrid(set), coefficient_type(set))
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)
@@ -157,10 +157,10 @@ end
 # Methods to transform from ChebyshevBasis to ChebyshevNodeGrid
 ###############################################################
 transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodeGrid; options...) =
-	_forward_chebyshev_operator(src, dest, eltype(src,dest); options...)
+	_forward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevNodeGrid; options...) =
-	_backward_chebyshev_operator(src, dest, eltype(src,dest); options...)
+	_backward_chebyshev_operator(src, dest, eltype(src, dest); options...)
 
 # These are the generic fallbacks
 _forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =

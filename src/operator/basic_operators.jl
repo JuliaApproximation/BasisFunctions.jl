@@ -291,27 +291,32 @@ A ComplexifyOperator converts real numbers to their complex counterparts.
 A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
 """
 struct ComplexifyOperator{T} <: AbstractOperator{T}
-  src   ::  FunctionSet
-  dest  ::  FunctionSet
+    src   ::  FunctionSet
+    dest  ::  FunctionSet
 
-  function ComplexifyOperator{T}(src, dest) where T
-    @assert length(src) == length(dest)
-    @assert complex(eltype(src)) == eltype(dest)
-    new(src, dest)
-  end
+    function ComplexifyOperator{T}(src, dest) where T
+        @assert length(src) == length(dest)
+        @assert complex(eltype(src)) == eltype(dest)
+        new(src, dest)
+    end
 end
 
 ComplexifyOperator(src::FunctionSet, dest::FunctionSet) = ComplexifyOperator{eltype(src)}(src, dest)
-ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, promote_eltype(src,complex(eltype(src))))
+
+ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, promote_domaintype(src, complex(domaintype(src))))
+
 ComplexifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
+
 Base.inv(op::ComplexifyOperator) = RealifyOperator(dest(op),src(op))
+
 is_diagonal(::ComplexifyOperator) = true
+
 ctranspose(op::ComplexifyOperator) = inv(op)
 
 function apply!(op::ComplexifyOperator, coef_dest, coef_src)
-  for i in eachindex(coef_src)
-      coef_dest[i] = complex(coef_src[i])
-  end
+    for i in eachindex(coef_src)
+        coef_dest[i] = complex(coef_src[i])
+    end
 end
 
 """
@@ -321,29 +326,35 @@ If the complex numbers should have no significant imaginary part.
 A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
 """
 struct RealifyOperator{T} <: AbstractOperator{T}
-  src   ::  FunctionSet
-  dest  ::  FunctionSet
+    src   ::  FunctionSet
+    dest  ::  FunctionSet
 
-  function RealifyOperator{T}(src, dest) where T
-    @assert length(src) == length(dest)
-    @assert real(eltype(src)) == eltype(dest)
-    new(src, dest)
-  end
+    function RealifyOperator{T}(src, dest) where T
+        @assert length(src) == length(dest)
+        @assert real(eltype(src)) == eltype(dest)
+        new(src, dest)
+    end
 end
 
 RealifyOperator(src::FunctionSet, dest::FunctionSet) = RealifyOperator{eltype(dest)}(src, dest)
-RealifyOperator(src::FunctionSet) = RealifyOperator(src, set_promote_eltype(src,real(eltype(src))))
+
+RealifyOperator(src::FunctionSet) = RealifyOperator(src, promote_domaintype(src, real(domaintype(src))))
+
 RealifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
-inv(op::RealifyOperator) = ComplexifyOperator(dest(op),src(op))
+
+inv(op::RealifyOperator) = ComplexifyOperator(dest(op), src(op))
+
 is_diagonal(::RealifyOperator) = true
+
 ctranspose(op::RealifyOperator) = inv(op)
+
 function apply!(op::RealifyOperator, coef_dest, coef_src)
-  exact = true
-  for i in eachindex(coef_src)
-      coef_dest[i] = real(coef_src[i])
-      if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
-        exact =  false
-      end
-  end
-  !exact && (warn("Realify operator can not realify exactly."))
+    exact = true
+    for i in eachindex(coef_src)
+        coef_dest[i] = real(coef_src[i])
+        if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
+            exact =  false
+        end
+    end
+    !exact && (warn("Realify operator can not realify exactly."))
 end

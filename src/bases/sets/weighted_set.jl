@@ -9,6 +9,7 @@ struct WeightedSet{T} <: DerivedSet{T}
 end
 
 const WeightedSet1d{T <: Number} = WeightedSet{T}
+const WeightedSet2d{T <: Number} = WeightedSet{SVector{2,T}}
 
 weightfunction(set::WeightedSet) = set.weightfun
 
