@@ -23,11 +23,11 @@ import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
 
 import Base: cos, sin, exp, log
 
-import Base: zeros, ones, fill!
+import Base: zeros, ones, one, zero, fill!
 
 import Base: getindex, setindex!, unsafe_getindex, eltype
 
-import Base: isreal, iseven, isodd
+import Base: isreal, iseven, isodd, real, complex
 
 import Base: ctranspose, transpose, inv, hcat, vcat, ndims
 
@@ -115,6 +115,7 @@ export moment
 
 # from bases/sets/span.jl
 export Span
+export coefficient_type, coeftype
 
 # from bases/sets/subsets.jl
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
@@ -135,8 +136,11 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 
 # from operator/operator.jl
 export AbstractOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!, ConcreteDerivedOperator
+        apply, apply_multiple, apply_inplace!
 export matrix, diagonal, is_diagonal, is_inplace
+
+# from operator/derived_op.jl
+export ConcreteDerivedOperator
 
 # from operator/composite_operator.jl
 export CompositeOperator, compose
@@ -279,6 +283,7 @@ include("bases/sets/span.jl")
 include("generic/gram.jl")
 
 include("operator/operator.jl")
+include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
 include("grid/discretegridspace.jl")

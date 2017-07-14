@@ -2,74 +2,70 @@
 
 struct PseudoDiagonalOperator{T} <: DerivedOperator{T}
     superoperator   :: DiagonalOperator{T}
-    tolerance       :: Real
+    tolerance       :: T
 end
 
-PseudoDiagonalOperator{T <: Real}(diagonal::AbstractVector{T}) = PseudoDiagonalOperator(Rn{T}(length(diagonal)), diagonal)
-PseudoDiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = PseudoDiagonalOperator(Cn{T}(length(diagonal)), diagonal)
+PseudoDiagonalOperator(diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(diagonal))
 
-PseudoDiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}, tolerance = default_tolerance(ELT)) =
-    PseudoDiagonalOperator(src, src, diagonal, tolerance)
+PseudoDiagonalOperator(src::Span, diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal))
 
-PseudoDiagonalOperator{ELT}(src::FunctionSet, dest::FunctionSet, diagonal::AbstractVector{ELT}, tolerance = default_tolerance(ELT)) =
-    PseudoDiagonalOperator{ELT}(DiagonalOperator{ELT}(src, dest, diagonal), tolerance)
+PseudoDiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(src, dest, diagonal))
 
-op_promote_eltype{ELT,S}(op::PseudoDiagonalOperator{ELT}, ::Type{S}) =
-    PseudoDiagonalOperator{S}(promote_eltype(superoperator(op), S), tolerance(S))
+PseudoDiagonalOperator(op::DiagonalOperator{T}, tolerance = default_tolerance(T)) where {T} =
+    PseudoDiagonalOperator{T}(op, tolerance)
 
-default_tolerance{T}(op::AbstractOperator{T}) = default_tolerance(T)
+similar_operator(op::PseudoDiagonalOperator, ::Type{S}, src, dest) where {S} =
+    PseudoDiagonalOperator(similar_operator(op.superoperator, S, src, dest))
 
-default_tolerance{T}(::Type{T}) = sqrt(eps(real(T)))
+default_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(real(T)))
 
 tolerance(op::PseudoDiagonalOperator) = op.tolerance
 
-tolerance(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = max(tolerance(op1), tolerance(op2))
+maxtolerance(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = max(tolerance(op1), tolerance(op2))
 
-function inv{T}(op::PseudoDiagonalOperator{T})
+function inv(op::PseudoDiagonalOperator)
+    T = eltype(op)
     diag = diagonal(op)
     for i in 1:length(diag)
-        abs(diag[i]) < tolerance(op) ? diag[i] = T(0) : diag[i] = T(T(1)/diag[i])
+        abs(diag[i]) < tolerance(op) ? diag[i] = zero(T) : diag[i] = T(one(T)/diag[i])
     end
     PseudoDiagonalOperator(DiagonalOperator(dest(op), src(op), diag), tolerance(op))
 end
 
-function ctranspose{T}(op::PseudoDiagonalOperator{T})
+function ctranspose(op::PseudoDiagonalOperator)
     PseudoDiagonalOperator(ctranspose(superoperator(op)), tolerance(op))
 end
 
 
-(*)(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), diagonal(op1) .* diagonal(op2), tolerance(op1, op2))
+(*)(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), diagonal(op1) .* diagonal(op2), maxtolerance(op1, op2))
 (*)(op1::ScalingOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), scalar(op1) * diagonal(op2), tolerance(op2))
 (*)(op2::PseudoDiagonalOperator, op1::ScalingOperator) = op1 * op2
 
-(*)(op1::DiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), diagonal(op1) .* diagonal(op2), tolerance(op1op2))
+(*)(op1::DiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), diagonal(op1) .* diagonal(op2), maxtolerance(op1, op2))
 (*)(op1::PseudoDiagonalOperator, op2::DiagonalOperator) = op1 * op2
 
-(+)(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2), tolerance(op1, op2))
+(+)(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2), maxtolerance(op1, op2))
 (+)(op1::ScalingOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), dest(op1), scalar(op1) +  diagonal(op2), tolerance(op2))
 (+)(op2::PseudoDiagonalOperator, op1::ScalingOperator) = op1 + op2
 
 (+)(op1::DiagonalOperator, op2::PseudoDiagonalOperator) = PseudoDiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2), tolerance(op2))
 (+)(op2::PseudoDiagonalOperator, op1::DiagonalOperator) = op1 + op2
 
-promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{IdentityOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
-
-promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{ScalingOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
-
-promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{ZeroOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
-
-promote_rule{S,T}(::Type{PseudoDiagonalOperator{S}}, ::Type{DiagonalOperator{T}}) = PseudoDiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{PseudoDiagonalOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = PseudoDiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{PseudoDiagonalOperator{S}}, ::Type{ScalingOperator{T}}) where {S,T} = PseudoDiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{PseudoDiagonalOperator{S}}, ::Type{ZeroOperator{T}}) where {S,T} = PseudoDiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{PseudoDiagonalOperator{S}}, ::Type{DiagonalOperator{T}}) where {S,T} = PseudoDiagonalOperator{promote_type(S,T)}
 
 
 ## CONVERSIONS
 
-convert{S,T}(::Type{PseudoDiagonalOperator{S}}, op::IdentityOperator{T}) =
+convert(::Type{PseudoDiagonalOperator{S}}, op::IdentityOperator{T}) where {S,T} =
     PseudoDiagonalOperator(src(op), dest(op), ones(S,length(src(op))), default_tolerance(op))
 
-convert{S,T}(::Type{PseudoDiagonalOperator{S}}, op::ScalingOperator{T}) =
+convert(::Type{PseudoDiagonalOperator{S}}, op::ScalingOperator{T}) where {S,T} =
     PseudoDiagonalOperator(src(op), dest(op), S(scalar(op))*ones(S,length(src(op))), default_tolerance(op))
 
-convert{S,T}(::Type{PseudoDiagonalOperator{S}}, op::DiagonalOperator{T}) =
+convert(::Type{PseudoDiagonalOperator{S}}, op::DiagonalOperator{T}) where {S,T} =
     PseudoDiagonalOperator(src(op), dest(op), map(S, diagonal(op)), default_tolerance(op))
 
-convert{S,T}(::Type{PseudoDiagonalOperator{S}}, op::PseudoDiagonalOperator{T}) = promote_eltype(op, S)
+convert(::Type{PseudoDiagonalOperator{S}}, op::PseudoDiagonalOperator{T}) where {S,T} = promote_eltype(op, S)

@@ -4,8 +4,8 @@
 The identity operator between two (possibly different) function sets.
 """
 struct IdentityOperator{T} <: AbstractOperator{T}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    src     ::  Span
+    dest    ::  Span
 
     function IdentityOperator{T}(src, dest) where {T}
         @assert length(src) == length(dest)
@@ -13,29 +13,27 @@ struct IdentityOperator{T} <: AbstractOperator{T}
     end
 end
 
+IdentityOperator(src::Span, dest::Span = src) = IdentityOperator(op_eltype(src, dest), src, dest)
 
-
-
-function IdentityOperator(src::FunctionSet, dest::FunctionSet = src)
-    T = promote_type(rangetype(src), rangetype(dest))
-    IdentityOperator{T}(src, dest)
+function IdentityOperator(::Type{T}, src, dest) where {T}
+    S, D, A = op_eltypes(src, dest, T)
+    IdentityOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
 end
 
-op_promote_eltype(op::IdentityOperator{T}, ::Type{S}) where {T,S} =
-    IdentityOperator{S}(src(op), dest(op))
+similar_operator(::IdentityOperator, ::Type{S}, src, dest) where {S} = IdentityOperator(S, src, dest)
 
 @add_properties(IdentityOperator, is_inplace, is_diagonal)
 
-inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+inv(op::IdentityOperator) = IdentityOperator(eltype(op), dest(op), src(op))
 
-ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+ctranspose(op::IdentityOperator) = IdentityOperator(eltype(op), dest(op), src(op))
 
 function matrix!(op::IdentityOperator, a)
     @assert size(a,1) == size(a,2)
 
-    a[:] = 0
+    a[:] = zero(eltype(op))
     for i in 1:size(a,1)
-        a[i,i] = 1
+        a[i,i] = one(eltype(op))
     end
     a
 end
@@ -47,38 +45,42 @@ unsafe_diagonal(op::IdentityOperator, i) = one(eltype(op))
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 
+
 """
 A ScalingOperator is the identity operator up to a scaling.
 """
 struct ScalingOperator{T} <: AbstractOperator{T}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    src     ::  Span
+    dest    ::  Span
     scalar  ::  T
 
-    function ScalingOperator{T}(src, dest, scalar) where T
+    function ScalingOperator{T}(src, dest, scalar) where {T}
         @assert length(src) == length(dest)
         new(src, dest, scalar)
     end
 end
 
-function ScalingOperator(src::FunctionSet, dest::FunctionSet, scalar::Number)
-    T = promote_type(rangetype(src), rangetype(dest), typeof(scalar))
-    ScalingOperator{T}(src, dest, convert(T, scalar))
+ScalingOperator(src::Span, scalar::Number) = ScalingOperator(src, src, scalar)
+
+ScalingOperator(src::Span, dest::Span, scalar) =
+    ScalingOperator(typeof(scalar), src, dest, scalar)
+
+function ScalingOperator(::Type{T}, src, dest, scalar) where {T}
+    S, D, A = op_eltypes(src, dest, T)
+    ScalingOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D), scalar)
 end
 
-ScalingOperator(src::FunctionSet, scalar::Number) = ScalingOperator(src, src, scalar)
+similar_operator(op::ScalingOperator, ::Type{S}, src, dest) where {S} =
+    ScalingOperator(S, src, dest, scalar(op))
 
-op_promote_eltype{T,S}(op::ScalingOperator{T}, ::Type{S}) =
-    ScalingOperator{S}(src(op), dest(op), convert(S, op.scalar))
+scalar(op::ScalingOperator) = op.scalar
 
 is_inplace(::ScalingOperator) = true
 is_diagonal(::ScalingOperator) = true
 
-scalar(op::ScalingOperator) = op.scalar
-
 ctranspose(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
 
-inv(op::ScalingOperator) = ScalingOperator(dest(op), src(op), 1/scalar(op))
+inv(op::ScalingOperator) = ScalingOperator(dest(op), src(op), inv(scalar(op)))
 
 function apply_inplace!(op::ScalingOperator, coef_srcdest)
     for i in eachindex(coef_srcdest)
@@ -90,8 +92,6 @@ end
 # Extra definition for out-of-place version to avoid making an intermediate copy
 function apply!(op::ScalingOperator, coef_dest, coef_src)
     for i in eachindex(coef_src, coef_dest)
-        # Can we assume that coef_dest and coef_src can both be indexed by i?
-        # TODO: do we need eachindex(coef_src, coef_dest)?
         coef_dest[i] = op.scalar * coef_src[i]
     end
     coef_dest
@@ -99,7 +99,7 @@ end
 
 for op in (:+, :*, :-, :/)
     @eval $op(op1::ScalingOperator, op2::ScalingOperator) =
-        (@assert size(op1) == size(op2); ScalingOperator(src(op1), dest(op1), $op(scalar(op1),scalar(op2))))
+        (@assert size(op1) == size(op2); ScalingOperator(src(op1), dest(op1), $op(scalar(op1), scalar(op2))))
 end
 
 diagonal(op::ScalingOperator) = [scalar(op) for i in 1:length(src(op))]
@@ -114,26 +114,29 @@ function matrix!(op::ScalingOperator, a)
     a
 end
 
-unsafe_getindex{T}(op::ScalingOperator{T}, i, j) = i == j ? convert(T, op.scalar) : convert(T, 0)
+unsafe_getindex(op::ScalingOperator{T}, i, j) where {T} = i == j ? convert(T, op.scalar) : convert(T, 0)
 
 
 # default implementation for scalar multiplication is a scaling operator
-*(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op),scalar) * op
+*(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op), scalar) * op
+
 
 
 "The zero operator maps everything to zero."
 struct ZeroOperator{T} <: AbstractOperator{T}
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    src     ::  Span
+    dest    ::  Span
 end
 
-function ZeroOperator(src::FunctionSet, dest::FunctionSet = src)
-    T = promote_type(rangetype(src), rangetype(dest))
-    ZeroOperator{T}(src, dest)
+ZeroOperator(src::Span, dest::Span = src) = ZeroOperator(op_eltype(src, dest), src, dest)
+
+function ZeroOperator(::Type{T}, src::Span, dest::Span) where {T}
+    S, D, A = op_eltypes(src, dest, T)
+    ZeroOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
 end
 
-op_promote_eltype(op::ZeroOperator{T}, ::Type{S}) where {T,S} =
-    ZeroOperator{S}(src(op), dest(op))
+similar_operator(op::ZeroOperator, ::Type{S}, src, dest) where {S} =
+    ZeroOperator(S, src, dest)
 
 # We can only be in-place if the numbers of coefficients of src and dest match
 is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
@@ -144,15 +147,15 @@ ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
 
 matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
-apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, 0); coef_srcdest)
+apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, zero(eltype(op))); coef_srcdest)
 
-apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, 0); coef_dest)
+apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, zero(eltype(op))); coef_dest)
 
 diagonal(op::ZeroOperator) = zeros(eltype(op), min(length(src(op)), length(dest(op))))
 
 unsafe_diagonal(op::ZeroOperator, i) = zero(eltype(op))
 
-unsafe_getindex{T}(op::ZeroOperator{T}, i, j) = convert(T, 0)
+unsafe_getindex{T}(op::ZeroOperator{T}, i, j) = zero(eltype(op))
 
 
 
@@ -165,29 +168,35 @@ Several other operators can be converted into a diagonal matrix, and this
 conversion happens automatically when such operators are combined into a composite
 operator.
 """
-struct DiagonalOperator{ELT} <: AbstractOperator{ELT}
-    src         ::  FunctionSet
-    dest        ::  FunctionSet
+struct DiagonalOperator{T} <: AbstractOperator{T}
+    src         ::  Span
+    dest        ::  Span
     # We store the diagonal in a vector
-    diagonal    ::  Vector{ELT}
+    diagonal    ::  Vector{T}
 end
 
-DiagonalOperator{T <: Real}(diagonal::AbstractVector{T}) = DiagonalOperator(Rn{T}(length(diagonal)), diagonal)
-DiagonalOperator{T <: Complex}(diagonal::AbstractVector{T}) = DiagonalOperator(Cn{T}(length(diagonal)), diagonal)
+DiagonalOperator(diagonal::AbstractVector) = DiagonalOperator(Span(DiscreteSet(length(diagonal)), eltype(diagonal)))
 
-DiagonalOperator{ELT}(src::FunctionSet, diagonal::AbstractVector{ELT}) = DiagonalOperator{ELT}(src, src, diagonal)
+DiagonalOperator(src::Span, diagonal::AbstractVector) = DiagonalOperator(src, src, diagonal)
 
-op_promote_eltype{ELT,S}(op::DiagonalOperator{ELT}, ::Type{S}) =
-    DiagonalOperator{S}(src(op), dest(op), convert(Array{S,1}, op.diagonal))
+DiagonalOperator(src::Span, dest::Span, diagonal) = DiagonalOperator(eltype(diagonal), src, dest, diagonal)
+
+function DiagonalOperator(::Type{T}, src::Span, dest::Span, diagonal) where {T}
+    S, D, A = op_eltypes(src, dest, T)
+    DiagonalOperator{A}(src, dest, convert(Vector{A}, diagonal))
+end
+
+similar_operator(op::DiagonalOperator, ::Type{S}, src, dest) where {S} =
+    DiagonalOperator(S, src, dest, diagonal(op))
 
 diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
 is_inplace(::DiagonalOperator) = true
 is_diagonal(::DiagonalOperator) = true
 
-inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), op.diagonal.^(-1))
+inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
 
-ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj(diagonal(op)))
+ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
 
 function matrix!(op::DiagonalOperator, a)
     a[:] = 0
@@ -221,33 +230,33 @@ matrix(op::DiagonalOperator) = diagm(diagonal(op))
 
 ## PROMOTION RULES
 
-promote_rule{S,T}(::Type{IdentityOperator{S}}, ::Type{IdentityOperator{T}}) = IdentityOperator{promote_type(S,T)}
-promote_rule{S,T}(::Type{ScalingOperator{S}}, ::Type{IdentityOperator{T}}) = ScalingOperator{promote_type(S,T)}
-promote_rule{S,T}(::Type{DiagonalOperator{S}}, ::Type{IdentityOperator{T}}) = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{IdentityOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = IdentityOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
+promote_rule(::Type{DiagonalOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
 
-promote_rule{S,T}(::Type{ScalingOperator{S}}, ::Type{ScalingOperator{T}}) = ScalingOperator{promote_type(S,T)}
-promote_rule{S,T}(::Type{DiagonalOperator{S}}, ::Type{ScalingOperator{T}}) = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{S}}, ::Type{ScalingOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
+promote_rule(::Type{DiagonalOperator{S}}, ::Type{ScalingOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
 
-promote_rule{S,T}(::Type{ScalingOperator{S}}, ::Type{ZeroOperator{T}}) = ScalingOperator{promote_type(S,T)}
-promote_rule{S,T}(::Type{DiagonalOperator{S}}, ::Type{ZeroOperator{T}}) = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{S}}, ::Type{ZeroOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
+promote_rule(::Type{DiagonalOperator{S}}, ::Type{ZeroOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
 
 ## CONVERSIONS
 
-convert{S,T}(::Type{IdentityOperator{S}}, op::IdentityOperator{T}) = promote_eltype(op, S)
-convert{S,T}(::Type{ScalingOperator{S}}, op::IdentityOperator{T}) =
+convert(::Type{IdentityOperator{S}}, op::IdentityOperator{T}) where {S,T} = promote_eltype(op, S)
+convert(::Type{ScalingOperator{S}}, op::IdentityOperator{T}) where {S,T} =
     ScalingOperator(src(op), dest(op), one(S))
-convert{S,T}(::Type{DiagonalOperator{S}}, op::IdentityOperator{T}) =
-    DiagonalOperator(src(op), dest(op), ones(S,length(src(op))))
+convert(::Type{DiagonalOperator{S}}, op::IdentityOperator{T}) where {S,T} =
+    DiagonalOperator(src(op), dest(op), ones(S, length(src(op))))
 
-convert{S,T}(::Type{ScalingOperator{S}}, op::ScalingOperator{T}) = promote_eltype(op, S)
-convert{S,T}(::Type{DiagonalOperator{S}}, op::ScalingOperator{T}) =
+convert(::Type{ScalingOperator{S}}, op::ScalingOperator{T}) where {S,T} = promote_eltype(op, S)
+convert(::Type{DiagonalOperator{S}}, op::ScalingOperator{T}) where {S,T} =
     DiagonalOperator(src(op), dest(op), S(scalar(op))*ones(S,length(src(op))))
 
-convert{S,T}(::Type{ZeroOperator{S}}, op::ZeroOperator{T}) = promote_eltype(op, S)
-convert{S,T}(::Type{DiagonalOperator{S}}, op::ZeroOperator{T}) =
-    DiagonalOperator(src(op), dest(op), zeros(S,length(src(op))))
+convert(::Type{ZeroOperator{S}}, op::ZeroOperator{T}) where {S,T} = promote_eltype(op, S)
+convert(::Type{DiagonalOperator{S}}, op::ZeroOperator{T}) where {S,T} =
+    DiagonalOperator(src(op), dest(op), zeros(S, length(src(op))))
 
-convert{S,T}(::Type{DiagonalOperator{S}}, op::DiagonalOperator{T}) = promote_eltype(op, S)
+convert(::Type{DiagonalOperator{S}}, op::DiagonalOperator{T}) where {S,T} = promote_eltype(op, S)
 
 
 ## SIMPLIFICATIONS
@@ -285,76 +294,86 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 (+)(op2::DiagonalOperator, op1::ScalingOperator) = op1 + op2
 
 
-"""
-A ComplexifyOperator converts real numbers to their complex counterparts.
+# """
+# A ComplexifyOperator converts real numbers to their complex counterparts.
+#
+# A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
+# """
+# struct ComplexifyOperator{T} <: AbstractOperator{T}
+#     src   ::  Span
+#     dest  ::  Span
+#
+#     function ComplexifyOperator{T}(src, dest) where T
+#         @assert length(src) == length(dest)
+#         @assert complex(eltype(src)) == eltype(dest)
+#         new(src, dest)
+#     end
+# end
+#
+# ComplexifyOperator(src::Span, dest::Span) = ComplexifyOperator(op_eltype(src, dest), src, dest)
+#
+# function ComplexifyOperator(::Type{T}, src::Span, dest::Span) = ComplexifyOperator{T}(src, dest)
+#     S, D, A = op_eltypes(src, dest, T)
+#     ComplexifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
+# end
+#
+# similar_operator(::ComplexifyOperator, ::Type{S}, src::Span, dest::Span) = ComplexifyOperator(S, src, dest)
+#
+# inv(op::ComplexifyOperator) = RealifyOperator(dest(op), src(op))
+#
+# is_diagonal(::ComplexifyOperator) = true
+#
+# ctranspose(op::ComplexifyOperator) = inv(op)
+#
+# function apply!(op::ComplexifyOperator, coef_dest, coef_src)
+#     for i in eachindex(coef_src)
+#         coef_dest[i] = complex(coef_src[i])
+#     end
+# end
+#
 
-A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
-"""
-struct ComplexifyOperator{T} <: AbstractOperator{T}
-    src   ::  FunctionSet
-    dest  ::  FunctionSet
-
-    function ComplexifyOperator{T}(src, dest) where T
-        @assert length(src) == length(dest)
-        @assert complex(eltype(src)) == eltype(dest)
-        new(src, dest)
-    end
-end
-
-ComplexifyOperator(src::FunctionSet, dest::FunctionSet) = ComplexifyOperator{eltype(src)}(src, dest)
-
-ComplexifyOperator(src::FunctionSet) = ComplexifyOperator(src, promote_domaintype(src, complex(domaintype(src))))
-
-ComplexifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
-
-Base.inv(op::ComplexifyOperator) = RealifyOperator(dest(op),src(op))
-
-is_diagonal(::ComplexifyOperator) = true
-
-ctranspose(op::ComplexifyOperator) = inv(op)
-
-function apply!(op::ComplexifyOperator, coef_dest, coef_src)
-    for i in eachindex(coef_src)
-        coef_dest[i] = complex(coef_src[i])
-    end
-end
-
-"""
-A RealifyOperator converts complex numbers to their real counterparts.
-
-If the complex numbers should have no significant imaginary part.
-A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
-"""
-struct RealifyOperator{T} <: AbstractOperator{T}
-    src   ::  FunctionSet
-    dest  ::  FunctionSet
-
-    function RealifyOperator{T}(src, dest) where T
-        @assert length(src) == length(dest)
-        @assert real(eltype(src)) == eltype(dest)
-        new(src, dest)
-    end
-end
-
-RealifyOperator(src::FunctionSet, dest::FunctionSet) = RealifyOperator{eltype(dest)}(src, dest)
-
-RealifyOperator(src::FunctionSet) = RealifyOperator(src, promote_domaintype(src, real(domaintype(src))))
-
-RealifyOperator{B<:FunctionSet}(src::B, dest::B) = IdentityOperator(src, dest)
-
-inv(op::RealifyOperator) = ComplexifyOperator(dest(op), src(op))
-
-is_diagonal(::RealifyOperator) = true
-
-ctranspose(op::RealifyOperator) = inv(op)
-
-function apply!(op::RealifyOperator, coef_dest, coef_src)
-    exact = true
-    for i in eachindex(coef_src)
-        coef_dest[i] = real(coef_src[i])
-        if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
-            exact =  false
-        end
-    end
-    !exact && (warn("Realify operator can not realify exactly."))
-end
+## A RealifyOperator is problematic because it is not a linear operator.
+#
+# """
+# A RealifyOperator converts complex numbers to their real counterparts.
+#
+# If the complex numbers should have no significant imaginary part.
+# A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
+# """
+# struct RealifyOperator{T} <: AbstractOperator{T}
+#     src   ::  Span
+#     dest  ::  Span
+#
+#     function RealifyOperator{T}(src, dest) where T
+#         @assert length(src) == length(dest)
+#         @assert real(eltype(src)) == eltype(dest)
+#         new(src, dest)
+#     end
+# end
+#
+# RealifyOperator(src::Span, dest::Span) = RealifyOperator(op_eltype(src, dest), src, dest)
+#
+# function RealifyOperator(::Type{T}, src::Span, dest::Span) = RealifyOperator{T}(src, dest)
+#     S, D, A = op_eltypes(src, dest, T)
+#     RealifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
+# end
+#
+# similar_operator(::RealifyOperator, ::Type{S}, src::Span, dest::Span) = RealifyOperator(S, src, dest)
+#
+#
+# inv(op::RealifyOperator) = ComplexifyOperator(dest(op), src(op))
+#
+# is_diagonal(::RealifyOperator) = true
+#
+# ctranspose(op::RealifyOperator) = inv(op)
+#
+# function apply!(op::RealifyOperator, coef_dest, coef_src)
+#     exact = true
+#     for i in eachindex(coef_src)
+#         coef_dest[i] = real(coef_src[i])
+#         if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
+#             exact =  false
+#         end
+#     end
+#     !exact && (warn("Realify operator can not realify exactly."))
+# end

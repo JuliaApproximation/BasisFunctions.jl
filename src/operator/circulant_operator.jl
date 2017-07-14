@@ -1,3 +1,5 @@
+# circulant_operator.jl
+
 """
 A circulant operator is represented by a circulant matrix.
 
@@ -6,44 +8,45 @@ conversion happens automatically when such operators are combined into a composi
 operator.
 """
 struct CirculantOperator{T} <: DerivedOperator{T}
-    superoperator   :: AbstractOperator
-    eigenvaluematrix  :: PseudoDiagonalOperator
+    superoperator       :: AbstractOperator
+    eigenvaluematrix    :: PseudoDiagonalOperator
 end
 
-function CirculantOperator{ELT <: Real}(src::FunctionSet{ELT}, dest::FunctionSet{ELT}, firstcolumn::AbstractVector{ELT}; options...)
+function CirculantOperator{T <: Real}(src::Span{T}, dest::Span{T}, firstcolumn::AbstractVector{T}; options...)
     D = PseudoDiagonalOperator(src, dest, fft(firstcolumn))
     CirculantOperator(src, dest, D; options...)
 end
 
-function CirculantOperator{ELT <: Complex}(complex_src::FunctionSet{ELT}, complex_dest::FunctionSet{ELT}, firstcolumn::AbstractVector; options...)
+function CirculantOperator{T <: Complex}(complex_src::Span{T}, complex_dest::Span{T}, firstcolumn::AbstractVector; options...)
     D = PseudoDiagonalOperator(complex_src, complex_dest,fftw_operator(complex_src,complex_dest,1:1,FFTW.MEASURE)*firstcolumn)
     CirculantOperator(complex_src, complex_dest, D; options...)
 end
 
-function CirculantOperator{T<:Real}(src::FunctionSet{T}, dest::FunctionSet{T}, D::PseudoDiagonalOperator; options...)
-    Csrc = ComplexifyOperator(src)
-    Cdest = ComplexifyOperator(dest)
+function CirculantOperator{T<:Real}(src::Span{T}, dest::Span{T}, D::PseudoDiagonalOperator; options...)
+    # Csrc = ComplexifyOperator(src)
+    # Cdest = ComplexifyOperator(dest)
+    complex_src = complex(src)
+    complex_dest = complex(dest)
 
-    complex_src = BasisFunctions.dest(Csrc)
-    complex_dest = BasisFunctions.dest(Cdest)
+    # complex_src = BasisFunctions.dest(Csrc)
+    # complex_dest = BasisFunctions.dest(Cdest)
 
-    F = forward_fourier_operator(complex_src, complex_src, eltype(complex_src); options...)
-    iF = backward_fourier_operator(complex_dest, complex_dest, eltype(complex_dest); options...)
+    F = forward_fourier_operator(complex_src, complex_src, coeftype(complex_src); options...)
+    iF = backward_fourier_operator(complex_dest, complex_dest, coeftype(complex_dest); options...)
 
-    R = inv(Cdest)
-    CirculantOperator{T}(R*iF*D*F*Csrc, D)
+    # R = inv(Cdest)
+    CirculantOperator{T}(iF*D*F, D)
 end
 
-function CirculantOperator{T<:Complex}(complex_src::FunctionSet{T}, complex_dest::FunctionSet{T}, D::PseudoDiagonalOperator; options...)
+function CirculantOperator{T<:Complex}(complex_src::Span{T}, complex_dest::Span{T}, D::PseudoDiagonalOperator; options...)
     F = forward_fourier_operator(complex_src, complex_src, eltype(complex_src); options...)
     iF = backward_fourier_operator(complex_dest, complex_dest, eltype(complex_dest); options...)
     CirculantOperator{T}(iF*D*F, D)
 end
 
-CirculantOperator{ELT}(src::FunctionSet, firstcolumn::AbstractVector{ELT}; options...) = CirculantOperator(src, src, firstcolumn; options...)
+CirculantOperator{T}(src::Span, firstcolumn::AbstractVector{T}; options...) = CirculantOperator(src, src, firstcolumn; options...)
 
-CirculantOperator{T <: Real}(firstcolumn::AbstractVector{T}; options...) = CirculantOperator(Rn{T}(length(firstcolumn)), firstcolumn; options...)
-CirculantOperator{T <: Complex}(firstcolumn::AbstractVector{T}; options...) = CirculantOperator(Cn{T}(length(firstcolumn)), firstcolumn; options...)
+CirculantOperator(firstcolumn::AbstractVector; options...) = CirculantOperator(Span(DiscreteSet(length(firstcolumn)), eltype(firstcolumn)), firstcolumn; options...)
 
 function CirculantOperator{T}(op::AbstractOperator{T})
     e = zeros(T, size(op,1))

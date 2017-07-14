@@ -5,9 +5,9 @@
 #####
 
 function test_generic_operators(T)
-    b1 = FourierBasis(3, T)
-    b2 = ChebyshevBasis(4, T)
-    b3 = ChebyshevBasis(3, T)
+    b1 = Span(FourierBasis(3, T))
+    b2 = Span(ChebyshevBasis(4, T))
+    b3 = Span(ChebyshevBasis(3, T))
 
     operators = [
         ["Identity operator", IdentityOperator(b1, b1)],
@@ -32,9 +32,9 @@ end
 function test_generic_operator_interface(op, T)
     ELT = eltype(op)
     @test promote_type(T,ELT) == ELT
-    # TODO: re-enable two tests below once operators are overhauled
+    @test coeftype(dest(op)) == ELT
+    # This may no longer always be true:
     # @test eltype(src(op)) == ELT
-    # @test eltype(dest(op)) == ELT
 
     m = matrix(op)
 
@@ -46,7 +46,7 @@ function test_generic_operator_interface(op, T)
     end
 
     # Does the operator agree with its matrix?
-    r = zeros(ELT, src(op))
+    r = zeros(src(op))
     for i in eachindex(r)
         r[i] = convert(ELT, rand())
     end

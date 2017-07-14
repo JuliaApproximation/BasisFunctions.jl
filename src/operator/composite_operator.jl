@@ -9,8 +9,8 @@ struct CompositeOperator{ELT} <: AbstractOperator{ELT}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).
-    src     ::  FunctionSet
-    dest    ::  FunctionSet
+    src     ::  Span
+    dest    ::  Span
     "The list of operators"
     operators
     "Scratch space for the result of each operator, except the last one"
@@ -28,26 +28,27 @@ is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
 
-function CompositeOperator(composite_src::FunctionSet, composite_dest::FunctionSet, operators::AbstractOperator...)
+function CompositeOperator(composite_src::Span, composite_dest::Span, operators::AbstractOperator...)
     L = length(operators)
     # Check operator compatibility
     for i in 1:length(operators)-1
         @assert size(dest(operators[i])) == size(src(operators[i+1]))
     end
 
-    ELT = promote_type(map(eltype, operators)...)
+    T = promote_type(map(eltype, operators)...)
+    c_operators = map(o -> promote_eltype(o, T), operators)
     # We are going to reserve scratch space, but only for operators that are not
     # in-place. We do reserve scratch space for the first operator, even if it
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
-    scratch_array = Any[zeros(ELT, dest(operators[1]))]
+    scratch_array = Any[zeros(dest(c_operators[1]))]
     for m = 2:L-1
-        if ~is_inplace(operators[m])
-            push!(scratch_array, zeros(ELT, dest(operators[m])))
+        if ~is_inplace(c_operators[m])
+            push!(scratch_array, zeros(dest(c_operators[m])))
         end
     end
     scratch = tuple(scratch_array...)
-    CompositeOperator{ELT}(composite_src, composite_dest, operators, scratch)
+    CompositeOperator{T}(composite_src, composite_dest, c_operators, scratch)
 end
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =

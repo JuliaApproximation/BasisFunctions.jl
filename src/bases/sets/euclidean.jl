@@ -5,15 +5,17 @@ end
 
 length(b::DiscreteVectorSpace) = b.n
 
-immutable DiscreteSet{T} <: FunctionSet{T}
+
+immutable DiscreteSet <: DiscreteVectorSpace{Int}
     n   ::  Int
 end
 
 length(s::DiscreteSet) = s.n
 
-set_promote_domaintype{T,S}(set::DiscreteSet{T}, ::Type{S}) = DiscreteSet{S}(length(set))
+set_promote_domaintype(set::DiscreteSet, ::Type{S}) where {S} = DiscreteSet{S}(length(set))
 
-resize(s::DiscreteSet{T}, n) where {T} = DiscreteSet{T}(n)
+resize(s::DiscreteSet, n) = DiscreteSet(n)
+
 
 struct Rn{T} <: DiscreteVectorSpace{T}
     n   ::  Int

@@ -21,6 +21,8 @@ end
 const FourierBasisEven{T} = FourierBasis{true,T}
 const FourierBasisOdd{T} = FourierBasis{false,T}
 
+const FourierSpan{A,F <: FourierBasis} = Span{A,F}
+
 name(b::FourierBasis) = "Fourier series"
 
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.

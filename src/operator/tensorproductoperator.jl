@@ -4,11 +4,11 @@
 """
 A TensorProductOperator represents the tensor product of other operators.
 
-struct TensorProductOperator{ELT} <: AbstractOperator{ELT}
+struct TensorProductOperator{T} <: AbstractOperator{T}
 """
-struct TensorProductOperator{ELT} <: AbstractOperator{ELT}
-    src             ::  FunctionSet
-    dest            ::  FunctionSet
+struct TensorProductOperator{T} <: AbstractOperator{T}
+    src             ::  Span
+    dest            ::  Span
     operators
     scratch
     src_scratch
@@ -20,10 +20,10 @@ elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
 function TensorProductOperator(operators...)
-    ELT = promote_type(map(eltype, operators)...)
+    T = promote_type(map(eltype, operators)...)
     L = length(operators)
-    tp_src = tensorproduct(map(src, operators)...)
-    tp_dest = tensorproduct(map(dest, operators)...)
+    tp_src = Span(tensorproduct(map(set, map(src, operators))...), T)
+    tp_dest = Span(tensorproduct(map(set, map(dest, operators))...), T)
 
     # Scratch contains matrices of sufficient size to hold intermediate results
     # in the application of the tensor product operator.
@@ -31,7 +31,7 @@ function TensorProductOperator(operators...)
     # - [M1,N2,N3]
     # - [M1,M2,N3]
     # where operator J maps a set of length Nj to a set of length Mj.
-    scratch_array = [ zeros(ELT, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:L]...) for j=2:L]
+    scratch_array = [ zeros(T, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:L]...) for j=2:L]
     scratch = (scratch_array...)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
@@ -40,13 +40,13 @@ function TensorProductOperator(operators...)
     src_scratch = (src_scratch_array...)
     dest_scratch_array = [zeros(dest(operators[j])) for j=1:L]
     dest_scratch = (dest_scratch_array...)
-    TensorProductOperator{ELT}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
+    TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
 
 # Element-wise src and dest functions
-src(op::TensorProductOperator, j::Int) = src(element(op,j))
-dest(op::TensorProductOperator, j::Int) = dest(element(op,j))
+src(op::TensorProductOperator, j::Int) = src(element(op, j))
+dest(op::TensorProductOperator, j::Int) = dest(element(op, j))
 
 
 # Element-wise and total size functions

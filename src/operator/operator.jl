@@ -16,34 +16,40 @@ Source and destination should at least implement the following:
 
 The element type (eltype) should be equal for src and dest.
 """
-abstract type AbstractOperator{ELT}
+abstract type AbstractOperator{T}
 end
 
-eltype{ELT}(::AbstractOperator{ELT}) = ELT
-eltype{ELT}(::Type{AbstractOperator{ELT}}) = ELT
-eltype{OP <: AbstractOperator}(::Type{OP}) = eltype(supertype(OP))
-
-isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
-
-op_eltype(src::FunctionSet, dest::FunctionSet) = promote_type(eltype(src),eltype(dest))
-
-
-"Promote the element type of the given operator."
-promote_eltype{ELT,S}(op::AbstractOperator{ELT}, ::Type{S}) =
-	_promote_eltype(op, promote_type(ELT,S))
-
-# For eltype promotion, subtypes should implement op_promote_eltype. They can
-# assume that S differs from ELT and that S is wider than ELT. The definition
-# should be like:
-# promote_eltype{ELT,S}(op::SomeOperator{ELT}, ::Type{S}) = ...
-# The eltypes of the source and destination sets should also be promoted.
-_promote_eltype{ELT}(op::AbstractOperator{ELT}, ::Type{ELT}) = op
-_promote_eltype{ELT,S}(op::AbstractOperator{ELT}, ::Type{S}) =
-	op_promote_eltype(op, S)
+eltype(::AbstractOperator{T}) where {T} = T
+eltype(::Type{AbstractOperator{T}}) where {T} = T
+eltype(::Type{OP}) where {OP <: AbstractOperator} = eltype(supertype(OP))
 
 # Default implementation of src and dest: assume they are fields
 src(op::AbstractOperator) = op.src
 dest(op::AbstractOperator) = op.dest
+
+isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
+
+"Return a suitable element type for an operator between the given spans."
+op_eltype(src::Span, dest::Span) = _op_eltype(coeftype(src), coeftype(dest))
+_op_eltype(::Type{T}, ::Type{T}) where {T <: Number} = T
+_op_eltype(::Type{T}, ::Type{S}) where {T <: Number, S <: Number} = promote_type(T,S)
+_op_eltype(::Type{SVector{N,T}}, ::Type{SVector{M,S}}) where {M,N,S,T} = SMatrix{M,N,promote_type(T,S)}
+_op_eltype(::Type{T}, ::Type{S}) where {T,S} = promote_type(T,S)
+
+"""
+Return suitably promoted types such that `D = A*S` are the types of the multiplication.
+"""
+op_eltypes(src::Span, dest::Span, T = op_eltype(src, dest)) = _op_eltypes(coeftype(src), coeftype(dest), T)
+_op_eltypes(::Type{S}, ::Type{D}, ::Type{A}) where {S <: Number, D <: Number, A <: Number} =
+	(S, promote_type(S, D, A), promote_type(S, D, A))
+_op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) where {N,M,S <: Number, D <: Number, A <: Number} =
+	(SVector{N,S}, SVector{M, promote_type(S, D, A)}, SMatrix{M,N,promote_type(S, D, A)})
+
+
+"Promote the element type of the given operator."
+promote_eltype(op::AbstractOperator{T}, ::Type{T}) where {T} = op
+promote_eltype(op::AbstractOperator{T}, ::Type{S}) where {T,S} =
+	similar_operator(op, S, src(op), dest(op))
 
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
@@ -60,7 +66,7 @@ is_inplace(op::AbstractOperator) = false
 is_diagonal(op::AbstractOperator) = false
 
 function apply(op::AbstractOperator, coef_src)
-	coef_dest = zeros(eltype(dest(op)), dest(op))
+	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)
 	coef_dest
 end
@@ -156,16 +162,17 @@ function matrix!(op::AbstractOperator, a)
 
     @assert (m,n) == size(a)
 
-    coef_src  = zeros(eltype(a), src(op))
-    coef_dest = zeros(eltype(a), dest(op))
+    coef_src  = zeros(src(op))
+    coef_dest = zeros(dest(op))
     matrix_fill!(op, a, coef_src, coef_dest)
 end
 
 function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
+	T = eltype(op)
     for (i,si) in enumerate(eachindex(coef_src))
-		coef_src[si] = 1
+		coef_src[si] = one(T)
         apply!(op, coef_dest, coef_src)
-		coef_src[si] = 0
+		coef_src[si] = zero(T)
         for (j,dj) in enumerate(eachindex(coef_dest))
             a[j,i] = coef_dest[dj]
         end
@@ -184,11 +191,11 @@ function getindex(op::AbstractOperator, i, j)
 end
 
 function unsafe_getindex(op::AbstractOperator, i, j)
-	s = zeros(eltype(op), src(op))
-	d = zeros(eltype(op), dest(op))
-	s[j] = 1
-	apply!(op, d, s)
-	d[i]
+	coef_src = zeros(src(op))
+	coef_dest = zeros(dest(op))
+	coef_src[j] = one(eltype(op))
+	apply!(op, coef_dest, coef_src)
+	coef_dest[i]
 end
 
 "Return the diagonal of the operator."
@@ -224,34 +231,3 @@ function inv_diagonal(op::AbstractOperator)
     d[find(d.==0)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
-
-abstract type DerivedOperator{T} <: AbstractOperator{T} end
-
-superoperator(op::DerivedOperator) = op.superoperator
-
-for op in (:src, :dest, :is_inplace, :is_diagonal, :diagonal, :unsafe_diagonal)
-	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
-end
-
-for op in (:matrix!, :apply_inplace!)
-	@eval $op(operator::DerivedOperator, a) = $op(superoperator(operator), a)
-end
-
-for op in (:apply!,)
-	@eval $op(operator::DerivedOperator, coef_dest, coef_src) = $op(superoperator(operator), coef_dest, coef_src)
-end
-
-for op in (:unsafe_getindex,)
-	@eval $op(operator::DerivedOperator, i, j) = $op(superoperator(operator), i, j)
-end
-
-for op in (:inv, :ctranspose,)
-	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
-end
-
-struct ConcreteDerivedOperator{T} <: DerivedOperator{T}
-	superoperator		:: AbstractOperator{T}
-end
-
-op_promote_eltype{T,S}(op::ConcreteDerivedOperator{T}, ::Type{S}) =
-    ConcreteDerivedOperator(op_promote_eltype(superoperator(op), S))

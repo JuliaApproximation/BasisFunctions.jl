@@ -140,22 +140,14 @@ similar(s::FunctionSet, ::Type{T}, n) where {T} = resize(promote_domaintype(s, T
 # write statements of the form resize(s, size(some_set)) in all dimensions.
 resize(s::FunctionSet1d, n::NTuple{1,Int}) = resize(s, n[1])
 
-"""
-Return a set of zero coefficients in the native format of the set.
-"""
-zeros(s::FunctionSet) = zeros(coefficient_type(s), s)
 
-function ones(s::FunctionSet)
-    z = zeros(s)
-    for i in eachindex(z)
-        z[i] = 1
-    end
-    z
-end
+"Return a set of zero coefficients in the native format of the set."
+zeros(s::FunctionSet) = zeros(coefficient_type(s), s)
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multisets.
-zeros(::Type{A}, s::FunctionSet) where {A} = zeros(A, size(s))
+zeros(::Type{T}, s::FunctionSet) where {T} = zeros(T, size(s))
+
 
 
 ###########

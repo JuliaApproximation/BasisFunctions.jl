@@ -15,22 +15,22 @@
 # The Fast Fourier transform
 #############################
 
-function fftw_scaling_operator(set::FunctionSet)
-    scalefactor = 1/sqrt(convert(eltype(set), length(set)))
-    ScalingOperator(set, set, scalefactor)
+function fftw_scaling_operator(span::Span)
+    scalefactor = 1/sqrt(convert(coeftype(span), length(span)))
+    ScalingOperator(span, span, scalefactor)
 end
 
 for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
                             (:ifftw_operator, :plan_bfft!, :ifft))
     # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
-    @eval $op(src::FunctionSet, dest::FunctionSet, dims, fftwflags) = $op(src, dest, eltype(dest), dims, fftwflags)
+    @eval $op(src::Span, dest::Span, dims, fftwflags) = $op(src, dest, coeftype(dest), dims, fftwflags)
     # In the default case apply fft or ifft
-    @eval $op(src::FunctionSet, dest::FunctionSet, ::Type{Complex{T}}, dims, fftwflags) where {T} =
+    @eval $op(src::Span, dest::Span, ::Type{Complex{T}}, dims, fftwflags) where {T} =
         FunctionOperator(src, dest, $f)
     # When possible apply the fast FFTW operator
     for T in (:(Complex{Float32}), :(Complex{Float64}))
-    	@eval function $op(src::FunctionSet, dest::FunctionSet, ::Type{$(T)}, dims, fftwflags)
-            plan = $plan_(zeros($T, dest), dims; flags = fftwflags)
+    	@eval function $op(src::Span, dest::Span, ::Type{$(T)}, dims, fftwflags)
+            plan = $plan_(zeros(dest), dims; flags = fftwflags)
             MultiplicationOperator(src, dest, plan; inplace = true)
         end
     end
@@ -60,7 +60,7 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
     # in order to have a unitary transform. Additional scaling is done in the _pre and
     # _post routines.
     # Note that we choose to use bfft, an unscaled inverse fft.
-    @eval function $FFTWTransform(src::FunctionSet, dest::FunctionSet,
+    @eval function $FFTWTransform(src::Span, dest::Span,
         dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
 
         t_op = $op(src, dest, dims, fftwflags)
@@ -80,11 +80,11 @@ ifft_scalefactor{ELT}(src, ::Type{ELT}) = sqrt(ELT(length(src)))
 FFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
 IFFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
 
-dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
     dim, object::FFTPLAN; options...) =
         FastFourierTransformFFTW(src, dest, dim:dim; options...)
 
-dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
     dim, object::IFFTPLAN; options...) =
         InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
@@ -160,7 +160,7 @@ for (plan, transform, invtransform) in (
       (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
       (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
   @eval begin
-    dimension_operator_multiplication(src::FunctionSet, dest::FunctionSet, op::MultiplicationOperator,
+    dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
         dim, object::$plan; options...) =
             $transform(src, dest, dim:dim; options...)
     ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
