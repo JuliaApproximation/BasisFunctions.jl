@@ -183,7 +183,7 @@ DiagonalOperator(src::Span, dest::Span, diagonal) = DiagonalOperator(eltype(diag
 
 function DiagonalOperator(::Type{T}, src::Span, dest::Span, diagonal) where {T}
     S, D, A = op_eltypes(src, dest, T)
-    DiagonalOperator{A}(src, dest, convert(Vector{A}, diagonal))
+    DiagonalOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D), convert(Vector{A}, diagonal))
 end
 
 similar_operator(op::DiagonalOperator, ::Type{S}, src, dest) where {S} =

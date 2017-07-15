@@ -95,9 +95,9 @@ end
 
 operator(op::WrappedOperator) = op.op
 
-function similar_operator(op::WrappedOperator, ::Type{S}, src, dest) where {S}
+function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where {S}
     subop = operator(op)
-    WrappedOperator(src, dest, similar_operator(subop, S, src(subop), dest(subop)))
+    WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
 
 """

@@ -63,3 +63,9 @@ complex(span::Span) = promote_coeftype(span, complex(coeftype(span)))
 real(span::Span) = similar_span(span, real(coeftype(span)))
 
 eltype(span::Span) = error("The eltype of a span is not supported. Perhaps you meant coeftype?")
+
+linearize_coefficients(span::Span, coef_native) = linearize_coefficients(set(span), coef_native)
+linearize_coefficients!(span::Span, coef_linear, coef_native) = linearize_coefficients!(set(span), coef_linear, coef_native)
+
+delinearize_coefficients(span::Span, coef_linear) = linearize_coefficients(set(span), coef_linear)
+delinearize_coefficients!(span::Span, coef_native, coef_linear) = delinearize_coefficients!(set(span), coef_native, coef_linear)

@@ -192,23 +192,23 @@ The order of the coefficients in this list is determined by the order of the
 elements in the set.
 """
 # Allocate memory for the linear set and call linearize_coefficients! to do the work
-function linearize_coefficients(s::FunctionSet, coef_native)
-    coef_linear = zeros(eltype(coef_native), length(s))
-    linearize_coefficients!(s, coef_linear, coef_native)
+function linearize_coefficients(set::FunctionSet, coef_native)
+    coef_linear = zeros(eltype(coef_native), length(set))
+    linearize_coefficients!(set, coef_linear, coef_native)
 end
 
-linearize_coefficients!(s::FunctionSet, coef_linear::Vector, coef_native) =
+linearize_coefficients!(set::FunctionSet, coef_linear::Vector, coef_native) =
     copy!(coef_linear, coef_native)
 
 """
 Convert a linear set of coefficients back to the native representation of the set.
 """
-function delinearize_coefficients(s::FunctionSet, coef_linear::AbstractVector{T}) where {T}
-    coef_native = zeros(eltype(coef_linear), s)
-    delinearize_coefficients!(s, coef_native, coef_linear)
+function delinearize_coefficients(set::FunctionSet, coef_linear::AbstractVector{T}) where {T}
+    coef_native = zeros(eltype(coef_linear), set)
+    delinearize_coefficients!(set, coef_native, coef_linear)
 end
 
-delinearize_coefficients!(s::FunctionSet, coef_native, coef_linear::Vector) =
+delinearize_coefficients!(set::FunctionSet, coef_native, coef_linear::Vector) =
     copy!(coef_native, coef_linear)
 
 # Sets have a native size and a linear size. However, there is not necessarily a

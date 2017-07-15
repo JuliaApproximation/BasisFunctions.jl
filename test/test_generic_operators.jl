@@ -50,7 +50,7 @@ function test_generic_operator_interface(op, T)
     for i in eachindex(r)
         r[i] = convert(ELT, rand())
     end
-    v1 = zeros(ELT, dest(op))
+    v1 = zeros(dest(op))
     apply!(op, v1, r)
     v2 = m*r
     @test maximum(abs.(v1-v2)) < 10*sqrt(eps(T))
@@ -64,7 +64,7 @@ function test_generic_operator_interface(op, T)
 
     # Verify that coef_src is not altered when applying out-of-place
     r2 = copy(r)
-    v = zeros(ELT, dest(op))
+    v = zeros(dest(op))
     apply!(op, v, r)
     @test maximum(abs.(r-r2)) < eps(T)
 
@@ -94,9 +94,7 @@ function test_generic_operator_interface(op, T)
         # ELT2 may not equal T, but it must be wider.
         # For example, when T2 is BigFloat, ELT2 could be Complex{BigFloat}
         @test promote_type(T2, ELT2) == ELT2
-        # TODO: reenable tests below once operators are overhauled
-        # @test eltype(src(op2)) == ELT2
-        # @test eltype(dest(op2)) == ELT2
+        @test coeftype(dest(op2)) == ELT2
     end
 
     # Verify inverse
