@@ -1,15 +1,19 @@
 # pseudo_diagonal.jl
 
+# TODO: add some documentation about this type
 struct PseudoDiagonalOperator{T} <: DerivedOperator{T}
     superoperator   :: DiagonalOperator{T}
     tolerance       :: T
 end
 
-PseudoDiagonalOperator(diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(diagonal))
+default_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(real(T)))
 
-PseudoDiagonalOperator(src::Span, diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal))
+PseudoDiagonalOperator(diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(diagonal), tolerance)
 
-PseudoDiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector) = PseudoDiagonalOperator(DiagonalOperator(src, dest, diagonal))
+PseudoDiagonalOperator(src::Span, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal), tolerance)
+
+PseudoDiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) =
+    PseudoDiagonalOperator(DiagonalOperator(src, promote_coeftype(dest, eltype(diagonal)), diagonal), tolerance)
 
 PseudoDiagonalOperator(op::DiagonalOperator{T}, tolerance = default_tolerance(T)) where {T} =
     PseudoDiagonalOperator{T}(op, tolerance)
@@ -17,17 +21,15 @@ PseudoDiagonalOperator(op::DiagonalOperator{T}, tolerance = default_tolerance(T)
 similar_operator(op::PseudoDiagonalOperator, ::Type{S}, src, dest) where {S} =
     PseudoDiagonalOperator(similar_operator(op.superoperator, S, src, dest))
 
-default_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(real(T)))
-
 tolerance(op::PseudoDiagonalOperator) = op.tolerance
 
-maxtolerance(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = max(tolerance(op1), tolerance(op2))
+maxtolerance(op1::PseudoDiagonalOperator, op2::PseudoDiagonalOperator) = max(abs(tolerance(op1)), abs(tolerance(op2)))
 
 function inv(op::PseudoDiagonalOperator)
     T = eltype(op)
     diag = diagonal(op)
     for i in 1:length(diag)
-        abs(diag[i]) < tolerance(op) ? diag[i] = zero(T) : diag[i] = T(one(T)/diag[i])
+        abs(diag[i]) < abs(tolerance(op)) ? diag[i] = zero(T) : diag[i] = T(one(T)/diag[i])
     end
     PseudoDiagonalOperator(DiagonalOperator(dest(op), src(op), diag), tolerance(op))
 end

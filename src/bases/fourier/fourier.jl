@@ -41,7 +41,7 @@ instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis(n, T)
 
 set_promote_domaintype(b::FourierBasis{EVEN,T}, ::Type{S}) where {EVEN,T,S} = FourierBasis{EVEN,S}(b.n)
 
-resize(b::FourierBasis, n) = FourierBasis(n, eltype(b))
+resize(b::FourierBasis, n) = FourierBasis(n, domaintype(b))
 
 # The rangetype of a Fourier series is complex, even when its domaintype T is real
 rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T <: Real} = Complex{T}
@@ -218,7 +218,7 @@ derivative_set(b::FourierBasisOdd, order; options...) = b
 
 # We extend the even basis both for derivation and antiderivation, regardless of order
 for op in (:derivative_set, :antiderivative_set)
-    @eval $op(b::FourierBasisEven, order::Int; options...) = fourier_basis_odd(length(b)+1,eltype(b))
+    @eval $op(b::FourierBasisEven, order::Int; options...) = fourier_basis_odd(length(b)+1, domaintype(b))
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
@@ -243,24 +243,24 @@ end
 
 function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)
-	forward_fourier_operator(src, dest, eltype(src, dest); options...)
+	forward_fourier_operator(src, dest, complex(domaintype(src, dest)); options...)
 end
 
 function transform_to_grid(src::FourierBasis, dest, grid; options...)
 	@assert compatible_grid(src, grid)
-	backward_fourier_operator(src, dest, eltype(src, dest); options...)
+	backward_fourier_operator(src, dest, complex(domaintype(src, dest)); options...)
 end
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
 function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	backward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	backward_fourier_operator(s1, s2, complex(domaintype(s1, s2)); options...)
 end
 
 function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
 	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	forward_fourier_operator(s1, s2, eltype(s1, s2); options...)
+	forward_fourier_operator(s1, s2, complex(domaintype(s1, s2)); options...)
 end
 
 
@@ -268,7 +268,7 @@ end
 function transform_from_grid_post(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)
     L = length(src)
-    ELT = eltype(src)
+    ELT = domaintype(src)
     ScalingOperator(dest, 1/sqrt(ELT(L)))
 end
 
@@ -295,7 +295,7 @@ function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, gri
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			T = eltype(grid)
+			T = domaintype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
 			super_dgs = gridspace(set, super_grid)
 			E = evaluation_operator(set, super_dgs; options...)
@@ -332,7 +332,7 @@ function (*)(src1::FourierBasisEven, src2::FourierBasisEven, coef_src1, coef_src
 end
 
 function (*)(src1::FourierBasisOdd, src2::FourierBasisOdd, coef_src1, coef_src2)
-    dest = FourierBasis(length(src1)+length(src2)-1,eltype(src1,src2))
+    dest = FourierBasis(length(src1)+length(src2)-1, eltype(src1,src2))
     coef_src1 = [coef_src1[(nhalf(src1))+2:end]; coef_src1[1:nhalf(src1)+1]]
     coef_src2 = [coef_src2[(nhalf(src2))+2:end]; coef_src2[1:nhalf(src2)+1]]
     coef_dest = conv(coef_src1,coef_src2)

@@ -21,23 +21,22 @@ A tensor product operation can be implemented as a sequence of DimensionOperator
 # 3: use ArrayViews.view
 # The first is the default.
 struct DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
-    src             ::  FunctionSet
-    dest            ::  FunctionSet
+    src             ::  Span
+    dest            ::  Span
     op              ::  AbstractOperator{ELT}
     dim             ::  Int
     scratch_src     ::  AbstractArray{ELT}
     scratch_dest    ::  AbstractArray{ELT}
 
-    function DimensionOperator{VIEW,ELT}(set_src::FunctionSet, set_dest::FunctionSet, op::AbstractOperator, dim::Int) where {VIEW,ELT}
-        scratch_src = zeros(eltype(op), src(op))
-        scratch_dest = zeros(eltype(op), dest(op))
+    function DimensionOperator{VIEW,ELT}(set_src::Span, set_dest::Span, op::AbstractOperator, dim::Int) where {VIEW,ELT}
+        scratch_src = zeros(src(op))
+        scratch_dest = zeros(dest(op))
         new(set_src, set_dest, op, dim, scratch_src, scratch_dest)
     end
 end
 
 
-
-DimensionOperator(src::FunctionSet, dest::FunctionSet, op, dim, viewtype) =
+DimensionOperator(src::Span, dest::Span, op, dim, viewtype) =
     DimensionOperator{viewtype,eltype(op)}(src, dest, op, dim)
 
 is_inplace(op::DimensionOperator) = is_inplace(op.op)

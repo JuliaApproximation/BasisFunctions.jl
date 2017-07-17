@@ -5,9 +5,9 @@
 #####
 
 function test_generic_operators(T)
-    b1 = Span(FourierBasis(3, T))
-    b2 = Span(ChebyshevBasis(4, T))
-    b3 = Span(ChebyshevBasis(3, T))
+    b1 = span(FourierBasis(3, T))
+    b2 = span(ChebyshevBasis(4, T))
+    b3 = span(ChebyshevBasis(3, T))
 
     operators = [
         ["Identity operator", IdentityOperator(b1, b1)],
@@ -168,33 +168,36 @@ end
 
 
 function test_diagonal_operators(T)
-    for SRC in (FourierBasis(10),ChebyshevBasis(11))
-        operators = (ComplexifyOperator(SRC),RealifyOperator(SRC),CoefficientScalingOperator(SRC,3,map(eltype(SRC),rand())),UnevenSignFlipOperator(SRC),IdentityOperator(SRC),ScalingOperator(SRC,rand(eltype(SRC))),ScalingOperator(SRC,3),
-        DiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))), PseudoDiagonalOperator(SRC,map(eltype(SRC),rand(size(SRC)))))
+    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, T)))
+        operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
+            UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
+            ScalingOperator(SRC, rand(coeftype(SRC))), ScalingOperator(SRC,3),
+            DiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))),
+            PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place
             if is_inplace(Op)
-              coef_src = map(eltype(src(Op)),rand(size(src(Op))))
-              coef_dest_m = m * coef_src
-              coef_dest = apply!(Op, coef_src)
-              @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
+                coef_src = rand(src(Op))
+                coef_dest_m = m * coef_src
+                coef_dest = apply!(Op, coef_src)
+                @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             end
             # Test out-of-place
-            coef_src = map(eltype(src(Op)),rand(size(src(Op))))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test inverse
             I = inv(Op)
-            @test (sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
-            @test (sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
             # Test transposes
-            @test (sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
             # Test Sum
-            @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            @test abs(sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
             # Test Equivalence to diagonal operator
-            @test (sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
             @test is_diagonal(2*Op)
             @test is_diagonal(Op')
@@ -202,35 +205,38 @@ function test_diagonal_operators(T)
             @test is_diagonal(Op*Op)
             # Make sure in_place is retained
             if is_inplace(Op)
-              @test is_inplace(2*Op)
-              @test is_inplace(Op')
-              @test is_inplace(inv(Op))
-              @test is_inplace(Op*Op)
+                @test is_inplace(2*Op)
+                @test is_inplace(Op')
+                @test is_inplace(inv(Op))
+                @test is_inplace(Op*Op)
             end
         end
     end
 end
 
 function test_multidiagonal_operators(T)
-    MSet = FourierBasis(10)⊕ChebyshevBasis(11, Complex{T})
-    operators = (CoefficientScalingOperator(MSet,3,map(eltype(MSet),rand())),UnevenSignFlipOperator(MSet),IdentityOperator(MSet),ScalingOperator(MSet,2.0+2.0im),ScalingOperator(MSet,3),DiagonalOperator(MSet,map(eltype(MSet),rand(length(MSet)))))
+    MSet = span(FourierBasis(10, T)⊕ChebyshevBasis(11, Complex{T}))
+    operators = (CoefficientScalingOperator(MSet, 3, rand()*one(coeftype(MSet))),
+        UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
+        ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
+        DiagonalOperator(MSet, map(coeftype(MSet), rand(length(MSet)))))
     for Op in operators
-    # Test in-place
-        coef_src = zeros(eltype(MSet),MSet)
+        # Test in-place
+        coef_src = zeros(MSet)
         for i in eachindex(coef_src)
-            coef_src[i]=map(eltype(src(Op)),rand())
+            coef_src[i] = rand() * one(eltype(coef_src))
         end
         m = matrix(Op)
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)
-        coef_dest = linearize_coefficients(MSet,apply!(Op, coef_src))
+        coef_dest = linearize_coefficients(MSet, apply!(Op, coef_src))
         @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
         # Test out-of-place
-        coef_src = zeros(eltype(MSet),MSet)
+        coef_src = zeros(MSet)
         for i in eachindex(coef_src)
-            coef_src[i]=map(eltype(src(Op)),rand())
+            coef_src[i] = rand() * one(eltype(coef_src))
         end
-        coef_dest = linearize_coefficients(MSet,apply(Op, coef_src))
-        coef_dest_m = m * linearize_coefficients(MSet,coef_src)
+        coef_dest = linearize_coefficients(MSet, apply(Op, coef_src))
+        coef_dest_m = m * linearize_coefficients(MSet, coef_src)
         @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
 
         # Test inverse
@@ -251,101 +257,104 @@ function test_multidiagonal_operators(T)
     end
 end
 
-function test_complexify_operator(T)
-  for SRC in (BSplineTranslatesBasis(11, 2, T), BSplineTranslatesBasis(11, 2, complex(T)))
-    op = ComplexifyOperator(SRC)
-    DEST = dest(op)
-    ELT = eltype(op)
-    @test ELT == eltype(src(op))
-    @test eltype(dest(op)) == complex(T)
-    coef_src = zeros(eltype(SRC),SRC)
-    coef_dest = zeros(eltype(DEST),DEST)
-    for i in eachindex(coef_src)
-        coef_src[i]=map(eltype(src(op)),rand())
-    end
-    apply!(op, coef_dest, coef_src)
-    @test norm(coef_dest-coef_src) == 0
-
-    op = RealifyOperator(SRC)
-    ELT = eltype(op)
-    @test ELT == eltype(dest(op))
-    @test eltype(dest(op)) == T
-    coef_src = zeros(eltype(SRC),SRC)
-    coef_dest = zeros(eltype(DEST),DEST)
-    for i in eachindex(coef_src)
-        coef_src[i]=map(eltype(src(op)),rand())
-    end
-    apply!(op, coef_dest, coef_src)
-    @test norm(coef_dest-coef_src) == 0
-  end
-end
+# function test_complexify_operator(T)
+#   for SRC in (BSplineTranslatesBasis(11, 2, T), BSplineTranslatesBasis(11, 2, complex(T)))
+#     op = ComplexifyOperator(SRC)
+#     DEST = dest(op)
+#     ELT = eltype(op)
+#     @test ELT == eltype(src(op))
+#     @test eltype(dest(op)) == complex(T)
+#     coef_src = zeros(eltype(SRC),SRC)
+#     coef_dest = zeros(eltype(DEST),DEST)
+#     for i in eachindex(coef_src)
+#         coef_src[i]=map(eltype(src(op)),rand())
+#     end
+#     apply!(op, coef_dest, coef_src)
+#     @test norm(coef_dest-coef_src) == 0
+#
+#     op = RealifyOperator(SRC)
+#     ELT = eltype(op)
+#     @test ELT == eltype(dest(op))
+#     @test eltype(dest(op)) == T
+#     coef_src = zeros(eltype(SRC),SRC)
+#     coef_dest = zeros(eltype(DEST),DEST)
+#     for i in eachindex(coef_src)
+#         coef_src[i]=map(eltype(src(op)),rand())
+#     end
+#     apply!(op, coef_dest, coef_src)
+#     @test norm(coef_dest-coef_src) == 0
+#   end
+# end
 
 function test_circulant_operator(ELT)
-  n = 20
-  for T in (ELT, complex(ELT))
-    e1 = zeros(T,n); e1[1] = 1
-    c = map(T, rand(n))
-    C = CirculantOperator(c)
-    m = matrix(C)
-    for i in 1:n
-      @test m[:,i] ≈ circshift(c,i-1)
+    n = 20
+    for T in (ELT, complex(ELT))
+        e1 = zeros(T,n); e1[1] = 1
+        c = map(T, rand(n))
+        C = CirculantOperator(c)
+        m = matrix(C)
+        for i in 1:n
+            @test m[:,i] ≈ circshift(c,i-1)
+        end
+        invC = inv(C)
+        @test BasisFunctions.eigenvalues(invC).*BasisFunctions.eigenvalues(C) ≈ ones(T,n)
+        @test m'*e1 ≈ C'*e1
+
+        sumC = invC+C
+        @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+        @test sumC*e1 ≈ m[:,1] + matrix(invC)[:,1]
+
+        subC = invC-C
+        @test (typeof(subC) <:BasisFunctions.CirculantOperator)
+        @test subC*e1 ≈ -m[:,1] + matrix(invC)[:,1]
+
+        mulC = invC*C
+        @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+        @test mulC*e1 ≈ (m*matrix(invC))[:,1]
+
+        mulC = 2*C
+        @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+        @test mulC*e1 ≈ 2*C*e1
+
+        mulC = C*2
+        @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
+        @test mulC*e1 ≈ 2*C*e1
     end
-    invC = inv(C)
-    @test BasisFunctions.eigenvalues(invC).*BasisFunctions.eigenvalues(C) ≈ ones(T,n)
-    @test m'*e1 ≈ C'*e1
-
-    sumC = invC+C
-    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
-    @test sumC*e1 ≈ m[:,1] + matrix(invC)[:,1]
-
-    subC = invC-C
-    @test (typeof(subC) <:BasisFunctions.CirculantOperator)
-    @test subC*e1 ≈ -m[:,1] + matrix(invC)[:,1]
-
-    mulC = invC*C
-    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
-    @test mulC*e1 ≈ (m*matrix(invC))[:,1]
-
-    mulC = 2*C
-    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
-    @test mulC*e1 ≈ 2*C*e1
-
-    mulC = C*2
-    @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
-    @test mulC*e1 ≈ 2*C*e1
-  end
 end
 
 function test_invertible_operators(T)
-    for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}), ChebyshevBasis(10,T))
-        operators = (MultiplicationOperator(SRC,SRC,map(eltype(SRC),rand((length(SRC),length(SRC))))),ComplexifyOperator(SRC),RealifyOperator(SRC), CirculantOperator(map(T,rand(10))), CirculantOperator(map(complex(T),rand(10))))
+    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, Complex{T})), span(ChebyshevBasis(10,T)))
+        operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
+            CirculantOperator(map(T,rand(10))),
+            CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = map(eltype(SRC),rand(size(src(Op))))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             # Test inverse
             I = inv(Op)
-            @test (sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
-            @test (sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(I*(Op*coef_src)-coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.((I*Op)*coef_src-coef_src))) + 1 ≈ 1
             # Test transposes
-            @test (sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(m'*coef_src-Op'*coef_src))) + 1 ≈ 1
             # Test Sum
-            @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
+            @test abs(sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
         end
     end
 end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (FourierBasis(10, T),ChebyshevBasis(11, Complex{T}))
-        operators = (MultiplicationOperator(SRC,resize(SRC,length(SRC)+2),map(eltype(SRC),rand((length(SRC)+2,length(SRC))))),ZeroOperator(SRC))
+    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, Complex{T})))
+        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
+            ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = map(eltype(SRC),rand(size(src(Op))))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1

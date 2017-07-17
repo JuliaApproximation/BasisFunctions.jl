@@ -46,7 +46,8 @@ d6 = plan_idct!(zeros(10), 1:1)
 
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevBasisSecondKind, LegendreBasis,
         LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,DiscreteOrthonormalSplineBasis]
+        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
+        DiscreteOrthonormalSplineBasis]
 
 for T in [Float64,BigFloat]
     println()
@@ -70,9 +71,9 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("test tensor operators",80))" begin
         test_tensor_operators(T)
     end
-    @testset "$(rpad("test complexify/realify operator",80))" begin
-        test_complexify_operator(T)
-    end
+    # @testset "$(rpad("test complexify/realify operator",80))" begin
+    #     test_complexify_operator(T)
+    # end
     @testset "$(rpad("test circulant operator",80))" begin
         test_circulant_operator(T)
     end

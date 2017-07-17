@@ -12,6 +12,8 @@ Span(set::FunctionSet, ::Type{A} = coefficient_type(set)) where {A} = Span{A,typ
 
 set(s::Span) = s.set
 
+span(set::FunctionSet, ::Type{A} = coefficient_type(set)) where {A} = Span(set, A)
+
 coefficient_type(::Span{A,F}) where {A,F} = A
 
 coeftype = coefficient_type
@@ -46,12 +48,23 @@ for op in (:length, :size, :ndims)
     @eval $op(span::Span) = $op(set(span))
 end
 
+resize(span::Span, n) = Span(resize(set(span), n), coeftype(span))
+
 zeros(span::Span) = zeros(coefficient_type(span), set(span))
 
 function ones(span::Span)
     c = zeros(span)
     for i in eachindex(c)
         c[i] = one(coeftype(span))
+    end
+    c
+end
+
+# Compute a random expansion
+function rand(span::Span)
+    c = zeros(span)
+    for i in eachindex(c)
+        c[i] = rand() * one(coeftype(span))
     end
     c
 end
@@ -69,3 +82,6 @@ linearize_coefficients!(span::Span, coef_linear, coef_native) = linearize_coeffi
 
 delinearize_coefficients(span::Span, coef_linear) = linearize_coefficients(set(span), coef_linear)
 delinearize_coefficients!(span::Span, coef_native, coef_linear) = delinearize_coefficients!(set(span), coef_native, coef_linear)
+
+tensorproduct(s1::Span{A}, s2::Span{A}) where {A} = span(tensorproduct(set(s1), set(s2)), A)
+tensorproduct(s1::Span{A}, s2::Span{B}) where {A,B} = span(tensorproduct(set(s1), set(s2)), promote_type(A,B))

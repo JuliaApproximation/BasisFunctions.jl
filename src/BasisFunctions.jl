@@ -23,7 +23,7 @@ import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
 
 import Base: cos, sin, exp, log
 
-import Base: zeros, ones, one, zero, fill!
+import Base: zeros, ones, one, zero, fill!, rand
 
 import Base: getindex, setindex!, unsafe_getindex, eltype
 
@@ -115,7 +115,7 @@ export moment
 
 # from bases/sets/span.jl
 export Span
-export coefficient_type, coeftype
+export span, coefficient_type, coeftype
 
 # from bases/sets/subsets.jl
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices

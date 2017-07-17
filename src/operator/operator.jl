@@ -4,7 +4,7 @@
 """
 AbstractOperator represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
-destination are of type FunctionSet.
+destination are of type `Span`.
 The action of the operator is defined by providing a method for apply!.
 
 The dimension of an operator are like a matrix: (length(dest),length(src)).
@@ -41,7 +41,7 @@ Return suitably promoted types such that `D = A*S` are the types of the multipli
 """
 op_eltypes(src::Span, dest::Span, T = op_eltype(src, dest)) = _op_eltypes(coeftype(src), coeftype(dest), T)
 _op_eltypes(::Type{S}, ::Type{D}, ::Type{A}) where {S <: Number, D <: Number, A <: Number} =
-	(S, promote_type(S, D, A), promote_type(S, D, A))
+	(promote_type(S, D, A), promote_type(S, D, A), promote_type(S, D, A))
 _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) where {N,M,S <: Number, D <: Number, A <: Number} =
 	(SVector{N,S}, SVector{M, promote_type(S, D, A)}, SMatrix{M,N,promote_type(S, D, A)})
 

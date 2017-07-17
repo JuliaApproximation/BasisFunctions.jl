@@ -375,7 +375,7 @@ end
 
 FunctionOperator(src::Span, dest::Span, fun) = FunctionOperator(op_eltype(src, dest), src, dest, fun)
 
-function FunctionOperator(::Type{T}, src::FunctionSet, dest::FunctionSet, fun) where {T}
+function FunctionOperator(::Type{T}, src::Span, dest::Span, fun) where {T}
     S, D, A = op_eltypes(src, dest, T)
     FunctionOperator{typeof(fun),A}(promote_coeftype(src, S), promote_coeftype(dest, D), fun)
 end

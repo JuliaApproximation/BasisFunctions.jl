@@ -51,6 +51,9 @@ function CompositeOperator(composite_src::Span, composite_dest::Span, operators:
     CompositeOperator{T}(composite_src, composite_dest, c_operators, scratch)
 end
 
+similar_operator(op::CompositeOperator, ::Type{S}, src, dest) where {S} =
+    CompositeOperator(promote_coeftype(src, S), promote_coeftype(dest, S), elements(op)...)
+
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
     apply_inplace_composite!(op, coef_srcdest, op.operators)
 

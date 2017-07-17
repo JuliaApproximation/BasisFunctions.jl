@@ -60,8 +60,7 @@ coefficient_type(::Type{S}) where {S <: FunctionSet} = rangetype(S)
 coefficient_type(set::FunctionSet) = coefficient_type(typeof(set))
 
 function eltype(set::FunctionSet)
-    println("Warning: calling eltype on a function set is deprecated. Use a span instead.")
-    coefficient_type(set)
+    error("Error: calling eltype on a function set is deprecated. Use a span instead.")
 end
 
 function eltype(set1::FunctionSet, set2::FunctionSet)

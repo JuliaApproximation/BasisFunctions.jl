@@ -175,11 +175,12 @@ struct DiagonalOperator{T} <: AbstractOperator{T}
     diagonal    ::  Vector{T}
 end
 
-DiagonalOperator(diagonal::AbstractVector) = DiagonalOperator(Span(DiscreteSet(length(diagonal)), eltype(diagonal)))
+DiagonalOperator(diagonal::AbstractVector) = DiagonalOperator(Span(DiscreteSet(length(diagonal)), eltype(diagonal)), diagonal)
 
-DiagonalOperator(src::Span, diagonal::AbstractVector) = DiagonalOperator(src, src, diagonal)
+DiagonalOperator(src::Span, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
 
-DiagonalOperator(src::Span, dest::Span, diagonal) = DiagonalOperator(eltype(diagonal), src, dest, diagonal)
+# Intercept the default constructor
+DiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector{T}) where {T} = DiagonalOperator(T, src, dest, diagonal)
 
 function DiagonalOperator(::Type{T}, src::Span, dest::Span, diagonal) where {T}
     S, D, A = op_eltypes(src, dest, T)
