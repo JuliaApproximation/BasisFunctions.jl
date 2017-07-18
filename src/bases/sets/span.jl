@@ -60,14 +60,21 @@ function ones(span::Span)
     c
 end
 
+# Generate a random value of type T
+random_value(::Type{T}) where {T <: Number} = convert(T, rand())
+random_value(::Type{Complex{T}}) where {T <: Real} = T(rand()) + im*T(rand())
+random_value(::Type{T}) where {T} = rand() * one(T)
+
 # Compute a random expansion
 function rand(span::Span)
     c = zeros(span)
     for i in eachindex(c)
-        c[i] = rand() * one(coeftype(span))
+        c[i] = random_value(coeftype(span))
     end
     c
 end
+
+random_expansion(span::Span) = SetExpansion(set(span), rand(span))
 
 zero(span::Span) = Expansion(set(span), zeros(span))
 

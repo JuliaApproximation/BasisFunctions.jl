@@ -71,9 +71,7 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("test tensor operators",80))" begin
         test_tensor_operators(T)
     end
-    # @testset "$(rpad("test complexify/realify operator",80))" begin
-    #     test_complexify_operator(T)
-    # end
+
     @testset "$(rpad("test circulant operator",80))" begin
         test_circulant_operator(T)
     end
@@ -85,10 +83,9 @@ for T in [Float64,BigFloat]
             basis = instantiate(SET, n, T)
 
             @test length(basis) == n
-            @test numtype(basis) == T
-            @test promote_type(eltype(basis),numtype(basis)) == eltype(basis)
+            @test domaintype(basis) == T
 
-            test_generic_set_interface(basis, SET)
+            test_generic_set_interface(basis, span(basis))
     end
 
     # TODO: all sets in the test below should use type T!

@@ -22,6 +22,8 @@ const FourierBasisEven{T} = FourierBasis{true,T}
 const FourierBasisOdd{T} = FourierBasis{false,T}
 
 const FourierSpan{A,F <: FourierBasis} = Span{A,F}
+const FourierSpanEven{A,F <: FourierBasisEven} = Span{A,F}
+const FourierSpanOdd{A,F <: FourierBasisOdd} = Span{A,F}
 
 name(b::FourierBasis) = "Fourier series"
 
@@ -228,13 +230,13 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
 end
 
 # Both differentiation and antidifferentiation are diagonal operations
-diff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = (2 * T(pi) * im * idx2frequency(b,idx))^order
-function differentiation_operator{T}(b1::FourierBasisOdd{T}, b2::FourierBasisOdd{T}, order::Int; options...)
+diff_scaling_function(b::FourierBasisOdd{T}, idx, order) where {T} = (2 * T(pi) * im * idx2frequency(b,idx))^order
+function differentiation_operator(b1::FourierBasisOdd{T}, b2::FourierBasisOdd{T}, order::Int; options...) where {T}
 	@assert length(b1) == length(b2)
 	DiagonalOperator(b1, [diff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
 end
 
-antidiff_scaling_function{T}(b::FourierBasisOdd{T}, idx, order) = idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
+antidiff_scaling_function(b::FourierBasisOdd{T}, idx, order) where {T} = idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
 function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...)
 	@assert length(b1) == length(b2)
 	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
@@ -253,7 +255,7 @@ end
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
-function transform_to_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
 	backward_fourier_operator(s1, s2, complex(domaintype(s1, s2)); options...)
 end

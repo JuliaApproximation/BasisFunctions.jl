@@ -1,7 +1,11 @@
 # expansions.jl
 
+"Check whether a set of coefficients is compatible with the function set."
+compatible_coefficients(set::FunctionSet, coefficients) =
+    length(set) == length(coefficients)
+
 """
-A SetExpansion describes a function using its expansion coefficients in a certain
+A `SetExpansion` describes a function using its expansion coefficients in a certain
 function set.
 
 Parameters:
@@ -13,8 +17,7 @@ struct SetExpansion{S,C}
     coefficients    ::  C
 
     function SetExpansion{S,C}(set, coefficients) where {S,C}
-        @assert length(set) == length(coefficients)
-        # @assert eltype(set) == eltype(coefficients)
+        @assert compatible_coefficients(set, coefficients)
         new(set, coefficients)
     end
 end
@@ -22,13 +25,17 @@ end
 SetExpansion(set::FunctionSet, coefficients = zeros(set)) =
     SetExpansion{typeof(set),typeof(coefficients)}(set, coefficients)
 
+SetExpansion(span::Span) = SetExpansion(set(span), zeros(span))
+
 similar(e::SetExpansion, coefficients) = SetExpansion(set(e), coefficients)
 
-eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(S)
+eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(C)
 
 set(e::SetExpansion) = e.set
 
 coefficients(e::SetExpansion) = e.coefficients
+
+span(e::SetExpansion) = Span(set(e), eltype(e))
 
 # For expansions of composite types, return a SetExpansion of a subset
 element(e::SetExpansion, i) = SetExpansion(element(e.set, i), element(e.coefficients, i))
@@ -113,20 +120,6 @@ end
 
 differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(set(s1), set(s2), var...)
 differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
-
-# Generate a random value of type T
-random_value{T <: Real}(::Type{T}) = T(rand())
-random_value{T <: Real}(::Type{Complex{T}}) = T(rand()) + im*T(rand())
-
-"Generate an expansion with random coefficients."
-function random_expansion(s::FunctionSet)
-    coef = zeros(s)
-    T = eltype(s)
-    for i in eachindex(coef)
-        coef[i] = random_value(T)
-    end
-    SetExpansion(s, coef)
-end
 
 
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))

@@ -126,13 +126,13 @@ function promote_domaintype(set1::FunctionSet{T}, set2::FunctionSet{S}) where {T
 end
 
 function promote_eltype(set::FunctionSet, args...)
-    error("Calling promote_eltype is deprecated.")
+    error("Calling promote_eltype on a function set is deprecated.")
 end
 
 widen(s::FunctionSet) = promote_domaintype(s, widen(domaintype(s)))
 
 # similar returns a similar basis of a given size and numeric type
-# It can be implemented in terms of resize and promote_eltype.
+# It can be implemented in terms of resize and promote_domaintype.
 similar(s::FunctionSet, ::Type{T}, n) where {T} = resize(promote_domaintype(s, T), n)
 
 # Support resize of a 1D set with a tuple of a single element, so that one can
@@ -259,7 +259,7 @@ has_unitary_transform(s::FunctionSet) = has_transform(s)
 
 # Convenience functions: default grid, and conversion from grid to space
 has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, grid(s))
-has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, eltype(s)))
+has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, rangetype(s)))
 
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false
@@ -311,7 +311,7 @@ end
 done(s::FunctionSet, state) = done(state[1], state[2])
 
 
-tolerance(set::FunctionSet) = tolerance(eltype(set))
+tolerance(set::FunctionSet) = tolerance(domaintype(set))
 
 # Provide this implementation which Base does not include anymore
 # TODO: hook into the Julia checkbounds system, once such a thing is developed.
@@ -352,7 +352,7 @@ the support. This value can be changed with an optional extra argument.
 
 After the checks, this routine calls eval_element on the concrete set.
 """
-function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(eltype(set)))
+function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)))
     checkbounds(set, idx)
     in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
 end
@@ -360,11 +360,11 @@ end
 # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
 # We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
 function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(DiscreteGridSpace(grid, eltype(set)))
+    result = zeros(DiscreteGridSpace(grid, rangetype(set)))
     eval_set_element!(result, set, idx, grid, outside_value...)
 end
 
-function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(eltype(set)))
+function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(rangetype(set)))
     @assert size(result) == size(grid)
     checkbounds(set, idx)
 
@@ -378,7 +378,7 @@ end
 Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
 """
 function eval_expansion(set::FunctionSet, coefficients, x)
-    T = promote_type(eltype(coefficients), eltype(set))
+    T = rangetype(span(set, eltype(coefficients)))
     z = zero(T)
 
     # It is safer below to use eval_set_element than eval_element, because of
@@ -392,9 +392,9 @@ end
 function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
     @assert ndims(set) == ndims(grid)
     @assert size(coefficients) == size(set)
-    @assert numtype(grid) == numtype(set)
+    @assert eltype(grid) == domaintype(set)
 
-    T = promote_type(eltype(set), eltype(coefficients))
+    T = rangetype(span(set, eltype(coefficients)))
     E = evaluation_operator(set, DiscreteGridSpace(grid, T))
     E * coefficients
 end

@@ -39,7 +39,7 @@ function point_in_domain(basis::FunctionSet1d, scalar)
     a = left(basis)
     b = right(basis)
 
-    T = numtype(basis)
+    T = domaintype(basis)
     # Avoid infinities for some bases on the real line
     if isinf(a)
         a = -T(1)
@@ -55,19 +55,19 @@ end
 
 # Abuse point_in_domain with a scalar greater than one in order to get
 # a point outside the domain.
-point_outside_domain(basis::FunctionSet) = point_in_domain(basis, numtype(basis)(1.1))
+point_outside_domain(basis::FunctionSet) = point_in_domain(basis, domaintype(basis)(1.1))
 
-point_outside_domain(basis::LaguerreBasis) = -one(numtype(basis))
-point_outside_domain(basis::HermiteBasis) = one(numtype(basis))+im
+point_outside_domain(basis::LaguerreBasis) = -one(domaintype(basis))
+point_outside_domain(basis::HermiteBasis) = one(domaintype(basis))+im
 
 function random_point_in_domain(basis::FunctionSet)
-    T = numtype(basis)
+    T = domaintype(basis)
     w = one(T) * rand()
     point_in_domain(basis, w)
 end
 
 function fixed_point_in_domain(basis::FunctionSet)
-    T = numtype(basis)
+    T = domaintype(basis)
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end

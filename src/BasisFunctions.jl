@@ -52,6 +52,7 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
+import Domains: domaintype, rangetype
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
@@ -72,7 +73,7 @@ export PiecewiseInterval, Partition
 export partition
 export split_interval
 
-# from src/tensorproducts.jl
+# from src/products.jl
 export tensorproduct, ⊗
 
 # from grid/grid.jl
@@ -99,14 +100,15 @@ export DimensionOperator, dimension_operator
 
 # from bases/sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export numtype, grid, left, right, support, eval_expansion, eval_set_element, eval_element
+export domaintype, rangetype, coefficient_type
+export promote_domaintype
+export grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
-export True, False
 export approx_length, extension_size
 export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
@@ -187,7 +189,7 @@ export approximation_operator, default_approximation_operator, approximate, disc
 export differentiation_operator, antidifferentiation_operator, derivative_set,
     antiderivative_set, Differentiation, Antidifferentiation
 
-# from tensorproducts.jl
+# from products.jl
 export is_homogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
@@ -195,10 +197,6 @@ export TensorProductOperator
 
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
-
-# from grid/discretegridspace.jl
-export DiscreteGridSpace, DiscreteGridSpace1d, DiscreteGridSpaceNd, left, right,
-    gridspace
 
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
@@ -221,7 +219,13 @@ export PiecewiseSet
 export OperatedSet, derivative
 
 # from bases/sets/euclidean.jl
-export Cn, Rn
+export DiscreteVectorSpace, DiscreteSet
+
+# from bases/sets/gridset.jl
+export GridSet, DiscreteGridSpace, DiscreteGridSpace1d
+export gridspace
+
+
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -282,11 +286,13 @@ include("bases/sets/functionset.jl")
 include("bases/sets/span.jl")
 include("generic/gram.jl")
 
+include("bases/sets/euclidean.jl")
+include("bases/sets/gridset.jl")
+
 include("operator/operator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
-include("grid/discretegridspace.jl")
 include("grid/mappedgrid.jl")
 include("grid/intervalgrids.jl")
 include("grid/scattered_grid.jl")
@@ -295,8 +301,6 @@ include("grid/subgrid.jl")
 include("bases/sets/derived_set.jl")
 include("bases/sets/tensorproductset.jl")
 include("bases/sets/mapped_set.jl")
-
-include("bases/sets/euclidean.jl")
 
 include("operator/dimop.jl")
 
@@ -312,7 +316,7 @@ include("operator/circulant_operator.jl")
 include("bases/sets/expansions.jl")
 
 
-include("tensorproducts.jl")
+include("products.jl")
 
 include("generic/generic_operators.jl")
 

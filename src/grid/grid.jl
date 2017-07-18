@@ -17,9 +17,15 @@ eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 ndims(::AbstractGrid{T}) where {T <: Number} = 1
 ndims(::AbstractGrid{SVector{N,T}}) where {N,T} = N
 
-# TODO: remvoe the numtype or disambiguate its meaning
-numtype(::AbstractGrid{T}) where {T <: Number} = T
-numtype(::AbstractGrid{SVector{N,T}}) where {N,T} = T
+# TODO: remove the numtype or disambiguate its meaning
+function numtype(::AbstractGrid{T}) where {T <: Number}
+	warning("Calling numtype on a grid is deprecated.")
+	T
+end
+function numtype(::AbstractGrid{SVector{N,T}}) where {N,T}
+	warning("Calling numtype on a grid is deprecated.")
+	T
+end
 
 
 size(g::AbstractGrid1d) = (length(g),)

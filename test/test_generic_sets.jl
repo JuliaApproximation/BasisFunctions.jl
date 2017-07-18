@@ -36,7 +36,7 @@ function suitable_interpolation_grid(basis::FunctionSet)
     if BF.has_grid(basis)
         grid(basis)
     else
-        T = numtype(basis)
+        T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
         MidpointEquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
     end
@@ -45,9 +45,9 @@ end
 suitable_interpolation_grid(basis::TensorProductSet) =
     ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
 
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, numtype(basis))
+suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, domaintype(basis))
 
-suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, numtype(basis))
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, domaintype(basis))
 
 suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
 
@@ -89,13 +89,20 @@ function suitable_function(s::WeightedSet2d)
 end
 
 
-function test_generic_set_interface(basis, SET = typeof(basis))
-    ELT = eltype(basis)
-    T = numtype(basis)
+function test_generic_set_interface(basis, span)
+    ELT = coefficient_type(span)
+    T = domaintype(basis)
+    Y = rangetype(basis)
+    SY = rangetype(span)
+
+    # Does the set of the span agree with the basis?
+    @test typeof(set(span)) == typeof(basis)
+
+    # Do the domain types of basis and span agree?
+    @test domaintype(basis) == domaintype(span)
+    @test typeof(one(coefficient_type(span)) * one(rangetype(basis))) == rangetype(span)
+
     n = length(basis)
-
-    @test typeof(basis) <: SET
-
     if is_basis(basis)
         @test is_frame(basis)
     end
@@ -105,8 +112,8 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
     # Test type promotion
     ELT2 = widen(ELT)
-    basis2 = promote_eltype(basis, ELT2)
-    @test eltype(basis2) == ELT2
+    basis2 = promote_domaintype(basis, ELT2)
+    @test domaintype(basis2) == ELT2
 
 
     ## Test dimensions
@@ -180,7 +187,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
 
 
     # Create a random expansion in the basis to test expansion interface
-    e = random_expansion(basis)
+    e = random_expansion(span)
     coef = coefficients(e)
 
     ## Does evaluating an expansion equal the sum of coefficients times basis function calls?
@@ -193,7 +200,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
     # Test linearization of coefficients
-    linear_coefs = zeros(eltype(basis), length(basis))
+    linear_coefs = zeros(span)
     BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
     coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
     @test coef ≈ coef2
@@ -260,7 +267,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         n2 = extension_size(basis)
         basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
-        e1 = random_expansion(basis)
+        e1 = random_expansion(span)
         e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
@@ -278,7 +285,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         basis_ext = extend(basis)
         grid_ext = grid(basis_ext)
         L = evaluation_operator(basis, grid_ext)
-        e = random_expansion(basis)
+        e = random_expansion(span)
         z = L*e
         L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
         z2 = L2*e
@@ -294,7 +301,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             @test basis == src(D)
             diff_dest = dest(D)
 
-            coef1 = random_expansion(basis)
+            coef1 = random_expansion(span)
             coef2 = D*coef
             e1 = SetExpansion(basis, coef)
             e2 = SetExpansion(diff_dest, coef2)
@@ -320,7 +327,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
             @test basis == src(D)
             antidiff_dest = dest(D)
 
-            coef1 = random_expansion(basis)
+            coef1 = random_expansion(span)
             coef2 = D*coef
             e1 = SetExpansion(basis, coef)
             e2 = SetExpansion(antidiff_dest, coef2)
@@ -368,12 +375,12 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         pre2 = transform_operator_pre(basis, tbasis)
         post2 = transform_operator_post(basis, tbasis)
         # - try interpolation using transform+pre/post-normalization
-        x = coefficients(random_expansion(tbasis))
+        x = coefficients(rand(Span(tbasis)))
         e = SetExpansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs.(e(g)-x)) < sqrt(eps(T))
         # - try evaluation using transform+pre/post-normalization
-        e = random_expansion(basis)
+        e = random_expansion(span)
         x1 = (post2*it*pre2)*coefficients(e)
         x2 = e(grid(basis))
         @test maximum(abs.(x1-x2)) < sqrt(eps(T))
@@ -406,7 +413,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
     E = evaluation_operator(basis, g)
-    e = random_expansion(basis)
+    e = random_expansion(span)
     y = E*e
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
 
@@ -425,7 +432,7 @@ function test_generic_set_interface(basis, SET = typeof(basis))
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
-        if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(eltype(basis))==BigFloat)
+        if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
           e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
           @test abs(e(x)-f(x...)) < 1e-3
         end
