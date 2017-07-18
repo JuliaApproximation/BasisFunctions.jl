@@ -15,6 +15,8 @@ struct TensorProductSet{TS,T} <: FunctionSet{T}
     sets   ::  TS
 end
 
+const TensorProductSpan{A, S <: TensorProductSet} = Span{A, S}
+
 # Generic functions for composite types:
 is_composite(set::TensorProductSet) = true
 elements(set::TensorProductSet) = set.sets
@@ -102,7 +104,7 @@ has_grid_transform(s::TensorProductSet, dgs, grid::ProductGrid) =
 
 has_grid_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
 
-for op in (:derivative_set, :antiderivative_set)
+for op in (:derivative_space, :antiderivative_space)
     @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =
         TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
 end

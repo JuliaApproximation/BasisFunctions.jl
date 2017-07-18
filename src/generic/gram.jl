@@ -6,54 +6,54 @@
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-Gram(b::FunctionSet; options...) = Gram(b, is_orthonormal(b)? Val{true}: Val{false}; options...)
+Gram(s::Span; options...) = Gram(s, Val{is_orthonormal(set(s))}; options...)
 
-Gram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
+Gram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
-function Gram(set::FunctionSet, ::Type{Val{false}}; options...)
-  if is_orthogonal(set)
-    d = zeros(eltype(set), length(set))
-    gramdiagonal!(d, set; options...)
-    DiagonalOperator(set, set, d)
-  else
-    A = zeros(eltype(set),length(set),length(set))
-    grammatrix!(A,set; options...)
-    MatrixOperator(set, set, A)
-  end
+function Gram(s::Span, ::Type{Val{false}}; options...)
+    if is_orthogonal(set(s))
+        d = zeros(s)
+        gramdiagonal!(d, s; options...)
+        DiagonalOperator(s, s, d)
+    else
+        A = zeros(coeftype(s), length(s), length(s))
+        grammatrix!(A, s; options...)
+        MatrixOperator(s, s, A)
+    end
 end
 
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-DualGram(b::FunctionSet; options...) = DualGram(b, is_biorthogonal(b)? Val{true}: Val{false}; options...)
+DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(s)}; options...)
 
-DualGram(b::FunctionSet, ::Type{Val{true}}; options...) = inv(Gram(b; options...))
+DualGram(s::Span, ::Type{Val{true}}; options...) = inv(Gram(s; options...))
 
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-MixedGram(b::FunctionSet; options...) = MixedGram(b, is_biorthogonal(b)? Val{true}: Val{false}; options...)
+MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(s)}; options...)
 
-MixedGram(b::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(b,b)
+MixedGram(s::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
-function grammatrix!(result, b::FunctionSet; options...)
-  for i in 1:size(result,1)
-    for j in i:size(result,2)
-      I = dot(b, i, j; options...)
-      result[i,j] = I
-      if i!= j
-        result[j,i] = conj(I)
-      end
+function grammatrix!(result, s::Span; options...)
+    for i in 1:size(result,1)
+        for j in i:size(result,2)
+            I = dot(s, i, j; options...)
+            result[i,j] = I
+            if i!= j
+                result[j,i] = conj(I)
+            end
+        end
     end
-  end
-  result
+    result
 end
 
-function gramdiagonal!(result, b::FunctionSet; options...)
-  for i in 1:size(result,1)
-    result[i] = dot(b, i, i; options...)
-  end
-  result
+function gramdiagonal!(result, s::Span; options...)
+    for i in 1:size(result,1)
+        result[i] = dot(s, i, i; options...)
+    end
+    result
 end
 
 ################################################################################################
@@ -62,16 +62,16 @@ end
 """
 Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
 """
-project(b, f::Function, ELT = eltype(b); options...) = project!(zeros(ELT,size(b)), b, f; options...)
+project(s, f::Function; options...) = project!(zero(s), s, f; options...)
 
-function project!(result, b, f::Function; options...)
+function project!(result, s, f::Function; options...)
     for i in eachindex(result)
-        result[i] = dot(b, i, f; options...)
+        result[i] = dot(s, i, f; options...)
     end
     result
 end
 
-function dot{T}(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verbose=false, options...)
+function dot(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verbose=false, options...) where {T}
     (I,e) = QuadGK.quadgk(x->f(x), nodes...; reltol=reltol, abstol=abstol)
     (e > sqrt(reltol) && verbose) && (warn("Dot product did not converge"))
     I
@@ -79,18 +79,19 @@ end
 
 native_nodes(set::FunctionSet1d) = [left(set), right(set)]
 
-dot(set::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...)  =
+dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-dot(set::FunctionSet, f1::Int, f2::Function, nodes::Array=native_nodes(set); options...) =
-    dot(set, x->eval_element(set, f1, x), f2, nodes; options...)
+dot(s::Span, f1::Int, f2::Function, nodes::Array=native_nodes(set(s)); options...) =
+    dot(s, x->eval_element(set(s), f1, x), f2, nodes; options...)
 
-dot(set::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set); options...) =
-    dot(set, x->eval_element(set, f1, x),x->eval_element(set, f2, x), nodes; options...)
+dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(set(s)); options...) =
+    dot(s, x->eval_element(set(s), f1, x), x->eval_element(set(s), f2, x), nodes; options...)
 
 ##########################
 ## Discrete Gram operators
 ##########################
+
 oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
 
 length_oversampled_grid(b::FunctionSet, oversampling::Real)::Int = approx_length(b, basis_oversampling(b, oversampling)*length(b))
@@ -99,20 +100,20 @@ basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 
 default_oversampling(b::FunctionSet) = 1
 # E'E/N
-DiscreteGram(b::FunctionSet; oversampling = default_oversampling(b)) =
-  1/discrete_gram_scaling(b, oversampling)*UnNormalizedGram(b, oversampling)
+DiscreteGram(s::Span; oversampling = default_oversampling(set(s))) =
+  1/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
 
-function UnNormalizedGram(b::FunctionSet, oversampling = 1)
-  grid = oversampled_grid(b, oversampling)
-  evaluation_operator(b, grid)'*evaluation_operator(b, grid)
+function UnNormalizedGram(s::Span, oversampling = 1)
+    grid = oversampled_grid(set(s), oversampling)
+    evaluation_operator(s, grid)'*evaluation_operator(s, grid)
 end
 
 # discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length_oversampled_grid(b, oversampling)
 discrete_gram_scaling(b::FunctionSet, oversampling) = length(b)
 
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
-DiscreteDualGram(b::FunctionSet; oversampling = default_oversampling(b)) =
-  inv(DiscreteGram(b; oversampling=oversampling))
+DiscreteDualGram(s::Span; oversampling = default_oversampling(set(s))) =
+    inv(DiscreteGram(s; oversampling=oversampling))
 
 # Ẽ'E/N
-DiscreteMixedGram(b::FunctionSet; oversampling=default_oversampling(b)) = IdentityOperator(b,b)
+DiscreteMixedGram(s::Span; oversampling = default_oversampling(set(s))) = IdentityOperator(s, s)

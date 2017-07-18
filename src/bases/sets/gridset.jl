@@ -11,6 +11,8 @@ const GridSet1d{G <: AbstractGrid1d,T} = GridSet{G,T}
 
 GridSet(grid::AbstractGrid) = GridSet{typeof(grid),typeof(first(eachindex(grid)))}(grid)
 
+gridset(grid::AbstractGrid) = GridSet(grid)
+
 grid(set::GridSet) = set.grid
 
 for op in (:length, :size, :domaintype)
@@ -23,6 +25,15 @@ name(set::GridSet) = "a discrete set associated with a grid"
 
 tensorproduct(set1::GridSet, set2::GridSet) = GridSet(tensorproduct(grid(set1), grid(set2)))
 
+# Convenience function: add grid as extra parameter to has_transform
+has_transform(s1::FunctionSet, s2::GridSet) =
+	has_grid_transform(s1, s2, grid(s2))
+has_transform(s1::GridSet, s2::FunctionSet) =
+	has_grid_transform(s2, s1, grid(s1))
+# and provide a default
+has_grid_transform(s1::FunctionSet, s2, grid) = false
+
+
 
 ###############################################
 # A DiscreteGridSpace is the span of a GridSet
@@ -31,11 +42,13 @@ tensorproduct(set1::GridSet, set2::GridSet) = GridSet(tensorproduct(grid(set1), 
 """
 A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
 """
-const DiscreteGridSpace{S <: GridSet,A} = Span{S,A}
-const DiscreteGridSpace1d{S <: GridSet1d,A} = Span{S,A}
+const DiscreteGridSpace{A,S <: GridSet} = Span{A,S}
+const DiscreteGridSpace1d{A,S <: GridSet1d} = Span{A,S}
 
-DiscreteGridSpace(grid::AbstractGrid, ::Type{T} = float_type(eltype(grid))) where {T} =
+gridspace(grid::AbstractGrid, ::Type{T} = float_type(eltype(grid))) where {T} =
     Span(GridSet(grid), T)
+
+gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridset(g), coeftype(s))
 
 name(s::DiscreteGridSpace) = "A discrete grid space"
 
@@ -45,16 +58,7 @@ similar(dgs::DiscreteGridSpace, grid::AbstractGrid) = DiscreteGridSpace(grid, co
 
 grid(span::DiscreteGridSpace) = grid(set(span))
 
-# Convenience function: add grid as extra parameter to has_transform
-has_transform(s::FunctionSet, dgs::DiscreteGridSpace) =
-	has_grid_transform(s, dgs, grid(dgs))
-# and provide a default
-has_grid_transform(s::FunctionSet, dgs, grid) = false
-
 # Delegate a map to the underlying grid, but retain the element type of the space
-apply_map(dgs::DiscreteGridSpace, map) = DiscreteGridSpace(apply_map(grid(dgs), map), coeftype(s))
-
-# Make a DiscreteGridSpace with the same eltype as the given function set
-gridspace(s::FunctionSet, g = grid(s)) = DiscreteGridSpace(g, coefficient_type(s))
+apply_map(dgs::DiscreteGridSpace, map) = Span(apply_map(grid(dgs), map), coeftype(s))
 
 sample(s::DiscreteGridSpace, f) = sample(grid(s), f, coeftype(s))

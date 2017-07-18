@@ -4,9 +4,11 @@
 The span of a function set is the set of all possible expansions in that set,
 where the coefficients have eltype `A`.
 """
-struct Span{A,F}
+struct Span{A,F} <: FunctionSpace
     set ::  F
 end
+
+const Span1d{A,F <: FunctionSet1d} = Span{A,F}
 
 Span(set::FunctionSet, ::Type{A} = coefficient_type(set)) where {A} = Span{A,typeof(set)}(set)
 
@@ -25,10 +27,12 @@ coeftype = coefficient_type
 similar_span(span::Span{A,F}, ::Type{A}) where {A,F} = span
 similar_span(span::Span{A,F}, ::Type{B}) where {A,B,F} = Span(set(span), B)
 
+# For convenience, one can also create a span with the same coefficient type
+# but with a different function set
+similar_span(span::Span, set::FunctionSet) = Span(set, coeftype(span))
+
 promote_coeftype(span::Span{A,F}, ::Type{A}) where {A,F} = span
 promote_coeftype(span::Span{A,F}, ::Type{B}) where {A,B,F} = Span(set(span), promote_type(A,B))
-
-domaintype(s::Span) = domaintype(set(s))
 
 # What is the rangetype of a span? It depends on the type of the coefficients,
 # and on the rangetype of the set.
@@ -40,13 +44,25 @@ _rangetype(::Type{Complex{T}}, ::Type{T}) where {T <: Number} = Complex{T}
 # Default fallback
 _rangetype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
 
+# For convenience
+rangetype(set::FunctionSet, coefficients) = rangetype(set, eltype(coefficients))
+rangetype(set::FunctionSet, ::Type{A}) where {A} = rangetype(Span(set, A))
+
 elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
 element(span::Span, i) = Span(element(set(span, i)), coeftype(span))
 
 
-for op in (:length, :size, :ndims)
+for op in (:length, :size, :ndims, :domaintype, :grid)
     @eval $op(span::Span) = $op(set(span))
 end
+
+for op in (:has_transform, :has_extension, :has_derivative, :has_antiderivative,
+    :has_grid)
+    @eval $op(span::Span) = $op(set(span))
+end
+
+has_transform(s1::Span, s2::Span) = has_transform(set(s1), set(s2))
+has_transform(s1::Span, g::AbstractGrid) = has_transform(set(s1), g)
 
 resize(span::Span, n) = Span(resize(set(span), n), coeftype(span))
 
@@ -92,3 +108,7 @@ delinearize_coefficients!(span::Span, coef_native, coef_linear) = delinearize_co
 
 tensorproduct(s1::Span{A}, s2::Span{A}) where {A} = span(tensorproduct(set(s1), set(s2)), A)
 tensorproduct(s1::Span{A}, s2::Span{B}) where {A,B} = span(tensorproduct(set(s1), set(s2)), promote_type(A,B))
+
+for op in (:extend, :restrict)
+    @eval $op(s::Span) = Span(op(set(s)), coeftype(s))
+end

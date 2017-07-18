@@ -7,8 +7,7 @@
 # Compute the evaluation matrix of the given basis on the given set of points
 # (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
-    T = promote_type(eltype(set), numtype(pts))
-    a = Array{T}(length(pts), length(set))
+    a = Array{rangetype(set)}(length(pts), length(set))
     evaluation_matrix!(a, set, pts)
 end
 
@@ -23,71 +22,72 @@ function evaluation_matrix!(a::AbstractMatrix, set::FunctionSet, pts)
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
-evaluation_operator(set::FunctionSet; oversampling=default_oversampling(set), options...) =
-    evaluation_operator(set, oversampled_grid(set, oversampling); options...)
+evaluation_operator(s::Span; oversampling = default_oversampling(set(s)), options...) =
+    evaluation_operator(s, oversampled_grid(set(s), oversampling); options...)
 
 # Convert a grid to a DiscreteGridSpace
-evaluation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
-    evaluation_operator(set, gridspace(set, grid); options...)
+evaluation_operator(s::Span, grid::AbstractGrid; options...) =
+    evaluation_operator(s, gridspace(s, grid); options...)
 
 # Convert a linear range to an equispaced grid
-evaluation_operator(set::FunctionSet, r::LinSpace; options...) =
-    evaluation_operator(set, EquispacedGrid(r))
+evaluation_operator(s::Span, r::LinSpace; options...) =
+    evaluation_operator(s, EquispacedGrid(r))
 
 # For easier dispatch, if the destination is a DiscreteGridSpace we add the grid as parameter
-evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...) =
-    grid_evaluation_operator(set, dgs, grid(dgs); options...)
+evaluation_operator(s::Span, dgs::DiscreteGridSpace; options...) =
+    grid_evaluation_operator(s, dgs, grid(dgs); options...)
 
-default_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...) =
-    MultiplicationOperator(set, dgs, evaluation_matrix(set, grid(dgs)))
+default_evaluation_operator(s::Span, dgs::DiscreteGridSpace; options...) =
+    MultiplicationOperator(s, dgs, evaluation_matrix(set(s), grid(dgs)))
 
 # Evaluate s in the grid of dgs
 # We try to see if any fast transform is available
-function grid_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
-    if has_transform(set)
-        if has_transform(set, dgs)
-            full_transform_operator(set, dgs; options...)
-        elseif length(set) < length(dgs)
-            if ndims(set) == 1
-                slarge = resize(set, length(dgs))
-                (has_transform(slarge, dgs) && has_extension(set)) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
+function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
+    fs = set(s)
+    if has_transform(s)
+        if has_transform(s, dgs)
+            full_transform_operator(s, dgs; options...)
+        elseif length(s) < length(dgs)
+            if ndims(s) == 1
+                slarge = resize(s, length(dgs))
+                (has_transform(slarge, dgs) && has_extension(s)) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...))
             # The basis should at least be resizeable to the dimensions of the grid
-            elseif ndims(set) == length(size(dgs))
-                slarge = resize(set, size(dgs))
-                has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(set, slarge; options...))
+            elseif ndims(s) == length(size(dgs))
+                slarge = resize(s, size(dgs))
+                has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...))
             end
-            return default_evaluation_operator(set, dgs; options...)
+            return default_evaluation_operator(s, dgs; options...)
         else
             # This might be faster implemented by:
             #   - finding an integer n so that nlength(dgs)>length(s)
             #   - resorting to the above evaluation + extension
             #   - subsampling by factor n
-            default_evaluation_operator(set, dgs; options...)
+            default_evaluation_operator(s, dgs; options...)
         end
     else
-        default_evaluation_operator(set, dgs; options...)
+        default_evaluation_operator(s, dgs; options...)
     end
 end
 
 # Try to do efficient evaluation also for subgrids
-function grid_evaluation_operator(set::FunctionSet, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
+function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
     # We make no attempt if the set has no associated grid
-    if has_grid(set)
+    if has_grid(s)
         # Is the associated grid of the same type as the supergrid at hand?
-        if typeof(grid(set)) == typeof(supergrid(subgrid))
+        if typeof(grid(s)) == typeof(supergrid(subgrid))
             # It is: we can use the evaluation operator of the supergrid
-            super_dgs = gridspace(set, supergrid(subgrid))
-            E = evaluation_operator(set, super_dgs; options...)
+            super_dgs = gridspace(s, supergrid(subgrid))
+            E = evaluation_operator(s, super_dgs; options...)
             R = restriction_operator(super_dgs, dgs; options...)
             R*E
         else
-            default_evaluation_operator(set, dgs; options...)
+            default_evaluation_operator(s, dgs; options...)
         end
     else
-        default_evaluation_operator(set, dgs; options...)
+        default_evaluation_operator(s, dgs; options...)
     end
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
-discrete_dual_evaluation_operator(set::FunctionSet; oversampling=default_oversampling(set), options...) =
-    grid_evaluation_operator(set, gridspace(set, oversampled_grid(set, oversampling)), oversampled_grid(set, oversampling); options...)*DiscreteDualGram(set; oversampling=oversampling)
+discrete_dual_evaluation_operator(s::Span; oversampling = default_oversampling(set(s)), options...) =
+    grid_evaluation_operator(s, gridspace(s, oversampled_grid(set(s), oversampling)), oversampled_grid(set(s), oversampling); options...)*DiscreteDualGram(s; oversampling=oversampling)

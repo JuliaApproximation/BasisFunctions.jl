@@ -21,12 +21,12 @@
 #
 # apply!(op::Extension, s1::SomeSet, s2::SomeSet, coef_dest, coef_src) = ...
 
-struct Extension{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct Extension{SRC <: Span,DEST <: Span,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
 
-Extension(src::FunctionSet, dest::FunctionSet) =
+Extension(src::Span, dest::Span) =
     Extension{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 """
@@ -34,14 +34,14 @@ An extension operator is an operator that can be used to extend a representation
 representation in a larger set s2. The default extension operator is of type Extension with s1 and
 s2 as source and destination.
 """
-function extension_operator(s1::FunctionSet, s2::FunctionSet; options...)
+function extension_operator(s1::Span, s2::Span; options...)
     @assert has_extension(s1)
     default_extension_operator(s1, s2; options...)
 end
 
-# default_extension_operator(s1::FunctionSet, s2::FunctionSet; options...) =
+# default_extension_operator(s1::Span, s2::Span; options...) =
 #     IndexExtensionOperator(s1, s2, 1:length(s1))
-default_extension_operator(s1::FunctionSet, s2::FunctionSet; options...) =
+default_extension_operator(s1::Span, s2::Span; options...) =
     Extension(s1, s2)
 
 
@@ -53,16 +53,16 @@ extension_size(s::FunctionSet) = 2*length(s)
 
 extend(s::FunctionSet) = resize(s, extension_size(s))
 
-extension_operator(s1::FunctionSet; options...) =
+extension_operator(s1::Span; options...) =
     extension_operator(s1, extend(s1); options...)
 
 
-struct Restriction{SRC <: FunctionSet,DEST <: FunctionSet,ELT} <: AbstractOperator{ELT}
+struct Restriction{SRC <: Span,DEST <: Span,ELT} <: AbstractOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
 
-Restriction(src::FunctionSet, dest::FunctionSet) =
+Restriction(src::Span, dest::Span) =
     Restriction{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
 
@@ -72,12 +72,12 @@ a representation in a set s1 to a representation in a smaller set s2. Loss of ac
 from the restriction. The default restriction_operator is of type Restriction with sets s1 and
 s2 as source and destination.
 """
-function restriction_operator(s1::FunctionSet, s2::FunctionSet; options...)
+function restriction_operator(s1::Span, s2::Span; options...)
     @assert has_extension(s2)
     default_restriction_operator(s1, s2; options...)
 end
 
-default_restriction_operator(s1::FunctionSet, s2::FunctionSet; options...) =
+default_restriction_operator(s1::Span, s2::Span; options...) =
     Restriction(s1, s2)
 
 
@@ -106,7 +106,7 @@ restriction_size(s::FunctionSet) = length(s)>>1
 
 restrict(s::FunctionSet) = resize(s, restriction_size(s))
 
-restriction_operator(s1::FunctionSet; options...) =
+restriction_operator(s1::Span; options...) =
     restriction_operator(s1, restrict(s1); options...)
 
 
@@ -115,15 +115,14 @@ ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
 ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 
 # Transforming between functionsets with the same type is the same as restricting
-has_transform{S<:FunctionSet}(src::S,dest::S)=true
+has_transform(src::S, dest::S) where {S <: FunctionSet} = true
 
-function transform_operator{S<:FunctionSet}(src::S,dest::S)
-    if length(src)>length(dest)
-        return Restriction(src,dest)
-    elseif length(src)<length(dest)
-        return Extension(src,dest)
+function transform_operator(src::Span{A,S}, dest::Span{A,S}) where {A,S <: FunctionSet}
+    if length(src) > length(dest)
+        return Restriction(src, dest)
+    elseif length(src) < length(dest)
+        return Extension(src, dest)
     else
-        return Identity(src)
+        return Identity(src, dest)
     end
 end
-        

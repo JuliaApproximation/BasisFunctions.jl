@@ -15,6 +15,8 @@ end
 
 ChebyshevBasisFirstKind{T} = ChebyshevBasis{T}
 
+const ChebyshevSpan{A,F<:ChebyshevBasis} = Span{A,F}
+
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 
@@ -33,9 +35,9 @@ has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevNodeGrid) = length(b) == length(dgs)
-has_grid_transform(b::ChebyshevBasis, dgs, ::ChebyshevExtremaGrid) = length(b) == length(dgs)
-has_grid_transform(b::ChebyshevBasis, dgs, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevNodeGrid) = length(b) == length(gs)
+has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevExtremaGrid) = length(b) == length(gs)
+has_grid_transform(b::ChebyshevBasis, gs, ::AbstractGrid) = false
 
 
 left(b::ChebyshevBasis) = -one(domaintype(b))
@@ -48,8 +50,8 @@ grid(b::ChebyshevBasis) = ChebyshevNodeGrid(b.n, domaintype(b))
 secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
 
 # extends the default definition at transform.jl
-transform_set(set::ChebyshevBasis; nodegrid=true, options...) =
-    nodegrid ? DiscreteGridSpace(grid(set), coefficient_type(set)) : DiscreteGridSpace(secondgrid(set), coefficient_type(set))
+transform_space(s::ChebyshevSpan; nodegrid=true, options...) =
+    nodegrid ? gridspace(s) : gridspace(secondgrid(set(s)), coeftype(s))
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)

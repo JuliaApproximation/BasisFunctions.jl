@@ -80,7 +80,9 @@ function apply!(op::AbstractOperator, coef_dest, coef_src)
 		copy!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
-		apply!(op, dest(op), src(op), coef_dest, coef_src)
+		# We pass on the sets, rather than the spans, because the coefficient
+		# type is implicit in the coefficients
+		apply!(op, set(dest(op)), set(src(op)), coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.

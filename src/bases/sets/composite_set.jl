@@ -141,8 +141,8 @@ end
 
 ## Differentiation
 
-derivative_set(set::CompositeSet, order; options...) =
-    similar_set(set, map(s->derivative_set(s,order; options...), elements(set)))
+derivative_space(set::CompositeSet, order; options...) =
+    similar_set(set, map(s->derivative_space(s,order; options...), elements(set)))
 
-antiderivative_set(set::CompositeSet, order; options...) =
-    similar_set(set, map(s-> antiderivative_set(s, order; options...), elements(set)))
+antiderivative_space(set::CompositeSet, order; options...) =
+    similar_set(set, map(s-> antiderivative_space(s, order; options...), elements(set)))

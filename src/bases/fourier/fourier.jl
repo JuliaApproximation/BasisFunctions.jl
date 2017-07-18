@@ -77,7 +77,7 @@ compatible_grid(set::FourierBasis, grid::PeriodicEquispacedGrid) =
 # - Any non-periodic grid is not compatible
 compatible_grid(set::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-has_grid_transform(b::FourierBasis, dgs, grid) = compatible_grid(b, grid)
+has_grid_transform(b::FourierBasis, gs, grid) = compatible_grid(b, grid)
 
 
 length(b::FourierBasis) = b.n
@@ -216,66 +216,73 @@ function apply!(op::Restriction, dest::FourierBasisEven, src::FourierBasis, coef
 	coef_dest
 end
 
-derivative_set(b::FourierBasisOdd, order; options...) = b
+derivative_space(b::FourierSpanOdd, order; options...) = b
 
 # We extend the even basis both for derivation and antiderivation, regardless of order
-for op in (:derivative_set, :antiderivative_set)
-    @eval $op(b::FourierBasisEven, order::Int; options...) = fourier_basis_odd(length(b)+1, domaintype(b))
+for op in (:derivative_space, :antiderivative_space)
+    @eval $op(b::FourierSpanEven, order::Int; options...) = similar_span(b, fourier_basis_odd(length(b)+1, domaintype(b)))
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval function $op(b::FourierBasisEven, b_odd::FourierBasisOdd, order::Int; options...)
+    @eval function $op(b::FourierSpanEven, b_odd::FourierSpanOdd, order::Int; options...)
         $op(b_odd, b_odd, order; options...) * extension_operator(b, b_odd; options...)
     end
 end
 
 # Both differentiation and antidifferentiation are diagonal operations
-diff_scaling_function(b::FourierBasisOdd{T}, idx, order) where {T} = (2 * T(pi) * im * idx2frequency(b,idx))^order
-function differentiation_operator(b1::FourierBasisOdd{T}, b2::FourierBasisOdd{T}, order::Int; options...) where {T}
+function diff_scaling_function(b::FourierBasisOdd, idx, order)
+	T = domaintype(b)
+	(2 * T(pi) * im * idx2frequency(b,idx))^order
+end
+
+function differentiation_operator(b1::FourierSpanOdd{A}, b2::FourierSpanOdd{A}, order::Int; options...) where {A}
 	@assert length(b1) == length(b2)
-	DiagonalOperator(b1, [diff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
+	DiagonalOperator(b1, [diff_scaling_function(set(b1), idx, order) for idx in eachindex(set(b1))])
 end
 
-antidiff_scaling_function(b::FourierBasisOdd{T}, idx, order) where {T} = idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
-function antidifferentiation_operator(b1::FourierBasisOdd, b2::FourierBasisOdd, order::Int; options...)
+function antidiff_scaling_function(b::FourierBasisOdd, idx, order)
+	T = domaintype(b)
+	idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
+end
+
+function antidifferentiation_operator(b1::FourierSpanOdd{A}, b2::FourierSpanOdd{A}, order::Int; options...) where {A}
 	@assert length(b1) == length(b2)
-	DiagonalOperator(b1, [antidiff_scaling_function(b1, idx, order) for idx in eachindex(b1)])
+	DiagonalOperator(b1, [antidiff_scaling_function(set(b1), idx, order) for idx in eachindex(set(b1))])
 end
 
 
-function transform_from_grid(src, dest::FourierBasis, grid; options...)
-	@assert compatible_grid(dest, grid)
-	forward_fourier_operator(src, dest, complex(domaintype(src, dest)); options...)
+function transform_from_grid(src, dest::FourierSpan, grid; options...)
+	@assert compatible_grid(set(dest), grid)
+	forward_fourier_operator(src, dest, coeftype(dest); options...)
 end
 
-function transform_to_grid(src::FourierBasis, dest, grid; options...)
-	@assert compatible_grid(src, grid)
-	backward_fourier_operator(src, dest, complex(domaintype(src, dest)); options...)
+function transform_to_grid(src::FourierSpan, dest, grid; options...)
+	@assert compatible_grid(set(src), grid)
+	backward_fourier_operator(src, dest, coeftype(src); options...)
 end
 
 # Warning: this multidimensional FFT will be used only when the tensor product is homogeneous
 # Thus, it is not called when a Fourier basis of even length is combined with one of odd length...
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierSpan,G <: PeriodicEquispacedGrid}
 	@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	backward_fourier_operator(s1, s2, complex(domaintype(s1, s2)); options...)
+	backward_fourier_operator(s1, s2, coeftype(s1); options...)
 end
 
-function transform_from_grid_tensor{F <: FourierBasis,G <: PeriodicEquispacedGrid}(::Type{F}, ::Type{G}, s1, s2, grid; options...)
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierSpan,G <: PeriodicEquispacedGrid}
 	@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	forward_fourier_operator(s1, s2, complex(domaintype(s1, s2)); options...)
+	forward_fourier_operator(s1, s2, coeftype(s2); options...)
 end
 
 
 
-function transform_from_grid_post(src, dest::FourierBasis, grid; options...)
-	@assert compatible_grid(dest, grid)
-    L = length(src)
-    ELT = domaintype(src)
-    ScalingOperator(dest, 1/sqrt(ELT(L)))
+function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
+	@assert compatible_grid(set(dest), grid)
+    L = convert(coeftype(dest), length(src))
+    ScalingOperator(dest, 1/sqrt(L))
 end
 
-function transform_to_grid_pre(src::FourierBasis, dest, grid; options...)
-	@assert compatible_grid(src, grid)
+function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
+	@assert compatible_grid(set(src), grid)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
@@ -283,7 +290,8 @@ end
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
-function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options...)
+function grid_evaluation_operator(span::FourierSpan, dgs::DiscreteGridSpace, grid::EquispacedGrid; options...)
+	fs = set(span)
 	a = leftendpoint(grid)
 	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
@@ -299,23 +307,24 @@ function grid_evaluation_operator(set::FourierBasis, dgs::DiscreteGridSpace, gri
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
-			super_dgs = gridspace(set, super_grid)
-			E = evaluation_operator(set, super_dgs; options...)
+			super_dgs = gridspace(span, super_grid)
+			E = evaluation_operator(span, super_dgs; options...)
 			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
 			R*E
 		else
-			default_evaluation_operator(set, dgs; options...)
+			default_evaluation_operator(span, dgs; options...)
 		end
-	elseif a ≈ left(set) && b ≈ right(set)
+	elseif a ≈ left(fs) && b ≈ right(fs)
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		default_evaluation_operator(set, dgs; options...)
+		default_evaluation_operator(span, dgs; options...)
 	else
-		default_evaluation_operator(set, dgs; options...)
+		default_evaluation_operator(span, dgs; options...)
 	end
 end
 
 is_compatible(s1::FourierBasis, s2::FourierBasis) = true
+
 # Multiplication of Fourier Series
 function (*)(src1::FourierBasisOdd, src2::FourierBasisEven, coef_src1, coef_src2)
     dsrc2 = resize(src2,length(src2)+1)
@@ -345,6 +354,6 @@ end
 dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-Gram{T}(b::FourierBasisEven{T}; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, T(1)/2)
+Gram(b::FourierSpanEven; options...) = CoefficientScalingOperator(b, b, (length(b)>>1)+1, one(coeftype(b))/2)
 
-UnNormalizedGram(b::FourierBasis, oversampling) = ScalingOperator(b, b, length_oversampled_grid(b, oversampling))
+UnNormalizedGram(b::FourierSpan, oversampling) = ScalingOperator(b, b, length_oversampled_grid(set(b), oversampling))

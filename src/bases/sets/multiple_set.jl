@@ -117,11 +117,11 @@ approx_length(s::MultiSet, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_el
 
 ## Differentiation
 
-# derivative_set(s::MultiSet, order; options...) =
-#     MultiSet(map(b-> derivative_set(b, order; options...), elements(s)))
+# derivative_space(s::MultiSet, order; options...) =
+#     MultiSet(map(b-> derivative_space(b, order; options...), elements(s)))
 #
-# antiderivative_set(s::MultiSet, order; options...) =
-#     MultiSet(map(b-> antiderivative_set(b, order; options...), elements(s)))
+# antiderivative_space(s::MultiSet, order; options...) =
+#     MultiSet(map(b-> antiderivative_space(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiSet, s2::MultiSet, order; options...)

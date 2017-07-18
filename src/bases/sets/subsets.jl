@@ -64,8 +64,8 @@ has_derivative(s::Subset) = subset_has_derivative(s, superset(s), indices(s))
 has_antiderivative(s::Subset) = subset_has_antiderivative(s, superset(s), indices(s))
 has_transform(s::Subset) = subset_has_transform(s, superset(s), indices(s))
 
-derivative_set(s::Subset, order; options...) = subset_derivative_set(s, order, superset(s), indices(s); options...)
-antiderivative_set(s::Subset, order; options...) = subset_antiderivative_set(s, order, superset(s), indices(s); options...)
+derivative_space(s::Subset, order; options...) = subset_derivative_space(s, order, superset(s), indices(s); options...)
+antiderivative_space(s::Subset, order; options...) = subset_antiderivative_space(s, order, superset(s), indices(s); options...)
 
 grid(s::Subset) = subset_grid(s, superset(s), indices(s))
 
@@ -151,20 +151,20 @@ end
 subset_has_derivative(s::LargeSubset, superset, indices) = has_derivative(superset)
 subset_has_antiderivative(s::LargeSubset, superset, indices) = has_antiderivative(superset)
 
-subset_derivative_set(s::LargeSubset, order, superset, indices; options...) =
-    derivative_set(superset, order; options...)
-subset_antiderivative_set(s::LargeSubset, order, superset, indices; options...) =
-    antiderivative_set(superset, order; options...)
+subset_derivative_space(s::LargeSubset, order, superset, indices; options...) =
+    derivative_space(superset, order; options...)
+subset_antiderivative_space(s::LargeSubset, order, superset, indices; options...) =
+    antiderivative_space(superset, order; options...)
 
 function differentiation_operator(s1::LargeSubset, s2::FunctionSet, order::Int; options...)
-    @assert s2 == derivative_set(s1, order)
+    @assert s2 == derivative_space(s1, order)
     D = differentiation_operator(superset(s1), s2, order; options...)
     E = extension_operator(s1, superset(s1); options...)
     D*E
 end
 
 function antidifferentiation_operator(s1::LargeSubset, s2::FunctionSet, order::Int; options...)
-    @assert s2 == antiderivative_set(s1, order)
+    @assert s2 == antiderivative_space(s1, order)
     D = antidifferentiation_operator(superset(s1), s2, order; options...)
     E = extension_operator(s1, superset(s1); options...)
     D*E

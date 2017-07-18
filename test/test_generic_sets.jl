@@ -214,7 +214,7 @@ function test_generic_set_interface(basis, span)
         z1 = e(grid1)
         z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
         @test z1 ≈ z2
-        E = evaluation_operator(set(e), DiscreteGridSpace(set(e)) )
+        E = evaluation_operator(span, gridspace(span))
         z3 = E * coefficients(e)
         @test z1 ≈ z3
     end
@@ -266,7 +266,7 @@ function test_generic_set_interface(basis, span)
     if BF.has_extension(basis)
         n2 = extension_size(basis)
         basis2 = resize(basis, n2)
-        E = extension_operator(basis, basis2)
+        E = extension_operator(span, similar_span(span, basis2))
         e1 = random_expansion(span)
         e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
@@ -274,7 +274,7 @@ function test_generic_set_interface(basis, span)
         x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
-        R = restriction_operator(basis2, basis)
+        R = restriction_operator(similar_span(span, basis2), span)
         e3 = R * e2
         @test e2(x1) ≈ e3(x1)
         @test e2(x2) ≈ e3(x2)
@@ -283,11 +283,12 @@ function test_generic_set_interface(basis, span)
     # Verify whether evaluation in a larger grid works
     if BF.has_extension(basis) && BF.has_grid(basis)
         basis_ext = extend(basis)
+        span_ext = similar_span(span, basis_ext)
         grid_ext = grid(basis_ext)
-        L = evaluation_operator(basis, grid_ext)
+        L = evaluation_operator(span, grid_ext)
         e = random_expansion(span)
         z = L*e
-        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
+        L2 = evaluation_operator(span_ext, grid_ext) * extension_operator(span, span_ext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < sqrt(eps(T))
         # In the future, when we can test for 'fastness' of operators
@@ -297,9 +298,9 @@ function test_generic_set_interface(basis, span)
     ## Test derivatives
     if BF.has_derivative(basis)
         for dim in 1:ndims(basis)
-            D = differentiation_operator(basis; dim=dim)
-            @test basis == src(D)
-            diff_dest = dest(D)
+            D = differentiation_operator(span; dim=dim)
+            @test basis == set(src(D))
+            diff_dest = set(dest(D))
 
             coef1 = random_expansion(span)
             coef2 = D*coef
@@ -323,8 +324,8 @@ function test_generic_set_interface(basis, span)
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
         for dim in 1:ndims(basis)
-            D = antidifferentiation_operator(basis; dim=dim)
-            @test basis == src(D)
+            D = antidifferentiation_operator(span; dim=dim)
+            @test basis == set(src(D))
             antidiff_dest = dest(D)
 
             coef1 = random_expansion(span)
@@ -347,35 +348,35 @@ function test_generic_set_interface(basis, span)
     end
 
     ## Test associated transform
-    if BF.has_transform(basis)
+    if BF.has_transform(span)
         # We have to look into this test
-        @test has_transform(basis) == has_transform(basis, DiscreteGridSpace(grid(basis)))
+        @test has_transform(span) == has_transform(span, gridspace(span))
         # Check whether it is unitary
-        tbasis = transform_set(basis)
-        t = transform_operator(tbasis, basis)
-        it = transform_operator(basis, tbasis)
+        tspan = transform_space(span)
+        t = transform_operator(tspan, span)
+        it = transform_operator(span, tspan)
         A = matrix(t)
         if has_unitary_transform(basis)
-          if T == Float64
-              @test cond(A) ≈ 1
-          else
-              #@test_skip cond(A) ≈ 1
-          end
-          AI = matrix(it)
-          if T == Float64
-              @test cond(AI) ≈ 1
-          else
-              #@test_skip cond(AI) ≈ 1
-          end
+            if T == Float64
+                @test cond(A) ≈ 1
+            else
+                #@test_skip cond(A) ≈ 1
+            end
+            AI = matrix(it)
+            if T == Float64
+                @test cond(AI) ≈ 1
+            else
+                #@test_skip cond(AI) ≈ 1
+            end
         end
 
         # Verify the pre and post operators and their inverses
-        pre1 = transform_operator_pre(tbasis, basis)
-        post1 = transform_operator_post(tbasis, basis)
-        pre2 = transform_operator_pre(basis, tbasis)
-        post2 = transform_operator_post(basis, tbasis)
+        pre1 = transform_operator_pre(tspan, span)
+        post1 = transform_operator_post(tspan, span)
+        pre2 = transform_operator_pre(span, tspan)
+        post2 = transform_operator_post(span, tspan)
         # - try interpolation using transform+pre/post-normalization
-        x = coefficients(rand(Span(tbasis)))
+        x = rand(tspan)
         e = SetExpansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs.(e(g)-x)) < sqrt(eps(T))
@@ -387,39 +388,34 @@ function test_generic_set_interface(basis, span)
 
         # Verify the transposes and inverses
         if has_unitary_transform(basis)
-          @test maximum(abs.( (t' * t)*x-x)) < sqrt(eps(T))
-          @test maximum(abs.( (it' * it)*x-x)) < sqrt(eps(T))
-          @test maximum(abs.( (inv(t) * t)*x-x)) < sqrt(eps(T))
-          @test maximum(abs.( (inv(it) * it)*x-x)) < sqrt(eps(T))
-          @test maximum(abs.( (it * t)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (t' * t)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (it' * it)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (inv(t) * t)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (inv(it) * it)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (it * t)*x-x)) < sqrt(eps(T))
         end
-
-
     end
 
 
     ## Test interpolation operator on a suitable interpolation grid
     if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
-        I = interpolation_operator(basis, g)
-        x = zeros(ELT, size(basis))
-        for i in eachindex(x)
-            x[i] = rand()
-        end
+        I = interpolation_operator(span, g)
+        x = rand(span)
         e = SetExpansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100sqrt(eps(T))
     end
 
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
-    E = evaluation_operator(basis, g)
+    E = evaluation_operator(span, g)
     e = random_expansion(span)
     y = E*e
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
 
     ## Test approximation operator
     if supports_approximation(basis)
-        A = approximation_operator(basis)
+        A = approximation_operator(span)
         f = suitable_function(basis)
         e = SetExpansion(basis, A*f)
         x = random_point_in_domain(basis)
@@ -433,8 +429,8 @@ function test_generic_set_interface(basis, span)
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
         if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
-          e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
-          @test abs(e(x)-f(x...)) < 1e-3
+            e = approximate(span, f; discrete=false, reltol=1e-6, abstol=1e-6)
+            @test abs(e(x)-f(x...)) < 1e-3
         end
     end
 end

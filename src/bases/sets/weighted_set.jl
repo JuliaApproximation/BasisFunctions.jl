@@ -80,20 +80,20 @@ transform_from_grid_pre(src::DiscreteGridSpace, dest::WeightedSet, grid; options
 	inv(transform_to_grid_post(dest, src, grid; options...))
 
 
-function derivative_set(src::WeightedSet, order; options...)
+function derivative_space(src::WeightedSet, order; options...)
     @assert order == 1
 
     s = superset(src)
     f = weightfunction(src)
     f_prime = derivative(f)
-    s_prime = derivative_set(s, order)
+    s_prime = derivative_space(s, order)
     (f_prime * s) ⊕ (f * s_prime)
 end
 
 # Assume order = 1...
 function differentiation_operator(s1::WeightedSet, s2::MultiSet, order; options...)
     @assert order == 1
-    @assert s2 == derivative_set(s1, order)
+    @assert s2 == derivative_space(s1, order)
 
     I = IdentityOperator(s1, element(s2, 1))
     D = differentiation_operator(superset(s1))

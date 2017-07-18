@@ -28,34 +28,34 @@
 
 
 # The default transform space is the space associated with the grid of the set
-transform_set(set::FunctionSet; options...) = DiscreteGridSpace(grid(set), eltype(set))
+transform_space(s::Span; options...) = gridspace(s)
 
 for op in (:transform_operator, :transform_operator_pre, :transform_operator_post)
     # With only one argument, use the default transform space
-    @eval $op(src::FunctionSet; options...) =
-        $op(src, transform_set(src; options...); options...)
+    @eval $op(src::Span; options...) =
+        $op(src, transform_space(src; options...); options...)
 end
 
 # If the destination is a DiscreteGridSpace, invoke the "to_grid" routines
 for op in ( (:transform_operator, :transform_to_grid),
             (:transform_operator_pre, :transform_to_grid_pre),
             (:transform_operator_post, :transform_to_grid_post) )
-    @eval $(op[1])(src::FunctionSet, dest::DiscreteGridSpace; options...) =
+    @eval $(op[1])(src::Span, dest::DiscreteGridSpace; options...) =
         $(op[2])(src, dest, grid(dest); options...)
     # Convenience function: convert a grid to a grid space
-    @eval $(op[1])(src::FunctionSet, grid::AbstractGrid; options...) =
-        $(op[1])(src, DiscreteGridSpace(grid, eltype(src)); options...)
+    @eval $(op[1])(src::Span, grid::AbstractGrid; options...) =
+        $(op[1])(src, gridspace(grid, coeftype(src)); options...)
 end
 
 # If the source is a DiscreteGridSpace, invoke the "from_grid" routines
 for op in ( (:transform_operator, :transform_from_grid),
             (:transform_operator_pre, :transform_from_grid_pre),
             (:transform_operator_post, :transform_from_grid_post) )
-    @eval $(op[1])(src::DiscreteGridSpace, dest::FunctionSet; options...) =
+    @eval $(op[1])(src::DiscreteGridSpace, dest::Span; options...) =
         $(op[2])(src, dest, grid(src); options...)
     # Convenience function: convert a grid to a grid space
-    @eval $(op[1])(src::AbstractGrid, dest::FunctionSet; options...) =
-        $(op[1])(DiscreteGridSpace(src, eltype(dest)), dest; options...)
+    @eval $(op[1])(src::AbstractGrid, dest::Span; options...) =
+        $(op[1])(gridspace(src, coeftype(dest)), dest; options...)
 end
 
 # Pre and post operations are identity by default.
@@ -68,14 +68,13 @@ for op in (:transform_from_grid_post, :transform_to_grid_post)
 end
 
 # Return all three of them in a tuple
-transform_operators(sets::FunctionSet...; options...) =
+transform_operators(sets::Span...; options...) =
     (transform_operator_pre(sets...; options...),
      transform_operator(sets...; options...),
      transform_operator_post(sets...; options...))
 
 # Return the full operation: Post * Trans * Pre
-function full_transform_operator(sets::FunctionSet...; options...)
+function full_transform_operator(sets::Span...; options...)
     Pre,T,Post = transform_operators(sets...; options...)
     Post * T * Pre
 end
-

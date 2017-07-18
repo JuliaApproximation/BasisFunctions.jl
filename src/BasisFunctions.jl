@@ -95,6 +95,9 @@ export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
 # from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
 
+# from spaces/spaces.jl
+export FunctionSpace
+
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
@@ -117,7 +120,7 @@ export moment
 
 # from bases/sets/span.jl
 export Span
-export span, coefficient_type, coeftype
+export span, coefficient_type, coeftype, similar_span
 
 # from bases/sets/subsets.jl
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
@@ -158,7 +161,7 @@ export CirculantOperator
 export PseudoDiagonalOperator
 
 # from generic/transform.jl
-export transform_operator, transform_set, full_transform_operator,
+export transform_operator, transform_space, full_transform_operator,
     transform_operator_pre, transform_operator_post,
     transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
     transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
@@ -186,8 +189,8 @@ export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
 
 # from generic/differentiation.jl
-export differentiation_operator, antidifferentiation_operator, derivative_set,
-    antiderivative_set, Differentiation, Antidifferentiation
+export differentiation_operator, antidifferentiation_operator, derivative_space,
+    antiderivative_space, Differentiation, Antidifferentiation
 
 # from products.jl
 export is_homogeneous, basetype, tensorproduct
@@ -223,7 +226,7 @@ export DiscreteVectorSpace, DiscreteSet
 
 # from bases/sets/gridset.jl
 export GridSet, DiscreteGridSpace, DiscreteGridSpace1d
-export gridspace
+export gridset, gridspace
 
 
 
@@ -281,6 +284,8 @@ include("maps/partition.jl")
 include("grid/grid.jl")
 include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
+
+include("spaces/spaces.jl")
 
 include("bases/sets/functionset.jl")
 include("bases/sets/span.jl")

@@ -259,24 +259,24 @@ has_unitary_transform(s::FunctionSet) = has_transform(s)
 
 # Convenience functions: default grid, and conversion from grid to space
 has_transform(s::FunctionSet) = has_grid(s) && has_transform(s, grid(s))
-has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, DiscreteGridSpace(grid, rangetype(s)))
+has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, gridset(grid))
 
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false
 
 # A concrete FunctionSet has spaces associated with derivatives or antiderivatives of a certain order,
 # and it should implement the following introspective functions:
-# derivative_set(s::MyFunctionSet, order) = ...
-# antiderivative_set(s::MyFunctionSet, order) = ...
+# derivative_space(s::MyFunctionSet, order) = ...
+# antiderivative_space(s::MyFunctionSet, order) = ...
 # where order is either an Int (in 1D) or a tuple of Int's (in higher dimensions).
 
 # The default order is 1 for 1d sets:
-derivative_set(s::FunctionSet1d) = derivative_set(s, 1)
-antiderivative_set(s::FunctionSet1d) = antiderivative_set(s, 1)
+derivative_space(s::FunctionSet1d) = derivative_space(s, 1)
+antiderivative_space(s::FunctionSet1d) = antiderivative_space(s, 1)
 
 # Catch tuples with just one element and convert to Int
-derivative_set(s::FunctionSet1d, order::Tuple{Int}) = derivative_set(s, order[1])
-antiderivative_set(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_set(s, order[1])
+derivative_space(s::FunctionSet1d, order::Tuple{Int}) = derivative_space(s, order[1])
+antiderivative_space(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_space(s, order[1])
 
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?
@@ -284,8 +284,8 @@ antiderivative_set(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_set(s, 
 dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
 
 # Convenience function to differentiate in a given dimension
-derivative_set(s::FunctionSet; dim=1) = derivative_set(s, dimension_tuple(ndims(s), dim))
-antiderivative_set(s::FunctionSet; dim=1) = antiderivative_set(s, dimension_tuple(ndims(s), dim))
+derivative_space(s::FunctionSet; dim=1) = derivative_space(s, dimension_tuple(ndims(s), dim))
+antiderivative_space(s::FunctionSet; dim=1) = antiderivative_space(s, dimension_tuple(ndims(s), dim))
 
 # A concrete FunctionSet may also override extension_set and restriction_set
 # The default is simply to resize.
@@ -360,7 +360,7 @@ end
 # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
 # We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
 function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(DiscreteGridSpace(grid, rangetype(set)))
+    result = zeros(gridspace(grid, rangetype(set)))
     eval_set_element!(result, set, idx, grid, outside_value...)
 end
 
@@ -378,7 +378,7 @@ end
 Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
 """
 function eval_expansion(set::FunctionSet, coefficients, x)
-    T = rangetype(span(set, eltype(coefficients)))
+    T = rangetype(set, coefficients)
     z = zero(T)
 
     # It is safer below to use eval_set_element than eval_element, because of
@@ -394,8 +394,9 @@ function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
     @assert size(coefficients) == size(set)
     @assert eltype(grid) == domaintype(set)
 
-    T = rangetype(span(set, eltype(coefficients)))
-    E = evaluation_operator(set, DiscreteGridSpace(grid, T))
+    span = Span(set, eltype(coefficients))
+    T = rangetype(span)
+    E = evaluation_operator(span, gridspace(grid, T))
     E * coefficients
 end
 

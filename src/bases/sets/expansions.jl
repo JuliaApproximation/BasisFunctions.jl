@@ -174,7 +174,7 @@ end
 (*)(e::SetExpansion, a::Number) = a*e
 
 function apply(op::AbstractOperator, e::SetExpansion)
-    @assert set(e) == src(op)
+    @assert set(e) == set(src(op))
 
-    SetExpansion(dest(op), op * coefficients(e))
+    SetExpansion(set(dest(op)), op * coefficients(e))
 end

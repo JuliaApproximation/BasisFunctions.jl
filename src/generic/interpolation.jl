@@ -9,27 +9,27 @@ function interpolation_matrix(set::FunctionSet, pts)
     evaluation_matrix(set, pts)
 end
 
-interpolation_operator(set::FunctionSet; options...) =
-    interpolation_operator(set, grid(set); options...)
+interpolation_operator(s::Span; options...) =
+    interpolation_operator(s, grid(s); options...)
 
-interpolation_operator(set::FunctionSet, grid::AbstractGrid; options...) =
-    interpolation_operator(set, gridspace(set, grid); options...)
+interpolation_operator(s::Span, grid::AbstractGrid; options...) =
+    interpolation_operator(s, gridspace(s, grid); options...)
 
 # Interpolate set in the grid of dgs
-function interpolation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
-    if has_grid(set) && grid(set) == grid(dgs) && has_transform(set, dgs)
-        full_transform_operator(dgs, set; options...)
+function interpolation_operator(s::Span, dgs::DiscreteGridSpace; options...)
+    if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
+        full_transform_operator(dgs, s; options...)
     else
-        default_interpolation_operator(set, dgs; options...)
+        default_interpolation_operator(s, dgs; options...)
     end
 end
 
-function default_interpolation_operator(set::FunctionSet, dgs::DiscreteGridSpace; options...)
-    SolverOperator(dgs, set, qrfact(evaluation_matrix(set, grid(dgs))))
+function default_interpolation_operator(s::Span, dgs::DiscreteGridSpace; options...)
+    SolverOperator(dgs, s, qrfact(evaluation_matrix(set(s), grid(dgs))))
 end
 
-function interpolate(set::FunctionSet, pts, f)
-    A = interpolation_matrix(set, pts)
-    B = eltype(A)[f(x...) for x in pts]
-    SetExpansion(set, A\B)
+function interpolate(s::Span, pts, f)
+    A = interpolation_matrix(set(s), pts)
+    B = coeftype(s)[f(x...) for x in pts]
+    SetExpansion(set(s), A\B)
 end

@@ -37,8 +37,8 @@ is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_set(b::OPS, order::Int; options...) = resize(b, b.n-order)
-antiderivative_set(b::OPS, order::Int; options...) = resize(b, b.n+order)
+derivative_space(b::OPS, order::Int; options...) = resize(b, b.n-order)
+antiderivative_space(b::OPS, order::Int; options...) = resize(b, b.n+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 

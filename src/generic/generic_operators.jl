@@ -94,6 +94,13 @@ function simplify_transform_sets(s1::FunctionSet, s2::DiscreteGridSpace, grid)
     simple_s1, simple_s2, simple_grid
 end
 
+function simplify_transform_spaces(s1::Span, s2::Span, grid)
+    T1 = coeftype(s1)
+    T2 = coeftype(s2)
+    simple_s1, simple_s2, simple_grid = simplify_transform_sets(set(s1), set(s2), grid)
+    Span(simple_s1, T1), Span(simple_s2, T2), simple_grid
+end
+
 
 # The main logic is implemented in the functions below.
 #
@@ -106,8 +113,8 @@ for op in ( (:transform_from_grid, :s1, :s2),
     op_tensor = Symbol("$(op[1])_tensor")
 
     # Invoke the *_tensor function with additional basetype arguments
-    @eval function $(op[1])(s1::DiscreteGridSpace, s2::TensorProductSet, grid::ProductGrid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+    @eval function $(op[1])(s1::DiscreteGridSpace, s2::TensorProductSpan, grid::ProductGrid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op_tensor)(basetype(simple_s2), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
@@ -123,8 +130,8 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_post, :s1, :s2))
     op_tensor = Symbol("$(op[1])_tensor")
 
-    @eval function $(op[1])(s1::TensorProductSet, s2::DiscreteGridSpace, grid::ProductGrid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+    @eval function $(op[1])(s1::TensorProductSpan, s2::DiscreteGridSpace, grid::ProductGrid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op_tensor)(basetype(simple_s1), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
@@ -137,21 +144,21 @@ end
 
 for op in (:extension_operator, :restriction_operator,
             :interpolation_operator, :leastsquares_operator)
-    @eval $op(s1::TensorProductSet, s2::TensorProductSet; options...) =
+    @eval $op(s1::TensorProductSpan, s2::TensorProductSpan; options...) =
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
 
-grid_evaluation_operator(set::TensorProductSet, dgs::DiscreteGridSpace, grid::ProductGrid; options...) =
+grid_evaluation_operator(set::TensorProductSpan, dgs::DiscreteGridSpace, grid::ProductGrid; options...) =
     tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(set), elements(grid))...)
 
 for op in (:approximation_operator, )
-    @eval $op(s::TensorProductSet; options...) =
+    @eval $op(s::TensorProductSpan; options...) =
         tensorproduct(map( u -> $op(u; options...), elements(s))...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
     # TODO: this assumes that the number of elements of the tensor product equals the dimension
-    @eval function $op(s1::TensorProductSet, s2::TensorProductSet, order::NTuple; options...)
+    @eval function $op(s1::TensorProductSpan, s2::TensorProductSpan, order::NTuple; options...)
         tensorproduct(map( (u,v,w) -> $op(u, v, w; options...), elements(s1), elements(s2), order)...)
     end
 end

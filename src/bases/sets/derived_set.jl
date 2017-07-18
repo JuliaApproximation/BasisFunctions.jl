@@ -111,11 +111,11 @@ eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
 # Wrapping of operators
 #########################
 
-for op in (:transform_set,)
+for op in (:transform_space,)
     @eval $op(s::DerivedSet; options...) = $op(superset(s); options...)
 end
 
-for op in (:derivative_set, :antiderivative_set)
+for op in (:derivative_space, :antiderivative_space)
     @eval $op(s::DerivedSet, order; options...) = similar_set(s, $op(superset(s), order; options...))
 end
 
@@ -134,7 +134,7 @@ for op in ( (:transform_from_grid, :s1, :s2),
             (:transform_from_grid_post, :s1, :s2))
 
     @eval function $(op[1])(s1, s2::DerivedSet, grid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
@@ -145,7 +145,7 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_post, :s1, :s2))
 
     @eval function $(op[1])(s1::DerivedSet, s2, grid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end

@@ -68,7 +68,7 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_set(s::MappedSet; options...) = apply_map(transform_set(superset(s); options...), mapping(s))
+transform_space(s::MappedSet; options...) = apply_map(transform_space(superset(s); options...), mapping(s))
 
 has_grid_transform(s::MappedSet, dgs, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) && has_transform(superset(s), DiscreteGridSpace(grid(g), eltype(dgs)))
@@ -132,7 +132,7 @@ end
 # Differentiation
 ###################
 
-for op in (:derivative_set, :antiderivative_set)
+for op in (:derivative_space, :antiderivative_space)
     @eval $op(s::MappedSet1d, order::Int; options...) =
         (@assert islinear(mapping(s)); apply_map( $op(superset(s), order; options...), mapping(s) ))
 end
