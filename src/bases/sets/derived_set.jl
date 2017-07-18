@@ -23,6 +23,8 @@ superset(s::DerivedSet) = s.superset
 "Return the span of the superset of the given derived set."
 superspan(s::DerivedSpan) = Span(superset(s), coeftype(s))
 
+superset(s::DerivedSpan) = superset(set(s))
+
 # The concrete subset should implement similar_set, as follows:
 #
 # similar_set(s::ConcreteDerivedSet, s2::FunctionSet) = ConcreteDerivedSet(s2)
@@ -30,6 +32,8 @@ superspan(s::DerivedSpan) = Span(superset(s), coeftype(s))
 # This function calls the constructor of the concrete set. We can then
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
+
+similar_span(s::DerivedSpan, s2::Span) = Span(similar_set(set(s), set(s2)), coeftype(s2))
 
 resize(s::DerivedSet, n) = similar_set(s, resize(superset(s),n))
 
@@ -81,7 +85,7 @@ apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
 in_support(set::DerivedSet, i, x) = in_support(superset(set), i, x)
 
 # To avoid an ambiguity with a similar definition for abstract type FunctionSet:
-in_support{T <: Complex}(set::DerivedSet, idx, x::T) =
+in_support(set::DerivedSet, idx, x::T) where {T <: Complex} =
     imag(x) == 0 && in_support(superset(set), idx, real(x))
 
 #########################
@@ -94,10 +98,10 @@ linear_index(s::DerivedSet, idxn) = linear_index(superset(s), idxn)
 
 eachindex(s::DerivedSet) = eachindex(superset(s))
 
-linearize_coefficients!(s::DerivedSet, coef_linear, coef_native) =
+linearize_coefficients!(s::DerivedSet, coef_linear::Vector, coef_native) =
     linearize_coefficients!(superset(s), coef_linear, coef_native)
 
-delinearize_coefficients!(s::DerivedSet, coef_native, coef_linear) =
+delinearize_coefficients!(s::DerivedSet, coef_native, coef_linear::Vector) =
     delinearize_coefficients!(superset(s), coef_native, coef_linear)
 
 approximate_native_size(s::DerivedSet, size_l) = approximate_native_size(superset(s), size_l)
@@ -121,13 +125,13 @@ for op in (:transform_space,)
 end
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::DerivedSpan, order; options...) = similar_set(s, $op(superspan(s), order; options...))
+    @eval $op(s::DerivedSpan, order; options...) = similar_span(s, $op(superspan(s), order; options...))
 end
 
 
 for op in (:extension_operator, :restriction_operator)
-    @eval $op(s1::DerivedSet, s2::DerivedSet; options...) =
-        wrap_operator(s1, s2, $op(superset(s1), superset(s2); options...))
+    @eval $op(s1::DerivedSpan, s2::DerivedSpan; options...) =
+        wrap_operator(s1, s2, $op(superspan(s1), superspan(s2); options...))
 end
 
 # By default we return the underlying set when simplifying transforms
@@ -138,7 +142,7 @@ for op in ( (:transform_from_grid, :s1, :s2),
             (:transform_from_grid_pre, :s1, :s1),
             (:transform_from_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1, s2::DerivedSet, grid; options...)
+    @eval function $(op[1])(s1, s2::DerivedSpan, grid; options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
@@ -149,7 +153,7 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_pre, :s1, :s1),
             (:transform_to_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1::DerivedSet, s2, grid; options...)
+    @eval function $(op[1])(s1::DerivedSpan, s2, grid; options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
@@ -158,18 +162,18 @@ end
 
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedSet, s2::DerivedSet, order; options...) =
-        wrap_operator(s1, s2, $op(superset(s1), superset(s2), order; options...))
+    @eval $op(s1::DerivedSpan, s2::DerivedSpan, order; options...) =
+        wrap_operator(s1, s2, $op(superspan(s1), superspan(s2), order; options...))
 end
 
-grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superspan(set), dgs, grid; options...))
 
-grid_evaluation_operator(set::DerivedSet, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superset(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superspan(set), dgs, grid; options...))
 
-dot(set::DerivedSet, f1::Function, f2::Function, nodes::Array=native_nodes(superset(set)); options...) =
-    dot(superset(set), f1, f2, nodes; options...)
+dot(s::DerivedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(superset(s)); options...) =
+    dot(superspan(s), f1, f2, nodes; options...)
 
 #########################
 # Concrete set

@@ -94,7 +94,7 @@ widen_type(::Type{Tuple{A,B}}) where {A,B} = Tuple{widen(A),widen(B)}
 widen_type(::Type{Tuple{A,B,C}}) where {A,B,C} = Tuple{widen(A),widen(B),widen(C)}
 
 
-function test_generic_set_interface(basis, span)
+function test_generic_set_interface(basis, span = Span(basis))
     ELT = coefficient_type(span)
     T = domaintype(basis)
     FT = float_type(T)

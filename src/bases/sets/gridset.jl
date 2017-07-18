@@ -37,6 +37,9 @@ has_grid_transform(s1::FunctionSet, s2, grid) = false
 elements(s::ProductGridSet) = map(GridSet, elements(grid(s)))
 element(s::ProductGridSet, i) = GridSet(element(grid(s), i))
 
+apply_map(s::GridSet, map) = GridSet(apply_map(grid(s), map))
+
+
 ###############################################
 # A DiscreteGridSpace is the span of a GridSet
 ###############################################
@@ -54,13 +57,13 @@ gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridset(g), coeftype(s))
 
 name(s::DiscreteGridSpace) = "A discrete grid space"
 
-gridset(dgs::DiscreteGridSpace) = set(dsg)
+gridset(s::DiscreteGridSpace) = set(s)
 
-similar(dgs::DiscreteGridSpace, grid::AbstractGrid) = DiscreteGridSpace(grid, coeftype(dgs))
+similar(s::DiscreteGridSpace, grid::AbstractGrid) = Span(grid, coeftype(s))
 
 grid(span::DiscreteGridSpace) = grid(set(span))
 
 # Delegate a map to the underlying grid, but retain the element type of the space
-apply_map(dgs::DiscreteGridSpace, map) = Span(apply_map(grid(dgs), map), coeftype(s))
+apply_map(s::DiscreteGridSpace, map) = Span(apply_map(set(s), map), coeftype(s))
 
 sample(s::DiscreteGridSpace, f) = sample(grid(s), f, coeftype(s))
