@@ -25,14 +25,14 @@ end
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(s)}; options...)
+DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(set(s))}; options...)
 
 DualGram(s::Span, ::Type{Val{true}}; options...) = inv(Gram(s; options...))
 
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(s)}; options...)
+MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(set(s))}; options...)
 
 MixedGram(s::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
@@ -62,7 +62,7 @@ end
 """
 Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
 """
-project(s, f::Function; options...) = project!(zero(s), s, f; options...)
+project(s, f::Function; options...) = project!(zeros(s), s, f; options...)
 
 function project!(result, s, f::Function; options...)
     for i in eachindex(result)

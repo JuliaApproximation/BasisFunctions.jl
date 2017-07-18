@@ -92,7 +92,7 @@ end
 
 random_expansion(span::Span) = SetExpansion(set(span), rand(span))
 
-zero(span::Span) = Expansion(set(span), zeros(span))
+zero(span::Span) = SetExpansion(set(span), zeros(span))
 
 complex(span::Span) = promote_coeftype(span, complex(coeftype(span)))
 
