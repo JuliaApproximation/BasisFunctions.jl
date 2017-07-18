@@ -117,11 +117,11 @@ eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
 #########################
 
 for op in (:transform_space,)
-    @eval $op(s::DerivedSet; options...) = $op(superset(s); options...)
+    @eval $op(s::DerivedSpan; options...) = $op(superspan(s); options...)
 end
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::DerivedSet, order; options...) = similar_set(s, $op(superset(s), order; options...))
+    @eval $op(s::DerivedSpan, order; options...) = similar_set(s, $op(superspan(s), order; options...))
 end
 
 

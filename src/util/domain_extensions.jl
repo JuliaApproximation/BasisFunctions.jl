@@ -18,3 +18,4 @@ dimension(::Type{Tuple{A}}) where {A} = 1
 dimension(::Type{Tuple{A,B}}) where {A,B} = 2
 dimension(::Type{Tuple{A,B,C}}) where {A,B,C} = 3
 dimension(::Type{Tuple{A,B,C,D}}) where {A,B,C,D} = 4
+dimension(::Type{CartesianIndex{N}}) where {N} = N

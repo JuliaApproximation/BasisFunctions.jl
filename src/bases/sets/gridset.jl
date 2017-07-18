@@ -8,6 +8,7 @@ immutable GridSet{G <: AbstractGrid,T} <: DiscreteVectorSpace{T}
 end
 
 const GridSet1d{G <: AbstractGrid1d,T} = GridSet{G,T}
+const ProductGridSet{G <: ProductGrid,T} = GridSet{G,T}
 
 GridSet(grid::AbstractGrid) = GridSet{typeof(grid),typeof(first(eachindex(grid)))}(grid)
 
@@ -15,7 +16,7 @@ gridset(grid::AbstractGrid) = GridSet(grid)
 
 grid(set::GridSet) = set.grid
 
-for op in (:length, :size, :domaintype)
+for op in (:length, :size)
     @eval $op(set::GridSet) = $op(grid(set))
 end
 
@@ -23,7 +24,7 @@ coefficient_type(set::GridSet) = float_type(eltype(grid(set)))
 
 name(set::GridSet) = "a discrete set associated with a grid"
 
-tensorproduct(set1::GridSet, set2::GridSet) = GridSet(tensorproduct(grid(set1), grid(set2)))
+tensorproduct(sets::GridSet...) = GridSet(cartesianproduct(map(grid, sets)...))
 
 # Convenience function: add grid as extra parameter to has_transform
 has_transform(s1::FunctionSet, s2::GridSet) =
@@ -33,7 +34,8 @@ has_transform(s1::GridSet, s2::FunctionSet) =
 # and provide a default
 has_grid_transform(s1::FunctionSet, s2, grid) = false
 
-
+elements(s::ProductGridSet) = map(GridSet, elements(grid(s)))
+element(s::ProductGridSet, i) = GridSet(element(grid(s), i))
 
 ###############################################
 # A DiscreteGridSpace is the span of a GridSet

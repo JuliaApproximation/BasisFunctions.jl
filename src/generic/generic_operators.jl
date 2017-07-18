@@ -80,17 +80,21 @@ function simplify_transform_pair(set::TensorProductSet, grid::ProductGrid)
     TensorProductSet(set_elements...), ProductGrid(grid_elements...)
 end
 
+function simplify_transform_pair(set::ProductGridSet, grid::ProductGrid)
+    set, grid
+end
+
 # For convenience, we implement a function that takes the three transform arguments,
 # and simplifies the correct pair (leaving out the DiscreteGridSpace)
-function simplify_transform_sets(s1::DiscreteGridSpace, s2::FunctionSet, grid)
+function simplify_transform_sets(s1::GridSet, s2::FunctionSet, grid)
     simple_s2, simple_grid = simplify_transform_pair(s2, grid)
-    simple_s1 = similar(s1, simple_grid)
+    simple_s1 = gridset(simple_grid)
     simple_s1, simple_s2, simple_grid
 end
 
-function simplify_transform_sets(s1::FunctionSet, s2::DiscreteGridSpace, grid)
+function simplify_transform_sets(s1::FunctionSet, s2::GridSet, grid)
     simple_s1, simple_grid = simplify_transform_pair(s1, grid)
-    simple_s2 = similar(s2, simple_grid)
+    simple_s2 = gridset(simple_grid)
     simple_s1, simple_s2, simple_grid
 end
 

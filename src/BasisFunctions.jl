@@ -75,6 +75,7 @@ export split_interval
 
 # from src/products.jl
 export tensorproduct, ⊗
+export element, elements, nb_elements
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,

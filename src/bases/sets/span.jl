@@ -49,12 +49,14 @@ rangetype(set::FunctionSet, coefficients) = rangetype(set, eltype(coefficients))
 rangetype(set::FunctionSet, ::Type{A}) where {A} = rangetype(Span(set, A))
 
 elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
-element(span::Span, i) = Span(element(set(span, i)), coeftype(span))
+element(span::Span, i) = Span(element(set(span), i), coeftype(span))
 
 
 for op in (:length, :size, :dimension, :domaintype, :grid)
     @eval $op(span::Span) = $op(set(span))
 end
+
+compatible_grid(span::Span, grid::AbstractGrid) = compatible_grid(set(span), grid)
 
 for op in (:has_transform, :has_extension, :has_derivative, :has_antiderivative,
     :has_grid)

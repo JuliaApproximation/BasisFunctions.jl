@@ -97,6 +97,7 @@ widen_type(::Type{Tuple{A,B,C}}) where {A,B,C} = Tuple{widen(A),widen(B),widen(C
 function test_generic_set_interface(basis, span)
     ELT = coefficient_type(span)
     T = domaintype(basis)
+    FT = float_type(T)
     Y = rangetype(basis)
     SY = rangetype(span)
 
@@ -134,12 +135,12 @@ function test_generic_set_interface(basis, span)
     if (dimension(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicSetOfTranslates)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
-            @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))
+            @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(FT)))
             @test ~in_support(basis, 1, left(basis, 1)-1)
         end
         if ~isinf(right(basis, 1))
             @test in_support(basis, 1, right(basis, 1))
-            @test in_support(basis, 1, right(basis, 1)+1/10*sqrt(eps(T)))
+            @test in_support(basis, 1, right(basis, 1)+1/10*sqrt(eps(FT)))
             @test ~in_support(basis, 1, right(basis, 1)+1)
         end
         if ~isinf(left(basis, 1)) && ~isinf(right(basis, 1))
@@ -189,7 +190,7 @@ function test_generic_set_interface(basis, span)
 
     x_outside = point_outside_domain(basis)
     @test bf(x_outside) == 0
-    @test isnan(eval_set_element(basis, idx, x_outside, T(NaN)))
+    @test isnan(eval_set_element(basis, idx, x_outside, FT(NaN)))
 
 
     # Create a random expansion in the basis to test expansion interface
@@ -206,7 +207,7 @@ function test_generic_set_interface(basis, span)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
     # Test linearization of coefficients
-    linear_coefs = zeros(span)
+    linear_coefs = zeros(coeftype(span), length(basis))
     BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
     coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
     @test coef ≈ coef2
@@ -230,7 +231,7 @@ function test_generic_set_interface(basis, span)
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, T(0.5))) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, FT(0.5))) ]
         if length(basis) > 1
             indices = [1 2 n>>1 n-1 n]
         else
@@ -257,7 +258,7 @@ function test_generic_set_interface(basis, span)
             b = T(1)
         end
 
-        grid2 = EquispacedGrid(n+3, T(a)+sqrt(eps(T)), T(b)-sqrt(eps(T)))
+        grid2 = EquispacedGrid(n+3, T(a)+sqrt(eps(FT)), T(b)-sqrt(eps(FT)))
         z = e(grid2)
         @test z ≈ ELT[ e(grid2[i]) for i in eachindex(grid2) ]
 
@@ -296,7 +297,7 @@ function test_generic_set_interface(basis, span)
         z = L*e
         L2 = evaluation_operator(span_ext, grid_ext) * extension_operator(span, span_ext)
         z2 = L2*e
-        @test maximum(abs.(z-z2)) < sqrt(eps(T))
+        @test maximum(abs.(z-z2)) < sqrt(eps(FT))
         # In the future, when we can test for 'fastness' of operators
         # @test is_fast(L2) == is_fast(L)
     end
@@ -314,16 +315,16 @@ function test_generic_set_interface(basis, span)
             e2 = SetExpansion(diff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/10
+            delta = sqrt(eps(FT))/10
             N = dimension(basis)
             if N > 1
-                unit_vector = zeros(T, dimension(basis))
+                unit_vector = zeros(FT, dimension(basis))
                 unit_vector[dim] = 1
                 x2 = x + SVector{N}(delta*unit_vector)
             else
                 x2 = x+delta
             end
-            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*sqrt(eps(T))
+            @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*sqrt(eps(FT))
         end
     end
 
@@ -340,16 +341,16 @@ function test_generic_set_interface(basis, span)
             e2 = SetExpansion(antidiff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
-            delta = sqrt(eps(T))/10
+            delta = sqrt(eps(FT))/10
             N = dimension(basis)
             if N > 1
-                unit_vector = zeros(T, dimension(basis))
+                unit_vector = zeros(FT, dimension(basis))
                 unit_vector[dim] = 1
                 x2 = x + SVector{N}(delta*unit_vector)
             else
                 x2 = x+delta
             end
-            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000*sqrt(eps(T))
+            @test abs( (e2(x2)-e2(x))/delta - e1(x) ) / abs(e1(x)) < 2000*sqrt(eps(FT))
         end
     end
 
@@ -385,20 +386,20 @@ function test_generic_set_interface(basis, span)
         x = rand(tspan)
         e = SetExpansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
-        @test maximum(abs.(e(g)-x)) < sqrt(eps(T))
+        @test maximum(abs.(e(g)-x)) < sqrt(eps(FT))
         # - try evaluation using transform+pre/post-normalization
         e = random_expansion(span)
         x1 = (post2*it*pre2)*coefficients(e)
         x2 = e(grid(basis))
-        @test maximum(abs.(x1-x2)) < sqrt(eps(T))
+        @test maximum(abs.(x1-x2)) < sqrt(eps(FT))
 
         # Verify the transposes and inverses
         if has_unitary_transform(basis)
-            @test maximum(abs.( (t' * t)*x-x)) < sqrt(eps(T))
-            @test maximum(abs.( (it' * it)*x-x)) < sqrt(eps(T))
-            @test maximum(abs.( (inv(t) * t)*x-x)) < sqrt(eps(T))
-            @test maximum(abs.( (inv(it) * it)*x-x)) < sqrt(eps(T))
-            @test maximum(abs.( (it * t)*x-x)) < sqrt(eps(T))
+            @test maximum(abs.( (t' * t)*x-x)) < sqrt(eps(FT))
+            @test maximum(abs.( (it' * it)*x-x)) < sqrt(eps(FT))
+            @test maximum(abs.( (inv(t) * t)*x-x)) < sqrt(eps(FT))
+            @test maximum(abs.( (inv(it) * it)*x-x)) < sqrt(eps(FT))
+            @test maximum(abs.( (it * t)*x-x)) < sqrt(eps(FT))
         end
     end
 
@@ -409,7 +410,7 @@ function test_generic_set_interface(basis, span)
         I = interpolation_operator(span, g)
         x = rand(span)
         e = SetExpansion(basis, I*x)
-        @test maximum(abs.(e(g)-x)) < 100sqrt(eps(T))
+        @test maximum(abs.(e(g)-x)) < 100sqrt(eps(FT))
     end
 
     ## Test evaluation operator
@@ -417,7 +418,7 @@ function test_generic_set_interface(basis, span)
     E = evaluation_operator(span, g)
     e = random_expansion(span)
     y = E*e
-    @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(T))
+    @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < sqrt(eps(FT))
 
     ## Test approximation operator
     if supports_approximation(basis)

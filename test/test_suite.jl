@@ -90,20 +90,21 @@ for T in [Float64,BigFloat]
             test_generic_set_interface(basis, span(basis))
     end
 
+    delimit("Derived sets")
+        test_derived_sets(T)
+
     delimit("Tensor product set interfaces")
 
     # TODO: all sets in the test below should use type T!
-    @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
-                  FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+    @testset "$(rpad("$(name(basis))",80," "))" for basis in
+                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
                   FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
+                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
                   FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
-                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
+                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
         test_generic_set_interface(basis, span(basis))
     end
-
-    delimit("Derived sets")
-        test_derived_sets(T)
 
     delimit("Tensor specific tests")
     @testset "$(rpad("test iteration",80))" begin

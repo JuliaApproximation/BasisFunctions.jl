@@ -89,9 +89,10 @@ function moment(b::ChebyshevBasis{T}, idx::Int) where {T}
     end
 end
 
-function apply!(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef) where {T}
+function apply!(op::Differentiation, dest::ChebyshevBasis, src::ChebyshevBasis, result, coef)
     #	@assert period(dest)==period(src)
     n = length(src)
+    T = eltype(coef)
     tempc = coef[:]
     tempr = coef[:]
     for o = 1:order(op)
@@ -120,8 +121,9 @@ function apply!(op::Differentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasi
     result
 end
 
-function apply!(op::AntiDifferentiation, dest::ChebyshevBasis{T}, src::ChebyshevBasis{T}, result, coef) where {T}
+function apply!(op::AntiDifferentiation, dest::ChebyshevBasis, src::ChebyshevBasis, result, coef)
     #	@assert period(dest)==period(src)
+    T = eltype(coef)
     tempc = zeros(T,length(result))
     tempc[1:length(src)] = coef[1:length(src)]
     tempr = zeros(T,length(result))
@@ -168,10 +170,10 @@ transform_to_grid(src::ChebyshevSpan, dest, grid::ChebyshevNodeGrid; options...)
 	_backward_chebyshev_operator(src, dest, coeftype(src); options...)
 
 # These are the generic fallbacks
-_forward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
+_forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
 	FastChebyshevTransform(src, dest)
 
-_backward_chebyshev_operator{T <: Number}(src, dest, ::Type{T}; options...) =
+_backward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
 	InverseFastChebyshevTransform(src, dest)
 
 # But for some types we use FFTW

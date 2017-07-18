@@ -90,7 +90,7 @@ linear_index(s::TensorProductSet, idxn::Tuple) = linear_index(s, map(linear_inde
 
 # Convert the given index to a multilinear index.
 # - A tuple of Int's is already a multilinear index
-multilinear_index{N}(s::TensorProductSet, idx::NTuple{N,Int}) = idx
+multilinear_index(s::TensorProductSet, idx::NTuple{N,Int}) where {N} = idx
 # - From linear index to multilinear
 multilinear_index(s::TensorProductSet, idx::Int) = ind2sub(size(s), idx)
 # - Convert a CartesianIndex to a tuple (! this uses CartesianIndex internals currently)
@@ -100,7 +100,7 @@ multilinear_index(s::TensorProductSet, idx::Tuple) = map(linear_index, elements(
 
 # Convert the given index to a native index.
 # - From a multilinear index
-native_index{N}(s::TensorProductSet, idx::NTuple{N,Int}) = map(native_index, elements(s), idx)
+native_index(s::TensorProductSet, idx::NTuple{N,Int}) where {N} = map(native_index, elements(s), idx)
 # - Assume that another kind of tuple is the native index
 native_index(s::TensorProductSet, idx::Tuple) = idx
 # - From a linear index
@@ -238,16 +238,16 @@ eval_element(set::TensorProductSet, idx, x) = _eval_element(set, elements(set), 
 
 # For now, we assume that each set in the tensor product is a 1D set.
 # This may not always be the case.
-_eval_element{TS}(set::TensorProductSet{TS,1}, sets, i, x) =
+_eval_element(set::TensorProductSet{TS,1}, sets, i, x) where {TS} =
     eval_element(sets[1], i[1], x[1])
 
-_eval_element{TS}(set::TensorProductSet{TS,2}, sets, i, x) =
+_eval_element(set::TensorProductSet{TS,2}, sets, i, x) where {TS} =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2])
 
-_eval_element{TS}(set::TensorProductSet{TS,3}, sets, i, x) =
+_eval_element(set::TensorProductSet{TS,3}, sets, i, x) where {TS} =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3])
 
-_eval_element{TS}(set::TensorProductSet{TS,4}, sets, i, x) =
+_eval_element(set::TensorProductSet{TS,4}, sets, i, x) where {TS} =
     eval_element(sets[1], i[1], x[1]) * eval_element(sets[2], i[2], x[2]) * eval_element(sets[3], i[3], x[3]) * eval_element(sets[4], i[4], x[4])
 
 # Generic implementation, slightly slower
