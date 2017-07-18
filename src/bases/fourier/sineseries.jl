@@ -12,6 +12,8 @@ struct SineSeries{T} <: FunctionSet{T}
     n           ::  Int
 end
 
+const SineSpan{A, F <: SineSeries} = Span{A,F}
+
 name(b::SineSeries) = "Sine series"
 
 
@@ -77,4 +79,4 @@ function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, c
     coef_dest
 end
 
-Gram(b::SineSeries{T}; options...) where {T} = ScalingOperator(b, b ,T(1)/2)
+Gram(s::SineSpan; options...) = ScalingOperator(s, s, one(coeftype(s))/2)

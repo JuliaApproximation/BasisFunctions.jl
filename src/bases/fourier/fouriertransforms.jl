@@ -133,18 +133,16 @@ inv(fun::typeof(ifft)) = fft
 for (transform, plan) in
     ((:FastChebyshevTransformFFTW, :plan_dct!),
     (:InverseFastChebyshevTransformFFTW, :plan_idct!))
-  @eval begin
-    function $transform(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
-        ELT = op_eltype(src, dest)
-        plan = FFTW.$plan(zeros(ELT, dest), dims; flags = fftwflags)
-        MultiplicationOperator(src, dest, plan; inplace=true)
+    @eval begin
+        function $transform(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
+            plan = FFTW.$plan(zeros(dest), dims; flags = fftwflags)
+            MultiplicationOperator(src, dest, plan; inplace=true)
+        end
     end
-  end
 end
 
 function FastChebyshevITransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
-    ELT = op_eltype(src, dest)
-    plan = FFTW.plan_r2r!(zeros(ELT, src), FFTW.REDFT00, dims; flags = fftwflags)
+    plan = FFTW.plan_r2r!(zeros(src), FFTW.REDFT00, dims; flags = fftwflags)
     MultiplicationOperator(src, dest, plan; inplace=true)
 end
 
@@ -159,15 +157,17 @@ for (plan, transform, invtransform) in (
       (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
       (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
       (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
-  @eval begin
-    dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
-        dim, object::$plan; options...) =
-            $transform(src, dest, dim:dim; options...)
-    ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
-        $invtransform(dest(op), src(op))
-    inv_multiplication(op::MultiplicationOperator, object::$plan) =
-        ctranspose_multiplication(op, object)
-  end
+    @eval begin
+        dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
+            dim, object::$plan; options...) =
+                $transform(src, dest, dim:dim; options...)
+
+        ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
+            $invtransform(dest(op), src(op))
+
+        inv_multiplication(op::MultiplicationOperator, object::$plan) =
+            ctranspose_multiplication(op, object)
+    end
 end
 
 # The four functions below are used when computing the ctranspose or inv of a

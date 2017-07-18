@@ -16,6 +16,8 @@ end
 
 const MappedSet1d{S,M,T <: Number} = MappedSet{S,M,T}
 
+const MappedSpan{A, F <: MappedSet} = Span{A,F}
+
 MappedSet(set::FunctionSet{T}, map::AbstractMap) where {T} =
     MappedSet{typeof(set),typeof(map),T}(set, map)
 

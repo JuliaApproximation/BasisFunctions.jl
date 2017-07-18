@@ -5,6 +5,8 @@ struct HermiteBasis{T} <: OPS{T}
     n           ::  Int
 end
 
+const HermiteSpan{A, F <: HermiteBasis} = Span{A,F}
+
 name(b::HermiteBasis) = "Hermite OPS"
 
 # Constructor with a default numeric type
@@ -12,7 +14,7 @@ HermiteBasis(n::Int, ::Type{T} = Float64) where {T} = HermiteBasis{T}(n)
 
 instantiate(::Type{HermiteBasis}, n, ::Type{T}) where {T} = HermiteBasis{T}(n)
 
-set_promote_domaintype(b::HermiteBasis, ::Type{S}) where {S} = HermiteBasis{promote_type(T,S)}(b.n)
+set_promote_domaintype(b::HermiteBasis, ::Type{S}) where {S} = HermiteBasis{S}(b.n)
 
 resize(b::HermiteBasis, n) = HermiteBasis(n, eltype(b))
 
@@ -37,7 +39,8 @@ rec_Bn(b::HermiteBasis, n::Int) = 0
 
 rec_Cn(b::HermiteBasis, n::Int) = 2*n
 
-function gramdiagonal!(result, ::HermiteBasis{T}; options...) where {T}
+function gramdiagonal!(result, ::HermiteSpan; options...)
+    T = eltype(result)
     for i in 1:length(result)
         result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
     end

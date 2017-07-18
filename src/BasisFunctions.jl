@@ -242,7 +242,7 @@ export CosineSeries, SineSeries
 
 
 # from bases/poly/chebyshev.jl
-export ChebyshevBasis, ChebyshevBasisSecondKind,
+export ChebyshevBasis, ChebyshevII,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 

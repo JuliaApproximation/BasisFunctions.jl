@@ -21,7 +21,7 @@ function leastsquares_operator(s::Span; samplingfactor = 2, options...)
 end
 
 leastsquares_operator(s::Span, grid::AbstractGrid; options...) =
-    leastsquares_operator(s, DiscreteGridSpace(grid, coeftype(s)); options...)
+    leastsquares_operator(s, gridspace(grid, coeftype(s)); options...)
 
 function leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
     if has_grid(s)

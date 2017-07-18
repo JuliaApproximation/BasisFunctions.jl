@@ -44,7 +44,7 @@ for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
     @eval $op(s::DerivedSet) = $op(superset(s))
 end
 # has_transform has extra arguments
-has_grid_transform(s::DerivedSet, dgs, grid) = has_grid_transform(superset(s), dgs, grid)
+has_grid_transform(s::DerivedSet, gs, grid) = has_grid_transform(superset(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false

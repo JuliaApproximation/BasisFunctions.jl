@@ -326,7 +326,7 @@ function test_generic_set_interface(basis, span)
         for dim in 1:ndims(basis)
             D = antidifferentiation_operator(span; dim=dim)
             @test basis == set(src(D))
-            antidiff_dest = dest(D)
+            antidiff_dest = set(dest(D))
 
             coef1 = random_expansion(span)
             coef2 = D*coef

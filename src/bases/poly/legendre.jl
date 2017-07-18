@@ -7,6 +7,8 @@ struct LegendreBasis{T} <: OPS{T}
     n           ::  Int
 end
 
+const LegendreSpan{A, F <: LegendreBasis} = Span{A,F}
+
 name(b::LegendreBasis) = "Legendre OPS"
 
 # Constructor with a default numeric type
@@ -33,7 +35,8 @@ jacobi_β(b::LegendreBasis{T}) where {T} = T(0)
 
 weight(b::LegendreBasis{T}, x) where {T} = T(1)
 
-function gramdiagonal!{T}(result, ::LegendreBasis{T}; options...)
+function gramdiagonal!(result, ::LegendreSpan; options...)
+    T = eltype(result)
     for i in 1:length(result)
         result[i] = T(2//(2(i-1)+1))
     end

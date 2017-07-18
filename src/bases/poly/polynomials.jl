@@ -31,20 +31,23 @@ end
 
 const OPS{T} = OrthogonalPolynomialBasis{T}
 
+const OPSpan{A,F <: OrthogonalPolynomialBasis} = Span{A,F}
 
 is_orthogonal(b::OPS) = true
 is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_space(b::OPS, order::Int; options...) = resize(b, b.n-order)
-antiderivative_space(b::OPS, order::Int; options...) = resize(b, b.n+order)
+derivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)-order)
+antiderivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)+order)
 
 length(o::OrthogonalPolynomialBasis) = o.n
 
-dot(set::OPS{T}, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) where {T} =
-		# To avoid difficult points at the ends of the domain.
-		dot(x->weight(set,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)
+    T = coeftype(s)
+	# To avoid difficult points at the ends of the domain.
+	dot(x->weight(set(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+end
 
 clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
 
@@ -111,7 +114,7 @@ end
 #
 # with the coefficients implemented by the rec_An, rec_Bn and rec_Cn functions.
 function recurrence_eval(b::OPS, idx::Int, x)
-	T = eltype(b)
+	T = rangetype(b)
     z0 = one(T)
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))
 

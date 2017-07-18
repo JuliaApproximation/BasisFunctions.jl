@@ -12,6 +12,8 @@ struct CosineSeries{T} <: FunctionSet{T}
     n           ::  Int
 end
 
+const CosineSpan{A, F <: CosineSeries} = Span{A,F}
+
 name(b::CosineSeries) = "Cosine series"
 
 
@@ -81,14 +83,16 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
     coef_dest
 end
 
-function Gram(b::CosineSeries{T}; options...) where {T}
-    diag = ones(T,length(b))/2
+function Gram(s::CosineSpan; options...)
+    T = coeftype(s)
+    diag = ones(T,length(s))/2
     diag[1] = 1
-    DiagonalOperator(b, b, diag)
+    DiagonalOperator(s, s, diag)
 end
 
-function UnNormalizedGram(b::CosineSeries{T}, oversampling) where {T}
-    d = T(length_oversampled_grid(b, oversampling))/2*ones(T,length(b))
-    d[1] = length_oversampled_grid(b, oversampling)
-    DiagonalOperator(b, b, d)
+function UnNormalizedGram(s::CosineSpan, oversampling)
+    T = coeftype(s)
+    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(s, oversampling)
+    DiagonalOperator(s, s, d)
 end
