@@ -52,7 +52,7 @@ elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
 element(span::Span, i) = Span(element(set(span, i)), coeftype(span))
 
 
-for op in (:length, :size, :ndims, :domaintype, :grid)
+for op in (:length, :size, :dimension, :domaintype, :grid)
     @eval $op(span::Span) = $op(set(span))
 end
 

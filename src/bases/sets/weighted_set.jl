@@ -36,7 +36,7 @@ eval_weight_on_grid(w, grid::AbstractGrid1d) = [w(x) for x in grid]
 function eval_weight_on_grid(w, grid::AbstractGrid)
     # Perhaps the implementation here could be simpler, but [w(x...) for x in grid]
     # does not seem to respect the size of the grid, only its length
-    a = zeros(numtype(grid), size(grid))
+    a = zeros(float_type(eltype(grid)), size(grid))
     for i in eachindex(grid)
         a[i] = w(grid[i]...)
     end

@@ -8,6 +8,8 @@ to the underlying set.
 abstract type DerivedSet{T} <: FunctionSet{T}
 end
 
+const DerivedSpan{A, F <: DerivedSet} = Span{A,F}
+
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
 # underlying set, as if the derived set does not want to change any of that
@@ -17,6 +19,9 @@ end
 
 # Assume the concrete set has a field called set -- override if it doesn't
 superset(s::DerivedSet) = s.superset
+
+"Return the span of the superset of the given derived set."
+superspan(s::DerivedSpan) = Span(superset(s), coeftype(s))
 
 # The concrete subset should implement similar_set, as follows:
 #
@@ -55,7 +60,7 @@ has_grid_transform(s::DerivedSet, gs, grid) = has_grid_transform(superset(s), gs
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
-zeros(ELT::Type, s::DerivedSet) = zeros(ELT, superset(s))
+zeros(::Type{T}, s::DerivedSet) where {T} = zeros(T, superset(s))
 
 
 # Delegation of methods

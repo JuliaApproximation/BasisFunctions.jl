@@ -25,7 +25,7 @@ end
 
 
 # Is this constructor type-stable? Probably not, even if T is given, because
-# of the use of ndims below.
+# of the use of dimension below.
 function MultiSet(sets, T)
     for set in sets
         # Is this the right check here?
@@ -57,7 +57,7 @@ function multiset(sets::AbstractArray)
     if length(sets) == 1
         multiset(sets[1])
     else
-        MultiSet(flatten(MultiSet, sets, FunctionSet{ndims(sets[1]),eltype(sets[1])}))
+        MultiSet(flatten(MultiSet, sets, FunctionSet{eltype(sets[1])}))
     end
 end
 

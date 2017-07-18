@@ -48,11 +48,11 @@ function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, grid::Abstrac
         if has_transform(s, dgs)
             full_transform_operator(s, dgs; options...)
         elseif length(s) < length(dgs)
-            if ndims(s) == 1
+            if dimension(s) == 1
                 slarge = resize(s, length(dgs))
                 (has_transform(slarge, dgs) && has_extension(s)) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...))
             # The basis should at least be resizeable to the dimensions of the grid
-            elseif ndims(s) == length(size(dgs))
+            elseif dimension(s) == length(size(dgs))
                 slarge = resize(s, size(dgs))
                 has_transform(slarge, dgs) && return (full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...))
             end

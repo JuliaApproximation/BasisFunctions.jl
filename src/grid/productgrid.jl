@@ -34,7 +34,7 @@ end
 size(g::ProductGrid) = map(length, g.grids)
 size(g::ProductGrid, j::Int) = length(g.grids[j])
 
-ndims(g::ProductGrid, j::Int) = ndims(element(g,j))
+dimension(g::ProductGrid, j::Int) = dimension(element(g,j))
 
 length(g::ProductGrid) = prod(size(g))
 

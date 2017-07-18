@@ -61,10 +61,10 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
     # _post routines.
     # Note that we choose to use bfft, an unscaled inverse fft.
     @eval function $FFTWTransform(src::Span, dest::Span,
-        dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+        dims = 1:dimension(src); fftwflags = FFTW.MEASURE, options...)
 
         t_op = $op(src, dest, dims, fftwflags)
-        # TODO: this scaling can't be correct if dims is not equal to 1:ndims(dest)
+        # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
         s_op = fftw_scaling_operator(dest)
         s_op * t_op
     end
@@ -90,10 +90,10 @@ dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOpera
 
 
 ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    ifftw_operator(dest(op), src(op), 1:ndims(dest(op)), object.flags)
+    ifftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
 
 ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    fftw_operator(dest(op), src(op), 1:ndims(dest(op)), object.flags)
+    fftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
     ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
@@ -134,14 +134,14 @@ for (transform, plan) in
     ((:FastChebyshevTransformFFTW, :plan_dct!),
     (:InverseFastChebyshevTransformFFTW, :plan_idct!))
     @eval begin
-        function $transform(src, dest, dims = 1:ndims(dest); fftwflags = FFTW.MEASURE, options...)
+        function $transform(src, dest, dims = 1:dimension(dest); fftwflags = FFTW.MEASURE, options...)
             plan = FFTW.$plan(zeros(dest), dims; flags = fftwflags)
             MultiplicationOperator(src, dest, plan; inplace=true)
         end
     end
 end
 
-function FastChebyshevITransformFFTW(src, dest, dims = 1:ndims(src); fftwflags = FFTW.MEASURE, options...)
+function FastChebyshevITransformFFTW(src, dest, dims = 1:dimension(src); fftwflags = FFTW.MEASURE, options...)
     plan = FFTW.plan_r2r!(zeros(src), FFTW.REDFT00, dims; flags = fftwflags)
     MultiplicationOperator(src, dest, plan; inplace=true)
 end

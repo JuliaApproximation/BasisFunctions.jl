@@ -67,9 +67,10 @@ function eltype(set1::FunctionSet, set2::FunctionSet)
     promote_type(eltype(set1), eltype(set2))
 end
 
-# One can talk about dimensions for a set in Euclidean space
-ndims(::FunctionSet1d) = 1
-ndims(set::FunctionSet{SVector{N,T}}) where {N,T} = N
+# The dimension of a function set is the dimension of its domain type
+dimension(set::FunctionSet) = dimension(domaintype(set))
+
+dimension(set::FunctionSet, i) = dimension(element(set, i))
 
 "Property to indicate whether the functions in the set are real-valued (for real arguments)."
 isreal(s::FunctionSet) = isreal(rangetype(s))
@@ -284,8 +285,8 @@ antiderivative_space(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_space
 dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
 
 # Convenience function to differentiate in a given dimension
-derivative_space(s::FunctionSet; dim=1) = derivative_space(s, dimension_tuple(ndims(s), dim))
-antiderivative_space(s::FunctionSet; dim=1) = antiderivative_space(s, dimension_tuple(ndims(s), dim))
+derivative_space(s::FunctionSet; dim=1) = derivative_space(s, dimension_tuple(dimension(s), dim))
+antiderivative_space(s::FunctionSet; dim=1) = antiderivative_space(s, dimension_tuple(dimension(s), dim))
 
 # A concrete FunctionSet may also override extension_set and restriction_set
 # The default is simply to resize.
@@ -390,7 +391,7 @@ function eval_expansion(set::FunctionSet, coefficients, x)
 end
 
 function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
-    @assert ndims(set) == ndims(grid)
+    @assert dimension(set) == dimension(grid)
     @assert size(coefficients) == size(set)
     @assert eltype(grid) == domaintype(set)
 

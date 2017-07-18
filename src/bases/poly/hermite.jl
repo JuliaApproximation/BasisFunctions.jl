@@ -16,7 +16,7 @@ instantiate(::Type{HermiteBasis}, n, ::Type{T}) where {T} = HermiteBasis{T}(n)
 
 set_promote_domaintype(b::HermiteBasis, ::Type{S}) where {S} = HermiteBasis{S}(b.n)
 
-resize(b::HermiteBasis, n) = HermiteBasis(n, eltype(b))
+resize(b::HermiteBasis{T}, n) where {T} = HermiteBasis{T}(n)
 
 
 left(b::HermiteBasis{T}) where {T} = -convert(T, Inf)

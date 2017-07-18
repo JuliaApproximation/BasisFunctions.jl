@@ -30,7 +30,7 @@ name(b::FourierBasis) = "Fourier series"
 # The Element Type of a Fourier Basis is complex by definition. Real types are complexified.
 FourierBasis(n, ::Type{T} = Float64) where {T} = FourierBasis{iseven(n),T}(n)
 
-FourierBasis(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale(FourierBasis(n, T), a, b)
+FourierBasis(n, a, b, ::Type{T} = float(promote_type(typeof(a),typeof(b)))) where {T} = rescale(FourierBasis(n, T), a, b)
 
 # Typesafe methods for constructing a Fourier series with even length
 fourier_basis_even(n, ::Type{T}) where {T} = FourierBasis{true,T}(n)
@@ -113,19 +113,20 @@ linear_index(b::FourierBasis, idxn::NativeIndex) = frequency2idx(b, index(idxn))
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversions to T in the lines below.
-eval_element{T, S <: Number}(b::FourierBasisOdd{T}, idx::Int, x::S) = exp(x * 2 * T(pi) * 1im  * idx2frequency(b, idx))
+eval_element(b::FourierBasisOdd{T}, idx::Int, x::S) where {T, S <: Number} =
+	exp(x * 2 * T(pi) * 1im  * idx2frequency(b, idx))
 
 # Note that the function below is typesafe because T(pi) converts pi to a complex number, hence the cosine returns a complex number
-eval_element{T, S <: Number}(b::FourierBasisEven{T}, idx::Int, x::S) =
+eval_element(b::FourierBasisEven{T}, idx::Int, x::S) where {T, S <: Number} =
 	(idx == nhalf(b)+1	?  cos(x * 2 * T(pi) * idx2frequency(b,idx))
 						: exp(x * 2 * T(pi) * 1im * idx2frequency(b,idx)))
 
-function eval_element_derivative{T}(b::FourierBasisOdd{T}, idx::Int, x)
+function eval_element_derivative(b::FourierBasisOdd{T}, idx::Int, x) where {T}
 	arg = 2*T(pi)*1im*idx2frequency(b, idx)
 	arg * exp(arg * x)
 end
 
-function eval_element_derivative{T}(b::FourierBasisEven{T}, idx::Int, x)
+function eval_element_derivative(b::FourierBasisEven{T}, idx::Int, x) where {T}
 	if idx == nhalf(b)+1
 		arg = 2*T(pi)*idx2frequency(b, idx)
 		-arg * sin(arg*x)

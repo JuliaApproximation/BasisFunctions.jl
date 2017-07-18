@@ -10,3 +10,11 @@ float_type(::Type{NTuple{N,T}}) where {N,T} = T
 
 # Fallback: we return T itself
 float_type(::Type{T}) where {T} = Float64
+
+dimension(::Type{T}) where {T <: Number} = 1
+dimension(::Type{SVector{N,T}}) where {N,T <: Number} = N
+dimension(::Type{NTuple{N,T}}) where {N,T <: Number} = N
+dimension(::Type{Tuple{A}}) where {A} = 1
+dimension(::Type{Tuple{A,B}}) where {A,B} = 2
+dimension(::Type{Tuple{A,B,C}}) where {A,B,C} = 3
+dimension(::Type{Tuple{A,B,C,D}}) where {A,B,C,D} = 4

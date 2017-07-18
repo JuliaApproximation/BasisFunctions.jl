@@ -17,6 +17,7 @@ end
 const MappedSet1d{S,M,T <: Number} = MappedSet{S,M,T}
 
 const MappedSpan{A, F <: MappedSet} = Span{A,F}
+const MappedSpan1d{A, F <: MappedSet1d} = Span{A,F}
 
 MappedSet(set::FunctionSet{T}, map::AbstractMap) where {T} =
     MappedSet{typeof(set),typeof(map),T}(set, map)
@@ -27,6 +28,8 @@ mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
 apply_map(set::FunctionSet, map) = mapped_set(set, map)
 
 apply_map(set::MappedSet, map) = apply_map(superset(set), map*mapping(set))
+
+apply_map(span::Span, map) = Span(apply_map(set(span), map), coeftype(span))
 
 mapping(set::MappedSet) = set.map
 
@@ -70,20 +73,20 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_space(s::MappedSet; options...) = apply_map(transform_space(superset(s); options...), mapping(s))
+transform_space(s::MappedSpan; options...) = apply_map(transform_space(superspan(s); options...), mapping(s))
 
-has_grid_transform(s::MappedSet, dgs, g::MappedGrid) =
-    is_compatible(mapping(s), mapping(g)) && has_transform(superset(s), DiscreteGridSpace(grid(g), eltype(dgs)))
+has_grid_transform(s::MappedSet, gs, g::MappedGrid) =
+    is_compatible(mapping(s), mapping(g)) && has_transform(superset(s), gridset(supergrid(g)))
 
-function has_grid_transform(s::MappedSet, dgs, g::AbstractGrid)
+function has_grid_transform(s::MappedSet, gs, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superset(s), DiscreteGridSpace(g2, eltype(dgs)), g2)
+    has_grid_transform(superset(s), gridset(g2), g2)
 end
 
 
 function simplify_transform_pair(s::MappedSet, g::MappedGrid)
     if is_compatible(mapping(s), mapping(g))
-        superset(s), grid(g)
+        superset(s), supergrid(g)
     else
         s, g
     end
@@ -99,11 +102,13 @@ end
 # Evaluation
 ###################
 
+mapping(s::MappedSpan) = mapping(set(s))
+
 # If the set is mapped and the grid is mapped, and if the maps are identical,
 # we can use the evaluation operator of the underlying set and grid
-function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::MappedGrid; options...)
+function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::MappedGrid; options...)
     if is_compatible(mapping(s), mapping(g))
-        E = evaluation_operator(superset(s), grid(g); options...)
+        E = evaluation_operator(superspan(s), supergrid(g); options...)
         wrap_operator(s, dgs, E)
     else
         default_evaluation_operator(s, dgs; options...)
@@ -112,9 +117,9 @@ end
 
 # If the grid is not mapped, we proceed by performing the inverse map on the grid,
 # like we do for transforms above
-function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractGrid; options...)
+function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::AbstractGrid; options...)
     g2 = apply_map(g, inv(mapping(s)))
-    E = evaluation_operator(superset(s), gridspace(superset(s), g2); options...)
+    E = evaluation_operator(superspan(s), gridspace(superspan(s), g2); options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -122,11 +127,11 @@ end
 # for subgrids and abstract FunctionSet's in generic/evaluation that causes an
 # ambiguity. We proceed here by applying the inverse map to the underlying grid
 # of the subgrid.
-function grid_evaluation_operator(s::MappedSet, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
+function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
     mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
     g2 = similar_subgrid(g, mapped_supergrid)
-    g2_dgs = gridspace(superset(s), g2)
-    E = evaluation_operator(superset(s), g2_dgs; options...)
+    g2_dgs = gridspace(superspan(s), g2)
+    E = evaluation_operator(superspan(s), g2_dgs; options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -135,22 +140,22 @@ end
 ###################
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::MappedSet1d, order::Int; options...) =
-        (@assert islinear(mapping(s)); apply_map( $op(superset(s), order; options...), mapping(s) ))
+    @eval $op(s::MappedSpan1d, order::Int; options...) =
+        (@assert islinear(mapping(s)); apply_map( $op(superspan(s), order; options...), mapping(s) ))
 end
 
-function differentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
+function differentiation_operator(s1::MappedSpan1d, s2::MappedSpan1d, order::Int; options...)
     @assert islinear(mapping(s1))
-    D = differentiation_operator(superset(s1), superset(s2), order; options...)
+    D = differentiation_operator(superspan(s1), superspan(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order))
-    wrap_operator( s1, s2, S*D )
+    wrap_operator(s1, s2, S*D)
 end
 
-function antidifferentiation_operator(s1::MappedSet1d, s2::MappedSet1d, order::Int; options...)
+function antidifferentiation_operator(s1::MappedSpan1d, s2::MappedSpan1d, order::Int; options...)
     @assert islinear(mapping(s1))
-    D = antidifferentiation_operator(superset(s1), superset(s2), order; options...)
+    D = antidifferentiation_operator(superspan(s1), superspan(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order))
-    wrap_operator( s1, s2, S*D )
+    wrap_operator(s1, s2, S*D)
 end
 
 
@@ -165,7 +170,7 @@ mapped_set(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_gr
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::FunctionSet1d, a, b)
-    T = numtype(s)
+    T = domaintype(s)
     if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
         s
     else
@@ -191,15 +196,15 @@ function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
     (MappedSet(mset, mapping(s1)), mcoef)
 end
 
-Gram(s::MappedSet; options...) = wrap_operator(s, s, Gram(superset(s), mapping(s); options...))
+Gram(s::MappedSpan; options...) = wrap_operator(s, s, _gram(superspan(s), mapping(s); options...))
 
-Gram(s::FunctionSet, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
+_gram(s::Span, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
 
-dot(s::MappedSet, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...) =
-    dot(superset(s), mapping(s), f1, f2, nodes; options...)
+dot(s::MappedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...) =
+    _dot(superspan(s), mapping(s), f1, f2, nodes; options...)
 
-dot(s::FunctionSet1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
+_dot(s::Span1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
     jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_inverse(map,nodes); options...)
 
-native_nodes(s::MappedSet) = native_nodes(superset(s), mapping(s))
-native_nodes(s::FunctionSet, map::AffineMap) = applymap(map, native_nodes(s))
+native_nodes(s::MappedSet) = _native_nodes(superset(s), mapping(s))
+_native_nodes(s::FunctionSet, map::AffineMap) = applymap(map, native_nodes(s))

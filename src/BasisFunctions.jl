@@ -29,7 +29,7 @@ import Base: getindex, setindex!, unsafe_getindex, eltype
 
 import Base: isreal, iseven, isodd, real, complex
 
-import Base: ctranspose, transpose, inv, hcat, vcat, ndims
+import Base: ctranspose, transpose, inv, hcat, vcat
 
 import Base: show, showcompact, convert, similar
 
@@ -246,13 +246,14 @@ export ChebyshevBasis, ChebyshevII,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
-# from util/plots.jl
-# export plot, plot_expansion, plot_samples, plot_error
 # from util/recipes.jl
 export plotgrid, postprocess
 
-#from util/MultiArray.jl
+# from util/MultiArray.jl
 export MultiArray
+
+# from util/domain_extensions.jl
+export float_type, dimension
 
 # from bases/poly/polynomials.jl and friends
 export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis, RationalBasis

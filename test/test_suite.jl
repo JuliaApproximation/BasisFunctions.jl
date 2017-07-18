@@ -44,10 +44,12 @@ d5 = plan_dct!(zeros(10), 1:1)
 d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
+# SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
+#         LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+#         BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
+#         DiscreteOrthonormalSplineBasis]
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
-        LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
-        DiscreteOrthonormalSplineBasis]
+        LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
 
 for T in [Float64,BigFloat]
     println()
@@ -88,6 +90,8 @@ for T in [Float64,BigFloat]
             test_generic_set_interface(basis, span(basis))
     end
 
+    delimit("Tensor product set interfaces")
+
     # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in (FourierBasis(10) ⊗ ChebyshevBasis(12),
                   FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
@@ -95,7 +99,7 @@ for T in [Float64,BigFloat]
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20),
                   FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5))
-        test_generic_set_interface(basis, typeof(basis))
+        test_generic_set_interface(basis, span(basis))
     end
 
     delimit("Derived sets")

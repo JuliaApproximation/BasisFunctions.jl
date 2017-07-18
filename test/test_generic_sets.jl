@@ -56,11 +56,11 @@ suitable_interpolation_grid(basis::OperatedSet) = suitable_interpolation_grid(sr
 
 # Make a tensor product of suitable functions
 function suitable_function(s::TensorProductSet)
-    if ndims(s) == 2
+    if dimension(s) == 2
         f1 = suitable_function(element(s,1))
         f2 = suitable_function(element(s,2))
         (x,y) -> f1(x)*f2(y)
-    elseif ndims(s) == 3
+    elseif dimension(s) == 3
         f1 = suitable_function(element(s,1))
         f2 = suitable_function(element(s,2))
         f3 = suitable_function(element(s,3))
@@ -89,6 +89,11 @@ function suitable_function(s::WeightedSet2d)
 end
 
 
+widen_type(::Type{T}) where {T <: Number} = widen(T)
+widen_type(::Type{Tuple{A,B}}) where {A,B} = Tuple{widen(A),widen(B)}
+widen_type(::Type{Tuple{A,B,C}}) where {A,B,C} = Tuple{widen(A),widen(B),widen(C)}
+
+
 function test_generic_set_interface(basis, span)
     ELT = coefficient_type(span)
     T = domaintype(basis)
@@ -111,9 +116,10 @@ function test_generic_set_interface(basis, span)
     end
 
     # Test type promotion
-    ELT2 = widen(ELT)
-    basis2 = promote_domaintype(basis, ELT2)
-    @test domaintype(basis2) == ELT2
+    @test domaintype(promote_domaintype(basis, T)) == T
+    T2 = widen_type(T)
+    basis2 = promote_domaintype(basis, T2)
+    @test domaintype(basis2) == T2
 
 
     ## Test dimensions
@@ -125,7 +131,7 @@ function test_generic_set_interface(basis, span)
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (ndims(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicSetOfTranslates)
+    if (dimension(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicSetOfTranslates)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
             @test in_support(basis, 1, left(basis, 1)-1/10*sqrt(eps(T)))
@@ -238,7 +244,7 @@ function test_generic_set_interface(basis, span)
     end
     @test types_correct
 
-    if ndims(basis) == 1
+    if dimension(basis) == 1
 
         # Test evaluation on a different grid on the support of the basis
         a = left(basis)
@@ -297,7 +303,7 @@ function test_generic_set_interface(basis, span)
 
     ## Test derivatives
     if BF.has_derivative(basis)
-        for dim in 1:ndims(basis)
+        for dim in 1:dimension(basis)
             D = differentiation_operator(span; dim=dim)
             @test basis == set(src(D))
             diff_dest = set(dest(D))
@@ -309,9 +315,9 @@ function test_generic_set_interface(basis, span)
 
             x = fixed_point_in_domain(basis)
             delta = sqrt(eps(T))/10
-            N = ndims(basis)
+            N = dimension(basis)
             if N > 1
-                unit_vector = zeros(T, ndims(basis))
+                unit_vector = zeros(T, dimension(basis))
                 unit_vector[dim] = 1
                 x2 = x + SVector{N}(delta*unit_vector)
             else
@@ -323,7 +329,7 @@ function test_generic_set_interface(basis, span)
 
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
-        for dim in 1:ndims(basis)
+        for dim in 1:dimension(basis)
             D = antidifferentiation_operator(span; dim=dim)
             @test basis == set(src(D))
             antidiff_dest = set(dest(D))
@@ -335,9 +341,9 @@ function test_generic_set_interface(basis, span)
 
             x = fixed_point_in_domain(basis)
             delta = sqrt(eps(T))/10
-            N = ndims(basis)
+            N = dimension(basis)
             if N > 1
-                unit_vector = zeros(T, ndims(basis))
+                unit_vector = zeros(T, dimension(basis))
                 unit_vector[dim] = 1
                 x2 = x + SVector{N}(delta*unit_vector)
             else
@@ -427,8 +433,8 @@ function test_generic_set_interface(basis, span)
 
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.
-        # if ndims(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
-        if TEST_CONTINUOUS && ndims(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
+        # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
+        if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
             e = approximate(span, f; discrete=false, reltol=1e-6, abstol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end

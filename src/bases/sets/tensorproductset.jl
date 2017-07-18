@@ -9,9 +9,10 @@ struct TensorProductSet{TS,T} <: FunctionSet{T}
 
 Parameters:
 - TS is a tuple of types, representing the (possibly different) types of the sets.
+- S is the range type
 - T is the domain type.
 """
-struct TensorProductSet{TS,T} <: FunctionSet{T}
+struct TensorProductSet{TS,S,T} <: FunctionSet{T}
     sets   ::  TS
 end
 
@@ -32,8 +33,29 @@ end
 # TODO: what should be the domaintype of the tensor product set?
 function TensorProductSet(sets::FunctionSet...)
     T = product_domaintype(sets...)
-    TensorProductSet{typeof(sets),T}(sets)
+    S = promote_type(map(rangetype, sets)...)
+    TensorProductSet{typeof(sets),S,T}(sets)
 end
+
+# We almost have to make rangetype a parameter, since it may differ from the rangetypes
+# of the individual elements: it is a promoted type
+rangetype(::Type{TensorProductSet{TS,S,T}}) where {TS,S,T} = S
+
+# We need a more generic definition, but one can't iterate over a tuple type nor index it
+set_promote_domaintype(s::TensorProductSet, ::Type{Tuple{A,B}}) where {A,B} =
+    TensorProductSet(promote_domaintype(element(s, 1), A), promote_domaintype(element(s, 2), B))
+
+set_promote_domaintype(s::TensorProductSet, ::Type{Tuple{A,B,C}}) where {A,B,C} =
+    TensorProductSet(promote_domaintype(element(s, 1), A),
+                        promote_domaintype(element(s, 2), B),
+                        promote_domaintype(element(s, 3), C))
+
+set_promote_domaintype(s::TensorProductSet, ::Type{Tuple{A,B,C,D}}) where {A,B,C,D} =
+    TensorProductSet(promote_domaintype(element(s, 1), A),
+                        promote_domaintype(element(s, 2), B),
+                        promote_domaintype(element(s, 3), C),
+                        promote_domaintype(element(s, 4), D))
+
 
 ^(s::FunctionSet, n::Int) = tensorproduct(s, n)
 
@@ -105,12 +127,9 @@ has_grid_transform(s::TensorProductSet, dgs, grid::ProductGrid) =
 has_grid_transform(s::TensorProductSet, dgs, grid::AbstractGrid) = false
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op{TS,N}(s::TensorProductSet{TS,N}, order::NTuple{N}; options...) =
-        TensorProductSet( map( i -> $op(element(s,i), order[i]; options...), 1:N)... )
+    @eval $op(s::TensorProductSpan, order; options...) =
+        tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end
-
-set_promote_domaintype(s::TensorProductSet, ::Type{S}) where {S} =
-    TensorProductSet([promote_domaintype(element(s, i), S[i]) for i in 1:nb_elements(s)] )
 
 resize(s::TensorProductSet, n) = TensorProductSet(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
 resize(s::TensorProductSet, n::Int) = resize(s, approx_length(s, n))
@@ -148,11 +167,12 @@ _in_support(::TensorProductSet, sets, idx::NTuple{3,Int}, x) =
 _in_support(::TensorProductSet, sets, idx::NTuple{4,Int}, x) =
     in_support(sets[1], idx[1], x[1]) && in_support(sets[2], idx[2], x[2]) && in_support(sets[3], idx[3], x[3]) && in_support(sets[4], idx[4], x[4])
 
+
 function approx_length(s::TensorProductSet, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
-    N = ndims(s)
+    N = dimension(s)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(element(s, j), m^ndims(s, j)) for j in 1:nb_elements(s)]...)
+    tuple([approx_length(element(s, j), m^dimension(s, j)) for j in 1:nb_elements(s)]...)
 end
 
 extension_size(s::TensorProductSet) = map(extension_size, elements(s))

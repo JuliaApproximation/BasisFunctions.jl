@@ -48,7 +48,7 @@ for op in (:length, :size, :left, :right, :grid)
 end
 
 # Delegation of property methods
-for op in (:numtype, :ndims, :nb_elements)
+for op in (:numtype, :dimension, :nb_elements)
     @eval $op(s::SetExpansion) = $op(set(s))
 end
 
@@ -97,8 +97,8 @@ Base.broadcast{T}(e::SetExpansion, x::LinSpace{T}) = broadcast(e, EquispacedGrid
 # little helper function
 ei(dim,i, coefficients) = tuple((coefficients*eye(Int,dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
-differentiate(f::SetExpansion, var, order) = differentiate(f, ei(ndims(f), var, order))
-antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(ndims(f), var, order))
+differentiate(f::SetExpansion, var, order) = differentiate(f, ei(dimension(f), var, order))
+antidifferentiate(f::SetExpansion, var, order) = antidifferentiate(f, ei(dimension(f), var, order))
 
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::SetExpansion)
@@ -125,7 +125,7 @@ differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operat
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
 
 function show_setexpansion(io::IO, fun::SetExpansion, fs::FunctionSet)
-    println(io, "A ", ndims(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
+    println(io, "A ", dimension(fun), "-dimensional SetExpansion with ", length(coefficients(fun)), " degrees of freedom.")
     println(io, "Basis: ", name(fs))
 end
 

@@ -18,7 +18,7 @@ instantiate(::Type{LegendreBasis}, n, ::Type{T}) where {T} = LegendreBasis{T}(n)
 
 set_promote_domaintype(b::LegendreBasis, ::Type{S}) where {S} = LegendreBasis{S}(b.n)
 
-resize(b::LegendreBasis, n) = LegendreBasis(n, domaintype(b))
+resize(b::LegendreBasis{T}, n) where {T} = LegendreBasis{T}(n)
 
 
 left(b::LegendreBasis{T}) where {T} = -T(1)

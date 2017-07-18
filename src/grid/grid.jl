@@ -14,17 +14,13 @@ Point{N,T} = SVector{N,T}
 eltype(::Type{AbstractGrid{T}}) where {T} = T
 eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 
-ndims(::AbstractGrid{T}) where {T <: Number} = 1
-ndims(::AbstractGrid{SVector{N,T}}) where {N,T} = N
+# The dimension of a grid is the dimension of its elements
+dimension(grid::AbstractGrid) = dimension(eltype(grid))
 
 # TODO: remove the numtype or disambiguate its meaning
-function numtype(::AbstractGrid{T}) where {T <: Number}
+function numtype(::AbstractGrid{T}) where {T}
 	warning("Calling numtype on a grid is deprecated.")
-	T
-end
-function numtype(::AbstractGrid{SVector{N,T}}) where {N,T}
-	warning("Calling numtype on a grid is deprecated.")
-	T
+	float_type(T)
 end
 
 
@@ -86,7 +82,7 @@ end
 done(g::AbstractGrid, state) = done(state[1], state[2])
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f, ELT = numtype(g)) = sample!(zeros(ELT, size(g)), g, f)
+sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
 
 # We don't want to assume that f can be called with a vector argument.
 # In order to avoid the overhead of splatting, we capture a number of special cases
