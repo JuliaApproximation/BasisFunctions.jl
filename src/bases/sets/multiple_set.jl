@@ -63,7 +63,7 @@ function multiset(sets::AbstractArray)
     end
 end
 
-multispan(spans::Span) = Span(multiset(map(set, spans)...), reduce(promote_type, map(coeftype, spans)))
+multispan(spans::Span...) = Span(multiset(map(set, spans)...), reduce(promote_type, map(coeftype, spans)))
 
 # Perhaps we don't want this behaviour, that [b;b] creates a MultiSet, rather
 # than an array of FunctionSet's

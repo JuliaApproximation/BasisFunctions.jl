@@ -40,13 +40,13 @@ function test_derived_sets(T)
         test_generic_set_interface(multiset(s,Log()*s)) end
 
     @testset "$(rpad("A complicated subset",80))" begin
-    s = rescale(b1, 1/2, 1)
-    test_generic_set_interface(s[1:5]) end
+        s = rescale(b1, 1/2, 1)
+        test_generic_set_interface(s[1:5]) end
 
     @testset "$(rpad("Piecewise sets",80))" begin
-    part = PiecewiseInterval(T(0), T(10), 10)
-    pw = PiecewiseSet(b2, part)
-    test_generic_set_interface(pw) end
+        part = PiecewiseInterval(T(0), T(10), 10)
+        pw = PiecewiseSet(b2, part)
+        test_generic_set_interface(pw) end
 
     # @testset "$(rpad("A tensor product of MultiSet's",80))" begin
     # b = multiset(b1,b2)

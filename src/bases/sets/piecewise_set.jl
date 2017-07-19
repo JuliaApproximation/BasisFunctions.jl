@@ -25,12 +25,14 @@ function PiecewiseSet(set::FunctionSet1d, partition::Partition, n = ones(length(
 end
 
 # Make a PiecewiseSet from a list of sets and a given partition
-function PiecewiseSet(sets, partition::Partition, T = domaintype(sets[1]))
+function PiecewiseSet(sets, partition::Partition)
+    T = reduce(promote_type, map(domaintype, sets))
+    S = reduce(promote_type, map(rangetype, sets))
     # Make sure that the sets are an indexable list of FunctionSet's
     @assert indexable_set(sets, FunctionSet)
     # TODO: We should check that the supports of the sets match the partition pieces
 
-    PiecewiseSet{typeof(partition),typeof(sets),T}(sets, partition)
+    PiecewiseSet{typeof(partition),typeof(sets),S,T}(sets, partition)
 end
 
 # Construct a piecewise set from a list of sets in 1d
@@ -93,16 +95,16 @@ function eval_expansion(set::PiecewiseSet, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-evaluation_operator(set::PiecewiseSet, dgs::DiscreteGridSpace; options...) =
-    MultiplicationOperator(set, dgs, evaluation_matrix(set, grid(dgs))) *
-    LinearizationOperator(set)
+evaluation_operator(s::PiecewiseSetSpan, dgs::DiscreteGridSpace; options...) =
+    MultiplicationOperator(s, dgs, evaluation_matrix(set(s), grid(dgs))) *
+        LinearizationOperator(s)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::PiecewiseSet, s2::PiecewiseSet, order; options...)
+    @eval function $op(s1::PiecewiseSetSpan, s2::PiecewiseSetSpan, order; options...)
         @assert nb_elements(s1) == nb_elements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(AbstractOperator{eltype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
     end
 end
 
@@ -187,13 +189,14 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
     PiecewiseSet(sets), MultiArray(coefs)
 end
 
-function dot(set::PiecewiseSet, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set); options...)
-    idxn = native_index(set, f1)
-    b = set.sets[idxn[1]]
+function dot(s::PiecewiseSetSpan, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...)
+    idxn = native_index(s, f1)
+    # set.sets[idxn[1]]
+    b = element(s, idxn[1])
 
     dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
 end
 
-function Gram(set::PiecewiseSet; options...)
-    BlockDiagonalOperator(AbstractOperator{eltype(set)}[Gram(element(set,i); options...) for i in 1:nb_elements(set)], set, set)
+function Gram(s::PiecewiseSetSpan; options...)
+    BlockDiagonalOperator(AbstractOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:nb_elements(s)], s, s)
 end
