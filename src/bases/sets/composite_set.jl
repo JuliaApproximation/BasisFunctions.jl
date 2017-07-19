@@ -31,7 +31,7 @@ is_composite(set::CompositeSet) = true
 elements(set::CompositeSet) = set.sets
 element(set::CompositeSet, j::Int) = set.sets[j]
 
-similar_span(s::CompositeSetSpan, spans::Span...) =
+similar_compositespan(s::CompositeSetSpan, spans) =
     Span(similar_set(set(s), map(set, spans)), coeftype(s))
 
 # TODO: think about these and verify correctness. Maybe the types depend on the
@@ -151,7 +151,7 @@ end
 ## Differentiation
 
 derivative_space(s::CompositeSetSpan, order; options...) =
-    similar_span(s, map(u->derivative_space(u, order; options...), elements(s)))
+    similar_compositespan(s, map(u->derivative_space(u, order; options...), elements(s)))
 
 antiderivative_space(s::CompositeSetSpan, order; options...) =
-    similar_span(s, map(u-> antiderivative_space(u, order; options...), elements(s)))
+    similar_compositespan(s, map(u-> antiderivative_space(u, order; options...), elements(s)))

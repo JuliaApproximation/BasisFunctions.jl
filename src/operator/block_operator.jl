@@ -29,8 +29,8 @@ struct BlockOperator{T} <: AbstractOperator{T}
 end
 
 function BlockOperator(operators::Array{OP,2},
-    op_src = multiset(map(src, operators[1,:])),
-    op_dest = multiset(map(dest, operators[:,1]))) where {OP <: AbstractOperator}
+    op_src = multispan(map(src, operators[1,:])),
+    op_dest = multispan(map(dest, operators[:,1]))) where {OP <: AbstractOperator}
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
 
@@ -47,7 +47,7 @@ function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::
     BlockOperator(operators, sets...)
 end
 
-function block_row_operator(ops::Array{OP, 1}, sets::FunctionSet...) where {OP <: AbstractOperator}
+function block_row_operator(ops::Array{OP, 1}, sets::Span...) where {OP <: AbstractOperator}
     T = promote_type(map(eltype, ops)...)
     operators = Array{AbstractOperator{T}}(1, length(ops))
     operators[:] = ops
@@ -186,19 +186,19 @@ ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
 A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
-struct BlockDiagonalOperator{ELT} <: AbstractOperator{ELT}
-    operators   ::  Array{AbstractOperator{ELT}, 1}
-    src         ::  FunctionSet
-    dest        ::  FunctionSet
+struct BlockDiagonalOperator{T} <: AbstractOperator{T}
+    operators   ::  Array{AbstractOperator{T}, 1}
+    src         ::  Span
+    dest        ::  Span
 end
 
 function BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}, src, dest)
-  ELT = promote_type(map(eltype, operators)...)
-  BlockDiagonalOperator{ELT}(operators, src, dest)
+  T = promote_type(map(eltype, operators)...)
+  BlockDiagonalOperator{T}(operators, src, dest)
 end
 
 BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
-    BlockDiagonalOperator(operators, MultiSet(map(src, operators)), MultiSet(map(dest, operators)))
+    BlockDiagonalOperator(operators, multispan(map(src, operators)), multispan(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
 
@@ -235,7 +235,7 @@ function block_diagonal_operator(op1::AbstractOperator, op2::BlockOperator)
     BlockOperator(ops)
 end
 
-function block_diagonal_operator{ELT}(ops::AbstractArray{AbstractOperator{ELT}})
+function block_diagonal_operator(ops::AbstractArray{AbstractOperator{T}}) where {T}
     @assert length(ops) > 1
     if length(ops) > 2
         block_diagonal_operator(ops[1], ops[2], ops[2:end])
@@ -246,15 +246,16 @@ end
 
 ⊕(op1::AbstractOperator, op2::AbstractOperator) = block_diagonal_operator(op1, op2)
 
-function element{ELT}(op::BlockDiagonalOperator{ELT}, i::Int, j::Int)
+function element(op::BlockDiagonalOperator{T}, i::Int, j::Int) where {T}
     if i == j
         op.operators[i]
     else
-        ZeroOperator{ELT}(element(op.src, j), element(op.dest, i))
+        ZeroOperator{T}(element(op.src, j), element(op.dest, i))
     end
 end
 
-apply!{T}(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Array{T,1}) = apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
+apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Array{T,1}) where {T} =
+    apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
 
 function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::MultiArray)
     for i in 1:nb_elements(coef_src)

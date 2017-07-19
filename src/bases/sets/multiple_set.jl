@@ -70,6 +70,7 @@ multispan(spans::Span) = Span(multiset(map(set, spans)...), reduce(promote_type,
 # vcat(s1::FunctionSet, s2::FunctionSet) = multiset(s1,s2)
 
 ⊕(s1::FunctionSet, s2::FunctionSet) = multiset(s1, s2)
+⊕(s1::Span, s2::Span) = multispan(s1, s2)
 
 name(s::MultiSet) = "A set consisting of $(nb_elements(s)) sets"
 
