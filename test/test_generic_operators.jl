@@ -215,7 +215,7 @@ function test_diagonal_operators(T)
 end
 
 function test_multidiagonal_operators(T)
-    MSet = span(FourierBasis(10, T)⊕ChebyshevBasis(11, Complex{T}))
+    MSet = span(FourierBasis(10, T)⊕ChebyshevBasis(11, T))
     operators = (CoefficientScalingOperator(MSet, 3, rand()*one(coeftype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),

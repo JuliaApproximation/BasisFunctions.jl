@@ -52,12 +52,13 @@ domaintype(::Type{S}) where {S <: FunctionSet} = domaintype(supertype(S))
 domaintype(set::FunctionSet) = domaintype(typeof(set))
 
 "The type of the elements of the codomain of the set."
-rangetype(::Type{S}) where {S <: FunctionSet} = domaintype(S)
+rangetype(F::Type{FunctionSet{T}}) where {T} = T
+rangetype(::Type{S}) where {S <: FunctionSet} = rangetype(supertype(S))
 rangetype(set::FunctionSet) = rangetype(typeof(set))
 
 "The default type of the expansion coefficients in a function set."
-coefficient_type(::Type{S}) where {S <: FunctionSet} = rangetype(S)
-coefficient_type(set::FunctionSet) = coefficient_type(typeof(set))
+# By default we set it equal to the rangetype
+coefficient_type(set::FunctionSet) = rangetype(set)
 
 function eltype(set::FunctionSet)
     error("Error: calling eltype on a function set is deprecated. Use a span instead.")

@@ -12,11 +12,11 @@ is the native representation of the corresponding element of the multiset.
 Evaluation of an expansion at a point is defined by summing the evaluation of all
 functions in the set at that point.
 """
-struct MultiSet{SETS,T} <: CompositeSet{T}
+struct MultiSet{SETS,S,T} <: CompositeSet{S,T}
     sets    ::  SETS
     offsets ::  Array{Int,1}
 
-    function MultiSet{SETS,T}(sets) where {SETS,T}
+    function MultiSet{SETS,S,T}(sets) where {SETS,S,T}
         offsets = compute_offsets(sets)
         new(sets, offsets)
     end
@@ -26,21 +26,23 @@ const MultiSetSpan{A, F <: MultiSet} = Span{A,F}
 
 # Is this constructor type-stable? Probably not, even if T is given, because
 # of the use of dimension below.
-function MultiSet(sets, T)
+function MultiSet(sets, S, T)
     for set in sets
         # Is this the right check here?
         @assert promote_type(domaintype(set), T) == T
+        @assert promote_type(rangetype(set), S) == S
     end
-    MultiSet{typeof(sets),T}(sets)
+    MultiSet{typeof(sets),S,T}(sets)
 end
 
 function MultiSet(sets)
     T = reduce(promote_type, map(domaintype, sets))
-    MultiSet(map(s->promote_domaintype(s,T), sets), T)
+    S = reduce(promote_type, map(rangetype, sets))
+    MultiSet(map(s->promote_domaintype(s,T), sets), S, T)
 end
 
 
-similar_set(set::MultiSet, sets, T = domaintype(set)) = MultiSet(sets, T)
+similar_set(set::MultiSet, sets) = MultiSet(sets)
 
 multiset(set::FunctionSet) = set
 
@@ -57,9 +59,11 @@ function multiset(sets::AbstractArray)
     if length(sets) == 1
         multiset(sets[1])
     else
-        MultiSet(flatten(MultiSet, sets, FunctionSet{eltype(sets[1])}))
+        MultiSet(flatten(MultiSet, sets, FunctionSet{domaintype(sets[1])}))
     end
 end
+
+multispan(spans::Span) = Span(multiset(map(set, spans)...), reduce(promote_type, map(coeftype, spans)))
 
 # Perhaps we don't want this behaviour, that [b;b] creates a MultiSet, rather
 # than an array of FunctionSet's

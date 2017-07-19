@@ -4,17 +4,19 @@
 A PiecewiseSet has a function set for each piece in a partition. Its representation
 is a MultiArray containing the expansions of all sets combined.
 """
-struct PiecewiseSet{P <: Partition,SETS,T} <: CompositeSet{T}
+struct PiecewiseSet{P <: Partition,SETS,S,T} <: CompositeSet{S,T}
     sets        ::  SETS
     offsets     ::  Array{Int,1}
     partition   ::  P
 
-    function PiecewiseSet{P,SETS,T}(sets, partition) where {P <: Partition,SETS,T}
+    function PiecewiseSet{P,SETS,S,T}(sets, partition) where {P <: Partition,SETS,S,T}
         offsets = compute_offsets(sets)
         new(sets, offsets, partition)
     end
 
 end
+
+const PiecewiseSetSpan{A, F <: PiecewiseSet} = Span{A,F}
 
 # Make a PiecewiseSet by scaling one set to each of the elements of the partition
 function PiecewiseSet(set::FunctionSet1d, partition::Partition, n = ones(length(partition))*length(set))
@@ -32,7 +34,7 @@ function PiecewiseSet(sets, partition::Partition, T = domaintype(sets[1]))
 end
 
 # Construct a piecewise set from a list of sets in 1d
-function PiecewiseSet{S <: FunctionSet1d}(sets::Array{S})
+function PiecewiseSet(sets::Array{S}) where {S <: FunctionSet1d}
     for i in 1:length(sets)-1
         @assert right(sets[i]) ≈ left(sets[i+1])
     end
@@ -54,7 +56,7 @@ partition(set::PiecewiseSet) = set.partition
 
 name(set::PiecewiseSet) = "Piecewise function set"
 
-similar_set(set::PiecewiseSet, sets, T = eltype(set)) = PiecewiseSet(sets, partition(set), T)
+similar_set(set::PiecewiseSet, sets) = PiecewiseSet(sets, partition(set))
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)

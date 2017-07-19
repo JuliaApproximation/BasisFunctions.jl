@@ -71,6 +71,9 @@ _eval_expansion(set::WeightedSet, w, coefficients, grid::AbstractGrid) =
 # and our own functors:
 (*)(f::AbstractFunction, set::FunctionSet) = WeightedSet(set, f)
 
+(*)(f::Function, s::Span) = Span(f*set(s), coeftype(s))
+(*)(f::AbstractFunction, s::Span) = Span(f*set(s), coeftype(s))
+
 weightfun_scaling_operator(dgs::DiscreteGridSpace1d, weightfunction) =
     DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x) for x in grid(dgs)])
 

@@ -20,7 +20,8 @@ The concrete subtypes differ in what evaluation means. Examples include:
 subsets
 - PiecewiseSet, where evaluation depends on the location of the evaluation point
 """
-abstract type CompositeSet{T} <: FunctionSet{T}
+# The type parameter S is the rangetype.
+abstract type CompositeSet{S,T} <: FunctionSet{T}
 end
 
 const CompositeSetSpan{A,F <: CompositeSet} = Span{A,F}
@@ -32,6 +33,10 @@ element(set::CompositeSet, j::Int) = set.sets[j]
 
 similar_span(s::CompositeSetSpan, spans::Span...) =
     Span(similar_set(set(s), map(set, spans)), coeftype(s))
+
+# TODO: think about these and verify correctness. Maybe the types depend on the
+# nature of the composite set.
+rangetype(::Type{CompositeSet{S,T}}) where {S,T} = S
 
 # For a generic implementation of range indexing, we need a 'similar_set' function
 # to create a new set of the same type as the given set.
@@ -53,7 +58,6 @@ length(s::CompositeSet) = s.offsets[end]
 length(s::CompositeSet, i::Int) = length(element(s,i))
 
 # Concrete subtypes should override similar_set and call their own constructor
-similar_set(set::CompositeSet, sets) = similar_set(set, sets, eltype(set))
 
 # Using map in the definitions below ensures that a tuple is created when
 # elements(set) is a tuple, and an array when elements(set) is an array.
@@ -61,7 +65,7 @@ resize(set::CompositeSet, n) =
     similar_set(set, map( (s,l) -> resize(s, l), elements(set), n))
 
 set_promote_domaintype(set::CompositeSet, ::Type{S}) where {S} =
-    similar_set(set, map(s->promote_eltype(s, S), elements(set)), S)
+    similar_set(set, map(s->set_promote_domaintype(s, S), elements(set)))
 
 zeros(::Type{T}, set::CompositeSet) where {T} = MultiArray(map(s->zeros(T,s),elements(set)))
 
@@ -139,8 +143,8 @@ end
 # Calling and evaluation
 eval_element(set::CompositeSet, idx::Int, x) = eval_element(set, multilinear_index(set,idx), x)
 
-function eval_element(set::CompositeSet, idx::Tuple{Int,Any}, x)
-    eval_element( element(set, idx[1]), idx[2], x)
+function eval_element(set::CompositeSet{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
+    convert(S, eval_element( element(set, idx[1]), idx[2], x))
 end
 
 

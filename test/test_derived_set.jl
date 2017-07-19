@@ -19,6 +19,12 @@ function test_derived_sets(T)
     @testset "$(rpad("Operated sets",80))" begin
         test_generic_set_interface(OperatedSet(differentiation_operator(span(b1)))) end
 
+
+    @testset "$(rpad("Multiple sets",80))" begin
+        # Test sets with internal representation as vector and as tuple separately
+        test_generic_set_interface(multiset(b1,rescale(b2, 0, 1)))
+        test_generic_set_interface(MultiSet((b1,rescale(b2, 0, 1)))) end
+
     @testset "$(rpad("Weighted sets",80))" begin
         # Try a functor
         test_generic_set_interface(BF.Cos() * b1)
@@ -28,12 +34,6 @@ function test_derived_sets(T)
         # (not just yet, fix 2D for BigFloat first)
 #        test_generic_set_interface( ((x,y) -> cos(x+y)) * tensorproduct(b1, 2) )
     end
-
-
-    @testset "$(rpad("Multiple sets",80))" begin
-        # Test sets with internal representation as vector and as tuple separately
-        test_generic_set_interface(multiset(b1,rescale(b2, 0, 1)))
-        test_generic_set_interface(MultiSet((b1,rescale(b2, 0, 1)))) end
 
     @testset "$(rpad("A multiple and weighted set combination",80))" begin
         s = rescale(b1, 1/2, 1)

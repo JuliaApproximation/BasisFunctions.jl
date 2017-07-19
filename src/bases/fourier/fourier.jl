@@ -15,7 +15,11 @@ even. In that case, the largest frequency function in the set is a cosine.
 struct FourierBasis{EVEN,T} <: FunctionSet1d{T}
 	n			::	Int
 
-	FourierBasis{EVEN,T}(n) where {EVEN,T} = (@assert iseven(n)==EVEN; new(n))
+	function FourierBasis{EVEN,T}(n) where {EVEN,T}
+		@assert iseven(n) == EVEN
+		@assert real(T) == T
+		new(n)
+	end
 end
 
 const FourierBasisEven{T} = FourierBasis{true,T}
@@ -45,16 +49,15 @@ set_promote_domaintype(b::FourierBasis{EVEN,T}, ::Type{S}) where {EVEN,T,S} = Fo
 
 resize(b::FourierBasis, n) = FourierBasis(n, domaintype(b))
 
-# The rangetype of a Fourier series is complex, even when its domaintype T is real
-rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T <: Real} = Complex{T}
-rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T <: Complex} = T
+# The rangetype of a Fourier series is complex
+rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T} = Complex{T}
 
 
 # Properties
 
 isreal(b::FourierBasis) = false
 
-iseven{EVEN}(b::FourierBasis{EVEN}) = EVEN
+iseven(b::FourierBasis{EVEN}) where {EVEN} = EVEN
 isodd(b::FourierBasis) = ~iseven(b)
 
 is_basis(b::FourierBasis) = true

@@ -101,7 +101,7 @@ function test_generic_set_interface(basis, span = Span(basis))
     ELT = coefficient_type(span)
     T = domaintype(basis)
     FT = float_type(T)
-    Y = rangetype(basis)
+    RT = rangetype(basis)
     SY = rangetype(span)
 
     # Does the set of the span agree with the basis?
@@ -243,7 +243,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         end
         for idx in indices
             z = eval_set_element(basis, idx, x)
-            types_correct = types_correct & (typeof(z) == ELT)
+            types_correct = types_correct & (typeof(z) == RT)
         end
     end
     @test types_correct
