@@ -13,55 +13,59 @@ struct OperatedSet{T} <: FunctionSet{T}
     scratch_dest
 
     function OperatedSet{T}(op::AbstractOperator) where T
-        scratch_src = zeros(T, src(op))
-        scratch_dest = zeros(T, dest(op))
+        scratch_src = zeros(src(op))
+        scratch_dest = zeros(dest(op))
         new(op, scratch_src, scratch_dest)
     end
 end
 
 # TODO: OperatedSet should really be a DerivedSet, deriving from src(op)
 
-OperatedSet{ELT}(op::AbstractOperator{ELT}) =
-    OperatedSet{ELT}(op)
+OperatedSet(op::AbstractOperator{T}) where {T} = OperatedSet{T}(op)
 
-name(set::OperatedSet) = name(dest(set)) * " transformed by an operator"
+name(s::OperatedSet) = name(src_set(s) * " transformed by an operator")
 
-src(set::OperatedSet) = src(set.op)
+src(s::OperatedSet) = src(s.op)
+src_set(s::OperatedSet) = set(src(s))
 
-dest(set::OperatedSet) = dest(set.op)
+dest(s::OperatedSet) = dest(s.op)
+dest_set(s::OperatedSet) = set(dest(s))
+
+domaintype(s::OperatedSet) = domaintype(src_set(s))
 
 operator(set::OperatedSet) = set.op
 
-set_promote_domaintype(set::OperatedSet, ::Type{S}) where {S} = OperatedSet(promote_eltype(operator(set), S))
+set_promote_domaintype(s::OperatedSet{T}, ::Type{S}) where {S,T} =
+    OperatedSet(similar_operator(operator(s), T, promote_domaintype(src(s), S), dest(s) ) )
 
 for op in (:left, :right, :length)
-    @eval $op(set::OperatedSet) = $op(src(set))
+    @eval $op(s::OperatedSet) = $op(src_set(s))
 end
 
 # We don't know in general what the support of a specific basis functions is.
 # The safe option is to return the support of the set itself for each element.
 for op in (:left, :right)
-    @eval $op(set::OperatedSet, idx) = $op(src(set))
+    @eval $op(s::OperatedSet, idx) = $op(src_set(s))
 end
 
-zeros(ELT::Type, set::OperatedSet) = zeros(ELT, src(set))
+zeros(::Type{T}, s::OperatedSet) where {T} = zeros(T, src_set(s))
 
 
 eval_element(set::OperatedSet, i, x) = _eval_element(set, operator(set), i, x)
 
-function _eval_element(set::OperatedSet, op::AbstractOperator, i, x)
+function _eval_element(s::OperatedSet, op::AbstractOperator, i, x)
     if is_diagonal(op)
-        diagonal(op, i) * eval_element(src(set), i, x)
+        diagonal(op, i) * eval_element(src_set(s), i, x)
     else
-        idx = native_index(set, i)
-        set.scratch_src[idx] = 1
-        apply!(set.op, set.scratch_dest, set.scratch_src)
-        set.scratch_src[idx] = 0
-        eval_expansion(dest(set), set.scratch_dest, x)
+        idx = native_index(s, i)
+        s.scratch_src[idx] = 1
+        apply!(s.op, s.scratch_dest, s.scratch_src)
+        s.scratch_src[idx] = 0
+        eval_expansion(dest_set(s), s.scratch_dest, x)
     end
 end
 
-_eval_element(set::OperatedSet, op::ScalingOperator, i, x) = diagonal(op, i) * eval_element(src(set), i, x)
+_eval_element(s::OperatedSet, op::ScalingOperator, i, x) = diagonal(op, i) * eval_element(src_set(s), i, x)
 
 ## Properties
 
@@ -79,14 +83,14 @@ isreal(set::OperatedSet) = isreal(operator(set))
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedSet.
-derivative(s::FunctionSet; options...) = OperatedSet(differentiation_operator(s; options...))
+derivative(s::Span; options...) = OperatedSet(differentiation_operator(s; options...))
 
-function (*)(a::Number, set::FunctionSet)
-    T = promote_type(typeof(a), eltype(set))
-    OperatedSet(ScalingOperator(set, convert(T, a)))
+function (*)(a::Number, s::Span)
+    T = promote_type(typeof(a), coeftype(s))
+    OperatedSet(ScalingOperator(s, convert(T, a)))
 end
 
-function (*)(op::AbstractOperator, set::FunctionSet)
-    @assert src(op) == set
+function (*)(op::AbstractOperator, s::Span)
+    @assert src(op) == s
     OperatedSet(op)
 end

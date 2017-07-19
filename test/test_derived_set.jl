@@ -17,7 +17,7 @@ function test_derived_sets(T)
         test_generic_set_interface(b1[2:6]) end
 
     @testset "$(rpad("Operated sets",80))" begin
-        test_generic_set_interface(OperatedSet(differentiation_operator(b1))) end
+        test_generic_set_interface(OperatedSet(differentiation_operator(span(b1)))) end
 
     @testset "$(rpad("Weighted sets",80))" begin
         # Try a functor

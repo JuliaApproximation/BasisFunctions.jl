@@ -23,10 +23,15 @@ subsets
 abstract type CompositeSet{T} <: FunctionSet{T}
 end
 
+const CompositeSetSpan{A,F <: CompositeSet} = Span{A,F}
+
 # We assume that every subset has an indexable field called sets
 is_composite(set::CompositeSet) = true
 elements(set::CompositeSet) = set.sets
 element(set::CompositeSet, j::Int) = set.sets[j]
+
+similar_span(s::CompositeSetSpan, spans::Span...) =
+    Span(similar_set(set(s), map(set, spans)), coeftype(s))
 
 # For a generic implementation of range indexing, we need a 'similar_set' function
 # to create a new set of the same type as the given set.
@@ -58,7 +63,7 @@ resize(set::CompositeSet, n) =
 set_promote_domaintype(set::CompositeSet, ::Type{S}) where {S} =
     similar_set(set, map(s->promote_eltype(s, S), elements(set)), S)
 
-zeros(T::Type, set::CompositeSet) = MultiArray(map(s->zeros(T,s),elements(set)))
+zeros(::Type{T}, set::CompositeSet) where {T} = MultiArray(map(s->zeros(T,s),elements(set)))
 
 for op in (:isreal, )
     @eval $op(set::CompositeSet) = reduce($op, elements(set))
@@ -127,8 +132,8 @@ eachindex(set::CompositeSet) = CompositeIndexIterator(map(length, elements(set))
 extension_size(set::CompositeSet) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
-    @eval $op(s1::CompositeSet, s2::CompositeSet; options...) =
-        BlockDiagonalOperator( AbstractOperator{eltype(s1)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
+    @eval $op(s1::CompositeSetSpan, s2::CompositeSetSpan; options...) =
+        BlockDiagonalOperator( AbstractOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
 end
 
 # Calling and evaluation
@@ -141,8 +146,8 @@ end
 
 ## Differentiation
 
-derivative_space(set::CompositeSet, order; options...) =
-    similar_set(set, map(s->derivative_space(s,order; options...), elements(set)))
+derivative_space(s::CompositeSetSpan, order; options...) =
+    similar_span(s, map(u->derivative_space(u, order; options...), elements(s)))
 
-antiderivative_space(set::CompositeSet, order; options...) =
-    similar_set(set, map(s-> antiderivative_space(s, order; options...), elements(set)))
+antiderivative_space(s::CompositeSetSpan, order; options...) =
+    similar_span(s, map(u-> antiderivative_space(u, order; options...), elements(s)))

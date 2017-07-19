@@ -20,10 +20,10 @@ const DerivedSpan{A, F <: DerivedSet} = Span{A,F}
 # Assume the concrete set has a field called set -- override if it doesn't
 superset(s::DerivedSet) = s.superset
 
+superset(s::DerivedSpan) = superset(set(s))
+
 "Return the span of the superset of the given derived set."
 superspan(s::DerivedSpan) = Span(superset(s), coeftype(s))
-
-superset(s::DerivedSpan) = superset(set(s))
 
 # The concrete subset should implement similar_set, as follows:
 #
@@ -42,6 +42,10 @@ resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
 
 set_promote_domaintype(s::DerivedSet{T}, ::Type{S}) where {T,S} =
     similar_set(s, promote_domaintype(superset(s), S))
+
+for op in (:domaintype, :rangetype, :coefficient_type)
+    @eval $op(s::DerivedSet) = $op(superset(s))
+end
 
 # Delegation of properties
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)

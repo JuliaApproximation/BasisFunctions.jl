@@ -220,7 +220,8 @@ export MultiSet, multiset, ⊕
 export PiecewiseSet
 
 # from bases/sets/operated_set.jl
-export OperatedSet, derivative
+export OperatedSet
+export derivative, src_set, dest_set
 
 # from bases/sets/euclidean.jl
 export DiscreteVectorSpace, DiscreteSet

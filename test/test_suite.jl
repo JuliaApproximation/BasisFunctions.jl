@@ -56,39 +56,37 @@ for T in [Float64,BigFloat]
     delimit("T is $T", )
     delimit("Operators")
 
-    # test_generic_operators(T)
-    #
-    # @testset "$(rpad("test diagonal operators",80))" begin
-    #     test_diagonal_operators(T) end
-    #
-    # @testset "$(rpad("test multidiagonal operators",80))" begin
-    #     test_multidiagonal_operators(T) end
-    #
-    # @testset "$(rpad("test invertible operators",80))" begin
-    #     test_invertible_operators(T) end
-    #
-    # @testset "$(rpad("test noninvertible operators",80))" begin
-    #     test_noninvertible_operators(T) end
-    #
-    # @testset "$(rpad("test tensor operators",80))" begin
-    #     test_tensor_operators(T)
-    # end
-    #
-    # @testset "$(rpad("test circulant operator",80))" begin
-    #     test_circulant_operator(T)
-    # end
-    #
-    # delimit("Generic interfaces")
-    #
-    # @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
-    #     # Choose an odd and even number of degrees of freedom
-    #         basis = instantiate(SET, n, T)
-    #
-    #         @test length(basis) == n
-    #         @test domaintype(basis) == T
-    #
-    #         test_generic_set_interface(basis, span(basis))
-    # end
+    test_generic_operators(T)
+
+    @testset "$(rpad("test diagonal operators",80))" begin
+        test_diagonal_operators(T) end
+
+    @testset "$(rpad("test multidiagonal operators",80))" begin
+        test_multidiagonal_operators(T) end
+
+    @testset "$(rpad("test invertible operators",80))" begin
+        test_invertible_operators(T) end
+
+    @testset "$(rpad("test noninvertible operators",80))" begin
+        test_noninvertible_operators(T) end
+
+    @testset "$(rpad("test tensor operators",80))" begin
+        test_tensor_operators(T) end
+
+    @testset "$(rpad("test circulant operator",80))" begin
+        test_circulant_operator(T) end
+
+    delimit("Generic interfaces")
+
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
+        # Choose an odd and even number of degrees of freedom
+            basis = instantiate(SET, n, T)
+
+            @test length(basis) == n
+            @test domaintype(basis) == T
+
+            test_generic_set_interface(basis, span(basis))
+    end
 
     delimit("Derived sets")
         test_derived_sets(T)
@@ -113,24 +111,20 @@ for T in [Float64,BigFloat]
     delimit("Test Grids")
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
+
     delimit("Test B splines")
     @testset "$(rpad("Elementary properties",80))" begin
-      elementarypropsofsplinetest(T)
-    end
+        elementarypropsofsplinetest(T) end
     @testset "$(rpad("periodic B splines",80))"  begin
-      periodicbsplinetest(T)
-    end
+        periodicbsplinetest(T) end
     @testset "$(rpad("symmetric B splines",80))"  begin
-      symmetricbsplinestest(T)
-    end
+        symmetricbsplinestest(T) end
     @testset "$(rpad("integration of B splines",80))"  begin
-      test_spline_integration()
-    end
+        test_spline_integration() end
 
     delimit("Gram")
     @testset "$(rpad("Gram functionality",80))" begin
-      discrete_gram_test(T)
-    end
+        discrete_gram_test(T) end
 
     delimit("Check evaluations, interpolations, extensions, setexpansions")
 
@@ -143,17 +137,17 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
 
-    @testset "$(rpad("Periodic translate expansions",80))"begin
+    @testset "$(rpad("Periodic translate expansions",80))" begin
         test_generic_periodicbsplinebasis(T) end
 
-    @testset "$(rpad("Translates of B spline expansions",80))"begin
+    @testset "$(rpad("Translates of B spline expansions",80))" begin
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
         test_orthonormalsplinebasis(T)
         test_discrete_orthonormalsplinebasis(T)
         test_dualsplinebasis(T)
         test_discrete_dualsplinebasis(T)
-      end
+    end
 
 
 

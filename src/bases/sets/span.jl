@@ -34,6 +34,11 @@ similar_span(span::Span, set::FunctionSet) = Span(set, coeftype(span))
 promote_coeftype(span::Span{A,F}, ::Type{A}) where {A,F} = span
 promote_coeftype(span::Span{A,F}, ::Type{B}) where {A,B,F} = Span(set(span), promote_type(A,B))
 
+function promote_domaintype(span::Span, ::Type{S}) where {S}
+    newset = promote_domaintype(set(span), S)
+    Span(newset, promote_type(coeftype(span), coeftype(newset)))
+end
+
 # What is the rangetype of a span? It depends on the type of the coefficients,
 # and on the rangetype of the set.
 rangetype(span::Span) = _rangetype(coefficient_type(span), rangetype(set(span)))
@@ -114,3 +119,6 @@ tensorproduct(s1::Span{A}, s2::Span{B}) where {A,B} = span(tensorproduct(set(s1)
 for op in (:extend, :restrict)
     @eval $op(s::Span) = Span(op(set(s)), coeftype(s))
 end
+
+native_index(s::Span, idx) = native_index(set(s), idx)
+linear_index(s::Span, idxn) = linear_index(set(s), idxn)

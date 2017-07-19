@@ -27,16 +27,24 @@ underlying larger set, and a collection of indices into that set.
 abstract type Subset{T} <: FunctionSet{T}
 end
 
+const SubsetSpan{A,F <: Subset} = Span{A,F}
+
 # We assume that the underlying set is stored in a field called superset
 superset(s::Subset) = s.superset
+
+superset(s::SubsetSpan) = superset(set(s))
+
+superspan(s::SubsetSpan) = Span(superset(s), coeftype(s))
 
 # We assume that the underlying indices are stored in a field called indices
 indices(s::Subset) = s.indices
 indices(s::Subset, i) = s.indices[i]
 
+indices(s::SubsetSpan) = indices(set(s))
+
 # The concrete subset should implement `similar_subset`, a routine that
 # returns a subset of a similar type as itself, but with a different underlying set.
-set_promote_domaintype{T,S}(s::Subset{T}, ::Type{S}) =
+set_promote_domaintype(s::Subset, ::Type{S}) where {S} =
     similar_subset(s, promote_domaintype(superset(s), S), indices(s))
 
 apply_map(s::Subset, map) = similar_subset(s, apply_map(superset(s), map), indices(s))
@@ -64,8 +72,8 @@ has_derivative(s::Subset) = subset_has_derivative(s, superset(s), indices(s))
 has_antiderivative(s::Subset) = subset_has_antiderivative(s, superset(s), indices(s))
 has_transform(s::Subset) = subset_has_transform(s, superset(s), indices(s))
 
-derivative_space(s::Subset, order; options...) = subset_derivative_space(s, order, superset(s), indices(s); options...)
-antiderivative_space(s::Subset, order; options...) = subset_antiderivative_space(s, order, superset(s), indices(s); options...)
+derivative_space(s::SubsetSpan, order; options...) = subset_derivative_space(s, order, superspan(s), indices(s); options...)
+antiderivative_space(s::SubsetSpan, order; options...) = subset_antiderivative_space(s, order, superspan(s), indices(s); options...)
 
 grid(s::Subset) = subset_grid(s, superset(s), indices(s))
 
@@ -124,21 +132,24 @@ struct LargeSubset{SET,IDX,T} <: Subset{T}
     end
 end
 
+const LargeSubsetSpan{A,F <: LargeSubset} = Span{A,F}
+
 LargeSubset(set::FunctionSet{T}, indices) where {T} =
     LargeSubset{typeof(set),typeof(indices),T}(set, indices)
 
 similar_subset(s::LargeSubset, set, indices) = LargeSubset(set, indices)
 
+rangetype(::Type{LargeSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
 
 grid(s::LargeSubset) = grid(superset(s))
 
-function extension_operator(s1::LargeSubset, s2::FunctionSet; options...)
-    @assert s2 == superset(s1)
+function extension_operator(s1::LargeSubsetSpan, s2::Span; options...)
+    @assert set(s2) == superset(s1)
     IndexExtensionOperator(s1, s2, indices(s1))
 end
 
-function restriction_operator(s1::FunctionSet, s2::LargeSubset; options...)
-    @assert s1 == superset(s2)
+function restriction_operator(s1::Span, s2::LargeSubsetSpan; options...)
+    @assert set(s1) == superset(s2)
     IndexRestrictionOperator(s1, s2, indices(s2))
 end
 
@@ -151,22 +162,22 @@ end
 subset_has_derivative(s::LargeSubset, superset, indices) = has_derivative(superset)
 subset_has_antiderivative(s::LargeSubset, superset, indices) = has_antiderivative(superset)
 
-subset_derivative_space(s::LargeSubset, order, superset, indices; options...) =
+subset_derivative_space(s::LargeSubsetSpan, order, superset, indices; options...) =
     derivative_space(superset, order; options...)
-subset_antiderivative_space(s::LargeSubset, order, superset, indices; options...) =
+subset_antiderivative_space(s::LargeSubsetSpan, order, superset, indices; options...) =
     antiderivative_space(superset, order; options...)
 
-function differentiation_operator(s1::LargeSubset, s2::FunctionSet, order::Int; options...)
+function differentiation_operator(s1::LargeSubsetSpan, s2::Span, order::Int; options...)
     @assert s2 == derivative_space(s1, order)
-    D = differentiation_operator(superset(s1), s2, order; options...)
-    E = extension_operator(s1, superset(s1); options...)
+    D = differentiation_operator(superspan(s1), s2, order; options...)
+    E = extension_operator(s1, superspan(s1); options...)
     D*E
 end
 
-function antidifferentiation_operator(s1::LargeSubset, s2::FunctionSet, order::Int; options...)
+function antidifferentiation_operator(s1::LargeSubsetSpan, s2::Span, order::Int; options...)
     @assert s2 == antiderivative_space(s1, order)
-    D = antidifferentiation_operator(superset(s1), s2, order; options...)
-    E = extension_operator(s1, superset(s1); options...)
+    D = antidifferentiation_operator(superspan(s1), s2, order; options...)
+    E = extension_operator(s1, superspan(s1); options...)
     D*E
 end
 
@@ -189,12 +200,15 @@ struct SmallSubset{SET,IDX,T} <: Subset{T}
     end
 end
 
+const SmallSubsetSpan{A, F <: SmallSubset} = Span{A,F}
+
 SmallSubset(set::FunctionSet{T}, indices) where {T} =
     SmallSubset{typeof(set),typeof(indices),T}(set, indices)
 
 
 similar_subset(s::SmallSubset, set, indices) = SmallSubset(set, indices)
 
+rangetype(::Type{SmallSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
 
 """
 A SingletonSubset represent a single element from an underlying set.
@@ -209,10 +223,14 @@ struct SingletonSubset{SET,IDX,T} <: Subset{T}
     end
 end
 
+const SingletonSubsetSpan{A, F <: SingletonSubset} = Span{A,F}
+
 SingletonSubset(set::FunctionSet{T}, index) where {T} =
     SingletonSubset{typeof(set),typeof(index),T}(set, index)
 
 similar_subset(s::SingletonSubset, set, index) = SingletonSubset(set, index)
+
+rangetype(::Type{SingletonSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
 
 # Override the default `indices` because the field has a different name
 indices(s::SingletonSubset) = s.index
@@ -256,3 +274,5 @@ subset(s::FunctionSet, ::Colon) = s
 
 # Avoid creating nested subsets
 subset(s::Subset, idx) = subset(superset(s), indices(s)[idx])
+
+getindex(s::Span, idx) = span(subset(set(s), idx), coeftype(s))
