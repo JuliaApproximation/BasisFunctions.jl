@@ -189,12 +189,16 @@ function split_interval_expansion(set::PiecewiseSet, coefficients::MultiArray, x
     PiecewiseSet(sets), MultiArray(coefs)
 end
 
-function dot(s::PiecewiseSetSpan, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...)
-    idxn = native_index(s, f1)
-    # set.sets[idxn[1]]
-    b = element(s, idxn[1])
+dot(s::PiecewiseSetSpan, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(set(s)); options...) =
+    dot(s, native_index(s, f1), f2, nodes; options...)
 
-    dot(b, linear_index(b,idxn[2]), f2, clip_and_cut(nodes, left(b), right(b)); options...)
+function dot(s::PiecewiseSetSpan, f1, f2::Function, nodes::Array=BasisFunctions.native_nodes(set(s)); options...)
+    # idxn = native_index(s, f1)
+    # set.sets[idxn[1]]
+    # b = element(s, idxn[1])
+    b = element(s, f1[1])
+
+    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, left(set(b)), right(set(b))); options...)
 end
 
 function Gram(s::PiecewiseSetSpan; options...)

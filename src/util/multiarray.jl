@@ -29,7 +29,7 @@ The differences between this type and an Array of Array's are:
 an inner array.
 These differences have motivated this special purpose type.
 """
-struct MultiArray{A,ELT}
+struct MultiArray{A,T}
     # The underlying data is usually an array of arrays, but may be more general.
     # At the least, it is an indexable set that supports a linear index.
     arrays  ::  A
@@ -37,18 +37,18 @@ struct MultiArray{A,ELT}
     # The linear index for the i-th subarray starts at offsets[i]+1.
     offsets ::  Array{Int,1}
 
-    MultiArray{A,ELT}(arrays) where {A,ELT} = new(arrays, compute_offsets(arrays))
+    MultiArray{A,T}(arrays) where {A,T} = new(arrays, compute_offsets(arrays))
 end
 
 
-function MultiArray(arrays, ELT = eltype(arrays[1]))
+function MultiArray(arrays, T = eltype(arrays[1]))
     for array in arrays
-        @assert eltype(array) == ELT
+        @assert eltype(array) == T
     end
-    MultiArray{typeof(arrays),ELT}(arrays)
+    MultiArray{typeof(arrays),T}(arrays)
 end
 
-eltype{A,ELT}(::Type{MultiArray{A,ELT}}) = ELT
+eltype(::Type{MultiArray{A,T}}) where {A,T} = T
 
 element(a::MultiArray, i) = a.arrays[i]
 elements(a::MultiArray) = a.arrays
@@ -71,7 +71,7 @@ function linearize_coefficients(a::MultiArray)
     linearize_coefficients!(b, a)
 end
 
-function linearize_coefficients!{T}(b::Array{T,1}, a::MultiArray)
+function linearize_coefficients!(b::Vector, a::MultiArray)
     @assert length(a) == length(b)
     for (i,j) in enumerate(eachindex(a))
         b[i] = a[j]
@@ -79,13 +79,13 @@ function linearize_coefficients!{T}(b::Array{T,1}, a::MultiArray)
     b
 end
 
-function delinearize_coefficients{T}(a::MultiArray, b::Array{T,1})
+function delinearize_coefficients(a::MultiArray, b::Vector)
   multiarray = similar_multiarray(a)
   delinearize_coefficients!(multiarray, b)
   multiarray
 end
 
-function delinearize_coefficients!{T}(a::MultiArray, b::Array{T,1})
+function delinearize_coefficients!(a::MultiArray, b::Vector)
     @assert length(a) == length(b)
     for (i,j) in enumerate(eachindex(a))
         a[j] = b[i]
@@ -107,8 +107,8 @@ end
 ##########################
 
 # We introduce this type in order to support eachindex for MultiArray's below
-struct MultiArrayIndexIterator{A,ELT}
-    array   ::  MultiArray{A,ELT}
+struct MultiArrayIndexIterator{A,T}
+    array   ::  MultiArray{A,T}
 end
 
 eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
@@ -156,14 +156,14 @@ done(it::MultiArrayIndexIterator, state) = (state[1]==nb_elements(it.array)) && 
 
 length(it::MultiArrayIndexIterator) = length(it.array)
 
-ArrayOfArray{T} = Array{Array{T,1},1}
+const ArrayOfArray{T} = Array{Array{T,1},1}
 
 # Our iterator can be simpler when the element sets are vectors in an array
 # Strictly speaking we can do even better, since we don't need the full array in the
 # field of the iterator, only its dimensions
-start{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}) = (1,1)
+start(it::MultiArrayIndexIterator{ArrayOfArray{T}}) where {T} = (1,1)
 
-function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)
+function next(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) where {T}
     i = state[1]
     j = state[2]
     if j == length(it.array, i)
@@ -174,7 +174,7 @@ function next{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state)
     (state, nextstate)
 end
 
-done{T}(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) = state[1] > nb_elements(it.array)
+done(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) where {T} = state[1] > nb_elements(it.array)
 
 # Support linear indexing too
 getindex(a::MultiArray, idx::Int) = getindex(a, multilinear_index(a, idx))
@@ -184,7 +184,7 @@ getindex(a::MultiArray, idx::Int) = getindex(a, multilinear_index(a, idx))
 getindex(a::MultiArray, i::Int, j) = a.arrays[i][j]
 
 # Indexing with tuples allows for recursive indices
-getindex{I}(a::MultiArray, idx::Tuple{Int,I}) = getindex(a, idx[1], idx[2])
+getindex(a::MultiArray, idx::Tuple{Int,I}) where {I} = getindex(a, idx[1], idx[2])
 
 getindex(a::MultiArray, ::Colon) = linearize_coefficients(a)
 
@@ -197,7 +197,7 @@ setindex!(a::MultiArray, v, i::Int, j) = a.arrays[i][j] = v
 setindex!(a::MultiArray, v, idx::Tuple{Int,Any}) = setindex!(a, v, idx[1], idx[2])
 
 # Assignment from linear representation
-setindex!{T}(a::MultiArray, b::Array{T,1}, ::Colon) =
+setindex!(a::MultiArray, b::Vector, ::Colon) =
     delinearize_coefficients!(a, b)
 
 # Assignment from other MultiArray: assign recursively

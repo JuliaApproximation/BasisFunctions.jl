@@ -56,37 +56,37 @@ for T in [Float64,BigFloat]
     delimit("T is $T", )
     delimit("Operators")
 
-    # test_generic_operators(T)
-    #
-    # @testset "$(rpad("test diagonal operators",80))" begin
-    #     test_diagonal_operators(T) end
-    #
-    # @testset "$(rpad("test multidiagonal operators",80))" begin
-    #     test_multidiagonal_operators(T) end
-    #
-    # @testset "$(rpad("test invertible operators",80))" begin
-    #     test_invertible_operators(T) end
-    #
-    # @testset "$(rpad("test noninvertible operators",80))" begin
-    #     test_noninvertible_operators(T) end
-    #
-    # @testset "$(rpad("test tensor operators",80))" begin
-    #     test_tensor_operators(T) end
-    #
-    # @testset "$(rpad("test circulant operator",80))" begin
-    #     test_circulant_operator(T) end
-    #
-    # delimit("Generic interfaces")
-    #
-    # @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
-    #     # Choose an odd and even number of degrees of freedom
-    #         basis = instantiate(SET, n, T)
-    #
-    #         @test length(basis) == n
-    #         @test domaintype(basis) == T
-    #
-    #         test_generic_set_interface(basis, span(basis))
-    # end
+    test_generic_operators(T)
+    
+    @testset "$(rpad("test diagonal operators",80))" begin
+        test_diagonal_operators(T) end
+
+    @testset "$(rpad("test multidiagonal operators",80))" begin
+        test_multidiagonal_operators(T) end
+
+    @testset "$(rpad("test invertible operators",80))" begin
+        test_invertible_operators(T) end
+
+    @testset "$(rpad("test noninvertible operators",80))" begin
+        test_noninvertible_operators(T) end
+
+    @testset "$(rpad("test tensor operators",80))" begin
+        test_tensor_operators(T) end
+
+    @testset "$(rpad("test circulant operator",80))" begin
+        test_circulant_operator(T) end
+
+    delimit("Generic interfaces")
+
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
+        # Choose an odd and even number of degrees of freedom
+            basis = instantiate(SET, n, T)
+
+            @test length(basis) == n
+            @test domaintype(basis) == T
+
+            test_generic_set_interface(basis, span(basis))
+    end
 
     delimit("Derived sets")
         test_derived_sets(T)

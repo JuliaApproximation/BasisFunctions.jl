@@ -411,7 +411,7 @@ function test_generic_set_interface(basis, span = Span(basis))
     if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(span, g)
-        x = rand(span)
+        x = rand(gridspace(g, coeftype(span)))
         e = SetExpansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
     end

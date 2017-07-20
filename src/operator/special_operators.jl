@@ -511,7 +511,7 @@ struct LinearizationOperator{T} <: AbstractOperator{T}
 end
 
 LinearizationOperator(src::Span) =
-    LinearizationOperator{coeftype(src)}(src, Span(DiscreteSet(length(src), coeftype(src))))
+    LinearizationOperator{coeftype(src)}(src, Span(DiscreteSet(length(src)), coeftype(src)))
 
 similar_operator(::LinearizationOperator, ::Type{S}, src) where {S} = LinearizationOperator(promote_coeftype(src, S))
 
@@ -528,7 +528,7 @@ struct DelinearizationOperator{T} <: AbstractOperator{T}
 end
 
 DelinearizationOperator(dest::Span) =
-    DelinearizationOperator{coeftype(dest)}(Span(DiscreteSet(length(dest), coeftype(dest))), src)
+    DelinearizationOperator{coeftype(dest)}(Span(DiscreteSet(length(dest)), coeftype(dest)), src)
 
 similar_operator(::DelinearizationOperator, ::Type{S}, src) where {S} = DelinearizationOperator(promote_coeftype(src, S))
 

@@ -121,6 +121,7 @@ for op in (:extend, :restrict)
 end
 
 native_index(s::Span, idx) = native_index(set(s), idx)
+multilinear_index(s::Span, idx) = multilinear_index(set(s), idx)
 linear_index(s::Span, idxn) = linear_index(set(s), idxn)
 
 # A concrete FunctionSet has spaces associated with derivatives or antiderivatives of a certain order,
