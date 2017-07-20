@@ -266,28 +266,6 @@ has_transform(s::FunctionSet, grid::AbstractGrid) = has_transform(s, gridset(gri
 "Does the set support extension and restriction operators?"
 has_extension(s::FunctionSet) = false
 
-# A concrete FunctionSet has spaces associated with derivatives or antiderivatives of a certain order,
-# and it should implement the following introspective functions:
-# derivative_space(s::MyFunctionSet, order) = ...
-# antiderivative_space(s::MyFunctionSet, order) = ...
-# where order is either an Int (in 1D) or a tuple of Int's (in higher dimensions).
-
-# The default order is 1 for 1d sets:
-derivative_space(s::FunctionSet1d) = derivative_space(s, 1)
-antiderivative_space(s::FunctionSet1d) = antiderivative_space(s, 1)
-
-# Catch tuples with just one element and convert to Int
-derivative_space(s::FunctionSet1d, order::Tuple{Int}) = derivative_space(s, order[1])
-antiderivative_space(s::FunctionSet1d, order::Tuple{Int}) = antiderivative_space(s, order[1])
-
-# This is a candidate for a better implementation. How does one generate a
-# unit vector in a tuple?
-# ASK is this indeed a better implementation?
-dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
-
-# Convenience function to differentiate in a given dimension
-derivative_space(s::FunctionSet; dim=1) = derivative_space(s, dimension_tuple(dimension(s), dim))
-antiderivative_space(s::FunctionSet; dim=1) = antiderivative_space(s, dimension_tuple(dimension(s), dim))
 
 # A concrete FunctionSet may also override extension_set and restriction_set
 # The default is simply to resize.
