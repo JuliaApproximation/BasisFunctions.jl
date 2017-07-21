@@ -6,7 +6,7 @@
 
 function grid_iterator1(grid)
     l = 0
-    s = zero(numtype(grid))
+    s = zero(float_type(eltype(grid)))
     for i in eachindex(grid)
         x = grid[i]
         l += 1
@@ -17,7 +17,7 @@ end
 
 function grid_iterator2(grid)
     l = 0
-    s = zero(numtype(grid))
+    s = zero(float_type(eltype(grid)))
     for x in grid
         l += 1
         s += sum(x)
@@ -30,8 +30,8 @@ function test_generic_grid(grid)
     #println("Grid: ", typeof(grid))
     L = length(grid)
 
-    T = numtype(grid)
-    ELT = eltype(grid)
+    T = eltype(grid)
+    FT = float_type(T)
 
     # Test two types of iterations over a grid.
     # Make sure there are L elements. Do some computation on each point,
@@ -48,10 +48,10 @@ function test_generic_grid(grid)
     end
 
     if has_extension(grid)
-      g_ext = extend(grid, 2)
-      for i in 1:length(grid)
-        @test grid[i] ≈ g_ext[2i-1]
-      end
+        g_ext = extend(grid, 2)
+        for i in 1:length(grid)
+            @test grid[i] ≈ g_ext[2i-1]
+        end
     end
 
     if show_timings
@@ -169,7 +169,7 @@ function test_grids(T)
     mg3 = mapped_grid(mg1, m2)
     @test leftendpoint(mg3) ≈ T(4)
     @test rightendpoint(mg3) ≈ T(5)
-    @test typeof(grid(mg3)) <: PeriodicEquispacedGrid
+    @test typeof(supergrid(mg3)) <: PeriodicEquispacedGrid
 
     # Scattered grid
     pts = map(T, rand(10))

@@ -6,11 +6,11 @@ export evaluate_Bspline, evaluate_periodic_Bspline, Degree
   Calculates ∫[B_N(x)]^2, with B_N the cardinal bspline of degree N
 """
 function squared_spline_integral(N::Int)
-  m = N+1
-  if m > 7
-    m = BigInt(m)
-  end
-  sum(binomial(2m,k)*(-1)^k*(2*(m-k))^(2m-1) for k in 0:m-1)//(2^(2m-1)*factorial(2m-1))
+    m = N+1
+    if m > 7
+        m = BigInt(m)
+    end
+    sum(binomial(2m,k)*(-1)^k*(2*(m-k))^(2m-1) for k in 0:m-1)//(2^(2m-1)*factorial(2m-1))
 end
 
 """

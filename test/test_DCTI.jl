@@ -18,8 +18,8 @@ function test_full_transform_extremagrid()
                 B = ChebyshevBasis(n,T)
                 G = BasisFunctions.secondgrid(B)
                 coef[i] = 1
-                SE = SetExpansion(B,coef)
-                O = full_transform_operator(B, nodegrid=false)
+                SE = SetExpansion(B, coef)
+                O = full_transform_operator(span(B), nodegrid=false)
 
                 f1 = coefficients(O*SE)
                 f2 = BasisFunctions.broadcast(SE,G)
@@ -41,9 +41,9 @@ function test_inverse_transform_extremagrid()
                 B = ChebyshevBasis(n,T)
                 G = BasisFunctions.secondgrid(B)
                 coef[i] = 1
-                SE = SetExpansion(B,coef)
-                O = full_transform_operator(B, nodegrid=false)
-                Oinv = full_transform_operator(dest(O), src(O))
+                SE = SetExpansion(B, coef)
+                O = full_transform_operator(span(B), nodegrid=false)
+                Oinv = full_transform_operator(span(dest(O)), span(src(O)))
                 c = coefficients(Oinv*O*SE)
                 @test(norm(coef-c) < tol)
                 coef[i] = 0

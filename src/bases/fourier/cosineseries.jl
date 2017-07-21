@@ -92,7 +92,7 @@ end
 
 function UnNormalizedGram(s::CosineSpan, oversampling)
     T = coeftype(s)
-    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(s, oversampling)
+    d = T(length_oversampled_grid(set(s), oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(set(s), oversampling)
     DiagonalOperator(s, s, d)
 end

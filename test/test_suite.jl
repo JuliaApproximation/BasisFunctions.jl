@@ -57,7 +57,7 @@ for T in [Float64,BigFloat]
     delimit("Operators")
 
     test_generic_operators(T)
-    
+
     @testset "$(rpad("test diagonal operators",80))" begin
         test_diagonal_operators(T) end
 
@@ -112,15 +112,15 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
 
-    delimit("Test B splines")
-    @testset "$(rpad("Elementary properties",80))" begin
-        elementarypropsofsplinetest(T) end
-    @testset "$(rpad("periodic B splines",80))"  begin
-        periodicbsplinetest(T) end
-    @testset "$(rpad("symmetric B splines",80))"  begin
-        symmetricbsplinestest(T) end
-    @testset "$(rpad("integration of B splines",80))"  begin
-        test_spline_integration() end
+    # delimit("Test B splines")
+    # @testset "$(rpad("Elementary properties",80))" begin
+    #     elementarypropsofsplinetest(T) end
+    # @testset "$(rpad("periodic B splines",80))"  begin
+    #     periodicbsplinetest(T) end
+    # @testset "$(rpad("symmetric B splines",80))"  begin
+    #     symmetricbsplinestest(T) end
+    # @testset "$(rpad("integration of B splines",80))"  begin
+    #     test_spline_integration() end
 
     delimit("Gram")
     @testset "$(rpad("Gram functionality",80))" begin
@@ -137,19 +137,17 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
 
-    @testset "$(rpad("Periodic translate expansions",80))" begin
-        test_generic_periodicbsplinebasis(T) end
-
-    @testset "$(rpad("Translates of B spline expansions",80))" begin
-        test_translatedbsplines(T)
-        test_translatedsymmetricbsplines(T)
-        test_orthonormalsplinebasis(T)
-        test_discrete_orthonormalsplinebasis(T)
-        test_dualsplinebasis(T)
-        test_discrete_dualsplinebasis(T)
-    end
-
-
+    # @testset "$(rpad("Periodic translate expansions",80))" begin
+    #     test_generic_periodicbsplinebasis(T) end
+    #
+    # @testset "$(rpad("Translates of B spline expansions",80))" begin
+    #     test_translatedbsplines(T)
+    #     test_translatedsymmetricbsplines(T)
+    #     test_orthonormalsplinebasis(T)
+    #     test_discrete_orthonormalsplinebasis(T)
+    #     test_dualsplinebasis(T)
+    #     test_discrete_dualsplinebasis(T)
+    # end
 
 end # for T in...
 

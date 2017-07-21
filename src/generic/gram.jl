@@ -34,7 +34,7 @@ The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, 
 """
 MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(set(s))}; options...)
 
-MixedGram(s::FunctionSet, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
+MixedGram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
 function grammatrix!(result, s::Span; options...)
     for i in 1:size(result,1)
@@ -94,7 +94,7 @@ dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(set(s)); options...) =
 
 oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
 
-length_oversampled_grid(b::FunctionSet, oversampling::Real)::Int = approx_length(b, basis_oversampling(b, oversampling)*length(b))
+length_oversampled_grid(b::FunctionSet, oversampling::Real) = approx_length(b, basis_oversampling(b, oversampling)*length(b))
 
 basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 

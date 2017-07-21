@@ -29,7 +29,7 @@ SetExpansion(span::Span) = SetExpansion(set(span), zeros(span))
 
 similar(e::SetExpansion, coefficients) = SetExpansion(set(e), coefficients)
 
-eltype{S,C}(::Type{SetExpansion{S,C}}) = eltype(C)
+eltype(::Type{SetExpansion{S,C}}) where {S,C} = eltype(C)
 
 set(e::SetExpansion) = e.set
 
@@ -111,15 +111,15 @@ roots(f::SetExpansion) = roots(set(f), coefficients(f))
 
 # Delegate generic operators
 for op in (:extension_operator, :restriction_operator, :transform_operator)
-    @eval $op(s1::SetExpansion, s2::SetExpansion) = $op(set(s1), set(s2))
+    @eval $op(s1::SetExpansion, s2::SetExpansion) = $op(span(s1), span(s2))
 end
 
 for op in (:interpolation_operator, :evaluation_operator, :approximation_operator)
-    @eval $op(s::SetExpansion) = $op(set(s))
+    @eval $op(s::SetExpansion) = $op(span(s))
 end
 
-differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(set(s1), set(s2), var...)
-differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(set(s1), var...)
+differentiation_operator(s1::SetExpansion, s2::SetExpansion, var::Int...) = differentiation_operator(span(s1), span(s2), var...)
+differentiation_operator(s1::SetExpansion, var::Int...) = differentiation_operator(span(s1), var...)
 
 
 show(io::IO, fun::SetExpansion) = show_setexpansion(io, fun, set(fun))
@@ -153,10 +153,10 @@ for op in (:+, :-)
         if size(s1) == size(s2)
             SetExpansion(set(s1), $op(coefficients(s1), coefficients(s2)))
         elseif length(s1) < length(s2)
-            s3 = extension_operator(set(s1), set(s2)) * s1
+            s3 = extension_operator(span(s1), span(s2)) * s1
             SetExpansion(set(s2), $op(coefficients(s3), coefficients(s2)))
         else
-            s3 = extension_operator(set(s2), set(s1)) * s2
+            s3 = extension_operator(span(s2), span(s1)) * s2
             SetExpansion(set(s1), $op(coefficients(s1), coefficients(s3)))
         end
     end

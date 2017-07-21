@@ -224,7 +224,7 @@ function eval_element{K,T}(b::PeriodicSplineBasis{K,T}, idx::Int, x)
 end
 
 
-function eval_expansion{K,T <: Number}(b::PeriodicSplineBasis{K}, coef, x::T)
+function eval_expansion(b::PeriodicSplineBasis{K}, coef, x::T) where {K,T <: Number}
 	i = interval(b, x)
 	n = length(b)
 

@@ -1,4 +1,5 @@
 # translates_of_bsplines.jl
+
 abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
 end
 
@@ -200,7 +201,7 @@ struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates
   coefficients ::    Array{T,1}
 
   OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
-    new(b, coeffs_in_other_basis(b, OrthonormalSplineBasis; options...))
+    new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
 
 
@@ -208,7 +209,7 @@ end
 degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
 superset(b::OrthonormalSplineBasis) = b.superset
-coeffs(b::OrthonormalSplineBasis) = b.coefficients
+coefficients(b::OrthonormalSplineBasis) = b.coefficients
 
 OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
@@ -236,7 +237,7 @@ struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTr
   oversampling ::   T
 
   DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) where {K,T} =
-    new(b, coeffs_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
+    new(b, coefficients_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
 
 end
 
@@ -244,11 +245,11 @@ end
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
 superset(b::DiscreteOrthonormalSplineBasis) = b.superset
-coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
 default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
 
 ==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
-    superset(b1)==superset(b2) && coeffs(b1) ≈ coeffs(b2) && default_oversampling(b1) == default_oversampling(b2)
+    superset(b1)==superset(b2) && coefficients(b1) ≈ coefficients(b2) && default_oversampling(b1) == default_oversampling(b2)
 
 DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)

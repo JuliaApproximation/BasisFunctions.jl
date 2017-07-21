@@ -66,8 +66,8 @@ function test_fourier_series(T)
     b1 = rescale(FourierBasis(n,T), a, b)
     b2 = rescale(FourierBasis(n+1,T), a, b)
     b3 = rescale(FourierBasis(n+15,T), a, b)
-    E2 = extension_operator(b1, b2)
-    E3 = extension_operator(b1, b3)
+    E2 = extension_operator(span(b1), span(b2))
+    E3 = extension_operator(span(b1), span(b3))
     e1 = SetExpansion(b1, coef)
     e2 = SetExpansion(b2, E2*coef)
     e3 = SetExpansion(b3, E3*coef)
@@ -78,7 +78,7 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = map(complex(T), rand(Float64, size(fb)))
-    D = differentiation_operator(fb)
+    D = differentiation_operator(span(fb))
     coef2 = D*coef
     e1 = SetExpansion(fb, coef)
     e2 = SetExpansion(rescale(FourierBasis(length(fb)+1,T),left(fb),right(fb)), coef2)
@@ -126,8 +126,8 @@ function test_fourier_series(T)
     b1 = FourierBasis(n, T)
     b2 = FourierBasis(n+1, T)
     b3 = FourierBasis(n+15, T)
-    E2 = Extension(b1, b2)
-    E3 = Extension(b1, b3)
+    E2 = Extension(span(b1), span(b2))
+    E3 = Extension(span(b1), span(b3))
     e1 = SetExpansion(b1, coef)
     e2 = SetExpansion(b2, E2*coef)
     e3 = SetExpansion(b3, E3*coef)
@@ -140,8 +140,8 @@ function test_fourier_series(T)
     b1 = FourierBasis(n, T)
     b2 = FourierBasis(n-1, T)
     b3 = FourierBasis(n-5, T)
-    E1 = Restriction(b1, b2)    # source has even length
-    E2 = Restriction(b2, b3)    # source has odd length
+    E1 = Restriction(span(b1), span(b2))    # source has even length
+    E2 = Restriction(span(b2), span(b3))    # source has odd length
     coef1 = map(complex(T), rand(length(b1)))
     coef2 = E1*coef1
     coef3 = E2*coef2
@@ -152,7 +152,7 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = map(complex(T), rand(Float64, size(fbo)))
-    D = differentiation_operator(fbo)
+    D = differentiation_operator(span(fbo))
     coef2 = D*coef
     e1 = SetExpansion(fbo, coef)
     e2 = SetExpansion(fbo, coef2)
@@ -163,9 +163,9 @@ function test_fourier_series(T)
 
     # Transforms
     b1 = FourierBasis(161, T)
-    A = approximation_operator(b1)
+    A = approximation_operator(span(b1))
     f = x -> 1/(2+cos(2*T(pi)*x))
-    e = approximate(b1, f)
+    e = approximate(span(b1), f)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
@@ -173,7 +173,7 @@ function test_fourier_series(T)
 
     b2 = FourierBasis(162, T)
     f2 = x -> 1/(2+cos(2*T(pi)*x))
-    e2 = approximate(b2, f2)
+    e2 = approximate(span(b2), f2)
     x0 = T(1//2)
     @test abs((e*e2)(T(x0))-f(x0)*f2(x0)) < sqrt(eps(T))
     @test abs((e+2*e2)(T(x0))-(f(x0)+2*f2(x0))) < sqrt(eps(T))
@@ -182,20 +182,20 @@ function test_fourier_series(T)
     # Discrete Gram
     b = FourierBasis(11)
 
-    G = DiscreteGram(b)
-    DG = DiscreteDualGram(b)
-    MG = DiscreteMixedGram(b)
+    G = DiscreteGram(span(b))
+    DG = DiscreteDualGram(span(b))
+    MG = DiscreteMixedGram(span(b))
 
-    e = coefficients(random_expansion(b))
+    e = coefficients(random_expansion(span(b)))
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e
 
-    G = Gram(b)
-    DG = DualGram(b)
-    MG = MixedGram(b)
+    G = Gram(span(b))
+    DG = DualGram(span(b))
+    MG = MixedGram(span(b))
 
-    e = coefficients(random_expansion(b))
+    e = coefficients(random_expansion(span(b)))
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e

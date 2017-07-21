@@ -153,8 +153,8 @@ function gramdiagonal!(result, ::ChebyshevSpan; options...)
 end
 
 function UnNormalizedGram(s::ChebyshevSpan{A}, oversampling) where {A}
-    d = A(length_oversampled_grid(s, oversampling))/2*ones(A,length(s))
-    d[1] = length_oversampled_grid(s, oversampling)
+    d = A(length_oversampled_grid(set(s), oversampling))/2*ones(A,length(s))
+    d[1] = length_oversampled_grid(set(s), oversampling)
     DiagonalOperator(s, s, d)
 end
 
@@ -237,9 +237,9 @@ function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options.
 end
 
 function transform_to_grid_pre(src::ChebyshevSpan, dest, grid::ChebyshevExtremaGrid; options...)
-    ELT = coeftype(src)
-    coefscaling1 = CoefficientScalingOperator(src, 1, ELT(2))
-    coefscaling2 = CoefficientScalingOperator(src, length(src), ELT(2))
+    T = coeftype(src)
+    coefscaling1 = CoefficientScalingOperator(src, 1, T(2))
+    coefscaling2 = CoefficientScalingOperator(src, length(src), T(2))
     coefscaling1 * coefscaling2
 end
 
@@ -266,12 +266,14 @@ transform_from_grid_pre(src, dest::ChebyshevSpan, grid::ChebyshevExtremaGrid; op
 is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
 function (*)(src1::ChebyshevBasis, src2::ChebyshevBasis, coef_src1, coef_src2)
-    dest = ChebyshevBasis(length(src1)+length(src2),eltype(src1,src2))
-    coef_dest = zeros(eltype(dest),length(dest))
+    @assert domaintype(src1) == domaintype(src2)
+    T = promote_type(eltype(coef_src1), eltype(coef_src2))
+    dest = ChebyshevBasis(length(src1)+length(src2), domaintype(src1))
+    coef_dest = zeros(T, length(dest))
     for i = 1:length(src1)
         for j = 1:length(src2)
-            coef_dest[i+j-1]+=1/2*coef_src1[i]*coef_src2[j]
-            coef_dest[abs(i-j)+1]+=1/2*coef_src1[i]*coef_src2[j]
+            coef_dest[i+j-1] += 1/2*coef_src1[i]*coef_src2[j]
+            coef_dest[abs(i-j)+1] += 1/2*coef_src1[i]*coef_src2[j]
         end
     end
     (dest,coef_dest)
