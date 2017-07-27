@@ -72,7 +72,7 @@ export PiecewiseInterval, Partition
 export partition
 export split_interval
 
-# from src/tensorproducts.jl
+# from src/products.jl
 export tensorproduct, ⊗
 
 # from grid/grid.jl
@@ -180,7 +180,7 @@ export approximation_operator, default_approximation_operator, approximate, disc
 export differentiation_operator, antidifferentiation_operator, derivative_set,
     antiderivative_set, Differentiation, Antidifferentiation
 
-# from tensorproducts.jl
+# from products.jl
 export is_homogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
@@ -303,7 +303,7 @@ include("operator/circulant_operator.jl")
 include("bases/sets/expansions.jl")
 
 
-include("tensorproducts.jl")
+include("products.jl")
 
 include("generic/generic_operators.jl")
 
