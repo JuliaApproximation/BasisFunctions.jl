@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__()
+# __precompile__()
 
 module BasisFunctions
 
@@ -55,12 +55,13 @@ import Base.LinAlg: dot
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
-import Domains: matrix, vector
+import Domains: matrix, vector, tensorproduct
 
 # composite type interface
 import Domains: element, elements, nb_elements
 # cartesian product utility functions
 import Domains: cartesianproduct, ×
+
 import Domains: mapping
 
 
