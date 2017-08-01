@@ -52,7 +52,7 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
-import Domains: domaintype, rangetype
+import Domains: domaintype, rangetype, dimension
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
