@@ -101,7 +101,7 @@ basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 default_oversampling(b::FunctionSet) = 1
 # E'E/N
 DiscreteGram(s::Span; oversampling = default_oversampling(set(s))) =
-  1/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
+  rangetype(s)(1)/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
 
 function UnNormalizedGram(s::Span, oversampling = 1)
     grid = oversampled_grid(set(s), oversampling)

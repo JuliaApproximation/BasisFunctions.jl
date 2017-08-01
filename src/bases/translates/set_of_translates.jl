@@ -15,6 +15,7 @@ is_biorthogonal(::SetOfTranslates) = true
 is_basis(::SetOfTranslates) = true
 
 name(b::SetOfTranslates) = "Set of translates of a function"
+name(::Type{B}) where {B<:SetOfTranslates}= "Set of translates of a function"
 
 fun(b::SetOfTranslates) = b.fun
 fun(s::TranslatesSpan) = fun(set(s))
@@ -99,7 +100,7 @@ end
 
 eval_element(b::PeriodicSetOfTranslates, idx::Int, x::Real) = fun(b)(x-native_index(b, idx)*stepsize(b))
 
-eval_dualelement(b::PeriodicSetOfTranslates, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(b),native_index(b, idx)), x)
+eval_dualelement(b::PeriodicSetOfTranslates, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(span(b)),native_index(b, idx)), x)
 
 Gram(s::PeriodicTranslatesSpan; options...) = CirculantOperator(s, s, primalgramcolumn(s; options...))
 
@@ -108,9 +109,9 @@ function UnNormalizedGram(s::PeriodicTranslatesSpan, oversampling = 1)
     CirculantOperator(evaluation_operator(s, grid)'*evaluation_operator(s, grid))
 end
 
-grammatrix(b::PeriodicSetOfTranslates; options...) = matrix(Gram(b; options...))
+grammatrix(b::PeriodicTranslatesSpan; options...) = matrix(Gram(b; options...))
 
-dualgrammatrix(b::PeriodicSetOfTranslates; options...) = matrix(inv(Gram(b; options...)))
+dualgrammatrix(b::PeriodicTranslatesSpan; options...) = matrix(inv(Gram(b; options...)))
 
 # All inner products between elements of PeriodicSetOfTranslates are known by the first column of the (circulant) gram matrix.
 function primalgramcolumn(s::PeriodicTranslatesSpan; options...)
@@ -134,9 +135,15 @@ function dualgramcolumn(s::PeriodicTranslatesSpan; options...)
     real(G*e)
 end
 
+"""
+  The function set that correspands to the dual set ``Ψ={ψ_i}_{i∈ℕ}`` of the given set ``Φ={ϕ_i}_{i∈ℕ}``.
+
+"""
 dual(set::PeriodicSetOfTranslates; options...) =
     DualPeriodicSetOfTranslates(set; options...)
-
+"""
+  The function set that correspands to the dual set of the given set.
+"""
 discrete_dual(set::PeriodicSetOfTranslates; options...) =
     DiscreteDualPeriodicSetOfTranslates(set; options...)
 
@@ -148,6 +155,8 @@ discrete_dual(set::PeriodicSetOfTranslates; options...) =
 """
 abstract type CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T}
 end
+
+const CompactPeriodicTranslatesSpan{A, F <: CompactPeriodicSetOfTranslates} = Span{A,F}
 
 """
   Length of the function of a CompactPeriodicSetOfTranslates.
@@ -237,6 +246,8 @@ struct DualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTransla
     coefficients    :: Array{T,1}
 end
 
+const DualPeriodicTranslatesSpan{A, F <: DualPeriodicSetOfTranslates} = Span{A,F}
+
 function DualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; options...)
   DualPeriodicSetOfTranslates{eltype(set)}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicSetOfTranslates; options...))
 end
@@ -246,7 +257,7 @@ coefficients(b::DualPeriodicSetOfTranslates) = b.coefficients
 
 dual(b::DualPeriodicSetOfTranslates; options...) = superset(b)
 
-Gram(b::DualPeriodicSetOfTranslates; options...) = inv(Gram(superset(b); options...))
+Gram(b::Span{A,F}; options...) where {A,F<:DualPeriodicSetOfTranslates} = inv(Gram(Span(superset(set(b)), A); options...))
 
 """
   Set representing the dual basis with respect to a discrete norm on the oversampled grid.
@@ -258,12 +269,14 @@ struct DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetO
     oversampling    :: T
 end
 
+const DiscreteDualPeriodicTranslatesSpan{A, F <: DiscreteDualPeriodicSetOfTranslates} = Span{A,F}
+
 function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; oversampling=default_oversampling(set), options...)
     DiscreteDualPeriodicSetOfTranslates{eltype(set)}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
 end
 
 superset(b::DiscreteDualPeriodicSetOfTranslates) = b.superset
-coefficients(b::DiscreteDualPeriodicSetOfTranslates) = b.coefficients
+coeffs(b::DiscreteDualPeriodicSetOfTranslates) = b.coeffs
 
 default_oversampling(b::DiscreteDualPeriodicSetOfTranslates) = b.oversampling
 
@@ -273,4 +286,4 @@ change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTran
 
 resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 
-set_promote_eltype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_eltype(dual(b), S); oversampling=default_oversampling(b))
+set_promote_domaintype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_domaintype(dual(b), S); oversampling=default_oversampling(b))

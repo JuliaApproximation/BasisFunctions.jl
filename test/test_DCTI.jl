@@ -43,7 +43,7 @@ function test_inverse_transform_extremagrid()
                 coef[i] = 1
                 SE = SetExpansion(B, coef)
                 O = full_transform_operator(span(B), nodegrid=false)
-                Oinv = full_transform_operator(span(dest(O)), span(src(O)))
+                Oinv = full_transform_operator(dest(O), src(O))
                 c = coefficients(Oinv*O*SE)
                 @test(norm(coef-c) < tol)
                 coef[i] = 0

@@ -51,7 +51,7 @@ d6 = plan_idct!(zeros(10), 1:1)
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
         LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
 
-for T in [Float64,BigFloat]
+for T in [BigFloat,]
     println()
     delimit("T is $T", )
     delimit("Operators")
@@ -137,9 +137,9 @@ for T in [Float64,BigFloat]
     @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
         test_ops(T) end
 
-    # @testset "$(rpad("Periodic translate expansions",80))" begin
-    #     test_generic_periodicbsplinebasis(T) end
-    #
+    @testset "$(rpad("Periodic translate expansions",80))" begin
+        test_generic_periodicbsplinebasis(T) end
+
     # @testset "$(rpad("Translates of B spline expansions",80))" begin
     #     test_translatedbsplines(T)
     #     test_translatedsymmetricbsplines(T)

@@ -35,5 +35,5 @@ end
 # using BasisFunctions
 # using Base.Test
 # #
-# @testset begin discrete_gram_test(Float64) end
-#
+# @testset begin discrete_gram_test(BigFloat) end
+# #

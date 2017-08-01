@@ -171,7 +171,7 @@ function test_diagonal_operators(T)
     for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, T)))
         operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
-            ScalingOperator(SRC, rand(coeftype(SRC))), ScalingOperator(SRC,3),
+            ScalingOperator(SRC, map(coeftype(SRC),rand())), ScalingOperator(SRC,3),
             DiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))),
             PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
         for Op in operators

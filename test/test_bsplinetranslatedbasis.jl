@@ -19,8 +19,8 @@ function test_generic_periodicbsplinebasis(T)
     @test 0 < BasisFunctions.right_of_compact_function(b) - BasisFunctions.left_of_compact_function(b) < BasisFunctions.period(b)
 
     @test instantiate(B, 4, Float16)==B(4,3,Float16)
-    @test set_promote_eltype(b, Float16)==B(n,degree(b),Float16)
-    @test set_promote_eltype(b, complex(Float64))==B(n,degree(b),Complex128)
+    @test promote_domaintype(b, Float16)==B(n,degree(b),Float16)
+    @test promote_domaintype(b, complex(Float64))==B(n,degree(b),Complex128)
     @test resize(b, 20)==B(20,degree(b),T)
     @test BasisFunctions.grid(b)==PeriodicEquispacedGrid(n,0,1)
     @test BasisFunctions.period(b)==T(1)
@@ -28,8 +28,8 @@ function test_generic_periodicbsplinebasis(T)
 
     n = 3
     b=B(n,1,T)
-    @test abs(sum(BasisFunctions.grammatrix(b) - [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n)) < tol
-    @test abs(sum(BasisFunctions.dualgrammatrix(b) - [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n)) < tol
+    @test abs(sum(BasisFunctions.grammatrix(span(b)) - [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n)) < tol
+    @test abs(sum(BasisFunctions.dualgrammatrix(span(b)) - [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n)) < tol
 
     n = 8
     b=B(n,0,T)
@@ -46,7 +46,7 @@ function test_translatedbsplines(T)
   bb = BSplineTranslatesBasis(n,1, T;scaled=true)
   b = BSplineTranslatesBasis(n,1, T)
   e = rand(n)
-  @test norm(Gram(b)*e-Gram(bb)*e/n) < tol
+  @test norm(Gram(span(b))*e-Gram(span(bb))*e/n) < tol
 
 
   b = BSplineTranslatesBasis(n,3, T)
@@ -111,8 +111,8 @@ function test_translatedbsplines(T)
   for K in 0:3
     for s2 in 5:6
       s1 = s2<<1
-      b1 = BSplineTranslatesBasis(s1,K)
-      b2 = BSplineTranslatesBasis(s2,K)
+      b1 = span(BSplineTranslatesBasis(s1,K))
+      b2 = span(BSplineTranslatesBasis(s2,K))
 
       e1 = random_expansion(b1)
       e2 = random_expansion(b2)
@@ -163,7 +163,7 @@ function test_translatedsymmetricbsplines(T)
 
   b = SymBSplineTranslatesBasis(n,1,T)
   bb = BSplineTranslatesBasis(n,1,T)
-  @test norm((Gram(b)-Gram(bb))*rand(n)) < tol
+  @test norm((Gram(span(b))-Gram(span(bb)))*rand(n)) < tol
 
   b = SymBSplineTranslatesBasis(n,3, T)
 
@@ -206,7 +206,7 @@ function test_translatedsymmetricbsplines(T)
   # Test extension_operator and invertability of restriction_operator w.r.t. extension_operator.
   n = 8
   for degree in 1:2:3
-    b = SymBSplineTranslatesBasis(n, degree, T)
+    b = span(SymBSplineTranslatesBasis(n, degree, T))
     basis_ext = extend(b)
     r = restriction_operator(basis_ext, b)
     e = extension_operator(b, basis_ext)
@@ -226,8 +226,8 @@ function test_translatedsymmetricbsplines(T)
   for K in 1:2:3
     for s2 in 5:6
       s1 = s2<<1
-      b1 = SymBSplineTranslatesBasis(s1,K)
-      b2 = SymBSplineTranslatesBasis(s2,K)
+      b1 = span(SymBSplineTranslatesBasis(s1,K))
+      b2 = span(SymBSplineTranslatesBasis(s2,K))
 
       e1 = random_expansion(b1)
       e2 = random_expansion(b2)
@@ -245,10 +245,8 @@ function test_translatedsymmetricbsplines(T)
     end
   end
 
-  @test_throws AssertionError restriction_operator(SymBSplineTranslatesBasis(4,1), SymBSplineTranslatesBasis(3,1))
-  @test_throws AssertionError extension_operator(SymBSplineTranslatesBasis(4,1), SymBSplineTranslatesBasis(6,1))
-  @test_throws MethodError restriction_operator(SymBSplineTranslatesBasis(4,0), SymBSplineTranslatesBasis(2,0))
-  @test_throws MethodError extension_operator(SymBSplineTranslatesBasis(3,0), SymBSplineTranslatesBasis(6,0))
+  @test_throws AssertionError restriction_operator(span(SymBSplineTranslatesBasis(4,1)), span(SymBSplineTranslatesBasis(3,1)))
+  @test_throws AssertionError extension_operator(span(SymBSplineTranslatesBasis(4,1)), span(SymBSplineTranslatesBasis(6,1)))
 end
 
 function test_orthonormalsplinebasis(T)
@@ -257,18 +255,18 @@ function test_orthonormalsplinebasis(T)
   @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized)"
   @test instantiate(OrthonormalSplineBasis,5)==OrthonormalSplineBasis(5,3)
 
-  G = sqrt(DualGram(b.superset))
+  G = sqrt(DualGram(span(b.superset)))
   e = zeros(eltype(G),size(G,1))
   e[1] = 1
   @test BasisFunctions.coeffs(b) ≈ G*e
 
   d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
   @test d ≈ e
-  @test typeof(Gram(b)) <: IdentityOperator
+  @test typeof(Gram(span(b))) <: IdentityOperator
 
   n = 8
   for degree in 0:3
-    b = OrthonormalSplineBasis(n, degree, T)
+    b = span(OrthonormalSplineBasis(n, degree, T))
     basis_ext = extend(b)
     r = restriction_operator(basis_ext, b)
     e = extension_operator(b, basis_ext)

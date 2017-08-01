@@ -3,17 +3,29 @@
 abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
 end
 
-degree{K}(b::PeriodicBSplineBasis{K}) = K
+const PeriodicBSplineSpan{A,F <: PeriodicBSplineBasis} = Span{A,F}
 
-Gram(b::PeriodicBSplineBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
+degree(b::B) where {K,T, B<:PeriodicBSplineBasis{K,T}} = K
 
-function bspline_extension_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+Gram(b::PeriodicBSplineSpan; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
+
+function extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
+    @assert degree(set(s1)) == degree(set(s2))
+    bspline_extension_operator(s1, s2; options...)
+end
+
+function restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
+    @assert degree(set(s1)) == degree(set(s2))
+    bspline_restriction_operator(s1, s2; options...)
+end
+
+function bspline_extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
   @assert 2*length(s1) == length(s2)
   _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
 end
 
 # The calculation done in this function is equivalent to finding the pseudoinverse of the bspline_extension_operator.
-function bspline_restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
+function bspline_restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
     @assert length(s1) == 2*length(s2)
     r = BasisFunctions._binomial_circulant(s1)
     e = BasisFunctions.eigenvalues(r)
@@ -54,6 +66,8 @@ struct BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   fun             :: Function
 end
 
+const BSplineTranslatesSpan{A,F <: BSplineTranslatesBasis} = Span{A,F}
+
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
     BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
     BSplineTranslatesBasis{DEGREE,T,false}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
@@ -69,61 +83,56 @@ right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = stepsi
 
 instantiate{T}(::Type{BSplineTranslatesBasis}, n::Int, ::Type{T}) = BSplineTranslatesBasis(n,3,T)
 
-set_promote_eltype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTranslatesBasis(length(b),K, S)
+set_promote_domaintype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTranslatesBasis(length(b),K, S)
 
 resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, degree(b), T)
 
 # TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
-compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) = iseven(K) &&
+compatible_grid(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) where {K} = iseven(K) &&
     (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
-compatible_grid{K}(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) = isodd(K) &&
+compatible_grid(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) where {K}= isodd(K) &&
     (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
 # we use a PeriodicEquispacedGrid in stead
-grid{K}(b::BSplineTranslatesBasis{K}) = isodd(K) ?
+grid(b::BSplineTranslatesBasis{K}) where {K} = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function _binomial_circulant{K,T,SCALED}(s::BSplineTranslatesBasis{K,T,SCALED})
-  c = zeros(T, length(s))
+function _binomial_circulant(s::Span{A,BSplineTranslatesBasis{K,T,SCALED}}) where {A,K,T,SCALED}
+  c = zeros(A, length(s))
   for k in 1:K+2
     c[k] = binomial(K+1, k-1)
   end
   if SCALED
-    sqrt(T(2))/(1<<(degree(s)))*CirculantOperator(s, c)
+    sqrt(A(2))/(1<<K)*CirculantOperator(s, c)
   else
-    T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+    A(1)/(1<<K)*CirculantOperator(s, c)
   end
 end
 
-function primalgramcolumnelement{K,T,SCALED}(set::BSplineTranslatesBasis{K,T,SCALED}, i::Int; options...)
+function primalgramcolumnelement(span::Span{A,BSplineTranslatesBasis{K,T,SCALED}}, i::Int; options...) where {A,K,T,SCALED}
   r = 0
-  if length(set) <= 2degree(set)+1
-    return defaultprimalgramcolumnelement(set, i; options...)
+  # If size of functionspace is too small there is overlap and we can not use the
+  # function squared_spline_integral which assumes no overlap.
+  # Use integration as long as there is no more efficient way is implemented.
+  if length(span) <= 2K+1
+    return defaultprimalgramcolumnelement(span, i; options...)
   else
+    # squared_spline_integral gives the exact integral (in a rational number)
     if i==1
       r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
-    elseif 1 < i <= degree(set)+1
+    elseif 1 < i <= K+1
       r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
-    elseif i > length(set)-degree(set)
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(set)-i+1)
+    elseif i > length(span)-K
+      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
     end
   end
   if SCALED
-    T(r)
+    A(r)
   else
-    T(r)/length(set)
+    A(r)/length(span)
   end
 end
-
-
-# TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
-# extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
-extension_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
-    bspline_extension_operator(s1, s2; options...)
-
-restriction_operator{K,T}(s1::BSplineTranslatesBasis{K,T}, s2::BSplineTranslatesBasis{K,T}; options...) =
-    bspline_restriction_operator(s1, s2; options...)
 
 """
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
@@ -136,6 +145,8 @@ struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   b               :: T
   fun             :: Function
 end
+
+const SymBSplineTranslatesSpan{A,F <: SymBSplineTranslatesBasis} = Span{A,F}
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
@@ -151,11 +162,11 @@ right_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T})::real(T) = ste
 
 instantiate{T}(::Type{SymBSplineTranslatesBasis}, n::Int, ::Type{T}) = SymBSplineTranslatesBasis(n,3,T)
 
-set_promote_eltype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSplineTranslatesBasis(length(b),K, S)
+set_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSplineTranslatesBasis(length(b),K, S)
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
-function _binomial_circulant{K,T}(s::SymBSplineTranslatesBasis{K,T})
+function _binomial_circulant(s::Span{A,SymBSplineTranslatesBasis{K,T}}) where {A,K,T}
   if iseven(degree(s))
     warn("Extension and restriction work with odd degrees only.")
     throw(MethodError())
@@ -185,13 +196,13 @@ function testprimalgramcolumnelement{K,T}(set::SymBSplineTranslatesBasis{K,T}, i
   T(r)/length(set)
 end
 
-# TODO extension_operator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
-# extension_operator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
-extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
-    bspline_extension_operator(s1, s2; options...)
-
-restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
-    bspline_restriction_operator(s1, s2; options...)
+# # TODO erator/restriction_operator can be added to PeriodicBSplineBasis in julia 0.6
+# # erator{K,T,B<:PeriodicBSplineBasis{K,T}}(s1::B, s2::B; options...) =
+# extension_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
+#     bspline_extension_operator(s1, s2; options...)
+#
+# restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
+#     bspline_restriction_operator(s1, s2; options...)
 
 """
   Basis consisting of orthonormal basis function in the spline space of degree K.
@@ -204,12 +215,12 @@ struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates
     new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
 
-
+const OrthonormalSplineSpan{A,F <: OrthonormalSplineBasis} = Span{A,F}
 
 degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
 superset(b::OrthonormalSplineBasis) = b.superset
-coefficients(b::OrthonormalSplineBasis) = b.coefficients
+coeffs(b::OrthonormalSplineBasis) = b.coefficients
 
 OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
@@ -218,13 +229,13 @@ name(b::OrthonormalSplineBasis) = name(b.superset)*" (orthonormalized)"
 
 instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalSplineBasis(n,3,T)
 
-set_promote_eltype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
+set_promote_domaintype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
 
 resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
 
-Gram(b::OrthonormalSplineBasis) = IdentityOperator(b, b)
+Gram(b::OrthonormalSplineSpan) = IdentityOperator(b, b)
 
-change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DualGram(b; options...))
+change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DualGram(Span(b); options...))
 
 
 """
@@ -241,11 +252,12 @@ struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTr
 
 end
 
+const DiscreteOrthonormalSplineSpan{A,F <: DiscreteOrthonormalSplineBasis} = Span{A,F}
 
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
 superset(b::DiscreteOrthonormalSplineBasis) = b.superset
-coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
 default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
 
 ==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
@@ -258,8 +270,8 @@ name(b::DiscreteOrthonormalSplineBasis) = name(superset(b))*" (orthonormalized, 
 
 instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
 
-set_promote_eltype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
+set_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
 
 resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
 
-change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(b; options...))
+change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(Span(b); options...))

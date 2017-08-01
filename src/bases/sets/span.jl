@@ -56,6 +56,7 @@ rangetype(set::FunctionSet, ::Type{A}) where {A} = rangetype(Span(set, A))
 elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
 element(span::Span, i) = Span(element(set(span), i), coeftype(span))
 
+isreal(span::Span{A,F}) where {A,F} = isreal(A) && isreal(set(span))
 
 for op in (:length, :size, :dimension, :domaintype, :grid)
     @eval $op(span::Span) = $op(set(span))
@@ -117,7 +118,7 @@ tensorproduct(s1::Span{A}, s2::Span{A}) where {A} = span(tensorproduct(set(s1), 
 tensorproduct(s1::Span{A}, s2::Span{B}) where {A,B} = span(tensorproduct(set(s1), set(s2)), promote_type(A,B))
 
 for op in (:extend, :restrict)
-    @eval $op(s::Span) = Span(op(set(s)), coeftype(s))
+    @eval $op(s::Span) = Span($op(set(s)), coeftype(s))
 end
 
 native_index(s::Span, idx) = native_index(set(s), idx)
