@@ -167,7 +167,7 @@ set_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = Sy
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
 function _binomial_circulant(s::Span{A,SymBSplineTranslatesBasis{K,T}}) where {A,K,T}
-  if iseven(degree(s))
+  if iseven(K)
     warn("Extension and restriction work with odd degrees only.")
     throw(MethodError())
   end
@@ -177,7 +177,7 @@ function _binomial_circulant(s::Span{A,SymBSplineTranslatesBasis{K,T}}) where {A
     c[i+1] = binomial(K+1, k)
     c[end+1-i] = binomial(K+1, k)
   end
-  T(1)/(1<<(degree(s)))*CirculantOperator(s, c)
+  T(1)/(1<<K)*CirculantOperator(s, c)
 end
 
 function testprimalgramcolumnelement{K,T}(set::SymBSplineTranslatesBasis{K,T}, i::Int; options...)
@@ -220,7 +220,7 @@ const OrthonormalSplineSpan{A,F <: OrthonormalSplineBasis} = Span{A,F}
 degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
 superset(b::OrthonormalSplineBasis) = b.superset
-coeffs(b::OrthonormalSplineBasis) = b.coefficients
+coefficients(b::OrthonormalSplineBasis) = b.coefficients
 
 OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
@@ -257,7 +257,7 @@ const DiscreteOrthonormalSplineSpan{A,F <: DiscreteOrthonormalSplineBasis} = Spa
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
 superset(b::DiscreteOrthonormalSplineBasis) = b.superset
-coeffs(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
 default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
 
 ==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =

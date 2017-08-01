@@ -44,14 +44,14 @@ d5 = plan_dct!(zeros(10), 1:1)
 d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
-# SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
-#         LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
-#         BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
-#         DiscreteOrthonormalSplineBasis]
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
-        LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
+        LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
+        DiscreteOrthonormalSplineBasis]
+# SETS = [FourierBasis, ChebyshevBasis, ChebyshevII, LegendreBasis,
+#         LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
 
-for T in [BigFloat,]
+for T in [Float64,BigFloat,]
     println()
     delimit("T is $T", )
     delimit("Operators")
@@ -140,14 +140,14 @@ for T in [BigFloat,]
     @testset "$(rpad("Periodic translate expansions",80))" begin
         test_generic_periodicbsplinebasis(T) end
 
-    # @testset "$(rpad("Translates of B spline expansions",80))" begin
-    #     test_translatedbsplines(T)
-    #     test_translatedsymmetricbsplines(T)
-    #     test_orthonormalsplinebasis(T)
-    #     test_discrete_orthonormalsplinebasis(T)
-    #     test_dualsplinebasis(T)
-    #     test_discrete_dualsplinebasis(T)
-    # end
+    @testset "$(rpad("Translates of B spline expansions",80))" begin
+        test_translatedbsplines(T)
+        test_translatedsymmetricbsplines(T)
+        test_orthonormalsplinebasis(T)
+        test_discrete_orthonormalsplinebasis(T)
+        test_dualsplinebasis(T)
+        test_discrete_dualsplinebasis(T)
+    end
 
 end # for T in...
 

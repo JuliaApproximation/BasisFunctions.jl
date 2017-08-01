@@ -166,6 +166,7 @@ function matrix!(op::AbstractOperator, a)
 
     coef_src  = zeros(src(op))
     coef_dest = zeros(dest(op))
+
     matrix_fill!(op, a, coef_src, coef_dest)
 end
 

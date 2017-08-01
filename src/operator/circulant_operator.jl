@@ -33,14 +33,14 @@ function CirculantOperator(op_src::Span, op_dest::Span, firstcolumn::AbstractVec
     # Using src(D) and dest(D) ensures that they have complex types, because the fft
     # in the live above will result in complex numbers
     # Note that this makes all CirculantOperators complex! TODO: fix
-    real_operator = isreal(op_src) && isreal(op_dest) && isreal(firstcolumn)
-    CirculantOperator(op_src, op_dest, D, Val{real_operator}; options...)
+    CirculantOperator(op_src, op_dest, D; options...)
 end
 
-CirculantOperator(src::Span, dest::Span, D::PseudoDiagonalOperator, real_operator=Val{false}; options...) =
-    CirculantOperator(eltype(D), src, dest, D, real_operator; options...)
+CirculantOperator(src::Span, dest::Span, D::PseudoDiagonalOperator; options...) =
+    CirculantOperator(eltype(D), src, dest, D; options...)
 
-function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::PseudoDiagonalOperator, ::Type{Val{false}}; options...) where {T}
+function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::PseudoDiagonalOperator;
+  realify_circulant_operator=true, real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
     cpx_src = src(opD)
     cpx_dest = dest(opD)
 
@@ -48,28 +48,24 @@ function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::PseudoDi
     c_src = promote_coeftype(cpx_src, S)
     c_dest = promote_coeftype(cpx_dest, D)
     c_D = similar_operator(opD, A, c_src, c_dest)
-    F = forward_fourier_operator(c_src, c_src, A; options...)
-    iF = backward_fourier_operator(c_dest, c_dest, A; options...)
+    F = forward_fourier_operator(c_src, c_src, A; verbose=verbose, options...)
+    iF = backward_fourier_operator(c_dest, c_dest, A; verbose=verbose, options...)
 
+    #realify a circulant operator if asked, both spans are real and if it contains almost real elements
+    if realify_circulant_operator && isreal(op_src) && isreal(op_dest)
+        imag_norm = Base.norm(imag(fft(diagonal(opD))))
+        if  imag_norm < real_circulant_tol
+            verbose && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
+            r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
+            r_src = promote_coeftype(op_src, r_S)
+            r_dest = promote_coeftype(op_dest, r_D)
+
+            return CirculantOperator{r_A}(r_src, r_dest, iF*c_D*F, c_D)
+        else
+            verbose && warn("was not able to realify circulant operator")
+        end
+    end
     CirculantOperator{A}(src(F), dest(iF), iF*c_D*F, c_D)
-end
-
-function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::PseudoDiagonalOperator, ::Type{Val{true}}; options...) where {T}
-    cpx_src = src(opD)
-    cpx_dest = dest(opD)
-
-    S, D, A = op_eltypes(cpx_src, cpx_dest, T)
-    c_src = promote_coeftype(cpx_src, S)
-    c_dest = promote_coeftype(cpx_dest, D)
-    c_D = similar_operator(opD, A, c_src, c_dest)
-    F = forward_fourier_operator(c_src, c_src, A; options...)
-    iF = backward_fourier_operator(c_dest, c_dest, A; options...)
-
-    r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
-    r_src = promote_coeftype(op_src, r_S)
-    r_dest = promote_coeftype(op_dest, r_D)
-
-    CirculantOperator{r_A}(r_src, r_dest, iF*c_D*F, c_D)
 end
 
 function CirculantOperator(op::AbstractOperator{T}) where {T}
@@ -84,19 +80,19 @@ end
 eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
 
 similar_operator(op::CirculantOperator, ::Type{S}, src, dest) where {S} =
-    CirculantOperator(S, src, dest, op.eigenvaluematrix, Val{isreal(op)})
+    CirculantOperator(S, src, dest, op.eigenvaluematrix)
 
-Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(sqrt.(eigenvalues(c))), Val{isreal(c)})
+Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(sqrt.(eigenvalues(c))))
 
 for op in (:inv, :ctranspose)
     @eval $op{T}(C::CirculantOperator{T}) = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
 end
 
 for op in (:+, :-, :*)
-    @eval $op{T}(c1::CirculantOperator{T}, c2::CirculantOperator{T}) = CirculantOperator(src(c2), dest(c1), PseudoDiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))), Val{isreal(c1)&&isreal(c2)})
+    @eval $op{T}(c1::CirculantOperator{T}, c2::CirculantOperator{T}) = CirculantOperator(src(c2), dest(c1), PseudoDiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
 end
 
-*(scalar::Real, c::CirculantOperator) = CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(scalar*eigenvalues(c)), Val{isreal(c)&&isreal(scalar)})
+*(scalar::Real, c::CirculantOperator) = CirculantOperator(src(c), dest(c), PseudoDiagonalOperator(scalar*eigenvalues(c)))
 *(c::CirculantOperator, scalar::Real) = scalar*c
 
 apply!(c::CirculantOperator, coef_dest, coef_src) = apply!(c, coef_dest, coef_src, Val{isreal(c)})

@@ -90,7 +90,7 @@ function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSp
         elseif lg > ls
             return CirculantOperator(dgs, dgs, sample(grid, fun(s)); options...)*IndexExtensionOperator(s, dgs, 1:Int(lg/ls):length(dgs))
         elseif lg < ls && has_extension(grid)
-            return IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(set)); options...)
+            return IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(s)); options...)
         else
             return default_evaluation_operator(s, dgs; options...)
         end
@@ -211,6 +211,10 @@ end
 abstract type LinearCombinationOfPeriodicSetOfTranslates{PSoT<:PeriodicSetOfTranslates, T} <: PeriodicSetOfTranslates{T}
 end
 
+const LinearCombinationsSpan{A, F <: LinearCombinationOfPeriodicSetOfTranslates} = Span{A,F}
+
+coefficients(b::LinearCombinationOfPeriodicSetOfTranslates) = b.coefficients
+
 for op in (:length, :left, :right, :has_grid, :grid)
     @eval $op(b::LinearCombinationOfPeriodicSetOfTranslates) = $op(superset(b))
 end
@@ -222,9 +226,10 @@ end
 ==(b1::LinearCombinationOfPeriodicSetOfTranslates, b2::LinearCombinationOfPeriodicSetOfTranslates) =
     superset(b1)==superset(b2) && coefficients(b1) ≈ coefficients(b2)
 
-change_of_basis(b::LinearCombinationOfPeriodicSetOfTranslates; options...) = wrap_operator(superset(b), b, inv(change_of_basis(superset(b), typeof(b))))
+change_of_basis(b::LinearCombinationOfPeriodicSetOfTranslates; options...) =
+    wrap_operator(span(superset(b)), span(b), inv(change_of_basis(superset(b), typeof(b))))
 
-change_of_basis(b::PeriodicSetOfTranslates, ::Type{LinearCombinationOfPeriodicSetOfTranslates}; options...) = DualGram(b; options...)
+change_of_basis(b::PeriodicSetOfTranslates, ::Type{LinearCombinationOfPeriodicSetOfTranslates}; options...) = DualGram(span(b); options...)
 
 function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicSetOfTranslates}(b::PeriodicSetOfTranslates, ::Type{B}; options...)
     e = zeros(b)
@@ -232,11 +237,13 @@ function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicSetOfTranslat
     change_of_basis(b, B; options...)*e
 end
 
-extension_operator{B,T}(s1::LinearCombinationOfPeriodicSetOfTranslates{B,T}, s2::LinearCombinationOfPeriodicSetOfTranslates{B,T}; options...) =
-    wrap_operator(s1, s2, change_of_basis(s2; options...)*extension_operator(superset(s1), superset(s2))*inv(change_of_basis(s1; options...)))
+superspan(s::LinearCombinationsSpan) = Span(superset(set(s)), coeftype(s))
 
-restriction_operator{B,T}(s1::LinearCombinationOfPeriodicSetOfTranslates{B,T}, s2::LinearCombinationOfPeriodicSetOfTranslates{B,T}; options...) =
-    wrap_operator(s1, s2, change_of_basis(s2; options...)*restriction_operator(superset(s1), superset(s2))*inv(change_of_basis(s1; options...)))
+extension_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
+    wrap_operator(s1, s2, change_of_basis(set(s2); options...)*extension_operator(superspan(s1), superspan(s2))*inv(change_of_basis(set(s1); options...)))
+
+restriction_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
+    wrap_operator(s1, s2, change_of_basis(set(s2); options...)*restriction_operator(superspan(s1), superspan(s2))*inv(change_of_basis(set(s1); options...)))
 
 """
   Set representing the dual basis.
@@ -248,16 +255,14 @@ end
 
 const DualPeriodicTranslatesSpan{A, F <: DualPeriodicSetOfTranslates} = Span{A,F}
 
-function DualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; options...)
-  DualPeriodicSetOfTranslates{eltype(set)}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicSetOfTranslates; options...))
-end
+DualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates{T}; options...) where {T} =
+    DualPeriodicSetOfTranslates{T}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicSetOfTranslates; options...))
 
 superset(b::DualPeriodicSetOfTranslates) = b.superset
-coefficients(b::DualPeriodicSetOfTranslates) = b.coefficients
 
 dual(b::DualPeriodicSetOfTranslates; options...) = superset(b)
 
-Gram(b::Span{A,F}; options...) where {A,F<:DualPeriodicSetOfTranslates} = inv(Gram(Span(superset(set(b)), A); options...))
+Gram(b::Span{A,F}; options...) where {A,F<:DualPeriodicSetOfTranslates} = inv(Gram(superspan(b); options...))
 
 """
   Set representing the dual basis with respect to a discrete norm on the oversampled grid.
@@ -271,18 +276,18 @@ end
 
 const DiscreteDualPeriodicTranslatesSpan{A, F <: DiscreteDualPeriodicSetOfTranslates} = Span{A,F}
 
-function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates; oversampling=default_oversampling(set), options...)
-    DiscreteDualPeriodicSetOfTranslates{eltype(set)}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
+function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates{T}; oversampling=default_oversampling(set), options...) where {T}
+    DiscreteDualPeriodicSetOfTranslates{T}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
 end
 
 superset(b::DiscreteDualPeriodicSetOfTranslates) = b.superset
-coeffs(b::DiscreteDualPeriodicSetOfTranslates) = b.coeffs
+coefficients(b::DiscreteDualPeriodicSetOfTranslates) = b.coefficients
 
 default_oversampling(b::DiscreteDualPeriodicSetOfTranslates) = b.oversampling
 
 dual(b::DiscreteDualPeriodicSetOfTranslates; options...) = superset(b)
 
-change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(b; options...)
+change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(span(b); options...)
 
 resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 

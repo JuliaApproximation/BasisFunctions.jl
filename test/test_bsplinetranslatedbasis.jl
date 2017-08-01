@@ -91,7 +91,7 @@ function test_translatedbsplines(T)
   # Test extension_operator and invertability of restriction_operator w.r.t. extension_operator.
   n = 8
   for degree in 0:3
-    b = BSplineTranslatesBasis(n, degree, T)
+    b = span(BSplineTranslatesBasis(n, degree, T))
     basis_ext = extend(b)
     r = restriction_operator(basis_ext, b)
     e = extension_operator(b, basis_ext)
@@ -107,53 +107,54 @@ function test_translatedbsplines(T)
   end
 
 
+  if T == Float64
+    for K in 0:3
+      for s2 in 5:6
+        s1 = s2<<1
+        b1 = span(BSplineTranslatesBasis(s1,K,T))
+        b2 = span(BSplineTranslatesBasis(s2,K,T))
 
-  for K in 0:3
-    for s2 in 5:6
-      s1 = s2<<1
-      b1 = span(BSplineTranslatesBasis(s1,K))
-      b2 = span(BSplineTranslatesBasis(s2,K))
+        e1 = random_expansion(b1)
+        e2 = random_expansion(b2)
 
-      e1 = random_expansion(b1)
-      e2 = random_expansion(b2)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
 
-      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+        mr = matrix(restriction_operator(b1, b2))
+        me = matrix(extension_operator(b2, b1))
+        pinvme = pinv(me)
+        r = rand(size(pinvme,2))
+        @test pinvme*r ≈ mr*r
+      end
+    end
 
-      mr = matrix(restriction_operator(b1, b2))
-      me = matrix(extension_operator(b2, b1))
-      pinvme = pinv(me)
-      r = rand(size(pinvme,2))
-      @test pinvme*r ≈ mr*r
+    for K in 0:3
+      for s2 in 5:6
+        s1 = s2<<1
+        b1 = span(BSplineTranslatesBasis(s1,K,T; scaled=true))
+        b2 = span(BSplineTranslatesBasis(s2,K,T; scaled=true))
+
+        e1 = random_expansion(b1)
+        e2 = random_expansion(b2)
+
+        @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
+        @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+
+        mr = matrix(restriction_operator(b1, b2))
+        me = matrix(extension_operator(b2, b1))
+        pinvme = pinv(me)
+        r = rand(size(pinvme,2))
+        @test pinvme*r ≈ mr*r
+      end
     end
   end
 
-  for K in 0:3
-    for s2 in 5:6
-      s1 = s2<<1
-      b1 = BSplineTranslatesBasis(s1,K; scaled=true)
-      b2 = BSplineTranslatesBasis(s2,K; scaled=true)
-
-      e1 = random_expansion(b1)
-      e2 = random_expansion(b2)
-
-      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
-      @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
-
-      mr = matrix(restriction_operator(b1, b2))
-      me = matrix(extension_operator(b2, b1))
-      pinvme = pinv(me)
-      r = rand(size(pinvme,2))
-      @test pinvme*r ≈ mr*r
-    end
-  end
-
-  @test_throws AssertionError restriction_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(3,0))
-  @test_throws AssertionError extension_operator(BSplineTranslatesBasis(4,0), BSplineTranslatesBasis(6,0))
+  @test_throws AssertionError restriction_operator(span(BSplineTranslatesBasis(4,0,T)), span(BSplineTranslatesBasis(3,0,T)))
+  @test_throws AssertionError extension_operator(span(BSplineTranslatesBasis(4,0,T)), span(BSplineTranslatesBasis(6,0,T)))
 end
 
 
@@ -258,9 +259,9 @@ function test_orthonormalsplinebasis(T)
   G = sqrt(DualGram(span(b.superset)))
   e = zeros(eltype(G),size(G,1))
   e[1] = 1
-  @test BasisFunctions.coeffs(b) ≈ G*e
+  @test BasisFunctions.coefficients(b) ≈ G*e
 
-  d = BasisFunctions.primalgramcolumn(b; abstol=1e-3)
+  d = BasisFunctions.primalgramcolumn(span(b); abstol=1e-3)
   @test d ≈ e
   @test typeof(Gram(span(b))) <: IdentityOperator
 
@@ -288,7 +289,7 @@ function test_discrete_orthonormalsplinebasis(T)
   @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized, discrete)"
   @test instantiate(DiscreteOrthonormalSplineBasis,5)==DiscreteOrthonormalSplineBasis(5,3)
 
-  E = evaluation_operator(b)
+  E = evaluation_operator(span(b))
   e = zeros(eltype(E),size(E,1))
   e[1] = 1
   @test (E'*E*e) ≈ 5*e
@@ -296,7 +297,7 @@ function test_discrete_orthonormalsplinebasis(T)
 
   n = 8
   for degree in 0:3
-    b = DiscreteOrthonormalSplineBasis(n, degree, T)
+    b = span(DiscreteOrthonormalSplineBasis(n, degree, T))
     basis_ext = extend(b)
     r = restriction_operator(basis_ext, b)
     e = extension_operator(b, basis_ext)
@@ -314,8 +315,8 @@ function test_discrete_orthonormalsplinebasis(T)
     b = DiscreteOrthonormalSplineBasis(n,dgr,T; oversampling=oversampling)
 
     e = zeros(T,n); e[1] = 1
-    @test sqrt(DiscreteDualGram(BSplineTranslatesBasis(n,dgr,T); oversampling=oversampling))*e≈BasisFunctions.coeffs(b)
-    @test DiscreteGram(b; oversampling=oversampling)*e≈e
+    @test sqrt(DiscreteDualGram(span(BSplineTranslatesBasis(n,dgr,T)); oversampling=oversampling))*e≈BasisFunctions.coefficients(b)
+    @test DiscreteGram(span(b); oversampling=oversampling)*e≈e
   end
 end
 using QuadGK
@@ -325,10 +326,11 @@ function test_dualsplinebasis(T)
   b = BSplineTranslatesBasis(n,degree)
   bb = BasisFunctions.dual(b; reltol=tol, abstol=tol)
   @test dual(bb) == b
-  e = coefficients(random_expansion(b))
-  @test Gram(b; abstol=tol, reltol=tol)*e ≈ DualGram(bb; abstol=tol, reltol=tol)*e
-  @test Gram(bb; abstol=tol, reltol=tol)*e ≈ DualGram(b; abstol=tol, reltol=tol)*e
-  @test BasisFunctions.dualgramcolumn(b; reltol=tol, abstol=tol) ≈ BasisFunctions.coeffs(bb)
+  e = coefficients(random_expansion(span(b)))
+
+  @test Gram(span(b); abstol=tol, reltol=tol)*e ≈ DualGram(span(bb); abstol=tol, reltol=tol)*e
+  @test Gram(span(bb); abstol=tol, reltol=tol)*e ≈ DualGram(span(b); abstol=tol, reltol=tol)*e
+  @test BasisFunctions.dualgramcolumn(span(b); reltol=tol, abstol=tol) ≈ BasisFunctions.coefficients(bb)
   @test QuadGK.quadgk(x->b[1](x)*bb[1](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
   @test QuadGK.quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
 end
@@ -339,8 +341,8 @@ function test_discrete_dualsplinebasis(T)
     d = discrete_dual(b; oversampling=oversampling)
 
     e = zeros(T,n); e[1] = 1
-    @test DiscreteDualGram(b; oversampling=oversampling)*e≈BasisFunctions.coeffs(d)
-    E1 = matrix(discrete_dual_evaluation_operator(b; oversampling=oversampling))
+    @test DiscreteDualGram(span(b); oversampling=oversampling)*e≈BasisFunctions.coefficients(d)
+    E1 = matrix(discrete_dual_evaluation_operator(span(b); oversampling=oversampling))
     oss = []
     # For even degrees points on a coarse grid do not overlap with those on e fine grid.
     if isodd(degree)
@@ -349,7 +351,7 @@ function test_discrete_dualsplinebasis(T)
       oss = [oversampling,]
     end
     for os in oss
-      E2 = matrix(evaluation_operator(d; oversampling = os))
+      E2 = matrix(evaluation_operator(span(d); oversampling = os))
       E2test = E1[1:Int(oversampling/os):end,:]
       @test E2test*e ≈ E2*e
     end
