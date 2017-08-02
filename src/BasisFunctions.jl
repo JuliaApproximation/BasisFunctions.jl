@@ -105,7 +105,7 @@ export DimensionOperator, dimension_operator
 # from bases/sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export domaintype, rangetype, coefficient_type
-export promote_domaintype
+export promote_domaintype, promote_domainsubtype
 export grid, left, right, support, eval_expansion, eval_set_element, eval_element
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize

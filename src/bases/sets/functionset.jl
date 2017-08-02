@@ -131,6 +131,15 @@ function promote_eltype(set::FunctionSet, args...)
     error("Calling promote_eltype on a function set is deprecated.")
 end
 
+"Promote the domain sub type of the function set."
+promote_domainsubtype(set::FunctionSet{T}, ::Type{S}) where {T<:Number, S<:Number} = promote_domaintype(set, S)
+
+promote_domainsubtype(set::FunctionSet{SVector{N,T}}, ::Type{T}) where {N,T<:Number} = set
+promote_domainsubtype(set::FunctionSet{SVector{N,T}}, ::Type{S}) where {N,T<:Number,S<:Number} = promote_domaintype(set, SVector{N,S})
+
+promote_domainsubtype(set::FunctionSet{NTuple{N,T}}, ::Type{T}) where {N,T<:Number} = set
+promote_domainsubtype(set::FunctionSet{NTuple{N,T}}, ::Type{S}) where {N,T<:Number,S<:Number} = promote_domaintype(set, NTuple{N,S})
+
 widen(s::FunctionSet) = promote_domaintype(s, widen(domaintype(s)))
 
 # similar returns a similar basis of a given size and numeric type

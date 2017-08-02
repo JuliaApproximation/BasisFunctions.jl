@@ -42,6 +42,8 @@ end
 rangetype(::Type{TensorProductSet{TS,S,T}}) where {TS,S,T} = S
 
 # We need a more generic definition, but one can't iterate over a tuple type nor index it
+set_promote_domaintype(s::TensorProductSet, ::Type{NTuple{N,T}}) where {N,T} = TensorProductSet(map(x->promote_domaintype(x, T), elements(s))...)
+
 set_promote_domaintype(s::TensorProductSet, ::Type{Tuple{A,B}}) where {A,B} =
     TensorProductSet(promote_domaintype(element(s, 1), A), promote_domaintype(element(s, 2), B))
 
