@@ -73,13 +73,13 @@ call_set_expansion(e::SetExpansion, set::FunctionSet, coefficients, x) =
     eval_expansion(set, coefficients, x)
 
 function differentiate(e::SetExpansion, order=1)
-    op = differentiation_operator(e.set, order)
-    SetExpansion(dest(op), apply(op,e.coefficients))
+    op = differentiation_operator(span(e), order)
+    SetExpansion(set(dest(op)), apply(op,e.coefficients))
 end
 
 function antidifferentiate(e::SetExpansion, order=1)
-    op = antidifferentiation_operator(e.set, order)
-    SetExpansion(dest(op), apply(op,e.coefficients))
+    op = antidifferentiation_operator(span(e), order)
+    SetExpansion(set(dest(op)), apply(op,e.coefficients))
 end
 
 Base.broadcast(e::SetExpansion, grid::AbstractGrid) = eval_expansion(set(e), coefficients(e), grid)
