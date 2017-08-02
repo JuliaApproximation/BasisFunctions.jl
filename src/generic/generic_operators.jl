@@ -34,6 +34,8 @@ include("leastsquares.jl")
 
 include("approximation.jl")
 
+include("residual.jl")
+
 include("differentiation.jl")
 
 

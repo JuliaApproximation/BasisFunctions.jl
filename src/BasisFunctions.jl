@@ -13,7 +13,7 @@ using FastTransforms
 using Domains
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
-import Base: ≈
+import Base: ≈, norm
 import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen
@@ -112,7 +112,7 @@ export approx_length, extension_size
 export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
-export moment
+export moment, norm
 
 # from bases/sets/subsets.jl
 export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
@@ -176,6 +176,9 @@ export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
 export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
+
+# from generic/residual.jl
+export residual, residual_operator
 
 # from generic/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_set,
