@@ -40,10 +40,10 @@ end
 
 # Useful abstraction for special cases
 const FunctionSet1d{T <: Number} = FunctionSet{T}
-# Warning: not all 2d function sets have SVector{2,T} type, they could have (S,T) type
-const FunctionSet2d{T} = FunctionSet{SVector{2,T}}
-const FunctionSet3d{T} = FunctionSet{SVector{3,T}}
-const FunctionSet4d{T} = FunctionSet{SVector{4,T}}
+# Warning: not all 2d function sets have NTuple{2,T} type, they could have (S,T) type
+const FunctionSet2d{T} = FunctionSet{NTuple{2,T}}
+const FunctionSet3d{T} = FunctionSet{NTuple{3,T}}
+const FunctionSet4d{T} = FunctionSet{NTuple{4,T}}
 
 
 "The type of the elements of the domain of the set."

@@ -95,7 +95,7 @@ postprocess(S::Subset, grid, vals) = postprocess(superset(S), grid, vals)
 # Always plot on equispaced grids for the best plotting resolution
 plotgrid(S::FunctionSet1d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)),left(S),right(S))
 
-plotgrid(S::FunctionSet2d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)[1]),left(S)[1],right(S)[1])×rescale(PeriodicEquispacedGrid(n,domaintype(S)[2]),left(S)[2],right(S)[2])
+plotgrid(F::FunctionSet{Tuple{T,S}}, n) where {T,S} = rescale(PeriodicEquispacedGrid(n,T),left(F)[1],right(F)[1])×rescale(PeriodicEquispacedGrid(n,S),left(F)[2],right(F)[2])
 
 plotgrid(s::MappedSet1d, n) = apply_map(plotgrid(superset(s), n), mapping(s))
 
