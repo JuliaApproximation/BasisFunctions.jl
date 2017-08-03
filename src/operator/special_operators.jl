@@ -294,11 +294,11 @@ apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) where {ARRA
 
 
 # Definition in terms of A_mul_B
-apply!(op::MultiplicationOperator{Array{ELT,2},false,ELT}, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) where {ELT,T} =
+apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) where {ELT1,ELT2,T} =
     A_mul_B!(coef_dest, object(op), coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-apply!(op::MultiplicationOperator{Array{ELT,2},false,ELT}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {ELT,T,N1,N2} =
+apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {ELT1,ELT2,T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 
