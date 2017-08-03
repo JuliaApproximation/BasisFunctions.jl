@@ -9,6 +9,7 @@ struct Span{A,F} <: FunctionSpace
 end
 
 const Span1d{A,F <: FunctionSet1d} = Span{A,F}
+const Span2d{A,F <: FunctionSet2d} = Span{A,F}
 
 Span(set::FunctionSet, ::Type{A} = coefficient_type(set)) where {A} = Span{A,typeof(set)}(set)
 

@@ -120,7 +120,7 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
 export moment
 
 # from bases/sets/span.jl
-export Span
+export Span, Span1d, Span2d
 export span, coefficient_type, coeftype, similar_span
 
 # from bases/sets/subsets.jl
