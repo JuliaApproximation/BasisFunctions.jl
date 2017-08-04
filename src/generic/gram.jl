@@ -115,3 +115,48 @@ DiscreteDualGram{N,T}(b::FunctionSet{N,T}; oversampling = default_oversampling(b
 
 # Ẽ'E/N
 DiscreteMixedGram(b::FunctionSet; oversampling=default_oversampling(b)) = IdentityOperator(b,b)
+
+
+
+#################
+## Gram operators extended
+#################
+
+dual(set::FunctionSet; options...) = dual(set, Val{is_orthonormal(set)}; options...)
+dual(set::FunctionSet, ::Type{Val{true}}; options...) = set
+dual(set::FunctionSet, ::Type{Val{false}}; options...) = error("Dual of $(set) is not known.")
+"""
+The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+"""
+function Gram(set1::FunctionSet, set2::FunctionSet; options...)
+    A = zeros(eltype(set1),length(set2),length(set1))*NaN
+    grammatrix!(A,set2, set1; options...)
+    MatrixOperator(set1, set2, A)
+end
+
+DualGram(set1::FunctionSet, set2::FunctionSet; options...) = inv(Gram(set1, set2; options...))
+
+MixedGram(set1::FunctionSet, set2::FunctionSet; options...) = Gram(dual(set1), set2; options...)
+
+function grammatrix!(result, set1::FunctionSet, set2::FunctionSet; options...)
+  @assert size(result, 1) == length(set1)
+  @assert size(result, 2) == length(set2)
+  for i in 1:size(result,1)
+    for j in 1:size(result,2)
+      result[i,j] = dot(set1, set2, i, j; options...)
+    end
+  end
+  result
+end
+
+dot(set1::FunctionSet1d, set2::FunctionSet1d, f1::Function, f2::Function, nodes::Array=native_nodes(set1, set2); options...)  =
+    dot(x->conj(f1(x))*f2(x), nodes; options...)
+
+dot(set1::FunctionSet, set2::FunctionSet, f1::Int, f2::Int, nodes::Array=native_nodes(set1, set2); options...) =
+    dot(set1, set2, x->eval_element(set1, f1, x),x->eval_element(set2, f2, x), nodes; options...)
+
+function native_nodes(set1::FunctionSet, set2::FunctionSet)
+  @assert left(set1) ≈ left(set2)
+  @assert right(set1) ≈ right(set2)
+  [left(set1), right(set1)]
+end

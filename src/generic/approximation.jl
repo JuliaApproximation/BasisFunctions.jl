@@ -23,7 +23,13 @@ function discrete_approximation_operator(b::FunctionSet; options...)
     end
 end
 
-continuous_approximation_operator(b::FunctionSet; options...) = DualGram(b)
+# This makes no use from dual functions.
+function continuous_approximation_operator(b::FunctionSet; solver=ExactTruncatedSvdSolver, sampling_factor = 1, options...)
+    sampling_factor ≈ 1 && (return DualGram(b))
+    set1 = resize(b, round(Int, sampling_factor*length(b)))
+    G = Gram(b, set1; options...)
+    solver(G; options...)
+end
 
 # Automatically sample a function if an operator is applied to it with a
 # source that is a grid space.
