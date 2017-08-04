@@ -23,7 +23,8 @@ function discrete_approximation_operator(b::FunctionSet; options...)
     end
 end
 
-continuous_approximation_operator(b::FunctionSet; options...) = DualGram(b)
+# This makes no use from dual functions.
+continuous_approximation_operator(b::FunctionSet; options...) = return DualGram(b)
 
 # Automatically sample a function if an operator is applied to it with a
 # source that is a grid space.
@@ -39,12 +40,10 @@ approximate(s, f::Function; options...) =
 
 """
 The 2-argument approximation_operator exists to allow you to transform any FunctionSet coefficients to any other FunctionSet coefficients, this includes Discrete Grid Spaces.
-If a transform exists, the transform is used. 
+If a transform exists, the transform is used.
 """
 function approximation_operator(A::FunctionSet, B::FunctionSet, options...)
     if has_transform(A,B)
         return transform_operator(A,B;options...)
     end
 end
-
-
