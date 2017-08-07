@@ -128,22 +128,22 @@ dual(set::FunctionSet, ::Type{Val{false}}; options...) = error("Dual of $(set) i
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-function Gram(set1::FunctionSet, set2::FunctionSet; options...)
-    A = zeros(eltype(set1),length(set2),length(set1))*NaN
-    grammatrix!(A,set2, set1; options...)
-    MatrixOperator(set1, set2, A)
+function Gram(src::FunctionSet, dest::FunctionSet; options...)
+    A = zeros(eltype(src, dest),length(dest),length(src))*NaN
+    grammatrix!(A, src, dest; options...)
+    MatrixOperator(src, dest, A)
 end
 
 DualGram(set1::FunctionSet, set2::FunctionSet; options...) = inv(Gram(set1, set2; options...))
 
 MixedGram(set1::FunctionSet, set2::FunctionSet; options...) = Gram(dual(set1), set2; options...)
 
-function grammatrix!(result, set1::FunctionSet, set2::FunctionSet; options...)
-  @assert size(result, 1) == length(set1)
-  @assert size(result, 2) == length(set2)
+function grammatrix!(result, src::FunctionSet, dest::FunctionSet; options...)
+  @assert size(result, 1) == length(dest)
+  @assert size(result, 2) == length(src)
   for i in 1:size(result,1)
     for j in 1:size(result,2)
-      result[i,j] = dot(set1, set2, i, j; options...)
+      result[i,j] = dot(dest, src, i, j; options...)
     end
   end
   result

@@ -156,8 +156,6 @@ export transform_operator, transform_set, full_transform_operator,
     transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
     transform_operators
 
-export ExactTruncatedSvdSolver
-
 # from generic/gram.jl
 export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
 export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
@@ -305,7 +303,6 @@ include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
-include("operator/solver.jl")
 
 
 
