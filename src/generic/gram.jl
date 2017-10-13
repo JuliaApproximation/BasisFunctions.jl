@@ -116,4 +116,51 @@ DiscreteDualGram(s::Span; oversampling = default_oversampling(set(s))) =
     inv(DiscreteGram(s; oversampling=oversampling))
 
 # Ẽ'E/N
-DiscreteMixedGram(s::Span; oversampling = default_oversampling(set(s))) = IdentityOperator(s, s)
+DiscreteMixedGram(s::Span; oversampling=default_oversampling(set(s))) = IdentityOperator(s,s)
+
+
+
+#################
+## Gram operators extended
+#################
+
+dual(span::Span; options...) = dual(span, Val{is_orthonormal(set(span))}; options...)
+dual(span::Span, ::Type{Val{true}}; options...) = span
+dual(set::FunctionSet; options...) = error("Dual of $(set) is not known.")
+dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(set(span); options...))
+
+"""
+The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+"""
+function Gram(src::Span, dest::Span; options...)
+    A = zeros(rangetype(src, dest),length(dest),length(src))*NaN
+    grammatrix!(A, src, dest; options...)
+    MatrixOperator(src, dest, A)
+end
+
+DualGram(span1::Span, span2::Span; options...) = inv(Gram(span1, span2; options...))
+
+MixedGram(span1::Span, span2::Span; options...) = Gram(dual(span1), span2; options...)
+
+function grammatrix!(result, src::Span, dest::Span; options...)
+  @assert size(result, 1) == length(dest)
+  @assert size(result, 2) == length(src)
+  for i in 1:size(result,1)
+    for j in 1:size(result,2)
+      result[i,j] = dot(dest, src, i, j; options...)
+    end
+  end
+  result
+end
+
+dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(set(span1), set(span2)); options...)  =
+    dot(x->conj(f1(x))*f2(x), nodes; options...)
+
+dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(set(span1), set(span2)); options...) =
+    dot(span1, span2, x->eval_element(set(span1), f1, x),x->eval_element(set(span2), f2, x), nodes; options...)
+
+function native_nodes(set1::FunctionSet1d, set2::FunctionSet1d)
+  @assert left(set1) ≈ left(set2)
+  @assert right(set1) ≈ right(set2)
+  [left(set1), right(set1)]
+end

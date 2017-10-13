@@ -32,8 +32,20 @@ function discrete_gram_test(T)
     end
 end
 
+function general_gram_test(T)
+  tol = max(sqrt(eps(T)), 1e-10)
+  for method in (Gram, DualGram, MixedGram), B in (span(FourierBasis(11,T)), span(BSplineTranslatesBasis(5, 1,T)))
+    GBB = method(B,B; abstol=tol, reltol=tol)
+    GB = method(B; abstol=tol, reltol=tol)
+
+    e = rand(length(B))
+    @test norm(GBB*e - GB*e) <= 1000*tol
+  end
+end
+
 # using BasisFunctions
 # using Base.Test
 # #
-# @testset begin discrete_gram_test(BigFloat) end
-# #
+# @testset begin discrete_gram_test(Float64) end
+# @testset begin general_gram_test(Float64) end
+# # #

@@ -341,9 +341,9 @@ the support. This value can be changed with an optional extra argument.
 
 After the checks, this routine calls eval_element on the concrete set.
 """
-function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)))
+function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)); extend=false)
     checkbounds(set, idx)
-    in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
+    extend || in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
 end
 
 # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
@@ -366,14 +366,14 @@ end
 """
 Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
 """
-function eval_expansion(set::FunctionSet, coefficients, x)
+function eval_expansion(set::FunctionSet, coefficients, x; options...)
     T = rangetype(set, coefficients)
     z = zero(T)
 
     # It is safer below to use eval_set_element than eval_element, because of
     # the check on the support. We elide the boundscheck with @inbounds (perhaps).
     @inbounds for idx in eachindex(set)
-        z = z + coefficients[idx] * eval_set_element(set, idx, x)
+        z = z + coefficients[idx] * eval_set_element(set, idx, x; options...)
     end
     z
 end

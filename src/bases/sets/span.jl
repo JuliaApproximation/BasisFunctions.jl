@@ -54,6 +54,8 @@ _rangetype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
 rangetype(set::FunctionSet, coefficients) = rangetype(set, eltype(coefficients))
 rangetype(set::FunctionSet, ::Type{A}) where {A} = rangetype(Span(set, A))
 
+rangetype(span1::Span, span2::Span) = promote_eltype(rangetype(span1), rangetype(span2))
+
 elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
 element(span::Span, i) = Span(element(set(span), i), coeftype(span))
 
