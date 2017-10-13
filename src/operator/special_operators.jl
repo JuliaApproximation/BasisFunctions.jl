@@ -318,7 +318,6 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
-# TODO check if we should use MatrixOperator instead of MultiplicationOperator{Array{ELT,2},false,ELT}
 inv_multiplication{ELT}(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) = SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}))
 
 

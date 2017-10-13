@@ -140,7 +140,7 @@ end
 
 DualGram(span1::Span, span2::Span; options...) = inv(Gram(span1, span2; options...))
 
-MixedGram(span1::Span, span2::Span; options...) = Gram(dual(span1), span2; options...)
+MixedGram(span1::Span, span2::Span; options...) = Gram(dual(span1; options...), span2; options...)
 
 function grammatrix!(result, src::Span, dest::Span; options...)
   @assert size(result, 1) == length(dest)
