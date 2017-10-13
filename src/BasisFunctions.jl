@@ -56,13 +56,12 @@ import Domains: domaintype, rangetype, dimension
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
-import Domains: matrix, vector
+import Domains: matrix, vector, tensorproduct
 
 # composite type interface
 import Domains: element, elements, nb_elements
 # cartesian product utility functions
 import Domains: cartesianproduct, ×, product_eltype
-import Domains: mapping
 
 
 
