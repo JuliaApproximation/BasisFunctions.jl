@@ -245,7 +245,7 @@ function differentiation_operator(b1::FourierSpanOdd{A}, b2::FourierSpanOdd{A}, 
 end
 
 function antidiff_scaling_function(b::FourierBasisOdd, idx, order)
-	T = domaintype(b)
+	T = complex(domaintype(b))
 	idx2frequency(b,idx)==0 ? T(0) : 1 / (idx2frequency(b,idx) * 2 * T(pi) * im)^order
 end
 
