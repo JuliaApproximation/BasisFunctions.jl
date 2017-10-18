@@ -275,10 +275,10 @@ function _index_set_total_degree(s, n)
     if n == 1
         I = [[i] for i in 0:s]
     else
-        I = Array(Array{Int,1},0)
+        I = Array{Array{Int,1}}(0)
         I_rec = _index_set_total_degree(s, n-1)
         for idx in I_rec
-            for m in 0:s-sum(abs(idx))
+            for m in 0:s-sum(abs.(idx))
                 push!(I, [idx...; m])
             end
         end
@@ -300,7 +300,7 @@ function _index_set_hyperbolic_cross(s, n, α = 1)
         I = Array{Array{Int,1}}(0)
         I_rec = _index_set_total_degree(s, n-1)
         for idx in I_rec
-            for m in 0:floor(Int,s^(1/α)/prod(1+abs(idx)))-1
+            for m in 0:floor(Int,s^(1/α)/prod(1+abs.(idx)))-1
                 push!(I, [idx...; m])
             end
         end
