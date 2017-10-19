@@ -72,11 +72,11 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
 
-# We can define this O(1) evaluation method, but only for points in [-1,1]
-# We can not be 100% sure that x lies in [-1,1], because the check on support
-# in eval_set_element can be omitted by the user.
-function eval_element(b::ChebyshevBasis, idx::Int, x)
-    in_support(b, idx, x) ? cos((idx-1)*acos(x)) : recurrence_eval(b, idx, x)
+# We can define this O(1) evaluation method, but only for points that are
+# real and lie in [-1,1]
+# Note that if x is not Real, recurrence_eval will be called by the OPS supertype
+function eval_element(b::ChebyshevBasis, idx::Int, x::Real)
+    abs(x) <= 1 ? cos((idx-1)*acos(x)) : recurrence_eval(b, idx, x)
 end
 
 # The version below is safe for points outside [-1,1] too.
@@ -314,7 +314,7 @@ resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
 
 name(b::ChebyshevU) = "Chebyshev series (second kind)"
 
-function eval_element(b::ChebyshevU, idx::Int, x)
+function eval_element(b::ChebyshevU, idx::Int, x::Real)
     # Don't use the formula when |x|=1, because it will generate NaN's
     abs(x) < 1 ? sin(idx*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
 end

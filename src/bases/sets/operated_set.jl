@@ -84,6 +84,7 @@ isreal(set::OperatedSet) = isreal(operator(set))
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedSet.
 derivative(s::Span; options...) = OperatedSet(differentiation_operator(s; options...))
+derivative(s::FunctionSet; options...) = derivative(span(s); options...)
 
 function (*)(a::Number, s::Span)
     T = promote_type(typeof(a), coeftype(s))
