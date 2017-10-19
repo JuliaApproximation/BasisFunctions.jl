@@ -29,6 +29,16 @@ end
 Extension(src::Span, dest::Span) =
     Extension{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
 
+function Extension(::Type{ELT}, src::Span, dest::Span) where {ELT}
+    S, D, A = op_eltypes(src, dest, ELT)
+    new_src = promote_coeftype(src,S)
+    new_dest = promote_coeftype(dest,D)
+    Extension(new_src, new_dest)
+end
+
+similar_operator(op::Extension, ::Type{S}, src::Span, dest::Span) where {S} =
+    Extension(S, src, dest)
+
 """
 An extension operator is an operator that can be used to extend a representation in a set s1 to a
 representation in a larger set s2. The default extension operator is of type Extension with s1 and
@@ -64,6 +74,16 @@ end
 
 Restriction(src::Span, dest::Span) =
     Restriction{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
+
+function Restriction(::Type{ELT}, src::Span, dest::Span) where {ELT}
+    S, D, A = op_eltypes(src, dest, ELT)
+    new_src = promote_coeftype(src,S)
+    new_dest = promote_coeftype(dest,D)
+    Restriction(new_src, new_dest)
+end
+
+similar_operator(op::Restriction, ::Type{S}, src::Span, dest::Span) where {S} =
+    Restriction(S, src, dest)
 
 
 """
