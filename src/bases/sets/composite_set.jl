@@ -147,6 +147,11 @@ function eval_element(set::CompositeSet{S,T}, idx::Tuple{Int,Any}, x) where {S,T
     convert(S, eval_element( element(set, idx[1]), idx[2], x))
 end
 
+eval_element_derivative(set::CompositeSet, idx::Int, x) = eval_element_derivative(set, multilinear_index(set,idx), x)
+
+function eval_element_derivative(set::CompositeSet{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
+    convert(S, eval_element_derivative( element(set, idx[1]), idx[2], x))
+end
 
 ## Differentiation
 

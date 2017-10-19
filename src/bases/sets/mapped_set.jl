@@ -57,6 +57,12 @@ isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
 
 eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, apply_inverse(mapping(s),y))
 
+function eval_element_derivative(s::MappedSet1d, idx, y)
+    x = apply_inverse(mapping(s), y)
+    d = eval_element_derivative(superset(s), idx, x)
+    z = d / jacobian(mapping(s), y)
+end
+
 eval_expansion(s::MappedSet, coef, y::Number) = eval_expansion(superset(s), coef, apply_inverse(mapping(s),y))
 
 #eval_expansion(s::MappedSet, coef, grid::AbstractGrid) = eval_expansion(superset(s), coef, apply_map(grid, inv(mapping(s))))

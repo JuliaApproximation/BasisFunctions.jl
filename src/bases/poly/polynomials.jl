@@ -70,38 +70,21 @@ function clip_and_cut(a::Array{T,1}, low, up) where {T <: Real}
 	clipped[s:e]
 end
 
-function apply!(op::Extension, dest::B, src::B, coef_dest, coef_src) where {B <: OPS}
-    @assert length(dest) > length(src)
-
-    for i = 1:length(src)
-        coef_dest[i] = coef_src[i]
-    end
-    for i = length(src)+1:length(dest)
-        coef_dest[i] = 0
-    end
-    coef_dest
-end
-
-
-function apply!(op::Restriction, dest::B, src::B, coef_dest, coef_src) where {B <: OPS}
-    @assert length(dest) < length(src)
-
-    for i = 1:length(dest)
-        coef_dest[i] = coef_src[i]
-    end
-    coef_dest
-end
-
 has_extension(b::OPS) = true
 
+# CAVE: we have to add F <: OrthogonalPolynomialBasis at the end, otherwise
+# OPSpan{A,F} also seems to match non-polynomial sets F (in Julia 0.6).
+# Using OPSpan as types of the arguments, i.e. without parameters, is fine and
+# only matches with polynomial sets. But here we use parameters to enforce that
+# the two spaces have the same type of set, and same type of coefficients.
+function extension_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomialBasis}
+    @assert length(s2) >= length(s1)
+    IndexExtensionOperator(s1, s2, 1:length(s1))
+end
 
-#######################
-# The monomial basis
-#######################
-
-# A basis of the monomials x^i
-struct MonomialBasis{T} <: PolynomialBasis{T}
-    n   ::  Int
+function restriction_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomialBasis}
+    @assert length(s2) <= length(s1)
+    IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
 
 
@@ -138,6 +121,33 @@ end
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
 eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
+
+function recurrence_eval_derivative(b::OPS, idx::Int, x)
+	T = rangetype(b)
+    z0 = one(T)
+    z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))
+    z0_d = zero(T)
+    z1_d = convert(T, rec_An(b, 0))
+
+    if idx == 1
+        return z0_d
+    end
+    if idx == 2
+        return z1_d
+    end
+
+    z = z1
+    z_d = z1_d
+    for i = 1:idx-2
+        z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
+        z_d = (rec_An(b, i)*x + rec_Bn(b, i)) * z1_d + rec_An(b, i)*z1 - rec_Cn(b, i) * z0_d
+        z0 = z1
+        z1 = z
+        z0_d = z1_d
+        z1_d = z_d
+    end
+    z_d
+end
 
 
 # TODO: move to its own file and make more complete
