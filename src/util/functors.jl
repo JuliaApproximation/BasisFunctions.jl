@@ -13,6 +13,8 @@ isreal(f::AbstractFunction) = true
 has_derivative(f::AbstractFunction) = true
 has_derivative(f::Function) = false
 
+eval_derivative(f::AbstractFunction, x) = derivative(f)(x)
+
 "The function x^α"
 struct PowerFunction{T} <: AbstractFunction
     α   ::  T

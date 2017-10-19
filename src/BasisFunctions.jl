@@ -356,6 +356,7 @@ include("bases/translates/translates_of_bsplines.jl")
 
 include("bases/poly/polynomials.jl")
 
+include("bases/poly/monomials.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")

@@ -88,16 +88,6 @@ function restriction_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) wher
 end
 
 
-#######################
-# The monomial basis
-#######################
-
-# A basis of the monomials x^i
-struct MonomialBasis{T} <: PolynomialBasis{T}
-    n   ::  Int
-end
-
-
 
 
 # Evaluate an orthogonal polynomial using the three term recurrence relation.
