@@ -139,6 +139,33 @@ end
 eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
 
 
+function recurrence_eval_derivative(b::OPS, idx::Int, x)
+	T = rangetype(b)
+    z0 = one(T)
+    z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))
+    z0_d = zero(T)
+    z1_d = convert(T, rec_An(b, 0))
+
+    if idx == 1
+        return z0_d
+    end
+    if idx == 2
+        return z1_d
+    end
+
+    z = z1
+    z_d = z1_d
+    for i = 1:idx-2
+        z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
+        z_d = (rec_An(b, i)*x + rec_Bn(b, i)) * z1_d + rec_An(b, i)*z1 - rec_Cn(b, i) * z0_d
+        z0 = z1
+        z1 = z
+        z0_d = z1_d
+        z1_d = z_d
+    end
+    z_d
+end
+
 
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
