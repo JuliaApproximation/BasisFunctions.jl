@@ -52,6 +52,11 @@ eval_element(set::WeightedSet, idx, x) = _eval_element(set, weightfunction(set),
 _eval_element(set::WeightedSet1d, w, idx, x) = w(x) * eval_element(superset(set), idx, x)
 _eval_element(set::WeightedSet, w, idx, x) = w(x...) * eval_element(superset(set), idx, x)
 
+# Evaluate the derivative of 1d weighted sets
+eval_element_derivative(set::WeightedSet1d, idx, x) =
+    eval_derivative(weightfunction(set), x) * eval_element(superset(set), idx, x) +
+    weightfunction(set)(x) * eval_element_derivative(superset(set), idx, x)
+
 # Evaluate an expansion: same story
 eval_expansion(set::WeightedSet, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)
 # temporary, to remove an ambiguity

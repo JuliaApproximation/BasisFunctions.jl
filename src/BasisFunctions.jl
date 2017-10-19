@@ -63,7 +63,7 @@ import Domains: element, elements, nb_elements
 # cartesian product utility functions
 import Domains: cartesianproduct, ×, product_eltype
 
-import Domains: mapping
+import Domains: forward_map, inverse_map
 
 
 
@@ -107,7 +107,8 @@ export DimensionOperator, dimension_operator
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export domaintype, rangetype, coefficient_type
 export promote_domaintype, promote_domainsubtype
-export grid, left, right, support, eval_expansion, eval_set_element, eval_element
+export grid, left, right, support
+export eval_expansion, eval_set_element, eval_element, eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
@@ -247,7 +248,7 @@ export CosineSeries, SineSeries
 
 
 # from bases/poly/chebyshev.jl
-export ChebyshevBasis, ChebyshevII,
+export ChebyshevBasis, ChebyshevT, ChebyshevU,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
@@ -355,6 +356,7 @@ include("bases/translates/translates_of_bsplines.jl")
 
 include("bases/poly/polynomials.jl")
 
+include("bases/poly/monomials.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")

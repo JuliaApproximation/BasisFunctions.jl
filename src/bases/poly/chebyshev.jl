@@ -13,7 +13,7 @@ struct ChebyshevBasis{T} <: OPS{T}
     n			::	Int
 end
 
-ChebyshevBasisFirstKind{T} = ChebyshevBasis{T}
+ChebyshevT{T} = ChebyshevBasis{T}
 
 const ChebyshevSpan{A,F<:ChebyshevBasis} = Span{A,F}
 
@@ -72,13 +72,26 @@ rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
 
 
-# We can define this O(1) evaluation method, but only for points in [-1,1]
-# eval_element(b::ChebyshevBasis, idx::Int, x) = cos((idx-1)*acos(x))
+# We can define this O(1) evaluation method, but only for points that are
+# real and lie in [-1,1]
+# Note that if x is not Real, recurrence_eval will be called by the OPS supertype
+function eval_element(b::ChebyshevBasis, idx::Int, x::Real)
+    abs(x) <= 1 ? cos((idx-1)*acos(x)) : recurrence_eval(b, idx, x)
+end
 
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+
+function eval_element_derivative(b::ChebyshevBasis, idx::Int, x)
+    T = rangetype(b)
+    if idx == 1
+        T(0)
+    else
+        (idx-1) * eval_element(ChebyshevU(length(b)), idx-1, x)
+    end
+end
 
 function moment(b::ChebyshevBasis{T}, idx::Int) where {T}
     n = idx-1
@@ -284,46 +297,50 @@ end
 ############################################
 
 "A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
-struct ChebyshevII{T} <: OPS{T}
+struct ChebyshevU{T} <: OPS{T}
     n			::	Int
 end
 
-const ChebyshevSpanII{A,F<:ChebyshevII} = Span{A,F}
+const ChebyshevUSpace{A,F<:ChebyshevU} = Span{A,F}
 
-ChebyshevII(n, ::Type{T} = Float64) where {T} = ChebyshevII{T}(n)
+ChebyshevU(n, ::Type{T} = Float64) where {T} = ChebyshevU{T}(n)
 
-instantiate(::Type{ChebyshevII}, n, ::Type{T}) where {T} = ChebyshevII{T}(n)
+instantiate(::Type{ChebyshevU}, n, ::Type{T}) where {T} = ChebyshevU{T}(n)
 
-set_promote_domaintype(b::ChebyshevII, ::Type{S}) where {S} =
-    ChebyshevII{S}(b.n)
+set_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
+    ChebyshevU{S}(b.n)
 
-resize(b::ChebyshevII{T}, n) where {T} = ChebyshevII{T}(n)
+resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
 
-name(b::ChebyshevII) = "Chebyshev series (second kind)"
+name(b::ChebyshevU) = "Chebyshev series (second kind)"
 
+function eval_element(b::ChebyshevU, idx::Int, x::Real)
+    # Don't use the formula when |x|=1, because it will generate NaN's
+    abs(x) < 1 ? sin(idx*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
+end
 
-left(b::ChebyshevII{T}) where {T} = -one(T)
-left(b::ChebyshevII, idx) = left(b)
+left(b::ChebyshevU{T}) where {T} = -one(T)
+left(b::ChebyshevU, idx) = left(b)
 
-right(b::ChebyshevII{T}) where {T} = one(T)
-right(b::ChebyshevII, idx) = right(b)
+right(b::ChebyshevU{T}) where {T} = one(T)
+right(b::ChebyshevU, idx) = right(b)
 
-grid(b::ChebyshevII{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
+grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 
-Gram(s::ChebyshevSpanII{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
+Gram(s::ChebyshevUSpace{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
 
 # The weight function
-weight(b::ChebyshevII{T}, x) where {T} = sqrt(1-T(x)^2)
+weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevII) = 1//2
-jacobi_β(b::ChebyshevII) = 1//2
+jacobi_α(b::ChebyshevU) = 1//2
+jacobi_β(b::ChebyshevU) = 1//2
 
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevII, n::Int) = 2
+rec_An(b::ChebyshevU, n::Int) = 2
 
-rec_Bn(b::ChebyshevII, n::Int) = 0
+rec_Bn(b::ChebyshevU, n::Int) = 0
 
-rec_Cn(b::ChebyshevII, n::Int) = 1
+rec_Cn(b::ChebyshevU, n::Int) = 1
