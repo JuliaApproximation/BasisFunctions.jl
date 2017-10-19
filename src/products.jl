@@ -15,6 +15,7 @@ tensorproduct() = nothing
 
 # Don't create a tensor product of just one element
 tensorproduct(a::Tuple) = tensorproduct(a...)
+tensorproduct(a::AbstractArray) = tensorproduct(a...)
 tensorproduct(a) = a
 
 # Create a tensor product with n times the same element
