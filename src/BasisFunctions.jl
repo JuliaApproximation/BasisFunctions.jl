@@ -108,7 +108,8 @@ export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export domaintype, rangetype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support
-export eval_expansion, eval_set_element, eval_element, eval_element_derivative
+export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,
+        eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size

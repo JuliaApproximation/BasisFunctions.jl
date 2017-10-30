@@ -107,6 +107,8 @@ in_support(s::Subset, i, x) = in_support(superset(s), indices(s, i), x)
 
 eval_element(s::Subset, i, x) = eval_element(superset(s), indices(s, i), x)
 
+eval_element_derivative(s::Subset, i, x) = eval_element_derivative(superset(s), indices(s, i), x)
+
 
 
 

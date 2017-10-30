@@ -363,6 +363,32 @@ function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, ou
     result
 end
 
+
+"""
+This function is exactly like `eval_set_element`, but it evaluates the derivative
+of the element instead.
+"""
+function eval_set_element_derivative(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)); extend=false)
+    checkbounds(set, idx)
+    extend || in_support(set, idx, x) ? eval_element_derivative(set, idx, x) : outside_value
+end
+
+function eval_set_element_derivative(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
+    result = zeros(gridspace(grid, rangetype(set)))
+    eval_set_element_derivative!(result, set, idx, grid, outside_value...)
+end
+
+function eval_set_element_derivative!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(rangetype(set)))
+    @assert size(result) == size(grid)
+    checkbounds(set, idx)
+
+    @inbounds for k in eachindex(grid)
+        result[k] = eval_set_element_derivative(set, idx, grid[k], outside_value)
+    end
+    result
+end
+
+
 """
 Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
 """

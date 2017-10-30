@@ -329,6 +329,31 @@ function test_generic_set_interface(basis, span = Span(basis))
             end
             @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*test_tolerance(ELT)
         end
+
+        if dimension(basis) == 1
+            x = fixed_point_in_domain(basis)
+            D = differentiation_operator(span)
+            # Verify derivatives in three basis functions: the first, the last,
+            # and the middle one
+            i1 = 1
+            i2 = length(basis)
+            i3 = (i1+i2) >> 1
+
+            c1 = zero(span)
+            c1[i1] = 1
+            u1 = D*c1
+            @test abs(u1(x) - eval_set_element_derivative(basis, i1, x)) < test_tolerance(ELT)
+
+            c2 = zero(span)
+            c2[i2] = 1
+            u2 = D*c2
+            @test abs(u2(x) - eval_set_element_derivative(basis, i2, x)) < test_tolerance(ELT)
+
+            c3 = zero(span)
+            c3[i3] = 1
+            u3 = D*c3
+            @test abs(u3(x) - eval_set_element_derivative(basis, i3, x)) < test_tolerance(ELT)
+        end
     end
 
     ## Test antiderivatives
