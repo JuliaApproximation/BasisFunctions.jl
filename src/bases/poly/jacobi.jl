@@ -51,3 +51,17 @@ rec_Bn(b::JacobiBasis{T}, n::Int) where {T} =
 
 rec_Cn(b::JacobiBasis{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
+
+
+
+# TODO: move to its own file and make more complete
+# Or better yet: implement in terms of Jacobi polynomials
+struct UltrasphericalBasis{T} <: OPS{T}
+	n		::	Int
+	alpha	::	T
+end
+
+jacobi_α(b::UltrasphericalBasis) = b.α
+jacobi_β(b::UltrasphericalBasis) = b.α
+
+weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)

@@ -263,7 +263,7 @@ export MultiArray
 export float_type, dimension
 
 # from bases/poly/polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis, RationalBasis
+export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, Monomials, RationalBasis
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -333,6 +333,10 @@ include("products.jl")
 
 include("generic/generic_operators.jl")
 
+################################################################
+# Generic function sets
+################################################################
+
 include("bases/sets/subsets.jl")
 include("bases/sets/composite_set.jl")
 include("bases/sets/multiple_set.jl")
@@ -341,22 +345,39 @@ include("bases/sets/operated_set.jl")
 include("bases/sets/weighted_set.jl")
 
 
+################################################################
+# Trigonometric sets: Fourier, cosines and sines
+################################################################
+
 include("bases/fourier/fouriertransforms.jl")
 include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 
-include("bases/splines/bf_splines.jl")
 
+################################################################
+# Splines: natural splines, periodic splines, B-splines, ....
+################################################################
+
+include("bases/splines/bf_splines.jl")
 include("util/bsplines.jl")
 
 include("bases/translates/set_of_translates.jl")
 include("bases/translates/translates_of_bsplines.jl")
 
+
+################################################################
+# Wavelets
+################################################################
+
 # # include("bases/wavelets/bf_wavelets.jl")
 
-include("bases/poly/polynomials.jl")
+################################################################
+# Polynomials: monomials and (classical) orthogonal polynomials
+################################################################
 
+include("bases/poly/polynomials.jl")
+include("bases/poly/orthopoly.jl")
 include("bases/poly/monomials.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
