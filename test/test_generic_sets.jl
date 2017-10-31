@@ -4,8 +4,8 @@ TEST_CONTINUOUS = true
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::FunctionSet) = true
 # Laguerre and Hermite fail because they have unbounded support.
-supports_approximation(s::LaguerreBasis) = false
-supports_approximation(s::HermiteBasis) = false
+supports_approximation(s::LaguerrePolynomials) = false
+supports_approximation(s::HermitePolynomials) = false
 
 # It is difficult to do approximation in subsets generically
 supports_approximation(s::Subset) = false
@@ -45,7 +45,7 @@ end
 suitable_interpolation_grid(basis::TensorProductSet) =
     ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
 
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, domaintype(basis))
+suitable_interpolation_grid(basis::LaguerrePolynomials) = EquispacedGrid(length(basis), 0, 10, domaintype(basis))
 
 suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, domaintype(basis))
 
