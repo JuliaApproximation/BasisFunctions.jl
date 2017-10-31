@@ -1,7 +1,8 @@
 # legendre.jl
 
 """
-A basis of Legendre polynomials on the interval `[-1,1]`.
+A basis of Legendre polynomials on the interval `[-1,1]`. These classical
+polynomials are orthogonal with respect to the weight function `w(x) = 1`.
 """
 struct LegendrePolynomials{T} <: OPS{T}
     n           ::  Int
@@ -29,6 +30,7 @@ right(b::LegendrePolynomials, idx) = right(b)
 
 #grid(b::LegendrePolynomials) = LegendreGrid(b.n)
 
+first_moment(b::LegendrePolynomials{T}) where {T} = T(2)
 
 jacobi_α(b::LegendrePolynomials{T}) where {T} = T(0)
 jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)

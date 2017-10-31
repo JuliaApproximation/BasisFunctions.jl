@@ -262,8 +262,11 @@ export MultiArray
 # from util/domain_extensions.jl
 export float_type, dimension
 
-# from bases/poly/polynomials.jl and friends
+# from bases/poly/orthopoly.jl and friends
 export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials, Monomials, RationalBasis
+export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
+export jacobi_matrix, roots, gauss_rule, first_moment
+export leading_order_coefficient
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis

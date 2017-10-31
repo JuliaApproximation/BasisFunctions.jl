@@ -29,8 +29,7 @@ left(b::HermitePolynomials, idx) = left(b)
 right(b::HermitePolynomials{T}) where {T} = convert(T, Inf)
 right(b::HermitePolynomials, idx) = right(b)
 
-#grid(b::HermitePolynomials) = HermiteGrid(b.n)
-
+first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 
 weight(b::HermitePolynomials{T}, x) where {T} = exp(-T(x)^2)
 

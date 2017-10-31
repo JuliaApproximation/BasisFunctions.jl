@@ -39,7 +39,8 @@ left(b::JacobiPolynomials, idx) = left(b)
 right(b::JacobiPolynomials{T}) where {T} = T(1)
 right(b::JacobiPolynomials, idx) = right(b)
 
-#grid{S,T}(b::JacobiPolynomials{T}) = JacobiGrid{T}(b.n, jacobi_α(b), jacobi_β(b))
+first_moment(b::JacobiPolynomials) =
+    2^(b.α+b.β) / (b.α+b.β+1) * gamma(b.α+1) * gamma(b.β+1) / gamma(b.α+b.β+1)
 
 
 jacobi_α(b::JacobiPolynomials) = b.α

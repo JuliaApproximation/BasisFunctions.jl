@@ -46,6 +46,8 @@ left(b::ChebyshevBasis, idx) = left(b)
 right(b::ChebyshevBasis) = one(domaintype(b))
 right(b::ChebyshevBasis, idx) = right(b)
 
+first_moment(b::ChebyshevBasis{T}) where {T} = T(pi)
+
 grid(b::ChebyshevBasis) = ChebyshevNodeGrid(b.n, domaintype(b))
 secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
 
@@ -324,6 +326,8 @@ left(b::ChebyshevU, idx) = left(b)
 
 right(b::ChebyshevU{T}) where {T} = one(T)
 right(b::ChebyshevU, idx) = right(b)
+
+first_moment(b::ChebyshevU{T}) where {T} = T(pi)/2
 
 grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 

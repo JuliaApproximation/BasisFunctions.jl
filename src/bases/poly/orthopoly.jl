@@ -149,7 +149,7 @@ given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 function monic_recurrence_coefficients(b::OPS)
     T = rangetype(b)
     # n is the maximal degree polynomial
-    n = length(b)-1
+    n = length(b)
     α = zeros(T, n+1)
     β = zeros(T, n+1)
 
@@ -187,20 +187,21 @@ Evaluate the three-term recurrence relation for monic orthogonal polynomials
 p_{n+1}(x) = (x-α_n)p_n(x) - β_n p_{n-1}(x).
 ```
 """
-function monic_recurrence_eval(α, β, x)
+function monic_recurrence_eval(α, β, idx, x)
+    @assert idx > 0
     T = eltype(α)
     # n is the maximal degree polynomial, we want to evaluate p_n(x)
-    n = length(α)-1
+    n = length(α)
 
     # We store the values p_{k-1}(x), p_k(x) and p_{k+1}(x) in z_km1, z_k and
     # z_kp1 respectively.
     z_km1 = zero(T)
     z_k = one(T)
     z_kp1 = z_k
-    if n == 0
+    if idx == 1
         z_k
     else
-        for k in 0:n-1
+        for k in 0:idx-2
             z_kp1 = (x-α[k+1])*z_k - β[k+1]*z_km1
             z_km1 = z_k
             z_k = z_kp1
@@ -211,7 +212,7 @@ end
 
 function jacobi_matrix(b::OPS)
     T = rangetype(b)
-    n = length(b)-1
+    n = length(b)
     α, β = monic_recurrence_coefficients(b)
     J = zeros(T, n, n)
     for k in 1:n
@@ -229,4 +230,53 @@ end
 function roots(b::OPS)
     J = jacobi_matrix(b)
     eig(J)[1]
+end
+
+gauss_points(b::OPS) = roots(b)
+
+# We say that has_grid is true only for Float64 because it relies on an
+# eigenvalue decomposition and that is currently not (natively) supported in
+# BigFloat
+has_grid(b::OPS{Float64}) = true
+
+grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
+
+"Return the first moment, i.e., the integral of the weight function."
+function first_moment(b::OPS)
+    # To be implemented by the concrete subtypes
+end
+
+"""
+Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
+"""
+function gauss_rule(b::OPS{T}) where {T <: Real}
+    J = jacobi_matrix(b)
+    x,v = eig(J)
+    b0 = first_moment(b)
+    # In the real-valued case it is sufficient to use the first element of the
+    # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
+    w = b0 * v[1,:].^2
+    x,w
+end
+
+# In the complex-valued case, we have to compute the weights by summing explicitly
+# over the full eigenvector.
+function gauss_rule(b::OPS{T}) where {T <: Complex}
+    J = jacobi_matrix(b)
+    x,v = eig(J)
+    b0 = first_moment(b)
+    w = similar(x)
+    for i in 1:length(w)
+        w[i] = b0/sum(v[:,i].^2)
+    end
+    x,w
+end
+
+function leading_order_coefficient(b::OPS{T}, idx) where {T}
+    @assert 1 <= idx <= length(b)
+    γ = one(T)
+    for k in 0:idx-2
+        γ *= rec_An(b, k)
+    end
+    γ
 end

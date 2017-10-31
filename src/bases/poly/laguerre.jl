@@ -36,17 +36,17 @@ left(b::LaguerrePolynomials, idx) = left(b)
 right(b::LaguerrePolynomials) = convert(domaintype(b), Inf)
 right(b::LaguerrePolynomials, idx) = right(b)
 
-#grid(b::LaguerrePolynomials) = LaguerreGrid(b.n)
+first_moment(b::LaguerrePolynomials{T}) where {T} = T(1)
 
 jacobi_α(b::LaguerrePolynomials) = b.α
 
 
 weight(b::LaguerrePolynomials{T}, x) where {T} = exp(-T(x)) * T(x)^(b.α)
 
-function gramdiagonal!(result, ::LaguerreSpan; options...)
+function gramdiagonal!(result, b::LaguerreSpan; options...)
     T = eltype(result)
     for i in 1:length(result)
-        result[i] = gamma(T(i+jacobi_α(b)))/factorial(i-1)
+        result[i] = gamma(T(i+jacobi_α(set(b))))/factorial(i-1)
     end
 end
 
