@@ -263,7 +263,7 @@ export MultiArray
 export float_type, dimension
 
 # from bases/poly/polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, Monomials, RationalBasis
+export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials, Monomials, RationalBasis
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis

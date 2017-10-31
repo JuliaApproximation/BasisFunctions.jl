@@ -1,39 +1,39 @@
 # legendre.jl
 
 """
-A basis of Legendre polynomials on the interval [-1,1].
+A basis of Legendre polynomials on the interval `[-1,1]`.
 """
-struct LegendreBasis{T} <: OPS{T}
+struct LegendrePolynomials{T} <: OPS{T}
     n           ::  Int
 end
 
-const LegendreSpan{A, F <: LegendreBasis} = Span{A,F}
+const LegendreSpan{A, F <: LegendrePolynomials} = Span{A,F}
 
-name(b::LegendreBasis) = "Legendre OPS"
+name(b::LegendrePolynomials) = "Legendre OPS"
 
 # Constructor with a default numeric type
-LegendreBasis(n::Int, ::Type{T} = Float64) where {T} = LegendreBasis{T}(n)
+LegendrePolynomials(n::Int, ::Type{T} = Float64) where {T} = LegendrePolynomials{T}(n)
 
-instantiate(::Type{LegendreBasis}, n, ::Type{T}) where {T} = LegendreBasis{T}(n)
+instantiate(::Type{LegendrePolynomials}, n, ::Type{T}) where {T} = LegendrePolynomials{T}(n)
 
-set_promote_domaintype(b::LegendreBasis, ::Type{S}) where {S} = LegendreBasis{S}(b.n)
+set_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendrePolynomials{S}(b.n)
 
-resize(b::LegendreBasis{T}, n) where {T} = LegendreBasis{T}(n)
-
-
-left(b::LegendreBasis{T}) where {T} = -T(1)
-left(b::LegendreBasis, idx) = left(b)
-
-right(b::LegendreBasis{T}) where {T} = T(1)
-right(b::LegendreBasis, idx) = right(b)
-
-#grid(b::LegendreBasis) = LegendreGrid(b.n)
+resize(b::LegendrePolynomials{T}, n) where {T} = LegendrePolynomials{T}(n)
 
 
-jacobi_α(b::LegendreBasis{T}) where {T} = T(0)
-jacobi_β(b::LegendreBasis{T}) where {T} = T(0)
+left(b::LegendrePolynomials{T}) where {T} = -T(1)
+left(b::LegendrePolynomials, idx) = left(b)
 
-weight(b::LegendreBasis{T}, x) where {T} = T(1)
+right(b::LegendrePolynomials{T}) where {T} = T(1)
+right(b::LegendrePolynomials, idx) = right(b)
+
+#grid(b::LegendrePolynomials) = LegendreGrid(b.n)
+
+
+jacobi_α(b::LegendrePolynomials{T}) where {T} = T(0)
+jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)
+
+weight(b::LegendrePolynomials{T}, x) where {T} = T(1)
 
 function gramdiagonal!(result, ::LegendreSpan; options...)
     T = eltype(result)
@@ -44,8 +44,8 @@ end
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::LegendreBasis{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
+rec_An(b::LegendrePolynomials{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
 
-rec_Bn(b::LegendreBasis{T}, n::Int) where {T} = zero(T)
+rec_Bn(b::LegendrePolynomials{T}, n::Int) where {T} = zero(T)
 
-rec_Cn(b::LegendreBasis{T}, n::Int) where {T} = T(n)/T(n+1)
+rec_Cn(b::LegendrePolynomials{T}, n::Int) where {T} = T(n)/T(n+1)

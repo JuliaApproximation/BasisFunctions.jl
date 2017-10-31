@@ -44,12 +44,12 @@ d5 = plan_dct!(zeros(10), 1:1)
 d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
-SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendreBasis,
-        LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
+        LaguerrePolynomials, HermitePolynomials, PeriodicSplineBasis, CosineSeries, SineSeries,
         BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
         DiscreteOrthonormalSplineBasis]
-# SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendreBasis,
-#         LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
+# SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
+#         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 
 for T in [Float64,BigFloat,]
     println()
