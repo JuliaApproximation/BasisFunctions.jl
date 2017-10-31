@@ -1,6 +1,9 @@
 # orthopoly.jl
 
-"OrthogonalPolynomials is the abstract supertype of all univariate orthogonal polynomials."
+"""
+`OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
+polynomials.
+"""
 abstract type OrthogonalPolynomials{T} <: PolynomialBasis{T}
 end
 
@@ -64,13 +67,21 @@ end
 
 
 
+# Default evaluation of an orthogonal polynomial: invoke the recurrence relation
+eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
+eval_element_derivative(b::OPS, idx::Int, x) = recurrence_eval_derivative(b, idx, x)
 
-# Evaluate an orthogonal polynomial using the three term recurrence relation.
-# The recurrence relation is assumed to have the form
-#
-#    p_{n+1}(x) = (A_n x - B_n) * p_n(x) - C_n * p_{n-1}(x)
-#
-# with the coefficients implemented by the rec_An, rec_Bn and rec_Cn functions.
+
+"""
+Evaluate an orthogonal polynomial using the three term recurrence relation.
+The recurrence relation is assumed to have the form:
+'''
+    p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x)
+'''
+with the coefficients implemented by the `rec_An`, `rec_Bn` and `rec_Cn`
+functions.
+This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
+"""
 function recurrence_eval(b::OPS, idx::Int, x)
 	T = rangetype(b)
     z0 = one(T)
@@ -93,12 +104,10 @@ function recurrence_eval(b::OPS, idx::Int, x)
 end
 
 
-# Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
-
-eval_element_derivative(b::OPS, idx::Int, x) = recurrence_eval_derivative(b, idx, x)
-
-
+"""
+Evaluate the derivative of an orthogonal polynomial, based on taking the
+derivative of the three-term recurrence relation (see `recurrence_eval`).
+"""
 function recurrence_eval_derivative(b::OPS, idx::Int, x)
 	T = rangetype(b)
     z0 = one(T)
@@ -124,4 +133,100 @@ function recurrence_eval_derivative(b::OPS, idx::Int, x)
         z1_d = z_d
     end
     z_d
+end
+
+
+"""
+Return the recurrence coefficients `α_n` and `β_n` for the monic orthogonal
+polynomials (i.e., with leading order coefficient `1`). The recurrence relation
+is
+```
+p_{n+1}(x) = (x-α_n)p_n(x) - β_n p_{n-1}(x).
+```
+The result is a vector with indices starting at `1` (such that `α_n` above is
+given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
+"""
+function monic_recurrence_coefficients(b::OPS)
+    T = rangetype(b)
+    # n is the maximal degree polynomial
+    n = length(b)-1
+    α = zeros(T, n+1)
+    β = zeros(T, n+1)
+
+    # We keep track of the leading order coefficients of p_{k-1}, p_k and
+    # p_{k+1} in γ_km1, γ_k and γ_kp1 respectively. The recurrence relation
+    # becomes, with p_k(x) = γ_k q_k(x):
+    #
+    # γ_{k+1} q_{k+1}(x) = (A_k x + B_k) γ_k q_k(x) - C_k γ_{k-1} q_{k-1}(x).
+    #
+    # From this we derive the formulas below.
+
+    # We start with k = 1 and recall that p_0(x) = 1 and p_1(x) = A_0 x + B_0,
+    # hence γ_0 = 1 and γ_1 = A_0.
+    γ_km1 = 1
+    γ_k = rec_An(b, 0)
+    α[1] = -rec_Bn(b, 0) / rec_An(b, 0)
+    # We arbitrarily choose β_0 = β[1] = 0. TODO: change later.
+    β[1] = 0
+
+    # We can now loop for k from 1 to n.
+    for k in 1:n
+        γ_kp1 = rec_An(b, k) * γ_k
+        α[k+1] = -rec_Bn(b, k) * γ_k / γ_kp1
+        β[k+1] =  rec_Cn(b, k) * γ_km1 / γ_kp1
+        γ_km1 = γ_k
+        γ_k = γ_kp1
+    end
+    α, β
+end
+
+
+"""
+Evaluate the three-term recurrence relation for monic orthogonal polynomials
+```
+p_{n+1}(x) = (x-α_n)p_n(x) - β_n p_{n-1}(x).
+```
+"""
+function monic_recurrence_eval(α, β, x)
+    T = eltype(α)
+    # n is the maximal degree polynomial, we want to evaluate p_n(x)
+    n = length(α)-1
+
+    # We store the values p_{k-1}(x), p_k(x) and p_{k+1}(x) in z_km1, z_k and
+    # z_kp1 respectively.
+    z_km1 = zero(T)
+    z_k = one(T)
+    z_kp1 = z_k
+    if n == 0
+        z_k
+    else
+        for k in 0:n-1
+            z_kp1 = (x-α[k+1])*z_k - β[k+1]*z_km1
+            z_km1 = z_k
+            z_k = z_kp1
+        end
+        z_k
+    end
+end
+
+function jacobi_matrix(b::OPS)
+    T = rangetype(b)
+    n = length(b)-1
+    α, β = monic_recurrence_coefficients(b)
+    J = zeros(T, n, n)
+    for k in 1:n
+        J[k,k] = α[k]
+        if k > 1
+            J[k,k-1] = sqrt(β[k])
+        end
+        if k < n
+            J[k,k+1] = sqrt(β[k+1])
+        end
+    end
+    J
+end
+
+function roots(b::OPS)
+    J = jacobi_matrix(b)
+    eig(J)[1]
 end

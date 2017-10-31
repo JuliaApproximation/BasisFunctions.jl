@@ -39,3 +39,20 @@ function test_ops(T)
     @test abs(bh[6](x1) - 38.08768) < 1e-5
 
 end
+
+function test_ops_generic(ops)
+    T = rangetype(ops)
+    tol = test_tolerance(T)
+
+    x = fixed_point_in_domain(ops)
+    z1 = eval_element(ops, length(ops), x)
+    z2 = BasisFunctions.recurrence_eval(ops, x)
+    @test abs(z1-z2) < tol
+
+    d1 = eval_element_derivative(ops, length(ops), x)
+    d2 = BasisFunctions.recurrence_eval_derivative(ops, x)
+    @test abs(d1-d2) < tol
+
+    r = roots(ops)
+    @test max(abs.(eval_element.(ops, r))) < tol
+end
