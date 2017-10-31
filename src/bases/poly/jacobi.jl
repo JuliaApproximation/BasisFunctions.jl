@@ -44,10 +44,21 @@ weight(b::JacobiBasis{T}, x) where {T} = (T(x)-1)^b.α * (T(x)+1)^b.β
 
 # See DLMF (18.9.2)
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::JacobiBasis{T}, n::Int) where {T} = T(2*n + b.α + b.β + 1) * (2*n + b.α + b.β + 2) / T(2 * (n+1) * (n + b.α + b.β + 1))
+function rec_An(b::JacobiBasis{T}, n::Int) where {T}
+    if (n == 0) && (b.α + b.β+1 == 0)
+        one(T)/2*(b.α+b.β)+1
+    else
+        T(2*n + b.α + b.β + 1) * (2*n + b.α + b.β + 2) / T(2 * (n+1) * (n + b.α + b.β + 1))
+    end
+end
 
-rec_Bn(b::JacobiBasis{T}, n::Int) where {T} =
-    T(b.α^2 - b.β^2) * (2*n + b.α + b.β + 1) / T(2 * (n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
+function rec_Bn(b::JacobiBasis{T}, n::Int) where {T}
+    if (n == 0) && ((b.α + b.β + 1 == 0) || (b.α+b.β == 0))
+        one(T)/2*(b.α-b.β)
+    else
+        T(b.α^2 - b.β^2) * (2*n + b.α + b.β + 1) / T(2 * (n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
+    end
+end
 
 rec_Cn(b::JacobiBasis{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
