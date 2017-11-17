@@ -11,19 +11,23 @@ p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x).
 ```
 """
 struct GenericOPS{T} <: OPS{T}
+    moment  ::  T
     rec_a   ::  Vector{T}
     rec_b   ::  Vector{T}
     rec_c   ::  Vector{T}
 
-    function GenericOPS{T}(rec_a, rec_b) where {T}
-        @assert length(rec_a) == length(rec_b)
-        new{T}(rec_a, rec_b)
+    function GenericOPS{T}(moment, rec_a, rec_b, rec_c) where {T}
+        @assert length(rec_a) == length(rec_b) == length(rec_c)
+        new(moment, rec_a, rec_b, rec_c)
     end
 end
 
+GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}) where {T,A,B,C} =
+    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c)
+
 const GenericOPSpan{A, F <: GenericOPS} = Span{A,F}
 
-length(b::GenericOPS) = length(b.α)
+length(b::GenericOPS) = length(b.rec_a)
 
 name(b::GenericOPS) = "Generic OPS"
 
@@ -32,11 +36,13 @@ set_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
 
 function resize(b::GenericOPS, n)
     @assert n <= length(b)
-    GenericOPS(b.rec_a[1:n], b.rec_b[1:n])
+    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n])
 end
 
-rec_An(b::GenericOPS, n::Int) = b.rec_a[n]
+first_moment(b::GenericOPS) = b.moment
 
-rec_Bn(b::GenericOPS, n::Int) = b.rec_b[n]
+rec_An(b::GenericOPS, n::Int) = b.rec_a[n+1]
 
-rec_Cn(b::GenericOPS, n::Int) = b.rec_c[n]
+rec_Bn(b::GenericOPS, n::Int) = b.rec_b[n+1]
+
+rec_Cn(b::GenericOPS, n::Int) = b.rec_c[n+1]

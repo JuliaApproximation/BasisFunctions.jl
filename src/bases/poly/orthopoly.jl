@@ -79,7 +79,7 @@ The recurrence relation is assumed to have the form:
     p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x)
 '''
 with the coefficients implemented by the `rec_An`, `rec_Bn` and `rec_Cn`
-functions.
+functions and with `p_0(x) = 1`.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
 function recurrence_eval(b::OPS, idx::Int, x)
@@ -103,6 +103,46 @@ function recurrence_eval(b::OPS, idx::Int, x)
     z
 end
 
+"""
+Evaluate all the polynomials in the orthogonal polynomial sequence in the given
+point `x` using the three-term recurrence relation.
+"""
+function recurrence_eval!(result, b::OPS, x)
+    @assert length(result) == length(b)
+
+    result[1] = 1
+    if length(b) > 1
+        result[2] = rec_An(b, 0)*x + rec_Bn(b, 0)
+        for i = 2:length(b)-1
+            result[i+1] = (rec_An(b, i-1)*x + rec_Bn(b, i-1)) * result[i] - rec_Cn(b, i-1) * result[i-1]
+        end
+    end
+    result
+end
+
+
+"""
+Evaluate all the orthonormal polynomials in the sequence in the given
+point `x`, using the three-term recurrence relation.
+
+The implementation is based on Gautschi, 2004, Theorem 1.29, p. 12.
+"""
+function recurrence_eval_orthonormal!(result, b::OPS, x)
+    @assert length(result) == length(b)
+
+    α, β = monic_recurrence_coefficients(b)
+    # Explicit formula for the constant orthonormal polynomial
+    result[1] = 1/sqrt(first_moment(b))
+    if length(result) > 1
+        # We use an explicit formula for the first degree polynomial too
+        result[2] = 1/sqrt(β[2]) * (x-α[1]) * result[1]
+        # The rest follows (1.3.13) in the book of Gautschi
+        for i = 2:length(b)-1
+            result[i+1] = 1/sqrt(β[i+1]) * ( (x-α[i])*result[i] - sqrt(β[i])*result[i-1])
+        end
+    end
+    result
+end
 
 """
 Evaluate the derivative of an orthogonal polynomial, based on taking the
@@ -150,8 +190,8 @@ function monic_recurrence_coefficients(b::OPS)
     T = rangetype(b)
     # n is the maximal degree polynomial
     n = length(b)
-    α = zeros(T, n+1)
-    β = zeros(T, n+1)
+    α = zeros(T, n)
+    β = zeros(T, n)
 
     # We keep track of the leading order coefficients of p_{k-1}, p_k and
     # p_{k+1} in γ_km1, γ_k and γ_kp1 respectively. The recurrence relation
@@ -170,7 +210,7 @@ function monic_recurrence_coefficients(b::OPS)
     β[1] = 0
 
     # We can now loop for k from 1 to n.
-    for k in 1:n
+    for k in 1:n-1
         γ_kp1 = rec_An(b, k) * γ_k
         α[k+1] = -rec_Bn(b, k) * γ_k / γ_kp1
         β[k+1] =  rec_Cn(b, k) * γ_km1 / γ_kp1
@@ -210,7 +250,7 @@ function monic_recurrence_eval(α, β, idx, x)
     end
 end
 
-function jacobi_matrix(b::OPS)
+function symmetric_jacobi_matrix(b::OPS)
     T = rangetype(b)
     n = length(b)
     α, β = monic_recurrence_coefficients(b)
@@ -228,7 +268,7 @@ function jacobi_matrix(b::OPS)
 end
 
 function roots(b::OPS)
-    J = jacobi_matrix(b)
+    J = symmetric_jacobi_matrix(b)
     eig(J)[1]
 end
 
@@ -250,7 +290,7 @@ end
 Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
 """
 function gauss_rule(b::OPS{T}) where {T <: Real}
-    J = jacobi_matrix(b)
+    J = symmetric_jacobi_matrix(b)
     x,v = eig(J)
     b0 = first_moment(b)
     # In the real-valued case it is sufficient to use the first element of the
@@ -262,14 +302,40 @@ end
 # In the complex-valued case, we have to compute the weights by summing explicitly
 # over the full eigenvector.
 function gauss_rule(b::OPS{T}) where {T <: Complex}
-    J = jacobi_matrix(b)
+    J = symmetric_jacobi_matrix(b)
     x,v = eig(J)
     b0 = first_moment(b)
     w = similar(x)
     for i in 1:length(w)
-        w[i] = b0/sum(v[:,i].^2)
+        w[i] = b0 * v[1,i]^2 / sum(v[:,i].^2)
     end
     x,w
+end
+
+function gauss_rule(b::OPS{T}) where {T <: Union{BigFloat,Complex{BigFloat}}}
+    J = symmetric_jacobi_matrix(b)
+    # assuming the user has imported LinearAlgebra.jl
+    x = LinearAlgebra.EigenGeneral.eigvals!(J)
+    w = gauss_weights_from_points(b, x)
+    x,w
+end
+
+"""
+Compute the weights of Gaussian quadrature rule from the given roots of the
+orthogonal polynomial and using the formula:
+```
+w_j = 1 / \sum_{k=0}^{n-1} p_k(x_j)^2
+```
+This formula only holds for the monic orthogonal polynomials.
+"""
+function gauss_weights_from_points(b::OPS, roots)
+    pk = zeros(eltype(roots), length(b))
+    w = zeros(eltype(roots), length(b))
+    for j in 1:length(w)
+        recurrence_eval_orthonormal!(pk, b, roots[j])
+        w[j] = 1/sum(pk.^2)
+    end
+    w
 end
 
 function leading_order_coefficient(b::OPS{T}, idx) where {T}
