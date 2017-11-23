@@ -108,7 +108,8 @@ export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
 export domaintype, rangetype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support
-export eval_expansion, eval_set_element, eval_element, eval_element_derivative
+export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,
+        eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export native_index, linear_index, multilinear_index, native_size, linear_size
@@ -261,8 +262,12 @@ export MultiArray
 # from util/domain_extensions.jl
 export float_type, dimension
 
-# from bases/poly/polynomials.jl and friends
-export LegendreBasis, JacobiBasis, LaguerreBasis, HermiteBasis, MonomialBasis, RationalBasis
+# from bases/poly/orthopoly.jl and friends
+export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
+export Monomials, RationalBasis, GenericOPS
+export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
+export symmetric_jacobi_matrix, roots, gauss_rule, first_moment
+export leading_order_coefficient
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -332,6 +337,10 @@ include("products.jl")
 
 include("generic/generic_operators.jl")
 
+################################################################
+# Generic function sets
+################################################################
+
 include("bases/sets/subsets.jl")
 include("bases/sets/composite_set.jl")
 include("bases/sets/multiple_set.jl")
@@ -340,28 +349,46 @@ include("bases/sets/operated_set.jl")
 include("bases/sets/weighted_set.jl")
 
 
+################################################################
+# Trigonometric sets: Fourier, cosines and sines
+################################################################
+
 include("bases/fourier/fouriertransforms.jl")
 include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 
-include("bases/splines/bf_splines.jl")
 
+################################################################
+# Splines: natural splines, periodic splines, B-splines, ....
+################################################################
+
+include("bases/splines/bf_splines.jl")
 include("util/bsplines.jl")
 
 include("bases/translates/set_of_translates.jl")
 include("bases/translates/translates_of_bsplines.jl")
 
+
+################################################################
+# Wavelets
+################################################################
+
 # # include("bases/wavelets/bf_wavelets.jl")
 
-include("bases/poly/polynomials.jl")
+################################################################
+# Polynomials: monomials and (classical) orthogonal polynomials
+################################################################
 
+include("bases/poly/polynomials.jl")
 include("bases/poly/monomials.jl")
+include("bases/poly/orthopoly.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
+include("bases/poly/generic_op.jl")
 include("bases/poly/rational.jl")
 
 

@@ -119,6 +119,8 @@ end
 
 eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
 
+eval_element_derivative(s::DerivedSet, idx, x) = eval_element_derivative(superset(s), idx, x)
+
 
 #########################
 # Wrapping of operators

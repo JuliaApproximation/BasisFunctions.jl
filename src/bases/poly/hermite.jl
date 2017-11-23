@@ -1,43 +1,46 @@
 # hermite.jl
 
-"A Hermite polynomial basis."
-struct HermiteBasis{T} <: OPS{T}
+"""
+A basis of the classicale Hermite polynomials. These polynomials are orthogonal
+on the real line `(-∞,∞)` with respect to the weight function
+`w(x)=exp(-x^2)`.
+"""
+struct HermitePolynomials{T} <: OPS{T}
     n           ::  Int
 end
 
-const HermiteSpan{A, F <: HermiteBasis} = Span{A,F}
+const HermiteSpan{A, F <: HermitePolynomials} = Span{A,F}
 
-name(b::HermiteBasis) = "Hermite OPS"
+name(b::HermitePolynomials) = "Hermite OPS"
 
 # Constructor with a default numeric type
-HermiteBasis(n::Int, ::Type{T} = Float64) where {T} = HermiteBasis{T}(n)
+HermitePolynomials(n::Int, ::Type{T} = Float64) where {T} = HermitePolynomials{T}(n)
 
-instantiate(::Type{HermiteBasis}, n, ::Type{T}) where {T} = HermiteBasis{T}(n)
+instantiate(::Type{HermitePolynomials}, n, ::Type{T}) where {T} = HermitePolynomials{T}(n)
 
-set_promote_domaintype(b::HermiteBasis, ::Type{S}) where {S} = HermiteBasis{S}(b.n)
+set_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
 
-resize(b::HermiteBasis{T}, n) where {T} = HermiteBasis{T}(n)
-
-
-left(b::HermiteBasis{T}) where {T} = -convert(T, Inf)
-left(b::HermiteBasis, idx) = left(b)
-
-right(b::HermiteBasis{T}) where {T} = convert(T, Inf)
-right(b::HermiteBasis, idx) = right(b)
-
-#grid(b::HermiteBasis) = HermiteGrid(b.n)
+resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
 
 
-weight(b::HermiteBasis{T}, x) where {T} = exp(-T(x)^2)
+left(b::HermitePolynomials{T}) where {T} = -convert(T, Inf)
+left(b::HermitePolynomials, idx) = left(b)
+
+right(b::HermitePolynomials{T}) where {T} = convert(T, Inf)
+right(b::HermitePolynomials, idx) = right(b)
+
+first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
+
+weight(b::HermitePolynomials{T}, x) where {T} = exp(-T(x)^2)
 
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::HermiteBasis, n::Int) = 2
+rec_An(b::HermitePolynomials, n::Int) = 2
 
-rec_Bn(b::HermiteBasis, n::Int) = 0
+rec_Bn(b::HermitePolynomials, n::Int) = 0
 
-rec_Cn(b::HermiteBasis, n::Int) = 2*n
+rec_Cn(b::HermitePolynomials, n::Int) = 2*n
 
 function gramdiagonal!(result, ::HermiteSpan; options...)
     T = eltype(result)

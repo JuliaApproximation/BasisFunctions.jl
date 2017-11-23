@@ -3,11 +3,11 @@ TEST_CONTINUOUS = true
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::FunctionSet) = true
-# Laguerre and Hermite fail because they have unbounded support.
-supports_approximation(s::LaguerreBasis) = false
-supports_approximation(s::HermiteBasis) = false
+# Laguerre and Hermite fail due to linear algebra problems in BigFloat
+supports_approximation(s::LaguerrePolynomials{BigFloat}) = false
+supports_approximation(s::HermitePolynomials{BigFloat}) = false
 
-# It is difficult to do approximation in subsets generically
+# It is difficult to do approximation in subsets and operated sets generically
 supports_approximation(s::Subset) = false
 supports_approximation(s::OperatedSet) = false
 
@@ -22,13 +22,18 @@ supports_interpolation(s::SingletonSubset) = false
 # Pick a simple function to approximate
 suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
 
-# Make a simple periodic function for Fourier
-suitable_function(set::FourierBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(set::PeriodicSplineBasis) =  x->1/(10+cos(2*pi*x))
-suitable_function(set::BasisFunctions.PeriodicSetOfTranslates) =  x->1/(10+cos(2*pi*x))
-suitable_function(set::CosineSeries) =  x->1/(10+cos(2*pi*x))
+# Make a simple periodic function for Fourier and other periodic sets
+suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
+suitable_function(set::PeriodicSplineBasis) =  x -> 1/(10+cos(2*pi*x))
+suitable_function(set::BasisFunctions.PeriodicSetOfTranslates) =  x -> 1/(10+cos(2*pi*x))
+# The function has to be periodic and even symmetric
+suitable_function(set::CosineSeries) =  x -> 1/(10+cos(2*pi*x))
+# The function has to be periodic and odd symmetric
+suitable_function(set::SineSeries) =  x -> x^3*(1-x)^3
+# We use a function that is smooth and decays towards infinity
+suitable_function(set::LaguerrePolynomials) = x -> 1/(1000+(2x)^2)
+suitable_function(set::HermitePolynomials) = x -> 1/(1000+(2x)^2)
 
-suitable_function(set::SineSeries) =  x->x^3*(1-x)^3
 
 suitable_function(set::OperatedSet) = suitable_function(src(set))
 
@@ -44,8 +49,6 @@ end
 
 suitable_interpolation_grid(basis::TensorProductSet) =
     ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
-
-suitable_interpolation_grid(basis::LaguerreBasis) = EquispacedGrid(length(basis), 0, 10, domaintype(basis))
 
 suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, domaintype(basis))
 
@@ -300,7 +303,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         z = L*e
         L2 = evaluation_operator(span_ext, grid_ext) * extension_operator(span, span_ext)
         z2 = L2*e
-        @test maximum(abs.(z-z2)) < test_tolerance(ELT)
+        @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators
         # @test is_fast(L2) == is_fast(L)
     end
@@ -328,6 +331,31 @@ function test_generic_set_interface(basis, span = Span(basis))
                 x2 = x+delta
             end
             @test abs( (e1(x2)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 2000*test_tolerance(ELT)
+        end
+
+        if dimension(basis) == 1
+            x = fixed_point_in_domain(basis)
+            D = differentiation_operator(span)
+            # Verify derivatives in three basis functions: the first, the last,
+            # and the middle one
+            i1 = 1
+            i2 = length(basis)
+            i3 = (i1+i2) >> 1
+
+            c1 = zero(span)
+            c1[i1] = 1
+            u1 = D*c1
+            @test abs(u1(x) - eval_set_element_derivative(basis, i1, x)) < test_tolerance(ELT)
+
+            c2 = zero(span)
+            c2[i2] = 1
+            u2 = D*c2
+            @test abs(u2(x) - eval_set_element_derivative(basis, i2, x)) < test_tolerance(ELT)
+
+            c3 = zero(span)
+            c3[i3] = 1
+            u3 = D*c3
+            @test abs(u3(x) - eval_set_element_derivative(basis, i3, x)) < test_tolerance(ELT)
         end
     end
 

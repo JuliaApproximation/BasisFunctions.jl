@@ -22,7 +22,6 @@ include("test_bsplines.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
-include("test_chebyshev.jl")
 include("test_bsplinetranslatedbasis.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
@@ -44,12 +43,12 @@ d5 = plan_dct!(zeros(10), 1:1)
 d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
-SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendreBasis,
-        LaguerreBasis, HermiteBasis, PeriodicSplineBasis, CosineSeries, SineSeries,
+SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
+        LaguerrePolynomials, HermitePolynomials, PeriodicSplineBasis, CosineSeries, SineSeries,
         BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
         DiscreteOrthonormalSplineBasis]
-# SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendreBasis,
-#         LaguerreBasis, HermiteBasis, CosineSeries, SineSeries]
+# SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
+#         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 
 for T in [Float64,BigFloat,]
     println()
@@ -78,7 +77,7 @@ for T in [Float64,BigFloat,]
 
     delimit("Generic interfaces")
 
-    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,11)
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,9)
         # Choose an odd and even number of degrees of freedom
             basis = instantiate(SET, n, T)
 
@@ -133,10 +132,7 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Fourier expansions",80))" begin
         test_fourier_series(T) end
 
-    @testset "$(rpad("Chebyshev expansions",80))" begin
-        test_chebyshev(T) end
-
-    @testset "$(rpad("Orthogonal polynomial evaluation",80))" begin
+    @testset "$(rpad("Orthogonal polynomials",80))" begin
         test_ops(T) end
 
     @testset "$(rpad("Periodic translate expansions",80))" begin
