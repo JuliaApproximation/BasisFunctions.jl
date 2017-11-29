@@ -494,7 +494,7 @@ function modified_chebyshev(m::Array{T}, a=zeros(T,length(m)), b=zeros(T,length(
     σzero = Array{T}(L)
     σ = Array{T}(L)
 
-    modified_chebyshev_algorithm!(α,β,m,a,b,σ,σzero,σmone,n,1)
+    modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n,1)
     α, β
 end
 
@@ -512,7 +512,7 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
     α[1] = a[1]+m[2]/m[1]
     β[1] = m[1]
     fill!(σmone,0)
-    copy!(σzero,os,m,os,2n)
+    Base.copy!(σzero,os,m,os,2n)
     # continue
     for k=1:n-1
         for l in k+os:2n-k-1+os
@@ -522,8 +522,8 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
         α[k+1] += σ[k+2]/σ[k+1]
         α[k+1] = a[k+1]+σ[k+2]/σ[k+1]-σzero[k+1]/σzero[k]
         β[k+1] = σ[k+1]/σzero[k]
-        copy!(σmone,os,σzero,os,2n)
-        copy!(σzero,os,σ,os,2n)
+        Base.copy!(σmone,os,σzero,os,2n)
+        Base.copy!(σzero,os,σ,os,2n)
     end
     nothing
 end
@@ -539,7 +539,7 @@ with d(M) the degree of exactness. Thus δ is 2 for Gaussian quadrature.
 
 See equation page 101 from Gautschi's book, "Orthogonal Polynomials and Computation"
 """
-function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-6, δ = 1, maxits = 20, quadrature_size=false)
+function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1, maxits = 20, quadrature_size=false)
     M = 1 + floor(Int, (2n-1)/δ)
 
     nodes, weights = my_quadrature_rule(M)
