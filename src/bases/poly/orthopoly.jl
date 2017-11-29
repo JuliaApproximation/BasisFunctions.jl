@@ -554,7 +554,7 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
     no_its = 2
     while reduce(&, abs.(β1-β0) .> tol.*β1)
         if no_its > maxits
-            warn("accuracy of Stieltjes is not obtained")
+            warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./β1))")
             break
         end
         M = M+2^floor(Int,no_its/5)
@@ -566,64 +566,6 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
         α1,β1 = stieltjes(n,nodes,weights)
     end
     quadrature_size ? (α1, β1, M) : (α1, β1)
-end
-
-"""
-Transforms the recurrence coefficients (a_k), (b_k), and (c_k) of orthonormal
-orthogonal polynomials (q_k), which satisfy the three-term recurrence relation
-```
-q_{k+1}(t) = (a_kt+b_k)q_k(t)-c_kq_{k-1}(t)
-```
-to the recurrence coefficients (α_k) and (β_k) the associated
-monic polynomials (p_k), such that
-```
-p_{k+1}(t) = (t-α_k)p_k(t)-β_kp_{k-1}(t)
-```
-
-`b0` is the first element of β and should in the ideal case be equal to the first moment of the
-measure the polynomials are orthogonal to (see equation (1.3.6) from Gautschi's book,
- "Orthogonal Polynomials and Computation").
-"""
-function monic_recurrence_coefficients(a::Array{T},b::Array{T},c::Array{T},b0=0) where {T}
-    n = length(a)
-    α = Array{T}(n)
-    β = Array{T}(n)
-    monic_recurrence_coefficients!(α,β,a,b,c,b0)
-    α, β
-end
-
-"""
-See `monic_recurrence_coefficients`
-"""
-function monic_recurrence_coefficients!(α,β,a,b,c,b0)
-    n = length(α)
-    # We keep track of the leading order coefficients of p_{k-1}, p_k and
-    # p_{k+1} in γ_km1, γ_k and γ_kp1 respectively. The recurrence relation
-    # becomes, with p_k(x) = γ_k q_k(x):
-    #
-    # γ_{k+1} q_{k+1}(x) = (A_k x + B_k) γ_k q_k(x) - C_k γ_{k-1} q_{k-1}(x).
-    #
-    # From this we derive the formulas below.
-
-    # We start with k = 1 and recall that p_0(x) = 1 and p_1(x) = A_0 x + B_0,
-    # hence γ_0 = 1 and γ_1 = A_0.
-    γ_km1 = 1
-    # γ_k = rec_An(b, 0)
-    γ_k = a[1]
-    # α[1] = -rec_Bn(b, 0) / rec_An(b, 0)
-    α[1] = -b[1]/a[1]
-    # We arbitrarily choose β_0 = β[1] = 0. TODO: change later, should be first moment
-    β[1] = b0
-
-    # We can now loop for k from 1 to n.
-    for k in 1:n-1
-        γ_kp1 = a[k+1] * γ_k
-        α[k+1] = -b[k+1] * γ_k / γ_kp1
-        β[k+1] =  c[k+1] * γ_km1 / γ_kp1
-        γ_km1 = γ_k
-        γ_k = γ_kp1
-    end
-    α, β
 end
 
 """

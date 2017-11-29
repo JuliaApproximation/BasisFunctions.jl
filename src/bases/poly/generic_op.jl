@@ -37,7 +37,7 @@ function GenericOPSfromQuadrature(n, my_quadrature_rule, left, right; options...
 end
 
 function OrthonormalOPSfromQuadrature(n, my_quadrature_rule, left, right; options...)
-    α, β = adaptive_stieltjes(n,my_quadrature_rule; options...)
+    α, β = adaptive_stieltjes(n+1,my_quadrature_rule; options...)
     A = eltype(α); B = eltype(β);
     a,b,c = monic_to_orthonormal_recurrence_coefficients(α,β)
     T = promote_type(A,B)
@@ -139,7 +139,7 @@ default_indicator = x->1
 using FastGaussQuadrature
 function HalfRangeChebyshev(n::Int, α, T::ELT, indicator_function::Function; options...) where ELT
     my_quadrature_rule = n->_halfrangechebyshevweights(n, α, T, indicator_function)
-    OrthonormalOPSfromQuadrature(n, my_quadrature_rule, -one(ELT), one(ELT))
+    OrthonormalOPSfromQuadrature(n, my_quadrature_rule, -one(ELT), one(ELT); options...)
 end
 
 function _halfrangechebyshevweights(n, α, T, indicator_function)
