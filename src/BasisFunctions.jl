@@ -269,6 +269,9 @@ export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic
 export symmetric_jacobi_matrix, roots, gauss_rule, first_moment
 export leading_order_coefficient
 
+# from generic_op.jl
+export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind
+
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bases/splines/bf_splines.jl
