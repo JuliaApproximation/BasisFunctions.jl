@@ -541,7 +541,6 @@ See equation page 101 from Gautschi's book, "Orthogonal Polynomials and Computat
 """
 function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1, maxits = 20, quadrature_size=false)
     M = 1 + floor(Int, (2n-1)/δ)
-
     nodes, weights = my_quadrature_rule(M)
     ELT = eltype(nodes)
 

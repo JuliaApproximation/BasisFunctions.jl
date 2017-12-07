@@ -26,8 +26,8 @@ struct GenericOPS{T} <: OPS{T}
     end
 end
 
-GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, left, right) where {T,A,B,C} =
-    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c)
+GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, left, right, p0=one(T)) where {T,A,B,C} =
+    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c, left, right, p0)
 
 function GenericOPSfromQuadrature(n, my_quadrature_rule, left, right; options...)
     α, β = adaptive_stieltjes(n,my_quadrature_rule; options...)
@@ -61,7 +61,7 @@ set_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
 
 function resize(b::GenericOPS, n)
     @assert n <= length(b)
-    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n])
+    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.left, b.right, b.p0)
 end
 
 first_moment(b::GenericOPS) = b.moment
@@ -105,8 +105,8 @@ The indicator function refers to the indicator function of the domain the functi
 
 See also `HalfRangeChebyshevIkind`
 """
-HalfRangeChebyshevIkind(n::Int, T::ELT, indicator_function::Function=default_indicator; options...) where ELT =
-    HalfRangeChebyshev(n, ELT(-1//2), T, indicator_function; options...)
+HalfRangeChebyshevIkind(n::Int, T::ELT, indicator_function_nodes::Vector{ELT}=default_indicator_nodes(ELT); options...) where ELT =
+    HalfRangeChebyshev(n, ELT(-1//2), T, indicator_function_nodes; options...)
 
 """
 Creates the (normalized) half range Chebyshev polynomials of the second kind.
@@ -125,27 +125,55 @@ They appear in the context of Fourier extensions. There, an odd function `f(x)` 
 
 See also `HalfRangeChebyshevIkind`
 """
-HalfRangeChebyshevIIkind(n::Int, T::ELT, indicator_function::Function=default_indicator; options...) where ELT =
-    HalfRangeChebyshev(n, ELT(1//2), T, indicator_function; options...)
+HalfRangeChebyshevIIkind(n::Int, T::ELT, indicator_function_nodes::Vector{ELT}=default_indicator_nodes(ELT); options...) where ELT =
+    HalfRangeChebyshev(n, ELT(1//2), T, indicator_function_nodes; options...)
 
-m(T::ELT) where {ELT} = 1-2/sin(ELT(pi)/(2T))^2
-
-map_from_prolatedomain_to_OP_domain(x,T) = T/pi*acos(cos(pi/T)+(1-cos(pi/T))/2*(x+1))
-
-weight_of_indicator(indicator_function::Function, T) = x-> indicator_function(map_from_prolatedomain_to_OP_domain(x,T))+indicator_function(-map_from_prolatedomain_to_OP_domain(x,T))
-
-default_indicator = x->1
+m = (x,T)->2*(cos(pi/T*x)-cos(pi/T))/(1-cos(pi/T))-1
+m_inv = (t,T)->T/pi*acos(cos(pi/T)+(1-cos(pi/T))/2*(t+1))
+weight_of_indicator(T,indicator) = t->.5*(indicator(-m_inv(t,T))+indicator(m_inv(t,T)))
+default_indicator_nodes(ELT) = [-ELT(1),ELT(1)]
 
 using FastGaussQuadrature
-function HalfRangeChebyshev(n::Int, α, T::ELT, indicator_function::Function; options...) where ELT
-    my_quadrature_rule = n->_halfrangechebyshevweights(n, α, T, indicator_function)
+function HalfRangeChebyshev(n::Int, α, T::ELT, indicator_function_nodes::Vector{ELT}; options...) where ELT
+    my_quadrature_rule = n->_halfrangechebyshevweights(n, α, T, indicator_function_nodes)
     OrthonormalOPSfromQuadrature(n, my_quadrature_rule, -one(ELT), one(ELT); options...)
 end
 
-function _halfrangechebyshevweights(n, α, T, indicator_function)
-    β = 0
-    nodes, weights = gaussjacobi(2n, α, β)
-    Λ = weight_of_indicator(indicator_function,T)
-    modified_weights = weights.*((nodes.-m(T)).^α).*Λ.(nodes)
-    nodes, modified_weights
+function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes::Vector{ELT}) where {ELT}
+    @assert indicator_function_nodes[1] == -1 && indicator_function_nodes[end] == 1
+    @assert reduce(&, true, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end])
+    @assert iseven(length(indicator_function_nodes))
+
+    if length(indicator_function_nodes)==2
+        nodes, weights = gaussjacobi(n, α, 0)
+        Λ = weight_of_indicator(T,x->1)
+        modified_weights = weights.*((nodes.-m(T,T)).^α).*Λ.(nodes)*2T/pi
+        nodes, modified_weights
+    else
+        indicator = indicator_function(indicator_function_nodes)
+        mapped_nodes = sort(unique(map(x->m(x,T), push!(indicator_function_nodes,0))))
+        pop!(indicator_function_nodes)
+        no_intervals = length(mapped_nodes)-1
+        n_interval = n
+        N = n_interval*no_intervals
+        nodes = zeros(ELT,N)
+        weights = zeros(ELT,N)
+
+
+        for i in 1:no_intervals
+            nodes_interval, weights_interval = gaussjacobi(n_interval, 0., 0.)
+            a = mapped_nodes[i]
+            b = mapped_nodes[i+1]
+            nodes_interval[:] .= a + (b-a)/2*(nodes_interval+1)
+            weights_interval[:] .= weights_interval*(b-a)/2
+            Δ = weight_of_indicator(T,indicator)
+            weights_interval[:] .= 2T/pi*weights_interval.*(1-nodes_interval).^α.*(nodes_interval-m(T,T)).^α.*Δ.(nodes_interval)
+
+            nodes[1+(i-1)*n_interval:i*n_interval] .= nodes_interval[:]
+            weights[1+(i-1)*n_interval:i*n_interval] .= weights_interval[:]
+        end
+        nodes, weights
+    end
 end
+
+indicator_function(nodes) = x-> reduce(|, false, nodes[1:2:end] .<= x .<= nodes[2:2:end])
