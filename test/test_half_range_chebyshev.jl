@@ -11,7 +11,7 @@ function test_half_range_chebyshev()
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
-    modified_weights = weights.*(nodes-BasisFunctions.m(T)).^α
+    modified_weights = weights.*(nodes-BasisFunctions.m(T,T)).^α
 
     αstieltjes,βstieltjes = BasisFunctions.stieltjes(n,nodes,modified_weights)
     setprecision(350)
