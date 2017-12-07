@@ -100,8 +100,12 @@ to the polynomials `(p_k(t))`
 See Huybrechs 2010, On the Fourier Extension of nonperiodic functions
     Adcock, Huybrechs, Vaquero 2014, On the numerical stability of Fourier Extension
 
-The indicator function refers to the indicator function of the domain the function
-`f(x)` is approximated on. By default it is the indicator function of the interval [-1,1]
+The `indicator_function_nodes` refer to the boundary points of the domain of the function `f(x)` is approximated on.
+It is assumed that `indicator_function_nodes` has the form
+```
+    [-1,b_1,a_2,b_2, ..., a_n, 1 ] with -1<b_1<a_2<b_2<...<a_n<1.
+```
+By default it is the vector [-1.,1.].
 
 See also `HalfRangeChebyshevIkind`
 """
