@@ -11,38 +11,44 @@ p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x).
 p_{-1} = 0, p_0 = p0
 ```
 """
-struct GenericOPS{T} <: OPS{T}
+struct GenericOPS{T} <: BasisFunctions.OPS{T}
     moment  ::  T
     p0      ::  T
     rec_a   ::  Vector{T}
     rec_b   ::  Vector{T}
     rec_c   ::  Vector{T}
-    left    ::  T
-    right   ::  T
+    left
+    right
+    weight
 
-    function GenericOPS{T}(moment, rec_a, rec_b, rec_c, left, right, p0=one(T)) where {T}
+    function GenericOPS{T}(moment, rec_a, rec_b, rec_c, left, right, p0=one(T), weight=nothing) where {T}
         @assert length(rec_a) == length(rec_b) == length(rec_c)
-        new(moment, p0, rec_a, rec_b, rec_c, left, right)
+        new(moment, p0, rec_a, rec_b, rec_c, real(T)(left), real(T)(right), weight)
     end
 end
 
-GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, left, right) where {T,A,B,C} =
-    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c)
+GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, left, right, p0=one(T), weight=nothing) where {T,A,B,C} =
+    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c, left, right, p0, weight)
 
-function GenericOPSfromQuadrature(n, my_quadrature_rule, left, right; options...)
+function MonicOPSfromQuadrature(n, my_quadrature_rule, other...; options...)
     α, β = adaptive_stieltjes(n,my_quadrature_rule; options...)
-    A = eltype(α); B = eltype(β);
-    T = promote_type(A,B)
-    GenericOPS{T}(β[1], ones(T,n), -α, β, left, right)
+    MonicOPSfromMonicCoefficients(α, β, other...)
 end
 
-function OrthonormalOPSfromQuadrature(n, my_quadrature_rule, left, right; options...)
+function OrthonormalOPSfromQuadrature(n, my_quadrature_rule, other...; options...)
     α, β = adaptive_stieltjes(n+1,my_quadrature_rule; options...)
-    A = eltype(α); B = eltype(β);
-    a,b,c = monic_to_orthonormal_recurrence_coefficients(α,β)
-    T = promote_type(A,B)
-    GenericOPS{T}(β[1], a, b, c, left, right, one(T)/sqrt(β[1]))
+    ONPSfromMonicCoefficients(α, β, other...)
 end
+
+MonicOPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, left::T, right::T, other...) where {T,A,B} =
+    GenericOPS{promote_type(T,A,B)}(β[1], ones(T,length(α)), -α, β, left, right, one(T), other...)
+
+function ONPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, left::T, right::T, other...) where {T,A,B}
+    a,b,c = monic_to_orthonormal_recurrence_coefficients(α,β)
+    GenericOPS{promote_type(T,A,B)}(β[1], a, b, c, left, right, 1/sqrt(β[1]), other...)
+end
+
+
 
 const GenericOPSpan{A, F <: GenericOPS} = Span{A,F}
 
@@ -55,6 +61,8 @@ right(b::GenericOPS, idx) = right(b)
 length(b::GenericOPS) = length(b.rec_a)
 
 name(b::GenericOPS) = "Generic OPS"
+
+weight(b::GenericOPS, x) = b.weight==nothing? error("weight not defined for this Generic OPS"): b.weight(x)
 
 set_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
     GenericOPS{S}(b.rec_a, b.rec_b, b.rec_c)
@@ -73,6 +81,7 @@ rec_Bn(b::GenericOPS, n::Int) = b.rec_b[n+1]
 rec_Cn(b::GenericOPS, n::Int) = b.rec_c[n+1]
 
 p0(b::GenericOPS) = b.p0
+<<<<<<< Updated upstream
 
 """
 Creates the (normalized) half range Chebyshev polynomials of the first kind.
@@ -149,3 +158,5 @@ function _halfrangechebyshevweights(n, α, T, indicator_function)
     modified_weights = weights.*((nodes.-m(T)).^α).*Λ.(nodes)
     nodes, modified_weights
 end
+=======
+>>>>>>> Stashed changes

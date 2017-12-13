@@ -24,7 +24,7 @@ length(o::OrthogonalPolynomials) = o.n
 p0(::OPS{T}) where {T} = one(T)
 
 function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)
-    T = coeftype(s)
+    T = real(coeftype(s))
 	# To avoid difficult points at the ends of the domain.
 	dot(x->weight(set(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end
@@ -270,9 +270,15 @@ function symmetric_jacobi_matrix(b::OPS)
     J
 end
 
-function roots(b::OPS)
+function roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
     eig(J)[1]
+end
+
+function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+    J = symmetric_jacobi_matrix(b)
+    # assuming the user has imported LinearAlgebra.jl
+    LinearAlgebra.EigenGeneral.eigvals!(J)
 end
 
 gauss_points(b::OPS) = roots(b)
@@ -316,11 +322,22 @@ function gauss_rule(b::OPS{T}) where {T <: Complex}
 end
 
 function gauss_rule(b::OPS{T}) where {T <: Union{BigFloat,Complex{BigFloat}}}
-    J = symmetric_jacobi_matrix(b)
-    # assuming the user has imported LinearAlgebra.jl
-    x = LinearAlgebra.EigenGeneral.eigvals!(J)
+    x = gauss_points(b)
     w = gauss_weights_from_points(b, x)
     x,w
+end
+
+function sorted_gauss_rule(b::OPS)
+    x,w = gauss_rule(b)
+    idx = sortperm(real(x))
+    x[idx], w[idx]
+end
+
+function gaussjacobi(n::Int,α::T,β::T) where {T<:BigFloat}
+    x, w = sorted_gauss_rule(JacobiPolynomials(n,α,β))
+    @assert norm(imag(x)) < eps(T)
+    @assert norm(imag(w)) < eps(T)
+    real(x), real(w)
 end
 
 """
@@ -373,7 +390,8 @@ accompanying code `https://www.cs.purdue.edu/archives/2002/wxg/codes/OPQ.html`
 Note: The vectors used have indices starting at `1` (such that `a_n` above is
 given by `a[n+1]`). The last value is `a_{n-1} = a[n]`.
 """
-function stieltjes(N, x::Array{T},w::Array{T}) where {T}
+function stieltjes(N, x::Array{RT},w::Array{T}) where {T,RT}
+    @assert real(T) == RT
     # ####
     # Remove data with zero weights done in, e.g, Gautschi's book, "Orthogonal Polynomials and Computation".
     # ####
@@ -394,11 +412,11 @@ function stieltjes(N, x::Array{T},w::Array{T}) where {T}
         error("Too little quadrature points")
     end
 
-    a = zeros(N)
-    b = zeros(N)
+    a = zeros(T,N)
+    b = zeros(T,N)
 
-    p1 = zeros(Ncap,1)
-    p2 = ones(Ncap,1)
+    p1 = zeros(T,Ncap)
+    p2 = ones(T,Ncap)
     # The following scaling has to be adopted in case the
     # orthogonal polynomials underflow or overflow. In the
     # former case, c has to be chosen sufficiently large
@@ -423,9 +441,10 @@ see `stieltjes`
 
 `p0`, `p1`, `p2`, and `scratch` are vectors of size `N`
 """
-function stieltjes!(a::Array{T},b::Array{T},N,x::Array{T},w::Array{T},p0::Array{T},p1::Array{T},p2::Array{T},scratch::Array{T}) where {T}
-    tiny = 10*typemin(T)
-    huge = .1*typemax(T)
+function stieltjes!(a::Array{T},b::Array{T},N,x::Array{RT},w::Array{T},p0::Array{T},p1::Array{T},p2::Array{T},scratch::Array{T}) where {T, RT}
+    @assert real(T) == RT
+    tiny = 10*typemin(real(T))
+    huge = .1*typemax(real(T))
 
     s0 = sum(w)
     a[1] = dot(x,w)/s0
@@ -435,12 +454,12 @@ function stieltjes!(a::Array{T},b::Array{T},N,x::Array{T},w::Array{T},p0::Array{
         copy!(p1,p2)
 
         p2 .= (x.-a[k]).*p1.-b[k].*p0
-        scratch .= p2.^2
-        s1 = dot(w,scratch)
-        scratch .= w.*p2.^2
-        s2 = dot(x,scratch)
+        scratch .= p2.^2.*w
+        s1 = sum(scratch)
+        scratch .= w.*(p2.^2).*x
+        s2 = sum(scratch)
         scratch .= abs.(p2)
-        if (maximum(scratch)>huge || abs(s2)>huge)
+        if (maximum(abs.(scratch))>huge || abs(s2)>huge)
             error("impending overflow in stieltjes for k=$(k)")
         end
         if abs(s1)<tiny
@@ -552,9 +571,9 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
     α1,β1 = stieltjes(n,nodes,weights)
 
     no_its = 2
-    while reduce(&, abs.(β1-β0) .> tol.*β1)
+    while reduce(&, abs.(β1-β0) .> tol.*abs.(β1))
         if no_its > maxits
-            warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./β1))")
+            warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./abs.(β1)))")
             break
         end
         M = M+2^floor(Int,no_its/5)
