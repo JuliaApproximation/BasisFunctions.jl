@@ -56,7 +56,7 @@ See also `HalfRangeChebyshevIkind`
 HalfRangeChebyshevIIkind(n::Int, T::ELT, indicator_function_nodes::Vector{ELT}=default_indicator_nodes(ELT); options...) where ELT =
     HalfRangeChebyshev(n, ELT(1//2), T, indicator_function_nodes; options...)
 
-m = (x,T)->2*(cos(pi/T*x)-cos(pi/T))/(1-cos(pi/T))-1
+m_forward = (x,T)->2*(cos(pi/T*x)-cos(pi/T))/(1-cos(pi/T))-1
 m_inv = (t,T)->T/pi*acos(cos(pi/T)+(1-cos(pi/T))/2*(t+1))
 weight_of_indicator(T,indicator) = t->.5*(indicator(-m_inv(t,T))+indicator(m_inv(t,T)))
 default_indicator_nodes(ELT) = [-ELT(1),ELT(1)]
@@ -74,11 +74,11 @@ function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes
     if length(indicator_function_nodes)==2
         nodes, weights = gaussjacobi(n, α, ELT(0))
         Λ = weight_of_indicator(T,x->1)
-        modified_weights = weights.*((nodes.-m(T,T)).^α).*Λ.(nodes)*2T/pi
+        modified_weights = weights.*((nodes.-m_forward(T,T)).^α).*Λ.(nodes)*2T/pi
         nodes, modified_weights
     else
         indicator = indicator_function(indicator_function_nodes)
-        mapped_nodes = sort(unique(map(x->m(x,T), push!(indicator_function_nodes,0))))
+        mapped_nodes = sort(unique(map(x->m_forward(x,T), push!(indicator_function_nodes,0))))
         pop!(indicator_function_nodes)
         no_intervals = length(mapped_nodes)-1
         n_interval = n
@@ -94,7 +94,7 @@ function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes
             nodes_interval[:] .= a + (b-a)/2*(nodes_interval+1)
             weights_interval[:] .= weights_interval*(b-a)/2
             Δ = weight_of_indicator(T,indicator)
-            weights_interval[:] .= 2T/pi*weights_interval.*(1-nodes_interval).^α.*(nodes_interval-m(T,T)).^α.*Δ.(nodes_interval)
+            weights_interval[:] .= 2T/pi*weights_interval.*(1-nodes_interval).^α.*(nodes_interval-m_forward(T,T)).^α.*Δ.(nodes_interval)
 
             nodes[1+(i-1)*n_interval:i*n_interval] .= nodes_interval[:]
             weights[1+(i-1)*n_interval:i*n_interval] .= weights_interval[:]
