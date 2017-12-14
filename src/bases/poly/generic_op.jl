@@ -67,7 +67,7 @@ set_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
 
 function resize(b::GenericOPS, n)
     @assert n <= length(b)
-    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n])
+    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.left, b.right, b.p0, b.weight)
 end
 
 first_moment(b::GenericOPS) = b.moment

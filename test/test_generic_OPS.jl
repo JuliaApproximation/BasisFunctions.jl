@@ -11,7 +11,7 @@ function test_half_range_chebyshev()
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
-    modified_weights = weights.*(nodes-BasisFunctions.m(T)).^α
+    modified_weights = weights.*(nodes-BasisFunctions.m_forward(T,T)).^α
 
     αstieltjes,βstieltjes = BasisFunctions.stieltjes(n,nodes,modified_weights)
     setprecision(350)
@@ -31,46 +31,46 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 function test_generic_ops_from_quadrature()
     N = 10
     # LegendrePolynomials
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
     c2 = LegendrePolynomials(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
     c2 = JacobiPolynomials(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     # chebyshevI
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
     c2 = ChebyshevBasis(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
     c2 = JacobiPolynomials(N, -.5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # chebyshevII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
     c2 = ChebyshevU(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
     c2 = JacobiPolynomials(N, .5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     # ChebyshevIII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
     c2 = JacobiPolynomials(N, -.5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # ChebyshevIIII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
     c2 = JacobiPolynomials(N, .5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
@@ -96,7 +96,7 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
     @test name(c1) == "Generic OPS"
 
     @test first_moment(c1) ≈ firstmoment
-    @test BasisFunctions.p0(c1) == constant
+    @test BasisFunctions.p0(c1) ≈ 1/sqrt(firstmoment)
     A = BasisFunctions.rec_An.(c2,0:N-1)
     B = BasisFunctions.rec_Bn.(c2,0:N-1)
     C = BasisFunctions.rec_Cn.(c2,0:N-1)
