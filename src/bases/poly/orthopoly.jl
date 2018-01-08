@@ -326,7 +326,7 @@ orthogonal polynomial and using the formula:
 ```
 w_j = 1 / \sum_{k=0}^{n-1} p_k(x_j)^2
 ```
-This formula only holds for the monic orthogonal polynomials.
+This formula only holds for the orthonormal polynomials.
 """
 function gauss_weights_from_points(b::OPS, roots)
     pk = zeros(eltype(roots), length(b))
