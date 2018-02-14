@@ -12,6 +12,8 @@ using SpecialMatrices
 using FastTransforms
 using Domains
 
+using LinearAlgebra
+
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈, norm
 import Base: ∘
@@ -65,8 +67,7 @@ import Domains: cartesianproduct, ×, product_eltype
 
 import Domains: forward_map, inverse_map
 
-
-
+import FastGaussQuadrature: gaussjacobi
 ## Exhaustive list of exports
 
 # from maps/partition.jl
@@ -263,10 +264,14 @@ export MultiArray
 export float_type, dimension
 
 # from bases/poly/orthopoly.jl and friends
-export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials, Monomials, RationalBasis
+export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
+export Monomials, RationalBasis, GenericOPS
 export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
-export jacobi_matrix, roots, gauss_rule, first_moment
+export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment
 export leading_order_coefficient
+
+# from specialOPS.jl
+export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -278,6 +283,8 @@ export CompactPeriodicSetOfTranslates, dual, discrete_dual
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
 
 export degree, interval
+
+export gaussjacobi
 
 
 using Base.Cartesian
@@ -380,13 +387,15 @@ include("bases/translates/translates_of_bsplines.jl")
 ################################################################
 
 include("bases/poly/polynomials.jl")
-include("bases/poly/orthopoly.jl")
 include("bases/poly/monomials.jl")
+include("bases/poly/orthopoly.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
+include("bases/poly/generic_op.jl")
+include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
 

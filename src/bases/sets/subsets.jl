@@ -245,8 +245,8 @@ eachindex(s::SingletonSubset) = 1:1
 # Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars. Here, for convenience, you can call a function with
 # x, y, z arguments and so on. These are wrapped into an SVector.
-(s::SingletonSubset)(x) = eval_set_element(superset(s), index(s), x)
-(s::SingletonSubset)(x, y...) = s(SVector(x, y...))
+(s::SingletonSubset)(x; options...) = eval_set_element(superset(s), index(s), x; options...)
+(s::SingletonSubset)(x, y...; options...) = s(SVector(x, y...); options...)
 
 
 #########################################

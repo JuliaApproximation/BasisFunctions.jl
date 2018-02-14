@@ -3,3 +3,5 @@ FastTransforms
 RecipesBase
 SpecialMatrices
 QuadGK
+FastGaussQuadrature
+# https://github.com/andreasnoack/LinearAlgebra.jl.git

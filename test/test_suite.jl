@@ -152,7 +152,8 @@ end # for T in...
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
 @testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
-
+delimit("Generic OPS")
+include("test_generic_OPS.jl")
 println()
 println(" All tests passed!")
 
