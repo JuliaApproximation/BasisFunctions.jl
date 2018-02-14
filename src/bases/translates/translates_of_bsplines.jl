@@ -111,27 +111,34 @@ function _binomial_circulant(s::Span{A,BSplineTranslatesBasis{K,T,SCALED}}) wher
 end
 
 function primalgramcolumnelement(span::Span{A,BSplineTranslatesBasis{K,T,SCALED}}, i::Int; options...) where {A,K,T,SCALED}
-  r = 0
-  # If size of functionspace is too small there is overlap and we can not use the
-  # function squared_spline_integral which assumes no overlap.
-  # Use integration as long as there is no more efficient way is implemented.
-  if length(span) <= 2K+1
-    return defaultprimalgramcolumnelement(span, i; options...)
-  else
-    # squared_spline_integral gives the exact integral (in a rational number)
-    if i==1
-      r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
-    elseif 1 < i <= K+1
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
-    elseif i > length(span)-K
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
+    r = 0
+    # If size of functionspace is too small there is overlap and we can not use the
+    # function squared_spline_integral which assumes no overlap.
+    # Use integration as long as there is no more efficient way is implemented.
+    if length(span) <= 2K+1
+        return defaultprimalgramcolumnelement(span, i; options...)
+    else
+        # squared_spline_integral gives the exact integral (in a rational number)
+        if i==1
+            r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+        elseif 1 < i <= K+1
+            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+        elseif i > length(span)-K
+            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
+        end
     end
-  end
-  if SCALED
-    A(r)
-  else
-    A(r)/length(span)
-  end
+    if SCALED
+        A(r)
+    else
+        A(r)/length(span)
+    end
+end
+
+function support(B::BSplineTranslatesBasis{K,T}, i::Int) where {K,T}
+    start = T(i-1)/length(B)
+    width = T(degree(B)+1)/length(B)
+    stop  = start+width
+    stop <=1 ? (return (start,stop)) : (return (T(0),stop-T(1)), (start,T(1)))
 end
 
 """
