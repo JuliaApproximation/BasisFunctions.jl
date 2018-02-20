@@ -12,6 +12,8 @@ using SpecialMatrices
 using FastTransforms
 using Domains
 
+using LinearAlgebra
+
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈, norm
 import Base: ∘
@@ -65,8 +67,7 @@ import Domains: cartesianproduct, ×, product_eltype
 
 import Domains: forward_map, inverse_map
 
-
-
+import FastGaussQuadrature: gaussjacobi
 ## Exhaustive list of exports
 
 # from maps/partition.jl
@@ -146,7 +147,7 @@ export SetExpansion, TensorProductExpansion, coefficients, set, roots,
 # from operator/operator.jl
 export AbstractOperator, operator, src, dest, apply!,
         apply, apply_multiple, apply_inplace!
-export matrix, diagonal, is_diagonal, is_inplace
+export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -266,11 +267,11 @@ export float_type, dimension
 export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
 export Monomials, RationalBasis, GenericOPS
 export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
-export symmetric_jacobi_matrix, roots, gauss_rule, first_moment
+export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment
 export leading_order_coefficient
 
-# from generic_op.jl
-export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind
+# from specialOPS.jl
+export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
 # export DaubechiesWaveletBasis, CDFWaveletBasis
@@ -282,6 +283,8 @@ export CompactPeriodicSetOfTranslates, dual, discrete_dual
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
 
 export degree, interval
+
+export gaussjacobi
 
 
 using Base.Cartesian
@@ -392,6 +395,7 @@ include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
 include("bases/poly/generic_op.jl")
+include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
 

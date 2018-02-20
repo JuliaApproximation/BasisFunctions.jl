@@ -11,7 +11,7 @@ function test_half_range_chebyshev()
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
-    modified_weights = weights.*(nodes-BasisFunctions.m(T,T)).^α
+    modified_weights = weights.*(nodes-BasisFunctions.m_forward(T,T)).^α
 
     αstieltjes,βstieltjes = BasisFunctions.stieltjes(n,nodes,modified_weights)
     setprecision(350)
@@ -31,46 +31,46 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 function test_generic_ops_from_quadrature()
     N = 10
     # LegendrePolynomials
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
     c2 = LegendrePolynomials(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
     c2 = JacobiPolynomials(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     # chebyshevI
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
     c2 = ChebyshevBasis(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
     c2 = JacobiPolynomials(N, -.5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # chebyshevII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
     c2 = ChebyshevU(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
     c2 = JacobiPolynomials(N, .5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     # ChebyshevIII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
     c2 = JacobiPolynomials(N, -.5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # ChebyshevIIII
-    c1 = BasisFunctions.GenericOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
     c2 = JacobiPolynomials(N, .5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
@@ -96,7 +96,7 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
     @test name(c1) == "Generic OPS"
 
     @test first_moment(c1) ≈ firstmoment
-    @test BasisFunctions.p0(c1) == constant
+    @test BasisFunctions.p0(c1) ≈ 1/sqrt(firstmoment)
     A = BasisFunctions.rec_An.(c2,0:N-1)
     B = BasisFunctions.rec_Bn.(c2,0:N-1)
     C = BasisFunctions.rec_Cn.(c2,0:N-1)
@@ -121,5 +121,40 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
     end
 end
 
+function test_gaussjacobi()
+    w0 = BigFloat(128//225)
+    w1 = (sqrt(BigFloat(70))*13+322)/900
+    w2 = (-sqrt(BigFloat(70))*13+322)/900
+    weights_test = [w2,w1,w0,w1,w2]
+    n0 = BigFloat(0)
+    n1 = BigFloat(1)/3*sqrt(5-2sqrt(BigFloat(10)/7))
+    n2 = BigFloat(1)/3*sqrt(5+2sqrt(BigFloat(10)/7))
+    nodes_test = [-n2,-n1,n0,n1,n2]
+
+    gjnodes, gjweights = gaussjacobi(5,0,0)
+    @test Float64.(norm(gjweights-weights_test))+1≈1
+    @test Float64.(norm(gjnodes-nodes_test))+1≈1
+
+    gjnodes, gjweights = gaussjacobi(5,BigFloat(0),BigFloat(0))
+    @test norm(gjweights-weights_test)+1≈1
+    @test norm(gjnodes-nodes_test)+1≈1
+end
+
+function test_roots_of_legendre_halfrangechebyshev()
+    N = 10
+    B = HalfRangeChebyshevIkind(N,2.)
+    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    B = LegendrePolynomials(N)
+    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    B = LegendrePolynomials(N,BigFloat)
+    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    B = HalfRangeChebyshevIkind(N,BigFloat(2))
+    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+end
+
 @testset "$(rpad("Generic OPS",80))" begin test_generic_ops_from_quadrature() end
 @testset "$(rpad("Half Range Chebyshev",80))" begin test_half_range_chebyshev() end
+@testset "$(rpad("Gauss jacobi quadrature",80))"    begin
+    test_gaussjacobi()
+    test_roots_of_legendre_halfrangechebyshev()
+end
