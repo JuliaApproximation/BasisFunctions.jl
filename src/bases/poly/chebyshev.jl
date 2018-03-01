@@ -13,19 +13,25 @@ struct ChebyshevBasis{T} <: OPS{T}
     n			::	Int
 end
 
-ChebyshevT{T} = ChebyshevBasis{T}
+ChebyshevT = ChebyshevBasis
 
 const ChebyshevSpan{A,F<:ChebyshevBasis} = Span{A,F}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
+ChebyshevBasis(n::Int) = ChebyshevBasis{Float64}(n)
 
-ChebyshevBasis(n, ::Type{T} = Float64) where {T} = ChebyshevBasis{T}(n)
+ChebyshevBasis(n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
-ChebyshevBasis(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
-    rescale( ChebyshevBasis(n,float(T)), a, b)
+# Convenience constructor: map the Chebyshev basis to the interval [a,b]
+ChebyshevBasis{T}(n, a, b) where {T} = rescale(ChebyshevBasis{T}(n), a, b)
 
-instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
+function ChebyshevBasis(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    ChebyshevBasis{T}(n, a, b)
+end
+
+instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
 set_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
 

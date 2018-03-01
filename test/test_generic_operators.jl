@@ -323,7 +323,7 @@ function test_circulant_operator(ELT)
 end
 
 function test_invertible_operators(T)
-    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis(11, Complex{T})), span(ChebyshevBasis(10,T)))
+    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis{T}(11), Complex{T}), span(ChebyshevBasis{T}(10)))
         operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
@@ -348,7 +348,7 @@ end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis(11, Complex{T})))
+    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis{T}(11), Complex{T}))
         operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
             ZeroOperator(SRC))
         for Op in operators
