@@ -123,8 +123,8 @@ for T in [Float64,BigFloat,]
 
     delimit("Gram")
     @testset "$(rpad("Gram functionality",80))" begin
-      discrete_gram_test(T)
-      general_gram_test(T)
+        discrete_gram_test(T)
+        general_gram_test(T)
     end
 
     delimit("Check evaluations, interpolations, extensions, setexpansions")

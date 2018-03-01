@@ -1,8 +1,8 @@
 # test_derived_set.jl
 
 function test_derived_sets(T)
-    b1 = FourierBasis(11, T)
-    b2 = ChebyshevBasis(12, T)
+    b1 = FourierBasis{T}(11)
+    b2 = ChebyshevBasis{T}(12)
 
     @testset "$(rpad("Generic derived set",80))" begin
         test_generic_set_interface(BasisFunctions.ConcreteDerivedSet(b2))

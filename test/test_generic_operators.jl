@@ -5,9 +5,9 @@
 #####
 
 function test_generic_operators(T)
-    b1 = span(FourierBasis(3, T))
-    b2 = span(ChebyshevBasis(4, T))
-    b3 = span(ChebyshevBasis(3, T))
+    b1 = span(FourierBasis{T}(3))
+    b2 = span(ChebyshevBasis{T}(4))
+    b3 = span(ChebyshevBasis{T}(3))
 
     operators = [
         ["Identity operator", IdentityOperator(b1, b1)],
@@ -168,7 +168,7 @@ end
 
 
 function test_diagonal_operators(T)
-    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, T)))
+    for SRC in (Span(FourierBasis{T}(10)), Span(ChebyshevBasis{T}(11)))
         operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, map(coeftype(SRC),rand())), ScalingOperator(SRC,3),
@@ -215,7 +215,7 @@ function test_diagonal_operators(T)
 end
 
 function test_multidiagonal_operators(T)
-    MSet = span(FourierBasis(10, T)⊕ChebyshevBasis(11, T))
+    MSet = span(FourierBasis{T}(10)⊕ChebyshevBasis{T}(11))
     operators = (CoefficientScalingOperator(MSet, 3, rand()*one(coeftype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
@@ -323,7 +323,7 @@ function test_circulant_operator(ELT)
 end
 
 function test_invertible_operators(T)
-    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, Complex{T})), span(ChebyshevBasis(10,T)))
+    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis(11, Complex{T})), span(ChebyshevBasis(10,T)))
         operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
@@ -348,7 +348,7 @@ end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (span(FourierBasis(10, T)), span(ChebyshevBasis(11, Complex{T})))
+    for SRC in (span(FourierBasis{T}(10)), span(ChebyshevBasis(11, Complex{T})))
         operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
             ZeroOperator(SRC))
         for Op in operators

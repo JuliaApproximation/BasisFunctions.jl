@@ -6,7 +6,7 @@
 function test_fourier_series(T)
 
     ### Test bounds checking
-    fb0 = FourierBasis(5, T)
+    fb0 = FourierBasis{T}(5)
     @test ~in_support(fb0, 1, -one(T)/10)
     @test in_support(fb0, 1, zero(T))
     @test in_support(fb0, 1, one(T)/2)
@@ -18,7 +18,7 @@ function test_fourier_series(T)
     n = 12
     a = -T(1.2)
     b = T(3.4)
-    fb = rescale(FourierBasis(n,T), a, b)
+    fb = rescale(FourierBasis{T}(n), a, b)
     @test ~isreal(fb)
 
     @test left(fb) ≈ a
@@ -51,7 +51,7 @@ function test_fourier_series(T)
 
     # Evaluate an expansion
     coef = T[1; 2; 3; 4] * (1+im)
-    e = SetExpansion(rescale(FourierBasis(4,T), a, b), coef)
+    e = SetExpansion(rescale(FourierBasis{T}(4), a, b), coef)
     @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
     # Check type promotion: evaluate at an integer and at a rational point
@@ -63,9 +63,9 @@ function test_fourier_series(T)
     # Try an extension
     n = 12
     coef = map(complex(T), rand(n))
-    b1 = rescale(FourierBasis(n,T), a, b)
-    b2 = rescale(FourierBasis(n+1,T), a, b)
-    b3 = rescale(FourierBasis(n+15,T), a, b)
+    b1 = rescale(FourierBasis{T}(n), a, b)
+    b2 = rescale(FourierBasis{T}(n+1), a, b)
+    b3 = rescale(FourierBasis{T}(n+15), a, b)
     E2 = extension_operator(span(b1), span(b2))
     E3 = extension_operator(span(b1), span(b3))
     e1 = SetExpansion(b1, coef)
@@ -81,7 +81,7 @@ function test_fourier_series(T)
     D = differentiation_operator(span(fb))
     coef2 = D*coef
     e1 = SetExpansion(fb, coef)
-    e2 = SetExpansion(rescale(FourierBasis(length(fb)+1,T),left(fb),right(fb)), coef2)
+    e2 = SetExpansion(rescale(FourierBasis{T}(length(fb)+1),left(fb),right(fb)), coef2)
 
 
     x = T(2//10)
@@ -91,7 +91,7 @@ function test_fourier_series(T)
 
 
     ## Odd length
-    fbo = rescale(FourierBasis(13,T), a, b)
+    fbo = rescale(FourierBasis{T}(13), a, b)
 
     @test ~isreal(fbo)
 
@@ -109,7 +109,7 @@ function test_fourier_series(T)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    e = SetExpansion(FourierBasis(3, a, b), coef)
+    e = SetExpansion(FourierBasis{T}(3, a, b), coef)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
@@ -123,9 +123,9 @@ function test_fourier_series(T)
     # Try an extension
     n = 13
     coef = map(complex(T), rand(n))
-    b1 = FourierBasis(n, T)
-    b2 = FourierBasis(n+1, T)
-    b3 = FourierBasis(n+15, T)
+    b1 = FourierBasis{T}(n)
+    b2 = FourierBasis{T}(n+1)
+    b3 = FourierBasis{T}(n+15)
     E2 = Extension(span(b1), span(b2))
     E3 = Extension(span(b1), span(b3))
     e1 = SetExpansion(b1, coef)
@@ -137,9 +137,9 @@ function test_fourier_series(T)
 
     # Restriction
     n = 14
-    b1 = FourierBasis(n, T)
-    b2 = FourierBasis(n-1, T)
-    b3 = FourierBasis(n-5, T)
+    b1 = FourierBasis{T}(n)
+    b2 = FourierBasis{T}(n-1)
+    b3 = FourierBasis{T}(n-5)
     E1 = Restriction(span(b1), span(b2))    # source has even length
     E2 = Restriction(span(b2), span(b3))    # source has odd length
     coef1 = map(complex(T), rand(length(b1)))
@@ -162,7 +162,7 @@ function test_fourier_series(T)
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 150delta
 
     # Transforms
-    b1 = FourierBasis(161, T)
+    b1 = FourierBasis{T}(161)
     A = approximation_operator(span(b1))
     f = x -> 1/(2+cos(2*T(pi)*x))
     e = approximate(span(b1), f)
@@ -171,7 +171,7 @@ function test_fourier_series(T)
 
     # Arithmetic
 
-    b2 = FourierBasis(162, T)
+    b2 = FourierBasis{T}(162)
     f2 = x -> 1/(2+cos(2*T(pi)*x))
     e2 = approximate(span(b2), f2)
     x0 = T(1//2)
@@ -180,7 +180,7 @@ function test_fourier_series(T)
     @test abs((3*e-e2)(T(x0))-(3*f(x0)-f2(x0))) < sqrt(eps(T))
 
     # Discrete Gram
-    b = FourierBasis(11)
+    b = FourierBasis{T}(11)
 
     G = DiscreteGram(span(b))
     DG = DiscreteDualGram(span(b))
