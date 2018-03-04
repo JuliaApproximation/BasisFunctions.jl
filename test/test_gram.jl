@@ -34,7 +34,7 @@ end
 
 function general_gram_test(T)
     tol = max(sqrt(eps(T)), 1e-10)
-    for method in (Gram, DualGram, MixedGram), B in (span(FourierBasis{T}(11)), span(BSplineTranslatesBasis(5, 1,T)))
+    for method in (Gram, DualGram, MixedGram), B in (Span(FourierBasis{T}(11)), Span(BSplineTranslatesBasis(5, 1,T)))
         GBB = method(B,B; abstol=tol, reltol=tol)
         GB = method(B; abstol=tol, reltol=tol)
 

@@ -1,7 +1,7 @@
 # polynomials.jl
 
 "PolynomialBasis is the abstract supertype of all univariate polynomials."
-abstract type PolynomialBasis{T} <: FunctionSet{T}
+abstract type PolynomialBasis{S,T} <: Dictionary{S,T}
 end
 
 # The native index of a polynomial basis is the degree, which starts from 0 rather
@@ -16,10 +16,10 @@ linear_index(b::PolynomialBasis, idxn::PolynomialDegree) = index(idxn)+1
 
 is_basis(b::PolynomialBasis) = true
 
-function subset(b::PolynomialBasis, idx::OrdinalRange)
+function subdict(b::PolynomialBasis, idx::OrdinalRange)
     if (step(idx) == 1) && (first(idx) == 1) && (last(idx) <= length(b))
         resize(b, last(idx))
     else
-        subset(b, idx)
+        subdict(b, idx)
     end
 end

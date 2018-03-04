@@ -1,75 +1,69 @@
-# mapped_set.jl
+# mapped_dict.jl
 
 """
-A MappedSet has a set and a map. The domain of the set is mapped to a different
-one. Evaluating the MappedSet in a point uses the inverse map to evaluate the
-underlying set in the corresponding point.
+A `MappedDict` has a dictionary and a map. The domain of the dictionary is
+mapped to a different one. Evaluating the `MappedDict` in a point uses the
+inverse map to evaluate the underlying dictionary element in the corresponding
+point.
 """
-struct MappedSet{S,M,T} <: DerivedSet{T}
-    superset    ::  S
+struct MappedDict{D,M,S,T} <: DerivedDict{S,T}
+    superdict   ::  D
     map         ::  M
-
-    function MappedSet{S,M,T}(set::FunctionSet{T}, map) where {S,M,T}
-        new(set, map)
-    end
 end
 
-const MappedSet1d{S,M,T <: Number} = MappedSet{S,M,T}
+const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
 
-const MappedSpan{A, F <: MappedSet} = Span{A,F}
-const MappedSpan1d{A, F <: MappedSet1d} = Span{A,F}
+const MappedSpan{A,S,T,D <: MappedDict} = Span{A,S,T,D}
+const MappedSpan1d{A,S,T,D <: MappedDict1d} = Span{A,S,T,D}
 
-MappedSet(set::FunctionSet{T}, map::AbstractMap) where {T} =
-    MappedSet{typeof(set),typeof(map),T}(set, map)
+MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{T2,S2}) where {S1,S2,T1,T2} =
+    MappedDict{typeof(dict),typeof(map),T2,T1}(dict, map)
 
-mapped_set(set::FunctionSet, map::AbstractMap) = MappedSet(set, map)
+mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 
 # Convenience function, similar to apply_map for grids etcetera
-apply_map(set::FunctionSet, map) = mapped_set(set, map)
+apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
 
-apply_map(set::MappedSet, map) = apply_map(superset(set), map*mapping(set))
+apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map*mapping(dict))
 
-apply_map(span::Span, map) = Span(apply_map(set(span), map), coeftype(span))
+apply_map(span::Span, map) = Span(apply_map(dictionary(span), map), coeftype(span))
 
-mapping(set::MappedSet) = set.map
+mapping(dict::MappedDict) = dict.map
 
-similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
+similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
-rangetype(::Type{MappedSet{S,M,T}}) where {S,M,T} = promote_type(rangetype(S), rangetype(M))
-coefficienttype(F::Type{MappedSet{S,M,T}}) where {S,M,T} = rangetype(F)
+has_derivative(s::MappedDict) = has_derivative(superdict(s)) && islinear(mapping(s))
+has_antiderivative(s::MappedDict) = has_antiderivative(superdict(s)) && islinear(mapping(s))
 
-has_derivative(s::MappedSet) = has_derivative(superset(s)) && islinear(mapping(s))
-has_antiderivative(s::MappedSet) = has_antiderivative(superset(s)) && islinear(mapping(s))
-
-grid(s::MappedSet) = _grid(s, superset(s), mapping(s))
-_grid(s::MappedSet1d, set, map) = mapped_grid(grid(set), map)
+grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
+_grid(s::MappedDict1d, set, map) = mapped_grid(grid(set), map)
 
 for op in (:left, :right)
-    @eval $op(s::MappedSet1d) = applymap( mapping(s), $op(superset(s)) )
-    @eval $op(s::MappedSet1d, idx) = applymap( mapping(s), $op(superset(s), idx) )
+    @eval $op(s::MappedDict1d) = applymap( mapping(s), $op(superdict(s)) )
+    @eval $op(s::MappedDict1d, idx) = applymap( mapping(s), $op(superdict(s), idx) )
 end
 
-name(s::MappedSet) = _name(s, superset(s), mapping(s))
-_name(s::MappedSet, set, map) = "A mapped set based on " * name(set)
-_name(s::MappedSet1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
+name(s::MappedDict) = _name(s, superdict(s), mapping(s))
+_name(s::MappedDict, set, map) = "A mapped set based on " * name(set)
+_name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
-isreal(s::MappedSet) = isreal(superset(s)) && isreal(mapping(s))
+isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
-eval_element(s::MappedSet, idx, y) = eval_element(superset(s), idx, apply_inverse(mapping(s),y))
+eval_element(s::MappedDict, idx, y) = eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
 
-function eval_element_derivative(s::MappedSet1d, idx, y)
+function eval_element_derivative(s::MappedDict1d, idx, y)
     x = apply_inverse(mapping(s), y)
-    d = eval_element_derivative(superset(s), idx, x)
+    d = eval_element_derivative(superdict(s), idx, x)
     z = d / jacobian(mapping(s), y)
 end
 
-eval_expansion(s::MappedSet, coef, y::Number) = eval_expansion(superset(s), coef, apply_inverse(mapping(s),y))
+eval_expansion(s::MappedDict, coef, y::Number) = eval_expansion(superdict(s), coef, apply_inverse(mapping(s),y))
 
-#eval_expansion(s::MappedSet, coef, grid::AbstractGrid) = eval_expansion(superset(s), coef, apply_map(grid, inv(mapping(s))))
+#eval_expansion(s::MappedDict, coef, grid::AbstractGrid) = eval_expansion(superdict(s), coef, apply_map(grid, inv(mapping(s))))
 
-in_support(set::MappedSet, idx, y) = in_support(superset(set), idx, apply_inverse(mapping(set), y))
+in_support(set::MappedDict, idx, y) = in_support(superdict(set), idx, apply_inverse(mapping(set), y))
 
-is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superset(s1),superset(s2))
+is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superdict(s1),superdict(s2))
 
 
 ###############
@@ -84,26 +78,26 @@ is_compatible(s1::MappedSet, s2::MappedSet) = is_compatible(mapping(s1),mapping(
 
 transform_space(s::MappedSpan; options...) = apply_map(transform_space(superspan(s); options...), mapping(s))
 
-has_grid_transform(s::MappedSet, gs, g::MappedGrid) =
-    is_compatible(mapping(s), mapping(g)) && has_transform(superset(s), gridset(supergrid(g)))
+has_grid_transform(s::MappedDict, gs, g::MappedGrid) =
+    is_compatible(mapping(s), mapping(g)) && has_transform(superdict(s), gridbasis(supergrid(g)))
 
-function has_grid_transform(s::MappedSet, gs, g::AbstractGrid)
+function has_grid_transform(s::MappedDict, gs, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superset(s), gridset(g2), g2)
+    has_grid_transform(superdict(s), gridbasis(g2), g2)
 end
 
 
-function simplify_transform_pair(s::MappedSet, g::MappedGrid)
+function simplify_transform_pair(s::MappedDict, g::MappedGrid)
     if is_compatible(mapping(s), mapping(g))
-        superset(s), supergrid(g)
+        superdict(s), supergrid(g)
     else
         s, g
     end
 end
 
-function simplify_transform_pair(s::MappedSet, g::AbstractGrid)
+function simplify_transform_pair(s::MappedDict, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    simplify_transform_pair(superset(s), g2)
+    simplify_transform_pair(superdict(s), g2)
 end
 
 
@@ -111,7 +105,7 @@ end
 # Evaluation
 ###################
 
-mapping(s::MappedSpan) = mapping(set(s))
+mapping(s::MappedSpan) = mapping(dictionary(s))
 
 # If the set is mapped and the grid is mapped, and if the maps are identical,
 # we can use the evaluation operator of the underlying set and grid
@@ -133,7 +127,7 @@ function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::Abst
 end
 
 # We have to intercept the case of a subgrid, because there is a general rule
-# for subgrids and abstract FunctionSet's in generic/evaluation that causes an
+# for subgrids and abstract Dictionary's in generic/evaluation that causes an
 # ambiguity. We proceed here by applying the inverse map to the underlying grid
 # of the subgrid.
 function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
@@ -173,12 +167,12 @@ end
 #################
 
 # TODO: check for promotions here
-mapped_set(s::MappedSet, map::AbstractMap) = MappedSet(superset(s), map*mapping(s))
+mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapping(s))
 
-mapped_set(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map), eltype(s))
+mapped_dict(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map), eltype(s))
 
 "Rescale a function set to an interval [a,b]."
-function rescale(s::FunctionSet1d, a, b)
+function rescale(s::Dictionary1d, a, b)
     T = domaintype(s)
     if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
         s
@@ -189,7 +183,7 @@ function rescale(s::FunctionSet1d, a, b)
 end
 
 # "Preserve Tensor Product Structure"
-function rescale{N}(s::TensorProductSet, a::SVector{N}, b::SVector{N})
+function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
     scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
 end
@@ -199,21 +193,21 @@ end
 #################
 
 
-function (*)(s1::MappedSet, s2::MappedSet, coef_src1, coef_src2)
-    @assert is_compatible(superset(s1),superset(s2))
-    (mset,mcoef) = (*)(superset(s1),superset(s2),coef_src1, coef_src2)
-    (MappedSet(mset, mapping(s1)), mcoef)
+function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
+    @assert is_compatible(superdict(s1),superdict(s2))
+    (mset,mcoef) = (*)(superdict(s1),superdict(s2),coef_src1, coef_src2)
+    (MappedDict(mset, mapping(s1)), mcoef)
 end
 
 Gram(s::MappedSpan; options...) = wrap_operator(s, s, _gram(superspan(s), mapping(s); options...))
 
 _gram(s::Span, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
 
-dot(s::MappedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...) =
+dot(s::MappedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
     _dot(superspan(s), mapping(s), f1, f2, nodes; options...)
 
 _dot(s::Span1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
     jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_inverse(map,nodes); options...)
 
-native_nodes(s::MappedSet) = _native_nodes(superset(s), mapping(s))
-_native_nodes(s::FunctionSet, map::AffineMap) = applymap(map, native_nodes(s))
+native_nodes(s::MappedDict) = _native_nodes(superdict(s), mapping(s))
+_native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))

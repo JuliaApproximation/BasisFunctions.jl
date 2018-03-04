@@ -9,19 +9,17 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevBasis{T} <: OPS{T}
+struct ChebyshevBasis{T} <: OPS{T,T}
     n			::	Int
 end
 
 ChebyshevT = ChebyshevBasis
 
-const ChebyshevSpan{A,F<:ChebyshevBasis} = Span{A,F}
+const ChebyshevSpan{A,S,T,D<:ChebyshevBasis} = Span{A,S,T,D}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
 ChebyshevBasis(n::Int) = ChebyshevBasis{Float64}(n)
-
-ChebyshevBasis(n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
 # Convenience constructor: map the Chebyshev basis to the interval [a,b]
 ChebyshevBasis{T}(n, a, b) where {T} = rescale(ChebyshevBasis{T}(n), a, b)
@@ -33,9 +31,9 @@ end
 
 instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
-set_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
+dict_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
 
-resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, domaintype(b))
+resize(b::ChebyshevBasis{T}, n) where {T} = ChebyshevBasis{T}(n)
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
@@ -59,7 +57,7 @@ secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
 
 # extends the default definition at transform.jl
 transform_space(s::ChebyshevSpan; nodegrid=true, options...) =
-    nodegrid ? gridspace(s) : gridspace(secondgrid(set(s)), coeftype(s))
+    nodegrid ? gridspace(s) : gridspace(secondgrid(dictionary(s)), coeftype(s))
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)
@@ -93,7 +91,7 @@ end
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function eval_element_derivative(b::ChebyshevBasis, idx::Int, x)
-    T = rangetype(b)
+    T = codomaintype(b)
     if idx == 1
         T(0)
     else
@@ -174,8 +172,8 @@ function gramdiagonal!(result, ::ChebyshevSpan; options...)
 end
 
 function UnNormalizedGram(s::ChebyshevSpan{A}, oversampling) where {A}
-    d = A(length_oversampled_grid(set(s), oversampling))/2*ones(A,length(s))
-    d[1] = length_oversampled_grid(set(s), oversampling)
+    d = A(length_oversampled_grid(dictionary(s), oversampling))/2*ones(A,length(s))
+    d[1] = length_oversampled_grid(dictionary(s), oversampling)
     DiagonalOperator(s, s, d)
 end
 
@@ -304,18 +302,18 @@ end
 # Chebyshev polynomials of the second kind
 ############################################
 
-"A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
-struct ChebyshevU{T} <: OPS{T}
+"A basis of Chebyshev polynomials of the second kind on the interval `[-1,1]`."
+struct ChebyshevU{T} <: OPS{T,T}
     n			::	Int
 end
 
-const ChebyshevUSpace{A,F<:ChebyshevU} = Span{A,F}
+const ChebyshevUSpan{A,S,T,D<:ChebyshevU} = Span{A,S,T,D}
 
-ChebyshevU(n, ::Type{T} = Float64) where {T} = ChebyshevU{T}(n)
+ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
 instantiate(::Type{ChebyshevU}, n, ::Type{T}) where {T} = ChebyshevU{T}(n)
 
-set_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
+dict_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
     ChebyshevU{S}(b.n)
 
 resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
@@ -337,7 +335,7 @@ first_moment(b::ChebyshevU{T}) where {T} = T(pi)/2
 
 grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 
-Gram(s::ChebyshevUSpace{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
+Gram(s::ChebyshevUSpan{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
 
 # The weight function
 weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-T(x)^2)

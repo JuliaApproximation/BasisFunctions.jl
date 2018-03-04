@@ -54,7 +54,7 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
-import Domains: domaintype, rangetype, dimension
+import Domains: domaintype, codomaintype, dimension
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
@@ -104,9 +104,9 @@ export FunctionSpace
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
-# from bases/sets/functionset.jl
-export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export domaintype, rangetype, coefficient_type
+# from bases/generic/dictionary.jl
+export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
+export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support
 export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,
@@ -123,24 +123,25 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
     delinearize_coefficients!
 export moment, norm
 
-# from bases/sets/span.jl
+# from bases/generic/span.jl
 export Span, Span1d, Span2d
-export span, coefficient_type, coeftype, similar_span
+export coefficient_type, coeftype, similar_span
 
-# from bases/sets/subsets.jl
-export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
+# from bases/generic/subdicts.jl
+export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
+export subdict, indices
 
-# from bases/sets/tensorproductset.jl
-export TensorProductSet
+# from bases/generic/tensorproduct_dict.jl
+export TensorProductDict
 
-# from bases/sets/derived_set.jl
-export DerivedSet
+# from bases/generic/derived_dict.jl
+export DerivedDict
 
-# from bases/sets/mapped_set.jl
-export MappedSet, mapped_set, mapping, superset, rescale
+# from bases/generic/mapped_dict.jl
+export MappedDict, mapped_dict, mapping, superdict, rescale
 
-#from bases/sets/expansions.jl
-export SetExpansion, TensorProductExpansion, coefficients, set, roots,
+#from bases/generic/expansions.jl
+export Expansion, TensorProductExpansion, coefficients, dictionary, roots,
         random_expansion, differentiate, antidifferentiate, call_set_expansion,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
@@ -211,30 +212,30 @@ export BlockOperator, block_row_operator, block_column_operator, composite_size
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
-# from bases/sets/weighted_set.jl
-export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
+# from bases/generic/weighted_dict.jl
+export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
     weightfunction, weightfun_scaling_operator
 
 
-# from bases/sets/composite_set.jl
+# from bases/generic/composite_dict.jl
 export tail
 
-# from bases/sets/multiple_set.jl
-export MultiSet, multiset, ⊕
+# from bases/generic/multiple_dict.jl
+export MultiDict, multidict, ⊕
 
-# from bases/sets/piecewise_set.jl
-export PiecewiseSet
+# from bases/generic/piecewise_dict.jl
+export PiecewiseDict, dictionaries
 
-# from bases/sets/operated_set.jl
-export OperatedSet
-export derivative, src_set, dest_set
+# from bases/generic/operated_dict.jl
+export OperatedDict
+export derivative, src_dictionary, dest_dictionary
 
-# from bases/sets/euclidean.jl
+# from bases/generic/euclidean.jl
 export DiscreteVectorSpace, DiscreteSet
 
-# from bases/sets/gridset.jl
-export GridSet, DiscreteGridSpace, DiscreteGridSpace1d
-export gridset, gridspace
+# from bases/generic/gridbasis.jl
+export GridBasis, DiscreteGridSpace, DiscreteGridSpace1d
+export gridbasis, gridspace
 
 
 
@@ -305,12 +306,12 @@ include("grid/derived_grid.jl")
 
 include("spaces/spaces.jl")
 
-include("bases/sets/functionset.jl")
-include("bases/sets/span.jl")
+include("bases/generic/dictionary.jl")
+include("bases/generic/span.jl")
 include("generic/gram.jl")
 
-include("bases/sets/euclidean.jl")
-include("bases/sets/gridset.jl")
+include("bases/generic/euclidean.jl")
+include("bases/generic/gridbasis.jl")
 
 include("operator/operator.jl")
 include("operator/derived_op.jl")
@@ -321,9 +322,9 @@ include("grid/intervalgrids.jl")
 include("grid/scattered_grid.jl")
 include("grid/subgrid.jl")
 
-include("bases/sets/derived_set.jl")
-include("bases/sets/tensorproductset.jl")
-include("bases/sets/mapped_set.jl")
+include("bases/generic/derived_dict.jl")
+include("bases/generic/tensorproduct_dict.jl")
+include("bases/generic/mapped_dict.jl")
 
 include("operator/dimop.jl")
 
@@ -336,7 +337,7 @@ include("operator/circulant_operator.jl")
 
 
 
-include("bases/sets/expansions.jl")
+include("bases/generic/expansions.jl")
 
 
 include("products.jl")
@@ -344,15 +345,15 @@ include("products.jl")
 include("generic/generic_operators.jl")
 
 ################################################################
-# Generic function sets
+# Generic dictionaries
 ################################################################
 
-include("bases/sets/subsets.jl")
-include("bases/sets/composite_set.jl")
-include("bases/sets/multiple_set.jl")
-include("bases/sets/piecewise_set.jl")
-include("bases/sets/operated_set.jl")
-include("bases/sets/weighted_set.jl")
+include("bases/generic/subdicts.jl")
+include("bases/generic/composite_dict.jl")
+include("bases/generic/multiple_dict.jl")
+include("bases/generic/piecewise_dict.jl")
+include("bases/generic/operated_dict.jl")
+include("bases/generic/weighted_dict.jl")
 
 
 ################################################################

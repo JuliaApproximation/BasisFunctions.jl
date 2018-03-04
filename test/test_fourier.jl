@@ -36,22 +36,22 @@ function test_fourier_series(T)
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(superset(fb), freq)
+    idx = frequency2idx(superdict(fb), freq)
     @test fb[idx](x) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(superset(fb), freq)
+    idx = frequency2idx(superdict(fb), freq)
     @test fb[idx](x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate the largest frequency, which is a cosine in this case
     freq = n >> 1
-    idx = frequency2idx(superset(fb), freq)
+    idx = frequency2idx(superdict(fb), freq)
     @test fb[idx](x) ≈ cos(2*T(pi)*freq*y)
 
     # Evaluate an expansion
     coef = T[1; 2; 3; 4] * (1+im)
-    e = SetExpansion(rescale(FourierBasis{T}(4), a, b), coef)
+    e = Expansion(rescale(FourierBasis{T}(4), a, b), coef)
     @test e(x) ≈ coef[1]*T(1) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*cos(4*T(pi)*y) + coef[4]*exp(-2*T(pi)*im*y)
 
     # Check type promotion: evaluate at an integer and at a rational point
@@ -66,11 +66,11 @@ function test_fourier_series(T)
     b1 = rescale(FourierBasis{T}(n), a, b)
     b2 = rescale(FourierBasis{T}(n+1), a, b)
     b3 = rescale(FourierBasis{T}(n+15), a, b)
-    E2 = extension_operator(span(b1), span(b2))
-    E3 = extension_operator(span(b1), span(b3))
-    e1 = SetExpansion(b1, coef)
-    e2 = SetExpansion(b2, E2*coef)
-    e3 = SetExpansion(b3, E3*coef)
+    E2 = extension_operator(Span(b1), Span(b2))
+    E3 = extension_operator(Span(b1), Span(b3))
+    e1 = Expansion(b1, coef)
+    e2 = Expansion(b2, E2*coef)
+    e3 = Expansion(b3, E3*coef)
     x = T(2//10)
     @test e1(x) ≈ e2(x)
     @test e1(x) ≈ e3(x)
@@ -78,10 +78,10 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = map(complex(T), rand(Float64, size(fb)))
-    D = differentiation_operator(span(fb))
+    D = differentiation_operator(Span(fb))
     coef2 = D*coef
-    e1 = SetExpansion(fb, coef)
-    e2 = SetExpansion(rescale(FourierBasis{T}(length(fb)+1),left(fb),right(fb)), coef2)
+    e1 = Expansion(fb, coef)
+    e2 = Expansion(rescale(FourierBasis{T}(length(fb)+1),left(fb),right(fb)), coef2)
 
 
     x = T(2//10)
@@ -97,24 +97,24 @@ function test_fourier_series(T)
 
     # Is the 0-index basis function the constant 1?
     freq = 0
-    idx = frequency2idx(superset(fbo), freq)
+    idx = frequency2idx(superdict(fbo), freq)
     @test fbo[idx](T(2//10)) ≈ 1
 
     # Evaluate in a point in the interior
     freq = 3
-    idx = frequency2idx(superset(fbo), freq)
+    idx = frequency2idx(superdict(fbo), freq)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test fbo[idx](x) ≈ exp(2*T(pi)*1im*freq*y)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    e = SetExpansion(FourierBasis{T}(3, a, b), coef)
+    e = Expansion(FourierBasis{T}(3, a, b), coef)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
-    g = grid(set(e))
+    g = grid(dictionary(e))
     result = e(g)
     # Don't compare to zero with isapprox because the default absolute tolerance is zero.
     # So: add 1 and compare to 1
@@ -126,11 +126,11 @@ function test_fourier_series(T)
     b1 = FourierBasis{T}(n)
     b2 = FourierBasis{T}(n+1)
     b3 = FourierBasis{T}(n+15)
-    E2 = Extension(span(b1), span(b2))
-    E3 = Extension(span(b1), span(b3))
-    e1 = SetExpansion(b1, coef)
-    e2 = SetExpansion(b2, E2*coef)
-    e3 = SetExpansion(b3, E3*coef)
+    E2 = Extension(Span(b1), Span(b2))
+    E3 = Extension(Span(b1), Span(b3))
+    e1 = Expansion(b1, coef)
+    e2 = Expansion(b2, E2*coef)
+    e3 = Expansion(b3, E3*coef)
     x = T(2//10)
     @test e1(x) ≈ e2(x)
     @test e1(x) ≈ e3(x)
@@ -140,8 +140,8 @@ function test_fourier_series(T)
     b1 = FourierBasis{T}(n)
     b2 = FourierBasis{T}(n-1)
     b3 = FourierBasis{T}(n-5)
-    E1 = Restriction(span(b1), span(b2))    # source has even length
-    E2 = Restriction(span(b2), span(b3))    # source has odd length
+    E1 = Restriction(Span(b1), Span(b2))    # source has even length
+    E2 = Restriction(Span(b2), Span(b3))    # source has odd length
     coef1 = map(complex(T), rand(length(b1)))
     coef2 = E1*coef1
     coef3 = E2*coef2
@@ -152,10 +152,10 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = map(complex(T), rand(Float64, size(fbo)))
-    D = differentiation_operator(span(fbo))
+    D = differentiation_operator(Span(fbo))
     coef2 = D*coef
-    e1 = SetExpansion(fbo, coef)
-    e2 = SetExpansion(fbo, coef2)
+    e1 = Expansion(fbo, coef)
+    e2 = Expansion(fbo, coef2)
 
     x = T(2//10)
     delta = sqrt(eps(T))
@@ -163,9 +163,9 @@ function test_fourier_series(T)
 
     # Transforms
     b1 = FourierBasis{T}(161)
-    A = approximation_operator(span(b1))
+    A = approximation_operator(Span(b1))
     f = x -> 1/(2+cos(2*T(pi)*x))
-    e = approximate(span(b1), f)
+    e = approximate(Span(b1), f)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
@@ -173,7 +173,7 @@ function test_fourier_series(T)
 
     b2 = FourierBasis{T}(162)
     f2 = x -> 1/(2+cos(2*T(pi)*x))
-    e2 = approximate(span(b2), f2)
+    e2 = approximate(Span(b2), f2)
     x0 = T(1//2)
     @test abs((e*e2)(T(x0))-f(x0)*f2(x0)) < sqrt(eps(T))
     @test abs((e+2*e2)(T(x0))-(f(x0)+2*f2(x0))) < sqrt(eps(T))
@@ -182,20 +182,20 @@ function test_fourier_series(T)
     # Discrete Gram
     b = FourierBasis{T}(11)
 
-    G = DiscreteGram(span(b))
-    DG = DiscreteDualGram(span(b))
-    MG = DiscreteMixedGram(span(b))
+    G = DiscreteGram(Span(b))
+    DG = DiscreteDualGram(Span(b))
+    MG = DiscreteMixedGram(Span(b))
 
-    e = coefficients(random_expansion(span(b)))
+    e = coefficients(random_expansion(Span(b)))
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e
 
-    G = Gram(span(b))
-    DG = DualGram(span(b))
-    MG = MixedGram(span(b))
+    G = Gram(Span(b))
+    DG = DualGram(Span(b))
+    MG = MixedGram(Span(b))
 
-    e = coefficients(random_expansion(span(b)))
+    e = coefficients(random_expansion(Span(b)))
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e

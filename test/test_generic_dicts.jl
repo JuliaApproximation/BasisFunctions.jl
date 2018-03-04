@@ -1,26 +1,27 @@
-# test_generic_sets.jl
+# test_generic_dicts.jl
+
 TEST_CONTINUOUS = true
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
-supports_approximation(s::FunctionSet) = true
+supports_approximation(s::Dictionary) = true
 # Laguerre and Hermite fail due to linear algebra problems in BigFloat
 supports_approximation(s::LaguerrePolynomials{BigFloat}) = false
 supports_approximation(s::HermitePolynomials{BigFloat}) = false
 
 # It is difficult to do approximation in subsets and operated sets generically
-supports_approximation(s::Subset) = false
-supports_approximation(s::OperatedSet) = false
+supports_approximation(s::Subdictionary) = false
+supports_approximation(s::OperatedDict) = false
 
-supports_approximation(s::TensorProductSet) =
+supports_approximation(s::TensorProductDict) =
     reduce(&, map(supports_approximation, elements(s)))
 
-supports_interpolation(s::FunctionSet) = is_basis(s)
+supports_interpolation(s::Dictionary) = is_basis(s)
 
 # disable for now
-supports_interpolation(s::SingletonSubset) = false
+supports_interpolation(s::SingletonSubdict) = false
 
 # Pick a simple function to approximate
-suitable_function(s::FunctionSet1d) = x->exp(x/right(s))
+suitable_function(s::Dictionary1d) = x->exp(x/right(s))
 
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
@@ -35,9 +36,9 @@ suitable_function(set::LaguerrePolynomials) = x -> 1/(1000+(2x)^2)
 suitable_function(set::HermitePolynomials) = x -> 1/(1000+(2x)^2)
 
 
-suitable_function(set::OperatedSet) = suitable_function(src(set))
+suitable_function(set::OperatedDict) = suitable_function(src(set))
 
-function suitable_interpolation_grid(basis::FunctionSet)
+function suitable_interpolation_grid(basis::Dictionary)
     if BF.has_grid(basis)
         grid(basis)
     else
@@ -47,18 +48,18 @@ function suitable_interpolation_grid(basis::FunctionSet)
     end
 end
 
-suitable_interpolation_grid(basis::TensorProductSet) =
+suitable_interpolation_grid(basis::TensorProductDict) =
     ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
 
 suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, domaintype(basis))
 
-suitable_interpolation_grid(basis::WeightedSet) = suitable_interpolation_grid(superset(basis))
+suitable_interpolation_grid(basis::WeightedDict) = suitable_interpolation_grid(superdict(basis))
 
-suitable_interpolation_grid(basis::OperatedSet) = suitable_interpolation_grid(src_set(basis))
+suitable_interpolation_grid(basis::OperatedDict) = suitable_interpolation_grid(src_dictionary(basis))
 
 
 # Make a tensor product of suitable functions
-function suitable_function(s::TensorProductSet)
+function suitable_function(s::TensorProductDict)
     if dimension(s) == 2
         f1 = suitable_function(element(s,1))
         f2 = suitable_function(element(s,2))
@@ -73,20 +74,20 @@ function suitable_function(s::TensorProductSet)
 end
 
 # Make a suitable function by undoing the map
-function suitable_function(s::MappedSet)
-    f = suitable_function(superset(s))
+function suitable_function(s::MappedDict)
+    f = suitable_function(superdict(s))
     m = inv(mapping(s))
     x -> f(m*x)
 end
 
-function suitable_function(s::WeightedSet1d)
-    f = suitable_function(superset(s))
+function suitable_function(s::WeightedDict1d)
+    f = suitable_function(superdict(s))
     g = weightfunction(s)
     x -> g(x) * f(x)
 end
 
-function suitable_function(s::WeightedSet2d)
-    f = suitable_function(superset(s))
+function suitable_function(s::WeightedDict2d)
+    f = suitable_function(superdict(s))
     g = weightfunction(s)
     (x,y) -> g(x, y) * f(x, y)
 end
@@ -100,19 +101,19 @@ test_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{Complex{T}}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{T}) where {T} = test_tolerance(float_type(T))
 
-function test_generic_set_interface(basis, span = Span(basis))
+function test_generic_dict_interface(basis, span = Span(basis))
     ELT = coefficient_type(span)
     T = domaintype(basis)
     FT = float_type(T)
-    RT = rangetype(basis)
-    SY = rangetype(span)
+    RT = codomaintype(basis)
+    SY = codomaintype(span)
 
     # Does the set of the span agree with the basis?
-    @test typeof(set(span)) == typeof(basis)
+    @test typeof(dictionary(span)) == typeof(basis)
 
     # Do the domain types of basis and span agree?
     @test domaintype(basis) == domaintype(span)
-    @test typeof(one(coefficient_type(span)) * one(rangetype(basis))) == rangetype(span)
+    @test typeof(one(coefficient_type(span)) * one(codomaintype(basis))) == codomaintype(span)
 
     n = length(basis)
     if is_basis(basis)
@@ -171,8 +172,8 @@ function test_generic_set_interface(basis, span = Span(basis))
     idx = random_index(basis)
     bf = basis[idx]
     # Test below disabled because the assumption that the set of a basis function
-    # is always the set that was indexed is false, e.g., for multisets.
-    #@test set(bf) == basis
+    # is always the set that was indexed is false, e.g., for multidicts.
+    #@test dictionary(bf) == basis
 
     @test endof(basis) == length(basis)
     # Is a boundserror thrown when the index is too large?
@@ -312,13 +313,13 @@ function test_generic_set_interface(basis, span = Span(basis))
     if BF.has_derivative(basis)
         for dim in 1:dimension(basis)
             D = differentiation_operator(span; dim=dim)
-            @test basis == set(src(D))
-            diff_dest = set(dest(D))
+            @test basis == dictionary(src(D))
+            diff_dest = dictionary(dest(D))
 
             coef1 = random_expansion(span)
             coef2 = D*coef
-            e1 = SetExpansion(basis, coef)
-            e2 = SetExpansion(diff_dest, coef2)
+            e1 = Expansion(basis, coef)
+            e2 = Expansion(diff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
             delta = test_tolerance(ELT)/10
@@ -363,13 +364,13 @@ function test_generic_set_interface(basis, span = Span(basis))
     if BF.has_antiderivative(basis)
         for dim in 1:dimension(basis)
             D = antidifferentiation_operator(span; dim=dim)
-            @test basis == set(src(D))
-            antidiff_dest = set(dest(D))
+            @test basis == dictionary(src(D))
+            antidiff_dest = dictionary(dest(D))
 
             coef1 = random_expansion(span)
             coef2 = D*coef
-            e1 = SetExpansion(basis, coef)
-            e2 = SetExpansion(antidiff_dest, coef2)
+            e1 = Expansion(basis, coef)
+            e2 = Expansion(antidiff_dest, coef2)
 
             x = fixed_point_in_domain(basis)
             delta = test_tolerance(ELT)/10
@@ -415,7 +416,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         post2 = transform_operator_post(span, tspan)
         # - try interpolation using transform+pre/post-normalization
         x = rand(tspan)
-        e = SetExpansion(basis, (post1*t*pre1)*x)
+        e = Expansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
         # - try evaluation using transform+pre/post-normalization
@@ -440,7 +441,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(span, g)
         x = rand(gridspace(g, coeftype(span)))
-        e = SetExpansion(basis, I*x)
+        e = Expansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
     end
 
@@ -455,7 +456,7 @@ function test_generic_set_interface(basis, span = Span(basis))
     if supports_approximation(basis)
         A = approximation_operator(span)
         f = suitable_function(basis)
-        e = SetExpansion(basis, A*f)
+        e = Expansion(basis, A*f)
         x = random_point_in_domain(basis)
 
         # We choose a fairly large error, because the ndof's can be very small.
@@ -465,8 +466,8 @@ function test_generic_set_interface(basis, span = Span(basis))
 
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.
-        # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
-        if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
+        # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedDict) || (typeof(basis)<:BasisFunctions.ConcreteDerivedDict) || typeof(basis)<:WeightedDict) && eltype(basis)==BigFloat)
+        if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedDict) && real(codomaintype(basis))==BigFloat)
             e = approximate(span, f; discrete=false, reltol=1e-6, abstol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end
@@ -483,7 +484,7 @@ function test_tensor_sets(T)
     a = FourierBasis(12)
     b = FourierBasis(13)
     c = FourierBasis(11)
-    d = TensorProductSet(a,b,c)
+    d = TensorProductDict(a,b,c)
 
     bf = d[3,4,5]
     x1 = T(2//10)

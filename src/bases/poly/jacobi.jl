@@ -7,7 +7,7 @@ These polynomials are orthogonal with respect to the weight function
 w(x) = (1-x)^α (1+x)^β.
 ```
 """
-struct JacobiPolynomials{T} <: OPS{T}
+struct JacobiPolynomials{T} <: OPS{T,T}
     n       ::  Int
     α       ::  T
     β       ::  T
@@ -15,7 +15,7 @@ struct JacobiPolynomials{T} <: OPS{T}
     JacobiPolynomials{T}(n, α = zero(T), β = zero(T)) where {T} = new{T}(n, α, β)
 end
 
-const JacobiSpan{A, F <: JacobiPolynomials} = Span{A,F}
+const JacobiSpan{A,S,T,D <: JacobiPolynomials} = Span{A,S,T,D}
 
 name(b::JacobiPolynomials) = "Jacobi OPS"
 
@@ -28,7 +28,7 @@ JacobiPolynomials(n, α::T, β::T) where {T <: Integer} = JacobiPolynomials(n, f
 
 instantiate(::Type{JacobiPolynomials}, n, ::Type{T}) where {T} = JacobiPolynomials{T}(n)
 
-set_promote_domaintype(b::JacobiPolynomials, ::Type{S}) where {S} =
+dict_promote_domaintype(b::JacobiPolynomials, ::Type{S}) where {S} =
     JacobiPolynomials{S}(b.n, b.α, b.β)
 
 resize(b::JacobiPolynomials, n) = JacobiPolynomials(n, b.α, b.β)
@@ -76,7 +76,7 @@ rec_Cn(b::JacobiPolynomials{T}, n::Int) where {T} =
 
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
-struct UltrasphericalBasis{T} <: OPS{T}
+struct UltrasphericalBasis{T} <: OPS{T,T}
 	n		::	Int
 	alpha	::	T
 end

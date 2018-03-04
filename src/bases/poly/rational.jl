@@ -1,7 +1,7 @@
 # rational.jl
 
-immutable RationalBasis{T} <: FunctionSet1d{T}
-    roots :: AbstractArray{T}
+immutable RationalBasis{T} <: Dictionary1d{T,T}
+    roots   :: AbstractArray{T}
 
     RationalBasis{T}(roots) where {T} = new(roots)
 end

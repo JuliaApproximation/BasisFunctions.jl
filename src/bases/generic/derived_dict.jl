@@ -1,14 +1,18 @@
 # derived_set.jl
 
 """
-A DerivedSet is a set that derives from an underlying set. The abstract type
-derived sets implements a lot of the interface of a function set by delegating
-to the underlying set.
+A `DerivedDict` is a dictionary that inherits most of its behaviour from
+an underlying dictionary.
+
+The abstract type for derived dictionaries implements the interface of a
+dictionary using composition and delegation. Concrete derived dictionaries
+may override functions to specialize behaviour. For example, a mapped dictionary
+may override the evaluation routine to apply the map first.
 """
-abstract type DerivedSet{T} <: FunctionSet{T}
+abstract type DerivedDict{S,T} <: Dictionary{S,T}
 end
 
-const DerivedSpan{A, F <: DerivedSet} = Span{A,F}
+const DerivedSpan{A,S,T,D <: DerivedDict} = Span{A,S,T,D}
 
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
@@ -18,46 +22,46 @@ const DerivedSpan{A, F <: DerivedSet} = Span{A,F}
 ###########################################################################
 
 # Assume the concrete set has a field called set -- override if it doesn't
-superset(s::DerivedSet) = s.superset
+superdict(s::DerivedDict) = s.superdict
 
-superset(s::DerivedSpan) = superset(set(s))
+superdict(s::DerivedSpan) = superdict(dictionary(s))
 
-"Return the span of the superset of the given derived set."
-superspan(s::DerivedSpan) = Span(superset(s), coeftype(s))
+"Return the span of the superdict of the given derived set."
+superspan(s::DerivedSpan) = Span(superdict(s), coeftype(s))
 
-# The concrete subset should implement similar_set, as follows:
+# The concrete subset should implement similar_dictionary, as follows:
 #
-# similar_set(s::ConcreteDerivedSet, s2::FunctionSet) = ConcreteDerivedSet(s2)
+# similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
 #
 # This function calls the constructor of the concrete set. We can then
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
 
-similar_span(s::DerivedSpan, s2::Span) = Span(similar_set(set(s), set(s2)), coeftype(s2))
+similar_span(s::DerivedSpan, s2::Span) = Span(similar_dictionary(dictionary(s), dictionary(s2)), coeftype(s2))
 
-resize(s::DerivedSet, n) = similar_set(s, resize(superset(s),n))
+resize(s::DerivedDict, n) = similar_dictionary(s, resize(superdict(s),n))
 
-# To avoid ambiguity with a similar definition for abstract type FunctionSet:
-resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
+# To avoid ambiguity with a similar definition for abstract type Dictionary:
+resize(s::DerivedDict, n::Tuple{Int}) = resize(s, n[1])
 
-set_promote_domaintype(s::DerivedSet{T}, ::Type{S}) where {T,S} =
-    similar_set(s, promote_domaintype(superset(s), S))
+dict_promote_domaintype(s::DerivedDict{T}, ::Type{S}) where {T,S} =
+    similar_dictionary(s, promote_domaintype(superdict(s), S))
 
-for op in (:rangetype, :coefficient_type)
-    @eval $op(s::DerivedSet) = $op(superset(s))
+for op in (:coefficient_type,)
+    @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
 # Delegation of properties
 for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
-    @eval $op(s::DerivedSet) = $op(superset(s))
+    @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
 # Delegation of feature methods
 for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
-    @eval $op(s::DerivedSet) = $op(superset(s))
+    @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 # has_transform has extra arguments
-has_grid_transform(s::DerivedSet, gs, grid) = has_grid_transform(superset(s), gs, grid)
+has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false
@@ -68,58 +72,58 @@ has_grid_transform(s::DerivedSet, gs, grid) = has_grid_transform(superset(s), gs
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
-zeros(::Type{T}, s::DerivedSet) where {T} = zeros(T, superset(s))
+zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
     :elements, :tail)
-    @eval $op(s::DerivedSet) = $op(superset(s))
+    @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
 # Delegation of methods with an index parameter
 for op in (:size, :element)
-    @eval $op(s::DerivedSet, i) = $op(superset(s), i)
+    @eval $op(s::DerivedDict, i) = $op(superdict(s), i)
 end
 
-approx_length(s::DerivedSet, n::Int) = approx_length(superset(s), n)
+approx_length(s::DerivedDict, n::Int) = approx_length(superdict(s), n)
 
-apply_map(s::DerivedSet, map) = similar_set(s, apply_map(superset(s), map))
+apply_map(s::DerivedDict, map) = similar_dictionary(s, apply_map(superdict(s), map))
 
-in_support(set::DerivedSet, i, x) = in_support(superset(set), i, x)
+in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 
-# To avoid an ambiguity with a similar definition for abstract type FunctionSet:
-in_support(set::DerivedSet, idx, x::T) where {T <: Complex} =
-    imag(x) == 0 && in_support(superset(set), idx, real(x))
+# To avoid an ambiguity with a similar definition for abstract type Dictionary:
+in_support(set::DerivedDict, idx, x::T) where {T <: Complex} =
+    imag(x) == 0 && in_support(superdict(set), idx, real(x))
 
 #########################
 # Indexing and iteration
 #########################
 
-native_index(s::DerivedSet, idx::Int) = native_index(superset(s), idx)
+native_index(s::DerivedDict, idx::Int) = native_index(superdict(s), idx)
 
-linear_index(s::DerivedSet, idxn) = linear_index(superset(s), idxn)
+linear_index(s::DerivedDict, idxn) = linear_index(superdict(s), idxn)
 
-eachindex(s::DerivedSet) = eachindex(superset(s))
+eachindex(s::DerivedDict) = eachindex(superdict(s))
 
-linearize_coefficients!(s::DerivedSet, coef_linear::Vector, coef_native) =
-    linearize_coefficients!(superset(s), coef_linear, coef_native)
+linearize_coefficients!(s::DerivedDict, coef_linear::Vector, coef_native) =
+    linearize_coefficients!(superdict(s), coef_linear, coef_native)
 
-delinearize_coefficients!(s::DerivedSet, coef_native, coef_linear::Vector) =
-    delinearize_coefficients!(superset(s), coef_native, coef_linear)
+delinearize_coefficients!(s::DerivedDict, coef_native, coef_linear::Vector) =
+    delinearize_coefficients!(superdict(s), coef_native, coef_linear)
 
-approximate_native_size(s::DerivedSet, size_l) = approximate_native_size(superset(s), size_l)
+approximate_native_size(s::DerivedDict, size_l) = approximate_native_size(superdict(s), size_l)
 
-linear_size(s::DerivedSet, size_n) = linear_size(superset(s), size_n)
+linear_size(s::DerivedDict, size_n) = linear_size(superdict(s), size_n)
 
 for op in (:left, :right)
-    @eval $op(s::DerivedSet) = $op(superset(s))
-    @eval $op(s::DerivedSet, idx) = $op(superset(s), idx)
+    @eval $op(s::DerivedDict) = $op(superdict(s))
+    @eval $op(s::DerivedDict, idx) = $op(superdict(s), idx)
 end
 
-eval_element(s::DerivedSet, idx, x) = eval_element(superset(s), idx, x)
+eval_element(s::DerivedDict, idx, x) = eval_element(superdict(s), idx, x)
 
-eval_element_derivative(s::DerivedSet, idx, x) = eval_element_derivative(superset(s), idx, x)
+eval_element_derivative(s::DerivedDict, idx, x) = eval_element_derivative(superdict(s), idx, x)
 
 
 #########################
@@ -141,9 +145,9 @@ for op in (:extension_operator, :restriction_operator)
 end
 
 # By default we return the underlying set when simplifying transforms
-simplify_transform_pair(s::DerivedSet, grid::AbstractGrid) = (superset(s),grid)
+simplify_transform_pair(s::DerivedDict, grid::AbstractGrid) = (superdict(s),grid)
 
-# Simplify invocations of transform_from/to_grid with DerivedSet's
+# Simplify invocations of transform_from/to_grid with DerivedDict's
 for op in ( (:transform_from_grid, :s1, :s2),
             (:transform_from_grid_pre, :s1, :s1),
             (:transform_from_grid_post, :s1, :s2))
@@ -178,21 +182,22 @@ grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::Abstrac
 grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
     wrap_operator(set, dgs, grid_evaluation_operator(superspan(set), dgs, grid; options...))
 
-dot(s::DerivedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(superset(s)); options...) =
+dot(s::DerivedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
     dot(superspan(s), f1, f2, nodes; options...)
 
+
 #########################
-# Concrete set
+# Concrete dict
 #########################
 
 """
-For testing purposes we define a concrete subset of DerivedSet. This set should
+For testing purposes we define a concrete subset of DerivedDict. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
-struct ConcreteDerivedSet{T} <: DerivedSet{T}
-    superset ::  FunctionSet{T}
+struct ConcreteDerivedDict{S,T} <: DerivedDict{S,T}
+    superdict   ::  Dictionary
 end
 
-# Implementing similar_set is all it takes.
+# Implementing similar_dictionary is all it takes.
 
-similar_set(s::ConcreteDerivedSet, s2::FunctionSet) = ConcreteDerivedSet(s2)
+similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)

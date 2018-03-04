@@ -15,16 +15,16 @@ end
 
 function test_chebyshev(T)
     println("- Chebyshev polynomials")
-    bc = ChebyshevBasis(12, T)
+    bc = ChebyshevBasis{T}(12)
     test_ops_generic(bc)
     x1 = T(4//10)
     @test bc[4](x1) ≈ cos(3*acos(x1))
 
     n1 = 160
-    b1 = ChebyshevBasis(n1, T)
-    A = approximation_operator(span(b1))
+    b1 = ChebyshevBasis{T}(n1)
+    A = approximation_operator(Span(b1))
     f = exp
-    e = approximate(span(b1), exp)
+    e = approximate(Span(b1), exp)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
@@ -71,7 +71,7 @@ end
 
 
 function test_ops_generic(ops)
-    T = rangetype(ops)
+    T = codomaintype(ops)
     tol = test_tolerance(T)
 
     x = fixed_point_in_domain(ops)
@@ -87,7 +87,7 @@ function test_ops_generic(ops)
     d2 = recurrence_eval_derivative(ops, length(ops), x)
     @test abs(d1-d2) < tol
 
-    if rangetype(ops) == Float64
+    if codomaintype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
         r = roots(ops)
         @test maximum(abs.(eval_element.(ops, length(ops)+1, r))) < 100tol

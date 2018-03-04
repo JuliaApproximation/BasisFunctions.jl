@@ -1,12 +1,12 @@
 # set_of_translates.jl
 
 """
-  Set consisting of translates of a function.
+Set consisting of translates of a function.
 """
-abstract type SetOfTranslates{T} <: FunctionSet{T}
+abstract type SetOfTranslates{T} <: Dictionary{T,T}
 end
 
-const TranslatesSpan{A, F <: SetOfTranslates} = Span{A,F}
+const TranslatesSpan{A,S,T,D <: SetOfTranslates} = Span{A,S,T,D}
 
 length(set::SetOfTranslates) = set.n
 
@@ -18,7 +18,7 @@ name(b::SetOfTranslates) = "Set of translates of a function"
 name(::Type{B}) where {B<:SetOfTranslates}= "Set of translates of a function"
 
 fun(b::SetOfTranslates) = b.fun
-fun(s::TranslatesSpan) = fun(set(s))
+fun(s::TranslatesSpan) = fun(dictionary(s))
 
 # Indices set of translates naturally range from 0 to n-1
 native_index(b::SetOfTranslates, idx::Int) = idx-1
@@ -35,7 +35,7 @@ has_unitary_transform(::SetOfTranslates) = false
 abstract type PeriodicSetOfTranslates{T} <: SetOfTranslates{T}
 end
 
-const PeriodicTranslatesSpan{A, F <: PeriodicSetOfTranslates} = Span{A,F}
+const PeriodicTranslatesSpan{A,S,T,D <: PeriodicSetOfTranslates} = Span{A,S,T,D}
 
 left{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.a)
 
@@ -61,7 +61,7 @@ compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =
 
 approx_length(b::PeriodicSetOfTranslates, n::Int) = ceil(Int,n/length(b))*length(b)
 
-function periodic_compatible_grid(b::FunctionSet, grid::AbstractEquispacedGrid)
+function periodic_compatible_grid(b::Dictionary, grid::AbstractEquispacedGrid)
     l1 = length(b)
     l2 = length(grid)
     l1 > l2 && ((l2,l1) = (l1, l2))
@@ -77,12 +77,12 @@ function transform_from_grid(src, dest::PeriodicTranslatesSpan, grid; options...
 end
 
 function transform_to_grid(src::PeriodicTranslatesSpan, dest, grid; options...)
-    @assert compatible_grid(set(src), grid)
+    @assert compatible_grid(dictionary(src), grid)
     CirculantOperator(src, dest, sample(grid, fun(src)); options...)
 end
 
 function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
-    if periodic_compatible_grid(set(s), grid)
+    if periodic_compatible_grid(dictionary(s), grid)
         lg = length(grid)
         ls = length(s)
         if lg == ls
@@ -100,12 +100,12 @@ end
 
 eval_element(b::PeriodicSetOfTranslates, idx::Int, x::Real) = fun(b)(x-native_index(b, idx)*stepsize(b))
 
-eval_dualelement(b::PeriodicSetOfTranslates, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(span(b)),native_index(b, idx)), x)
+eval_dualelement(b::PeriodicSetOfTranslates, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(Span(b)),native_index(b, idx)), x)
 
 Gram(s::PeriodicTranslatesSpan; options...) = CirculantOperator(s, s, primalgramcolumn(s; options...))
 
 function UnNormalizedGram(s::PeriodicTranslatesSpan, oversampling = 1)
-    grid = oversampled_grid(set(s), oversampling)
+    grid = oversampled_grid(dictionary(s), oversampling)
     CirculantOperator(evaluation_operator(s, grid)'*evaluation_operator(s, grid))
 end
 
@@ -156,7 +156,7 @@ discrete_dual(set::PeriodicSetOfTranslates; options...) =
 abstract type CompactPeriodicSetOfTranslates{T} <: PeriodicSetOfTranslates{T}
 end
 
-const CompactPeriodicTranslatesSpan{A, F <: CompactPeriodicSetOfTranslates} = Span{A,F}
+const CompactPeriodicTranslatesSpan{A,S,T,D <: CompactPeriodicSetOfTranslates} = Span{A,S,T,D}
 
 """
   Length of the function of a CompactPeriodicSetOfTranslates.
@@ -206,30 +206,30 @@ end
 """
   Set of translates of a function f that is a linear combination of basis function of an other set of translates.
 
-  `f(x) = ∑ coefficients(set)[k] * supserset(set)[k](x)`
+  `f(x) = ∑ coefficients(set)[k] * superdictionary(set)[k](x)`
 """
 abstract type LinearCombinationOfPeriodicSetOfTranslates{PSoT<:PeriodicSetOfTranslates, T} <: PeriodicSetOfTranslates{T}
 end
 
-const LinearCombinationsSpan{A, F <: LinearCombinationOfPeriodicSetOfTranslates} = Span{A,F}
+const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicSetOfTranslates} = Span{A,S,T,D}
 
 coefficients(b::LinearCombinationOfPeriodicSetOfTranslates) = b.coefficients
 
 for op in (:length, :left, :right, :has_grid, :grid)
-    @eval $op(b::LinearCombinationOfPeriodicSetOfTranslates) = $op(superset(b))
+    @eval $op(b::LinearCombinationOfPeriodicSetOfTranslates) = $op(superdict(b))
 end
 
 function fun(b::LinearCombinationOfPeriodicSetOfTranslates)
-    x->eval_expansion(superset(b), real(coefficients(b)), BasisFunctions.Cardinal_b_splines.periodize(x, period(superset(b))))
+    x->eval_expansion(superdict(b), real(coefficients(b)), BasisFunctions.Cardinal_b_splines.periodize(x, period(superdict(b))))
 end
 
 ==(b1::LinearCombinationOfPeriodicSetOfTranslates, b2::LinearCombinationOfPeriodicSetOfTranslates) =
-    superset(b1)==superset(b2) && coefficients(b1) ≈ coefficients(b2)
+    superdict(b1)==superdict(b2) && coefficients(b1) ≈ coefficients(b2)
 
 change_of_basis(b::LinearCombinationOfPeriodicSetOfTranslates; options...) =
-    wrap_operator(span(superset(b)), span(b), inv(change_of_basis(superset(b), typeof(b))))
+    wrap_operator(Span(superdict(b)), Span(b), inv(change_of_basis(superdict(b), typeof(b))))
 
-change_of_basis(b::PeriodicSetOfTranslates, ::Type{LinearCombinationOfPeriodicSetOfTranslates}; options...) = DualGram(span(b); options...)
+change_of_basis(b::PeriodicSetOfTranslates, ::Type{LinearCombinationOfPeriodicSetOfTranslates}; options...) = DualGram(Span(b); options...)
 
 function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicSetOfTranslates}(b::PeriodicSetOfTranslates, ::Type{B}; options...)
     e = zeros(b)
@@ -237,58 +237,58 @@ function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicSetOfTranslat
     change_of_basis(b, B; options...)*e
 end
 
-superspan(s::LinearCombinationsSpan) = Span(superset(set(s)), coeftype(s))
+superspan(s::LinearCombinationsSpan) = Span(superdict(dictionary(s)), coeftype(s))
 
 extension_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
-    wrap_operator(s1, s2, change_of_basis(set(s2); options...)*extension_operator(superspan(s1), superspan(s2))*inv(change_of_basis(set(s1); options...)))
+    wrap_operator(s1, s2, change_of_basis(dictionary(s2); options...)*extension_operator(superspan(s1), superspan(s2))*inv(change_of_basis(dictionary(s1); options...)))
 
 restriction_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
-    wrap_operator(s1, s2, change_of_basis(set(s2); options...)*restriction_operator(superspan(s1), superspan(s2))*inv(change_of_basis(set(s1); options...)))
+    wrap_operator(s1, s2, change_of_basis(dictionary(s2); options...)*restriction_operator(superspan(s1), superspan(s2))*inv(change_of_basis(dictionary(s1); options...)))
 
 """
   Set representing the dual basis.
 """
 struct DualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
-    superset        :: PeriodicSetOfTranslates{T}
+    superdict       :: PeriodicSetOfTranslates{T}
     coefficients    :: Array{T,1}
 end
 
-const DualPeriodicTranslatesSpan{A, F <: DualPeriodicSetOfTranslates} = Span{A,F}
+const DualPeriodicTranslatesSpan{A,S,T,D <: DualPeriodicSetOfTranslates} = Span{A,S,T,D}
 
 DualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates{T}; options...) where {T} =
     DualPeriodicSetOfTranslates{T}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicSetOfTranslates; options...))
 
-superset(b::DualPeriodicSetOfTranslates) = b.superset
+superdict(b::DualPeriodicSetOfTranslates) = b.superdict
 
-dual(b::DualPeriodicSetOfTranslates; options...) = superset(b)
+dual(b::DualPeriodicSetOfTranslates; options...) = superdict(b)
 
-Gram(b::Span{A,F}; options...) where {A,F<:DualPeriodicSetOfTranslates} = inv(Gram(superspan(b); options...))
+Gram(b::DualPeriodicTranslatesSpan; options...) = inv(Gram(superspan(b); options...))
 
 """
   Set representing the dual basis with respect to a discrete norm on the oversampled grid.
 """
 struct DiscreteDualPeriodicSetOfTranslates{T} <: LinearCombinationOfPeriodicSetOfTranslates{PeriodicSetOfTranslates, T}
-    superset        :: PeriodicSetOfTranslates{T}
+    superdict       :: PeriodicSetOfTranslates{T}
     coefficients    :: Array{T,1}
 
     oversampling    :: T
 end
 
-const DiscreteDualPeriodicTranslatesSpan{A, F <: DiscreteDualPeriodicSetOfTranslates} = Span{A,F}
+const DiscreteDualPeriodicTranslatesSpan{A,S,T,D <: DiscreteDualPeriodicSetOfTranslates} = Span{A,S,T,D}
 
 function DiscreteDualPeriodicSetOfTranslates(set::PeriodicSetOfTranslates{T}; oversampling=default_oversampling(set), options...) where {T}
     DiscreteDualPeriodicSetOfTranslates{T}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicSetOfTranslates; oversampling=oversampling, options...), oversampling)
 end
 
-superset(b::DiscreteDualPeriodicSetOfTranslates) = b.superset
+superdict(b::DiscreteDualPeriodicSetOfTranslates) = b.superdict
 coefficients(b::DiscreteDualPeriodicSetOfTranslates) = b.coefficients
 
 default_oversampling(b::DiscreteDualPeriodicSetOfTranslates) = b.oversampling
 
-dual(b::DiscreteDualPeriodicSetOfTranslates; options...) = superset(b)
+dual(b::DiscreteDualPeriodicSetOfTranslates; options...) = superdict(b)
 
-change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(span(b); options...)
+change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTranslates}; options...) = DiscreteDualGram(Span(b); options...)
 
 resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 
-set_promote_domaintype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_domaintype(dual(b), S); oversampling=default_oversampling(b))
+dict_promote_domaintype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_domaintype(dual(b), S); oversampling=default_oversampling(b))

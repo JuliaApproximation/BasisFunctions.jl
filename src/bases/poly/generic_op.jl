@@ -11,7 +11,7 @@ p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x).
 p_{-1} = 0, p_0 = p0
 ```
 """
-struct GenericOPS{T} <: BasisFunctions.OPS{T}
+struct GenericOPS{T} <: BasisFunctions.OPS{T,T}
     moment  ::  T
     p0      ::  T
     rec_a   ::  Vector{T}
@@ -48,7 +48,7 @@ function ONPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, left::T, right:
     GenericOPS{promote_type(T,A,B)}(β[1], a, b, c, left, right, 1/sqrt(β[1]), other...)
 end
 
-const GenericOPSpan{A, F <: GenericOPS} = Span{A,F}
+const GenericOPSpan{A,S,T,D <: GenericOPS} = Span{A,S,T,D}
 
 left(b::GenericOPS) = b.left
 left(b::GenericOPS, idx) = left(b)
@@ -62,7 +62,7 @@ name(b::GenericOPS) = "Generic OPS"
 
 weight(b::GenericOPS, x) = b.weight==nothing? error("weight not defined for this Generic OPS"): b.weight(x)
 
-set_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
+dict_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
     GenericOPS{S}(b.rec_a, b.rec_b, b.rec_c)
 
 function resize(b::GenericOPS, n)

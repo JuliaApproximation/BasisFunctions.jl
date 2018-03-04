@@ -4,12 +4,12 @@
 `OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
 polynomials.
 """
-abstract type OrthogonalPolynomials{T} <: PolynomialBasis{T}
+abstract type OrthogonalPolynomials{S,T} <: PolynomialBasis{S,T}
 end
 
-const OPS{T} = OrthogonalPolynomials{T}
+const OPS{S,T} = OrthogonalPolynomials{S,T}
 
-const OPSpan{A,F <: OrthogonalPolynomials} = Span{A,F}
+const OPSpan{A,S,T,D <: OrthogonalPolynomials} = Span{A,S,T,D}
 
 is_orthogonal(b::OPS) = true
 is_biorthogonal(b::OPS) = true
@@ -23,10 +23,10 @@ length(o::OrthogonalPolynomials) = o.n
 
 p0(::OPS{T}) where {T} = one(T)
 
-function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)
+function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
     T = real(coeftype(s))
 	# To avoid difficult points at the ends of the domain.
-	dot(x->weight(set(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+	dot(x->weight(dictionary(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end
 
 clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
@@ -52,17 +52,17 @@ end
 
 has_extension(b::OPS) = true
 
-# CAVE: we have to add F <: OrthogonalPolynomials at the end, otherwise
-# OPSpan{A,F} also seems to match non-polynomial sets F (in Julia 0.6).
+# CAVE: we have to add D <: OrthogonalPolynomials at the end, otherwise
+# OPSpan{A,S,T,D} also seems to match non-polynomial sets D (in Julia 0.6).
 # Using OPSpan as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomials}
+function extension_operator(s1::OPSpan{A,S,T,D}, s2::OPSpan{A,S,T,D}; options...) where {A,S,T,D <: OrthogonalPolynomials}
     @assert length(s2) >= length(s1)
     IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomials}
+function restriction_operator(s1::OPSpan{A,S,T,D}, s2::OPSpan{A,S,T,D}; options...) where {A,S,T,D <: OrthogonalPolynomials}
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
@@ -86,7 +86,7 @@ functions and with the initial value implemented with the `p0` function.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
 function recurrence_eval(b::OPS, idx::Int, x)
-	T = rangetype(b)
+	T = codomaintype(b)
     z0 = T(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
 
@@ -152,7 +152,7 @@ Evaluate the derivative of an orthogonal polynomial, based on taking the
 derivative of the three-term recurrence relation (see `recurrence_eval`).
 """
 function recurrence_eval_derivative(b::OPS, idx::Int, x)
-	T = rangetype(b)
+	T = codomaintype(b)
     z0 = one(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
     z0_d = zero(T)
@@ -190,7 +190,7 @@ The result is a vector with indices starting at `1` (such that `α_n` above is
 given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 """
 function monic_recurrence_coefficients(b::OPS)
-    T = rangetype(b)
+    T = codomaintype(b)
     # n is the maximal degree polynomial
     n = length(b)
     α = zeros(T, n)
@@ -254,7 +254,7 @@ function monic_recurrence_eval(α, β, idx, x)
 end
 
 function symmetric_jacobi_matrix(b::OPS)
-    T = rangetype(b)
+    T = codomaintype(b)
     n = length(b)
     α, β = monic_recurrence_coefficients(b)
     J = zeros(T, n, n)

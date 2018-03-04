@@ -6,26 +6,31 @@
 
 
 """
-Sine series on the interval [0,1].
+Sine series on the interval `[0,1]`.
 """
-struct SineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct SineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
 
-const SineSpan{A, F <: SineSeries} = Span{A,F}
+const SineSpan{A,S,T,D <: SineSeries} = Span{A,S,T,D}
 
 name(b::SineSeries) = "Sine series"
 
+Sineseries(n::Int) = SineSeries{Float64}(n)
 
-SineSeries(n, ::Type{T} = Float64) where {T} = SineSeries{T}(n)
+SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(SineSeries{T}(n), a, b)
 
-SineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale( SineSeries(n,float(T)), a, b)
+function SineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    SineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-set_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
+dict_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
 
-resize(b::SineSeries, n) = SineSeries(n, domaintype(b))
+resize(b::SineSeries{T}, n) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true

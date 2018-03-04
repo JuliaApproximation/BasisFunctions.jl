@@ -4,26 +4,26 @@
 # Generic evaluation
 #####################
 
-# Compute the evaluation matrix of the given basis on the given set of points
+# Compute the evaluation matrix of the given dict on the given set of points
 # (a grid or any iterable set of points)
-function evaluation_matrix(set::FunctionSet, pts)
-    a = Array{rangetype(set)}(length(pts), length(set))
-    evaluation_matrix!(a, set, pts)
+function evaluation_matrix(dict::Dictionary, pts)
+    a = Array{codomaintype(dict)}(length(pts), length(dict))
+    evaluation_matrix!(a, dict, pts)
 end
 
-function evaluation_matrix!(a::AbstractMatrix, set::FunctionSet, pts)
+function evaluation_matrix!(a::AbstractMatrix, dict::Dictionary, pts)
     @assert size(a,1) == length(pts)
-    @assert size(a,2) == length(set)
+    @assert size(a,2) == length(dict)
 
-    for (j,ϕ) in enumerate(set), (i,x) in enumerate(pts)
+    for (j,ϕ) in enumerate(dict), (i,x) in enumerate(pts)
         a[i,j] = ϕ(x)
     end
     a
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
-evaluation_operator(s::Span; oversampling = default_oversampling(set(s)), options...) =
-    evaluation_operator(s, oversampled_grid(set(s), oversampling); options...)
+evaluation_operator(s::Span; oversampling = default_oversampling(dictionary(s)), options...) =
+    evaluation_operator(s, oversampled_grid(dictionary(s), oversampling); options...)
 
 # Convert a grid to a DiscreteGridSpace
 evaluation_operator(s::Span, grid::AbstractGrid; options...) =
@@ -38,12 +38,12 @@ evaluation_operator(s::Span, dgs::DiscreteGridSpace; options...) =
     grid_evaluation_operator(s, dgs, grid(dgs); options...)
 
 default_evaluation_operator(s::Span, dgs::DiscreteGridSpace; options...) =
-    MultiplicationOperator(s, dgs, evaluation_matrix(set(s), grid(dgs)))
+    MultiplicationOperator(s, dgs, evaluation_matrix(dictionary(s), grid(dgs)))
 
 # Evaluate s in the grid of dgs
 # We try to see if any fast transform is available
 function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
-    fs = set(s)
+    fs = dictionary(s)
     if has_transform(s)
         if has_transform(s, dgs)
             full_transform_operator(s, dgs; options...)
@@ -89,5 +89,5 @@ function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, subgrid::Abst
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
-discrete_dual_evaluation_operator(s::Span; oversampling = default_oversampling(set(s)), options...) =
-    grid_evaluation_operator(s, gridspace(s, oversampled_grid(set(s), oversampling)), oversampled_grid(set(s), oversampling); options...)*DiscreteDualGram(s; oversampling=oversampling)
+discrete_dual_evaluation_operator(s::Span; oversampling = default_oversampling(dictionary(s)), options...) =
+    grid_evaluation_operator(s, gridspace(s, oversampled_grid(dictionary(s), oversampling)), oversampled_grid(dictionary(s), oversampling); options...)*DiscreteDualGram(s; oversampling=oversampling)

@@ -1,10 +1,10 @@
 # multiarray.jl
 
 """
-A MultiArray in its simplest form is an array of arrays. It is meant to store
+A `MultiArray` in its simplest form is an array of arrays. It is meant to store
 coefficient sets of different expansions together, i.e. each element of the outer
 array stores the coefficients of an expansion. This is useful as a representation
-for MultiSet's.
+for MultiDict's.
 
 A MultiArray has one outer array, of which each element is an inner array. The
 inner arrays can represent the coefficients of an expansion. In case the
@@ -15,7 +15,7 @@ but there should not be too many.
 
 The MultiArray can be indexed with a linear index, which iterates over all the
 elements of the subarray's linearly. This index would correspond to the linear
-index of a MultiSet. Alternatively, the MultiArray can be index with a native index,
+index of a MultiDict. Alternatively, the MultiArray can be index with a native index,
 which is a tuple consisting of the outer array index and the native index of the
 coefficient set it points to.
 
@@ -59,7 +59,7 @@ length(a::MultiArray) = a.offsets[end]
 
 # This definition is up for debate: what is the size of a MultiArray?
 # By defining it as (length(a),), we can assert elsewhere that the size of a
-# multiset equals the size of its multiarray representation.
+# multidict equals the size of its multiarray representation.
 size(a::MultiArray) = (length(a),)
 
 length(a::MultiArray, i::Int) = length(a.arrays[i])

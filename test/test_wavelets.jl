@@ -25,8 +25,8 @@ function bf_wavelets_implementation_test()
     @test support(b1,i) == (0.,1.)
   end
 
-  @test BasisFunctions.subset(b1,1:1) == BasisFunctions.DaubechiesWaveletBasis(3,0)
-  @test BasisFunctions.subset(b2,1:3) == BasisFunctions.FunctionSubSet(b2,1:3)
+  @test BasisFunctions.subdict(b1,1:1) == BasisFunctions.DaubechiesWaveletBasis(3,0)
+  @test BasisFunctions.subdict(b2,1:3) == BasisFunctions.FunctionSubSet(b2,1:3)
   @test b2[1:5] == BasisFunctions.FunctionSubSet(b2,1:5)
   @test b2[1:4] == BasisFunctions.CDFWaveletBasis(3,1,2)
   @test BasisFunctions.dyadic_length(b1) == 2

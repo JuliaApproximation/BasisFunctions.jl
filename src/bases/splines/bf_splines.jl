@@ -10,7 +10,7 @@ spline_eval{K}(::Type{SplineDegree{K}}, i, x, a, b, h) = (x - (a+i*h)) / (K*h) *
 
 
 # Splines of degree K (with equispaced knots only...)
-abstract type SplineBasis{K,T} <: FunctionSet{T}
+abstract type SplineBasis{K,T} <: Dictionary{T,T}
 end
 
 is_biorthogonal(::SplineBasis) = true
@@ -157,7 +157,7 @@ PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = Peri
 
 instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
 
-set_promote_domaintype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,S}(b.n, b.a, b.b)
+dict_promote_domaintype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,S}(b.n, b.a, b.b)
 
 resize{K,T}(b::PeriodicSplineBasis{K,T}, n) = PeriodicSplineBasis{K,T}(n, b.a, b.b)
 

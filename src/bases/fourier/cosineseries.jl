@@ -6,27 +6,31 @@
 
 
 """
-Cosine series on the interval [0,1].
+Cosine series on the interval `[0,1]`.
 """
-struct CosineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct CosineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
 
-const CosineSpan{A, F <: CosineSeries} = Span{A,F}
+const CosineSpan{A,S,T,D <: CosineSeries} = Span{A,S,T,D}
 
 name(b::CosineSeries) = "Cosine series"
 
+Cosineseries(n::Int) = CosineSeries{Float64}(n)
 
-CosineSeries(n, ::Type{T} = Float64) where {T} = CosineSeries{T}(n)
+CosineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(CosineSeries{T}(n), a, b)
 
-CosineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
-    rescale( CosineSeries(n,float(T)), a, b)
+function CosineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    CosineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
-set_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
+dict_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
 
-resize(b::CosineSeries, n) = CosineSeries(n, domaintype(b))
+resize(b::CosineSeries{T}, n) where {T} = CosineSeries{T}(n)
 
 is_basis(b::CosineSeries) = true
 is_orthogonal(b::CosineSeries) = true
@@ -92,7 +96,7 @@ end
 
 function UnNormalizedGram(s::CosineSpan, oversampling)
     T = coeftype(s)
-    d = T(length_oversampled_grid(set(s), oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(set(s), oversampling)
+    d = T(length_oversampled_grid(dictionary(s), oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(dictionary(s), oversampling)
     DiagonalOperator(s, s, d)
 end

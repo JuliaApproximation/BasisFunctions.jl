@@ -5,14 +5,14 @@ A basis of the classicale Laguerre polynomials. These polynomials are orthogonal
 on the positive halfline `[0,∞)` with respect to the weight function
 `w(x)=exp(-x)`.
 """
-struct LaguerrePolynomials{T} <: OPS{T}
+struct LaguerrePolynomials{T} <: OPS{T,T}
     n       ::  Int
     α       ::  T
 
     LaguerrePolynomials{T}(n::Int, α = zero(T)) where {T} = new(n, α)
 end
 
-const LaguerreSpan{A, F <: LaguerrePolynomials} = Span{A,F}
+const LaguerreSpan{A,S,T,D <: LaguerrePolynomials} = Span{A,S,T,D}
 
 name(b::LaguerrePolynomials) = "Laguerre OPS"
 
@@ -25,7 +25,7 @@ LaguerrePolynomials(n, α::T) where {T <: Number} = LaguerrePolynomials{T}(n, α
 
 instantiate(::Type{LaguerrePolynomials}, n, ::Type{T}) where {T} = LaguerrePolynomials{T}(n)
 
-set_promote_domaintype(b::LaguerrePolynomials, ::Type{S}) where {S} =
+dict_promote_domaintype(b::LaguerrePolynomials, ::Type{S}) where {S} =
     LaguerrePolynomials{S}(b.n, b.α)
 
 resize(b::LaguerrePolynomials, n) = LaguerrePolynomials(n, b.α)
@@ -46,7 +46,7 @@ weight(b::LaguerrePolynomials{T}, x) where {T} = exp(-T(x)) * T(x)^(b.α)
 function gramdiagonal!(result, b::LaguerreSpan; options...)
     T = eltype(result)
     for i in 1:length(result)
-        result[i] = gamma(T(i+jacobi_α(set(b))))/factorial(i-1)
+        result[i] = gamma(T(i+jacobi_α(dictionary(b))))/factorial(i-1)
     end
 end
 

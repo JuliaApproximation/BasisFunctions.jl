@@ -6,12 +6,12 @@
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-Gram(s::Span; options...) = Gram(s, Val{is_orthonormal(set(s))}; options...)
+Gram(s::Span; options...) = Gram(s, Val{is_orthonormal(dictionary(s))}; options...)
 
 Gram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
 function Gram(s::Span, ::Type{Val{false}}; options...)
-    if is_orthogonal(set(s))
+    if is_orthogonal(dictionary(s))
         d = zeros(s)
         gramdiagonal!(d, s; options...)
         DiagonalOperator(s, s, d)
@@ -25,14 +25,14 @@ end
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(set(s))}; options...)
+DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(dictionary(s))}; options...)
 
 DualGram(s::Span, ::Type{Val{true}}; options...) = inv(Gram(s; options...))
 
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(set(s))}; options...)
+MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(dictionary(s))}; options...)
 
 MixedGram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
@@ -77,46 +77,46 @@ function dot(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verb
     I
 end
 
-native_nodes(set::FunctionSet1d) = [left(set), right(set)]
+native_nodes(dict::Dictionary1d) = [left(dict), right(dict)]
 
-dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)  =
+dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-dot(s::Span, f1::Int, f2::Function, nodes::Array=native_nodes(set(s)); options...) =
-    dot(s, x->eval_element(set(s), f1, x), f2, nodes; options...)
+dot(s::Span, f1::Int, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
+    dot(s, x->eval_element(dictionary(s), f1, x), f2, nodes; options...)
 
-dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(set(s)); options...) =
-    dot(s, x->eval_element(set(s), f1, x), x->eval_element(set(s), f2, x), nodes; options...)
+dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(s)); options...) =
+    dot(s, x->eval_element(dictionary(s), f1, x), x->eval_element(dictionary(s), f2, x), nodes; options...)
 
 ##########################
 ## Discrete Gram operators
 ##########################
 
-oversampled_grid(b::FunctionSet, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
+oversampled_grid(b::Dictionary, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
 
-length_oversampled_grid(b::FunctionSet, oversampling::Real) = approx_length(b, basis_oversampling(b, oversampling)*length(b))
+length_oversampled_grid(b::Dictionary, oversampling::Real) = approx_length(b, basis_oversampling(b, oversampling)*length(b))
 
-basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
+basis_oversampling(dict::Dictionary, sampling_factor::Real) =  sampling_factor
 
-default_oversampling(b::FunctionSet) = 1
+default_oversampling(b::Dictionary) = 1
 # E'E/N
-DiscreteGram(s::Span; oversampling = default_oversampling(set(s))) =
-  rangetype(s)(1)/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
+DiscreteGram(s::Span; oversampling = default_oversampling(dictionary(s))) =
+  codomaintype(s)(1)/discrete_gram_scaling(dictionary(s), oversampling)*UnNormalizedGram(s, oversampling)
 
 function UnNormalizedGram(s::Span, oversampling = 1)
-    grid = oversampled_grid(set(s), oversampling)
+    grid = oversampled_grid(dictionary(s), oversampling)
     evaluation_operator(s, grid)'*evaluation_operator(s, grid)
 end
 
-# discrete_gram_scaling{N,T}(b::FunctionSet{N,T}, oversampling) = length_oversampled_grid(b, oversampling)
-discrete_gram_scaling(b::FunctionSet, oversampling) = length(b)
+# discrete_gram_scaling{N,T}(b::Dictionary{N,T}, oversampling) = length_oversampled_grid(b, oversampling)
+discrete_gram_scaling(b::Dictionary, oversampling) = length(b)
 
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
-DiscreteDualGram(s::Span; oversampling = default_oversampling(set(s))) =
+DiscreteDualGram(s::Span; oversampling = default_oversampling(dictionary(s))) =
     inv(DiscreteGram(s; oversampling=oversampling))
 
 # Ẽ'E/N
-DiscreteMixedGram(s::Span; oversampling=default_oversampling(set(s))) = IdentityOperator(s,s)
+DiscreteMixedGram(s::Span; oversampling=default_oversampling(dictionary(s))) = IdentityOperator(s,s)
 
 
 
@@ -124,16 +124,16 @@ DiscreteMixedGram(s::Span; oversampling=default_oversampling(set(s))) = Identity
 ## Gram operators extended
 #################
 
-dual(span::Span; options...) = dual(span, Val{is_orthonormal(set(span))}; options...)
+dual(span::Span; options...) = dual(span, Val{is_orthonormal(dictionary(span))}; options...)
 dual(span::Span, ::Type{Val{true}}; options...) = span
-dual(set::FunctionSet; options...) = error("Dual of $(set) is not known.")
-dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(set(span); options...))
+dual(dict::Dictionary; options...) = error("Dual of $(dict) is not known.")
+dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(dictionary(span); options...))
 
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
 function Gram(src::Span, dest::Span; options...)
-    A = zeros(rangetype(src, dest),length(dest),length(src))*NaN
+    A = zeros(codomaintype(src, dest),length(dest),length(src))*NaN
     grammatrix!(A, src, dest; options...)
     MatrixOperator(src, dest, A)
 end
@@ -153,14 +153,14 @@ function grammatrix!(result, src::Span, dest::Span; options...)
   result
 end
 
-dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(set(span1), set(span2)); options...)  =
+dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(set(span1), set(span2)); options...) =
-    dot(span1, span2, x->eval_element(set(span1), f1, x),x->eval_element(set(span2), f2, x), nodes; options...)
+dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...) =
+    dot(span1, span2, x->eval_element(dictionary(span1), f1, x),x->eval_element(dictionary(span2), f2, x), nodes; options...)
 
-function native_nodes(set1::FunctionSet1d, set2::FunctionSet1d)
-  @assert left(set1) ≈ left(set2)
-  @assert right(set1) ≈ right(set2)
-  [left(set1), right(set1)]
+function native_nodes(dict1::Dictionary1d, dict2::Dictionary1d)
+    @assert left(dict1) ≈ left(dict2)
+    @assert right(dict1) ≈ right(dict2)
+    [left(dict1), right(dict1)]
 end

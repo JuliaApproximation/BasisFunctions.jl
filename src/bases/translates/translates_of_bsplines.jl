@@ -3,19 +3,19 @@
 abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
 end
 
-const PeriodicBSplineSpan{A,F <: PeriodicBSplineBasis} = Span{A,F}
+const PeriodicBSplineSpan{A,S,T,D <: PeriodicBSplineBasis} = Span{A,S,T,D}
 
 degree(b::B) where {K,T, B<:PeriodicBSplineBasis{K,T}} = K
 
 Gram(b::PeriodicBSplineSpan; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
 
 function extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
-    @assert degree(set(s1)) == degree(set(s2))
+    @assert degree(dictionary(s1)) == degree(dictionary(s2))
     bspline_extension_operator(s1, s2; options...)
 end
 
 function restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
-    @assert degree(set(s1)) == degree(set(s2))
+    @assert degree(dictionary(s1)) == degree(dictionary(s2))
     bspline_restriction_operator(s1, s2; options...)
 end
 
@@ -66,7 +66,7 @@ struct BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   fun             :: Function
 end
 
-const BSplineTranslatesSpan{A,F <: BSplineTranslatesBasis} = Span{A,F}
+const BSplineTranslatesSpan{A,S,T,D <: BSplineTranslatesBasis} = Span{A,S,T,D}
 
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
     BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
@@ -83,7 +83,7 @@ right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = stepsi
 
 instantiate{T}(::Type{BSplineTranslatesBasis}, n::Int, ::Type{T}) = BSplineTranslatesBasis(n,3,T)
 
-set_promote_domaintype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTranslatesBasis(length(b),K, S)
+dict_promote_domaintype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSplineTranslatesBasis(length(b),K, S)
 
 resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, degree(b), T)
 
@@ -146,7 +146,7 @@ struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
   fun             :: Function
 end
 
-const SymBSplineTranslatesSpan{A,F <: SymBSplineTranslatesBasis} = Span{A,F}
+const SymBSplineTranslatesSpan{A,S,T,D <: SymBSplineTranslatesBasis} = Span{A,S,T,D}
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
@@ -162,7 +162,7 @@ right_of_compact_function{K,T}(b::SymBSplineTranslatesBasis{K,T})::real(T) = ste
 
 instantiate{T}(::Type{SymBSplineTranslatesBasis}, n::Int, ::Type{T}) = SymBSplineTranslatesBasis(n,3,T)
 
-set_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSplineTranslatesBasis(length(b),K, S)
+dict_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = SymBSplineTranslatesBasis(length(b),K, S)
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
@@ -208,28 +208,28 @@ end
   Basis consisting of orthonormal basis function in the spline space of degree K.
 """
 struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
-  superset     ::    BSplineTranslatesBasis{K,T}
+  superdict     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
 
   OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
     new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
 end
 
-const OrthonormalSplineSpan{A,F <: OrthonormalSplineBasis} = Span{A,F}
+const OrthonormalSplineSpan{A,S,T,D <: OrthonormalSplineBasis} = Span{A,S,T,D}
 
 degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 
-superset(b::OrthonormalSplineBasis) = b.superset
+superdict(b::OrthonormalSplineBasis) = b.superdict
 coefficients(b::OrthonormalSplineBasis) = b.coefficients
 
 OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
 
-name(b::OrthonormalSplineBasis) = name(b.superset)*" (orthonormalized)"
+name(b::OrthonormalSplineBasis) = name(b.superdict)*" (orthonormalized)"
 
 instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalSplineBasis(n,3,T)
 
-set_promote_domaintype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
+dict_promote_domaintype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
 
 resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
 
@@ -242,7 +242,7 @@ change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B};
   Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
 """
 struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
-  superset     ::    BSplineTranslatesBasis{K,T}
+  superdict     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
 
   oversampling ::   T
@@ -252,25 +252,25 @@ struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTr
 
 end
 
-const DiscreteOrthonormalSplineSpan{A,F <: DiscreteOrthonormalSplineBasis} = Span{A,F}
+const DiscreteOrthonormalSplineSpan{A,S,T,D <: DiscreteOrthonormalSplineBasis} = Span{A,S,T,D}
 
 degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 
-superset(b::DiscreteOrthonormalSplineBasis) = b.superset
+superdict(b::DiscreteOrthonormalSplineBasis) = b.superdict
 coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
 default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
 
 ==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
-    superset(b1)==superset(b2) && coefficients(b1) ≈ coefficients(b2) && default_oversampling(b1) == default_oversampling(b2)
+    superdict(b1)==superdict(b2) && coefficients(b1) ≈ coefficients(b2) && default_oversampling(b1) == default_oversampling(b2)
 
 DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
     DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
 
-name(b::DiscreteOrthonormalSplineBasis) = name(superset(b))*" (orthonormalized, discrete)"
+name(b::DiscreteOrthonormalSplineBasis) = name(superdict(b))*" (orthonormalized, discrete)"
 
 instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
 
-set_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
+dict_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
 
 resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
 

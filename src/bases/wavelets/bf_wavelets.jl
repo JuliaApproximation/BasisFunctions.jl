@@ -1,6 +1,6 @@
 # bf_wavelets.jl
 
-abstract type WaveletBasis{T} <: FunctionSet1d{T} end
+abstract type WaveletBasis{T} <: Dictionary1d{T,T} end
 
 dyadic_length(b::WaveletBasis) = b.L
 
@@ -11,11 +11,11 @@ BasisFunctions.wavelet(b::WaveletBasis) = b.w
 BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
 
 # If only the first 2^L basis elements remains, this is equivalent to a smaller wavelet basis
-function subset(b::WaveletBasis, idx::OrdinalRange)
+function subdict(b::WaveletBasis, idx::OrdinalRange)
   if (step(idx)==1) && (first(idx) == 1) && isdyadic(last(idx))
     resize(b, last(idx))
   else
-    subset(b,idx)
+    subdict(b,idx)
   end
 end
 
@@ -120,11 +120,11 @@ function transform_to_grid_pre(src::WaveletBasis, dest, grid; options...)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
-function DiscreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
+function DiscreteWaveletTransform(src::Dictionary, dest::Dictionary, w::DiscreteWavelet; options...)
   FunctionOperator(src, dest, x->full_dwt(x, w, perbound))
 end
 
-function InverseDistreteWaveletTransform(src::FunctionSet, dest::FunctionSet, w::DiscreteWavelet; options...)
+function InverseDistreteWaveletTransform(src::Dictionary, dest::Dictionary, w::DiscreteWavelet; options...)
   FunctionOperator(src, dest, x->full_idwt(x, w, perbound))
 end
 

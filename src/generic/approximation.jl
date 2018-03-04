@@ -16,7 +16,7 @@ approximation_operator(s; discrete = true, options...) =
     continuous_approximation_operator(s; options...)
 
 function discrete_approximation_operator(s::Span; options...)
-    if is_basis(set(s)) && has_grid(set(s))
+    if is_basis(dictionary(s)) && has_grid(dictionary(s))
         interpolation_operator(s, grid(s); options...)
     else
         default_approximation_operator(s; options...)
@@ -35,11 +35,11 @@ end
 project(s::DiscreteGridSpace, f::Function; options...) = sample(s, f)
 
 approximate(s::Span, f::Function; options...) =
-    SetExpansion(set(s), *(approximation_operator(s; options...),f; options...))
+    Expansion(dictionary(s), *(approximation_operator(s; options...),f; options...))
 
 """
 The 2-argument approximation_operator exists to allow you to transform any
-FunctionSet coefficients to any other FunctionSet coefficients, including
+Dictionary coefficients to any other Dictionary coefficients, including
 Discrete Grid Spaces.
 If a transform exists, the transform is used.
 """

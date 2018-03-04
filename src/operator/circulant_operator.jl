@@ -21,8 +21,10 @@ end
 src(c::CirculantOperator) = c.src
 dest(c::CirculantOperator) = c.dest
 
-CirculantOperator(firstcolumn::AbstractVector; options...) =
-    CirculantOperator(Span(DiscreteSet(length(firstcolumn)), eltype(firstcolumn)), firstcolumn; options...)
+function CirculantOperator(firstcolumn::AbstractVector; options...)
+    T = eltype(firstcolumn)
+    CirculantOperator(Span(DiscreteSet{T}(length(firstcolumn))), firstcolumn; options...)
+end
 
 CirculantOperator(src::Span, firstcolumn::AbstractVector; options...) = CirculantOperator(src, src, firstcolumn; options...)
 

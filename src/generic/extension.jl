@@ -4,7 +4,7 @@
 # Generic extension and restriction
 ####################################
 
-# A function set can often be extended to a similar function set of a different size.
+# A dictionary can often be extended or restricted to a larger or smaller one.
 # Extension and restriction operators always have a source and destination set.
 # For introspection, you can ask a set what a suitable extensize size would be,
 # and use a resized set as the destination of the operator:
@@ -59,9 +59,9 @@ default_extension_operator(s1::Span, s2::Span; options...) =
 Return a suitable length to extend to, for example one such that the corresponding grids are nested
 and function evaluations can be shared. The default is twice the length of the current set.
 """
-extension_size(s::FunctionSet) = 2*length(s)
+extension_size(s::Dictionary) = 2*length(s)
 
-extend(s::FunctionSet) = resize(s, extension_size(s))
+extend(s::Dictionary) = resize(s, extension_size(s))
 
 extension_operator(s1::Span; options...) =
     extension_operator(s1, extend(s1); options...)
@@ -122,9 +122,9 @@ grid_restriction_operator(src, dest, src_grid, dest_grid; options...) =
 Return a suitable length to restrict to, for example one such that the corresponding grids are nested
 and function evaluations can be shared. The default is half the length of the current set.
 """
-restriction_size(s::FunctionSet) = length(s)>>1
+restriction_size(s::Dictionary) = length(s)>>1
 
-restrict(s::FunctionSet) = resize(s, restriction_size(s))
+restrict(s::Dictionary) = resize(s, restriction_size(s))
 
 restriction_operator(s1::Span; options...) =
     restriction_operator(s1, restrict(s1); options...)
@@ -134,10 +134,10 @@ ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
 
 ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
 
-# Transforming between functionsets with the same type is the same as restricting
-has_transform(src::S, dest::S) where {S <: FunctionSet} = true
+# Transforming between dictionaries with the same type is the same as restricting
+has_transform(src::D, dest::D) where {D <: Dictionary} = true
 
-function transform_operator(src::Span{A,S}, dest::Span{A,S}) where {A,S <: FunctionSet}
+function transform_operator(src::Span{A,D}, dest::Span{A,D}) where {A,D <: Dictionary}
     if length(src) > length(dest)
         return Restriction(src, dest)
     elseif length(src) < length(dest)

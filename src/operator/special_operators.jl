@@ -264,8 +264,8 @@ function MultiplicationOperator(::Type{T}, src::Span, dest::Span, object; inplac
     MultiplicationOperator{typeof(object),inplace,A}(promote_coeftype(src, S), promote_coeftype(dest, D), object)
 end
 
-MultiplicationOperator{T <: Number}(matrix::AbstractMatrix{T}) =
-    MultiplicationOperator(Span(DiscreteSet(size(matrix, 2)), T), Span(DiscreteSet(size(matrix, 1)), T), matrix)
+MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
+    MultiplicationOperator(Span(DiscreteSet{T}(size(matrix, 2))), Span(DiscreteSet{T}(size(matrix, 1))), matrix)
 
 # Provide aliases for when the object is an actual matrix.
 MatrixOperator(matrix::Matrix) = MultiplicationOperator(matrix)
@@ -510,8 +510,10 @@ struct LinearizationOperator{T} <: AbstractOperator{T}
     dest        ::  Span
 end
 
-LinearizationOperator(src::Span) =
-    LinearizationOperator{coeftype(src)}(src, Span(DiscreteSet(length(src)), coeftype(src)))
+function LinearizationOperator(src::Span)
+    A = coeftype(src)
+    LinearizationOperator{T}(src, Span(DiscreteSet{A}(length(src))))
+end
 
 similar_operator(::LinearizationOperator, ::Type{S}, src) where {S} = LinearizationOperator(promote_coeftype(src, S))
 
@@ -527,8 +529,10 @@ struct DelinearizationOperator{T} <: AbstractOperator{T}
     dest        ::  Span
 end
 
-DelinearizationOperator(dest::Span) =
-    DelinearizationOperator{coeftype(dest)}(Span(DiscreteSet(length(dest)), coeftype(dest)), src)
+function DelinearizationOperator(dest::Span)
+    A = coeftype(dest)
+    DelinearizationOperator{A}(Span(DiscreteSet{A}(length(dest))), src)
+end
 
 similar_operator(::DelinearizationOperator, ::Type{S}, src) where {S} = DelinearizationOperator(promote_coeftype(src, S))
 

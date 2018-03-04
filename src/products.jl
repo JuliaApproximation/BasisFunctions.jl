@@ -53,7 +53,7 @@ end
 # This function calls a suitable constructor for the tensor product.
 
 for (BaseType,TPType) in [(:AbstractOperator,:TensorProductOperator),
-           (:FunctionSet,:TensorProductSet)]
+           (:Dictionary,:TensorProductDict)]
     # In order to avoid strange nested structures, we flatten the arguments
     @eval tensorproduct(args::$BaseType...) = $TPType(flatten($TPType, args...)...)
     @eval tensorproduct(arg::$BaseType, n::Int) = tensorproduct([arg for i in 1:n]...)

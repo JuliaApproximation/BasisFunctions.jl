@@ -23,7 +23,7 @@
 # the routines transform_from_grid, transform_from_grid_pre and transform_from_grid_post
 # are invoked, with the grid as a third argument. When the source is a DiscreteGridSpace,
 # similar routines with "to_grid" in their names are invoked.
-# FunctionSet's can intercept these functions and define their coefficient-to-value
+# Dictionary's can intercept these functions and define their coefficient-to-value
 # and value-to-coefficient transforms.
 
 

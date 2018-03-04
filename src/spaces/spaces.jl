@@ -1,7 +1,4 @@
 # spaces.jl
 
-abstract type FunctionSpace
+abstract type FunctionSpace{S,T}
 end
-
-#abstract type FunctionSpace{S,T}
-#end

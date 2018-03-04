@@ -10,15 +10,17 @@ using BasisFunctions
 BF = BasisFunctions
 
 const show_timings = false
+
 ######### #
 # Testing
 ##########
 
 include("util_functions.jl")
 include("test_generic_grids.jl")
-include("test_generic_sets.jl")
-include("test_derived_set.jl")
+include("test_generic_dicts.jl")
+include("test_derived_dict.jl")
 include("test_bsplines.jl")
+include("test_operators.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
@@ -55,25 +57,8 @@ for T in [Float64,BigFloat,]
     delimit("T is $T", )
     delimit("Operators")
 
+    test_operators(T)
     test_generic_operators(T)
-
-    @testset "$(rpad("test diagonal operators",80))" begin
-        test_diagonal_operators(T) end
-
-    @testset "$(rpad("test multidiagonal operators",80))" begin
-        test_multidiagonal_operators(T) end
-
-    @testset "$(rpad("test invertible operators",80))" begin
-        test_invertible_operators(T) end
-
-    @testset "$(rpad("test noninvertible operators",80))" begin
-        test_noninvertible_operators(T) end
-
-    @testset "$(rpad("test tensor operators",80))" begin
-        test_tensor_operators(T) end
-
-    @testset "$(rpad("test circulant operator",80))" begin
-        test_circulant_operator(T) end
 
     delimit("Generic interfaces")
 
@@ -84,7 +69,7 @@ for T in [Float64,BigFloat,]
             @test length(basis) == n
             @test domaintype(basis) == T
 
-            test_generic_set_interface(basis, span(basis))
+            test_generic_dict_interface(basis, Span(basis))
     end
 
     delimit("Derived sets")
@@ -100,7 +85,7 @@ for T in [Float64,BigFloat,]
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
                   FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
-        test_generic_set_interface(basis, span(basis))
+        test_generic_dict_interface(basis, Span(basis))
     end
 
     delimit("Tensor specific tests")

@@ -12,11 +12,11 @@ implementation. The frequencies k are in the following order:
 Parameter EVEN is true if the length of the corresponding Fourier series is
 even. In that case, the largest frequency function in the set is a cosine.
 """
-struct FourierBasis{T <: Real} <: FunctionSet{T}
-	n			::	Int
+struct FourierBasis{T <: Real} <: Dictionary{T,Complex{T}}
+	n	::	Int
 end
 
-const FourierSpan{A,F <: FourierBasis} = Span{A,F}
+const FourierSpan{A,S,T,D <: FourierBasis} = Span{A,S,T,D}
 
 name(b::FourierBasis) = "Fourier series"
 
@@ -35,12 +35,10 @@ end
 
 instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis{T}(n)
 
-set_promote_domaintype(b::FourierBasis{T}, ::Type{S}) where {T,S} = FourierBasis{S}(b.n)
+dict_promote_domaintype(b::FourierBasis{T}, ::Type{S}) where {T,S} = FourierBasis{S}(b.n)
 
 resize(b::FourierBasis{T}, n) where {T} = FourierBasis{T}(n)
 
-# The rangetype of a Fourier series is complex
-rangetype(::Type{FourierBasis{T}}) where {T} = Complex{T}
 
 
 # Properties
@@ -62,10 +60,10 @@ has_extension(b::FourierBasis) = true
 # For has_transform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
-compatible_grid(set::FourierBasis, grid::PeriodicEquispacedGrid) =
-	(1+(left(set) - leftendpoint(grid))≈1) && (1+(right(set) - rightendpoint(grid))≈1) && (length(set)==length(grid))
+compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
+	(1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
-compatible_grid(set::FourierBasis, grid::AbstractGrid) = false
+compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
 has_grid_transform(b::FourierBasis, gs, grid) = compatible_grid(b, grid)
 
@@ -143,7 +141,7 @@ function eval_element_derivative(b::FourierBasis, idx::Int, x)
 end
 
 function moment(b::FourierBasis, idx)
-	T = rangetype(b)
+	T = codomaintype(b)
 	idx == 1 ? T(2) : T(0)
 end
 
@@ -221,7 +219,7 @@ end
 
 function derivative_space(s::FourierSpan, order; options...)
 	A = coeftype(s)
-	basis = set(s)
+	basis = dictionary(s)
 	if oddlength(basis)
 		s
 	else
@@ -248,7 +246,7 @@ end
 function differentiation_operator(s1::FourierSpan{A}, s2::FourierSpan{A}, order::Int; options...) where {A}
 	if isodd(length(s1))
 		@assert s1 == s2
-		DiagonalOperator(s1, [diff_scaling_function(set(s1), idx, order) for idx in eachindex(set(s1))])
+		DiagonalOperator(s1, [diff_scaling_function(dictionary(s1), idx, order) for idx in eachindex(dictionary(s1))])
 	else
 		differentiation_operator(s2, s2, order; options...) * extension_operator(s1, s2; options...)
 	end
@@ -256,12 +254,12 @@ end
 
 
 function transform_from_grid(src, dest::FourierSpan, grid; options...)
-	@assert compatible_grid(set(dest), grid)
+	@assert compatible_grid(dictionary(dest), grid)
 	forward_fourier_operator(src, dest, coeftype(dest); options...)
 end
 
 function transform_to_grid(src::FourierSpan, dest, grid; options...)
-	@assert compatible_grid(set(src), grid)
+	@assert compatible_grid(dictionary(src), grid)
 	backward_fourier_operator(src, dest, coeftype(src); options...)
 end
 
@@ -278,13 +276,13 @@ end
 
 
 function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
-	@assert compatible_grid(set(dest), grid)
+	@assert compatible_grid(dictionary(dest), grid)
     L = convert(coeftype(dest), length(src))
     ScalingOperator(dest, 1/sqrt(L))
 end
 
 function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
-	@assert compatible_grid(set(src), grid)
+	@assert compatible_grid(dictionary(src), grid)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
@@ -293,7 +291,7 @@ end
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
 function grid_evaluation_operator(span::FourierSpan, dgs::DiscreteGridSpace, grid::EquispacedGrid; options...)
-	fs = set(span)
+	fs = dictionary(span)
 	a = leftendpoint(grid)
 	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
@@ -331,16 +329,16 @@ is_compatible(s1::FourierBasis, s2::FourierBasis) = true
 function (*)(src1::FourierBasis, src2::FourierBasis, coef_src1, coef_src2)
 	if oddlength(src1) && evenlength(src2)
 	    dsrc2 = resize(src2, length(src2)+1)
-	    (*)(src1, dsrc2, coef_src1, extension_operator(span(src2, eltype(coef_src2)), span(dsrc2, eltype(coef_src2)))*coef_src2)
+	    (*)(src1, dsrc2, coef_src1, extension_operator(Span(src2, eltype(coef_src2)), Span(dsrc2, eltype(coef_src2)))*coef_src2)
 	elseif evenlength(src1) && oddlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
-	    (*)(dsrc1, src2, extension_operator(span(src1, eltype(coef_sr1)), span(dsrc1, eltype(coef_src1)))*coef_src1,coef_src2)
+	    (*)(dsrc1, src2, extension_operator(Span(src1, eltype(coef_sr1)), Span(dsrc1, eltype(coef_src1)))*coef_src1,coef_src2)
 	elseif evenlength(src1) && evenlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
 	    dsrc2 = resize(src2, length(src2)+1)
 		T1 = eltype(coef_src1)
 		T2 = eltype(coef_src2)
-	    (*)(dsrc1,dsrc2,extension_operator(span(src1, T1), span(dsrc1, T1))*coef_src1, extension_operator(span(src2, T2), span(dsrc2, T2))*coef_src2)
+	    (*)(dsrc1,dsrc2,extension_operator(Span(src1, T1), Span(dsrc1, T1))*coef_src1, extension_operator(Span(src2, T2), Span(dsrc2, T2))*coef_src2)
 	else # they are both odd
 		@assert domaintype(src1) == domaintype(src2)
 	    dest = FourierBasis{domaintype(src1)}(length(src1)+length(src2)-1)
@@ -353,7 +351,7 @@ function (*)(src1::FourierBasis, src2::FourierBasis, coef_src1, coef_src2)
 end
 
 
-dot(set::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(set); options...) =
+dot(b::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(b); options...) =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
 function Gram(s::FourierSpan; options...)
@@ -364,4 +362,4 @@ function Gram(s::FourierSpan; options...)
 	end
 end
 
-UnNormalizedGram(b::FourierSpan, oversampling) = ScalingOperator(b, b, length_oversampled_grid(set(b), oversampling))
+UnNormalizedGram(b::FourierSpan, oversampling) = ScalingOperator(b, b, length_oversampled_grid(dictionary(b), oversampling))

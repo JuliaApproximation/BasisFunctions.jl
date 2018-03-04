@@ -22,8 +22,8 @@ element(op::TensorProductOperator, j::Int) = op.operators[j]
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
     L = length(operators)
-    tp_src = Span(tensorproduct(map(set, map(src, operators))...), T)
-    tp_dest = Span(tensorproduct(map(set, map(dest, operators))...), T)
+    tp_src = Span(tensorproduct(map(dictionary, map(src, operators))...), T)
+    tp_dest = Span(tensorproduct(map(dictionary, map(dest, operators))...), T)
 
     # Scratch contains matrices of sufficient size to hold intermediate results
     # in the application of the tensor product operator.
