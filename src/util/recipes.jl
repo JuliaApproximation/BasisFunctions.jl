@@ -95,13 +95,13 @@ postprocess(S::Subdictionary, grid, vals) = postprocess(superdict(S), grid, vals
 # Always plot on equispaced grids for the best plotting resolution
 plotgrid(S::Dictionary1d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)),left(S),right(S))
 
-plotgrid(F::Dictionary{S,Tuple{T1,T2}}, n) where {S,T1,T2} = rescale(PeriodicEquispacedGrid(n,T1),left(F)[1],right(F)[1])×rescale(PeriodicEquispacedGrid(n,T2),left(F)[2],right(F)[2])
+plotgrid(F::Dictionary{Tuple{S1,S2},T}, n) where {S1,S2,T} = rescale(PeriodicEquispacedGrid(n,S1),left(F)[1],right(F)[1])×rescale(PeriodicEquispacedGrid(n,S2),left(F)[2],right(F)[2])
 
 plotgrid(s::MappedDict1d, n) = apply_map(plotgrid(superdict(s), n), mapping(s))
 
 ## Split complex plots in real and imaginary parts
 # 1D
-@recipe function f{S<:Real, T<:Real}(A::AbstractArray{S}, B::Array{Complex{T}})
+@recipe function f(A::AbstractArray{S}, B::Array{Complex{T}}) where {S<:Real, T<:Real}
     # Force double layout
     layout := 2
     # Legend is useless here
@@ -120,7 +120,7 @@ plotgrid(s::MappedDict1d, n) = apply_map(plotgrid(superdict(s), n), mapping(s))
 end
 
 # 2D
-@recipe function f{S<:Real,T<:Complex}(A::LinSpace{S},B::LinSpace{S},C::Array{T})
+@recipe function f(A::LinSpace{S},B::LinSpace{S},C::Array{T}) where {S<:Real,T<:Complex}
     # Force double layout
     layout := 2
     # Legend is useless here
