@@ -512,7 +512,7 @@ end
 
 function LinearizationOperator(src::Span)
     A = coeftype(src)
-    LinearizationOperator{T}(src, Span(DiscreteSet{A}(length(src))))
+    LinearizationOperator{A}(src, Span(DiscreteSet{A}(length(src))))
 end
 
 similar_operator(::LinearizationOperator, ::Type{S}, src) where {S} = LinearizationOperator(promote_coeftype(src, S))

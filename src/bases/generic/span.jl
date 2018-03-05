@@ -60,6 +60,7 @@ codomaintype(::Span{A,S,T,D}) where {A,S,T,D} = T
 
 dictionary(s::Span) = s.dictionary
 
+dict_codomaintype(s::Span) = codomaintype(dictionary(s))
 
 # The difference between similar_span and promote_coeftype is that similar_span
 # sets the coefficient type of the new span to the given argument, whereas

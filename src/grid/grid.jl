@@ -8,21 +8,22 @@ const AbstractGrid1d{T <: Number} = AbstractGrid{T}
 # Todo: remove this one again, it is not sufficiently generic
 const AbstractGrid2d{T <: Number} = AbstractGrid{SVector{2,T}}
 
-Point{N,T} = SVector{N,T}
+GridPoint{N,T} = SVector{N,T}
 
 # The element type of a grid is the type returned by getindex.
 eltype(::Type{AbstractGrid{T}}) where {T} = T
 eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 
+# The subeltype of a grid is the T in SVector{N,T}
+subeltype(::Type{AbstractGrid{T}}) where {T} = subeltype(T)
+subeltype(::Type{G}) where {G <: AbstractGrid} = subeltype(supertype(G))
+subeltype(g::AbstractGrid) = subeltype(typeof(g))
+
+subeltype(::Type{T}) where {T <: Number} = T
+subeltype(::Type{GridPoint{N,T}}) where {N,T} = T
+
 # The dimension of a grid is the dimension of its elements
 dimension(grid::AbstractGrid) = dimension(eltype(grid))
-
-# TODO: remove the numtype or disambiguate its meaning
-function numtype(::AbstractGrid{T}) where {T}
-	warning("Calling numtype on a grid is deprecated.")
-	float_type(T)
-end
-
 
 size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)

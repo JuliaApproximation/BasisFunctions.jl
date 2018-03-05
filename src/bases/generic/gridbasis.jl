@@ -2,25 +2,37 @@
 
 """
 A `GridBasis` is a discrete basis that is associated with a grid.
+
+The domain of the grid basis is the index set of the grid.
 """
-immutable GridBasis{G <: AbstractGrid,T} <: DiscreteVectorSpace{T,T}
+immutable GridBasis{G <: AbstractGrid,T} <: DiscreteVectorSpace{LinearIndex,T}
     grid    ::  G
 end
 
 const GridBasis1d{G <: AbstractGrid1d,T} = GridBasis{G,T}
 const ProductGridBasis{G <: ProductGrid,T} = GridBasis{G,T}
 
-GridBasis(grid::AbstractGrid) = GridBasis{typeof(grid),typeof(first(eachindex(grid)))}(grid)
+# We don't know the coefficient type of a grid in general.
+# If the codomain type is Int (the default), then we try to guess the coefficient
+# type from the element type. If the codomain type is anything but Int, we choose
+# that.
+coefficient_type(grid::AbstractGrid) = _coefficient_type(grid, codomaintype(grid))
+_coefficient_type(grid, ::Type{Int}) = subeltype(eltype(grid))
+_coefficient_type(grid, ::Type{T}) where {T} = T
+
+# We don't know the codomain type either. The safest bet is Int.
+# As a user, it is best to provide T.
+GridBasis(grid::AbstractGrid, T = Int) =
+    GridBasis{typeof(grid),T}(grid)
 
 gridbasis(grid::AbstractGrid) = GridBasis(grid)
+gridbasis(grid::AbstractGrid, T) = GridBasis(grid, T)
 
 grid(b::GridBasis) = b.grid
 
 for op in (:length, :size)
     @eval $op(b::GridBasis) = $op(grid(b))
 end
-
-coefficient_type(b::GridBasis) = float_type(eltype(grid(b)))
 
 name(b::GridBasis) = "a discrete basis associated with a grid"
 
@@ -50,10 +62,9 @@ A DiscreteGridSpace is a discrete basis that can represent a sampled function on
 const DiscreteGridSpace{A,S,T,D <: GridBasis} = Span{A,S,T,D}
 const DiscreteGridSpace1d{A,S,T,D <: GridBasis1d} = Span{A,S,T,D}
 
-gridspace(grid::AbstractGrid, ::Type{T} = float(eltype(grid))) where {T} =
-    Span(GridBasis(grid), T)
+gridspace(grid::AbstractGrid, T = coefficient_type(grid)) = Span(GridBasis(grid, T))
 
-gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridbasis(g), coeftype(s))
+gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridbasis(g, dict_codomaintype(s)), coeftype(s))
 
 name(s::DiscreteGridSpace) = "A discrete grid space"
 

@@ -16,8 +16,21 @@ const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
 const MappedSpan{A,S,T,D <: MappedDict} = Span{A,S,T,D}
 const MappedSpan1d{A,S,T,D <: MappedDict1d} = Span{A,S,T,D}
 
-MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{T2,S2}) where {S1,S2,T1,T2} =
-    MappedDict{typeof(dict),typeof(map),T2,T1}(dict, map)
+# In the constructor we check the domain and codomain types.
+# The domain of the MappedDict is defined by the range of the map, because the
+# domain of the underlying dict is mapped to the domain of the MappedDict.
+# Hence, the domain type of the map has to equal the domain type of the dictionary.
+# Confusingly, the domain and codomain types of dictionaries and Maps are
+# defined in different order ({S,T} and {T,S}): below, parameter T1 has to equal.
+MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{S,T1}) where {S,T1,T} =
+    MappedDict{typeof(dict),typeof(map),S,T}(dict, map)
+
+# If the parameters don't match, we may have to promote the map.
+# This does not (currently) work for all maps.
+function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{T2,S2}) where {S1,S2,T1,T2}
+    S = promote_type(S1,S2)
+    MappedDict(promote_domaintype(dict, S), update_eltype(map, S))
+end
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 
@@ -79,11 +92,12 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 transform_space(s::MappedSpan; options...) = apply_map(transform_space(superspan(s); options...), mapping(s))
 
 has_grid_transform(s::MappedDict, gs, g::MappedGrid) =
-    is_compatible(mapping(s), mapping(g)) && has_transform(superdict(s), gridbasis(supergrid(g)))
+    is_compatible(mapping(s), mapping(g)) &&
+        has_transform(superdict(s), gridbasis(supergrid(g), dict_codomaintype(gs)))
 
 function has_grid_transform(s::MappedDict, gs, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superdict(s), gridbasis(g2), g2)
+    has_grid_transform(superdict(s), gridbasis(g2, dict_codomaintype(gs)), g2)
 end
 
 

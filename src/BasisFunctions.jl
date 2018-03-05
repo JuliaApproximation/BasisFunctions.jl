@@ -1,6 +1,6 @@
 # BasisFunctions
 
-# __precompile__()
+__precompile__()
 
 module BasisFunctions
 
@@ -69,6 +69,9 @@ import Domains: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 ## Exhaustive list of exports
+
+# from util/indexing.jl
+export LinearIndex
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -292,6 +295,7 @@ using Base.Cartesian
 
 
 include("util/common.jl")
+include("util/indexing.jl")
 include("util/composite_index.jl")
 include("util/multiarray.jl")
 include("util/slices.jl")

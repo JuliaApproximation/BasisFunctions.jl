@@ -270,7 +270,8 @@ has_unitary_transform(d::Dictionary) = has_transform(d)
 
 # Convenience functions: default grid, and conversion from grid to space
 has_transform(d::Dictionary) = has_grid(d) && has_transform(d, grid(d))
-has_transform(d::Dictionary, grid::AbstractGrid) = has_transform(d, gridbasis(grid))
+has_transform(d::Dictionary, grid::AbstractGrid) =
+    has_transform(d, gridbasis(grid, codomaintype(d)))
 
 "Does the set support extension and restriction operators?"
 has_extension(d::Dictionary) = false

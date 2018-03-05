@@ -55,8 +55,8 @@ SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 for T in [Float64,BigFloat,]
     println()
     delimit("T is $T", )
-    delimit("Operators")
 
+    delimit("Operators")
     test_operators(T)
     test_generic_operators(T)
 
@@ -72,8 +72,9 @@ for T in [Float64,BigFloat,]
             test_generic_dict_interface(basis, Span(basis))
     end
 
-    delimit("Derived sets")
-        test_derived_sets(T)
+    delimit("Derived dictionaries")
+
+    test_derived_dicts(T)
 
     delimit("Tensor product set interfaces")
 

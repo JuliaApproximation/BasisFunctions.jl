@@ -18,7 +18,7 @@
 # Dictionaries can be indexed in various ways. We assume that the semantics
 # of the index is determined by its type and, moreover, that linear indices
 # are always Int's. This means that no other index can have type Int.
-LinearIndex = Int
+const LinearIndex = Int
 
 # We fall back to whatever membership function (`in`) is defined for the index
 # set `I`.

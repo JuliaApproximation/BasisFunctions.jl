@@ -195,7 +195,7 @@ For testing purposes we define a concrete subset of DerivedDict. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
 struct ConcreteDerivedDict{S,T} <: DerivedDict{S,T}
-    superdict   ::  Dictionary
+    superdict   ::  Dictionary{S,T}
 end
 
 # Implementing similar_dictionary is all it takes.
