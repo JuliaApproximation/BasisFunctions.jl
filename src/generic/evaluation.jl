@@ -22,6 +22,7 @@ function evaluation_matrix!(a::AbstractMatrix, dict::Dictionary, pts)
 end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
+# TODO: try to get rid of the oversampling again, that should go to FrameFun
 evaluation_operator(s::Span; oversampling = default_oversampling(dictionary(s)), options...) =
     evaluation_operator(s, oversampled_grid(dictionary(s), oversampling); options...)
 

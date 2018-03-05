@@ -39,9 +39,9 @@ has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevNodeGrid) = length(b) == length(gs)
-has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevExtremaGrid) = length(b) == length(gs)
-has_grid_transform(b::ChebyshevBasis, gs, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodeGrid) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremaGrid) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
 left(b::ChebyshevBasis) = -one(domaintype(b))

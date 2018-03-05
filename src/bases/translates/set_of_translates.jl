@@ -53,7 +53,7 @@ period(set::PeriodicSetOfTranslates) = right(set)-left(set)
 
 stepsize(set::PeriodicSetOfTranslates) = period(set)/length(set)
 
-has_grid_transform(b::PeriodicSetOfTranslates, dgs, grid::AbstractEquispacedGrid) =
+has_grid_transform(b::PeriodicSetOfTranslates, gb, grid::AbstractEquispacedGrid) =
     compatible_grid(b, grid)
 
 compatible_grid(b::PeriodicSetOfTranslates, grid::AbstractEquispacedGrid) =

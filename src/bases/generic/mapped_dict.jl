@@ -91,13 +91,13 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 
 transform_space(s::MappedSpan; options...) = apply_map(transform_space(superspan(s); options...), mapping(s))
 
-has_grid_transform(s::MappedDict, gs, g::MappedGrid) =
+has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
-        has_transform(superdict(s), gridbasis(supergrid(g), dict_codomaintype(gs)))
+        has_transform(superdict(s), gridbasis(supergrid(g), codomaintype(gb)))
 
-function has_grid_transform(s::MappedDict, gs, g::AbstractGrid)
+function has_grid_transform(s::MappedDict, gb, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superdict(s), gridbasis(g2, dict_codomaintype(gs)), g2)
+    has_grid_transform(superdict(s), gridbasis(g2, codomaintype(gb)), g2)
 end
 
 

@@ -12,13 +12,13 @@ end
 const GridBasis1d{G <: AbstractGrid1d,T} = GridBasis{G,T}
 const ProductGridBasis{G <: ProductGrid,T} = GridBasis{G,T}
 
-# We don't know the coefficient type of a grid in general.
-# If the codomain type is Int (the default), then we try to guess the coefficient
+# We don't know the expected coefficient type of a grid basis in general.
+# If the codomain type is Int (the default), then we try to guess a coefficient
 # type from the element type. If the codomain type is anything but Int, we choose
 # that.
-coefficient_type(grid::AbstractGrid) = _coefficient_type(grid, codomaintype(grid))
-_coefficient_type(grid, ::Type{Int}) = subeltype(eltype(grid))
-_coefficient_type(grid, ::Type{T}) where {T} = T
+coefficient_type(gb::GridBasis) = _coefficient_type(gb, codomaintype(gb))
+_coefficient_type(gb, ::Type{Int}) = subeltype(eltype(gb))
+_coefficient_type(gb, ::Type{T}) where {T} = T
 
 # We don't know the codomain type either. The safest bet is Int.
 # As a user, it is best to provide T.
@@ -33,6 +33,8 @@ grid(b::GridBasis) = b.grid
 for op in (:length, :size)
     @eval $op(b::GridBasis) = $op(grid(b))
 end
+
+dimension(b::GridBasis) = dimension(grid(b))
 
 name(b::GridBasis) = "a discrete basis associated with a grid"
 
@@ -62,7 +64,7 @@ A DiscreteGridSpace is a discrete basis that can represent a sampled function on
 const DiscreteGridSpace{A,S,T,D <: GridBasis} = Span{A,S,T,D}
 const DiscreteGridSpace1d{A,S,T,D <: GridBasis1d} = Span{A,S,T,D}
 
-gridspace(grid::AbstractGrid, T = coefficient_type(grid)) = Span(GridBasis(grid, T))
+gridspace(grid::AbstractGrid, T = subeltype(eltype(grid))) = Span(GridBasis(grid, T))
 
 gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridbasis(g, dict_codomaintype(s)), coeftype(s))
 

@@ -52,7 +52,7 @@ compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
 compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
 	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
-has_grid_transform(b::WaveletBasis, dgs, grid) = compatible_grid(b, grid)
+has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 
 left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)

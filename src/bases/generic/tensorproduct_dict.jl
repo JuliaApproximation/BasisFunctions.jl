@@ -104,6 +104,8 @@ native_index(s::TensorProductDict, idx::NTuple{N,Int}) where {N} = map(native_in
 native_index(s::TensorProductDict, idx::Tuple) = idx
 # - From a linear index
 native_index(s::TensorProductDict, idx::Int) = native_index(s, multilinear_index(s, idx))
+# - From a Cartesian index
+native_index(s::TensorProductDict, idx::CartesianIndex) = native_index(s, multilinear_index(s, idx))
 
 # Convert an index into an index that is indexable, with length equal to the length of the product set
 # - we convert a linear index into a multilinear one
@@ -120,10 +122,10 @@ for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
-has_grid_transform(s::TensorProductDict, dgs, grid::ProductGrid) =
+has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
     reduce(&, map(has_transform, elements(s), elements(grid)))
 
-has_grid_transform(s::TensorProductDict, dgs, grid::AbstractGrid) = false
+has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_space, :antiderivative_space)
     @eval $op(s::TensorProductSpan, order; options...) =

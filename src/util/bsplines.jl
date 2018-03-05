@@ -2,8 +2,9 @@
 module Cardinal_b_splines
 
 export evaluate_Bspline, evaluate_periodic_Bspline, Degree
+
 """
-  Calculates ∫[B_N(x)]^2, with B_N the cardinal bspline of degree N
+  Calculates ∫[B_N(x)]^2 dx, with B_N the cardinal bspline of degree N
 """
 function squared_spline_integral(N::Int)
     m = N+1
@@ -14,7 +15,7 @@ function squared_spline_integral(N::Int)
 end
 
 """
-  Calculates ∫ B_m(x) B_m(x-t), with B_m the cardinal bspline of degree m
+  Calculates ∫ B_m(x) B_m(x-t) dx, with B_m the cardinal bspline of degree m
 """
 function shifted_spline_integral(m::Int,t::Int)
   @assert t >= 0

@@ -1,16 +1,19 @@
 # composite_index.jl
 
 """
-A CompositeIndexIterator iterates over a sequence of linear indices. Each index
+A `CompositeIndexIterator` iterates over a sequence of linear indices. Each index
 is a tuple, where the first entry refers to the linear index, and the second
-entry is the linear index. The Flatten iterator in Base would yield only the
-second entry.
+entry is the linear index.
 
-For example, the composite indices of (1:5,1:3) are:
+This resembles the `Flatten` iterator in `Base`, but the latter would yield only the
+second entry. For example, the composite indices of `(1:5,1:3)` are:
+```
 (1,1), (1,2), (1,3), (1,4), (1,5), (2,1), (2,2), (2,3).
-
-In contrast, the Flatten iterator in Base would yield:
+```
+In contrast, the `Flatten` iterator in Base would yield:
+```
 1, 2, 3, 4, 5, 1, 2, 3
+```
 """
 struct CompositeIndexIterator{L}
     lengths ::  L

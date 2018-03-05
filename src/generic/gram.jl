@@ -3,6 +3,7 @@
 #################
 ## Gram operators
 #################
+
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
@@ -133,7 +134,8 @@ dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(dictionary(span); o
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
 function Gram(src::Span, dest::Span; options...)
-    A = zeros(codomaintype(src, dest),length(dest),length(src))*NaN
+    T = promote_type(codomaintype(src), codomaintype(dest))
+    A = zeros(T,length(dest),length(src))*NaN
     grammatrix!(A, src, dest; options...)
     MatrixOperator(src, dest, A)
 end
@@ -143,14 +145,14 @@ DualGram(span1::Span, span2::Span; options...) = inv(Gram(span1, span2; options.
 MixedGram(span1::Span, span2::Span; options...) = Gram(dual(span1; options...), span2; options...)
 
 function grammatrix!(result, src::Span, dest::Span; options...)
-  @assert size(result, 1) == length(dest)
-  @assert size(result, 2) == length(src)
-  for i in 1:size(result,1)
-    for j in 1:size(result,2)
-      result[i,j] = dot(dest, src, i, j; options...)
+    @assert size(result, 1) == length(dest)
+    @assert size(result, 2) == length(src)
+    for i in 1:size(result,1)
+        for j in 1:size(result,2)
+            result[i,j] = dot(dest, src, i, j; options...)
+        end
     end
-  end
-  result
+    result
 end
 
 dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...)  =

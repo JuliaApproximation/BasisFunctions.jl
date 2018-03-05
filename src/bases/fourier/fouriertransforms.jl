@@ -70,9 +70,9 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
     end
 end
 
-fft_scalefactor{ELT}(src, ::Type{ELT}) = 1/sqrt(ELT(length(src)))
+fft_scalefactor(src, ::Type{ELT}) where {ELT} = 1/sqrt(ELT(length(src)))
 
-ifft_scalefactor{ELT}(src, ::Type{ELT}) = sqrt(ELT(length(src)))
+ifft_scalefactor(src, ::Type{ELT}) where {ELT} = sqrt(ELT(length(src)))
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific FFT-plans

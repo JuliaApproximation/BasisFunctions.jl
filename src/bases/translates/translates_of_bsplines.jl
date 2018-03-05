@@ -20,8 +20,8 @@ function restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; 
 end
 
 function bspline_extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
-  @assert 2*length(s1) == length(s2)
-  _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
+    @assert 2*length(s1) == length(s2)
+    _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
 end
 
 # The calculation done in this function is equivalent to finding the pseudoinverse of the bspline_extension_operator.
@@ -98,40 +98,40 @@ grid(b::BSplineTranslatesBasis{K}) where {K} = isodd(K) ?
     PeriodicEquispacedGrid(length(b), left(b), right(b)) :
     MidpointEquispacedGrid(length(b), left(b), right(b))
 
-function _binomial_circulant(s::Span{A,BSplineTranslatesBasis{K,T,SCALED}}) where {A,K,T,SCALED}
-  c = zeros(A, length(s))
-  for k in 1:K+2
-    c[k] = binomial(K+1, k-1)
-  end
-  if SCALED
-    sqrt(A(2))/(1<<K)*CirculantOperator(s, c)
-  else
-    A(1)/(1<<K)*CirculantOperator(s, c)
-  end
+function _binomial_circulant(s::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}) where {A,S,K,T,SCALED}
+    c = zeros(A, length(s))
+    for k in 1:K+2
+        c[k] = binomial(K+1, k-1)
+    end
+    if SCALED
+        sqrt(A(2))/(1<<K)*CirculantOperator(s, c)
+    else
+        A(1)/(1<<K)*CirculantOperator(s, c)
+    end
 end
 
-function primalgramcolumnelement(span::Span{A,BSplineTranslatesBasis{K,T,SCALED}}, i::Int; options...) where {A,K,T,SCALED}
-  r = 0
-  # If size of functionspace is too small there is overlap and we can not use the
-  # function squared_spline_integral which assumes no overlap.
-  # Use integration as long as there is no more efficient way is implemented.
-  if length(span) <= 2K+1
-    return defaultprimalgramcolumnelement(span, i; options...)
-  else
-    # squared_spline_integral gives the exact integral (in a rational number)
-    if i==1
-      r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
-    elseif 1 < i <= K+1
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
-    elseif i > length(span)-K
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
+function primalgramcolumnelement(span::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}, i::Int; options...) where {A,S,K,T,SCALED}
+    r = 0
+    # If size of functionspace is too small there is overlap and we can not use the
+    # function squared_spline_integral which assumes no overlap.
+    # Use integration as long as there is no more efficient way is implemented.
+    if length(span) <= 2K+1
+        return defaultprimalgramcolumnelement(span, i; options...)
+    else
+        # squared_spline_integral gives the exact integral (in a rational number)
+        if i==1
+            r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+        elseif 1 < i <= K+1
+            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+        elseif i > length(span)-K
+            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
+        end
     end
-  end
-  if SCALED
-    A(r)
-  else
-    A(r)/length(span)
-  end
+    if SCALED
+        A(r)
+    else
+        A(r)/length(span)
+    end
 end
 
 """
@@ -140,10 +140,10 @@ end
   There degree should be odd to use extension or restriction.
 """
 struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
-  n               :: Int
-  a               :: T
-  b               :: T
-  fun             :: Function
+    n               :: Int
+    a               :: T
+    b               :: T
+    fun             :: Function
 end
 
 const SymBSplineTranslatesSpan{A,S,T,D <: SymBSplineTranslatesBasis} = Span{A,S,T,D}
@@ -166,7 +166,7 @@ dict_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = S
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
-function _binomial_circulant(s::Span{A,SymBSplineTranslatesBasis{K,T}}) where {A,K,T}
+function _binomial_circulant(s::Span{A,S,T,SymBSplineTranslatesBasis{K,T}}) where {A,S,T,K}
   if iseven(K)
     warn("Extension and restriction work with odd degrees only.")
     throw(MethodError())

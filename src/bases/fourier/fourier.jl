@@ -65,7 +65,7 @@ compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
 # - Any non-periodic grid is not compatible
 compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-has_grid_transform(b::FourierBasis, gs, grid) = compatible_grid(b, grid)
+has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
 length(b::FourierBasis) = b.n

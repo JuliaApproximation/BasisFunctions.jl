@@ -29,7 +29,7 @@ tensorproduct(a, ::Type{Val{N}}) where {N} = tensorproduct(ntuple(t->a, Val{N}).
 # Flatten a sequence of elements that may be recursively composite
 # For example: a ProductDomain of ProductDomains will yield a list of each of the
 # individual domains, like the leafs of a tree structure.
-function flatten{T}(::Type{T}, elements::Array, BaseType = Any)
+function flatten(::Type{T}, elements::Array, BaseType = Any) where {T}
     flattened = BaseType[]
     for element in elements
         append_flattened!(T, flattened, element)
@@ -37,15 +37,15 @@ function flatten{T}(::Type{T}, elements::Array, BaseType = Any)
     flattened
 end
 
-flatten{T}(::Type{T}, elements...) = tuple(flatten(T, [el for el in elements])...)
+flatten(T, elements...) = tuple(flatten(T, [el for el in elements])...)
 
-function append_flattened!{T}(::Type{T}, flattened::Vector, element::T)
+function append_flattened!(::Type{T}, flattened::Vector, element::T) where {T}
     for el in elements(element)
         append_flattened!(T, flattened, el)
     end
 end
 
-function append_flattened!{T}(::Type{T}, flattened::Vector, element)
+function append_flattened!(::Type{T}, flattened::Vector, element) where {T}
     append!(flattened, [element])
 end
 
