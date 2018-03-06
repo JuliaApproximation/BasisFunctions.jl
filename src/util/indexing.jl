@@ -15,20 +15,16 @@
 # - conversion between indices of different types
 # - efficient iterators
 
-# Dictionaries can be indexed in various ways. We assume that the semantics
-# of the index is determined by its type and, moreover, that linear indices
-# are always Int's. This means that no other index can have type Int.
-const LinearIndex = Int
-
-# We fall back to whatever membership function (`in`) is defined for the index
-# set `I`.
-checkbounds(i::LinearIndex, I) = i ∈ I
 
 
 ##################
 # Native indices
 ##################
 
+# Dictionaries can be indexed in various ways. We assume that the semantics
+# of the index is determined by its type and, moreover, that linear indices
+# are always Int's. This means that no other index can have type Int.
+const LinearIndex = Int
 
 """
 A native index has to be distinguishable from a linear index by its type, but
@@ -69,8 +65,10 @@ end
 The `type IndexList` implements a map from linear indices to another family
 of indices, and vice-versa.
 
-It is implemented as an abstract vector, and hence the functionality of vectors
-is available.
+It is implemented as an abstract vector. Hence, the functionality of vectors
+is available. This also means that the dimension of an index list is always a
+vector, whose length equals that of the dictionary it corresponds to. Still,
+in several cases one may index the list with other kinds of indices.
 
 Concrete subtypes should implement:
 - `getindex(l::MyIndexList, idx::Int)` -> this is the map from linear indices
@@ -107,25 +105,41 @@ size(list::DefaultIndexList) = (list.n,)
 getindex(list::DefaultIndexList, idx::LinearIndex) = DefaultNativeIndex(idx)
 getindex(list::DefaultIndexList, idxn::DefaultNativeIndex) = value(idxn)
 
-"""
-The `ShiftedIndex` is the linear index shifted by `1`. Thus, its value starts at
-`0` and ranges up to `n-1`.
-"""
-const ShiftedIndex = NativeIndex{:shift}
+# In this case, we can compute the linear index without reference to
+# any dictionary or list:
+linear_index(idx::DefaultNativeIndex) = value(idx)
+# The line below may be called with the size and eltype of an array when indexing
+# into an array using a native index, see dictionary.jl
+linear_index(idx::DefaultNativeIndex, size, T) = linear_index(idx)
 
-struct ShiftedIndexList <: IndexList{ShiftedIndex}
+
+"""
+A `ShiftedIndex{S}` is a linear index shifted by `S`. Thus, its value starts at
+`1-S` and ranges up to `n-S`. A typical case is `S=1`.
+
+We use the `S` type parameter of `NativeIndex` to store the shift.
+"""
+const ShiftedIndex{S} = NativeIndex{S}
+
+shift(idx::ShiftedIndex{S}) where {S} = S
+
+struct ShiftedIndexList{S} <: IndexList{ShiftedIndex{S}}
     n       ::  Int
-    shift   ::  Int
 end
 
 # Default value of the shift is 1
-ShiftedIndexList(n::Int) = ShiftedIndexList(n, 1)
+ShiftedIndexList(n::Int) = ShiftedIndexList{1}(n)
 
 size(list::ShiftedIndexList) = (list.n,)
-shift(list::ShiftedIndexList) = list.shift
+shift(list::ShiftedIndexList{S}) where {S} = S
 
-getindex(list::ShiftedIndexList, idx::LinearIndex) = ShiftedIndex(idx-shift(list))
-getindex(list::ShiftedIndexList, idxn::ShiftedIndex) = value(idxn)+shift(list)
+getindex(list::ShiftedIndexList{S}, idx::LinearIndex) where {S} = ShiftedIndex{S}(idx-S)
+getindex(list::ShiftedIndexList{S}, idxn::ShiftedIndex) where {S} = value(idxn)+S
+
+# Here too, as with the DefaultIndex above, we can compute the linear index
+# without reference to any dictionary or list
+linear_index(idx::ShiftedIndex) = value(idx) + shift(idx)
+linear_index(idx::ShiftedIndex, size, T) = linear_index(idx)
 
 
 ########################
@@ -136,9 +150,10 @@ getindex(list::ShiftedIndexList, idxn::ShiftedIndex) = value(idxn)+shift(list)
 const ProductIndex{N} = CartesianIndex{N}
 
 # Convenience functions
-index(idxn::ProductIndex) = value(idxn)
+index(idx::ProductIndex) = value(idx)
 # Return the index as a tuple
-indextuple(idxn::ProductIndex) = value(idxn).I
+indextuple(idx::ProductIndex) = idx.I
+
 
 """
 `ProductIndexList` is a list of product indices, suitable for use as the ordering
@@ -148,6 +163,10 @@ struct ProductIndexList{N} <: IndexList{ProductIndex{N}}
     size    ::  NTuple{N,Int}
 end
 
+# There is something dodgy about defining the index list to be an abstract vector,
+# yet having its size be that of a tensor. What matters is that the length of
+# the list is correct, and that the list can be indexed with integers.
+# All code which assumes that length(list) == size(list)[1] will be fooled...
 size(list::ProductIndexList) = list.size
 
 # We use Cartesian indexing, because that is more efficient than linear indexing
@@ -161,10 +180,13 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 eachindex(list::ProductIndexList) = CartesianRange(indices(list))
 
 # We convert between integers and product indices using ind2sub and sub2ind
+product_native_index(size, idx::LinearIndex) = ProductIndex(ind2sub(size, idx))
+product_linear_index(size, idxn::ProductIndex) = sub2ind(size, indextuple(idxn)...)
+
 getindex(list::ProductIndexList, idx::LinearIndex) =
-    ProductIndex(ind2sub(size(list), idx))
+    product_native_index(size(list), idx)
 getindex(list::ProductIndexList, idxn::ProductIndex) =
-    sub2ind(size(list), indextuple(idxn)...)
+    product_linear_index(size(list), idxn)
 
 # Convert a tuple of int's or a list of int's to a linear index
 getindex(list::ProductIndexList{N}, idx::NTuple{N,Int}) where {N} =
@@ -184,60 +206,63 @@ const MultilinearIndex = NTuple{2,Int}
 `MultiLinearIndexList` is a list of indices suitable for use as the ordering
 of a dictionary with composite structure.
 """
-struct MultilinearIndexList <: IndexList{MultilinearIndex}
-    offsets ::  Vector{Int}
+struct MultilinearIndexList{O} <: IndexList{MultilinearIndex}
+    offsets ::  O
 end
 
 const MLIndexList = MultilinearIndexList
 
 length(list::MLIndexList) = list.offsets[end]
 
-function getindex(list::MLIndexList, idx::LinearIndex)
+# Convert a linear index into a multilinear index using the offsets information
+function offsets_multilinear_index(offsets, idx::Int)
     i = 0
-    while idx > list.offsets[i+1]
+    while idx > offsets[i+1]
         i += 1
     end
-    (i,idx-list.offsets[i])
+    (i,idx-offsets[i])
 end
 
-getindex(list::MLIndexList, idxn::MultilinearIndex) = list.offsets[idxn[1]] + idxn[2]
+# and vice-versa
+offsets_linear_index(offsets, idx::MultilinearIndex) = offsets[idx[1]] + idx[2]
+
+getindex(list::MLIndexList, idx::LinearIndex) = offsets_multilinear_index(list.offsets, idx)
+getindex(list::MLIndexList, idx::MultilinearIndex) = offsets_linear_index(list.offsets, idx)
 
 
-# Comment out but keep for possible later use: is the indexing below faster than
-# simply using lienar indices?
-#
-# """
-# A `MLIndexIterator` iterates over a sequence of linear indices. Each index
-# is a tuple, where the first entry refers to the linear index, and the second
-# entry is the linear index.
-#
-# This resembles the `Flatten` iterator in `Base`, but the latter would yield only the
-# second entry. For example, the composite indices of `(1:5,1:3)` are:
-# ```
-# (1,1), (1,2), (1,3), (1,4), (1,5), (2,1), (2,2), (2,3).
-# ```
-# In contrast, the `Flatten` iterator in Base would yield:
-# ```
-# 1, 2, 3, 4, 5, 1, 2, 3
-# ```
-# """
-# struct MLIndexIterator{L}
-#     lengths ::  L
-# end
-#
-# start(it::MLIndexIterator) = (1,1)
-#
-# function next(it::MLIndexIterator, state)
-#     i = state[1]
-#     j = state[2]
-#     if j == it.lengths[i]
-#         nextstate = (i+1,1)
-#     else
-#         nextstate = (i,j+1)
-#     end
-#     (state, nextstate)
-# end
-#
-# done(it::MLIndexIterator, state) = state[1] > length(it.lengths)
-#
-# length(it::MLIndexIterator) = sum(it.lengths)
+
+"""
+A `MultilinearIndexIterator` iterates over a sequence of linear indices. Each index
+is a tuple, where the first entry refers to the linear index, and the second
+entry is the linear index.
+
+This resembles the `Flatten` iterator in `Base`, but the latter would yield only the
+second entry. For example, the composite indices of `(1:5,1:3)` are:
+```
+(1,1), (1,2), (1,3), (1,4), (1,5), (2,1), (2,2), (2,3).
+```
+In contrast, the `Flatten` iterator in Base would yield:
+```
+1, 2, 3, 4, 5, 1, 2, 3
+```
+"""
+struct MultilinearIndexIterator{L}
+    lengths ::  L
+end
+
+start(it::MultilinearIndexIterator) = (1,1)
+
+function next(it::MultilinearIndexIterator, state)
+    i = state[1]
+    j = state[2]
+    if j == it.lengths[i]
+        nextstate = (i+1,1)
+    else
+        nextstate = (i,j+1)
+    end
+    (state, nextstate)
+end
+
+done(it::MultilinearIndexIterator, state) = state[1] > length(it.lengths)
+
+length(it::MultilinearIndexIterator) = sum(it.lengths)

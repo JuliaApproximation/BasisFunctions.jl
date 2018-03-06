@@ -18,12 +18,14 @@ const show_timings = false
 include("util_functions.jl")
 include("test_generic_grids.jl")
 include("test_generic_dicts.jl")
+include("test_tensors.jl")
 include("test_derived_dict.jl")
 include("test_bsplines.jl")
 include("test_operators.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
+include("test_discrete_sets.jl")
 include("test_bsplinetranslatedbasis.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
@@ -56,20 +58,27 @@ for T in [Float64,BigFloat,]
     println()
     delimit("T is $T", )
 
-    # delimit("Operators")
-    # test_operators(T)
-    # test_generic_operators(T)
+    delimit("Operators")
+    test_operators(T)
+    test_generic_operators(T)
 
     delimit("Generic interfaces")
 
-    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS, n in (8,9)
-        # Choose an odd and even number of degrees of freedom
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS,
+            n = 9
             basis = instantiate(SET, n, T)
 
             @test length(basis) == n
             @test domaintype(basis) == T
 
             test_generic_dict_interface(basis, Span(basis))
+    end
+    # also try a Fourier series with an even length
+    test_generic_dict_interface(FourierBasis{T}(8))
+
+    delimit("Discrete sets")
+    @testset "$(rpad("discrete sets",80))" begin
+        test_discrete_sets(T)
     end
 
     delimit("Derived dictionaries")

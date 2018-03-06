@@ -62,7 +62,8 @@ _name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(r
 
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
-unsafe_eval_element(s::MappedDict, idx, y) = unsafe_eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
+unsafe_eval_element(s::MappedDict, idx, y) =
+    unsafe_eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
 
 function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
     x = apply_inverse(mapping(s), y)
@@ -70,7 +71,8 @@ function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
     z = d / jacobian(mapping(s), y)
 end
 
-eval_expansion(s::MappedDict, coef, y::Number) = eval_expansion(superdict(s), coef, apply_inverse(mapping(s),y))
+eval_expansion(s::MappedDict, coef, y::Number) =
+    eval_expansion(superdict(s), coef, apply_inverse(mapping(s),y))
 
 #eval_expansion(s::MappedDict, coef, grid::AbstractGrid) = eval_expansion(superdict(s), coef, apply_map(grid, inv(mapping(s))))
 

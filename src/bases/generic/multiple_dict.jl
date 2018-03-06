@@ -14,7 +14,7 @@ functions in the set at that point.
 """
 struct MultiDict{DICTS,S,T} <: CompositeDict{S,T}
     dicts   ::  DICTS
-    offsets ::  Array{Int,1}
+    offsets ::  Vector{Int}
 
     function MultiDict{DICTS,S,T}(dicts) where {DICTS,S,T}
         offsets = compute_offsets(dicts)
@@ -95,14 +95,14 @@ end
 
 
 # Try to return ranges of an underlying set, if possible
-function subdict(s::MultiDict, idx::OrdinalRange{Int})
-    i1 = multilinear_index(s, first(idx))
-    i2 = multilinear_index(s, last(idx))
+function subdict(dict::MultiDict, idx::OrdinalRange{Int})
+    i1 = multilinear_index(dict, first(idx))
+    i2 = multilinear_index(dict, last(idx))
     # Check whether the range lies fully in one set
     if i1[1] == i2[1]
-        subdict(element(s, i1[1]), i1[2]:step(idx):i2[2])
+        subdict(element(dict, i1[1]), i1[2]:step(idx):i2[2])
     else
-        LargeSubdict(s, idx)
+        LargeSubdict(dict, idx)
     end
 end
 

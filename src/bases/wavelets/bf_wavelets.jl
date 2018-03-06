@@ -1,6 +1,7 @@
 # bf_wavelets.jl
 
-abstract type WaveletBasis{T} <: Dictionary1d{T,T} end
+abstract type WaveletBasis{T} <: Dictionary1d{T,T}
+end
 
 dyadic_length(b::WaveletBasis) = b.L
 
@@ -12,36 +13,37 @@ BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
 
 # If only the first 2^L basis elements remains, this is equivalent to a smaller wavelet basis
 function subdict(b::WaveletBasis, idx::OrdinalRange)
-  if (step(idx)==1) && (first(idx) == 1) && isdyadic(last(idx))
-    resize(b, last(idx))
-  else
-    subdict(b,idx)
-  end
+    if (step(idx)==1) && (first(idx) == 1) && isdyadic(last(idx))
+        resize(b, last(idx))
+    else
+        subdict(b,idx)
+    end
 end
 
 #  Extension is possible by putting zeros on the coefficients that correspond to detail information
 function apply!{B<:WaveletBasis}(op::Extension, dest::B, src::B, coef_dest, coef_src)
-  @assert dyadic_length(dest) > dyadic_length(src)
+    @assert dyadic_length(dest) > dyadic_length(src)
 
-  coef_dest[1:length(src)] = coef_src[1:length(src)]
-  coef_dest[length(src)+1:length(dest)] = 0
+    coef_dest[1:length(src)] = coef_src[1:length(src)]
+    coef_dest[length(src)+1:length(dest)] = 0
 end
-#  Restriction by discaring all detail information
-function apply!{B<:WaveletBasis}(op::Restriction, dest::B, src::B, coef_dest, coef_src)
-  @assert dyadic_length(dest) < dyadic_length(src)
 
-  coef_dest[1:length(dest)] = coef_src[1:length(dest)]
-  coef_dest
+#  Restriction by discarding all detail information
+function apply!{B<:WaveletBasis}(op::Restriction, dest::B, src::B, coef_dest, coef_src)
+    @assert dyadic_length(dest) < dyadic_length(src)
+
+    coef_dest[1:length(dest)] = coef_src[1:length(dest)]
+    coef_dest
 end
 
 has_extension(b::WaveletBasis) = true
 
 approx_length(b::WaveletBasis, n::Int) = 1<<ceil(Int, log2(n))
 
-call_element(b::WaveletBasis, idx::Int, x) =
+unsafe_eval_element(b::WaveletBasis, idx::Int, x) =
     error("There is no explicit formula for elements of wavelet basis, ", b)
 
-resize{B<:WaveletBasis}(b::B, n::Int) = B(wavelet(b),round(Int, log2(n)))
+resize(b::B, n::Int) where {B<:WaveletBasis} = B(wavelet(b),round(Int, log2(n)))
 
 has_grid(::WaveletBasis) = true
 # TODO implement transform

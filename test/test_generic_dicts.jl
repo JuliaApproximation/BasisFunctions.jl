@@ -26,7 +26,7 @@ suitable_function(s::Dictionary1d) = x->exp(x/right(s))
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
 suitable_function(set::PeriodicSplineBasis) =  x -> 1/(10+cos(2*pi*x))
-suitable_function(set::BasisFunctions.PeriodicSetOfTranslates) =  x -> 1/(10+cos(2*pi*x))
+suitable_function(set::BasisFunctions.PeriodicTranslationDict) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and even symmetric
 suitable_function(set::CosineSeries) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and odd symmetric
@@ -139,7 +139,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (dimension(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicSetOfTranslates)
+    if (dimension(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicTranslationDict)
         if ~isinf(left(basis, 1))
             @test in_support(basis, 1, left(basis, 1))
             @test in_support(basis, 1, left(basis, 1)-1/10*test_tolerance(ELT))
@@ -472,52 +472,4 @@ function test_generic_dict_interface(basis, span = Span(basis))
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end
-end
-
-
-#####
-# Tensor sets
-#####
-
-function test_tensor_sets(T)
-
-    a = FourierBasis(12)
-    b = FourierBasis(13)
-    c = FourierBasis(11)
-    d = TensorProductDict(a,b,c)
-
-    bf = d[3,4,5]
-    x1 = T(2//10)
-    x2 = T(3//10)
-    x3 = T(4//10)
-    @test bf(x1, x2, x3) ≈ eval_element(a, 3, x1) * eval_element(b, 4, x2) * eval_element(c, 5, x3)
-
-    # Can you iterate over the product set?
-    z = zero(T)
-    i = 0
-    for f in d
-        z += f(x1, x2, x3)
-        i = i+1
-    end
-    @test i == length(d)
-    @test abs(-0.5 - z) < 0.01
-
-    z = zero(T)
-    l = 0
-    for i in eachindex(d)
-        f = d[i]
-        z += f(x1, x2, x3)
-        l = l+1
-    end
-    @test l == length(d)
-    @test abs(-0.5 - z) < 0.01
-
-    # Indexing with ranges
-    # @test try
-    #     d[CartesianRange(CartesianIndex(1,1,1),CartesianIndex(3,4,5))]
-    #     true
-    # catch
-    #     false
-    # end
-    # Is an error thrown if you index with a range that is out of range?
 end

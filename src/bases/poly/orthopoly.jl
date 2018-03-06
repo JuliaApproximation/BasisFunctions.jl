@@ -109,6 +109,8 @@ function recurrence_eval(b::OPS, idx::PolynomialDegree, x)
     z
 end
 
+recurrence_eval(b::OPS, idx::LinearIndex, x) = recurrence_eval(b, native_index(b, idx), x)
+
 """
 Evaluate all the polynomials in the orthogonal polynomial sequence in the given
 point `x` using the three-term recurrence relation.
@@ -182,6 +184,8 @@ function recurrence_eval_derivative(b::OPS, idx::PolynomialDegree, x)
     z_d
 end
 
+recurrence_eval_derivative(b::OPS, idx::LinearIndex, x) =
+    recurrence_eval_derivative(b, native_index(b, idx), x)
 
 """
 Return the recurrence coefficients `α_n` and `β_n` for the monic orthogonal
@@ -256,6 +260,7 @@ function monic_recurrence_eval(α, β, idx, x)
         z_k
     end
 end
+
 
 function symmetric_jacobi_matrix(b::OPS)
     T = codomaintype(b)

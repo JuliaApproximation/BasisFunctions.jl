@@ -55,26 +55,35 @@ end
 
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src_dictionary(s))
 
+##########################
+# Indexing and evaluation
+##########################
 
-unsafe_eval_element(set::OperatedDict, i, x) = _unsafe_eval_element(set, operator(set), i, x)
+ordering(dict::OperatedDict) = ordering(src_dictionary(dict))
 
-function _unsafe_eval_element(s::OperatedDict, op::AbstractOperator, i, x)
+unsafe_eval_element(dict::OperatedDict, i, x) =
+    _unsafe_eval_element(dict, i, x, operator(dict), dict.scratch_src, dict.scratch_dest)
+
+function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
+    idx = linear_index(dict, idxn)
     if is_diagonal(op)
-        diagonal(op, i) * unsafe_eval_element(src_dictionary(s), i, x)
+        diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
     else
-        idx = native_index(s, i)
-        s.scratch_src[idx] = 1
-        apply!(s.op, s.scratch_dest, s.scratch_src)
-        s.scratch_src[idx] = 0
-        eval_expansion(dest_dictionary(s), s.scratch_dest, x)
+        scratch_src[idxn] = 1
+        apply!(op, scratch_dest, scratch_src)
+        scratch_src[idxn] = 0
+        eval_expansion(dest_dictionary(dict), scratch_dest, x)
     end
 end
 
-_unsafe_eval_element(s::OperatedDict, op::ScalingOperator, i, x) = diagonal(op, i) * unsafe_eval_element(src_dictionary(s), i, x)
+function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, scratch_src, scratch_dest)
+    idx = linear_index(dict, idxn)
+    diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
+end
 
 ## Properties
 
-isreal(set::OperatedDict) = isreal(operator(set))
+isreal(dict::OperatedDict) = isreal(operator(dict))
 
 # Disable for now
 # for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
@@ -89,7 +98,7 @@ isreal(set::OperatedDict) = isreal(operator(set))
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
 derivative(s::Span; options...) = OperatedDict(differentiation_operator(s; options...))
-derivative(s::Dictionary; options...) = derivative(Span(s); options...)
+derivative(dict::Dictionary; options...) = derivative(Span(dict); options...)
 
 function (*)(a::Number, s::Span)
     T = promote_type(typeof(a), coeftype(s))

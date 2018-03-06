@@ -1,6 +1,6 @@
 # translates_of_bsplines.jl
 
-abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicSetOfTranslates{T}
+abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicTranslationDict{T}
 end
 
 const PeriodicBSplineSpan{A,S,T,D <: PeriodicBSplineBasis} = Span{A,S,T,D}
@@ -137,7 +137,7 @@ end
 """
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
 
-  There degree should be odd to use extension or restriction.
+  The degree should be odd in order to use extension or restriction.
 """
 struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
     n               :: Int
@@ -207,7 +207,7 @@ end
 """
   Basis consisting of orthonormal basis function in the spline space of degree K.
 """
-struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
   superdict     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
 
@@ -241,7 +241,7 @@ change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B};
 """
   Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
 """
-struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicSetOfTranslates{BSplineTranslatesBasis,T}
+struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
   superdict     ::    BSplineTranslatesBasis{K,T}
   coefficients ::    Array{T,1}
 

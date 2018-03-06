@@ -190,6 +190,9 @@ native_index(dict::Dictionary, idxn) = idxn
 linear_index(dict::Dictionary, idx::LinearIndex) = idx
 linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
 
+# Convenience: make a vector indexable using native indices, if possible
+getindex(v::Array, idxn::NativeIndex) =
+	getindex(v, linear_index(idxn, size(v), eltype(v)))
 
 """
 Convert the set of coefficients in the native format of the dictionary
@@ -302,17 +305,27 @@ tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 
 checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
-checkbounds(::Type{Bool}, dict::Dictionary, i::Int) = checkindex(Bool, linearindices(dict), i)
+# We make a special case for a linear index
+checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, linearindices(dict), i)
 
-checkbounds(::Type{Bool}, dict::Dictionary, i) = checkindex(Bool, linearindices(dict), linear_index(dict, i))
+# We also convert native indices to linear indices, before moving on.
+# (This is more difficult to do later on, e.g. in checkindex, because that routine
+#  does not have access to the dict anymore)
+checkbounds(::Type{Bool}, dict::Dictionary, i::NativeIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
+checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
 
 checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
 
 left(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
-right(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
+right(dict::Dictionary, idx) = right(dict, native_index(dict, idx))
 
 "Return the support of the idx-th basis function."
 support(d::Dictionary1d, idx) = (left(d,idx), right(d,idx))
+# Warning: the functions above and below may be wrong for certain concrete
+# dictionaries, for example for univariate functions with non-connected support.
+# Make sure to override, and make sure that the overridden version is called.
 
 "Does the given point lie inside the support of the given set function?"
 in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)

@@ -87,6 +87,7 @@ const FourierFrequency = NativeIndex{:fourier}
 
 frequency(idxn::FourierFrequency) = value(idxn)
 
+
 """
 `FFTIndexList` defines the map from native indices to linear indices
 for a finite Fourier basis, when the indices are ordered in the way they
@@ -123,7 +124,11 @@ end
 
 ordering(b::FourierBasis) = FFTIndexList(length(b))
 
-# Convenience functions: compute with integer frequencies, rather than FourierFrequency types
+# Shorthand: compute the linear index based on the size and element type
+# of an array only
+linear_index(idxn::FourierFrequency, size::Tuple{Int}, T) = FFTIndexList(size[1])[idxn]
+
+# Convenience: compute with integer frequencies, rather than FourierFrequency types
 idx2frequency(b::FourierBasis, idx) = frequency(native_index(b, idx))
 frequency2idx(b::FourierBasis, k) = linear_index(b, FourierFrequency(k))
 
@@ -131,6 +136,7 @@ nhalf(b::FourierBasis) = length(b)>>1
 
 maxfrequency(b::FourierBasis) = nhalf(b)
 minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
+
 
 
 

@@ -34,13 +34,6 @@ element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::Range) = tensorproduct(dict.dicts[range]...)
 nb_elements(dict::TensorProductDict{N}) where {N} = N
 
-# # The routine below is a type-stable way to obtain the length of the product set
-# # Note that nb_elements above also returns N, but as a value and not as a type parameter
-# @generated function product_length(s::TensorProductDict{DT}) where {DT}
-#     LEN = tuple_length(DT)
-#     :(Val{$LEN}())
-# end
-
 
 function TensorProductDict(dict::Dictionary)
     warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductDict.")
@@ -90,61 +83,30 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
 end
 
 
-##################
-# Native indices
-##################
+## Native indices are of type ProductIndex
 
-
+# The native indices of a tensor product dict are of type ProductIndex
 ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
-# A tensor product set s has three types of indices:
-# - Linear index: this is an Int, ranging from 1 to length(s)
-# - Multilinear index: tuple of Ints, or CartesianIndex. Each element of the tuple
-#   is a linear index for the corresponding element of the set
-# - Native index: any other tuple type. Each element is the native index of the
-#   corresponding element of the set.
-# The storage of a product set is an array, and it can be indexed using either a
-# linear index or a multilinear (cartesian) index.
-#
-# We define some conversion routines below.
+"""
+A recursive native index of a `TensorProductDict` is a tuple consisting of
+native indices of each of the elements of the dictionary.
+"""
+recursive_native_index(d::TensorProductDict, idxn::ProductIndex) =
+    map(native_index, elements(d), indextuple(idxn))
 
-# Convert the given index to a linear index.
-# - If it is an Int, it already is a linear index
-linear_index(s::TensorProductDict, i::Int) = i
-# - If the argument is a tuple of integers or a CartesianIndex, then it is
-#   a multilinear index.
-linear_index(s::TensorProductDict, i::NTuple{N,Int}) where {N} = sub2ind(size(s), i...)
-linear_index(s::TensorProductDict, i::CartesianIndex) = sub2ind(size(s), i.I...)
-# - If its type is anything else, it may be a tuple of native indices
-linear_index(s::TensorProductDict, idxn::Tuple) = linear_index(s, map(linear_index, elements(s), idxn))
+recursive_native_index(d::TensorProductDict, idx::LinearIndex) =
+    recursive_native_index(d, native_index(d, idx))
 
-# Convert the given index to a multilinear index.
-# - A tuple of Int's is already a multilinear index
-multilinear_index(s::TensorProductDict, idx::NTuple{N,Int}) where {N} = idx
-# - From linear index to multilinear
-multilinear_index(s::TensorProductDict, idx::Int) = ind2sub(size(s), idx)
-# - Convert a CartesianIndex to a tuple (! this uses CartesianIndex internals currently)
-multilinear_index(s::TensorProductDict, idx::CartesianIndex) = idx.I
-# - From any other tuple
-multilinear_index(s::TensorProductDict, idx::Tuple) = map(linear_index, elements(s), idx)
-
-# Convert the given index to a native index.
-# - From a multilinear index
-native_index(s::TensorProductDict, idx::NTuple{N,Int}) where {N} = map(native_index, elements(s), idx)
-# - Assume that another kind of tuple is the native index
-native_index(s::TensorProductDict, idx::Tuple) = idx
-# - From a linear index
-native_index(s::TensorProductDict, idx::Int) = native_index(s, multilinear_index(s, idx))
-# - From a Cartesian index
-native_index(s::TensorProductDict, idx::CartesianIndex) = native_index(s, multilinear_index(s, idx))
-
-# Convert an index into an index that is indexable, with length equal to the length of the product set
-# - we convert a linear index into a multilinear one
-indexable_index(set::TensorProductDict, idx::Int) = multilinear_index(set, idx)
-# - for a tuple we don't need to do anything
-indexable_index(set::TensorProductDict, idx::Tuple) = idx
-# - we catch a CartesianIndex and convert it to multilinear as well
-indexable_index(set::TensorProductDict, idx::CartesianIndex) = multilinear_index(set, idx)
+# We have to amend the boundscheck ecosystem to catch some cases:
+# - This line will catch indexing with tuples of integers, and we assume
+#   the user wanted to use a CartesianIndex
+checkbounds(::Type{Bool}, d::TensorProductDict{N}, idx::NTuple{N,Int}) where {N} =
+    checkbounds(Bool, d, CartesianIndex(idx))
+# - Any other tuple we assume is a recursive native index, which we convert
+#   elementwise to a tuple of linear indices
+checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
+    checkbounds(Bool, d, map(linear_index, elements(d), idx))
 
 
 ## Feature methods
@@ -167,20 +129,11 @@ resize(d::TensorProductDict, n) = TensorProductDict(map( (d_i,n_i)->resize(d_i, 
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 
 
-# nested_vector{DT}(set::TensorProductDict{DT}, x) = _nested_vector(DT, set, x)
-#
-# _nested_vector{A}(::Type{Tuple{A}}, set, x::SVector{1}) = x
-# _nested_vector{A}(::Type{Tuple{A}}, set, x::Number) = x
-#
-# _nested_vector{A,B}(::Type{Tuple{A,B},2,T}, x::SVector{2}) = x
-# _nested_vector{A,B,C}(::Type{Tuple{A,B,C},3,T}, x::SVector{3}) = x
-# _nested_vector{A,B,C,D}(::Type{Tuple{A,B,C,D},4,T}, x::SVector{4}) = x
-
 
 # Delegate in_support to _in_support with the composing dicts as extra arguments,
 # in order to avoid extra memory allocation.
-in_support(set::TensorProductDict, idx, x) =
-    _in_support(set, elements(set), indexable_index(set, idx), x)
+in_support(dict::TensorProductDict, idx, x) =
+    _in_support(dict, elements(dict), idx, x)
 
 # This line is a bit slower than the lines below:
 _in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
@@ -248,17 +201,17 @@ right(s::TensorProductDict) = SVector(map(right, elements(s)))
 #right(b::TensorProductDict, idxt::NTuple, j) = right(b.dicts[j], idxt[j])
 
 
-# Convert CartesianIndex argument to a tuple
-getindex(s::TensorProductDict, idx::CartesianIndex) = getindex(s, idx.I)
+# # Convert CartesianIndex argument to a tuple
+# getindex(s::TensorProductDict, idx::CartesianIndex) = getindex(s, idx.I)
 
 
 # We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
-unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
+# unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
+unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), idx, x)
 
-# For now, we assume that each set in the tensor product is a 1D set.
-# This may not always be the case. If not, then x should have the same structure
-# as i, i.e., both i and x should have N components.
+# We assume that x has exactly as many components as the index i does
+# We can call unsafe_eval_element on the subsets because we have already done bounds checking
 _unsafe_eval_element(set::TensorProductDict1, dicts, i, x) =
     unsafe_eval_element(dicts[1], i[1], x[1])
 

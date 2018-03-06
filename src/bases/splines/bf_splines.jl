@@ -63,7 +63,7 @@ length(b::FullSplineBasis{K}) where {K} = b.n+K-1
 
 # Indices of splines naturally range from -K to n-1.
 const FSplineIndex = ShiftedIndex
-ordering(b::FullSplineBasis{K}) where {K} = ShiftedIndexList(length(b), K+1)
+ordering(b::FullSplineBasis{K}) where {K} = ShiftedIndexList{K+1}(length(b))
 
 left(b::FullSplineBasis, idxn::FSplineIndex) = max(b.a, knot(b, value(idxn)))
 right(b::FullSplineBasis{K}, idxn::FSplineIndex) where {K} =
@@ -112,8 +112,8 @@ has_grid(b::NaturalSplineBasis) = true
 length(b::NaturalSplineBasis) = b.n+1
 
 # Indices of natural splines naturally range from 0 to n
-const NSplineIndex = ShiftedIndex
-ordering(b::NaturalSplineBasis) = ShiftedIndexList(length(b), 1)
+const NSplineIndex = ShiftedIndex{1}
+ordering(b::NaturalSplineBasis) = ShiftedIndexList{1}(length(b))
 
 left(b::NaturalSplineBasis, idxn::NSplineIndex) = max(b.a, b.a + (value(idxn)-1)*b.h)
 right(b::NaturalSplineBasis, idxn::NSplineIndex) = min(b.b, b.a + (value(idxn)+1)*b.h)
@@ -126,6 +126,11 @@ unsafe_eval_element(b::NaturalSplineBasis{K,T}, idx::Int, x) where {K,T} =
 	error("Natural splines not implemented yet. Sorry. Carry on.")
 
 
+#######################
+# Periodic splines
+#######################
+
+
 """
 Periodic splines of degree K.
 """
@@ -134,38 +139,51 @@ struct PeriodicSplineBasis{K,T} <: SplineBasis{K,T}
 	a		::	T
 	b		::	T
 
-	PeriodicSplineBasis{K,T}(n, a = -one(T), b = one(T)) where {K,T} = new(n, a, b)
+	PeriodicSplineBasis{K,T}(n, a = -one(T), b = one(T)) where {K,T} = new{K,T}(n, a, b)
 end
 
 name(b::PeriodicSplineBasis) = "Periodic splines of degree $(degree(b))"
 
-# Type-unsafe constructor
-PeriodicSplineBasis(n, k::Int, a...) = PeriodicSplineBasis(n, SplineDegree{k}, a...)
+## CONSTRUCTORS
 
-# This one is type-safe
-PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, a::T, b::T) = PeriodicSplineBasis{K,T}(n, a, b)
+# If no type parameter is given, assume K = 3
+PeriodicSplineBasis(n::Int, ab...) = PeriodicSplineBasis{3}(n, ab...)
 
-PeriodicSplineBasis{K,T}(n, ::Type{SplineDegree{K}}, ::Type{T} = Float64) = PeriodicSplineBasis{K,T}(n)
+# If K is given but T is not, assume T=Float64
+PeriodicSplineBasis{K}(n::Int) where {K} = PeriodicSplineBasis{K,Float64}(n)
 
-instantiate{T}(::Type{PeriodicSplineBasis}, n, ::Type{T}) = PeriodicSplineBasis{3,T}(n)
+# If a and b are given, get T from them, but make sure it is a floating point type
+PeriodicSplineBasis{K}(n::Int, a::Number, b::Number) where {K} =
+	PeriodicSplineBasis{K}(n, promote(a,b)...)
+PeriodicSplineBasis{K}(n::Int, a::T, b::T) where {K,T <: Number} =
+	PeriodicSplineBasis{K,float(T)}(n, a, b)
 
-dict_promote_domaintype{K,T,S}(b::PeriodicSplineBasis{K,T}, ::Type{S}) = PeriodicSplineBasis{K,S}(b.n, b.a, b.b)
+instantiate(::Type{PeriodicSplineBasis}, n, T) = PeriodicSplineBasis{3,T}(n)
 
-resize(b::PeriodicSplineBasis{K,T}, n) where {K,T} = PeriodicSplineBasis{K,T}(n, b.a, b.b)
+dict_promote_domaintype(b::PeriodicSplineBasis{K,T}, ::Type{S}) where {K,T,S} =
+	PeriodicSplineBasis{K,S}(b.n, b.a, b.b)
 
-has_grid(b::PeriodicSplineBasis) = true
-
+## Properties
 
 length(b::PeriodicSplineBasis) = b.n
 
-grid(b::PeriodicSplineBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
+resize(b::PeriodicSplineBasis{K,T}, n) where {K,T} = PeriodicSplineBasis{K,T}(n, b.a, b.b)
 
-const PSplineIndex = ShiftedIndex
-ordering(b::PeriodicSplineBasis) = ShiftedIndexList(length(b), 1)
+rescale(s::PeriodicSplineBasis{K,T}, a, b) where {K,T} = PeriodicSplineBasis{K,T}(s.n, a, b)
+
+has_grid(b::PeriodicSplineBasis) = true
+
+grid(b::PeriodicSplineBasis) = PeriodicEquispacedGrid(b.n, b.a, b.b)
 
 stepsize(b::PeriodicSplineBasis) = (b.b-b.a)/b.n
 
 period(b::PeriodicSplineBasis) = b.b - b.a
+
+
+## Indexing and evaluation
+
+const PSplineIndex = ShiftedIndex{1}
+ordering(b::PeriodicSplineBasis) = ShiftedIndexList{1}(length(b))
 
 left(b::PeriodicSplineBasis) = b.a
 
@@ -196,8 +214,6 @@ function in_support(b::PeriodicSplineBasis{K}, idxn::PSplineIndex, x) where {K}
 		(left(b, idx) <= x+period <= right(b, idx))
 	A && B
 end
-
-rescale(s::PeriodicSplineBasis{K,T}, a, b) where {K,T} = PeriodicSplineBasis{K,T}(s.n, a, b)
 
 function unsafe_eval_element(b::PeriodicSplineBasis{K,T}, idxn::PSplineIndex, x) where {K,T}
 	idx_n = value(idxn)

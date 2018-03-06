@@ -100,11 +100,12 @@ in_support(set::DerivedDict, idx, x::T) where {T <: Complex} =
 # Indexing and iteration
 #########################
 
-native_index(s::DerivedDict, idx::Int) = native_index(superdict(s), idx)
+native_index(dict::DerivedDict, idx::LinearIndex) = native_index(superdict(dict), idx)
 
-linear_index(s::DerivedDict, idxn) = linear_index(superdict(s), idxn)
+linear_index(dict::DerivedDict, idx::LinearIndex) = idx
+linear_index(dict::DerivedDict, idxn) = linear_index(superdict(dict), idxn)
 
-eachindex(s::DerivedDict) = eachindex(superdict(s))
+eachindex(dict::DerivedDict) = eachindex(superdict(dict))
 
 linearize_coefficients!(s::DerivedDict, coef_linear::Vector, coef_native) =
     linearize_coefficients!(superdict(s), coef_linear, coef_native)
@@ -123,7 +124,8 @@ end
 
 unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
 
-unsafe_eval_element_derivative(s::DerivedDict, idx, x) = unsafe_eval_element_derivative(superdict(s), idx, x)
+unsafe_eval_element_derivative(s::DerivedDict, idx, x) =
+    unsafe_eval_element_derivative(superdict(s), idx, x)
 
 
 #########################

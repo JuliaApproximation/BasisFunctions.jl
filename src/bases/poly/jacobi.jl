@@ -39,6 +39,8 @@ left(b::JacobiPolynomials, idx) = left(b)
 right(b::JacobiPolynomials{T}) where {T} = T(1)
 right(b::JacobiPolynomials, idx) = right(b)
 
+domain(b::JacobiPolynomials{T}) where {T} = ChebyshevInterval{T}()
+
 first_moment(b::JacobiPolynomials) = b.α+b.β+1≈0 ?
     2.^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1) :
     2.^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1)/(b.α+b.β+1)/gamma(b.α+b.β+1)

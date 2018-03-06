@@ -28,6 +28,8 @@ left(b::LegendrePolynomials, idx) = left(b)
 right(b::LegendrePolynomials{T}) where {T} = T(1)
 right(b::LegendrePolynomials, idx) = right(b)
 
+domain(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
+
 #grid(b::LegendrePolynomials) = LegendreGrid(b.n)
 
 first_moment(b::LegendrePolynomials{T}) where {T} = T(2)

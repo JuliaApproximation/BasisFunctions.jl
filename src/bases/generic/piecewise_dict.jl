@@ -6,7 +6,7 @@ is a `MultiArray` containing the expansions of all dictionaries combined.
 """
 struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
     dicts       ::  DICTS
-    offsets     ::  Array{Int,1}
+    offsets     ::  Vector{Int}
     partition   ::  P
 
     function PiecewiseDict{P,DICTS,S,T}(dicts, partition) where {P <: Partition,DICTS,S,T}

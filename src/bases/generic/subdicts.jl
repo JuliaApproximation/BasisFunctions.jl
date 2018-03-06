@@ -1,17 +1,5 @@
 # subdicts.jl
 
-checkbounds(set::Dictionary, idx::Range) =
-    (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
-
-checkbounds(set::Dictionary, idx::CartesianRange) =
-    (checkbounds(set, first(idx)); checkbounds(set, last(idx)))
-
-function checkbounds(set::Dictionary, idx::Array)
-    for i in idx
-        checkbounds(set, i)
-    end
-end
-
 #############################
 # An abstract subdictionary
 #############################
@@ -30,33 +18,33 @@ end
 const SubdictSpan{A,S,T,D <: Subdictionary} = Span{A,S,T,D}
 
 # We assume that the underlying set is stored in a field called superdict
-superdict(s::Subdictionary) = s.superdict
+superdict(dict::Subdictionary) = dict.superdict
 
-superdict(s::SubdictSpan) = superdict(dictionary(s))
+# We assume that the underlying indices are stored in a field called superindices
+superindices(dict::Subdictionary) = dict.superindices
+superindices(dict::Subdictionary, idx::Int) = dict.superindices[idx]
+superindices(dict::Subdictionary, idx::DefaultNativeIndex) = superindices(dict, value(idx))
 
-superspan(s::SubdictSpan) = Span(superdict(s), coeftype(s))
+for op in (:superindices, :superdict)
+    @eval $op(span::SubdictSpan) = $op(dictionary(span))
+end
+superspan(span::SubdictSpan) = Span(superdict(span), coefficient_type(span))
 
-# We assume that the underlying indices are stored in a field called indices
-indices(s::Subdictionary) = s.indices
-indices(s::Subdictionary, i) = s.indices[i]
 
-indices(s::SubdictSpan) = indices(dictionary(s))
 
 # The concrete subdict should implement `similar_subdict`, a routine that
 # returns a subdict of a similar type as itself, but with a different underlying set.
 dict_promote_domaintype(s::Subdictionary, ::Type{S}) where {S} =
-    similar_subdict(s, promote_domaintype(superdict(s), S), indices(s))
+    similar_subdict(s, promote_domaintype(superdict(s), S), superindices(s))
 
-apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), indices(s))
+apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
 
-name(s::Subdictionary) = "Subdictionary of " * name(superdict(s)) * " with indices " * string(indices(s))
+name(s::Subdictionary) = "Subdictionary of " * name(superdict(s)) * " with indices " * string(superindices(s))
 
-length(s::Subdictionary) = length(indices(s))
+length(s::Subdictionary) = length(superindices(s))
 
-size(s::Subdictionary) = size(indices(s))
-
-eachindex(s::Subdictionary) = eachindex(indices(s))
+size(s::Subdictionary) = size(superindices(s))
 
 ##
 # For various properties it is not a priori clear whether a subdict has them or not,
@@ -65,24 +53,24 @@ eachindex(s::Subdictionary) = eachindex(indices(s))
 # arguments. This function call can be intercepted and implemented for specific kinds
 # of subdicts, if it is known that foo applies.
 
-resize(s::Subdictionary, n) = subdict_resize(s, n, superdict(s), indices(s))
+resize(s::Subdictionary, n) = subdict_resize(s, n, superdict(s), superindices(s))
 
-has_grid(s::Subdictionary) = subdict_has_grid(s, superdict(s), indices(s))
-has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), indices(s))
-has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), indices(s))
-has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), indices(s))
+has_grid(s::Subdictionary) = subdict_has_grid(s, superdict(s), superindices(s))
+has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), superindices(s))
+has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
+has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
 
-derivative_space(s::SubdictSpan, order; options...) = subdict_derivative_space(s, order, superspan(s), indices(s); options...)
-antiderivative_space(s::SubdictSpan, order; options...) = subdict_antiderivative_space(s, order, superspan(s), indices(s); options...)
+derivative_space(s::SubdictSpan, order; options...) = subdict_derivative_space(s, order, superspan(s), superindices(s); options...)
+antiderivative_space(s::SubdictSpan, order; options...) = subdict_antiderivative_space(s, order, superspan(s), superindices(s); options...)
 
-grid(s::Subdictionary) = subdict_grid(s, superdict(s), indices(s))
+grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
 
 
 # By default, we have none of the properties
-subdict_has_derivative(s::Subdictionary, superdict, indices) = false
-subdict_has_antiderivative(s::Subdictionary, superdict, indices) = false
-subdict_has_transform(s::Subdictionary, superdict, indices) = false
-subdict_has_grid(s::Subdictionary, superdict, indices) = false
+subdict_has_derivative(s::Subdictionary, superdict, superindices) = false
+subdict_has_antiderivative(s::Subdictionary, superdict, superindices) = false
+subdict_has_transform(s::Subdictionary, superdict, superindices) = false
+subdict_has_grid(s::Subdictionary, superdict, superindices) = false
 
 
 
@@ -91,23 +79,19 @@ for op in (:isreal, :is_orthogonal, :is_basis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
 end
 
-
-native_index(d::Subdictionary, idx::Int) = idx
-linear_index(d::Subdictionary, idxn::Int) = idxn
-
 for op in [:left, :right]
     @eval $op(d::Subdictionary) = $op(superdict(d))
 end
 
 for op in [:left, :right, :moment, :norm]
-    @eval $op(d::Subdictionary, i) = $op(superdict(d), indices(d, i))
+    @eval $op(d::Subdictionary, i) = $op(superdict(d), superindices(d, i))
 end
 
-in_support(d::Subdictionary, i, x) = in_support(superdict(d), indices(d, i), x)
+in_support(d::Subdictionary, i, x) = in_support(superdict(d), superindices(d, i), x)
 
-unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), indices(d, i), x)
+unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), superindices(d, i), x)
 
-unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), indices(d, i), x)
+unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x)
 
 
 
@@ -121,12 +105,12 @@ unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_der
 A `LargeSubdict` is a large subset of a dictionary. Operators associated with the
 subset are implemented in terms of corresponding operators on the underlying dictionary.
 This often leads to an explicit extension to the full set, but it can take
-advantage of possible fast implementations for the underlying set. For large subsets
-this is more efficient than iterating over the individual elements.
+advantage of possible fast implementations for the underlying dictionary. For
+large subsets this is more efficient than iterating over the individual elements.
 """
 struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
-    superdict   ::  SET
-    indices     ::  IDX
+    superdict       ::  SET
+    superindices    ::  IDX
 
     function LargeSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, idx::IDX) where {SET,IDX,S,T}
         checkbounds(dict, idx)
@@ -136,21 +120,21 @@ end
 
 const LargeSubdictSpan{A,S,T,D <: LargeSubdict} = Span{A,S,T,D}
 
-LargeSubdict(dict::Dictionary{S,T}, indices) where {S,T} =
-    LargeSubdict{typeof(dict),typeof(indices),S,T}(dict, indices)
+LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
+    LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
-similar_subdict(d::LargeSubdict, dict, indices) = LargeSubdict(dict, indices)
+similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superindices)
 
 grid(d::LargeSubdict) = grid(superdict(d))
 
 function extension_operator(s1::LargeSubdictSpan, s2::Span; options...)
     @assert dictionary(s2) == superdict(s1)
-    IndexExtensionOperator(s1, s2, indices(s1))
+    IndexExtensionOperator(s1, s2, superindices(s1))
 end
 
 function restriction_operator(s1::Span, s2::LargeSubdictSpan; options...)
     @assert dictionary(s1) == superdict(s2)
-    IndexRestrictionOperator(s1, s2, indices(s2))
+    IndexRestrictionOperator(s1, s2, superindices(s2))
 end
 
 # In general, the derivative set of a subdict can be the whole derivative set
@@ -159,12 +143,12 @@ end
 # Yet, we can generically define a differentiation_operator by extending the subdict
 # to the whole set and then invoking the differentiation operator of the latter,
 # and we choose that to be the default.
-subdict_has_derivative(s::LargeSubdict, superdict, indices) = has_derivative(superdict)
-subdict_has_antiderivative(s::LargeSubdict, superdict, indices) = has_antiderivative(superdict)
+subdict_has_derivative(s::LargeSubdict, superdict, superindices) = has_derivative(superdict)
+subdict_has_antiderivative(s::LargeSubdict, superdict, superindices) = has_antiderivative(superdict)
 
-subdict_derivative_space(s::LargeSubdictSpan, order, superdict, indices; options...) =
+subdict_derivative_space(s::LargeSubdictSpan, order, superdict, superindices; options...) =
     derivative_space(superdict, order; options...)
-subdict_antiderivative_space(s::LargeSubdictSpan, order, superdict, indices; options...) =
+subdict_antiderivative_space(s::LargeSubdictSpan, order, superdict, superindices; options...) =
     antiderivative_space(superdict, order; options...)
 
 function differentiation_operator(s1::LargeSubdictSpan, s2::Span, order::Int; options...)
@@ -191,8 +175,8 @@ are implemented by iterating explicitly over the indices, and not in terms of
 an operator on the full underlying set.
 """
 struct SmallSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
-    superdict   ::  SET
-    indices     ::  IDX
+    superdict       ::  SET
+    superindices    ::  IDX
 
     function SmallSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, indices::IDX) where {SET,IDX,S,T}
         checkbounds(dict, indices)
@@ -202,11 +186,11 @@ end
 
 const SmallSubdictSpan{A,S,T,D <: SmallSubdict} = Span{A,S,T,D}
 
-SmallSubdict(dict::Dictionary{S,T}, indices) where {S,T} =
-    SmallSubdict{typeof(set),typeof(indices),S,T}(dict, indices)
+SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
+    SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
 
-similar_subdict(d::SmallSubdict, dict, indices) = SmallSubdict(dict, indices)
+similar_subdict(d::SmallSubdict, dict, superindices) = SmallSubdict(dict, superindices)
 
 
 """
@@ -230,13 +214,11 @@ SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
 similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
 
 
-# Override the default `indices` because the field has a different name
-indices(s::SingletonSubdict) = s.index
-indices(s::SingletonSubdict, i) = s.index[i]
+# Override the default `superindices` because the field has a different name
+superindices(s::SingletonSubdict) = s.index
+superindices(s::SingletonSubdict, i::Int) = s.index[i]
 
 index(s::SingletonSubdict) = s.index
-
-eachindex(s::SingletonSubdict) = 1:1
 
 # Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars. Here, for convenience, you can call a function with
@@ -249,28 +231,41 @@ eachindex(s::SingletonSubdict) = 1:1
 # The default logic of creating subdicts
 #########################################
 
+# First some additions to the checkbounds ecosystem
+
+checkbounds(::Type{Bool}, dict::Dictionary, indices::CartesianRange) =
+    checkbounds(Bool, dict, first(indices)) && checkbounds(Bool, dict, last(indices))
+
+function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)
+    result = true
+    for idx in indices
+        result &= checkbounds(Bool, dict, idx)
+    end
+end
+
+
 # We define the behaviour of getindex for function sets: `subdict` create a
 # suitable subdict based on the type of the indices
-getindex(s::Dictionary, idx) = subdict(s, idx)
-getindex(s::Dictionary, idx, indices...) = subdict(s, (idx, indices...))
+getindex(dict::Dictionary, idx) = subdict(dict, idx)
+getindex(dict::Dictionary, idx, superindices...) = subdict(dict, (idx, superindices...))
 
 # - By default we generate a large subdict
-subdict(s::Dictionary, indices) = LargeSubdict(s, indices)
+subdict(dict::Dictionary, superindices) = LargeSubdict(dict, superindices)
 
 # - If the type indicates there is only one element we create a singleton subdict
 for singleton_type in (:Int, :Tuple, :CartesianIndex, :NativeIndex)
     @eval subdict(s::Dictionary, idx::$singleton_type) = SingletonSubdict(s, idx)
     # Specialize for Subdictionary's in order to avoid ambiguities...
-    @eval subdict(s::Subdictionary, idx::$singleton_type) = SingletonSubdict(superdict(s), indices(s)[idx])
+    @eval subdict(s::Subdictionary, idx::$singleton_type) = SingletonSubdict(superdict(s), superindices(s)[idx])
 end
 
 # - For an array, which as far as we know has no additional structure, we create
 # a small subdict by default. For large arrays, a large subdict may be more efficient.
-subdict(s::Dictionary, indices::Array) = SmallSubdict(s, indices)
+subdict(s::Dictionary, superindices::Array) = SmallSubdict(s, superindices)
 
 subdict(s::Dictionary, ::Colon) = s
 
 # Avoid creating nested subdicts
-subdict(s::Subdictionary, idx) = subdict(superdict(s), indices(s)[idx])
+subdict(s::Subdictionary, idx) = subdict(superdict(s), superindices(s)[idx])
 
 getindex(s::Span, idx) = Span(subdict(dictionary(s), idx), coeftype(s))

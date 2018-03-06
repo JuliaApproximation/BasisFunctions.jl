@@ -56,7 +56,7 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
-import Domains: domaintype, codomaintype, dimension
+import Domains: domaintype, codomaintype, dimension, domain
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
@@ -117,7 +117,7 @@ export DimensionOperator, dimension_operator
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
-export grid, left, right, support
+export grid, left, right, support, domain, codomain
 export eval_expansion, eval_element, unsafe_eval_element, eval_element_derivative,
         unsafe_eval_element_derivative
 export name
@@ -139,10 +139,12 @@ export coefficient_type, coeftype, similar_span
 
 # from bases/generic/subdicts.jl
 export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
-export subdict, indices
+export subdict, superindices
 
 # from bases/generic/tensorproduct_dict.jl
-export TensorProductDict
+export TensorProductDict, TensorProductDict1, TensorProductDict2,
+        TensorProductDict3
+export recursive_native_index
 
 # from bases/generic/derived_dict.jl
 export DerivedDict
@@ -242,6 +244,7 @@ export derivative, src_dictionary, dest_dictionary
 
 # from bases/generic/euclidean.jl
 export DiscreteVectorSpace, DiscreteSet
+export is_discrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis, DiscreteGridSpace, DiscreteGridSpace1d
@@ -288,8 +291,8 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 # export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-# from bases/translates/set_of_translates.jl
-export CompactPeriodicSetOfTranslates, dual, discrete_dual
+# from bases/translates/translation_dict.jl
+export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
 
@@ -303,7 +306,6 @@ using Base.Cartesian
 
 include("util/common.jl")
 include("util/indexing.jl")
-include("util/composite_index.jl")
 include("util/multiarray.jl")
 include("util/slices.jl")
 include("util/functors.jl")
@@ -384,7 +386,7 @@ include("bases/fourier/sineseries.jl")
 include("bases/splines/bf_splines.jl")
 include("util/bsplines.jl")
 
-include("bases/translates/set_of_translates.jl")
+include("bases/translates/translation_dict.jl")
 include("bases/translates/translates_of_bsplines.jl")
 
 

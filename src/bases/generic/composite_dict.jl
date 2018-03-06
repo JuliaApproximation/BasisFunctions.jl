@@ -58,7 +58,7 @@ length(s::CompositeDict) = s.offsets[end]
 
 length(s::CompositeDict, i::Int) = length(element(s,i))
 
-# Concrete subtypes should override similar_dictionary and call their own constructor
+## Concrete subtypes should override similar_dictionary and call their own constructor
 
 # Using map in the definitions below ensures that a tuple is created when
 # elements(set) is a tuple, and an array when elements(set) is an array.
@@ -78,9 +78,28 @@ for op in (:has_derivative, :has_antiderivative, :has_extension)
     @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
 end
 
-checkbounds(set::CompositeDict, idx::Tuple{Int,Any}) = checkbounds(element(set,idx[1]), idx[2])
+##################
+# Indexing
+##################
 
+multilinear_index(dict::CompositeDict, idx::LinearIndex) =
+    offsets_multilinear_index(unsafe_offsets(dict), idx)
+
+linear_index(dict::CompositeDict, idx::MultilinearIndex) =
+    offsets_linear_index(unsafe_offsets(dict), idx)
+
+
+# The native index is a MultilinearIndex, defined in util/indexing.jl
 ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
+
+# We have to amend the boundscheck ecosystem to catch some cases:
+# - This line will catch indexing with tuples of integers, and we assume
+#   the user wanted to use a CartesianIndex
+checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Any}) =
+    checkbounds(Bool, d, (idx[1], linear_index(element(d,idx[1]), idx[2])))
+# - and this line to avoid an ambiguity
+checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
+    checkbounds(Bool, d, linear_index(d, idx))
 
 getindex(set::CompositeDict, i::Int) = getindex(set, multilinear_index(set, i))
 
@@ -90,10 +109,6 @@ getindex(set::CompositeDict, idx::Tuple{Int,Any}) = getindex(set, idx[1], idx[2]
 getindex(set::CompositeDict, i, j) = set.dicts[i][j]
 
 
-function checkbounds(set::CompositeDict, idx::NTuple{2,Int})
-    checkbounds(element(set,idx[1]), idx[2])
-end
-
 # Translate a linear index into a multilinear index
 in_support(set::CompositeDict, idx, x) = _in_support(set, elements(set), idx, x)
 
@@ -101,7 +116,7 @@ _in_support(set::CompositeDict, dicts, idx::Int, x) = in_support(set, multilinea
 
 _in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[idx[1]], idx[2], x)
 
-eachindex(set::CompositeDict) = CompositeIndexIterator(map(length, elements(set)))
+eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(set)))
 
 ## Extension and restriction
 
