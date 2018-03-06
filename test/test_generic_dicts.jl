@@ -193,11 +193,11 @@ function test_generic_dict_interface(basis, span = Span(basis))
     end
 
     x = fixed_point_in_domain(basis)
-    @test bf(x) ≈ eval_set_element(basis, idx, x)
+    @test bf(x) ≈ eval_element(basis, idx, x)
 
     x_outside = point_outside_domain(basis)
     @test bf(x_outside) == 0
-    @test isnan(eval_set_element(basis, idx, x_outside, FT(NaN)))
+#    @test isnan(eval_element(basis, idx, x_outside, FT(NaN)))
 
 
     # Create a random expansion in the basis to test expansion interface
@@ -246,7 +246,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
             indices = 1
         end
         for idx in indices
-            z = eval_set_element(basis, idx, x)
+            z = eval_element(basis, idx, x)
             types_correct = types_correct & (typeof(z) == RT)
         end
     end
@@ -271,7 +271,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
 
         # Test evaluation on a grid of a single basis function
         idx = random_index(basis)
-        z = basis[idx](grid2)
+        z = eval_element(basis, idx, grid2)
         @test  z ≈ ELT[ basis[idx](grid2[i]) for i in eachindex(grid2) ]
 
     end
@@ -346,17 +346,17 @@ function test_generic_dict_interface(basis, span = Span(basis))
             c1 = zero(span)
             c1[i1] = 1
             u1 = D*c1
-            @test abs(u1(x) - eval_set_element_derivative(basis, i1, x)) < test_tolerance(ELT)
+            @test abs(u1(x) - eval_element_derivative(basis, i1, x)) < test_tolerance(ELT)
 
             c2 = zero(span)
             c2[i2] = 1
             u2 = D*c2
-            @test abs(u2(x) - eval_set_element_derivative(basis, i2, x)) < test_tolerance(ELT)
+            @test abs(u2(x) - eval_element_derivative(basis, i2, x)) < test_tolerance(ELT)
 
             c3 = zero(span)
             c3[i3] = 1
             u3 = D*c3
-            @test abs(u3(x) - eval_set_element_derivative(basis, i3, x)) < test_tolerance(ELT)
+            @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)
         end
     end
 
@@ -490,7 +490,7 @@ function test_tensor_sets(T)
     x1 = T(2//10)
     x2 = T(3//10)
     x3 = T(4//10)
-    @test bf(x1, x2, x3) ≈ eval_set_element(a, 3, x1) * eval_set_element(b, 4, x2) * eval_set_element(c, 5, x3)
+    @test bf(x1, x2, x3) ≈ eval_element(a, 3, x1) * eval_element(b, 4, x2) * eval_element(c, 5, x3)
 
     # Can you iterate over the product set?
     z = zero(T)

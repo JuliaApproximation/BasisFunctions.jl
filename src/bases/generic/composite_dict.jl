@@ -5,8 +5,8 @@
 several subdictionaries. The `CompositeDict` type defines common routines for
 indexing and iteration.
 
-The representation of a CompositeDict is a MultiArray. The outer array of this
-MultiArray adopts the structure of the elements of the CompositeDict: if the elements
+The representation of a `CompositeDict` is a `MultiArray`. The outer array of this
+`MultiArray` adopts the structure of the elements of the `CompositeDict`: if the elements
 are stored in a tuple, the outer array will be a tuple. If the elements are
 stored in an array, the outer array will be an array as well.
 
@@ -27,7 +27,7 @@ const CompositeDictSpan{A,S,T,D <: CompositeDict} = Span{A,S,T,D}
 # We assume that every subset has an indexable field called dicts
 is_composite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
-element(set::CompositeDict, j::Int) = set.dicts[j]
+element(set::CompositeDict, j) = set.dicts[j]
 
 similar_compositespan(s::CompositeDictSpan, spans) =
     Span(similar_dictionary(dictionary(s), map(dictionary, spans)), coeftype(s))
@@ -43,6 +43,13 @@ compute_offsets(dicts::Array) = [0; cumsum(map(length, dicts))]
 
 # Convert a tuple to an array in order to use cumsum like above
 compute_offsets(dicts::NTuple{N,Any}) where {N} = compute_offsets([dict for dict in dicts])
+
+"""
+Pass the internal `offsets` vector of the composite dict. This is not safe because
+the vector is not copied, hence its elements could be changed. That would affect
+the original composite dictionary. Use with care.
+"""
+unsafe_offsets(dict::CompositeDict) = dict.offsets
 
 # Implement equality in terms of equality of the elements.
 ==(s1::CompositeDict, s2::CompositeDict) = (elements(s1) == elements(s2))
@@ -73,43 +80,14 @@ end
 
 checkbounds(set::CompositeDict, idx::Tuple{Int,Any}) = checkbounds(element(set,idx[1]), idx[2])
 
+ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
+
 getindex(set::CompositeDict, i::Int) = getindex(set, multilinear_index(set, i))
 
 # For getindex: return indexed basis function of the underlying set
 getindex(set::CompositeDict, idx::Tuple{Int,Any}) = getindex(set, idx[1], idx[2])
 
 getindex(set::CompositeDict, i, j) = set.dicts[i][j]
-
-MultiLinearIndex{N} = NTuple{N,Int}
-
-function multilinear_index(set::CompositeDict, idx::Int)
-    i = 0
-    while idx > set.offsets[i+1]
-        i += 1
-    end
-    (i,idx-set.offsets[i])
-end
-
-native_index(set::CompositeDict, idx::Int) =
-    native_index(set, multilinear_index(set, idx))
-
-# Conversion from multilinear index
-function native_index(set::CompositeDict, idxm::MultiLinearIndex{2})
-    i,j = idxm
-    (i, native_index(element(set, i), j))
-end
-
-# Convert from a multilinear index
-linear_index(set::CompositeDict, idxm::MultiLinearIndex{2}) = set.offsets[idxm[1]] + idxm[2]
-
-# Convert from a native index (whose type is anything but a tuple of 2 Int's)
-function linear_index(set::CompositeDict, idxn)
-    # We convert the native index in idxn[2] to a linear index
-    i = idxn[1]
-    j = linear_index(element(set, i), idxn[2])
-    # Now we have a multilinear index and we can use the routine above
-    linear_index(set, (i,j))
-end
 
 
 function checkbounds(set::CompositeDict, idx::NTuple{2,Int})
@@ -135,16 +113,16 @@ for op in [:extension_operator, :restriction_operator]
 end
 
 # Calling and evaluation
-eval_element(set::CompositeDict, idx::Int, x) = eval_element(set, multilinear_index(set,idx), x)
+unsafe_eval_element(set::CompositeDict, idx::Int, x) = unsafe_eval_element(set, multilinear_index(set,idx), x)
 
-function eval_element(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
-    convert(T, eval_element( element(set, idx[1]), idx[2], x))
+function unsafe_eval_element(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
+    convert(T, unsafe_eval_element( element(set, idx[1]), idx[2], x))
 end
 
-eval_element_derivative(set::CompositeDict, idx::Int, x) = eval_element_derivative(set, multilinear_index(set,idx), x)
+unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x)
 
-function eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
-    convert(T, eval_element_derivative( element(set, idx[1]), idx[2], x))
+function unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
+    convert(T, unsafe_eval_element_derivative( element(set, idx[1]), idx[2], x))
 end
 
 ## Differentiation

@@ -1,16 +1,21 @@
 # fourier.jl
 
 """
-A Fourier basis on the interval `[0,1]`. The precise basis functions are:
-`exp(2 π i k)`
-with `k` ranging from `-N` to `N` for Fourier series of odd length `2N+1`.
+A Fourier basis on the interval `[0,1]`. The basis functions are given by
+`exp(2 π i k)`, with `k` ranging from `-N` to `N` for Fourier series of odd
+length `2N+1` and from `-N+1` to `N` for even length. In the latter case, the
+highest frequency basis function is a cosine.
 
 The basis functions are ordered the way they are expected by a typical FFT
-implementation. The frequencies k are in the following order:
-0 1 2 3 ... N -N -N+1 ... -2 -1
-
-Parameter EVEN is true if the length of the corresponding Fourier series is
-even. In that case, the largest frequency function in the set is a cosine.
+implementation. The frequencies k are in the following order
+```
+0 1 2 3 ... N -N -N+1 ... -2 -1,
+```
+for odd length and
+```
+0 1 2 3 ... N -N+1 ... -2 -1,
+```
+for even length.
 """
 struct FourierBasis{T <: Real} <: Dictionary{T,Complex{T}}
 	n	::	Int
@@ -32,6 +37,9 @@ function FourierBasis(n, a::Number, b::Number)
 	FourierBasis{T}(n, a, b)
 end
 
+length(b::FourierBasis) = b.n
+oddlength(b::FourierBasis) = isodd(length(b))
+evenlength(b::FourierBasis) = iseven(length(b))
 
 instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis{T}(n)
 
@@ -68,10 +76,71 @@ compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-length(b::FourierBasis) = b.n
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), domaintype(b))
 
-oddlength(b::FourierBasis) = isodd(length(b))
-evenlength(b::FourierBasis) = iseven(length(b))
+
+##################
+# Native indices
+##################
+
+const FourierFrequency = NativeIndex{:fourier}
+
+frequency(idxn::FourierFrequency) = value(idxn)
+
+"""
+`FFTIndexList` defines the map from native indices to linear indices
+for a finite Fourier basis, when the indices are ordered in the way they
+are expected in the FFT routine.
+"""
+struct FFTIndexList <: IndexList{FourierFrequency}
+	n	::	Int
+end
+
+length(list::FFTIndexList) = list.n
+size(list::FFTIndexList) = (list.n,)
+
+# The frequency of an even Fourier basis ranges from -N+1 to N.
+# The frequency of an odd Fourier basis ranges from -N to N.
+# This makes for a small difference in the ordering.
+function getindex(m::FFTIndexList, idx::Int)
+	n = length(m)
+	nhalf = n >> 1
+	if idx <= nhalf+1
+		FourierFrequency(idx-1)
+	else
+		if iseven(n)
+			FourierFrequency(idx-2*nhalf-1)
+		else
+			FourierFrequency(idx-2*nhalf-2)
+		end
+	end
+end
+
+function getindex(list::FFTIndexList, idxn::FourierFrequency)
+	k = value(idxn)
+	k >= 0 ? k+1 : length(list)+k+1
+end
+
+ordering(b::FourierBasis) = FFTIndexList(length(b))
+
+# Convenience functions: compute with integer frequencies, rather than FourierFrequency types
+idx2frequency(b::FourierBasis, idx) = frequency(native_index(b, idx))
+frequency2idx(b::FourierBasis, k) = linear_index(b, FourierFrequency(k))
+
+nhalf(b::FourierBasis) = length(b)>>1
+
+maxfrequency(b::FourierBasis) = nhalf(b)
+minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
+
+
+
+#############
+# Evaluation
+#############
+
+domain(b::FourierBasis) = UnitInterval{domaintype(b)}()
+
+support(b::FourierBasis, i) = domain(b)
 
 left(b::FourierBasis) = zero(domaintype(b))
 left(b::FourierBasis, idx) = left(b)
@@ -81,82 +150,58 @@ right(b::FourierBasis, idx) = right(b)
 
 period(b::FourierBasis{T}) where {T} = T(1)
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), domaintype(b))
-
-nhalf(b::FourierBasis) = length(b)>>1
-
-
-# The frequency of an even Fourier basis ranges from -N+1 to N.
-# The frequency of an odd Fourier basis ranges from -N to N.
-# This makes for a small difference in the ordering.
-function idx2frequency(b::FourierBasis, idx)
-	nh = nhalf(b)
-	if idx <= nhalf(b)+1
-		idx-1
-	else
-		if evenlength(b)
-			idx-2*nh-1
-		else
-			idx-2*nh-2
-		end
-	end
-end
-
-frequency2idx(b::FourierBasis, freq) = freq >= 0 ? freq+1 : length(b)+freq+1
-
-# The native index of a FourierBasis is the frequency. Since that is an integer,
-# it is wrapped in a different type.
-struct FourierFrequency <: NativeIndex
-	index	::	Int
-end
-native_index(b::FourierBasis, idx::Int) = FourierFrequency(idx2frequency(b, idx))
-linear_index(b::FourierBasis, idxn::NativeIndex) = frequency2idx(b, index(idxn))
 
 # One has to be careful here not to match Floats and BigFloats by accident.
-# Hence the conversions to T in the lines below.
-function eval_element(b::FourierBasis, idx::Int, x)
-	T = domaintype(b)
-	k = idx2frequency(b, idx)
-	if oddlength(b) || idx != nhalf(b)+1
-		# Even-length Fourier series have a cosine at the maximal frequency
-		exp(x * 2 * T(pi) * 1im  * k)
+# Hence the conversions to S in the lines below.
+function unsafe_eval_element(b::FourierBasis, idxn::FourierFrequency, x)
+	S = domaintype(b)
+	k = frequency(idxn)
+
+	# Even-length Fourier series have a cosine at the maximal frequency.
+	# We do a test to distinguish between the complex exponentials and the cosine
+	if oddlength(b) || k != maxfrequency(b)
+		exp(x * 2 * S(pi) * 1im  * k)
 	else
 		# We convert to a complex number for type safety here, because the
 		# exponentials above are complex-valued but the cosine is real
-		Complex{T}(cos(x * 2 * T(pi) * k))
+		complex(cospi(2*S(x)*k))
 	end
 end
 
-function eval_element_derivative(b::FourierBasis, idx::Int, x)
-	# The structure for this reason is similar to the eval_element routine above
-	T = domaintype(b)
-	k = idx2frequency(b, idx)
-	if oddlength(b) || idx != nhalf(b)+1
-		arg = 2*T(pi)*1im*k
+function unsafe_eval_element_derivative(b::FourierBasis, idxn::FourierFrequency, x)
+	# The structure for this reason is similar to the unsafe_eval_element routine above
+	S = domaintype(b)
+	k = frequency(idxn)
+	if oddlength(b) || k != maxfrequency(b)
+		arg = 2*S(pi)*1im*k
 		arg * exp(arg * x)
 	else
-		arg = 2*T(pi)*k
-		Complex{T}(-arg * sin(arg*x))
+		arg = 2*S(pi)*k
+		complex(-arg * sin(arg*x))
 	end
 end
 
-function moment(b::FourierBasis, idx)
+function unsafe_moment(b::FourierBasis, idxn::FourierFrequency)
 	T = codomaintype(b)
-	idx == 1 ? T(2) : T(0)
+	frequency(idx) == 0 ? T(1) : T(0)
 end
+
+
 
 extension_size(b::FourierBasis) = evenlength(b) ? 2*length(b) : 2*length(b)+1
 
 approx_length(b::FourierBasis, n::Int) = n
 
+
+
 "Shift an expansion to the right by delta."
 function shift(b::FourierBasis, coefficients, delta)
 	# Only works for odd-length Fourier series for now
 	@assert oddlength(b)
-	T = domaintype(b)
+	S = domaintype(b)
 	coef2 = copy(coefficients)
 	for i in eachindex(coefficients)
-		coef2[i] *= exp(2 * T(pi) * im * idx2frequency(b, i) * delta)
+		coef2[i] *= exp(2 * S(pi) * im * idx2frequency(b, i) * delta)
 	end
 	coef2
 end

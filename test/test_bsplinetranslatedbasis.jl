@@ -34,7 +34,7 @@ function test_generic_periodicbsplinebasis(T)
         n = 8
         b=B(n,0,T)
         t = linspace(T(0),T(1))
-        fp = map(x->BasisFunctions.eval_element(b,1,x),t)
+        fp = map(x->BasisFunctions.unsafe_eval_element(b,1,x),t)
         fd = 1/n*map(x->BasisFunctions.eval_dualelement(b,1,x),t)
         @test fp≈fd
     end
@@ -377,10 +377,10 @@ end
 # k = 0
 # b = BSplineTranslatesBasis(n,k)
 # t = linspace(-0,2,200)
-# f = map(x->eval_element(b,1,x), t)
+# f = map(x->unsafe_eval_element(b,1,x), t)
 # using Plots
 # plot!(t,f)
-# @which eval_element(b,1,.25)
+# @which unsafe_eval_element(b,1,.25)
 # BasisFunctions.fun(b)
 # f = map(BasisFunctions.fun(b), t)
 # plot!(t,f)

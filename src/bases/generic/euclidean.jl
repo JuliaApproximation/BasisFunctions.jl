@@ -9,7 +9,7 @@ end
 
 coefficient_type(::Type{DiscreteVectorSpace{S,T}}) where {S,T} = T
 
-eval_element(set::DiscreteVectorSpace{S,T}, idx, x) where {S,T} =
+unsafe_eval_element(set::DiscreteVectorSpace{S,T}, idx, x) where {S,T} =
     idx == x ? one(T) : zero(T)
 
 is_discrete(dict::Dictionary) = false

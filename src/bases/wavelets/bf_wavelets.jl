@@ -85,7 +85,7 @@ approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
 
 extension_size(b::WaveletBasis) = 2*length(b)
 
-function eval_element{T, S<:Real}(b::WaveletBasis{T}, idx::Int, x::S; xtol::S = 1e-4, options...)
+function unsafe_eval_element{T, S<:Real}(b::WaveletBasis{T}, idx::Int, x::S; xtol::S = 1e-4, options...)
   kind, j, k = native_index(b, idx)
   evaluate_periodic(primal, kind, wavelet(b), j, k, x; xtol = xtol, options...)
 end
@@ -135,12 +135,12 @@ end
 
 # Used for fast plot of all elements in a WaveletBasis
 #TODO make in place implementation of evaluate_periodic_in_dyadic_points
-function eval_set_element!(result, set::WaveletBasis, idx, grid::DyadicPeriodicEquispacedGrid, outside_value = zero(eltype(set)))
+function eval_element!(result, set::WaveletBasis, idx, grid::DyadicPeriodicEquispacedGrid, outside_value = zero(eltype(set)))
   if (1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1)
     kind, j, k = native_index(set, idx)
     result = evaluate_periodic_in_dyadic_points(primal, kind, wavelet(set), j, k, dyadic_length(grid))
   else
-    eval_set_element!(result, set, idx, PeriodicEquispacedGrid(grid), outside_value)
+    eval_element!(result, set, idx, PeriodicEquispacedGrid(grid), outside_value)
   end
 end
 

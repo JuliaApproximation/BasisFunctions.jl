@@ -72,4 +72,4 @@ function fixed_point_in_domain(basis::Dictionary)
     point_in_domain(basis, w)
 end
 
-random_index(dict::Dictionary) = 1 + Int(floor(rand()*length(dict)))
+random_index(dict::Dictionary) = 1 + floor(Int, rand()*length(dict))

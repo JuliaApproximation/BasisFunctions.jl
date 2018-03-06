@@ -70,8 +70,10 @@ end
 
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
-eval_element_derivative(b::OPS, idx::Int, x) = recurrence_eval_derivative(b, idx, x)
+unsafe_eval_element(b::OPS, idx::PolynomialDegree, x) =
+    recurrence_eval(b, idx, x)
+unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x) =
+    recurrence_eval_derivative(b, idx, x)
 
 
 """
@@ -85,20 +87,21 @@ with the coefficients implemented by the `rec_An`, `rec_Bn` and `rec_Cn`
 functions and with the initial value implemented with the `p0` function.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
-function recurrence_eval(b::OPS, idx::Int, x)
+function recurrence_eval(b::OPS, idx::PolynomialDegree, x)
 	T = codomaintype(b)
     z0 = T(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
 
-    if idx == 1
+    d = degree(idx)
+    if d == 0
         return z0
     end
-    if idx == 2
+    if d == 1
         return z1
     end
 
     z = z1
-    for i = 1:idx-2
+    for i = 1:d-1
         z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
         z0 = z1
         z1 = z
@@ -151,23 +154,24 @@ end
 Evaluate the derivative of an orthogonal polynomial, based on taking the
 derivative of the three-term recurrence relation (see `recurrence_eval`).
 """
-function recurrence_eval_derivative(b::OPS, idx::Int, x)
+function recurrence_eval_derivative(b::OPS, idx::PolynomialDegree, x)
 	T = codomaintype(b)
     z0 = one(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
     z0_d = zero(T)
     z1_d = convert(T, rec_An(b, 0))
 
-    if idx == 1
+    d = degree(idx)
+    if d == 0
         return z0_d
     end
-    if idx == 2
+    if d == 1
         return z1_d
     end
 
     z = z1
     z_d = z1_d
-    for i = 1:idx-2
+    for i = 1:d-1
         z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
         z_d = (rec_An(b, i)*x + rec_Bn(b, i)) * z1_d + rec_An(b, i)*z1 - rec_Cn(b, i) * z0_d
         z0 = z1

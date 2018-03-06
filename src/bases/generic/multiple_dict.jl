@@ -41,7 +41,6 @@ function MultiDict(dicts)
     MultiDict(map(s->promote_domaintype(s,S), dicts), S, T)
 end
 
-
 similar_dictionary(set::MultiDict, dicts) = MultiDict(dicts)
 
 multidict(set::Dictionary) = set
@@ -71,8 +70,11 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)), reduce
 # than an array of Dictionary's
 # vcat(s1::Dictionary, s2::Dictionary) = multidict(s1,s2)
 
-⊕(s1::Dictionary, s2::Dictionary) = multidict(s1, s2)
-⊕(s1::Span, s2::Span) = multispan(s1, s2)
+⊕(d1::Dictionary, d2::Dictionary) = multidict(d1, d2)
+⊕(d1::Span, d2::Span) = multispan(d1, d2)
+
+∪(d1::Dictionary, d2::Dictionary) =
+    error("Union of dictionaries is not supported: use ⊕ instead")
 
 name(s::MultiDict) = "A dictionary consisting of $(nb_elements(s)) dictionaries"
 
@@ -109,7 +111,7 @@ end
 for op in [:left, :right, :moment, :norm]
     @eval $op(set::MultiDict, idx::Int) = $op(set, multilinear_index(set, idx))
     # Pass along a linear or a native index to the subset
-    @eval function $op(set::MultiDict, idx::Union{MultiLinearIndex,Tuple{Int,Any}})
+    @eval function $op(set::MultiDict, idx::Union{MultilinearIndex,Tuple{Int,Any}})
         i,j = idx
         $op(set.dicts[i], j)
     end

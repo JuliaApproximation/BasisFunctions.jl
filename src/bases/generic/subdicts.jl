@@ -105,9 +105,9 @@ end
 
 in_support(d::Subdictionary, i, x) = in_support(superdict(d), indices(d, i), x)
 
-eval_element(d::Subdictionary, i, x) = eval_element(superdict(d), indices(d, i), x)
+unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), indices(d, i), x)
 
-eval_element_derivative(d::Subdictionary, i, x) = eval_element_derivative(superdict(d), indices(d, i), x)
+unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), indices(d, i), x)
 
 
 
@@ -241,7 +241,7 @@ eachindex(s::SingletonSubdict) = 1:1
 # Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars. Here, for convenience, you can call a function with
 # x, y, z arguments and so on. These are wrapped into an SVector.
-(s::SingletonSubdict)(x) = eval_set_element(superdict(s), index(s), x)
+(s::SingletonSubdict)(x) = eval_element(superdict(s), index(s), x)
 (s::SingletonSubdict)(x, y...) = s(SVector(x, y...))
 
 

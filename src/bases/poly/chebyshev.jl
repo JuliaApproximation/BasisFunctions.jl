@@ -76,35 +76,36 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
-
+domain(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype
-function eval_element(b::ChebyshevBasis, idx::Int, x::Real)
-    abs(x) <= 1 ? cos((idx-1)*acos(x)) : recurrence_eval(b, idx, x)
+function unsafe_eval_element(b::ChebyshevBasis, idx::PolynomialDegree, x::Real)
+    abs(x) <= 1 ? cos(degree(idx)*acos(x)) : recurrence_eval(b, idx, x)
 end
 
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
-# eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+# unsafe_eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function eval_element_derivative(b::ChebyshevBasis, idx::Int, x)
+function unsafe_eval_element_derivative(b::ChebyshevBasis, idx::PolynomialDegree, x)
     T = codomaintype(b)
-    if idx == 1
+    d = degree(idx)
+    if d == 0
         T(0)
     else
-        (idx-1) * eval_element(ChebyshevU(length(b)), idx-1, x)
+        d * unsafe_eval_element(ChebyshevU(length(b)), idx-1, x)
     end
 end
 
-function moment(b::ChebyshevBasis{T}, idx::Int) where {T}
-    n = idx-1
-    if n == 0
+function unsafe_moment(b::ChebyshevBasis{T}, idx::PolynomialDegree) where {T}
+    d = degree(idx)
+    if d == 0
         T(2)
     else
-        isodd(n) ? zero(T) : -T(2)/((n+1)*(n-1))
+        isodd(d) ? zero(T) : -T(2)/((d+1)*(d-1))
     end
 end
 
@@ -320,9 +321,10 @@ resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
 
 name(b::ChebyshevU) = "Chebyshev series (second kind)"
 
-function eval_element(b::ChebyshevU, idx::Int, x::Real)
+function unsafe_eval_element(b::ChebyshevU, idx::PolynomialDegree, x::Real)
     # Don't use the formula when |x|=1, because it will generate NaN's
-    abs(x) < 1 ? sin(idx*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
+    d = degree(idx)
+    abs(x) < 1 ? sin((d+1)*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
 end
 
 left(b::ChebyshevU{T}) where {T} = -one(T)

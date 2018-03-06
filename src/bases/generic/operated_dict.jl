@@ -56,11 +56,11 @@ end
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src_dictionary(s))
 
 
-eval_element(set::OperatedDict, i, x) = _eval_element(set, operator(set), i, x)
+unsafe_eval_element(set::OperatedDict, i, x) = _unsafe_eval_element(set, operator(set), i, x)
 
-function _eval_element(s::OperatedDict, op::AbstractOperator, i, x)
+function _unsafe_eval_element(s::OperatedDict, op::AbstractOperator, i, x)
     if is_diagonal(op)
-        diagonal(op, i) * eval_element(src_dictionary(s), i, x)
+        diagonal(op, i) * unsafe_eval_element(src_dictionary(s), i, x)
     else
         idx = native_index(s, i)
         s.scratch_src[idx] = 1
@@ -70,7 +70,7 @@ function _eval_element(s::OperatedDict, op::AbstractOperator, i, x)
     end
 end
 
-_eval_element(s::OperatedDict, op::ScalingOperator, i, x) = diagonal(op, i) * eval_element(src_dictionary(s), i, x)
+_unsafe_eval_element(s::OperatedDict, op::ScalingOperator, i, x) = diagonal(op, i) * unsafe_eval_element(src_dictionary(s), i, x)
 
 ## Properties
 

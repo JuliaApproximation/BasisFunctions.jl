@@ -13,7 +13,6 @@ struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
         offsets = compute_offsets(dicts)
         new(dicts, offsets, partition)
     end
-
 end
 
 const PiecewiseDictSpan{A,S,T,D <: PiecewiseDict} = Span{A,S,T,D}
@@ -85,8 +84,8 @@ end
 # Perhaps this should change, and any function should be zero outside its support.
 getindex(set::PiecewiseDict, i, j) = subdict(set, (i,j))
 
-function eval_element(set::PiecewiseDict, idx::Tuple{Int,Any}, x)
-    x ∈ set.partition[idx[1]] ? eval_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))
+function unsafe_eval_element(set::PiecewiseDict, idx::Tuple{Int,Any}, x)
+    x ∈ set.partition[idx[1]] ? unsafe_eval_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))
 end
 
 function eval_expansion(set::PiecewiseDict, x)

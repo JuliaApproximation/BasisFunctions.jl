@@ -56,9 +56,9 @@ for T in [Float64,BigFloat,]
     println()
     delimit("T is $T", )
 
-    delimit("Operators")
-    test_operators(T)
-    test_generic_operators(T)
+    # delimit("Operators")
+    # test_operators(T)
+    # test_generic_operators(T)
 
     delimit("Generic interfaces")
 

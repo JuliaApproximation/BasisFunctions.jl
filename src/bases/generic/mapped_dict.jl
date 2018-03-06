@@ -62,11 +62,11 @@ _name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(r
 
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
-eval_element(s::MappedDict, idx, y) = eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
+unsafe_eval_element(s::MappedDict, idx, y) = unsafe_eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
 
-function eval_element_derivative(s::MappedDict1d, idx, y)
+function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
     x = apply_inverse(mapping(s), y)
-    d = eval_element_derivative(superdict(s), idx, x)
+    d = unsafe_eval_element_derivative(superdict(s), idx, x)
     z = d / jacobian(mapping(s), y)
 end
 

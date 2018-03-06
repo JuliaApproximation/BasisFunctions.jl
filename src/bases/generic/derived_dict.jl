@@ -77,7 +77,7 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
-    :elements, :tail)
+    :elements, :tail, :ordering)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -121,9 +121,9 @@ for op in (:left, :right)
     @eval $op(s::DerivedDict, idx) = $op(superdict(s), idx)
 end
 
-eval_element(s::DerivedDict, idx, x) = eval_element(superdict(s), idx, x)
+unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
 
-eval_element_derivative(s::DerivedDict, idx, x) = eval_element_derivative(superdict(s), idx, x)
+unsafe_eval_element_derivative(s::DerivedDict, idx, x) = unsafe_eval_element_derivative(superdict(s), idx, x)
 
 
 #########################

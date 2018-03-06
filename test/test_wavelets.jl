@@ -9,11 +9,11 @@ function bf_wavelets_implementation_test()
   b2 = CDFWaveletBasis(3,1,5)
   b = CDFWaveletBasis(1,1,3)
 
-  eval_element(b, 1, 0.5)
+  unsafe_eval_element(b, 1, 0.5)
   println("Timings should be in the order of 0.001 seconds, 22.01k allocations, 625.094 KB")
   @time begin
     for x in linspace(0,1,1000)
-      eval_element(b, 1, x)
+      unsafe_eval_element(b, 1, x)
     end
   end
   supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));

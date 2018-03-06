@@ -21,8 +21,8 @@ fun(b::SetOfTranslates) = b.fun
 fun(s::TranslatesSpan) = fun(dictionary(s))
 
 # Indices set of translates naturally range from 0 to n-1
-native_index(b::SetOfTranslates, idx::Int) = idx-1
-linear_index(b::SetOfTranslates, idxn::Int) = idxn+1
+const SOT_Index = ShiftedIndex
+ordering(b::SetOfTranslates) = ShiftedIndexList(length(b), 1)
 
 has_unitary_transform(::SetOfTranslates) = false
 
@@ -41,9 +41,9 @@ left{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.a)
 
 right{T}(set::PeriodicSetOfTranslates{T})::real(T) = real(T)(set.b)
 
-left(set::PeriodicSetOfTranslates, j::Int) = left(set)
+left(set::PeriodicSetOfTranslates, j) = left(set)
 
-right(set::PeriodicSetOfTranslates, j::Int) = right(set)
+right(set::PeriodicSetOfTranslates, j) = right(set)
 
 has_grid(::PeriodicSetOfTranslates) = true
 
@@ -98,9 +98,11 @@ function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSp
     default_evaluation_operator(s, dgs; options...)
 end
 
-eval_element(b::PeriodicSetOfTranslates, idx::Int, x::Real) = fun(b)(x-native_index(b, idx)*stepsize(b))
+unsafe_eval_element(b::PeriodicSetOfTranslates, idxn::SOT_Index, x::Real) =
+    fun(b)(x-value(idxn)*stepsize(b))
 
-eval_dualelement(b::PeriodicSetOfTranslates, idx::Int, x::Real) = eval_expansion(b, circshift(dualgramcolumn(Span(b)),native_index(b, idx)), x)
+eval_dualelement(b::PeriodicSetOfTranslates, idxn::SOT_Index, x::Real) =
+    eval_expansion(b, circshift(dualgramcolumn(Span(b)),value(idxn)), x)
 
 Gram(s::PeriodicTranslatesSpan; options...) = CirculantOperator(s, s, primalgramcolumn(s; options...))
 
@@ -176,14 +178,14 @@ right(b::CompactPeriodicSetOfTranslates, j::Int) = left(b, j) + length_compact_s
 in_support(set::CompactPeriodicSetOfTranslates, idx::Int, x::Real) =
     in_compact_support(set, idx, x)
 
-eval_element(b::CompactPeriodicSetOfTranslates, idx::Int, x::Real) =
+unsafe_eval_element(b::CompactPeriodicSetOfTranslates, idx::Int, x::Real) =
     eval_compact_element(b, idx, x)
 
 eval_expansion(b::CompactPeriodicSetOfTranslates, coef, x::Real) =
     eval_compact_expansion(b, coef, x)
 
 function eval_compact_element(b::CompactPeriodicSetOfTranslates{T}, idx::Int, x::Real) where {T}
-  !in_support(b, idx, x) ? zero(T) : fun(b)(x-native_index(b, idx)*stepsize(b))
+    !in_support(b, idx, x) ? zero(T) : fun(b)(x-native_index(b, idx)*stepsize(b))
 end
 
 function in_compact_support(set::CompactPeriodicSetOfTranslates, idx::Int, x::Real)
@@ -198,7 +200,7 @@ function eval_compact_expansion{T <: Number}(b::CompactPeriodicSetOfTranslates, 
 	z = zero(T)
 	for idxn = overlapping_elements(b, x)
 		idx = linear_index(b, mod(idxn,length(b)))
-		z = z + coef[idx] * eval_element(b, idx, x)
+		z = z + coef[idx] * unsafe_eval_element(b, idx, x)
 	end
 	z
 end
@@ -291,4 +293,5 @@ change_of_basis(b::PeriodicSetOfTranslates, ::Type{DiscreteDualPeriodicSetOfTran
 
 resize(b::DiscreteDualPeriodicSetOfTranslates, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 
-dict_promote_domaintype{T,S}(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) = discrete_dual(promote_domaintype(dual(b), S); oversampling=default_oversampling(b))
+dict_promote_domaintype(b::DiscreteDualPeriodicSetOfTranslates{T}, ::Type{S}) where {T,S} =
+    discrete_dual(promote_domaintype(dual(b), S); oversampling=default_oversampling(b))

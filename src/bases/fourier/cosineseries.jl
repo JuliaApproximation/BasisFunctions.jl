@@ -52,16 +52,47 @@ right(b::CosineSeries, idx) = right(b)
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(domaintype(b)), one(domaintype(b)))
+grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
 
 
-native_index(b::CosineSeries, idx::Int) = idx-1
-linear_index(b::CosineSeries, idxn::Int) = idxn+1
+##################
+# Native indices
+##################
 
-eval_element(b::CosineSeries{T}, idx::Int, x) where {T} = cos(x * T(pi) * (idx-1))
+const CosineFrequency = NativeIndex{:cosine}
 
-function eval_element_derivative(b::CosineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * (idx-1)
+frequency(idxn::CosineFrequency) = value(idxn)
+
+"""
+`CosineIndices` defines the map from native indices to linear indices
+for a finite number of cosines.
+"""
+struct CosineIndices <: IndexList{CosineFrequency}
+	n	::	Int
+end
+
+size(list::CosineIndices) = (list.n,)
+
+getindex(list::CosineIndices, idx::Int) = CosineFrequency(idx-1)
+getindex(list::CosineIndices, idxn::CosineFrequency) = value(idxn)+1
+
+ordering(b::CosineSeries) = CosineIndices(length(b))
+
+
+##################
+# Evaluation
+##################
+
+domain(b::CosineSeries) = UnitInterval{domaintype(b)}()
+
+support(b::CosineSeries, i) = domain(b)
+
+
+unsafe_eval_element(b::CosineSeries{T}, idx::CosineFrequency, x) where {T} =
+    cospi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     -arg * sin(arg * x)
 end
 
@@ -88,14 +119,14 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
 end
 
 function Gram(s::CosineSpan; options...)
-    T = coeftype(s)
+    T = dict_codomaintype(s)
     diag = ones(T,length(s))/2
     diag[1] = 1
     DiagonalOperator(s, s, diag)
 end
 
 function UnNormalizedGram(s::CosineSpan, oversampling)
-    T = coeftype(s)
+    T = dict_codomaintype(s)
     d = T(length_oversampled_grid(dictionary(s), oversampling))/2*ones(T,length(s))
     d[1] = length_oversampled_grid(dictionary(s), oversampling)
     DiagonalOperator(s, s, d)

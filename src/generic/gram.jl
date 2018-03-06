@@ -84,10 +84,10 @@ dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
 dot(s::Span, f1::Int, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
-    dot(s, x->eval_element(dictionary(s), f1, x), f2, nodes; options...)
+    dot(s, x->unsafe_eval_element(dictionary(s), native_index(dictionary(s), f1), x), f2, nodes; options...)
 
 dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(s)); options...) =
-    dot(s, x->eval_element(dictionary(s), f1, x), x->eval_element(dictionary(s), f2, x), nodes; options...)
+    dot(s, x->unsafe_eval_element(dictionary(s), f1, x), x->unsafe_eval_element(dictionary(s), f2, x), nodes; options...)
 
 ##########################
 ## Discrete Gram operators
@@ -159,7 +159,7 @@ dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=nativ
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
 dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...) =
-    dot(span1, span2, x->eval_element(dictionary(span1), f1, x),x->eval_element(dictionary(span2), f2, x), nodes; options...)
+    dot(span1, span2, x->unsafe_eval_element(dictionary(span1), f1, x),x->unsafe_eval_element(dictionary(span2), f2, x), nodes; options...)
 
 function native_nodes(dict1::Dictionary1d, dict2::Dictionary1d)
     @assert left(dict1) ≈ left(dict2)

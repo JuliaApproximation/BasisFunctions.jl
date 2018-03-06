@@ -1,21 +1,29 @@
 # tensorproduct_dict.jl
 
-product_domaintype(dict::Dictionary...) = Tuple{map(domaintype, dict)...}
 
 """
 A `TensorProductDict` is itself a dictionary: the tensor product of a number of
 dictionaries.
 
-struct TensorProductDict{TS,S,T} <: Dictionary{S,T}
+struct TensorProductDict{N,DT,S,T} <: Dictionary{S,T}
 
 Parameters:
-- TS is a tuple of types, representing the (possibly different) types of the dicts.
+- DT is a tuple of types, representing the (possibly different) types of the dicts.
+- N is the dimension of the product (equal to the length of the DT tuple)
 - S is the domain type
 - T is the codomain type.
 """
-struct TensorProductDict{TS,S,T} <: Dictionary{S,T}
-    dicts   ::  TS
+struct TensorProductDict{N,DT,S,T} <: Dictionary{S,T}
+    dicts   ::  DT
+    size    ::  NTuple{N,Int}
+
+    TensorProductDict{N,DT,S,T}(dicts::DT) where {N,DT,S,T} = new(dicts, map(length, dicts))
 end
+
+const TensorProductDict1{DT,S,T} = TensorProductDict{1,DT,S,T}
+const TensorProductDict2{DT,S,T} = TensorProductDict{2,DT,S,T}
+const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
+const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 const TensorProductSpan{A,S,T,D <: TensorProductDict} = Span{A,S,T,D}
 
@@ -24,32 +32,49 @@ is_composite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::Range) = tensorproduct(dict.dicts[range]...)
-nb_elements(dict::TensorProductDict{TS}) where {TS} = tuple_length(TS)
+nb_elements(dict::TensorProductDict{N}) where {N} = N
+
+# # The routine below is a type-stable way to obtain the length of the product set
+# # Note that nb_elements above also returns N, but as a value and not as a type parameter
+# @generated function product_length(s::TensorProductDict{DT}) where {DT}
+#     LEN = tuple_length(DT)
+#     :(Val{$LEN}())
+# end
+
 
 function TensorProductDict(dict::Dictionary)
     warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductDict.")
     dict
 end
 
-# TODO: what should be the domaintype of the tensor product dict?
+product_domaintype(dict::Dictionary...) = Tuple{map(domaintype, dict)...}
+
 function TensorProductDict(dicts::Dictionary...)
+    N = length(dicts)
+    DT = typeof(dicts)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
-    TensorProductDict{typeof(dicts),S,T}(dicts)
+    TensorProductDict{N,DT,S,T}(dicts)
 end
 
-# We need a more generic definition, but one can't iterate over a tuple type nor index it
-dict_promote_domaintype(s::TensorProductDict, ::Type{NTuple{N,T}}) where {N,T} = TensorProductDict(map(x->promote_domaintype(x, T), elements(s))...)
+size(d::TensorProductDict) = d.size
+size(d::TensorProductDict, j::Int) = d.size[j]
 
-dict_promote_domaintype(s::TensorProductDict, ::Type{Tuple{A,B}}) where {A,B} =
+length(d::TensorProductDict) = prod(size(d))
+
+# We need a more generic definition, but one can't iterate over a tuple type nor index it
+dict_promote_domaintype(s::TensorProductDict{N}, ::Type{NTuple{N,T}}) where {N,T} =
+    TensorProductDict(map(x->promote_domaintype(x, T), elements(s))...)
+
+dict_promote_domaintype(s::TensorProductDict2, ::Type{Tuple{A,B}}) where {A,B} =
     TensorProductDict(promote_domaintype(element(s, 1), A), promote_domaintype(element(s, 2), B))
 
-dict_promote_domaintype(s::TensorProductDict, ::Type{Tuple{A,B,C}}) where {A,B,C} =
+dict_promote_domaintype(s::TensorProductDict3, ::Type{Tuple{A,B,C}}) where {A,B,C} =
     TensorProductDict(promote_domaintype(element(s, 1), A),
                         promote_domaintype(element(s, 2), B),
                         promote_domaintype(element(s, 3), C))
 
-dict_promote_domaintype(s::TensorProductDict, ::Type{Tuple{A,B,C,D}}) where {A,B,C,D} =
+dict_promote_domaintype(s::TensorProductDict4, ::Type{Tuple{A,B,C,D}}) where {A,B,C,D} =
     TensorProductDict(promote_domaintype(element(s, 1), A),
                         promote_domaintype(element(s, 2), B),
                         promote_domaintype(element(s, 3), C),
@@ -64,7 +89,13 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
-## Indices
+
+##################
+# Native indices
+##################
+
+
+ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
 # A tensor product set s has three types of indices:
 # - Linear index: this is an Int, ranging from 1 to length(s)
@@ -132,11 +163,11 @@ for op in (:derivative_space, :antiderivative_space)
         tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end
 
-resize(s::TensorProductDict, n) = TensorProductDict(map( (s_i,n_i)->resize(s_i, n_i), elements(s), n)...)
-resize(s::TensorProductDict, n::Int) = resize(s, approx_length(s, n))
+resize(d::TensorProductDict, n) = TensorProductDict(map( (d_i,n_i)->resize(d_i, n_i), elements(d), n)...)
+resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 
 
-# nested_vector{TS}(set::TensorProductDict{TS}, x) = _nested_vector(TS, set, x)
+# nested_vector{DT}(set::TensorProductDict{DT}, x) = _nested_vector(DT, set, x)
 #
 # _nested_vector{A}(::Type{Tuple{A}}, set, x::SVector{1}) = x
 # _nested_vector{A}(::Type{Tuple{A}}, set, x::Number) = x
@@ -153,19 +184,18 @@ in_support(set::TensorProductDict, idx, x) =
 
 # This line is a bit slower than the lines below:
 _in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
-# Cases of elements of the set with dimension larger than 1 are not working yet
 
 # That is why we handcode a few cases:
-_in_support(::TensorProductDict, dicts, idx::NTuple{1,Int}, x) =
+_in_support(::TensorProductDict1, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1])
 
-_in_support(::TensorProductDict, dicts, idx::NTuple{2,Int}, x) =
+_in_support(::TensorProductDict2, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2])
 
-_in_support(::TensorProductDict, dicts, idx::NTuple{3,Int}, x) =
+_in_support(::TensorProductDict3, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3])
 
-_in_support(::TensorProductDict, dicts, idx::NTuple{4,Int}, x) =
+_in_support(::TensorProductDict4, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3]) && in_support(dicts[4], idx[4], x[4])
 
 
@@ -184,10 +214,6 @@ name(s::TensorProductDict) = "tensor product (" * name(element(s,1)) * names(s.d
 names(s1::Dictionary) = " x " * name(s1)
 names(s1::Dictionary, s::Dictionary...) = " x " * name(s1) * names(s...)
 
-size(s::TensorProductDict) = map(length, s.dicts)
-size(s::TensorProductDict, j::Int) = length(s.dicts[j])
-
-length(s::TensorProductDict) = prod(size(s))
 
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert nb_elements(s)==2; element(s,1))
 getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert nb_elements(s)==2; element(s,2))
@@ -216,18 +242,11 @@ left(s::TensorProductDict) = SVector(map(left, elements(s)))
 #left(b::TensorProductDict, idxt::NTuple, j) = left(b.dicts[j], idxt[j])
 
 right(s::TensorProductDict) = SVector(map(right, elements(s)))
-# right{TS,N,T}(s::TensorProductDict{TS,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
+# right{DT,N,T}(s::TensorProductDict{DT,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
 #right(b::TensorProductDict, j::Int) = right(element(b,j))
 #right(b::TensorProductDict, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductDict, idxt::NTuple, j) = right(b.dicts[j], idxt[j])
 
-
-@generated function eachindex(s::TensorProductDict{TS}) where {TS}
-    LEN = tuple_length(TS)
-    startargs = fill(1, LEN)
-    stopargs = [:(size(s,$i)) for i=1:LEN]
-    :(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
-end
 
 # Convert CartesianIndex argument to a tuple
 getindex(s::TensorProductDict, idx::CartesianIndex) = getindex(s, idx.I)
@@ -235,25 +254,26 @@ getindex(s::TensorProductDict, idx::CartesianIndex) = getindex(s, idx.I)
 
 # We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
-eval_element(set::TensorProductDict, idx, x) = _eval_element(set, elements(set), indexable_index(set, idx), x)
+unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
 
 # For now, we assume that each set in the tensor product is a 1D set.
-# This may not always be the case.
-_eval_element(set::TensorProductDict{Tuple{D1}}, dicts, i, x) where {D1} =
-    eval_element(dicts[1], i[1], x[1])
+# This may not always be the case. If not, then x should have the same structure
+# as i, i.e., both i and x should have N components.
+_unsafe_eval_element(set::TensorProductDict1, dicts, i, x) =
+    unsafe_eval_element(dicts[1], i[1], x[1])
 
-_eval_element(set::TensorProductDict{Tuple{D1,D2}}, dicts, i, x) where {D1,D2} =
-    eval_element(dicts[1], i[1], x[1]) * eval_element(dicts[2], i[2], x[2])
+_unsafe_eval_element(set::TensorProductDict2, dicts, i, x) =
+    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2])
 
-_eval_element(set::TensorProductDict{Tuple{D1,D2,D3}}, dicts, i, x) where {D1,D2,D3} =
-    eval_element(dicts[1], i[1], x[1]) * eval_element(dicts[2], i[2], x[2]) * eval_element(dicts[3], i[3], x[3])
+_unsafe_eval_element(set::TensorProductDict3, dicts, i, x) =
+    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3])
 
-_eval_element(set::TensorProductDict{Tuple{D1,D2,D3,D4}}, dicts, i, x) where {D1,D2,D3,D4} =
-    eval_element(dicts[1], i[1], x[1]) * eval_element(dicts[2], i[2], x[2]) * eval_element(dicts[3], i[3], x[3]) * eval_element(dicts[4], i[4], x[4])
+_unsafe_eval_element(set::TensorProductDict4, dicts, i, x) =
+    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3]) * unsafe_eval_element(dicts[4], i[4], x[4])
 
 # Generic implementation, slightly slower
-_eval_element(s::TensorProductDict, dicts, i, x) =
-    reduce(*, map(eval_element, dicts, i, x))
+_unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
+    reduce(*, map(unsafe_eval_element, dicts, i, x))
 
 
 

@@ -8,7 +8,7 @@ end
 
 RationalBasis(roots::AbstractArray{T}) where {T} = RationalBasis{T}(roots)
 
-function eval_element(b::RationalBasis, idx::Int, x)
+function unsafe_eval_element(b::RationalBasis, idx::Int, x)
     degree = 1
     for i = 1:(idx-1)
         if b.roots[i] == b.roots[idx]

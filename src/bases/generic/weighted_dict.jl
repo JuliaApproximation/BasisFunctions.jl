@@ -50,14 +50,14 @@ function eval_weight_on_grid(w, grid::AbstractGrid)
 end
 
 # Evaluating basis functions: we multiply by the function of the set
-eval_element(set::WeightedDict, idx, x) = _eval_element(set, weightfunction(set), idx, x)
-_eval_element(set::WeightedDict1d, w, idx, x) = w(x) * eval_element(superdict(set), idx, x)
-_eval_element(set::WeightedDict, w, idx, x) = w(x...) * eval_element(superdict(set), idx, x)
+unsafe_eval_element(set::WeightedDict, idx, x) = _unsafe_eval_element(set, weightfunction(set), idx, x)
+_unsafe_eval_element(set::WeightedDict1d, w, idx, x) = w(x) * unsafe_eval_element(superdict(set), idx, x)
+_unsafe_eval_element(set::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_element(superdict(set), idx, x)
 
 # Evaluate the derivative of 1d weighted sets
-eval_element_derivative(set::WeightedDict1d, idx, x) =
-    eval_derivative(weightfunction(set), x) * eval_element(superdict(set), idx, x) +
-    weightfunction(set)(x) * eval_element_derivative(superdict(set), idx, x)
+unsafe_eval_element_derivative(set::WeightedDict1d, idx, x) =
+    eval_derivative(weightfunction(set), x) * unsafe_eval_element(superdict(set), idx, x) +
+    weightfunction(set)(x) * unsafe_eval_element_derivative(superdict(set), idx, x)
 
 # Evaluate an expansion: same story
 eval_expansion(set::WeightedDict, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)

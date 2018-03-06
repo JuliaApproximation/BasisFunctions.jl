@@ -54,11 +54,42 @@ period(b::SineSeries{T}, idx) where {T} = T(2)
 
 grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
 
+##################
+# Native indices
+##################
 
-eval_element(b::SineSeries{T}, idx::Int, x) where {T} = sin(x * T(pi) * idx)
+const SineFrequency = NativeIndex{:sine}
 
-function eval_element_derivative(b::SineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * idx
+frequency(idxn::SineFrequency) = value(idxn)
+
+"""
+`SineIndices` defines the map from native indices to linear indices
+for a finite number of sines. It is merely the identity map.
+"""
+struct SineIndices <: IndexList{SineFrequency}
+	n	::	Int
+end
+
+size(list::SineIndices) = (list.n,)
+
+getindex(list::SineIndices, idx::Int) = SineFrequency(idx)
+getindex(list::SineIndices, idxn::SineFrequency) = value(idxn)
+
+ordering(b::SineSeries) = SineIndices(length(b))
+
+##################
+# Evaluation
+##################
+
+domain(b::SineSeries) = UnitInterval{domaintype(b)}()
+
+support(b::SineSeries, i) = domain(b)
+
+unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
+    sinpi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     arg * cos(arg * x)
 end
 

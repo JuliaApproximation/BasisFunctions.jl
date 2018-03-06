@@ -163,37 +163,33 @@ zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
 # Indexing
 ###########
 
+"""
+Dictionaries are ordered lists. Their ordering is defined by the way their
+index sets are ordered.
 
-# A native index has to be distinguishable from linear indices by type. A linear
-# index is an int. If a native index also has an integer type, then its value
-# should be wrapped in a different type. That is the purpose of NativeIndex.
-# Concrete types with a meaningful name can inherit from this abstract type.
-# If the native index is not an integer, then no wrapping is necessary.
-abstract type NativeIndex end
+The `ordering` of a dictionary returns a list-like object that can be indexed
+with integers between `1` and `length(dict)`. This operation returns the
+corresponding native index. This defines the ordering of the native index set
+of the dictionary.
+"""
+ordering(dict::Dictionary) = DefaultIndexList(length(dict))
 
-# We assume that the index is stored in the 'index' field
-index(idxn::NativeIndex) = idxn.index
+# By convention, `eachindex` returns the most efficient way to iterate over the
+# indices of a dictionary. This is not necessarily the linear index.
+# We call eachindex on `ordering(d)`.
+eachindex(d::Dictionary) = eachindex(ordering(d))
 
-length(idxn::NativeIndex) = 1
+"Compute the native index corresponding to the given index."
+# We explicitly convert a linear index. Anything else we return unchanged,
+# but concrete dictionaries can override for indices they wish to convert.
+native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
+native_index(dict::Dictionary, idxn) = idxn
 
-getindex(idxn::NativeIndex, i) = (assert(i==1); index(idxn))
+"Compute the linear index corresponding to the given index."
+# We can accept an integer unchanged, anything else we pass to the ordering
+linear_index(dict::Dictionary, idx::LinearIndex) = idx
+linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
 
-"Compute the native index corresponding to the given linear index."
-native_index(d::Dictionary, idx::Int) = idx
-# By default, the native index of a set is its linear index.
-# The given idx argument should always be an Int for conversion from linear indices.
-# Subtypes may add definitions for other types, such as multilinear indices.
-# Typing idx to be Int here narrows the scope of false definitions for subsets.
-# The downside is we have to write idx::Int everywhere else too in order to avoid ambiguities.
-
-"Compute the linear index corresponding to the given native index."
-linear_index(D::Dictionary, idxn) = idxn::Int
-# We don't specify an argument type to idxn here, even though we would only want
-# this default to apply to Int's. Instead, we add an assertion to the result.
-# Adding Int to idxn causes lots of ambiguities. Not adding the assertion either leads to
-# potentially wrong definitions, since in that case linear_index doesn't do anything.
-# This can lead to StackOverflowError's in other parts of the code that expect
-# the type of idxn to change to Int after calling linear_index.
 
 """
 Convert the set of coefficients in the native format of the dictionary
@@ -236,11 +232,6 @@ linear_size(d::Dictionary, size_n) = size_n
 approx_length(d::Dictionary, n::Int) = n
 approx_length(d::Dictionary, n::Real) = approx_length(d, round(Int,n))
 
-# Default set of linear indices: from 1 to length(s)
-# Default algorithms assume this indexing for the basis functions, and the same
-# linear indexing for the set of coefficients.
-# The indices may also have tensor-product structure, for tensor product sets.
-eachindex(d::Dictionary) = 1:length(d)
 
 
 
@@ -304,15 +295,21 @@ done(d::Dictionary, state) = done(state[1], state[2])
 
 tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 
-# Provide this implementation which Base does not include anymore
-# TODO: hook into the Julia checkbounds system, once such a thing is developed.
-checkbounds(i::Int, j::Int) = (1 <= j <= i) ? nothing : throw(BoundsError())
 
-# General bounds check: the linear index has to be in the range 1:length(s)
-checkbounds(d::Dictionary, i::Int) = checkbounds(length(d), i)
+####################
+## Bounds checking
+####################
 
-# Fail-safe backup when i is not an integer: convert to linear index (which is an integer)
-checkbounds(d::Dictionary, i) = checkbounds(d, linear_index(d, i))
+checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
+
+checkbounds(::Type{Bool}, dict::Dictionary, i::Int) = checkindex(Bool, linearindices(dict), i)
+
+checkbounds(::Type{Bool}, dict::Dictionary, i) = checkindex(Bool, linearindices(dict), linear_index(dict, i))
+
+checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
+
+left(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
+right(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
 
 "Return the support of the idx-th basis function."
 support(d::Dictionary1d, idx) = (left(d,idx), right(d,idx))
@@ -332,77 +329,91 @@ in_support{T <: Complex}(dict::Dictionary1d, idx, x::T) =
 ## Evaluating set elements and expansions
 ##############################################
 
+
 """
-You can evaluate a member function of a set using the eval_set_element routine.
-It takes as arguments the function set, the index of the member function and
+A member function of a dictionary is evaluated using the `eval_element` routine.
+It takes as arguments the dictionary, the index of the member function and
 the point in which to evaluate.
 
 This function performs bounds checking on the index and also checks whether the
-point x lies inside the support of the function. A BoundsError() is thrown for
-an index out of bounds. By default, the value 0 is returned when x is outside
-the support. This value can be changed with an optional extra argument.
+point x lies inside the support of the function. A `BoundsError` is thrown for
+an index out of bounds. The value `0` is returned when x is outside the support.
 
-After the checks, this routine calls eval_element on the concrete set.
+After the check on the index, the function calls `unsafe_eval_element1.` This
+function checks whether `x` lies in the support, and then calls
+`unsafe_eval_element`. The latter function should be implemented by a concrete
+dictionary.
 """
-function eval_set_element(dict::Dictionary, idx, x, outside_value = zero(codomaintype(dict)); extend=false)
-    checkbounds(dict, idx)
-    extend || in_support(dict, idx, x) ? eval_element(dict, idx, x) : outside_value
+function eval_element(dict::Dictionary, idx, x)
+    @boundscheck checkbounds(dict, idx)
+    unsafe_eval_element1(dict, native_index(dict, idx), x)
 end
 
-# We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
-# We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
-function eval_set_element(dict::Dictionary, idx, grid::AbstractGrid, outside_value...)
+unsafe_eval_element1(dict::Dictionary, idx, x) =
+    in_support(dict, idx, x) ? unsafe_eval_element(dict, idx, x) : zero(codomaintype(dict))
+
+# Catch any index and convert to native index, in case it got through to here
+unsafe_eval_element(dict::Dictionary, idx, x) =
+    unsafe_eval_element(dict, native_index(dict, idx), x)
+
+"""
+Evaluate a member function with a boundscheck on the index, but without checking
+the support of the function.
+"""
+function eval_element_extension(dict::Dictionary, idx, x)
+    @boundscheck checkbounds(dict, idx)
+    # We skip unsafe_evaluate_element1 and jump to unsafe_eval_element
+    unsafe_eval_element(dict, native_index(dict, idx), x)
+end
+
+# Convenience function: evaluate a function on a grid
+function eval_element(dict::Dictionary, idx, grid::AbstractGrid)
+    @boundscheck checkbounds(dict, idx)
+    idxn = native_index(dict, idx)
     result = zeros(gridspace(grid, codomaintype(dict)))
-    eval_set_element!(result, dict, idx, grid, outside_value...)
-end
-
-function eval_set_element!(result, dict::Dictionary, idx, grid::AbstractGrid, outside_value = zero(codomaintype(dict)))
-    @assert size(result) == size(grid)
-    checkbounds(dict, idx)
-
-    @inbounds for k in eachindex(grid)
-        result[k] = eval_set_element(dict, idx, grid[k], outside_value)
+    for k in eachindex(grid)
+        @inbounds result[k] = eval_element(dict, idxn, grid[k])
     end
     result
 end
 
 
+
 """
-This function is exactly like `eval_set_element`, but it evaluates the derivative
+This function is exactly like `eval_element`, but it evaluates the derivative
 of the element instead.
 """
-function eval_set_element_derivative(dict::Dictionary, idx, x, outside_value = zero(codomaintype(dict)); extend=false)
-    checkbounds(dict, idx)
-    extend || in_support(dict, idx, x) ? eval_element_derivative(dict, idx, x) : outside_value
+function eval_element_derivative(dict::Dictionary, idx, x)
+    @boundscheck checkbounds(dict, idx)
+    unsafe_eval_element_derivative1(dict, native_index(dict, idx), x)
 end
 
-function eval_set_element_derivative(dict::Dictionary, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(gridspace(grid, codomaintype(dict)))
-    eval_set_element_derivative!(result, dict, idx, grid, outside_value...)
+function eval_element_extension_derivative(dict::Dictionary, idx, x)
+    @boundscheck checkbounds(dict, idx)
+    unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
 end
 
-function eval_set_element_derivative!(result, dict::Dictionary, idx, grid::AbstractGrid, outside_value = zero(codomaintype(dict)))
-    @assert size(result) == size(grid)
-    checkbounds(dict, idx)
-
-    @inbounds for k in eachindex(grid)
-        result[k] = eval_set_element_derivative(dict, idx, grid[k], outside_value)
-    end
-    result
+function unsafe_eval_element_derivative1(dict::Dictionary{S,T}, idx, x) where {S,T}
+    in_support(dict, idx, x) ? unsafe_eval_element_derivative(dict, idx, x) : zero(T)
 end
+
+unsafe_eval_element_derivative(dict::Dictionary, idx, x) =
+    unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
+
 
 
 """
-Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
+Evaluate an expansion given by the set of coefficients in the point x.
 """
-function eval_expansion(dict::Dictionary, coefficients, x; options...)
+function eval_expansion(dict::Dictionary, coefficients, x)
+    @assert size(coefficients) == size(dict)
+
     T = span_codomaintype(dict, coefficients)
     z = zero(T)
-
-    # It is safer below to use eval_set_element than eval_element, because of
-    # the check on the support. We elide the boundscheck with @inbounds (perhaps).
+    # It is safer below to use eval_element than unsafe_eval_element, because of
+    # the check on the support.
     @inbounds for idx in eachindex(dict)
-        z = z + coefficients[idx] * eval_set_element(dict, idx, x; options...)
+        z = z + coefficients[idx] * eval_element(dict, idx, x)
     end
     z
 end
@@ -430,5 +441,15 @@ end
 Compute the moment of the given basisfunction, i.e. the integral on its
 support.
 """
+function moment(dict::Dictionary1d, idx)
+    @boundscheck checkbounds(dict, idx)
+    unsafe_moment(dict, native_index(dict, idx))
+end
+
+# This routine is called after the boundscheck. Call another function,
+# default moment, so that unsafe_moment of the concrete dictionary can still
+# fall back to `default_moment` as well for some values of the index.
+unsafe_moment(dict::Dictionary1d, idx) = default_moment(dict, idx)
+
 # Default to numerical integration
-moment(d::Dictionary1d, idx) = quadgk(d[idx], left(d), right(d))[1]
+default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], left(d), right(d))[1]

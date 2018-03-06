@@ -14,14 +14,16 @@ using Domains
 
 using LinearAlgebra
 
-import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
+import Base: +, *, /, ==, |, &, -, \, ^
+import Base: <, <=, >, >=
 import Base: ≈, norm
 import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect, endof, checkbounds, first, last
+        range, collect, endof, first, last
+import Base: checkbounds, checkbounds_indices, checkindex
 
 import Base: cos, sin, exp, log
 
@@ -68,10 +70,14 @@ import Domains: cartesianproduct, ×, product_eltype
 import Domains: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
+
+
 ## Exhaustive list of exports
 
 # from util/indexing.jl
-export LinearIndex
+export LinearIndex, NativeIndex
+export DefaultNativeIndex, DefaultIndexList
+export value
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -112,10 +118,11 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support
-export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,
-        eval_element_derivative
+export eval_expansion, eval_element, unsafe_eval_element, eval_element_derivative,
+        unsafe_eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
+export ordering
 export native_index, linear_index, multilinear_index, native_size, linear_size
 export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
