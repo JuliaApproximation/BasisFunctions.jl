@@ -238,6 +238,9 @@ export MultiDict, multidict, ⊕
 # from bases/generic/piecewise_dict.jl
 export PiecewiseDict, dictionaries
 
+# from bases/generic/vector_dict.jl
+export VectorvaluedDict
+
 # from bases/generic/operated_dict.jl
 export OperatedDict
 export derivative, src_dictionary, dest_dictionary
@@ -367,6 +370,7 @@ include("bases/generic/multiple_dict.jl")
 include("bases/generic/piecewise_dict.jl")
 include("bases/generic/operated_dict.jl")
 include("bases/generic/weighted_dict.jl")
+include("bases/generic/vector_dict.jl")
 
 
 ################################################################
