@@ -379,6 +379,7 @@ include("bases/generic/vector_dict.jl")
 
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
+include("sampling/platform.jl")
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines

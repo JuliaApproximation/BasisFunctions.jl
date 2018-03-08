@@ -3,11 +3,11 @@
 """
 A Fourier basis on the interval `[0,1]`. The basis functions are given by
 `exp(2 π i k)`, with `k` ranging from `-N` to `N` for Fourier series of odd
-length `2N+1` and from `-N+1` to `N` for even length. In the latter case, the
-highest frequency basis function is a cosine.
+length (`2N+1`) and from `-N+1` to `N` for even length. In the latter case, the
+highest frequency basis function corresponding to frequency `N` is a cosine.
 
 The basis functions are ordered the way they are expected by a typical FFT
-implementation. The frequencies k are in the following order
+implementation. The frequencies k are in the following order:
 ```
 0 1 2 3 ... N -N -N+1 ... -2 -1,
 ```
@@ -87,6 +87,8 @@ const FourierFrequency = NativeIndex{:fourier}
 
 frequency(idxn::FourierFrequency) = value(idxn)
 
+Base.show(io::IO, idx::BasisFunctions.NativeIndex{:fourier}) =
+	print(io, "Fourier frequency: $(value(idx))")
 
 """
 `FFTIndexList` defines the map from native indices to linear indices

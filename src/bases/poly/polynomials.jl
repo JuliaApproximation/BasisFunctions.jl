@@ -15,22 +15,8 @@ const PolynomialDegree = ShiftedIndex{1}
 
 degree(idx::PolynomialDegree) = value(idx)
 
-
-#
-# """
-# `DegreeIndexList` defines the map from native indices to linear indices
-# for a finite polynomial basis. Note that we assume that the elements in the
-# polynomial basis are ordered according to polynomial degree.
-# """
-# struct DegreeIndexList <: IndexList{PolynomialDegree}
-# 	n	::	Int
-# end
-#
-# length(list::DegreeIndexList) = list.n
-# size(list::DegreeIndexList) = (list.n,)
-#
-# getindex(list::DegreeIndexList, idx::Int) = PolynomialDegree(idx-1)
-# getindex(list::DegreeIndexList, idxn::PolynomialDegree) = value(idxn)+1
+Base.show(io::IO, idx::BasisFunctions.ShiftedIndex{1}) =
+	print(io, "Polynomial degree: $(degree(idx))")
 
 ordering(b::PolynomialBasis) = ShiftedIndexList{1}(length(b))
 
