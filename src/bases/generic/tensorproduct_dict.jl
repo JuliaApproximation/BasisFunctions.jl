@@ -88,6 +88,9 @@ end
 # The native indices of a tensor product dict are of type ProductIndex
 ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
+native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
+native_index(d::TensorProductDict, idx::LinearIndex) = product_native_index(size(d), idx)
+
 """
 A recursive native index of a `TensorProductDict` is a tuple consisting of
 native indices of each of the elements of the dictionary.
@@ -200,9 +203,6 @@ right(s::TensorProductDict) = SVector(map(right, elements(s)))
 #right(b::TensorProductDict, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductDict, idxt::NTuple, j) = right(b.dicts[j], idxt[j])
 
-
-# # Convert CartesianIndex argument to a tuple
-# getindex(s::TensorProductDict, idx::CartesianIndex) = getindex(s, idx.I)
 
 
 # We pass on the elements of s as an extra argument in order to avoid

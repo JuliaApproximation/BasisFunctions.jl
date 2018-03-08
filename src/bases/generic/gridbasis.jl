@@ -5,7 +5,7 @@ A `GridBasis` is a discrete basis that is associated with a grid.
 
 The domain of the grid basis is the index set of the grid.
 """
-immutable GridBasis{G <: AbstractGrid,T} <: DiscreteVectorSpace{LinearIndex,T}
+immutable GridBasis{G <: AbstractGrid,T} <: DiscreteSet{LinearIndex,T}
     grid    ::  G
 end
 

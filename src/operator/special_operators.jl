@@ -123,7 +123,7 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-for property in [:is_inplace, :is_diagonal]
+for property in (:is_inplace, :is_diagonal)
 	@eval $property(op::WrappedOperator) = $property(operator(op))
 end
 
@@ -265,7 +265,7 @@ function MultiplicationOperator(::Type{T}, src::Span, dest::Span, object; inplac
 end
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
-    MultiplicationOperator(Span(DiscreteSet{T}(size(matrix, 2))), Span(DiscreteSet{T}(size(matrix, 1))), matrix)
+    MultiplicationOperator(Span(DiscreteVectorSet{T}(size(matrix, 2))), Span(DiscreteVectorSet{T}(size(matrix, 1))), matrix)
 
 # Provide aliases for when the object is an actual matrix.
 MatrixOperator(matrix::Matrix) = MultiplicationOperator(matrix)
@@ -512,7 +512,7 @@ end
 
 function LinearizationOperator(src::Span)
     A = coeftype(src)
-    LinearizationOperator{A}(src, Span(DiscreteSet{A}(length(src))))
+    LinearizationOperator{A}(src, Span(DiscreteVectorSet{A}(length(src))))
 end
 
 similar_operator(::LinearizationOperator, ::Type{S}, src) where {S} = LinearizationOperator(promote_coeftype(src, S))
@@ -531,7 +531,7 @@ end
 
 function DelinearizationOperator(dest::Span)
     A = coeftype(dest)
-    DelinearizationOperator{A}(Span(DiscreteSet{A}(length(dest))), src)
+    DelinearizationOperator{A}(Span(DiscreteVectorSet{A}(length(dest))), src)
 end
 
 similar_operator(::DelinearizationOperator, ::Type{S}, src) where {S} = DelinearizationOperator(promote_coeftype(src, S))

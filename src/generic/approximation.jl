@@ -28,7 +28,7 @@ continuous_approximation_operator(s::Span; options...) = DualGram(s)
 # Automatically sample a function if an operator is applied to it with a
 # source that is a grid space.
 function (*)(op::AbstractOperator, f::Function; discrete=nothing, solver=nothing, cutoff=nothing, options...)
-  op * project(src(op), f; options...)
+    op * project(src(op), f; options...)
 end
 
 # general project on functionset, using inner products, is in functionset.jl

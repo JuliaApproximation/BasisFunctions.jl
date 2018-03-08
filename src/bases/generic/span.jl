@@ -9,7 +9,7 @@ the domain type of the dictionary. The codomain type `T` of the span results fro
 the multiplication of values of type `A` with the a value from the codomain type
 of the dictionary.
 """
-struct Span{A,S,T,D <: Dictionary} <: FunctionSpace{S,T}
+struct Span{A,S,T,D <: Dictionary} <: AbstractFunctionSpace{S,T}
     dictionary  ::  D
 end
 

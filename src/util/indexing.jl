@@ -183,6 +183,10 @@ eachindex(list::ProductIndexList) = CartesianRange(indices(list))
 product_native_index(size, idx::LinearIndex) = ProductIndex(ind2sub(size, idx))
 product_linear_index(size, idxn::ProductIndex) = sub2ind(size, indextuple(idxn)...)
 
+# We also know how to convert a tuple
+product_native_index(size::NTuple{N,Int}, idx::NTuple{N,Int}) where {N} = ProductIndex(idx)
+product_native_index(size::NTuple{N,Int}, idx::ProductIndex{N}) where {N} = idx
+
 getindex(list::ProductIndexList, idx::LinearIndex) =
     product_native_index(size(list), idx)
 getindex(list::ProductIndexList, idxn::ProductIndex) =
@@ -190,9 +194,28 @@ getindex(list::ProductIndexList, idxn::ProductIndex) =
 
 # Convert a tuple of int's or a list of int's to a linear index
 getindex(list::ProductIndexList{N}, idx::NTuple{N,Int}) where {N} =
-    getindex(list, CartesianIndex(idx))
+    getindex(list, ProductIndex(idx))
 getindex(list::ProductIndexList{N}, idx1::Int, idx2::Int, idx::Int...) where {N} =
-    getindex(list, CartesianIndex{N}(idx1, idx2, idx...))
+    getindex(list, ProductIndex{N}(idx1, idx2, idx...))
+
+
+## We implement a promotion system for two indices.
+# The goal is to convert both indices to the Cartesian{N} type, if possible.
+# We leave the indices unchanged if it is not possible.
+
+# This is an exhaustive list of types we know how to convert
+ProductIndices = Union{NTuple,ProductIndex,Int}
+
+# - Both indices are fine:
+promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where {N} = (idx1,idx2)
+# - One or both of them are not fine, but they are both in PTI. The formulation
+#   includes the case above, since they could both be ProductIndex{N}. By leaving
+#   out the type of size, we make sure that the line above is more specific and
+#   will be chosen by the compiler, thus avoiding an infinite loop.
+promote_product_indices(size, idx1::ProductIndices, idx2::ProductIndices) =
+    (product_native_index(size, idx1), product_native_index(size, idx2))
+# - At least one of the indices does not have a suitable type, we don't know what to do
+promote_product_indices(size, idx1, idx2) = (idx1,idx2)
 
 
 ########################

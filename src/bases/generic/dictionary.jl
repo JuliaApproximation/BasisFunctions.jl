@@ -172,7 +172,7 @@ with integers between `1` and `length(dict)`. This operation returns the
 corresponding native index. This defines the ordering of the native index set
 of the dictionary.
 """
-ordering(dict::Dictionary) = DefaultIndexList(length(dict))
+ordering(dict::Dictionary) = Base.OneTo(length(dict))
 
 # By convention, `eachindex` returns the most efficient way to iterate over the
 # indices of a dictionary. This is not necessarily the linear index.

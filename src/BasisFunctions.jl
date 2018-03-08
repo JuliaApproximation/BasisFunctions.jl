@@ -143,7 +143,7 @@ export subdict, superindices
 
 # from bases/generic/tensorproduct_dict.jl
 export TensorProductDict, TensorProductDict1, TensorProductDict2,
-        TensorProductDict3
+        TensorProductDict3, ProductIndex
 export recursive_native_index
 
 # from bases/generic/derived_dict.jl
@@ -245,15 +245,16 @@ export VectorvaluedDict
 export OperatedDict
 export derivative, src_dictionary, dest_dictionary
 
-# from bases/generic/euclidean.jl
-export DiscreteVectorSpace, DiscreteSet
+# from bases/generic/discrete_sets.jl
+export DiscreteSet, DiscreteVectorSet, DiscreteArraySet
 export is_discrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis, DiscreteGridSpace, DiscreteGridSpace1d
 export gridbasis, gridspace
 
-
+# from sampling/sampling_operator.jl
+export GridSamplingOperator
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -326,7 +327,7 @@ include("bases/generic/dictionary.jl")
 include("bases/generic/span.jl")
 include("generic/gram.jl")
 
-include("bases/generic/euclidean.jl")
+include("bases/generic/discrete_sets.jl")
 include("bases/generic/gridbasis.jl")
 
 include("operator/operator.jl")
@@ -372,6 +373,12 @@ include("bases/generic/operated_dict.jl")
 include("bases/generic/weighted_dict.jl")
 include("bases/generic/vector_dict.jl")
 
+################################################################
+# Sampling
+################################################################
+
+include("sampling/synthesis.jl")
+include("sampling/sampling_operator.jl")
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines
