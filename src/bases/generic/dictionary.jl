@@ -180,15 +180,18 @@ ordering(dict::Dictionary) = Base.OneTo(length(dict))
 eachindex(d::Dictionary) = eachindex(ordering(d))
 
 "Compute the native index corresponding to the given index."
-# We explicitly convert a linear index. Anything else we return unchanged,
-# but concrete dictionaries can override for indices they wish to convert.
-native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
-native_index(dict::Dictionary, idxn) = idxn
+native_index(dict::Dictionary, idx) = _native_index(dict, idx)
+# We redirect to a fallback _native_index in case the concrete dictionary
+# did not implement native_index.  We explicitly convert a linear index using the ordering.
+# Anything else we return unchanged because we do not know what to do at this level.
+_native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
+_native_index(dict::Dictionary, idxn) = idxn
 
 "Compute the linear index corresponding to the given index."
+linear_index(dict::Dictionary, idx) = _linear_index(dict, idx)
 # We can accept an integer unchanged, anything else we pass to the ordering
-linear_index(dict::Dictionary, idx::LinearIndex) = idx
-linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
+_linear_index(dict::Dictionary, idx::LinearIndex) = idx
+_linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
 
 # Convenience: make a vector indexable using native indices, if possible
 # It is possible whenever the size and element type of the vector completely
@@ -369,6 +372,15 @@ dictionary. Any user who wants to avoid the bounds check or the support check
 can intercept `eval_element` or `unsafe_eval_element1` respectively.
 """
 function eval_element(dict::Dictionary, idx, x)
+    # We convert to a native index before bounds checking
+    idxn = native_index(dict, idx)
+    @boundscheck checkbounds(dict, idxn)
+    unsafe_eval_element1(dict, idxn, x)
+end
+
+# For linear indices, bounds checking is very efficient, so we intercept this case
+# and only convert to a native index after the bounds check.
+function eval_element(dict::Dictionary, idx::LinearIndex, x)
     @boundscheck checkbounds(dict, idx)
     unsafe_eval_element1(dict, native_index(dict, idx), x)
 end
@@ -390,13 +402,12 @@ function eval_element_extension(dict::Dictionary, idx, x)
     unsafe_eval_element(dict, native_index(dict, idx), x)
 end
 
-# Convenience function: evaluate a function on a grid
-function eval_element(dict::Dictionary, idx, grid::AbstractGrid)
-    @boundscheck checkbounds(dict, idx)
-    idxn = native_index(dict, idx)
+# Convenience function: evaluate a function on a grid.
+# We implement unsafe_eval_element1, so the bounds check on idx has already happened
+function unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid)
     result = zeros(gridspace(grid, codomaintype(dict)))
     for k in eachindex(grid)
-        @inbounds result[k] = eval_element(dict, idxn, grid[k])
+        @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
     result
 end
@@ -408,6 +419,12 @@ This function is exactly like `eval_element`, but it evaluates the derivative
 of the element instead.
 """
 function eval_element_derivative(dict::Dictionary, idx, x)
+    idxn = native_index(dict, idx)
+    @boundscheck checkbounds(dict, idxn)
+    unsafe_eval_element_derivative1(dict, idxn, x)
+end
+
+function eval_element_derivative(dict::Dictionary, idx::LinearIndex, x)
     @boundscheck checkbounds(dict, idx)
     unsafe_eval_element_derivative1(dict, native_index(dict, idx), x)
 end

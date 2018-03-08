@@ -4,7 +4,7 @@
 A `GridSamplingOperator` is an operator that maps a function to its samples.
 """
 struct GridSamplingOperator <: GenericOperator
-    src     ::  FunctionSpace
+    src     ::  AbstractFunctionSpace
     dest    ::  DiscreteGridSpace
 end
 

@@ -118,8 +118,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support, domain, codomain
-export eval_expansion, eval_element, unsafe_eval_element, eval_element_derivative,
-        unsafe_eval_element_derivative
+export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export ordering
@@ -360,7 +359,6 @@ include("bases/generic/expansions.jl")
 include("products.jl")
 
 include("generic/generic_operators.jl")
-include("generic/concepts.jl")
 
 ################################################################
 # Generic dictionaries

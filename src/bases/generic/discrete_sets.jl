@@ -99,7 +99,6 @@ resize(d::DiscreteArraySet{N,T}, size) where {N,T} = DiscreteArraySet{N,T}(size)
 
 ordering(d::DiscreteArraySet{N}) where {N} = ProductIndexList{N}(size(d))
 
-native_index(d::DiscreteArraySet, idx::LinearIndex) = product_native_index(size(d), idx)
 native_index(d::DiscreteArraySet, idx) = product_native_index(size(d), idx)
 
 _in_support(d::DiscreteArraySet, idx, x::ProductIndices) =

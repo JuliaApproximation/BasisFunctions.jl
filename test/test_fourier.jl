@@ -58,8 +58,8 @@ function test_fourier_series(T)
 
     # Check type promotion: evaluate at an integer and at a rational point
     for i in [1 2]
-        @test typeof(unsafe_eval_element(fb, i, 0)) == Complex{T}
-        @test typeof(unsafe_eval_element(fb, i, 1//2)) == Complex{T}
+        @test typeof(BasisFunctions.unsafe_eval_element(fb, i, 0)) == Complex{T}
+        @test typeof(BasisFunctions.unsafe_eval_element(fb, i, 1//2)) == Complex{T}
     end
 
     # Try an extension

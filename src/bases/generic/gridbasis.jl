@@ -22,7 +22,7 @@ _coefficient_type(gb, ::Type{T}) where {T} = T
 
 # We don't know the codomain type either. The safest bet is Int.
 # As a user, it is best to provide T.
-GridBasis(grid::AbstractGrid, T = Int) =
+GridBasis(grid::AbstractGrid, T = Float64) =
     GridBasis{typeof(grid),T}(grid)
 
 gridbasis(grid::AbstractGrid) = GridBasis(grid)

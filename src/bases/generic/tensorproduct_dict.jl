@@ -89,7 +89,6 @@ end
 ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
 native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
-native_index(d::TensorProductDict, idx::LinearIndex) = product_native_index(size(d), idx)
 
 """
 A recursive native index of a `TensorProductDict` is a tuple consisting of
