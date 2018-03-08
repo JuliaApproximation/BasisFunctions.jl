@@ -360,6 +360,7 @@ include("bases/generic/expansions.jl")
 include("products.jl")
 
 include("generic/generic_operators.jl")
+include("generic/concepts.jl")
 
 ################################################################
 # Generic dictionaries
