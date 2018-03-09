@@ -24,10 +24,13 @@ grid(op::GridSamplingOperator) = grid(gridspace(op))
 apply(op::GridSamplingOperator, f) = sample(grid(op), f, eltype(op))
 apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f)
 
-(*)(op::GridSamplingOperator, f) = apply(op, f)
-
 "Sample the function f on the given grid."
 sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
+
+(*)(op::GridSamplingOperator, f) = apply(op, f)
+
+broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
+
 
 # We don't want to assume that f can be called with a vector argument.
 # In order to avoid the overhead of splatting, we capture a number of special cases

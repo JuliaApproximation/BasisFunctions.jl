@@ -162,7 +162,8 @@ struct ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevPoints = ChebyshevNodeGrid
 
 ChebyshevNodeGrid(n::Int, ::Type{T} = Float64) where {T} = ChebyshevNodeGrid{T}(n)
 
