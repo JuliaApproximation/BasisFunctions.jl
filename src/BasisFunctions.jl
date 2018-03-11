@@ -257,6 +257,10 @@ export gridbasis, gridspace
 export GridSamplingOperator
 export sample
 
+# from sampling/platform.jl
+export Platform
+export primal, dual
+
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
