@@ -12,7 +12,7 @@ using SpecialMatrices
 using FastTransforms
 using Domains
 
-using LinearAlgebra
+#using LinearAlgebra
 
 import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
 import Base: ≈, norm
