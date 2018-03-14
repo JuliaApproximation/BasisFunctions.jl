@@ -11,7 +11,6 @@ before_install:
 before_script:
   - julia -e 'Pkg.init()'
   - julia -e 'Pkg.clone("https://github.com/daanhb/Domains.jl")'
-  - julia -e 'Pkg.clone("https://github.com/andreasnoack/LinearAlgebra.jl")'
   - ./.travis/setup.sh
 script:
   - julia -e 'Pkg.clone(pwd())'
