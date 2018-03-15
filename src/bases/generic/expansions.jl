@@ -22,10 +22,14 @@ struct Expansion{D,C}
     end
 end
 
-Expansion(dict::Dictionary, coefficients = zeros(dict)) =
-    Expansion{typeof(dict),typeof(coefficients)}(dict, coefficients)
+# Some constructors
+Expansion(dict::Dictionary) = Expansion(dict, zeros(dict))
+Expansion(dict::Dictionary, coef) = Expansion{typeof(dict),typeof(coef)}(dict, coef)
 
 Expansion(span::Span) = Expansion(dictionary(span), zeros(span))
+
+expansion(dict::Dictionary, coefficients) =
+    Expansion(dict, native_coefficients(dict, coefficients))
 
 similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 
@@ -63,13 +67,13 @@ setindex!(e::Expansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the dict of the expansion
-(e::Expansion)(x; options...) = call_set_expansion(e, dictionary(e), coefficients(e), x; options...)
-(e::Expansion)(x, y) = call_set_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
-(e::Expansion)(x, y, z) = call_set_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
-(e::Expansion)(x, y, z, t) = call_set_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
-(e::Expansion)(x, y, z, t, u...) = call_set_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
+(e::Expansion)(x; options...) = call_expansion(e, dictionary(e), coefficients(e), x; options...)
+(e::Expansion)(x, y) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
+(e::Expansion)(x, y, z) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
+(e::Expansion)(x, y, z, t) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
+(e::Expansion)(x, y, z, t, u...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
 
-call_set_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
+call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
     eval_expansion(dict, coefficients, x; options...)
 
 function differentiate(e::Expansion, order=1)

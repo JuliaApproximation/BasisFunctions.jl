@@ -199,11 +199,15 @@ _linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
 getindex(v::Array, idxn::NativeIndex) =
 	getindex(v, linear_index(idxn, size(v), eltype(v)))
 
+
+##################################################
+## Conversion between coefficient representations
+##################################################
+
 """
 Convert the set of coefficients in the native format of the dictionary
 to a linear list in a vector.
 """
-# Allocate memory for the linear set and call linearize_coefficients! to do the work
 function linearize_coefficients(dict::Dictionary, coef_native)
     coef_linear = zeros(eltype(coef_native), length(dict))
     linearize_coefficients!(dict, coef_linear, coef_native)
@@ -211,18 +215,24 @@ end
 
 linearize_coefficients!(dict::Dictionary, coef_linear::Vector, coef_native) =
     copy!(coef_linear, coef_native)
-# copy! is defined in util/common.jl
+# Note that copy! is defined in util/common.jl
 
 """
 Convert a linear set of coefficients back to the native representation of the dictionary.
 """
-function delinearize_coefficients(dict::Dictionary, coef_linear::AbstractVector)
+function delinearize_coefficients(dict::Dictionary, coef_linear::Vector)
     coef_native = zeros(eltype(coef_linear), dict)
     delinearize_coefficients!(dict, coef_native, coef_linear)
 end
 
 delinearize_coefficients!(dict::Dictionary, coef_native, coef_linear::Vector) =
     copy!(coef_native, coef_linear)
+
+"Promote the given coefficients to the native representation of the dictionary."
+native_coefficients(dict::Dictionary, coef) = _native_coefficients(dict, coef)
+# TODO: we create an unnecessary copy here if the native type is a vector
+_native_coefficients(dict::Dictionary, coef::Vector) = delinearize_coefficients(dict, coef)
+_native_coefficients(dict::Dictionary, coef) = coef
 
 # Sets have a native size and a linear size. However, there is not necessarily a
 # bijection between the two. You can always convert a native size to a linear size,
@@ -453,7 +463,7 @@ function eval_expansion(dict::Dictionary, coefficients, x)
     z = zero(T)
     # It is safer below to use eval_element than unsafe_eval_element, because of
     # the check on the support.
-    @inbounds for idx in eachindex(dict)
+    @inbounds for idx in eachindex(coefficients)
         z = z + coefficients[idx] * eval_element(dict, idx, x)
     end
     z
