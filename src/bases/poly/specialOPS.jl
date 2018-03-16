@@ -73,10 +73,15 @@ function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes
     @assert reduce(&, true, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end])
     @assert iseven(length(indicator_function_nodes))
 
+    if α < 0
+        C = 2T/pi
+    else
+        C = T*(1-cos(pi/T))^2/2/pi
+    end
     if length(indicator_function_nodes)==2
         nodes, weights = gaussjacobi(n, α, ELT(0))
         Λ = weight_of_indicator(T,x->1)
-        modified_weights = weights.*((nodes.-m_forward(T,T)).^α).*Λ.(nodes)*2T/pi
+        modified_weights = weights.*((nodes.-m_forward(T,T)).^α).*Λ.(nodes)*C
         nodes, modified_weights
     else
         indicator = indicator_function(indicator_function_nodes)
@@ -96,7 +101,7 @@ function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes
             nodes_interval[:] .= a + (b-a)/2*(nodes_interval+1)
             weights_interval[:] .= weights_interval*(b-a)/2
             Δ = weight_of_indicator(T,indicator)
-            weights_interval[:] .= 2T/pi*weights_interval.*(1-nodes_interval).^α.*(nodes_interval-m_forward(T,T)).^α.*Δ.(nodes_interval)
+            weights_interval[:] .= C*weights_interval.*(1-nodes_interval).^α.*(nodes_interval-m_forward(T,T)).^α.*Δ.(nodes_interval)
 
             nodes[1+(i-1)*n_interval:i*n_interval] .= nodes_interval[:]
             weights[1+(i-1)*n_interval:i*n_interval] .= weights_interval[:]
