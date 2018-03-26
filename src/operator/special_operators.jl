@@ -100,9 +100,23 @@ function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
 
-children(op::WrappedOperator) = children(op.op)
+children(op::WrappedOperator) = isa(op.op,ParentOperator) ? children(op.op) : (op.op,)
 
-stencil(op::WrappedOperator,S) = ["W(",stencil(op.op,S)...,")"]
+function stencil(op::WrappedOperator)
+    A = Any[]
+    push!(A,"W(")
+    s = stencil(op.op)
+    if isa(s,GenericOperator)
+        push!(A,s)
+    else
+        for i=1:length(s)
+            push!(A,s[i])
+        end
+    end
+    push!(A,")")
+    A
+end
+
 
 """
 The function wrap_operator returns an operator with the given source and destination,

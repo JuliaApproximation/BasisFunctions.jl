@@ -124,3 +124,9 @@ function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace,
     D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
 end
+
+function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...)
+    super_e = grid_evaluation_operator(superspan(set), dgs, grid; options...)
+    D = weightfun_scaling_operator(dgs, weightfunction(set))
+    D * wrap_operator(set, dgs, super_e)
+end

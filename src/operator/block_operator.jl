@@ -274,7 +274,7 @@ function stencil(op::BlockOperator)
     A = Any[]
     push!(A,"[")
     for i=1:size(elements(op),1)
-        i!=1 && push!(A,";")
+        i!=1 && push!(A,";\t")
         push!(A,element(op,i,1))
         for j=2:size(elements(op),2)
             push!(A,", \t")
