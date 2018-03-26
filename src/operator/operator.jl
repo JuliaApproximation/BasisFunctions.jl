@@ -208,6 +208,7 @@ function unsafe_getindex(op::AbstractOperator, i, j)
 	coef_dest[i]
 end
 
+
 "Return the diagonal of the operator."
 function diagonal(op::AbstractOperator)
     if is_diagonal(op)
@@ -241,3 +242,4 @@ function inv_diagonal(op::AbstractOperator)
     d[find(d.==0)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
+

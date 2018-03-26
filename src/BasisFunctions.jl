@@ -13,6 +13,7 @@ using FastTransforms
 using Domains
 
 using LinearAlgebra
+using AbstractTrees
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
@@ -71,6 +72,7 @@ import Domains: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 
+import AbstractTrees: children
 
 ## Exhaustive list of exports
 
@@ -336,6 +338,7 @@ include("bases/generic/discrete_sets.jl")
 include("bases/generic/gridbasis.jl")
 
 include("operator/operator.jl")
+include("operator/parentoperator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
@@ -356,7 +359,7 @@ include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
-
+include("operator/prettyprint.jl")
 
 
 include("bases/generic/expansions.jl")

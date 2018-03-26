@@ -6,7 +6,7 @@ consecutively.
 
 Whenever possible, scratch space is allocated to hold intermediate results.
 """
-struct CompositeOperator{T} <: AbstractOperator{T}
+struct CompositeOperator{T} <: ParentOperator{T}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).
@@ -143,6 +143,19 @@ compose(op::AbstractOperator) = op
 # Here we have at least two operators. Remove nested compositions with flatten and continue.
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
+
+
+function stencil(op::CompositeOperator)
+    A = Any[]
+    push!(A,element(op,length(elements(op))))
+    for i=length(elements(op))-1:-1:1
+        push!(A," * ")
+        push!(A,element(op,i))
+    end
+    A
+end
+
+
 
 # function compose_verify_and_simplify(ops::AbstractOperator...)
 #     # Check for correct chain of function spaces

@@ -74,7 +74,7 @@ operator are correct, for example if a derived set returns an operator of the em
 This operator can be wrapped to make sure it has the right source and destination sets, i.e.
 its source and destination would correspond to the derived set, and not to the embedded set.
 """
-struct WrappedOperator{OP,T} <: AbstractOperator{T}
+struct WrappedOperator{OP,T} <: ParentOperator{T}
     src     ::  Span
     dest    ::  Span
     op      ::  OP
@@ -99,6 +99,10 @@ function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where
     subop = operator(op)
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
+
+children(op::WrappedOperator) = children(op.op)
+
+stencil(op::WrappedOperator,S) = ["W(",stencil(op.op,S)...,")"]
 
 """
 The function wrap_operator returns an operator with the given source and destination,
@@ -432,8 +436,9 @@ end
 diagonal{T}(op::UnevenSignFlipOperator{T}) = T[-(-1)^i for i in 1:length(src(op))]
 
 
+
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T}
+struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: ParentOperator{T} 
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
@@ -496,8 +501,23 @@ function apply_sum!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperato
     coef_dest
 end
 
+elements(op::OperatorSum) = (op.op1,op.op2)
+
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, -1)
+
+function stencil(op::OperatorSum,S)
+    s1=""
+    if op.val1==-1
+        s1="-"
+    end
+    s2=" + "
+    if op.val2==-1
+        s2=" - "
+    end
+    A = [s1,op.op1,s2,op.op2]
+    recurse_stencil(op,A,S)
+end
 
 """
 An operator that calls linearize on a native representation of a set, returning

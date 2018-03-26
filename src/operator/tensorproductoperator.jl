@@ -6,7 +6,7 @@ A TensorProductOperator represents the tensor product of other operators.
 
 struct TensorProductOperator{T} <: AbstractOperator{T}
 """
-struct TensorProductOperator{T} <: AbstractOperator{T}
+struct TensorProductOperator{T} <: ParentOperator{T}
     src             ::  Span
     dest            ::  Span
     operators
@@ -248,4 +248,14 @@ function apply_inplace_tensor!{A,B,C}(op, coef_srcdest, operators::Tuple{A,B,C},
         end
     end
     coef_srcdest
+end
+
+function stencil(op::TensorProductOperator)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
 end
