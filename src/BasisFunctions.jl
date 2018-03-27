@@ -36,7 +36,7 @@ import Base: isreal, iseven, isodd, real, complex
 
 import Base: ctranspose, transpose, inv, hcat, vcat
 
-import Base: show, showcompact, convert, similar
+import Base: show, showcompact, convert, similar, string
 
 import Base: dct, idct
 
