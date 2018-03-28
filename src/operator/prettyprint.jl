@@ -14,11 +14,8 @@ string(op::GenericOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).ma
 symbol(op::GenericOperator) = string(op)[1]
 
 # Common symbols (to be moved to respective files)
-symbol(op::MultiplicationOperator{Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,1},true,Complex{Float64}}) = "iFFT"
-symbol(op::MultiplicationOperator{Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,1},true,Complex{Float64}}) = "FFT"
 symbol(E::IndexRestrictionOperator) = "R"
 symbol(E::IndexExtensionOperator) = "E"
-symbol(op::MultiplicationOperator{Base.DFT.FFTW.DCTPlan{Float64,4,true},true,Float64}) = "DCT"
 
 string(op::MultiplicationOperator) = string(op,op.object)
 string(op::MultiplicationOperator,object) = "Multiplication by "*string(typeof(op.object))
@@ -27,7 +24,7 @@ symbol(op::MultiplicationOperator) = symbol(op,op.object)
 symbol(op::MultiplicationOperator,object) = "M"
 
 symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.cFFTWPlan{T,K}) where {T,K} = K<0 ? "FFT" : "iFFT" 
-symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.DCTPlan{T,K}) where {T,K} = K==REDFT10 ? "DCT" : "iDCT" 
+symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.DCTPlan{T,K}) where {T,K} = K==Base.DFT.FFTW.REDFT10 ? "DCT" : "iDCT" 
 
 function string(op::MultiplicationOperator, object::Base.DFT.FFTW.cFFTWPlan) 
     io = IOBuffer()
