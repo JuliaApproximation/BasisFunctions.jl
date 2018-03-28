@@ -102,7 +102,11 @@ end
 
 children(op::WrappedOperator) = isa(op.op,ParentOperator) ? children(op.op) : (op.op,)
 
-function stencil(op::WrappedOperator)
+    
+function stencil(op::WrappedOperator, S)
+    if haskey(S,op)
+        return op
+    end
     A = Any[]
     push!(A,"W(")
     s = stencil(op.op)
@@ -112,6 +116,7 @@ function stencil(op::WrappedOperator)
         for i=1:length(s)
             push!(A,s[i])
         end
+        A = recurse_stencil(op.op,A,S)
     end
     push!(A,")")
     A

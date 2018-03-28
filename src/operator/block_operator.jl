@@ -187,7 +187,7 @@ ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
 A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
-struct BlockDiagonalOperator{T} <: AbstractOperator{T}
+struct BlockDiagonalOperator{T} <: ParentOperator{T}
     operators   ::  Array{AbstractOperator{T}, 1}
     src         ::  Span
     dest        ::  Span
@@ -202,6 +202,7 @@ BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
     BlockDiagonalOperator(operators, multispan(map(src, operators)), multispan(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
+elements(op::BlockDiagonalOperator) = op.operators
 
 function block_operator(op::BlockDiagonalOperator)
     ops = Array(AbstractOperator{eltype(op)}, nb_elements(op), nb_elements(op))
@@ -279,6 +280,22 @@ function stencil(op::BlockOperator)
         for j=2:size(elements(op),2)
             push!(A,", \t")
             push!(A,element(op,i,j))
+        end
+    end
+    push!(A,"]")
+    A
+end
+
+function stencil(op::BlockDiagonalOperator)
+    A = Any[]
+    push!(A,"[")
+    for i=1:composite_size(op)[1]
+        i!=1 && push!(A,";\t 0")
+        i==1 && push!(A,element(op,1,1))
+        for j=2:composite_size(op)[2]
+            push!(A,", \t")
+            i==j && push!(A,element(op,i,j))
+            i!=j && push!(A,"0")
         end
     end
     push!(A,"]")
