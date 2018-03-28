@@ -62,6 +62,7 @@ function diagonal(op::CoefficientScalingOperator)
     diag
 end
 
+string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.index) by $(op.scalar)"
 
 """
 A WrappedOperator has a source and destination, as well as an embedded operator with its own
@@ -205,6 +206,7 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
     coef_dest
 end
 
+string(op::IndexRestrictionOperator) = "Selecting coefficients "*string(op.subindices)
 
 
 """
@@ -252,7 +254,7 @@ ctranspose(op::IndexRestrictionOperator) =
 ctranspose(op::IndexExtensionOperator) =
     IndexRestrictionOperator(dest(op), src(op), subindices(op))
 
-
+string(op::IndexExtensionOperator) = "Placing original elements in "*string(op.subindices)
 """
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
@@ -420,6 +422,8 @@ inv(op::FunctionOperator) = inv_function(op, op.fun)
 
 # This can be overriden for types of functions that do not support inv
 inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
+
+string(op::FunctionOperator) = "Function "*string(op.fun)
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
