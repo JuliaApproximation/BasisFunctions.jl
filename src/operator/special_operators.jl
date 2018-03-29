@@ -52,7 +52,7 @@ function matrix!(op::CoefficientScalingOperator, a)
 end
 
 function apply_inplace!(op::CoefficientScalingOperator, coef_srcdest)
-    coef_srcdest[op.index] *= op.scalar
+    coef_srcdest[op.index] = coef_srcdest[op.index]*op.scalar
     coef_srcdest
 end
 
@@ -448,10 +448,12 @@ ctranspose(op::UnevenSignFlipOperator) = op
 inv(op::UnevenSignFlipOperator) = op
 
 function apply_inplace!(op::UnevenSignFlipOperator, coef_srcdest)
-    l = 1
+    flip = false
     for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= l
-        l = -l
+        if flip
+            coef_srcdest[i] = -coef_srcdest[i]
+        end
+        flip = !flip
     end
     coef_srcdest
 end

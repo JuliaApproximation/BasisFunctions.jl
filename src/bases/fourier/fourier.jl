@@ -328,17 +328,6 @@ end
 
 
 
-function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
-	@assert compatible_grid(dictionary(dest), grid)
-    L = convert(coeftype(dest), length(src))
-    ScalingOperator(dest, 1/sqrt(L))
-end
-
-function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
-	@assert compatible_grid(dictionary(src), grid)
-	inv(transform_from_grid_post(dest, src, grid; options...))
-end
-
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because

@@ -53,7 +53,7 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
         s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
         t_op = FunctionOperator(src, dest, $fun)
 
-        s_op * t_op
+        t_op
     end
 
     # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
@@ -66,7 +66,7 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
         t_op = $op(src, dest, dims, fftwflags)
         # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
         s_op = fftw_scaling_operator(dest)
-        s_op * t_op
+        t_op
     end
 end
 
@@ -78,7 +78,7 @@ ifft_scalefactor(src, ::Type{ELT}) where {ELT} = sqrt(ELT(length(src)))
 # dimension_operator. These are important to catch, since there are specific FFT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
 FFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
-IFFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
+IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,Base.DFT.FFTW.cFFTWPlan{T,1,true,N},S}
 
 dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
     dim, object::FFTPLAN; options...) =
@@ -93,12 +93,14 @@ ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
     ifftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
 
 ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    fftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
+    fftw_operator(dest(op), src(op), 1:dimension(dest(op)),object.p.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+#        ctranspose_multiplication(op, object) 
+ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+#        ctranspose_multiplication(op, object) 
     ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 

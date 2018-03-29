@@ -219,6 +219,7 @@ function test_invertible_operators(T)
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
+            show(Op)
             m = matrix(Op)
             # Test out-of-place
             coef_src = rand(src(Op))

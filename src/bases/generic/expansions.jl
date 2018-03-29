@@ -178,7 +178,7 @@ end
 (*)(e::Expansion, a::Number) = a*e
 
 function apply(op::AbstractOperator, e::Expansion)
-    @assert dictionary(e) == dictionary(src(op))
+    #@assert dictionary(e) == dictionary(src(op))
 
     Expansion(dictionary(dest(op)), op * coefficients(e))
 end
