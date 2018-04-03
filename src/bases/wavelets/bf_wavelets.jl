@@ -3,10 +3,16 @@
 abstract type WaveletBasis{T} <: Dictionary1d{T,T}
 end
 
+"""
+The number of levels in the wavelet basis
+"""
 dyadic_length(b::WaveletBasis) = b.L
 
 length(b::WaveletBasis) = 1<<dyadic_length(b)
 
+"""
+The wavelet type
+"""
 BasisFunctions.wavelet(b::WaveletBasis) = b.w
 
 BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
@@ -46,7 +52,7 @@ unsafe_eval_element(b::WaveletBasis, idx::Int, x) =
 resize(b::B, n::Int) where {B<:WaveletBasis} = B(wavelet(b),round(Int, log2(n)))
 
 has_grid(::WaveletBasis) = true
-# TODO implement transform
+
 has_transform(::WaveletBasis) = true
 
 compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
