@@ -297,7 +297,7 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bases/translates/translation_dict.jl
