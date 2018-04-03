@@ -1,20 +1,5 @@
 # bf_wavelets.jl
 
-"""
-`WaveletIndex` contains three parameters, uniquely identifying a wavelet coefficient:
-Whether it is a scaling or a wavelet coefficient, the level of the wavelet and the displacement.
-"""
-struct WaveletIndex
-    kind
-    j   ::Int
-    k   ::Int
-end
-
-Int(idxn::WaveletIndex) = coefficient_index(idxn.kind, idxn.j, idxn.k)
-
-Base.show(io::IO, idx::BasisFunctions.NativeIndex{:fourier}) =
-	print(io, "Wavelet integer index: $(Int(idx))")
-
 abstract type WaveletBasis{T} <: Dictionary1d{T,T}
 end
 
@@ -77,8 +62,8 @@ has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)
 
-function support(b::WaveletBasis{T}, idxn::WaveletIndex) where {T}
-    l,r = support(Primal, idxn.kind, wavelet(b), idxn.j, idxn.k)
+function support(b::WaveletBasis{T}, idxn) where {T}
+    l,r = support(Primal, idxn[1], wavelet(b), idxn[2], idxn[3])
     l < 0 || r > 1 ? (T(0),T(1)) : (T(l),T(r))
 end
 
@@ -90,6 +75,8 @@ period{T}(::WaveletBasis{T}) = T(1)
 grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
 
 
+const WaveletIndex = NativeIndex{:wavelet}
+
 """
 `DWTIndexList` defines the map from native indices to linear indices
 for a finite wavelet basis, when the indices are ordered in the way they
@@ -99,21 +86,21 @@ struct DWTIndexList <: IndexList{WaveletIndex}
 	n	::	Int
 end
 
+Base.show(io::IO, idx::BasisFunctions.NativeIndex{:wavelet}) =
+	print(io, "Wavelet index: $(value(idx))")
+
 length(list::DWTIndexList) = list.n
 size(list::DWTIndexList) = (list.n,)
 
-getindex(m::DWTIndexList, idx::Int) = WaveletIndex(wavelet_index(length(m), idx, Int(log2(length(m))))...)
+getindex(m::DWTIndexList, idx::Int) = wavelet_index(length(m), idx, Int(log2(length(m))))
 
-getindex(list::DWTIndexList, idxn::WaveletIndex) = Int(idxn)
+getindex(list::DWTIndexList, idxn) = coefficient_index(idxn...)
 
 ordering(b::WaveletBasis) = DWTIndexList(length(b))
 
 
-native_index(b::WaveletBasis, idx::Int) = WaveletIndex(wavelet_index(length(b), idx, dyadic_length(b))...)
-linear_index(b::WaveletBasis, idxn::WaveletIndex) = Int(idxn)
-
-checkbounds(::Type{Bool}, dict::Dictionary, i::WaveletIndex) =
-    checkbounds(Bool, dict, linear_index(dict, i))
+native_index(b::WaveletBasis, idx::Int) = wavelet_index(length(b), idx, dyadic_length(b))
+linear_index(b::WaveletBasis, idxn) = coefficient_index(idxn...)
 
 approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
 
@@ -122,8 +109,10 @@ approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
 extension_size(b::WaveletBasis) = 2*length(b)
 
 
-unsafe_eval_element(dict::WaveletBasis, idxn::WaveletIndex, x; xtol=1e-4, options...) =
-    evaluate_periodic(Primal, idxn.kind, wavelet(dict), idxn.j, idxn.k, x; xtol = xtol, options...)
+function unsafe_eval_element(dict::WaveletBasis, idxn, x; xtol=1e-4, options...)
+    println(idxn)
+    evaluate_periodic(Primal, idxn[1], wavelet(dict), idxn[2], idxn[3], x; xtol = xtol, options...)
+end
 
 function transform_from_grid(src, dest::WaveletBasis, grid; options...)
     @assert compatible_grid(dest, grid)
