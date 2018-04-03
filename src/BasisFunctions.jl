@@ -47,11 +47,11 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-# import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-# import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
-# import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
-# import Wavelets.Sequences: support
-# import Wavelets.Util: isdyadic
+import Wavelets: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
+import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
+import Wavelets.Sequences: support
+import Wavelets.Util: isdyadic
 
 
 ## Imports from Domains
@@ -297,7 +297,7 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-# export DaubechiesWaveletBasis, CDFWaveletBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bases/translates/translation_dict.jl
@@ -411,7 +411,7 @@ include("bases/translates/translates_of_bsplines.jl")
 # Wavelets
 ################################################################
 
-# # include("bases/wavelets/bf_wavelets.jl")
+include("bases/wavelets/bf_wavelets.jl")
 
 ################################################################
 # Polynomials: monomials and (classical) orthogonal polynomials
