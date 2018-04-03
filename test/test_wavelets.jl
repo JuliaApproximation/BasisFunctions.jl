@@ -13,13 +13,13 @@ function bf_wavelets_implementation_test()
         println("Timings should be in the order of 0.001 seconds, 22.01k allocations, 625.094 KB")
         @time begin
             for x in linspace(0,1,1000)
-                BasisFunctions.eval_element(b, 1, x)
+                BasisFunctions.unsafe_eval_element(b, 1, x)
             end
         end
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test left(b,i) == supports[Int(i)][1]
-            @test right(b,i) == supports[Int(i)][2]
+            @test left(b,i) == supports[linear_index(b,i)][1]
+            @test right(b,i) == supports[linear_index(b,i)][2]
         end
         for i in ordering(b1)
             @test support(b1,i) == (0.,1.)
@@ -38,14 +38,14 @@ function bf_wavelets_implementation_test()
         @test resize(b1,8) == BasisFunctions.DaubechiesWaveletBasis(3,3)
         @test BasisFunctions.name(b1) == "Basis of db3 wavelets"
         @test BasisFunctions.name(b2) == "Basis of cdf31 wavelets"
-        @test BasisFunctions.native_index(b,1) == WaveletIndex(scaling, 0, 0)
-        @test BasisFunctions.native_index(b,2) == WaveletIndex(wavelet, 0, 0)
-        @test BasisFunctions.native_index(b,3) == WaveletIndex(wavelet, 1, 0)
-        @test BasisFunctions.native_index(b,4) == WaveletIndex(wavelet, 1, 1)
-        @test BasisFunctions.native_index(b,5) == WaveletIndex(wavelet, 2, 0)
-        @test BasisFunctions.native_index(b,6) == WaveletIndex(wavelet, 2, 1)
-        @test BasisFunctions.native_index(b,7) == WaveletIndex(wavelet, 2, 2)
-        @test BasisFunctions.native_index(b,8) == WaveletIndex(wavelet, 2, 3)
+        @test BasisFunctions.native_index(b,1) == (scaling, 0, 0)
+        @test BasisFunctions.native_index(b,2) == (wavelet, 0, 0)
+        @test BasisFunctions.native_index(b,3) == (wavelet, 1, 0)
+        @test BasisFunctions.native_index(b,4) == (wavelet, 1, 1)
+        @test BasisFunctions.native_index(b,5) == (wavelet, 2, 0)
+        @test BasisFunctions.native_index(b,6) == (wavelet, 2, 1)
+        @test BasisFunctions.native_index(b,7) == (wavelet, 2, 2)
+        @test BasisFunctions.native_index(b,8) == (wavelet, 2, 3)
 
         for i in 1:length(b)
             @test(linear_index(b,BasisFunctions.native_index(b,i))==i )
