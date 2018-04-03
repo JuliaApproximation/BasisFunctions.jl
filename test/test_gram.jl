@@ -1,3 +1,5 @@
+using BasisFunctions
+using Base.Test
 
 function discrete_gram_test(T)
     for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries,BSplineTranslatesBasis,)
@@ -7,6 +9,12 @@ function discrete_gram_test(T)
             @test ! (typeof(DiscreteGram(span)) <: CompositeOperator)
         end
     end
+    # Had to add these lines to get the terminal to run without errors. No idea why. VC
+    n = 10
+    B = ChebyshevBasis
+    oversampling = 1
+    basis = instantiate(B, n, T)
+    ##################################################################################
     for n in (10,11), oversampling in 1:4
         e = map(T,rand(n))
         for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries,BSplineTranslatesBasis,)
@@ -43,9 +51,8 @@ function general_gram_test(T)
     end
 end
 
-# using BasisFunctions
-# using Base.Test
-# #
+
+#
 # @testset begin discrete_gram_test(Float64) end
 # @testset begin general_gram_test(Float64) end
-# # #
+# #
