@@ -108,22 +108,18 @@ getindex(list::DWTIndexList, idxn::WaveletIndex) = Int(idxn)
 
 ordering(b::WaveletBasis) = DWTIndexList(length(b))
 
-function idx2waveletidx(b::WaveletBasis, idx::Int)
-    kind, j, k = wavelet_index(length(b), idx, dyadic_length(b))
-    kind, j, k
-end
 
-waveletidx2idx(b::WaveletBasis, kind::Kind, j::Int, k::Int) = coefficient_index(kind, j, k)
+native_index(b::WaveletBasis, idx::Int) = WaveletIndex(wavelet_index(length(b), idx, dyadic_length(b))...)
+linear_index(b::WaveletBasis, idxn::WaveletIndex) = Int(idxn)
 
-native_index(b::WaveletBasis, idx::Int) = WaveletIndex(idx2waveletidx(b,idx)...)
-linear_index(b::WaveletBasis, waveletidx::Tuple{Kind,Int,Int}) = waveletidx2idx(b, waveletidx...)
+checkbounds(::Type{Bool}, dict::Dictionary, i::WaveletIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
 
 approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
 
 approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
 
 extension_size(b::WaveletBasis) = 2*length(b)
-
 
 
 unsafe_eval_element(dict::WaveletBasis, idxn::WaveletIndex, x; xtol=1e-4, options...) =
