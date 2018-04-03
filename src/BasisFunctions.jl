@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__()
+#__precompile__()
 
 module BasisFunctions
 
@@ -92,10 +92,10 @@ export element, elements, nb_elements
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
-        AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid,
-        ChebyshevNodeGrid, ChebyshevExtremaGrid
+        AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
+export ChebyshevNodeGrid, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremaGrid
 export Point
-export leftendpoint, rightendpoint, range, sample
+export leftendpoint, rightendpoint, range
 
 # from grid/productgrid.jl
 export ProductGrid
@@ -118,12 +118,11 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support, domain, codomain
-export eval_expansion, eval_element, unsafe_eval_element, eval_element_derivative,
-        unsafe_eval_element_derivative
+export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
 export ordering
-export native_index, linear_index, multilinear_index, native_size, linear_size
+export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
 export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
@@ -153,8 +152,9 @@ export DerivedDict
 export MappedDict, mapped_dict, mapping, superdict, rescale
 
 #from bases/generic/expansions.jl
-export Expansion, TensorProductExpansion, coefficients, dictionary, roots,
-        random_expansion, differentiate, antidifferentiate, call_set_expansion,
+export Expansion, TensorProductExpansion
+export expansion, coefficients, dictionary, roots,
+        random_expansion, differentiate, antidifferentiate,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operator.jl
@@ -230,7 +230,7 @@ export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
 
 
 # from bases/generic/composite_dict.jl
-export tail
+export tail, numelements
 
 # from bases/generic/multiple_dict.jl
 export MultiDict, multidict, ⊕
@@ -255,6 +255,11 @@ export gridbasis, gridspace
 
 # from sampling/sampling_operator.jl
 export GridSamplingOperator
+export sample
+
+# from sampling/platform.jl
+export Platform
+export primal, dual
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -379,6 +384,7 @@ include("bases/generic/vector_dict.jl")
 
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
+include("sampling/platform.jl")
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines

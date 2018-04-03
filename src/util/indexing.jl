@@ -235,7 +235,7 @@ end
 
 const MLIndexList = MultilinearIndexList
 
-length(list::MLIndexList) = list.offsets[end]
+size(list::MLIndexList) = (list.offsets[end],)
 
 # Convert a linear index into a multilinear index using the offsets information
 function offsets_multilinear_index(offsets, idx::Int)

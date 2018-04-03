@@ -4,9 +4,13 @@
 A `WeightedDict` represents some function f(x) times an existing dictionary.
 """
 struct WeightedDict{S,T} <: DerivedDict{S,T}
-    superdict   ::  Dictionary{S,T}
+    superdict   ::  Dictionary{S}
     weightfun
 end
+
+WeightedDict(superdict::Dictionary{S,T},weightfun) where {S,T} = WeightedDict{S,T}(superdict,weightfun)
+
+WeightedDict(superdict::Dictionary{S},weightfun,T) where S = WeightedDict{S,T}(superdict,weightfun)
 
 const WeightedDict1d{S <: Number,T} = WeightedDict{S,T}
 const WeightedDict2d{S <: Number,T} = WeightedDict{SVector{2,S},T}

@@ -28,6 +28,7 @@ const CompositeDictSpan{A,S,T,D <: CompositeDict} = Span{A,S,T,D}
 is_composite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
 element(set::CompositeDict, j) = set.dicts[j]
+numelements(set::CompositeDict) = length(elements(set))
 
 similar_compositespan(s::CompositeDictSpan, spans) =
     Span(similar_dictionary(dictionary(s), map(dictionary, spans)), coeftype(s))

@@ -6,7 +6,7 @@ consecutively.
 
 Whenever possible, scratch space is allocated to hold intermediate results.
 """
-struct CompositeOperator{ELT} <: AbstractOperator{ELT}
+struct CompositeOperator{T} <: AbstractOperator{T}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).

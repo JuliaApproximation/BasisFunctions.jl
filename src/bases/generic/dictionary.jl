@@ -6,12 +6,12 @@
 ######################
 
 """
-A `Dictionary{S,T}` is an ordered list of functions, in which each function
+A `Dictionary{S,T}` is an ordered family of functions, in which each function
 maps a variable of type `S` to a variable of type `T`.
 
 A `Dictionary{S,T}` has domain type `S` and codomain type `T`. The domain type
 corresponds to the type of a domain in the `Domains.jl` package, and it is the
-type of the expected argument to the elements of the function set. The
+type of the expected argument to the elements of the dictionary. The
 codomain type is the type of the output.
 
 Each dictionary is ordered via its index set: the ordering is determined by the
@@ -63,7 +63,7 @@ dimension(dict::Dictionary) = dimension(domaintype(dict))
 
 dimension(dict::Dictionary, i) = dimension(element(dict, i))
 
-"Are the functions in the dictionary are real-valued?"
+"Are the functions in the dictionary real-valued?"
 isreal(d::Dictionary) = isreal(codomaintype(d))
 
 
@@ -180,26 +180,34 @@ ordering(dict::Dictionary) = Base.OneTo(length(dict))
 eachindex(d::Dictionary) = eachindex(ordering(d))
 
 "Compute the native index corresponding to the given index."
-# We explicitly convert a linear index. Anything else we return unchanged,
-# but concrete dictionaries can override for indices they wish to convert.
-native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
-native_index(dict::Dictionary, idxn) = idxn
+native_index(dict::Dictionary, idx) = _native_index(dict, idx)
+# We redirect to a fallback _native_index in case the concrete dictionary
+# did not implement native_index.  We explicitly convert a linear index using the ordering.
+# Anything else we return unchanged because we do not know what to do at this level.
+_native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
+_native_index(dict::Dictionary, idxn) = idxn
 
 "Compute the linear index corresponding to the given index."
+linear_index(dict::Dictionary, idx) = _linear_index(dict, idx)
 # We can accept an integer unchanged, anything else we pass to the ordering
-linear_index(dict::Dictionary, idx::LinearIndex) = idx
-linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
+_linear_index(dict::Dictionary, idx::LinearIndex) = idx
+_linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
 
 # Convenience: make a vector indexable using native indices, if possible
+# It is possible whenever the size and element type of the vector completely
+# determine the index map from native to linear indices
 getindex(v::Array, idxn::NativeIndex) =
 	getindex(v, linear_index(idxn, size(v), eltype(v)))
 
+
+##################################################
+## Conversion between coefficient representations
+##################################################
+
 """
 Convert the set of coefficients in the native format of the dictionary
-to a linear list. The order of the coefficients in this list is determined by
-the order of the elements in the dictionary.
+to a linear list in a vector.
 """
-# Allocate memory for the linear set and call linearize_coefficients! to do the work
 function linearize_coefficients(dict::Dictionary, coef_native)
     coef_linear = zeros(eltype(coef_native), length(dict))
     linearize_coefficients!(dict, coef_linear, coef_native)
@@ -207,17 +215,24 @@ end
 
 linearize_coefficients!(dict::Dictionary, coef_linear::Vector, coef_native) =
     copy!(coef_linear, coef_native)
+# Note that copy! is defined in util/common.jl
 
 """
 Convert a linear set of coefficients back to the native representation of the dictionary.
 """
-function delinearize_coefficients(dict::Dictionary, coef_linear::AbstractVector{T}) where {T}
+function delinearize_coefficients(dict::Dictionary, coef_linear::Vector)
     coef_native = zeros(eltype(coef_linear), dict)
     delinearize_coefficients!(dict, coef_native, coef_linear)
 end
 
 delinearize_coefficients!(dict::Dictionary, coef_native, coef_linear::Vector) =
     copy!(coef_native, coef_linear)
+
+"Promote the given coefficients to the native representation of the dictionary."
+native_coefficients(dict::Dictionary, coef) = _native_coefficients(dict, coef)
+# TODO: we create an unnecessary copy here if the native type is a vector
+_native_coefficients(dict::Dictionary, coef::Vector) = delinearize_coefficients(dict, coef)
+_native_coefficients(dict::Dictionary, coef) = coef
 
 # Sets have a native size and a linear size. However, there is not necessarily a
 # bijection between the two. You can always convert a native size to a linear size,
@@ -303,6 +318,11 @@ tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 ## Bounds checking
 ####################
 
+# We hook into Julia's bounds checking system. See the Julia documentation.
+# This is based on the set of indices, as returned by `indices(dict)`.
+# One thing to take into account in our setting is that the map from linear indices
+# to native indices and vice-versa requires knowledge of the dictionary. Hence,
+# we do some conversions before `indices(dict)` is called and passed on.
 checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
 # We make a special case for a linear index
@@ -316,8 +336,11 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::NativeIndex) =
 checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 
+# And here we call checkbounds_indices with indices(dict)
 checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
 
+# TODO: reconsider the left and right functions, in favour of the support or domain
+# of a set. Left and right do not generalize beyond intervals.
 left(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
 right(dict::Dictionary, idx) = right(dict, native_index(dict, idx))
 
@@ -355,9 +378,19 @@ an index out of bounds. The value `0` is returned when x is outside the support.
 After the check on the index, the function calls `unsafe_eval_element1.` This
 function checks whether `x` lies in the support, and then calls
 `unsafe_eval_element`. The latter function should be implemented by a concrete
-dictionary.
+dictionary. Any user who wants to avoid the bounds check or the support check
+can intercept `eval_element` or `unsafe_eval_element1` respectively.
 """
 function eval_element(dict::Dictionary, idx, x)
+    # We convert to a native index before bounds checking
+    idxn = native_index(dict, idx)
+    @boundscheck checkbounds(dict, idxn)
+    unsafe_eval_element1(dict, idxn, x)
+end
+
+# For linear indices, bounds checking is very efficient, so we intercept this case
+# and only convert to a native index after the bounds check.
+function eval_element(dict::Dictionary, idx::LinearIndex, x)
     @boundscheck checkbounds(dict, idx)
     unsafe_eval_element1(dict, native_index(dict, idx), x)
 end
@@ -379,13 +412,12 @@ function eval_element_extension(dict::Dictionary, idx, x)
     unsafe_eval_element(dict, native_index(dict, idx), x)
 end
 
-# Convenience function: evaluate a function on a grid
-function eval_element(dict::Dictionary, idx, grid::AbstractGrid)
-    @boundscheck checkbounds(dict, idx)
-    idxn = native_index(dict, idx)
+# Convenience function: evaluate a function on a grid.
+# We implement unsafe_eval_element1, so the bounds check on idx has already happened
+function unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid)
     result = zeros(gridspace(grid, codomaintype(dict)))
     for k in eachindex(grid)
-        @inbounds result[k] = eval_element(dict, idxn, grid[k])
+        @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
     result
 end
@@ -397,6 +429,12 @@ This function is exactly like `eval_element`, but it evaluates the derivative
 of the element instead.
 """
 function eval_element_derivative(dict::Dictionary, idx, x)
+    idxn = native_index(dict, idx)
+    @boundscheck checkbounds(dict, idxn)
+    unsafe_eval_element_derivative1(dict, idxn, x)
+end
+
+function eval_element_derivative(dict::Dictionary, idx::LinearIndex, x)
     @boundscheck checkbounds(dict, idx)
     unsafe_eval_element_derivative1(dict, native_index(dict, idx), x)
 end
@@ -425,7 +463,7 @@ function eval_expansion(dict::Dictionary, coefficients, x)
     z = zero(T)
     # It is safer below to use eval_element than unsafe_eval_element, because of
     # the check on the support.
-    @inbounds for idx in eachindex(dict)
+    @inbounds for idx in eachindex(coefficients)
         z = z + coefficients[idx] * eval_element(dict, idx, x)
     end
     z
@@ -435,15 +473,13 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
     @assert dimension(dict) == dimension(grid)
     @assert size(coefficients) == size(dict)
     # TODO: reenable test once product grids and product sets have compatible types again
-    # @assert eltype(grid) == domaintype(set)
+    # @assert eltype(grid) == domaintype(dict)
 
     span = Span(dict, eltype(coefficients))
     T = codomaintype(span)
     E = evaluation_operator(span, gridspace(grid, T))
     E * coefficients
 end
-
-# There is no need for an eval_expansion! method, since one can use evaluation_operator for that purpose
 
 
 #######################

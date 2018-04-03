@@ -100,9 +100,8 @@ in_support(set::DerivedDict, idx, x::T) where {T <: Complex} =
 # Indexing and iteration
 #########################
 
-native_index(dict::DerivedDict, idx::LinearIndex) = native_index(superdict(dict), idx)
+native_index(dict::DerivedDict, idx) = native_index(superdict(dict), idx)
 
-linear_index(dict::DerivedDict, idx::LinearIndex) = idx
 linear_index(dict::DerivedDict, idxn) = linear_index(superdict(dict), idxn)
 
 eachindex(dict::DerivedDict) = eachindex(superdict(dict))
