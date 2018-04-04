@@ -13,7 +13,7 @@ function bf_wavelets_implementation_test()
         println("Timings should be in the order of 0.001 seconds, 22.01k allocations, 625.094 KB")
         @time begin
             for x in linspace(0,1,1000)
-                BasisFunctions.eval_element(b, 1, x)
+                BasisFunctions.unsafe_eval_element(b, 1, x)
             end
         end
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
