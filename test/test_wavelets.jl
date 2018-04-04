@@ -55,16 +55,14 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.period(b1)==1.
 
         # test grid eval functions
-        i = ordering(b)[1]
-        BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g)
-        BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g)
+        g = plotgrid(b,200)
         for i in ordering(b)
-            tic()
-            e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g)
-            t1 = toq()
-            tic()
-            @elapsed e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g)
-            t2 = toq()
+            tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
+            tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
+        end
+        for i in ordering(b)
+            tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
+            tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
             @test e1 ≈ e2
             @test t2 < t1
         end

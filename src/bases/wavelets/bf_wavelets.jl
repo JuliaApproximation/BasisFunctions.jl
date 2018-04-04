@@ -175,19 +175,6 @@ function InverseDistreteWaveletTransform(src::Dictionary, dest::Dictionary, w::D
     FunctionOperator(src, dest, x->full_idwt(x, w, perbound))
 end
 
-
-
-# Used for fast plot of all elements in a WaveletBasis
-#TODO make in place implementation of evaluate_periodic_in_dyadic_points
-function eval_element!(result, set::WaveletBasis, idx, grid::DyadicPeriodicEquispacedGrid, outside_value = zero(eltype(set)))
-    if (1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1)
-        kind, j, k = native_index(set, idx)
-        result = evaluate_periodic_in_dyadic_points(Primal, kind, wavelet(set), j, k, dyadic_length(grid))
-    else
-        eval_element!(result, set, idx, PeriodicEquispacedGrid(grid), outside_value)
-    end
-end
-
 abstract type OrthogonalWaveletBasis{T} <: WaveletBasis{T} end
 
 is_basis(b::OrthogonalWaveletBasis) = true
