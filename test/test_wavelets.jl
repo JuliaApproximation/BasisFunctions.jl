@@ -61,11 +61,7 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.period(b1)==1.
 
         # test grid eval functions
-<<<<<<< HEAD
         for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,0,1))
-=======
-        for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,1))
->>>>>>> b7e39ad8c3c8c3519bc63e58fe12a3a9e601fb4e
             for i in ordering(b)
                 tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
                 tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
@@ -90,6 +86,22 @@ function bf_wavelets_implementation_test()
             @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
+            pre1 = transform_operator_pre(tspan, span)
+            post1 = transform_operator_post(tspan, span)
+            pre2 = transform_operator_pre(span, tspan)
+            post2 = transform_operator_post(span, tspan)
+            t = transform_operator(tspan, span)
+            it = transform_operator(span, tspan)
+            # # - try interpolation using transform+pre/post-normalization
+            # x = rand(tspan)
+            # e = Expansion(basis, (post1*t*pre1)*x)
+            # g = grid(basis)
+            # @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
+            # - try evaluation using transform+pre/post-normalization
+            e = random_expansion(span)
+            x1 = (post2*it*pre2)*coefficients(e)
+            x2 = e(grid(basis))
+            @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
         end
     end
 end
