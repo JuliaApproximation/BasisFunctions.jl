@@ -18,8 +18,8 @@ function bf_wavelets_implementation_test()
         end
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test left(b,i) == supports[Int(i)][1]
-            @test right(b,i) == supports[Int(i)][2]
+            @test left(b,i) == supports[value(i)][1]
+            @test right(b,i) == supports[value(i)][2]
         end
         for i in ordering(b1)
             @test support(b1,i) == (0.,1.)
@@ -38,14 +38,14 @@ function bf_wavelets_implementation_test()
         @test resize(b1,8) == BasisFunctions.DaubechiesWaveletBasis(3,3)
         @test BasisFunctions.name(b1) == "Basis of db3 wavelets"
         @test BasisFunctions.name(b2) == "Basis of cdf31 wavelets"
-        @test BasisFunctions.native_index(b,1) == WaveletIndex(scaling, 0, 0)
-        @test BasisFunctions.native_index(b,2) == WaveletIndex(wavelet, 0, 0)
-        @test BasisFunctions.native_index(b,3) == WaveletIndex(wavelet, 1, 0)
-        @test BasisFunctions.native_index(b,4) == WaveletIndex(wavelet, 1, 1)
-        @test BasisFunctions.native_index(b,5) == WaveletIndex(wavelet, 2, 0)
-        @test BasisFunctions.native_index(b,6) == WaveletIndex(wavelet, 2, 1)
-        @test BasisFunctions.native_index(b,7) == WaveletIndex(wavelet, 2, 2)
-        @test BasisFunctions.native_index(b,8) == WaveletIndex(wavelet, 2, 3)
+        @test BasisFunctions.native_index(b,1) == (scaling, 0, 0)
+        @test BasisFunctions.native_index(b,2) == (wavelet, 0, 0)
+        @test BasisFunctions.native_index(b,3) == (wavelet, 1, 0)
+        @test BasisFunctions.native_index(b,4) == (wavelet, 1, 1)
+        @test BasisFunctions.native_index(b,5) == (wavelet, 2, 0)
+        @test BasisFunctions.native_index(b,6) == (wavelet, 2, 1)
+        @test BasisFunctions.native_index(b,7) == (wavelet, 2, 2)
+        @test BasisFunctions.native_index(b,8) == (wavelet, 2, 3)
 
         for i in 1:length(b)
             @test(linear_index(b,BasisFunctions.native_index(b,i))==i )
@@ -53,11 +53,26 @@ function bf_wavelets_implementation_test()
         @test grid(b1) == PeriodicEquispacedGrid(4,0,1)
         @test grid(b2) == PeriodicEquispacedGrid(32,0,1)
         @test BasisFunctions.period(b1)==1.
+
+        # test grid eval functions
+        i = ordering(b)[1]
+        BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g)
+        BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g)
+        for i in ordering(b)
+            tic()
+            e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g)
+            t1 = toq()
+            tic()
+            @elapsed e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g)
+            t2 = toq()
+            @test e1 ≈ e2
+            @test t2 < t1
+        end
     end
 end
 bf_wavelets_implementation_test()
 
 using Plots
-b = CDFWaveletBasis(2,2,4)
+b = CDFWaveletBasis(2,2,3)
 gr()
 plot(b)

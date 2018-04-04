@@ -52,10 +52,12 @@ has_grid(::WaveletBasis) = true
 
 has_transform(::WaveletBasis) = true
 
+grid_equal_span(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
+    (1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1)
 compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
-	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
+	 grid_equal_span(set,grid) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
-	(1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1) && (length(set)==length(grid))
+	grid_equal_span(set,grid) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
 has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 
@@ -75,7 +77,15 @@ period{T}(::WaveletBasis{T}) = T(1)
 grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
 
 
-const WaveletIndex = NativeIndex{:wavelet}
+const WaveletIndex = Tuple{Kind,Int,Int}
+
+checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
+
+value(idxn::WaveletIndex) = coefficient_index(idxn...)
+
+Base.show(io::IO, idxn::WaveletIndex) =
+	print(io, "Wavelet index: $(value(idxn))")
 
 """
 `DWTIndexList` defines the map from native indices to linear indices
@@ -86,21 +96,20 @@ struct DWTIndexList <: IndexList{WaveletIndex}
 	n	::	Int
 end
 
-Base.show(io::IO, idx::BasisFunctions.NativeIndex{:wavelet}) =
-	print(io, "Wavelet index: $(value(idx))")
+
 
 length(list::DWTIndexList) = list.n
 size(list::DWTIndexList) = (list.n,)
 
-getindex(m::DWTIndexList, idx::Int) = wavelet_index(length(m), idx, Int(log2(length(m))))
+Base.getindex(m::BasisFunctions.DWTIndexList, idx::Int) ::WaveletIndex = wavelet_index(length(m), idx, Int(log2(length(m))))
 
-getindex(list::DWTIndexList, idxn) = coefficient_index(idxn...)
+Base.getindex(list::BasisFunctions.DWTIndexList, idxn::WaveletIndex)::Int = value(idxn)
 
 ordering(b::WaveletBasis) = DWTIndexList(length(b))
 
 
-native_index(b::WaveletBasis, idx::Int) = wavelet_index(length(b), idx, dyadic_length(b))
-linear_index(b::WaveletBasis, idxn) = coefficient_index(idxn...)
+BasisFunctions.native_index(b::WaveletBasis, idx::Int)::WaveletIndex = wavelet_index(length(b), idx, dyadic_length(b))
+BasisFunctions.linear_index(b::WaveletBasis, idxn::WaveletIndex)::Int = value(idxn)
 
 approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
 
@@ -109,11 +118,25 @@ approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
 extension_size(b::WaveletBasis) = 2*length(b)
 
 
-function unsafe_eval_element(dict::WaveletBasis, idxn, x; xtol=1e-4, options...)
-    println(idxn)
+unsafe_eval_element(dict::WaveletBasis, idxn::WaveletIndex, x; xtol=1e-4, options...) =
     evaluate_periodic(Primal, idxn[1], wavelet(dict), idxn[2], idxn[3], x; xtol = xtol, options...)
+
+unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::DyadicPeriodicEquispacedGrid; options...) =
+    _unsafe_eval_element_in_dyadic_grid(dict, idxn, grid; options...)
+
+function unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::PeriodicEquispacedGrid; options...)
+    if isdyadic(length(grid)) && grid_equal_span(dict,grid)
+        _unsafe_eval_element_in_dyadic_grid(dict, idxn, grid; options...)
+    else
+        _default_unsafe_eval_element_in_grid(dict, idxn, grid)
+    end
 end
 
+_unsafe_eval_element_in_dyadic_grid(dict::WaveletBasis, idxn::WaveletIndex, grid::AbstractGrid; options...) =
+    evaluate_periodic_in_dyadic_points(Primal, idxn[1], wavelet(dict), idxn[2], idxn[3], round(Int,log2(length(grid))))
+
+
+# TODO remove scaling if they disapear in Fourier
 function transform_from_grid(src, dest::WaveletBasis, grid; options...)
     @assert compatible_grid(dest, grid)
     L = length(src)
@@ -152,10 +175,7 @@ function InverseDistreteWaveletTransform(src::Dictionary, dest::Dictionary, w::D
     FunctionOperator(src, dest, x->full_idwt(x, w, perbound))
 end
 
-# TODO use evaluate_periodic_in_dyadicpoints if grid has only dyadic points
-# function grid_evaluation_operator(set::WaveletBasis, dgs::DiscreteGridSpace, grid::EquispacedGrid; options)
-#
-# end
+
 
 # Used for fast plot of all elements in a WaveletBasis
 #TODO make in place implementation of evaluate_periodic_in_dyadic_points
@@ -192,7 +212,7 @@ instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWavelet
 
 is_compatible{P,T1,T2}(src1::DaubechiesWaveletBasis{P,T1}, src2::DaubechiesWaveletBasis{P,T2}) = true
 
-# TODO ensure that only bases with existing CDFwavelets are built
+# Note no check on existence of CDFXY is present.
 struct CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
     w   ::    CDFWavelet{P,Q,T}
     L   ::    Int
@@ -209,6 +229,7 @@ instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, ap
 is_compatible{P,Q,T1,T2}(src1::CDFWaveletBasis{P,Q,T1}, src2::CDFWaveletBasis{P,Q,T2}) = true
 
 @recipe function f(F::WaveletBasis; plot_complex = false, n=200)
+    legend --> false
     grid = plotgrid(F,n)
     for i in eachindex(F)
         @series begin
