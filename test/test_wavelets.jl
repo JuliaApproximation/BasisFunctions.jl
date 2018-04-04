@@ -1,10 +1,17 @@
 # test_wavelets.jl
 using BasisFunctions
-using Base.Test
-using Wavelets.DWT: wavelet, scaling
-
+    BF = BasisFunctions
+    using Base.Test
+    using Wavelets.DWT: wavelet, scaling
+    using StaticArrays
+    include("util_functions.jl")
+    include("test_generic_dicts.jl")
+    suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
 function bf_wavelets_implementation_test()
     @testset begin
+
+        test_generic_dict_interface(CDFWaveletBasis(1,1,6))
+
         b1 = DaubechiesWaveletBasis(3,2)
         b2 = CDFWaveletBasis(3,1,5)
         b = CDFWaveletBasis(1,1,3)
@@ -33,8 +40,8 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.dyadic_length(b2) == 5
         @test length(b1) == 4
         @test length(b2) == 32
-        @test promote_eltype(b1,Complex128) == DaubechiesWaveletBasis(3,2, Complex128)
-        @test promote_eltype(b2,Complex128) == CDFWaveletBasis(3,1,5, Complex128)
+        @test BasisFunctions.dict_promote_domaintype(b1,Complex128) == DaubechiesWaveletBasis(3,2, Complex128)
+        @test BasisFunctions.dict_promote_domaintype(b2,Complex128) == CDFWaveletBasis(3,1,5, Complex128)
         @test resize(b1,8) == BasisFunctions.DaubechiesWaveletBasis(3,3)
         @test BasisFunctions.name(b1) == "Basis of db3 wavelets"
         @test BasisFunctions.name(b2) == "Basis of cdf31 wavelets"

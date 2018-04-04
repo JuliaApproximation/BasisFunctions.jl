@@ -3,6 +3,23 @@
 abstract type WaveletBasis{T} <: Dictionary1d{T,T}
 end
 
+const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
+
+const WaveletIndex = Tuple{Kind,Int,Int}
+
+checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
+
+value(idxn::WaveletIndex) = coefficient_index(idxn...)
+
+Base.show(io::IO, idxn::WaveletIndex) =
+	print(io, "Wavelet index: $(value(idxn))")
+
+kind(idxn::WaveletIndex) = idxn[1]
+j(idxn::WaveletIndex) = idxn[2]
+k(idxn::WaveletIndex) = idxn[3]
+
+
 """
 The number of levels in the wavelet basis
 """
@@ -52,40 +69,30 @@ has_grid(::WaveletBasis) = true
 
 has_transform(::WaveletBasis) = true
 
-grid_equal_span(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
-    (1+(left(set) - left(grid))≈1) && (1+(right(set) - right(grid))≈1)
 compatible_grid(set::WaveletBasis, grid::PeriodicEquispacedGrid) =
-	 grid_equal_span(set,grid) && (length(set)==length(grid))
+    has_grid_equal_span(set,grid) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
-	grid_equal_span(set,grid) && (length(set)==length(grid))
+	has_grid_equal_span(set,grid) && (length(set)==length(grid))
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
 has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 
 left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)
 
-function support(b::WaveletBasis{T}, idxn) where {T}
-    l,r = support(Primal, idxn[1], wavelet(b), idxn[2], idxn[3])
+function support(b::WaveletBasis{T}, idxn::WaveletIndex) where {T}
+    l,r = support(Primal, kind(idxn), wavelet(b), j(idxn), k(idxn))
     l < 0 || r > 1 ? (T(0),T(1)) : (T(l),T(r))
 end
 
-left(b::WaveletBasis, i) = support(b,i)[1]
-right(b::WaveletBasis, i) = support(b,i)[2]
+left(b::WaveletBasis, i::WaveletIndex) = support(b,i)[1]
+right(b::WaveletBasis, i::WaveletIndex) = support(b,i)[2]
 
 period{T}(::WaveletBasis{T}) = T(1)
 
 grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
 
 
-const WaveletIndex = Tuple{Kind,Int,Int}
 
-checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
-    checkbounds(Bool, dict, linear_index(dict, i))
-
-value(idxn::WaveletIndex) = coefficient_index(idxn...)
-
-Base.show(io::IO, idxn::WaveletIndex) =
-	print(io, "Wavelet index: $(value(idxn))")
 
 """
 `DWTIndexList` defines the map from native indices to linear indices
@@ -119,13 +126,13 @@ extension_size(b::WaveletBasis) = 2*length(b)
 
 
 unsafe_eval_element(dict::WaveletBasis, idxn::WaveletIndex, x; xtol=1e-4, options...) =
-    evaluate_periodic(Primal, idxn[1], wavelet(dict), idxn[2], idxn[3], x; xtol = xtol, options...)
+    evaluate_periodic(Primal, kind(idxn), wavelet(dict), j(idxn), k(idxn), x; xtol = xtol, options...)
 
 unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::DyadicPeriodicEquispacedGrid; options...) =
     _unsafe_eval_element_in_dyadic_grid(dict, idxn, grid; options...)
 
 function unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::PeriodicEquispacedGrid; options...)
-    if isdyadic(length(grid)) && grid_equal_span(dict,grid)
+    if isdyadic(length(grid)) && has_grid_equal_span(dict,grid)
         _unsafe_eval_element_in_dyadic_grid(dict, idxn, grid; options...)
     else
         _default_unsafe_eval_element_in_grid(dict, idxn, grid)
@@ -133,47 +140,65 @@ function unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::Peri
 end
 
 _unsafe_eval_element_in_dyadic_grid(dict::WaveletBasis, idxn::WaveletIndex, grid::AbstractGrid; options...) =
-    evaluate_periodic_in_dyadic_points(Primal, idxn[1], wavelet(dict), idxn[2], idxn[3], round(Int,log2(length(grid))))
+    evaluate_periodic_in_dyadic_points(Primal, kind(idxn), wavelet(dict), j(idxn), k(idxn), round(Int,log2(length(grid))))
 
 
 # TODO remove scaling if they disapear in Fourier
-function transform_from_grid(src, dest::WaveletBasis, grid; options...)
-    @assert compatible_grid(dest, grid)
+function transform_from_grid(src, dest::WaveletSpan, grid; options...)
+    @assert compatible_grid(dictionary(dest), grid)
     L = length(src)
-    ELT = eltype(src)
-    S = ScalingOperator(dest, 1/sqrt(ELT(L)))
-    T = DiscreteWaveletTransform(src, dest, wavelet(dest); options...)
+    ELT = coeftype(src)
+    S = ScalingOperator(dest, sqrt(ELT(L)))
+    T = DiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
     T*S
 end
 
-function transform_to_grid(src::WaveletBasis, dest, grid; options...)
+function transform_to_grid(src::WaveletSpan, dest, grid; options...)
     @assert compatible_grid(src, grid)
     L = length(src)
-    ELT = eltype(src)
+    ELT = coeftype(src)
     S = ScalingOperator(dest, 1/sqrt(ELT(L)))
-    T = InverseDistreteWaveletTransform(src, dest, wavelet(src); options...)
+    T = InverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)); options...)
     T*S
 end
 
-function transform_from_grid_post(src, dest::WaveletBasis, grid; options...)
-	@assert compatible_grid(dest, grid)
+function transform_from_grid_post(src, dest::WaveletSpan, grid; options...)
+	@assert compatible_grid(dictionary(dest), grid)
     L = length(src)
-    ELT = eltype(src)
+    ELT = coeftype(src)
     ScalingOperator(dest, 1/sqrt(ELT(L)))
 end
 
-function transform_to_grid_pre(src::WaveletBasis, dest, grid; options...)
-	@assert compatible_grid(src, grid)
+function transform_to_grid_pre(src::WaveletSpan, dest, grid; options...)
+	@assert compatible_grid(dictionary(src), grid)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
-function DiscreteWaveletTransform(src::Dictionary, dest::Dictionary, w::DiscreteWavelet; options...)
-    FunctionOperator(src, dest, x->full_dwt(x, w, perbound))
+struct DWTFunction <: Function
+    w::DiscreteWavelet
 end
+(dwt::DWTFunction)(x) = full_dwt(x, dwt.w, perbound)
 
-function InverseDistreteWaveletTransform(src::Dictionary, dest::Dictionary, w::DiscreteWavelet; options...)
-    FunctionOperator(src, dest, x->full_idwt(x, w, perbound))
+
+struct iDWTFunction <: Function
+    w::DiscreteWavelet
 end
+(idwt::iDWTFunction)(x) = full_idwt(x, idwt.w, perbound)
+
+inv(f::iDWTFunction) = DWTFunction(f.w)
+inv(f::DWTFunction) = iDWTFunction(f.w)
+
+DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
+    FunctionOperator(src, dest, DWTFunction(w))
+
+InverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
+    FunctionOperator(src, dest, iDWTFunction(w))
+
+Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.DWTFunction,T} =
+    InverseDistreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
+
+Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.iDWTFunction,T} =
+    DiscreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),length(src(op)))
 
 abstract type OrthogonalWaveletBasis{T} <: WaveletBasis{T} end
 
@@ -192,7 +217,7 @@ end
 DaubechiesWaveletBasis{T}(P::Int, L::Int, ::Type{T} = Float64) =
     DaubechiesWaveletBasis{P,T}(DaubechiesWavelet{P,T}(), L)
 
-promote_eltype{P,T,S}(b::DaubechiesWaveletBasis{P,T}, ::Type{S}) =
+dict_promote_domaintype{P,T,S}(b::DaubechiesWaveletBasis{P,T}, ::Type{S}) =
     DaubechiesWaveletBasis(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWaveletBasis(3, approx_length(n), T)
@@ -208,7 +233,7 @@ end
 CDFWaveletBasis{T}(P::Int, Q::Int, L::Int, ::Type{T} = Float64) =
     CDFWaveletBasis{P,Q,T}(CDFWavelet{P,Q,T}(),L)
 
-promote_eltype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
+dict_promote_domaintype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
     CDFWaveletBasis(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)

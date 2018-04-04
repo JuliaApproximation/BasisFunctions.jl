@@ -282,6 +282,10 @@ has_transform(d::Dictionary) = has_grid(d) && has_transform(d, grid(d))
 has_transform(d::Dictionary, grid::AbstractGrid) =
     has_transform(d, gridbasis(grid, codomaintype(d)))
 
+"Does the grid span the same interval as the dictionary"
+has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
+    (1+(left(set) - leftendpoint(grid))≈1) && (1+(right(set) - rightendpoint(grid))≈1)
+
 "Does the set support extension and restriction operators?"
 has_extension(d::Dictionary) = false
 

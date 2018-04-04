@@ -69,7 +69,7 @@ has_extension(b::FourierBasis) = true
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
-	(1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
+	has_grid_equal_span(b,grid) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
 compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
