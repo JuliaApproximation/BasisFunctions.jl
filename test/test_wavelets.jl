@@ -61,7 +61,11 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.period(b1)==1.
 
         # test grid eval functions
+<<<<<<< HEAD
         for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,0,1))
+=======
+        for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,1))
+>>>>>>> b7e39ad8c3c8c3519bc63e58fe12a3a9e601fb4e
             for i in ordering(b)
                 tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
                 tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
