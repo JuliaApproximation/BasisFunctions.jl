@@ -30,6 +30,8 @@ include("test_bsplinetranslatedbasis.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
 
+delimit("Wavelets")
+include("test_wavelets.jl")
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well

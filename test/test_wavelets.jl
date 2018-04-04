@@ -4,8 +4,12 @@ using BasisFunctions
     using Base.Test
     using Wavelets.DWT: wavelet, scaling
     using StaticArrays
-    include("util_functions.jl")
-    include("test_generic_dicts.jl")
+    try
+        test_generic_dict_interface
+    catch
+        include("test_generic_dicts.jl")
+        include("util_functions.jl")
+    end
     suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
 function bf_wavelets_implementation_test()
     @testset begin
