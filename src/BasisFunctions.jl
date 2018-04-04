@@ -1,6 +1,6 @@
 # BasisFunctions
 
-#__precompile__()
+__precompile__(true)
 
 module BasisFunctions
 
@@ -48,7 +48,7 @@ import Base: cross, ×
 import Base.LinAlg: dot
 
 import Wavelets: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
+import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt
 import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
 import Wavelets.Sequences: support
 import Wavelets.Util: isdyadic

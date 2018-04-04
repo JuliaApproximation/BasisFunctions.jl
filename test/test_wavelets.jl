@@ -13,20 +13,15 @@ using BasisFunctions
     suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
 function bf_wavelets_implementation_test()
     @testset begin
-
+        # Note, following line only succceeds for this particular wavelet basis (since it is orthogonal and easily evaluated in a random point)
         test_generic_dict_interface(CDFWaveletBasis(1,1,6))
 
         b1 = DaubechiesWaveletBasis(3,2)
         b2 = CDFWaveletBasis(3,1,5)
         b = CDFWaveletBasis(1,1,3)
 
-        eval_element(b, 1, 0.5)
-        println("Timings should be in the order of 0.001 seconds, 22.01k allocations, 625.094 KB")
-        @time begin
-            for x in linspace(0,1,1000)
-                BasisFunctions.unsafe_eval_element(b, 1, x)
-            end
-        end
+        BasisFunctions.unsafe_eval_element(b, 1, .1)
+        624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
             @test left(b,i) == supports[value(i)][1]
@@ -66,16 +61,31 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.period(b1)==1.
 
         # test grid eval functions
-        g = plotgrid(b,200)
-        for i in ordering(b)
-            tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
-            tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
+        for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,1))
+            for i in ordering(b)
+                tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
+                tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
+            end
+            for i in ordering(b)
+                tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
+                tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
+                @test e1 ≈ e2
+                @test t2 < t1
+            end
         end
-        for i in ordering(b)
-            tic(); e1 = BasisFunctions._default_unsafe_eval_element_in_grid(b, i, g); t1 = toq();
-            tic(); e2 = BasisFunctions._unsafe_eval_element_in_dyadic_grid(b, i, g); t2 = toq();
-            @test e1 ≈ e2
-            @test t2 < t1
+        for basis in (b,b1,b2)
+            T = Float64
+            ELT = Float64
+            span = Span(basis)
+            tspan = transform_space(span)
+            x = rand(tspan)
+            t = BasisFunctions.unitary_dwt(tspan, span)
+            it = BasisFunctions.unitary_idwt(span, tspan)
+            @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)
+            @test maximum(abs.( (it' * it)*x-x)) < test_tolerance(ELT)
+            @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
+            @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
+            @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
         end
     end
 end

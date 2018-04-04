@@ -149,12 +149,29 @@ function transform_from_grid(src, dest::WaveletSpan, grid; options...)
     L = length(src)
     ELT = coeftype(src)
     S = ScalingOperator(dest, sqrt(ELT(L)))
-    T = DiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
+    warn("Conversion from function values to scaling coefficients is approximate")
+    T = FullDiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
     T*S
 end
 
 function transform_to_grid(src::WaveletSpan, dest, grid; options...)
     @assert compatible_grid(src, grid)
+    L = length(src)
+    ELT = coeftype(src)
+    S = ScalingOperator(dest, 1/sqrt(ELT(L)))
+    T = FullInverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)); options...)
+    T*S
+end
+
+function unitary_dwt(src, dest::WaveletSpan; options...)
+    L = length(src)
+    ELT = coeftype(src)
+    S = ScalingOperator(dest, sqrt(ELT(L)))
+    T = DiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
+    T*S
+end
+
+function unitary_idwt(src::WaveletSpan, dest; options...)
     L = length(src)
     ELT = coeftype(src)
     S = ScalingOperator(dest, 1/sqrt(ELT(L)))
@@ -174,19 +191,32 @@ function transform_to_grid_pre(src::WaveletSpan, dest, grid; options...)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
+struct FullDWTFunction <: Function
+    w::DiscreteWavelet
+end
+(dwtf::FullDWTFunction)(x) = full_dwt(x, dwtf.w, perbound)
+
+
+struct FulliDWTFunction <: Function
+    w::DiscreteWavelet
+end
+(idwtf::FulliDWTFunction)(x) = full_idwt(x, idwtf.w, perbound)
+
 struct DWTFunction <: Function
     w::DiscreteWavelet
 end
-(dwt::DWTFunction)(x) = full_dwt(x, dwt.w, perbound)
-
+(dwtf::DWTFunction)(x) = dwt(x, dwtf.w, perbound)
 
 struct iDWTFunction <: Function
     w::DiscreteWavelet
 end
-(idwt::iDWTFunction)(x) = full_idwt(x, idwt.w, perbound)
+(idwtf::iDWTFunction)(x) = idwt(x, idwtf.w, perbound)
 
 inv(f::iDWTFunction) = DWTFunction(f.w)
 inv(f::DWTFunction) = iDWTFunction(f.w)
+
+inv(f::FulliDWTFunction) = (warn("Inverse of full_idwt is approximate since conversion of function samples to scaling coefficients is approximate"); FullDWTFunction(f.w))
+inv(f::FullDWTFunction) = (warn("Inverse of full_dwt is approximate since conversion of function samples to scaling coefficients is approximate"); FulliDWTFunction(f.w))
 
 DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
     FunctionOperator(src, dest, DWTFunction(w))
@@ -194,11 +224,23 @@ DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) 
 InverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
     FunctionOperator(src, dest, iDWTFunction(w))
 
+FullDiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
+    FunctionOperator(src, dest, FullDWTFunction(w))
+
+FullInverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
+    FunctionOperator(src, dest, FulliDWTFunction(w))
+
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.DWTFunction,T} =
     InverseDistreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.iDWTFunction,T} =
     DiscreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),length(src(op)))
+
+Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FullDWTFunction,T} =
+    FullInverseDistreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
+
+Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FulliDWTFunction,T} =
+    FullDiscreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),length(src(op)))
 
 abstract type OrthogonalWaveletBasis{T} <: WaveletBasis{T} end
 
