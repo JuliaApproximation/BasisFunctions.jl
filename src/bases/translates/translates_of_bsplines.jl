@@ -1,5 +1,5 @@
 # translates_of_bsplines.jl
-
+using CardinalBSplines
 abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicTranslationDict{T}
 end
 
@@ -69,8 +69,8 @@ end
 const BSplineTranslatesSpan{A,S,T,D <: BSplineTranslatesBasis} = Span{A,S,T,D}
 
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
-    BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
-    BSplineTranslatesBasis{DEGREE,T,false}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
+    BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
+    BSplineTranslatesBasis{DEGREE,T,false}(n, T(0), T(1), x->evaluate_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::BSplineTranslatesBasis) = name(typeof(b))*" (B spline of degree $(degree(b)))"
 
@@ -120,11 +120,11 @@ function primalgramcolumnelement(span::Span{A,S,T,BSplineTranslatesBasis{K,T,SCA
     else
         # squared_spline_integral gives the exact integral (in a rational number)
         if i==1
-            r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+            r = BasisFunctions.squared_spline_integral(K)
         elseif 1 < i <= K+1
-            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+            r = BasisFunctions.shifted_spline_integral(K,i-1)
         elseif i > length(span)-K
-            r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(span)-i+1)
+            r = BasisFunctions.shifted_spline_integral(K,length(span)-i+1)
         end
     end
     if SCALED
@@ -149,7 +149,7 @@ end
 const SymBSplineTranslatesSpan{A,S,T,D <: SymBSplineTranslatesBasis} = Span{A,S,T,D}
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
-    SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->Cardinal_b_splines.evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
+    SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
 
 name(b::SymBSplineTranslatesBasis) = name(typeof(b))*" (symmetric B spline of degree $(degree(b)))"
 
@@ -186,11 +186,11 @@ function testprimalgramcolumnelement{K,T}(set::SymBSplineTranslatesBasis{K,T}, i
     return defaultprimalgramcolumnelement(set, i; options...)
   else
     if i==1
-      r = BasisFunctions.Cardinal_b_splines.squared_spline_integral(K)
+      r = BasisFunctions.squared_spline_integral(K)
     elseif 1 < i <= degree(set)+1
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,i-1)
+      r = BasisFunctions.shifted_spline_integral(K,i-1)
     elseif i > length(set)-degree(set)
-      r = BasisFunctions.Cardinal_b_splines.shifted_spline_integral(K,length(set)-i+1)
+      r = BasisFunctions.shifted_spline_integral(K,length(set)-i+1)
     end
   end
   T(r)/length(set)

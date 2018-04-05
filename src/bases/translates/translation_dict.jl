@@ -1,5 +1,5 @@
 # translation_dict.jl
-
+using CardinalBSplines
 """
 Dictionary consisting of translates of one generating function.
 """
@@ -230,7 +230,7 @@ for op in (:length, :left, :right, :has_grid, :grid)
 end
 
 function fun(b::LinearCombinationOfPeriodicTranslationDict)
-    x->eval_expansion(superdict(b), real(coefficients(b)), BasisFunctions.Cardinal_b_splines.periodize(x, period(superdict(b))))
+    x->eval_expansion(superdict(b), real(coefficients(b)), CardinalBSplines.periodize(x, period(superdict(b))))
 end
 
 ==(b1::LinearCombinationOfPeriodicTranslationDict, b2::LinearCombinationOfPeriodicTranslationDict) =
