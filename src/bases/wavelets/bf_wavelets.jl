@@ -191,32 +191,31 @@ function transform_to_grid_pre(src::WaveletSpan, dest, grid; options...)
 	inv(transform_from_grid_post(dest, src, grid; options...))
 end
 
-struct FullDWTFunction <: Function
-    w::DiscreteWavelet
+dwtfunctions = [:full_dwt, :dwt, :dwt_dual]
+idwtfuncions = [:full_idwt, :idwt, :idwt_dual]
+
+dwtFunctions = [:FullDWTFunction, :DWTFunction, :DualDWTFunction]
+idwtFunctions = [:FulliDWTFunction, :iDWTFunction, :DualiDWTFunction]
+
+for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, idwtFunctions)
+    for (f, F) in zip([ffun, iffun],[FFun, iFFun])
+        @eval begin
+            struct $F <: Function
+                w::DiscreteWavelet
+            end
+            (dwtf::$F)(x) = $f(x, dwtf.w, perbound)
+        end
+    end
+    @eval begin
+        if $FFun == FullDWTFunction
+            Base.inv(f::$iFFun) = (warn("Inverse of full_idwt is approximate since conversion of function samples to scaling coefficients is approximate"); $FFun(f.w))
+            Base.inv(f::$FFun) = (warn("Inverse of full_dwt is approximate since conversion of function samples to scaling coefficients is approximate"); $iFFun(f.w))
+        else
+            Base.inv(f::$FFun) = $iFFun(f.w)
+            Base.inv(f::$iFFun) = $FFun(f.w)
+        end
+    end
 end
-(dwtf::FullDWTFunction)(x) = full_dwt(x, dwtf.w, perbound)
-
-
-struct FulliDWTFunction <: Function
-    w::DiscreteWavelet
-end
-(idwtf::FulliDWTFunction)(x) = full_idwt(x, idwtf.w, perbound)
-
-struct DWTFunction <: Function
-    w::DiscreteWavelet
-end
-(dwtf::DWTFunction)(x) = dwt(x, dwtf.w, perbound)
-
-struct iDWTFunction <: Function
-    w::DiscreteWavelet
-end
-(idwtf::iDWTFunction)(x) = idwt(x, idwtf.w, perbound)
-
-inv(f::iDWTFunction) = DWTFunction(f.w)
-inv(f::DWTFunction) = iDWTFunction(f.w)
-
-inv(f::FulliDWTFunction) = (warn("Inverse of full_idwt is approximate since conversion of function samples to scaling coefficients is approximate"); FullDWTFunction(f.w))
-inv(f::FullDWTFunction) = (warn("Inverse of full_dwt is approximate since conversion of function samples to scaling coefficients is approximate"); FulliDWTFunction(f.w))
 
 DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
     FunctionOperator(src, dest, DWTFunction(w))

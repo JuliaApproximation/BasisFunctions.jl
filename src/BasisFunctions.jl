@@ -48,11 +48,9 @@ import Base: cross, ×
 import Base.LinAlg: dot
 
 import Wavelets: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt
+import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
 import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
 import Wavelets.Sequences: support
-import Wavelets.Util: isdyadic
-
 
 ## Imports from Domains
 
@@ -401,7 +399,6 @@ include("bases/fourier/sineseries.jl")
 ################################################################
 
 include("bases/splines/bf_splines.jl")
-include("util/bsplines.jl")
 
 include("bases/translates/translation_dict.jl")
 include("bases/translates/translates_of_bsplines.jl")

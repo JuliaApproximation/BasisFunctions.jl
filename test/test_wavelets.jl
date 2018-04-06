@@ -98,6 +98,8 @@ function bf_wavelets_implementation_test()
             # g = grid(basis)
             # @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
             # - try evaluation using transform+pre/post-normalization
+
+            # evaluation is the same as transform_operator (using full_dwt)
             e = random_expansion(span)
             x1 = (post2*it*pre2)*coefficients(e)
             x2 = e(grid(basis))
