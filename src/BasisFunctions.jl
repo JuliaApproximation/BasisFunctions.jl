@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__(true)
+__precompile__()
 
 module BasisFunctions
 
