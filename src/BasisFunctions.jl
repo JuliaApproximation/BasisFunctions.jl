@@ -47,10 +47,10 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-import Wavelets: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-import Wavelets.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
-import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
-import Wavelets.Sequences: support
+import WaveletsCopy: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
+import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
+import WaveletsCopy.Sequences: support
 
 ## Imports from Domains
 

@@ -2,7 +2,7 @@
 using BasisFunctions
     BF = BasisFunctions
     using Base.Test
-    using Wavelets.DWT: wavelet, scaling
+    using WaveletsCopy.DWT: wavelet, scaling
     using StaticArrays
     try
         test_generic_dict_interface
