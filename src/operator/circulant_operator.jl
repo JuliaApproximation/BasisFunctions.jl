@@ -33,7 +33,7 @@ CirculantOperator(src::Span, firstcolumn::AbstractVector; options...) = Circulan
 function CirculantOperator(op_src::Span, op_dest::Span, firstcolumn::AbstractVector; options...)
     D = PseudoDiagonalOperator(op_src, op_dest, fft(firstcolumn))
     # Using src(D) and dest(D) ensures that they have complex types, because the fft
-    # in the live above will result in complex numbers
+    # in the line above will result in complex numbers
     # Note that this makes all CirculantOperators complex! TODO: fix
     CirculantOperator(op_src, op_dest, D; options...)
 end
@@ -52,7 +52,7 @@ function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::PseudoDi
     c_D = similar_operator(opD, A, c_src, c_dest)
     F = forward_fourier_operator(c_src, c_src, A; verbose=verbose, options...)
     iF = backward_fourier_operator(c_dest, c_dest, A; verbose=verbose, options...)
-
+    iF = wrap_operator(c_dest,c_dest,inv(F))
     #realify a circulant operator if asked, both spans are real and if it contains almost real elements
     if realify_circulant_operator && isreal(op_src) && isreal(op_dest)
         imag_norm = Base.norm(imag(fft(diagonal(opD))))

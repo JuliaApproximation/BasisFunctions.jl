@@ -234,12 +234,12 @@ end
 # Default behaviour: call unsafe_getindex
 unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
 
-
-function inv_diagonal(op::AbstractOperator)
+# We provide a default implementation for diagonal operators
+function pinv(op::AbstractOperator; tol=eps(eltype(op)))
     @assert is_diagonal(op)
     d = diagonal(op)
     # Avoid getting Inf values, we prefer a pseudo-inverse in this case
-    d[find(d.==0)] = Inf
+    d[find(d.<=tol)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
 

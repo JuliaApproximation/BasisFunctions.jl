@@ -76,5 +76,5 @@ transform_operators(sets::Span...; options...) =
 # Return the full operation: Post * Trans * Pre
 function full_transform_operator(sets::Span...; options...)
     Pre,T,Post = transform_operators(sets...; options...)
-    Pre * T * Post 
+    Post * T * Pre
 end
