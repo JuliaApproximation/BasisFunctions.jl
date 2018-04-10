@@ -4,6 +4,7 @@ using BasisFunctions
     using Base.Test
     using WaveletsCopy.DWT: wavelet, scaling
     using StaticArrays
+    using BasisFunctions: wavelet_dual
     try
         test_generic_dict_interface
     catch
@@ -15,6 +16,7 @@ function bf_wavelets_implementation_test()
     @testset begin
         # Note, following line only succceeds for this particular wavelet basis (since it is orthogonal and easily evaluated in a random point)
         test_generic_dict_interface(CDFWaveletBasis(1,1,6))
+        test_generic_dict_interface(wavelet_dual(CDFWaveletBasis(1,1,6)))
 
         b1 = DaubechiesWaveletBasis(3,2)
         b2 = CDFWaveletBasis(3,1,5)
@@ -73,7 +75,7 @@ function bf_wavelets_implementation_test()
                 @test t2 < t1
             end
         end
-        for basis in (b,b1,b2)
+        for basis in (b,b1,b2,BasisFunctions.wavelet_dual(b))
             T = Float64
             ELT = Float64
             span = Span(basis)
@@ -110,6 +112,8 @@ end
 bf_wavelets_implementation_test()
 
 using Plots
-b = CDFWaveletBasis(2,2,3)
-gr()
-plot(b)
+b = CDFWaveletBasis(1,5,3)
+plot(b,layout=2)
+plot(wavelet_dual(b)[3:4],layout=2,subplot=1)
+plot!(Dual, wavelet, wavelet(b),j=1,k=0,subplot=2,periodic=true)
+plot!(Dual, wavelet, wavelet(b),j=1,k=1,subplot=2,periodic=true)

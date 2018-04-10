@@ -1,6 +1,6 @@
 # bf_wavelets.jl
 
-abstract type WaveletBasis{T} <: Dictionary1d{T,T}
+abstract type WaveletBasis{T,S} <: Dictionary1d{T,T} where {S <: Side}
 end
 
 const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
@@ -19,6 +19,9 @@ kind(idxn::WaveletIndex) = idxn[1]
 j(idxn::WaveletIndex) = idxn[2]
 k(idxn::WaveletIndex) = idxn[3]
 
+"Create a similar wavelet basis, but replacing the wavelet with its biorthogonal dual"
+function wavelet_dual end
+
 
 """
 The number of levels in the wavelet basis
@@ -33,6 +36,8 @@ The wavelet type
 BasisFunctions.wavelet(b::WaveletBasis) = b.w
 
 BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
+
+side(::WaveletBasis{T,S}) where {T,S} = S()
 
 # If only the first 2^L basis elements remain, this is equivalent to a smaller wavelet basis
 function subdict(b::WaveletBasis, idx::OrdinalRange)
@@ -79,8 +84,8 @@ has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)
 
-function support(b::WaveletBasis{T}, idxn::WaveletIndex) where {T}
-    l,r = support(Primal, kind(idxn), wavelet(b), j(idxn), k(idxn))
+function support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
+    l,r = support(S(), kind(idxn), wavelet(b), j(idxn), k(idxn))
     l < 0 || r > 1 ? (T(0),T(1)) : (T(l),T(r))
 end
 
@@ -125,8 +130,9 @@ approx_length(::WaveletBasis, n) = 1<<round(Int, log2(size_l))
 extension_size(b::WaveletBasis) = 2*length(b)
 
 
-unsafe_eval_element(dict::WaveletBasis, idxn::WaveletIndex, x; xtol=1e-4, options...) =
-    evaluate_periodic(Primal, kind(idxn), wavelet(dict), j(idxn), k(idxn), x; xtol = xtol, options...)
+function unsafe_eval_element(dict::WaveletBasis{T,S}, idxn::WaveletIndex, x; xtol=1e-4, options...) where {T,S}
+    evaluate_periodic(S(), kind(idxn), wavelet(dict), j(idxn), k(idxn), x; xtol = xtol, options...)
+end
 
 unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::DyadicPeriodicEquispacedGrid; options...) =
     _unsafe_eval_element_in_dyadic_grid(dict, idxn, grid; options...)
@@ -139,8 +145,8 @@ function unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::Peri
     end
 end
 
-_unsafe_eval_element_in_dyadic_grid(dict::WaveletBasis, idxn::WaveletIndex, grid::AbstractGrid; options...) =
-    evaluate_periodic_in_dyadic_points(Primal, kind(idxn), wavelet(dict), j(idxn), k(idxn), round(Int,log2(length(grid))))
+_unsafe_eval_element_in_dyadic_grid(dict::WaveletBasis{T,S}, idxn::WaveletIndex, grid::AbstractGrid; options...) where {T,S} =
+    evaluate_periodic_in_dyadic_points(S(), kind(idxn), wavelet(dict), j(idxn), k(idxn), round(Int,log2(length(grid))))
 
 
 # TODO remove scaling if they disapear in Fourier
@@ -150,7 +156,7 @@ function transform_from_grid(src, dest::WaveletSpan, grid; options...)
     ELT = coeftype(src)
     S = ScalingOperator(dest, sqrt(ELT(L)))
     warn("Conversion from function values to scaling coefficients is approximate")
-    T = FullDiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
+    T = FullDiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)), side(dictionary(dest)); options...)
     T*S
 end
 
@@ -159,7 +165,7 @@ function transform_to_grid(src::WaveletSpan, dest, grid; options...)
     L = length(src)
     ELT = coeftype(src)
     S = ScalingOperator(dest, 1/sqrt(ELT(L)))
-    T = FullInverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)); options...)
+    T = FullInverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)), side(dictionary(src)); options...)
     T*S
 end
 
@@ -167,7 +173,7 @@ function unitary_dwt(src, dest::WaveletSpan; options...)
     L = length(src)
     ELT = coeftype(src)
     S = ScalingOperator(dest, sqrt(ELT(L)))
-    T = DiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)); options...)
+    T = DiscreteWaveletTransform(src, dest, wavelet(dictionary(dest)), side(dictionary(dest)); options...)
     T*S
 end
 
@@ -175,7 +181,7 @@ function unitary_idwt(src::WaveletSpan, dest; options...)
     L = length(src)
     ELT = coeftype(src)
     S = ScalingOperator(dest, 1/sqrt(ELT(L)))
-    T = InverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)); options...)
+    T = InverseDistreteWaveletTransform(src, dest, wavelet(dictionary(src)), side(dictionary(src)); options...)
     T*S
 end
 
@@ -202,8 +208,10 @@ for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, 
         @eval begin
             struct $F <: Function
                 w::DiscreteWavelet
+                s::Side
             end
-            (dwtf::$F)(x) = $f(x, dwtf.w, perbound)
+            $F(w::DiscreteWavelet) = $F(w, Primal)
+            (dwtf::$F)(x) = $f(x, dwtf.s, dwtf.w, perbound)
         end
     end
     @eval begin
@@ -217,69 +225,75 @@ for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, 
     end
 end
 
-DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
-    FunctionOperator(src, dest, DWTFunction(w))
+DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet, s::Side; options...) =
+    FunctionOperator(src, dest, DWTFunction(w, s))
 
-InverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
-    FunctionOperator(src, dest, iDWTFunction(w))
+InverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet, s::Side; options...) =
+    FunctionOperator(src, dest, iDWTFunction(w, s))
 
-FullDiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
-    FunctionOperator(src, dest, FullDWTFunction(w))
+FullDiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet, s::Side; options...) =
+    FunctionOperator(src, dest, FullDWTFunction(w, s))
 
-FullInverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet; options...) =
-    FunctionOperator(src, dest, FulliDWTFunction(w))
+FullInverseDistreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet, s::Side; options...) =
+    FunctionOperator(src, dest, FulliDWTFunction(w, s))
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.DWTFunction,T} =
-    InverseDistreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
+    InverseDistreteWaveletTransform(src(op), dest(op), op.fun.w, op.fun.s)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.iDWTFunction,T} =
-    DiscreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),length(src(op)))
+    DiscreteWaveletTransform(src(op), dest(op), op.fun.w, op.fun.s)*ScalingOperator(src(op),src(op),length(src(op)))
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FullDWTFunction,T} =
-    FullInverseDistreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
+    FullInverseDistreteWaveletTransform(src(op), dest(op), op.fun.w, op.fun.s)*ScalingOperator(src(op),src(op),T(1)/length(src(op)))
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FulliDWTFunction,T} =
-    FullDiscreteWaveletTransform(src(op), dest(op), op.fun.w)*ScalingOperator(src(op),src(op),length(src(op)))
+    FullDiscreteWaveletTransform(src(op), dest(op), op.fun.w, op.fun.s)*ScalingOperator(src(op),src(op),length(src(op)))
 
-abstract type OrthogonalWaveletBasis{T} <: WaveletBasis{T} end
+abstract type BiorthogonalWaveletBasis{T,S} <: WaveletBasis{T,S} end
+
+is_basis(b::BiorthogonalWaveletBasis) = true
+
+abstract type OrthogonalWaveletBasis{T,S} <: BiorthogonalWaveletBasis{T,S} end
 
 is_basis(b::OrthogonalWaveletBasis) = true
 is_orthogonal(b::OrthogonalWaveletBasis) = true
 
-abstract type BiorthogonalWaveletBasis{T} <: WaveletBasis{T} end
+wavelet_dual(w::OrthogonalWaveletBasis) = w
 
-is_basis(b::BiorthogonalWaveletBasis) = true
 
-struct DaubechiesWaveletBasis{P,T} <: OrthogonalWaveletBasis{T}
+struct DaubechiesWaveletBasis{P,T,S} <: OrthogonalWaveletBasis{T,S}
     w   ::    DaubechiesWavelet{P,T}
     L   ::    Int
 end
 
 DaubechiesWaveletBasis{T}(P::Int, L::Int, ::Type{T} = Float64) =
-    DaubechiesWaveletBasis{P,T}(DaubechiesWavelet{P,T}(), L)
+    DaubechiesWaveletBasis{P,T,Prl}(DaubechiesWavelet{P,T}(), L)
 
-dict_promote_domaintype{P,T,S}(b::DaubechiesWaveletBasis{P,T}, ::Type{S}) =
-    DaubechiesWaveletBasis(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
+dict_promote_domaintype(b::DaubechiesWaveletBasis{P,T,SIDE}, ::Type{S}) where {P,T,S,SIDE} =
+    DaubechiesWaveletBasis{P,promote_type(T,S),SIDE}(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWaveletBasis(3, approx_length(n), T)
 
 is_compatible{P,T1,T2}(src1::DaubechiesWaveletBasis{P,T1}, src2::DaubechiesWaveletBasis{P,T2}) = true
 
 # Note no check on existence of CDFXY is present.
-struct CDFWaveletBasis{P,Q,T} <: BiorthogonalWaveletBasis{T}
+struct CDFWaveletBasis{P,Q,T,S} <: BiorthogonalWaveletBasis{T,S}
     w   ::    CDFWavelet{P,Q,T}
     L   ::    Int
 end
 
 CDFWaveletBasis{T}(P::Int, Q::Int, L::Int, ::Type{T} = Float64) =
-    CDFWaveletBasis{P,Q,T}(CDFWavelet{P,Q,T}(),L)
+    CDFWaveletBasis{P,Q,T,Prl}(CDFWavelet{P,Q,T}(),L)
 
-dict_promote_domaintype{P,Q,T,S}(b::CDFWaveletBasis{P,Q,T}, ::Type{S}) =
-    CDFWaveletBasis(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
+dict_promote_domaintype(b::CDFWaveletBasis{P,Q,T,SIDE}, ::Type{S}) where {P,Q,T,S,SIDE} =
+    CDFWaveletBasis{P,Q,promote_type(T,S),SIDE}(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)
 
 is_compatible{P,Q,T1,T2}(src1::CDFWaveletBasis{P,Q,T1}, src2::CDFWaveletBasis{P,Q,T2}) = true
+
+wavelet_dual(w::CDFWaveletBasis{P,Q,T,S}) where {P,Q,T,S} =
+    CDFWaveletBasis{P,Q,T,inv(S)}(CDFWavelet{P,Q,T}(),dyadic_length(w))
 
 @recipe function f(F::WaveletBasis; plot_complex = false, n=200)
     legend --> false

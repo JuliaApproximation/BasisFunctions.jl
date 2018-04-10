@@ -6,3 +6,5 @@ set -ev
 } || { # catch
   julia -e "Pkg.checkout(\"Domains\",\"development\")"
 }
+
+julia -e "Pkg.checkout(\"WaveletsCopy\",\"development\")"
