@@ -377,6 +377,8 @@ include("bases/generic/piecewise_dict.jl")
 include("bases/generic/operated_dict.jl")
 include("bases/generic/weighted_dict.jl")
 include("bases/generic/vector_dict.jl")
+include("bases/generic/modified_dict.jl")
+include("bases/generic/periodization.jl")
 
 ################################################################
 # Sampling
