@@ -5,23 +5,11 @@ end
 
 const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
 
-const WaveletIndex = Tuple{Kind,Int,Int}
-
 checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 
-value(idxn::WaveletIndex) = coefficient_index(idxn...)
-
-Base.show(io::IO, idxn::WaveletIndex) =
-	print(io, "Wavelet index: $(value(idxn))")
-
-kind(idxn::WaveletIndex) = idxn[1]
-j(idxn::WaveletIndex) = idxn[2]
-k(idxn::WaveletIndex) = idxn[3]
-
 "Create a similar wavelet basis, but replacing the wavelet with its biorthogonal dual"
 function wavelet_dual end
-
 
 """
 The number of levels in the wavelet basis
@@ -85,7 +73,7 @@ left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)
 
 function support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
-    l,r = support(S(), kind(idxn), wavelet(b), j(idxn), k(idxn))
+    l,r = support(S(), kind(idxn), wavelet(b), level(idxn), offset(idxn))
     l < 0 || r > 1 ? (T(0),T(1)) : (T(l),T(r))
 end
 
@@ -97,30 +85,10 @@ period{T}(::WaveletBasis{T}) = T(1)
 grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
 
 
+ordering(b::WaveletBasis) = wavelet_indices(dyadic_length(b))
 
 
-"""
-`DWTIndexList` defines the map from native indices to linear indices
-for a finite wavelet basis, when the indices are ordered in the way they
-are expected in the DWT routine.
-"""
-struct DWTIndexList <: IndexList{WaveletIndex}
-	n	::	Int
-end
-
-
-
-length(list::DWTIndexList) = list.n
-size(list::DWTIndexList) = (list.n,)
-
-Base.getindex(m::BasisFunctions.DWTIndexList, idx::Int) ::WaveletIndex = wavelet_index(length(m), idx, Int(log2(length(m))))
-
-Base.getindex(list::BasisFunctions.DWTIndexList, idxn::WaveletIndex)::Int = value(idxn)
-
-ordering(b::WaveletBasis) = DWTIndexList(length(b))
-
-
-BasisFunctions.native_index(b::WaveletBasis, idx::Int)::WaveletIndex = wavelet_index(length(b), idx, dyadic_length(b))
+BasisFunctions.native_index(b::WaveletBasis, idx::Int)::WaveletIndex = wavelet_index(dyadic_length(b), idx)
 BasisFunctions.linear_index(b::WaveletBasis, idxn::WaveletIndex)::Int = value(idxn)
 
 approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
@@ -131,7 +99,7 @@ extension_size(b::WaveletBasis) = 2*length(b)
 
 
 function unsafe_eval_element(dict::WaveletBasis{T,S}, idxn::WaveletIndex, x; xtol=1e-4, options...) where {T,S}
-    evaluate_periodic(S(), kind(idxn), wavelet(dict), j(idxn), k(idxn), x; xtol = xtol, options...)
+    evaluate_periodic(S(), kind(idxn), wavelet(dict), level(idxn), offset(idxn), x; xtol = xtol, options...)
 end
 
 unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::DyadicPeriodicEquispacedGrid; options...) =
@@ -146,7 +114,7 @@ function unsafe_eval_element1(dict::WaveletBasis, idxn::WaveletIndex, grid::Peri
 end
 
 _unsafe_eval_element_in_dyadic_grid(dict::WaveletBasis{T,S}, idxn::WaveletIndex, grid::AbstractGrid; options...) where {T,S} =
-    evaluate_periodic_in_dyadic_points(S(), kind(idxn), wavelet(dict), j(idxn), k(idxn), round(Int,log2(length(grid))))
+    evaluate_periodic_in_dyadic_points(S(), kind(idxn), wavelet(dict), level(idxn), offset(idxn), round(Int,log2(length(grid))))
 
 
 # TODO remove scaling if they disapear in Fourier
@@ -225,6 +193,23 @@ for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, 
     end
 end
 
+struct EvalDWTFunction <: Function
+    w::DiscreteWavelet
+    s::Side
+    l::Int
+end
+(f::EvalDWTFunction)(c) = evaluate_periodic_in_dyadic_points(f.s, f.w, c, f.l)
+
+struct invEvalDWTFunction <: Function
+    w::DiscreteWavelet
+    s::Side
+    l::Int
+end
+(f::invEvalDWTFunction)(c) = inv_evaluate_periodic_in_dyadic_points(f.s, f.w, c, f.l)
+# scaling is necessary
+inv(f::EvalDWTFunction) = invEvalDWTFunction(f.w, f.s, f.l)
+inv(f::invEvalDWTFunction) = EvalDWTFunction(f.w, f.s, f.l)
+
 DiscreteWaveletTransform(src::Span, dest::Span, w::DiscreteWavelet, s::Side; options...) =
     FunctionOperator(src, dest, DWTFunction(w, s))
 
@@ -248,6 +233,57 @@ Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FullDWTFunct
 
 Base.ctranspose(op::FunctionOperator{F,T}) where {F<:BasisFunctions.FulliDWTFunction,T} =
     FullDiscreteWaveletTransform(src(op), dest(op), op.fun.w, op.fun.s)*ScalingOperator(src(op),src(op),length(src(op)))
+
+Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.EvalDWTFunction,T} =
+    ScalingOperator(dest(op), dest(op), T(1//(1<<op.fun.l)))*FunctionOperator(src(op), dest(op), inv(op.fun))
+
+Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.invEvalDWTFunction,T} =
+    FunctionOperator(src(op), dest(op), inv(op.fun))*ScalingOperator(src(op), src(op), T(1//(1<<op.fun.l)))
+
+function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
+    if typeof(grid) <: DyadicPeriodicEquispacedGrid
+        FunctionOperator(s, dgs, EvalDWTFunction(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(grid)))
+    else
+        default_evaluation_operator(s, dgs; options...)
+    end
+end
+
+function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
+    # We make no attempt if the set has no associated grid
+    if has_grid(s)
+        # Is the associated grid of the same type as the supergrid at hand?
+        if typeof(grid(s)) == typeof(supergrid(subgrid))
+            # It is: we can use the evaluation operator of the supergrid
+            super_dgs = gridspace(s, supergrid(subgrid))
+            E = evaluation_operator(s, super_dgs; options...)
+            R = restriction_operator(super_dgs, dgs; options...)
+            R*E
+        else
+            default_evaluation_operator(s, dgs; options...)
+        end
+    else
+        default_evaluation_operator(s, dgs; options...)
+    end
+end
+
+function evaluation_matrix!(a::AbstractMatrix, dict::WaveletBasis, pts::DyadicPeriodicEquispacedGrid)
+    @assert size(a,1) == length(pts)
+    @assert size(a,2) == length(dict)
+
+    s = side(dict)
+    w = wavelet(dict)
+    d = dyadic_length(pts)
+
+    f = zeros(length(pts))
+    SS = EvalPeriodicScratchSpace(s, w, dyadic_length(dict), d)
+    for index in ordering(dict)
+        evaluate_periodic_in_dyadic_points!(f, s, kind(index), w, level(index), offset(index), d, SS)
+        for i in 1:length(f)
+            a[i,value(index)] = f[i]
+        end
+    end
+    a
+end
 
 abstract type BiorthogonalWaveletBasis{T,S} <: WaveletBasis{T,S} end
 

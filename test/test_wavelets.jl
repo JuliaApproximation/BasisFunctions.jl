@@ -76,6 +76,7 @@ function bf_wavelets_implementation_test()
             end
         end
         for basis in (b,b1,b2,BasisFunctions.wavelet_dual(b))
+            @test evaluation_matrix(basis, BasisFunctions.grid(basis))≈evaluation_matrix(basis, collect(BasisFunctions.grid(basis)))
             T = Float64
             ELT = Float64
             span = Span(basis)
@@ -94,18 +95,6 @@ function bf_wavelets_implementation_test()
             post2 = transform_operator_post(span, tspan)
             t = transform_operator(tspan, span)
             it = transform_operator(span, tspan)
-            # # - try interpolation using transform+pre/post-normalization
-            # x = rand(tspan)
-            # e = Expansion(basis, (post1*t*pre1)*x)
-            # g = grid(basis)
-            # @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
-            # - try evaluation using transform+pre/post-normalization
-
-            # evaluation is the same as transform_operator (using full_dwt)
-            e = random_expansion(span)
-            x1 = (post2*it*pre2)*coefficients(e)
-            x2 = e(grid(basis))
-            @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
         end
     end
 end
@@ -115,5 +104,5 @@ using Plots
 b = CDFWaveletBasis(1,5,3)
 plot(b,layout=2)
 plot(wavelet_dual(b)[3:4],layout=2,subplot=1)
-plot!(Dual, wavelet, wavelet(b),j=1,k=0,subplot=2,periodic=true)
-plot!(Dual, wavelet, wavelet(b),j=1,k=1,subplot=2,periodic=true)
+plot!(BasisFunctions.Dual, wavelet, wavelet(b),j=1,k=0,subplot=2,periodic=true)
+plot!(BasisFunctions.Dual, wavelet, wavelet(b),j=1,k=1,subplot=2,periodic=true)

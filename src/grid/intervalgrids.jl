@@ -121,8 +121,7 @@ has_extension(::DyadicPeriodicEquispacedGrid) = true
 
 resize(g::DyadicPeriodicEquispacedGrid, n::Int) = DyadicPeriodicEquispacedGrid(n, g.a, g.b)
 
-# TODO: does this make sense for a dyadic grid? It is l that is being multiplied.
-extend(g::DyadicPeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.n)
+extend(g::DyadicPeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.l)
 
 stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
 

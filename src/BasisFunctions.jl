@@ -48,9 +48,12 @@ import Base: cross, ×
 import Base.LinAlg: dot
 
 import WaveletsCopy.DWT: Prl, Dul, Side
+import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!
+import WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, value, wavelet_index
 import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: inv_evaluate_periodic_in_dyadic_points
 import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
-import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
+import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name
 import WaveletsCopy.Sequences: support
 
 ## Imports from Domains
