@@ -305,3 +305,35 @@ dict_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}
 resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
 
 change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(Span(b); options...))
+
+##################
+# Platform
+##################
+
+struct DualBSplineGenerator
+    primal_generator
+    oversampling::Int
+    DualBSplineGenerator(primal_generator, oversampling::Int) = (@assert BasisFunctions.isdyadic(oversampling); new(primal_generator, oversampling))
+end
+
+function (DG::DualBSplineGenerator)(n::Int)
+    B = DG.primal_generator(n)
+    g = BasisFunctions.oversampled_grid(B, DG.oversampling)
+    E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(Span(B),gridspace(g),1:DG.oversampling:length(g))
+    G = CirculantOperator(E'E*[1,zeros(length(g)-1)...])
+    DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
+    DB = OperatedDict(DG)
+end
+
+primal_bspline_generator(::Type{T}, degree::Int) where {T} = n->BSplineTranslatesBasis(n, degree, T)
+dual_bspline_generator(::Type{T},degree::Int, oversampling::Int) where {T} = DualBSplineGenerator(primal_bspline_generator(T, degree), oversampling)
+
+
+function bspline_platform(::Type{T}, init::Int, degree::Int, oversampling::Int) where {T}
+	primal = primal_bspline_generator(T, degree)
+	dual = dual_bspline_generator(T, degree, oversampling)
+	sampler = n ->GridSamplingOperator(gridspace(grid(BSplineTranslatesBasis(oversampling*n, degree, T)), T))
+	params = BasisFunctions.DoublingSequence(init)
+	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
+		params = params, name = "B-Spline translatesd")
+end

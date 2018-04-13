@@ -131,6 +131,7 @@ for T in [Float64,BigFloat,]
         test_discrete_orthonormalsplinebasis(T)
         test_dualsplinebasis(T)
         test_discrete_dualsplinebasis(T)
+        test_bspline_platform(T)
     end
 
 end # for T in...

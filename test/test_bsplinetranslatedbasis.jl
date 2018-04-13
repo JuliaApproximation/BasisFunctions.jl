@@ -368,6 +368,29 @@ function test_discrete_dualsplinebasis(T)
     end
 end
 
+function test_bspline_platform(T)
+    init = 4
+    for oversampling in [1,2,4],  degree in 2:3, i in [1,3]
+        platform = BasisFunctions.bspline_platform(T, init, degree, oversampling)
+
+        P = primal(platform,i)
+        D = dual(platform,i)
+        S = BasisFunctions.sampler(platform,i)
+
+        B = P
+        g = BasisFunctions.oversampled_grid(B, oversampling)
+        E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(Span(B),gridspace(g),1:oversampling:length(g))
+        G = CirculantOperator(E'E*[1,zeros(length(g)-1)...])
+        DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
+
+        e = map(T,rand(length(B)))
+        @test evaluation_operator(Span(D),g)*e≈evaluation_matrix(D,g)*e
+        @test evaluation_operator(Span(D),g)*e≈evaluation_operator(Span(P),g)*(matrix(DG)*e)
+        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈e
+        @test S*exp≈exp.(g)
+    end
+end
+
 # exit()
 
 # @testset begin test_discrete_dualsplinebasis(Float64) end
@@ -378,6 +401,7 @@ end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end
 # @testset begin test_generic_periodicbsplinebasis(Float64) end
+# @testset begin test_bspline_platform(BigFloat) end
 
 # using Plots
 # using BasisFunctions
