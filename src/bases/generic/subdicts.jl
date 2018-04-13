@@ -241,6 +241,7 @@ function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)
     for idx in indices
         result &= checkbounds(Bool, dict, idx)
     end
+    result
 end
 
 

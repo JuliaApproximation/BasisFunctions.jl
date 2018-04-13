@@ -170,8 +170,10 @@ length_compact_support{T}(b::CompactPeriodicTranslationDict{T})::real(T) = right
 function left_of_compact_function end
 function right_of_compact_function end
 
-overlapping_elements(b::CompactPeriodicTranslationDict, x) =
-   floor(Int, (x-right_of_compact_function(b))/stepsize(b)):ceil(Int, (x-left_of_compact_function(b))/stepsize(b))
+function overlapping_elements(b::CompactPeriodicTranslationDict, x)
+   indices = ceil(Int, (x-BasisFunctions.right_of_compact_function(b))/stepsize(b)):floor(Int, (x-BasisFunctions.left_of_compact_function(b))/stepsize(b))
+   Set(mod(i, length(b))+1 for i in indices)
+end
 
 left(b::CompactPeriodicTranslationDict, idx::TransIndex) =
     value(idx) * stepsize(b) + left_of_compact_function(b)
@@ -204,13 +206,12 @@ function in_compact_support(set::CompactPeriodicTranslationDict, idx::TransIndex
 end
 
 function eval_compact_expansion(b::CompactPeriodicTranslationDict, coef, x)
-	z = zero(typeof(x))
-	for idx_n = overlapping_elements(b, x)
-        idxn = TransIndex(mod(idx_n, length(b)))
-		idx = linear_index(b, idxn)
-		z = z + coef[idx] * unsafe_eval_element(b, idxn, x)
-	end
-	z
+    z = zero(typeof(x))
+    for idx = BasisFunctions.overlapping_elements(b, x)
+        idxn = native_index(b, idx)
+        z = z + coef[idx] * BasisFunctions.unsafe_eval_element(b, idxn, x)
+    end
+    z
 end
 
 """

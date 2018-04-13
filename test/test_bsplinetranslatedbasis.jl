@@ -1,3 +1,5 @@
+using Base.Test
+using BasisFunctions
 function test_generic_periodicbsplinebasis(T)
 
     for B in (BSplineTranslatesBasis, SymBSplineTranslatesBasis,)
@@ -40,7 +42,14 @@ function test_generic_periodicbsplinebasis(T)
     end
 end
 
+using BasisFunctions: overlapping_elements, interval_index
 function test_translatedbsplines(T)
+    B = BSplineTranslatesBasis(10,1)
+    x = [1e-4,.23,.94]
+    @test interval_index.(B,x) == [1,3,10]
+    indices = overlapping_elements.(B,x)
+    @test reduce(&,true,[B[i].(x[j]) for j in 1:length(x) for i in indices[j]].>0)
+
     tol = sqrt(eps(real(T)))
     n = 5
     bb = BSplineTranslatesBasis(n, 1, T; scaled=true)
@@ -360,8 +369,7 @@ function test_discrete_dualsplinebasis(T)
 end
 
 # exit()
-# using Base.Test
-# using BasisFunctions
+
 # @testset begin test_discrete_dualsplinebasis(Float64) end
 #
 # @testset begin test_dualsplinebasis(Float64) end

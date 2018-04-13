@@ -5,7 +5,7 @@ An `OperatedDict` represents a set that is acted on by an operator, for example
 the differentiation operator. The `OperatedDict` has the dimension of the source
 set of the operator, but each basis function is acted on by the operator.
 """
-struct OperatedDict{S,T} <: Dictionary{S,T}
+struct OperatedDict{S,T} <: DerivedDict{S,T}
     "The operator that acts on the set"
     op          ::  AbstractOperator{T}
 
@@ -23,6 +23,8 @@ const OperatedDictSpan{A,S,T,D <: OperatedDict} = Span{A,S,T,D}
 
 # TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
 
+superdict(dict::OperatedDict) = dictionary(src(dict))
+
 function OperatedDict(op::AbstractOperator{T}) where {T}
     S = domaintype(src(op))
     OperatedDict{S,T}(op)
@@ -39,6 +41,8 @@ dest_dictionary(s::OperatedDict) = dictionary(dest(s))
 domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 
 operator(set::OperatedDict) = set.op
+
+in_support(dict::OperatedDict, idx, x) = default_in_support(dict, idx, x)
 
 dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
     OperatedDict(similar_operator(operator(s), T, promote_domaintype(src(s), S), dest(s) ) )
@@ -69,9 +73,9 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scra
     if is_diagonal(op)
         diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
     else
-        scratch_src[idxn] = 1
+        scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)
-        scratch_src[idxn] = 0
+        scratch_src[idx] = 0
         eval_expansion(dest_dictionary(dict), scratch_dest, x)
     end
 end
@@ -80,6 +84,8 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     idx = linear_index(dict, idxn)
     diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
 end
+
+grid_evaluation_operator(span::OperatedDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) = grid_evaluation_operator(src(dictionary(span)), dgs, grid; options...)*operator(dictionary(span))
 
 ## Properties
 

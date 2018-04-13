@@ -135,6 +135,36 @@ function primalgramcolumnelement(span::Span{A,S,T,BSplineTranslatesBasis{K,T,SCA
 end
 
 """
+Makes sure that (i-1)/N < x < i/N holds
+If x ≈ i/N it return -i
+"""
+interval_index(B::BSplineTranslatesBasis,x::Real) = round(x*length(B))≈x*length(B) ? -round(Int,x*length(B))-1 : ceil(Int,x*length(B))
+
+function BasisFunctions.support(B::BSplineTranslatesBasis, i)
+    start = (i-1)/length(B)
+    width = (degree(B)+1)/length(B)
+    stop  = start+width
+    stop <=1 ? (return [start,stop]) : (return [0.,stop-1.], [start,1.])
+end
+
+"""
+The linear index of the spline elements of B that are non-zero in x.
+"""
+function overlapping_elements(B::BSplineTranslatesBasis, x::Real)
+    # The interval_index is the starting index of all spline elements that overlap with x
+    init_index = interval_index(B,x)
+    (init_index == -1-length(B)) && (init_index += length(B))
+    degree(B) == 0 && return abs(init_index)
+    # The number of elements that overlap with one interval
+    no_elements = degree(B)+1
+    if init_index < 0
+        init_index = -init_index-1
+        no_elements = no_elements-1
+    end
+    [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
+end
+
+"""
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
 
   The degree should be odd in order to use extension or restriction.

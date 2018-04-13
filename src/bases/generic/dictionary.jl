@@ -355,7 +355,9 @@ support(d::Dictionary1d, idx) = (left(d,idx), right(d,idx))
 # Make sure to override, and make sure that the overridden version is called.
 
 "Does the given point lie inside the support of the given set function?"
-in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
+in_support(dict::Dictionary1d, idx, x) = default_in_support(dict, idx, x)
+
+default_in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
 
 # isless doesn't work when comparing complex numbers. It may happen that a real
 # function set uses a complex element type, or that the user evaluates at a
