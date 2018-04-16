@@ -40,7 +40,7 @@ function bspline_restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSpli
     d = d ./ e
     d[map(isnan,d)] = 0
 
-    IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, s1, PseudoDiagonalOperator(d))
+    IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, s1, DiagonalOperator(d))
 end
 
 # TODO check the properties of this one

@@ -6,7 +6,7 @@ consecutively.
 
 Whenever possible, scratch space is allocated to hold intermediate results.
 """
-struct CompositeOperator{T} <: ParentOperator{T}
+struct CompositeOperator{T} <: AbstractOperator{T}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).
@@ -25,6 +25,8 @@ element(op::CompositeOperator, j::Int) = op.operators[j]
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
+is_composite(op::CompositeOperator) = true
+
 
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)

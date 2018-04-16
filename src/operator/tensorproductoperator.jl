@@ -6,7 +6,7 @@ A TensorProductOperator represents the tensor product of other operators.
 
 struct TensorProductOperator{T} <: AbstractOperator{T}
 """
-struct TensorProductOperator{T} <: ParentOperator{T}
+struct TensorProductOperator{T} <: AbstractOperator{T}
     src             ::  Span
     dest            ::  Span
     operators
@@ -18,6 +18,8 @@ end
 # Generic functions for composite types:
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
+
+is_composite(op::TensorProductOperator) = true
 
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)

@@ -178,7 +178,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
-export PseudoDiagonalOperator
+#export PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_space, full_transform_operator,
@@ -338,7 +338,6 @@ include("bases/generic/discrete_sets.jl")
 include("bases/generic/gridbasis.jl")
 
 include("operator/operator.jl")
-include("operator/parentoperator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
@@ -357,9 +356,8 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/pseudo_diagonal.jl")
+#include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
-include("operator/prettyprint.jl")
 
 
 include("bases/generic/expansions.jl")
@@ -432,6 +430,7 @@ include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
+include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
 

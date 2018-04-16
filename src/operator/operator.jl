@@ -72,6 +72,9 @@ is_inplace(op::AbstractOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::AbstractOperator) = false
 
+"Is the operator a combination of other operators"
+is_composite(op::AbstractOperator) = false
+
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)

@@ -75,7 +75,7 @@ operator are correct, for example if a derived set returns an operator of the em
 This operator can be wrapped to make sure it has the right source and destination sets, i.e.
 its source and destination would correspond to the derived set, and not to the embedded set.
 """
-struct WrappedOperator{OP,T} <: ParentOperator{T}
+struct WrappedOperator{OP,T} <: DerivedOperator{T}
     src     ::  Span
     dest    ::  Span
     op      ::  OP
@@ -94,34 +94,32 @@ function WrappedOperator(::Type{T}, src::Span, dest::Span, op) where {T}
     WrappedOperator{typeof(op),A}(promote_coeftype(src, S), promote_coeftype(dest, D), op)
 end
 
-operator(op::WrappedOperator) = op.op
+superoperator(op::WrappedOperator) = op.op
 
 function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where {S}
     subop = operator(op)
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
 
-children(op::WrappedOperator) = isa(op.op,ParentOperator) ? children(op.op) : (op.op,)
-
     
-function stencil(op::WrappedOperator, S)
-    if haskey(S,op)
-        return op
-    end
-    A = Any[]
-    push!(A,"W(")
-    s = stencil(op.op)
-    if isa(s,GenericOperator)
-        push!(A,s)
-    else
-        for i=1:length(s)
-            push!(A,s[i])
-        end
-        A = recurse_stencil(op.op,A,S)
-    end
-    push!(A,")")
-    A
-end
+## function stencil(op::WrappedOperator, S)
+##     if haskey(S,op)
+##         return op
+##     end
+##     A = Any[]
+##     push!(A,"W(")
+##     s = stencil(op.op)
+##     if isa(s,GenericOperator)
+##         push!(A,s)
+##     else
+##         for i=1:length(s)
+##             push!(A,s[i])
+##         end
+##         A = recurse_stencil(op.op,A,S)
+##     end
+##     push!(A,")")
+##     A
+## end
 
 
 """
@@ -147,19 +145,9 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-for property in (:is_inplace, :is_diagonal)
-	@eval $property(op::WrappedOperator) = $property(operator(op))
-end
-
-apply_inplace!(op::WrappedOperator, coef_srcdest) = apply_inplace!(op.op, coef_srcdest)
-
-apply!(op::WrappedOperator, coef_dest, coef_src) = apply!(op.op, coef_dest, coef_src)
-
 inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(op.op))
 
 ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(op.op))
-
-matrix!(op::WrappedOperator, a) = matrix!(op.op, a)
 
 simplify(op::WrappedOperator) = op.op
 
@@ -463,7 +451,7 @@ diagonal{T}(op::UnevenSignFlipOperator{T}) = T[-(-1)^i for i in 1:length(src(op)
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: ParentOperator{T} 
+struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T} 
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
@@ -494,6 +482,7 @@ dest(op::OperatorSum) = dest(op.op1)
 
 ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), conj(op.val1), conj(op.val2))
 
+is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
 
 

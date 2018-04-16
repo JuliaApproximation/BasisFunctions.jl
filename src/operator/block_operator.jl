@@ -10,7 +10,7 @@ destination of the operator is not necessarily a multidict.
 A BlockOperator is column-like if it only has one column of blocks. In that case,
 the source set of the operator is not necessarily a multidict.
 """
-struct BlockOperator{T} <: ParentOperator{T}
+struct BlockOperator{T} <: AbstractOperator{T}
     operators   ::  Array{AbstractOperator{T}, 2}
     src         ::  Span
     dest        ::  Span
@@ -93,6 +93,8 @@ elements(op::BlockOperator) = op.operators
 composite_size(op::BlockOperator) = size(op.operators)
 
 composite_size(op::BlockOperator, dim) = size(op.operators, dim)
+
+is_composite(op::BlockOperator) = true
 
 is_rowlike(op::BlockOperator) = size(op.operators,1) == 1
 
@@ -187,7 +189,7 @@ ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
 A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
-struct BlockDiagonalOperator{T} <: ParentOperator{T}
+struct BlockDiagonalOperator{T} <: AbstractOperator{T}
     operators   ::  Array{AbstractOperator{T}, 1}
     src         ::  Span
     dest        ::  Span
@@ -203,6 +205,7 @@ BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators
+is_composite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
     ops = Array(AbstractOperator{eltype(op)}, nb_elements(op), nb_elements(op))

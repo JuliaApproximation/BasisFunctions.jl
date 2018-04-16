@@ -188,3 +188,5 @@ rightendpoint(g::ChebyshevExtremaGrid{T}) where {T} = one(T)
 
 # Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevExtremaGrid{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
+
+strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)
