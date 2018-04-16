@@ -80,6 +80,7 @@ function transform_to_grid(src::PeriodicTranslatesSpan, dest, grid; options...)
     CirculantOperator(src, dest, sample(grid, fun(src)); options...)
 end
 
+
 function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
     if periodic_compatible_grid(dictionary(s), grid)
         lg = length(grid)
@@ -95,6 +96,11 @@ function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSp
         end
     end
     default_evaluation_operator(s, dgs; options...)
+end
+
+function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
+        options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.PeriodicTranslationDict} where N,S,T}}}
+    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end
 
 unsafe_eval_element(b::PeriodicTranslationDict, idxn::TransIndex, x::Real) =

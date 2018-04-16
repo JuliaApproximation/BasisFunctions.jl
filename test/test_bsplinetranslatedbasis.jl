@@ -369,6 +369,7 @@ function test_discrete_dualsplinebasis(T)
 end
 
 function test_bspline_platform(T)
+    #  1D
     init = 4
     for oversampling in [1,2,4],  degree in 2:3, i in [1,3]
         platform = BasisFunctions.bspline_platform(T, init, degree, oversampling)
@@ -380,14 +381,50 @@ function test_bspline_platform(T)
         B = P
         g = BasisFunctions.oversampled_grid(B, oversampling)
         E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(Span(B),gridspace(g),1:oversampling:length(g))
-        G = CirculantOperator(E'E*[1,zeros(length(g)-1)...])
+        G = CirculantOperator(E'E*[1,zeros(length(g)-1)...]/length(B))
         DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
 
         e = map(T,rand(length(B)))
         @test evaluation_operator(Span(D),g)*e≈evaluation_matrix(D,g)*e
         @test evaluation_operator(Span(D),g)*e≈evaluation_operator(Span(P),g)*(matrix(DG)*e)
-        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈e
+        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈length(B)e
         @test S*exp≈exp.(g)
+    end
+
+    #  ND
+    init = [3,4]
+    degree = [1,3]
+    T = Float64
+    oversampling = 2
+    for oversampling in [1,2,4], i in [1,2]
+        platform = BasisFunctions.bspline_platform(T, init, degree, oversampling)
+
+        P = primal(platform,i)
+        D = dual(platform,i)
+        S = BasisFunctions.sampler(platform,i)
+
+
+        B = P
+        B1, B2 = elements(P)
+        g1 = BasisFunctions.oversampled_grid(B1,oversampling)
+        g2 = BasisFunctions.oversampled_grid(B2,oversampling)
+        g = g1×g2
+
+        E1 = CirculantOperator(evaluation_matrix(B1[1],g1)[:])*IndexExtensionOperator(Span(B1),gridspace(g1),1:oversampling:length(g1))
+        E2 = CirculantOperator(evaluation_matrix(B2[1],g2)[:])*IndexExtensionOperator(Span(B2),gridspace(g2),1:oversampling:length(g2))
+
+        G1 = CirculantOperator(E1'E1*[1,zeros(length(g1)-1)...]/length(B1));
+        G2 = CirculantOperator(E2'E2*[1,zeros(length(g2)-1)...]/length(B2));
+        G = G1⊗G2
+
+        DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
+
+        e = map(T,rand(size(B)...))
+        @test (evaluation_operator(Span(D),g)*e)[:]≈evaluation_matrix(D,g)*e[:]
+        @test (evaluation_operator(Span(D),g)*e)[:]≈(evaluation_operator(Span(P),g)*reshape(matrix(DG)*e[:],size(P)...))[:]
+        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈length(B)e
+        f = (x,y)->exp(x*y)
+        @test S*f≈f.(g)
     end
 end
 

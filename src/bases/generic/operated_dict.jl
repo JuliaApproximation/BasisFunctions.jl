@@ -5,7 +5,7 @@ An `OperatedDict` represents a set that is acted on by an operator, for example
 the differentiation operator. The `OperatedDict` has the dimension of the source
 set of the operator, but each basis function is acted on by the operator.
 """
-struct OperatedDict{S,T} <: DerivedDict{S,T}
+struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
     "The operator that acts on the set"
     op          ::  AbstractOperator{T}
 
@@ -22,6 +22,14 @@ end
 const OperatedDictSpan{A,S,T,D <: OperatedDict} = Span{A,S,T,D}
 
 # TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
+has_derivative(s::OperatedDict) = false
+has_antiderivative(s::OperatedDict) = false
+# has_grid(s::ConcreteSet) = false
+has_transform(s::OperatedDict) = false
+has_transform(s::OperatedDict, dgs::GridBasis) = false
+has_extension(s::OperatedDict) = false
+
+is_basis(::OperatedDict) = false
 
 superdict(dict::OperatedDict) = dictionary(src(dict))
 
@@ -85,7 +93,8 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
 end
 
-grid_evaluation_operator(span::OperatedDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) = grid_evaluation_operator(src(dictionary(span)), dgs, grid; options...)*operator(dictionary(span))
+grid_evaluation_operator(span::OperatedDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    WrappedOperator(span, dgs, grid_evaluation_operator(src(dictionary(span)), dgs, grid; options...)*operator(dictionary(span)))
 
 ## Properties
 

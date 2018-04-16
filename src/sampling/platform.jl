@@ -42,6 +42,18 @@ end
 
 name(platform::GenericPlatform) = platform.name
 
+"""
+Initalized with a series of generators, it generates tensorproduct dictionaries
+given a series of lengths.
+"""
+struct TensorGenerator{T}
+    fun
+end
+(TG::TensorGenerator)(n::Int...) = TG(collect(n))
+(TG::TensorGenerator)(n::AbstractVector{Int}) = tensorproduct(TG.fun(n))
+
+tensor_generator(::Type{T}, generators...) where {T} = TensorGenerator{T}( n ->([gi(ni)  for (ni, gi) in  zip(collect(n), collect(generators))]))
+
 
 #######################
 # Parameter sequences
@@ -65,3 +77,11 @@ DoublingSequence() = DoublingSequence(2)
 initial(s::DoublingSequence) = s.initial
 
 getindex(s::DoublingSequence, idx::Int) = initial(s) * 2<<(idx-2)
+
+
+"A tensor product sequences with given initial values."
+struct TensorSequence
+    sequences
+end
+
+getindex(s::TensorSequence, idx::Int) = [si[idx] for si in s.sequences]

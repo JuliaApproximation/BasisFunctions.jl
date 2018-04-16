@@ -1,9 +1,9 @@
 # test_suite.jl
 module test_suite
 
-using Base.Test
 srand(1234)
 using StaticArrays
+using Base.Test
 using Domains
 using BasisFunctions
 

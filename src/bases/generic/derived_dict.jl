@@ -68,7 +68,7 @@ has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), 
 # has_antiderivative(s::ConcreteSet) = false
 # has_grid(s::ConcreteSet) = false
 # has_transform(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet, dgs) = false
+# has_transform(s::ConcreteSet, dgs::GridBasis) = false
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 

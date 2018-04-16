@@ -310,6 +310,8 @@ change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::
 # Platform
 ##################
 
+# 1D generators
+primal_bspline_generator(::Type{T}, degree::Int) where {T} = n->BSplineTranslatesBasis(n, degree, T)
 struct DualBSplineGenerator
     primal_generator
     oversampling::Int
@@ -318,22 +320,39 @@ end
 
 function (DG::DualBSplineGenerator)(n::Int)
     B = DG.primal_generator(n)
-    g = BasisFunctions.oversampled_grid(B, DG.oversampling)
-    E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(Span(B),gridspace(g),1:DG.oversampling:length(g))
-    G = CirculantOperator(E'E*[1,zeros(length(g)-1)...])
-    DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
-    DB = OperatedDict(DG)
+    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
+    OperatedDict(DG)
 end
 
-primal_bspline_generator(::Type{T}, degree::Int) where {T} = n->BSplineTranslatesBasis(n, degree, T)
-dual_bspline_generator(::Type{T},degree::Int, oversampling::Int) where {T} = DualBSplineGenerator(primal_bspline_generator(T, degree), oversampling)
+dual_bspline_generator(primal_bspline_generator, oversampling::Int) = DualBSplineGenerator(primal_bspline_generator, oversampling)
 
+# ND generators
+primal_bspline_generator(::Type{T}, degree1::Int, degree2::Int, degree::Int...) where {T} = primal_bspline_generator(T, [degree1, degree2, degree...])
 
-function bspline_platform(::Type{T}, init::Int, degree::Int, oversampling::Int) where {T}
+primal_bspline_generator(::Type{T}, degree::AbstractVector{Int}) where {T} = tensor_generator(T, map(d->primal_bspline_generator(T, d), degree)...)
+
+(DG::DualBSplineGenerator)(n1::Int, n2::Int, ns::Int...) = DG([n1,ns...])
+
+function (DG::DualBSplineGenerator)(n::AbstractVector{Int})
+    B = DG.primal_generator(n)
+    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
+    tensorproduct([OperatedDict(DGi) for DGi in elements(DG)]...)
+end
+
+# Sampler
+bspline_sampler(::Type{T}, primal, oversampling::Int) where {T} = n-> GridSamplingOperator(gridspace(grid(primal(n*oversampling)),T))
+
+# params
+bspline_param(init::Int) = DoublingSequence(init)
+
+bspline_param(init::AbstractVector{Int}) = TensorSequence([DoublingSequence(i) for i in init])
+
+# Platform
+function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degree::Union{Int,AbstractVector{Int}}, oversampling::Int) where {T}
 	primal = primal_bspline_generator(T, degree)
-	dual = dual_bspline_generator(T, degree, oversampling)
-	sampler = n ->GridSamplingOperator(gridspace(grid(BSplineTranslatesBasis(oversampling*n, degree, T)), T))
-	params = BasisFunctions.DoublingSequence(init)
+	dual = dual_bspline_generator(primal, oversampling)
+	sampler = bspline_sampler(T, primal, oversampling)
+	params = bspline_param(init)
 	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
-		params = params, name = "B-Spline translatesd")
+		params = params, name = "B-Spline translates")
 end
