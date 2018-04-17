@@ -1,5 +1,6 @@
 using Base.Test
 using BasisFunctions
+using StaticArrays
 function test_generic_periodicbsplinebasis(T)
 
     for B in (BSplineTranslatesBasis, SymBSplineTranslatesBasis,)
@@ -426,7 +427,62 @@ function test_bspline_platform(T)
         f = (x,y)->exp(x*y)
         @test S*f≈f.(g)
     end
+
+    init = [3,3]
+    degree = [1,3]
+    oversampling = 2
+    center = @SVector [.5,.5]
+    domain  = disk(.3,center)
+    platform=BasisFunctions.bspline_platform(T, init, degree, oversampling)
+    i = 2
+    B = primal(platform,i)
+    D = dual(platform,i)
+    g = grid(sampler(platform,i))
+    Aop = A(platform, i)
+    Zop = Z(platform, i)
+
+
+    e = map(T,rand(size(B)...))
+    @test evaluation_operator(Span(B), g)*e≈Aop*e
+    @test evaluation_operator(Span(D), g)*e≈Zop*e
 end
+
+using BasisFunctions: overlapping_elements, support_indices
+function test_spline_approximation(T)
+
+    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
+
+    x = [SVector(1e-4,1e-5),SVector(.23,.94)]
+    indices = overlapping_elements.(B,x)
+
+    @test reduce(&,true,[B[i].(x[j]...) for j in 1:length(x) for i in indices[j]].>0)
+
+    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)⊗BSplineTranslatesBasis(5,1,T)
+
+    x = [SVector(1e-4,1e-5,1e-4),SVector(.23,.94,.93)]
+    indices = overlapping_elements.(B,x)
+
+    @test reduce(&,true,[B[i].(x[j]...) for j in 1:length(x) for i in indices[j]].>0)
+
+
+    # Select the points that are in the support of the function
+    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
+    g = BasisFunctions.grid(B)
+    set = [1,length(B)-1]
+    indices = support_indices.(B,g,set)
+    @which support_indices(B,g,set[1])
+    @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
+
+    # Select the points that are in the support of the function
+    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)⊗BSplineTranslatesBasis(5,1,T)
+    g = BasisFunctions.grid(B)
+    set = [1,length(B)-1]
+    indices = support_indices.(B,g,set)
+    @which support_indices(B,g,set[1])
+    @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
+end
+
+
 
 # exit()
 
@@ -438,8 +494,8 @@ end
 # @testset begin test_translatedbsplines(Float64) end
 # @testset begin test_translatedsymmetricbsplines(Float64) end
 # @testset begin test_generic_periodicbsplinebasis(Float64) end
-# @testset begin test_bspline_platform(BigFloat) end
-
+# @testset begin test_bspline_platform(Float64) end
+# @testset begin test_spline_approximation(Float64) end
 # using Plots
 # using BasisFunctions
 # n = 7

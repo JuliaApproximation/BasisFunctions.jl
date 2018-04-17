@@ -14,7 +14,7 @@ end
 A `GenericPlatform` stores a primal and dual dictionary generator, along with
 a sequence of parameter values.
 """
-struct GenericPlatform
+struct GenericPlatform <: Platform
     primal_generator
     dual_generator
     sampler_generator
@@ -41,6 +41,10 @@ function sampler(platform::GenericPlatform, i)
 end
 
 name(platform::GenericPlatform) = platform.name
+
+A(platform::GenericPlatform, i) = sampler(platform, i)*primal(platform, i)
+
+Z(platform::GenericPlatform, i) = sampler(platform, i)*dual(platform, i)
 
 """
 Initalized with a series of generators, it generates tensorproduct dictionaries

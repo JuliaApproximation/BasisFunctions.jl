@@ -43,19 +43,6 @@ function bspline_restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSpli
     IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, s1, PseudoDiagonalOperator(d))
 end
 
-# TODO check the properties of this one
-# function bspline_restriction_operator2{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
-#     @assert length(s1) == 2*length(s2)
-#     inv(evaluation_operator(s2; options...))*evaluation_operator(s1, grid(s2); options...)
-# end
-
-# function restriction_operator{K,T}(s1::PeriodicBSplineBasis{K,T}, s2::PeriodicBSplineBasis{K,T}; options...)
-#     @assert length(s1) == 2*length(s2)
-#     t = zeros(s2)
-#     t[1] = 1
-#     IndexRestrictionOperator(s1,s2,1:2:length(s1))*CirculantOperator(s1, matrix(extension_operator(s2, s1; options...))'\t)'
-# end
-
 """
   Basis consisting of dilated, translated, and periodized cardinal B splines on the interval [0,1].
 """
@@ -134,35 +121,7 @@ function primalgramcolumnelement(span::Span{A,S,T,BSplineTranslatesBasis{K,T,SCA
     end
 end
 
-"""
-Makes sure that (i-1)/N < x < i/N holds
-If x ≈ i/N it return -i
-"""
-interval_index(B::BSplineTranslatesBasis,x::Real) = round(x*length(B))≈x*length(B) ? -round(Int,x*length(B))-1 : ceil(Int,x*length(B))
-
-function BasisFunctions.support(B::BSplineTranslatesBasis, i)
-    start = (i-1)/length(B)
-    width = (degree(B)+1)/length(B)
-    stop  = start+width
-    stop <=1 ? (return [start,stop]) : (return [0.,stop-1.], [start,1.])
-end
-
-"""
-The linear index of the spline elements of B that are non-zero in x.
-"""
-function overlapping_elements(B::BSplineTranslatesBasis, x::Real)
-    # The interval_index is the starting index of all spline elements that overlap with x
-    init_index = interval_index(B,x)
-    (init_index == -1-length(B)) && (init_index += length(B))
-    degree(B) == 0 && return abs(init_index)
-    # The number of elements that overlap with one interval
-    no_elements = degree(B)+1
-    if init_index < 0
-        init_index = -init_index-1
-        no_elements = no_elements-1
-    end
-    [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
-end
+include("spline_approximation.jl")
 
 """
   Basis consisting of symmetric, dilated, translated, and periodized cardinal B splines on the interval [0,1].
@@ -305,54 +264,3 @@ dict_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}
 resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
 
 change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(Span(b); options...))
-
-##################
-# Platform
-##################
-
-# 1D generators
-primal_bspline_generator(::Type{T}, degree::Int) where {T} = n->BSplineTranslatesBasis(n, degree, T)
-struct DualBSplineGenerator
-    primal_generator
-    oversampling::Int
-    DualBSplineGenerator(primal_generator, oversampling::Int) = (@assert BasisFunctions.isdyadic(oversampling); new(primal_generator, oversampling))
-end
-
-function (DG::DualBSplineGenerator)(n::Int)
-    B = DG.primal_generator(n)
-    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
-    OperatedDict(DG)
-end
-
-dual_bspline_generator(primal_bspline_generator, oversampling::Int) = DualBSplineGenerator(primal_bspline_generator, oversampling)
-
-# ND generators
-primal_bspline_generator(::Type{T}, degree1::Int, degree2::Int, degree::Int...) where {T} = primal_bspline_generator(T, [degree1, degree2, degree...])
-
-primal_bspline_generator(::Type{T}, degree::AbstractVector{Int}) where {T} = tensor_generator(T, map(d->primal_bspline_generator(T, d), degree)...)
-
-(DG::DualBSplineGenerator)(n1::Int, n2::Int, ns::Int...) = DG([n1,ns...])
-
-function (DG::DualBSplineGenerator)(n::AbstractVector{Int})
-    B = DG.primal_generator(n)
-    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
-    tensorproduct([OperatedDict(DGi) for DGi in elements(DG)]...)
-end
-
-# Sampler
-bspline_sampler(::Type{T}, primal, oversampling::Int) where {T} = n-> GridSamplingOperator(gridspace(grid(primal(n*oversampling)),T))
-
-# params
-bspline_param(init::Int) = DoublingSequence(init)
-
-bspline_param(init::AbstractVector{Int}) = TensorSequence([DoublingSequence(i) for i in init])
-
-# Platform
-function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degree::Union{Int,AbstractVector{Int}}, oversampling::Int) where {T}
-	primal = primal_bspline_generator(T, degree)
-	dual = dual_bspline_generator(primal, oversampling)
-	sampler = bspline_sampler(T, primal, oversampling)
-	params = bspline_param(init)
-	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
-		params = params, name = "B-Spline translates")
-end

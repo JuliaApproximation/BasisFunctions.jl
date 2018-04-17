@@ -52,3 +52,7 @@ function sample!(result, g::AbstractGrid, f)
 	end
 	result
 end
+
+(*)(S::GridSamplingOperator, D::Dictionary) = apply(S, D)
+
+apply(S::GridSamplingOperator, D::Dictionary) = evaluation_operator(Span(D, coeftype(gridspace(S))), grid(S))

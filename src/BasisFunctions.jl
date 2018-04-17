@@ -261,7 +261,7 @@ export sample
 
 # from sampling/platform.jl
 export Platform
-export primal, dual
+export primal, dual, sampler, A, Z
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -306,6 +306,7 @@ export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, Sp
 export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
+export bspline_platform
 
 export degree, interval
 

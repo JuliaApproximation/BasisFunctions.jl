@@ -124,3 +124,8 @@ function (*)(op::AbstractOperator, s::Span)
     @assert src(op) == s
     OperatedDict(op)
 end
+
+function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
+        options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}}
+    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
+end
