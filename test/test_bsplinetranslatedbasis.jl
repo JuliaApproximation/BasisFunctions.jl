@@ -1,6 +1,7 @@
 using Base.Test
 using BasisFunctions
 using StaticArrays
+using Domains
 function test_generic_periodicbsplinebasis(T)
 
     for B in (BSplineTranslatesBasis, SymBSplineTranslatesBasis,)
@@ -444,7 +445,7 @@ function test_bspline_platform(T)
 
     e = map(T,rand(size(B)...))
     @test evaluation_operator(Span(B), g)*e≈Aop*e
-    @test evaluation_operator(Span(D), g)*e≈Zop*e
+    @test evaluation_operator(Span(D), g)*e≈Zop*e*length(D)
 end
 
 using BasisFunctions: overlapping_elements, support_indices
