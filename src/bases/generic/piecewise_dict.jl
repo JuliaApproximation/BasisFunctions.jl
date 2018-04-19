@@ -54,8 +54,21 @@ dictionaries(set::PiecewiseDict) = set.dicts
 
 partition(set::PiecewiseDict) = set.partition
 
+is_composite(set::PiecewiseDict) = true
+function stencil(set::PiecewiseDict)
+    A=Any[]
+    push!(A,"(")
+    i=1
+    for s in dictionaries(set)
+        i!=1 && push!(A,", ")
+        push!(A,s)
+        i+=1
+    end
+    push!(A,")")
+    A
+end
 
-name(set::PiecewiseDict) = "Piecewise function set"
+            
 
 similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 

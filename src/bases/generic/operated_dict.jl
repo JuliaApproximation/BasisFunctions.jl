@@ -28,7 +28,15 @@ function OperatedDict(op::AbstractOperator{T}) where {T}
     OperatedDict{S,T}(op)
 end
 
-name(s::OperatedDict) = name(src_dictionary(s) * " transformed by an operator")
+has_stencil(s::OperatedDict) = true
+function stencil(s::OperatedDict,S)
+    A = Any[]
+    push!(A,operator(s))
+    push!(A," * ")
+    push!(A,dictionary(src(s)))
+    return recurse_stencil(s,A,S)
+end
+myLeaves(s::OperatedDict) = (operator(s),myLeaves(dictionary(src(s)))...)
 
 src(s::OperatedDict) = src(s.op)
 src_dictionary(s::OperatedDict) = dictionary(src(s))
@@ -43,13 +51,13 @@ operator(set::OperatedDict) = set.op
 dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
     OperatedDict(similar_operator(operator(s), T, promote_domaintype(src(s), S), dest(s) ) )
 
-for op in (:left, :right, :length)
+for op in (:left, :right, :domain, :length)
     @eval $op(s::OperatedDict) = $op(src_dictionary(s))
 end
 
 # We don't know in general what the support of a specific basis functions is.
 # The safe option is to return the support of the set itself for each element.
-for op in (:left, :right)
+for op in (:left, :right, :domain)
     @eval $op(s::OperatedDict, idx) = $op(src_dictionary(s))
 end
 

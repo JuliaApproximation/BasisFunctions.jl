@@ -40,6 +40,7 @@ const PeriodicTranslatesSpan{A,S,T,D <: PeriodicTranslationDict} = Span{A,S,T,D}
 
 left{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.a)
 right{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.b)
+domain(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
 
 left(set::PeriodicTranslationDict, j::TransIndex) = left(set)
 right(set::PeriodicTranslationDict, j::TransIndex) = right(set)
@@ -225,7 +226,7 @@ const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicTranslationDi
 
 coefficients(b::LinearCombinationOfPeriodicTranslationDict) = b.coefficients
 
-for op in (:length, :left, :right, :has_grid, :grid)
+for op in (:length, :left, :right, :has_grid, :grid, :domain)
     @eval $op(b::LinearCombinationOfPeriodicTranslationDict) = $op(superdict(b))
 end
 

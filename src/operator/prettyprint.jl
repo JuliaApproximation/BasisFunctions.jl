@@ -2,11 +2,24 @@
 
 # Methods that override the standard show(io::IO,op::AbstractOperator), to be better understandable.
 
+####
+# Comment out these methods to disable pretty printing
+####
+
 # Delegate to show_operator
-function show(io::IO, op::GenericOperator)
-    # print operator
-    has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
-end
+show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+show(io::IO,s::Span) = show(io,dictionary(s))
+show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+
+####
+# Stop commenting here
+####
+
+####
+# Operator symbols and strings
+####
+
+
 # Default is the operator string
 show_operator(io::IO,op::GenericOperator) = println(string(op))
 
@@ -47,6 +60,10 @@ end
 subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in reverse(digits(i)))
 
 
+####
+# Parentheses for operators
+####
+    
 # Include parentheses based on precedence rules
 # By default, don't add parentheses
 parentheses(t::AbstractOperator,a::AbstractOperator) = false
@@ -57,28 +74,33 @@ parentheses(t::TensorProductOperator,a::OperatorSum) = true
 parentheses(t::CompositeOperator,a::TensorProductOperator) = true
 parentheses(t::TensorProductOperator,a::CompositeOperator) = true
 
-parentheses(t::Dictionary, d::Dictionary) = false
-parentheses(t::CompositeDict, a::TensorProductDict)=true
-parentheses(t::CompositeDict, a::TensorProductDict)=true
-
-## Dictionaries
-    # Delegate to show_operator
-    show(io::IO,s::Span) = show(io,dictionary(s))
-show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
-
+####
+# Dictionary symbols and strings
+####
     
 # Default is the operator string
 show_dictionary(io::IO,d::Dictionary) = println(print_strings(strings(d),0,""))
 
 # Default string is the string of the type
-    strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> $(codomaintype(d))","domain = $(domain(d))"))
-    strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d))",strings(grid(d)))
-    strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
+strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> $(codomaintype(d))","domain = $(domain(d))"))
+strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d))",strings(grid(d)))
+strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
         
 symbol(d::Dictionary) = name(d)[1]
 name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
 
+####
+# Dictionary Parentheses
+####    
+
+    
+parentheses(t::Dictionary, d::Dictionary) = false
+parentheses(t::CompositeDict, a::TensorProductDict)=true
+parentheses(t::CompositeDict, a::TensorProductDict)=true
+
+
+    
 has_stencil(anything) = is_composite(anything)
 #### Actual printing methods.
 
@@ -87,7 +109,7 @@ children(A) = is_composite(A) ? elements(A) : ()
 function myLeaves(op::BasisFunctions.DerivedOperator)
     A = Any[]
     push!(A,op)
-    push!(A,myLeaves(op.op)...)
+    push!(A,myLeaves(superoperator(op))...)
     return A
 end
 function myLeaves(op::BasisFunctions.DerivedDict)
@@ -154,7 +176,8 @@ function stencil(op,S)
         return recurse_stencil(op,A,S)
     end
 end
-    
+
+# Any remaining operator/dictionary that has a stencil will be 
 function recurse_stencil(op,A,S)
     i=1
     k=length(A)
@@ -174,6 +197,7 @@ function recurse_stencil(op,A,S)
     A
 end
 
+# When printing a stencil, replace all operators/dictionaries with their symbol. Strings are printed directly
 function printstencil(io,op,S)
     A = stencil(op,S)
     for i = 1:length(A)
@@ -186,6 +210,7 @@ function printstencil(io,op,S)
 end
         
 
+# Main printing method, first print the stencil and any remaining composites, then show a full list of symbols and their strings.
 function show_composite(io::IO,op)
     S = symbollist(op)
     printstencil(io,op,S)
@@ -204,6 +229,7 @@ function show_composite(io::IO,op)
         print(io,value,"\t:\t",print_strings(strings(key),0,"\t\t"))
     end
 end
+# Strings allow a dictionary or operator to return a multiline representation (each tuple is a line, each subtuple indicates a sublevel adding a downright arrow)
 function strings(op::AbstractOperator)
     tuple(String(string(op)))
 end
@@ -218,6 +244,8 @@ function strings(any)
     s = String(take!(io))
     tuple(s)
 end
+
+# Determine number of children of operator (to determine where to split)
 function nchildren(op)
     It = PostOrderDFS(op)
     j=0
@@ -226,7 +254,8 @@ function nchildren(op)
     end
     j
 end
-    
+
+# These functions convert the strings tuples to multiline strings, by prefixing a variable number of spaces, and possibly a downrright arrow
 function print_strings(strings::Tuple, depth=0,prefix="")
     s = strings
     result=""
@@ -235,11 +264,12 @@ function print_strings(strings::Tuple, depth=0,prefix="")
     end
     result
 end
-    function print_strings(strings::String, depth=0,prefix="")
-        if depth==1
-            result = strings*"\n"
-        else
-            result = prefix*"↳ "*strings*"\n"
-        end
-        result
+
+function print_strings(strings::String, depth=0,prefix="")
+    if depth==1
+        result = strings*"\n"
+    else
+        result = prefix*"↳ "*strings*"\n"
+    end
+    result
 end

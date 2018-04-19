@@ -70,7 +70,7 @@ for T in [Float64,BigFloat,]
 
             @test length(basis) == n
             @test domaintype(basis) == T
-
+        
             test_generic_dict_interface(basis, Span(basis))
     end
     # also try a Fourier series with an even length

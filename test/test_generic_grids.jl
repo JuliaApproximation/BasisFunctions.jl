@@ -27,7 +27,6 @@ end
 
 
 function test_generic_grid(grid)
-    #println("Grid: ", typeof(grid))
     L = length(grid)
 
     T = eltype(grid)

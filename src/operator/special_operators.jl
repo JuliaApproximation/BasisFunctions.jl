@@ -87,6 +87,9 @@ struct WrappedOperator{OP,T} <: DerivedOperator{T}
     end
 end
 
+src(op::WrappedOperator) = op.src
+dest(op::WrappedOperator) = op.dest
+
 WrappedOperator(src::Span, dest::Span, op) = WrappedOperator(eltype(op), src, dest, op)
 
 function WrappedOperator(::Type{T}, src::Span, dest::Span, op) where {T}
@@ -97,7 +100,7 @@ end
 superoperator(op::WrappedOperator) = op.op
 
 function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where {S}
-    subop = operator(op)
+    subop = superoperator(op)
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
 
@@ -136,7 +139,7 @@ function wrap_operator(w_src, w_dest, op::AbstractOperator)
 end
 
 # No need to wrap a wrapped operator
-wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, operator(op))
+wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, superoperator(op))
 
 # No need to wrap an IdentityOperator, we can just change src and dest
 # Same for a few other operators
@@ -145,11 +148,11 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(op.op))
+inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
 
-ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(op.op))
+ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(superoperator(op)))
 
-simplify(op::WrappedOperator) = op.op
+simplify(op::WrappedOperator) = superoperator(op)
 
 
 """

@@ -354,3 +354,5 @@ rec_An(b::ChebyshevU, n::Int) = 2
 rec_Bn(b::ChebyshevU, n::Int) = 0
 
 rec_Cn(b::ChebyshevU, n::Int) = 1
+
+domain(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
