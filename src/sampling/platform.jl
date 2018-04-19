@@ -44,7 +44,10 @@ name(platform::GenericPlatform) = platform.name
 
 A(platform::GenericPlatform, i) = sampler(platform, i)*primal(platform, i)
 
-Z(platform::GenericPlatform, i) = sampler(platform, i)*dual(platform, i)
+function Z(platform::GenericPlatform, i)
+    dict = dual(platform, i)
+    (coeftype(dict)(1)/length(dict))*(sampler(platform, i)*dict)
+end
 
 """
 Initalized with a series of generators, it generates tensorproduct dictionaries
