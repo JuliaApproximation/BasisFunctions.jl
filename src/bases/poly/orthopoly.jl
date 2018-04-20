@@ -287,7 +287,7 @@ end
 function roots(b::OPS{T}) where {T<:Union{BigFloat}}
     J = symmetric_jacobi_matrix(b)
     # assuming the user has imported LinearAlgebra.jl
-    LinearAlgebra.EigenGeneral.eigvals!(J)
+    sort(real(LinearAlgebra.EigenGeneral.eigvals!(J)))
 end
 
 gauss_points(b::OPS) = roots(b)

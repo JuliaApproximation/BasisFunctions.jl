@@ -36,7 +36,7 @@ left(b::LaguerrePolynomials, idx) = left(b)
 right(b::LaguerrePolynomials) = convert(domaintype(b), Inf)
 right(b::LaguerrePolynomials, idx) = right(b)
 
-first_moment(b::LaguerrePolynomials{T}) where {T} = T(1)
+first_moment(b::LaguerrePolynomials{T}) where {T} = gamma(b.α+1)
 
 jacobi_α(b::LaguerrePolynomials) = b.α
 

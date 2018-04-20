@@ -1,6 +1,6 @@
 # BasisFunctions
 
-__precompile__()
+#__precompile__()
 
 module BasisFunctions
 
@@ -230,7 +230,7 @@ export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
 
 
 # from bases/generic/composite_dict.jl
-export tail
+export tail, numelements
 
 # from bases/generic/multiple_dict.jl
 export MultiDict, multidict, ⊕
