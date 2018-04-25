@@ -25,6 +25,8 @@ element(op::CompositeOperator, j::Int) = op.operators[j]
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
+is_composite(op::CompositeOperator) = true
+
 
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
@@ -143,6 +145,19 @@ compose(op::AbstractOperator) = op
 # Here we have at least two operators. Remove nested compositions with flatten and continue.
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
+
+
+function stencil(op::CompositeOperator)
+    A = Any[]
+    push!(A,element(op,length(elements(op))))
+    for i=length(elements(op))-1:-1:1
+        push!(A," * ")
+        push!(A,element(op,i))
+    end
+    A
+end
+
+
 
 # function compose_verify_and_simplify(ops::AbstractOperator...)
 #     # Check for correct chain of function spaces

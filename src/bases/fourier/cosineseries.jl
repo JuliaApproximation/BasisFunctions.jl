@@ -16,7 +16,7 @@ const CosineSpan{A,S,T,D <: CosineSeries} = Span{A,S,T,D}
 
 name(b::CosineSeries) = "Cosine series"
 
-Cosineseries(n::Int) = CosineSeries{Float64}(n)
+CosineSeries(n::Int) = CosineSeries{Float64}(n)
 
 CosineSeries{T}(n::Int, a::Number, b::Number) where {T} =
     rescale(CosineSeries{T}(n), a, b)

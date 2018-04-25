@@ -426,13 +426,13 @@ function test_generic_dict_interface(basis, span = Span(basis))
         @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
 
         # Verify the transposes and inverses
-        if has_unitary_transform(basis)
-            @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (it' * it)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
-        end
+        ## if has_unitary_transform(basis)
+        ##     @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)
+        ##     @test maximum(abs.( (it' * it)*x-x)) < test_tolerance(ELT)
+        ##     @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
+        ##     @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
+        ##     @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
+        ## end
     end
 
 

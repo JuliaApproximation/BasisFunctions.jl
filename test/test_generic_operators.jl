@@ -18,7 +18,7 @@ function test_generic_operators(T)
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b1, b1, T(2))) ],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
         ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
-        ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
+#        ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
         ["Circulant operator", CirculantOperator(b2, map(T, rand(length(b2))))],
     ]
 

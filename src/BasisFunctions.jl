@@ -13,6 +13,7 @@ using FastTransforms
 using Domains
 
 using LinearAlgebra
+using AbstractTrees
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
@@ -35,7 +36,7 @@ import Base: isreal, iseven, isodd, real, complex
 
 import Base: ctranspose, transpose, inv, hcat, vcat
 
-import Base: show, showcompact, convert, similar
+import Base: show, showcompact, convert, similar, string
 
 import Base: dct, idct
 
@@ -73,6 +74,7 @@ import Domains: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 
+import AbstractTrees: children
 
 ## Exhaustive list of exports
 
@@ -178,7 +180,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
-export PseudoDiagonalOperator
+#export PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_space, full_transform_operator,
@@ -357,9 +359,8 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/pseudo_diagonal.jl")
+#include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
-
 
 
 include("bases/generic/expansions.jl")
@@ -431,6 +432,7 @@ include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
+include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
 

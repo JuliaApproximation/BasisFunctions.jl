@@ -326,18 +326,18 @@ function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options.
 	forward_fourier_operator(s1, s2, coeftype(s2); options...)
 end
 
+## function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
+## 	@assert compatible_grid(dictionary(dest), grid)
+##     L = convert(coeftype(dest), length(src))
+##     ScalingOperator(dest, 1/L)
+## end
+
+## function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
+## 	@assert compatible_grid(dictionary(src), grid)
+## 	inv(transform_from_grid_post(dest, src, grid; options...))
+## end
 
 
-function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
-	@assert compatible_grid(dictionary(dest), grid)
-    L = convert(coeftype(dest), length(src))
-    ScalingOperator(dest, 1/sqrt(L))
-end
-
-function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
-	@assert compatible_grid(dictionary(src), grid)
-	inv(transform_from_grid_post(dest, src, grid; options...))
-end
 
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid

@@ -19,6 +19,8 @@ end
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
+is_composite(op::TensorProductOperator) = true
+
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
     L = length(operators)
@@ -248,4 +250,14 @@ function apply_inplace_tensor!{A,B,C}(op, coef_srcdest, operators::Tuple{A,B,C},
         end
     end
     coef_srcdest
+end
+
+function stencil(op::TensorProductOperator)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
 end

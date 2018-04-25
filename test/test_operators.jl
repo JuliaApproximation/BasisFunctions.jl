@@ -63,8 +63,8 @@ function test_diagonal_operators(T)
         operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, map(coeftype(SRC),rand())), ScalingOperator(SRC,3),
-            DiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))),
-            PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
+            DiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
+           # PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place
