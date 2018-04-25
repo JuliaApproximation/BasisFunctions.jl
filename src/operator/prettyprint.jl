@@ -87,8 +87,12 @@ strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d
 strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
         
-symbol(d::Dictionary) = name(d)[1]
-name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
+    symbol(d::Dictionary) = name(d)[1]
+## Default names
+name(d::Dictionary) = _name(d)
+name(g::AbstractGrid) = _name(g)
+name(o::AbstractOperator) = _name(o)
+_name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
 
 ####
 # Dictionary Parentheses
@@ -234,9 +238,6 @@ function strings(op::AbstractOperator)
     tuple(String(string(op)))
 end
 
-function strings(op::AbstractOperator)
-    tuple(String(string(op)))
-end
 
 function strings(any)
     io = IOBuffer()
