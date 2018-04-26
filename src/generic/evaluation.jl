@@ -70,8 +70,11 @@ function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, grid::Abstrac
     end
 end
 
+grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...) = 
+    _grid_evaluation_operator(s, dgs, subgrid; options...)
+
 # Try to do efficient evaluation also for subgrids
-function grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
+function _grid_evaluation_operator(s::Span, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
     # We make no attempt if the set has no associated grid
     if has_grid(s)
         # Is the associated grid of the same type as the supergrid at hand?

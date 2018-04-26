@@ -160,6 +160,21 @@ end
 
 collect(op::AbstractOperator) = matrix(op)
 
+function sparse_matrix(op::AbstractOperator;sparse_tol = 1e-14, options...)
+	coef_src  = zeros(src(op))
+    coef_dest = zeros(dest(op))
+    R = spzeros(eltype(op),size(op,1),0)
+    for (i,si) in enumerate(eachindex(coef_src))
+        coef_src[si] = 1
+        apply!(op, coef_dest, coef_src)
+        coef_src[si] = 0
+        coef_dest[abs.(coef_dest).<sparse_tol] = 0
+        R = hcat(R,sparse(coef_dest))
+    end
+    R
+end
+
+
 function matrix(op::AbstractOperator)
     a = Array{eltype(op)}(size(op))
     matrix!(op, a)

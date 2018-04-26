@@ -144,6 +144,8 @@ compose(op::AbstractOperator) = op
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
+sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
+
 # function compose_verify_and_simplify(ops::AbstractOperator...)
 #     # Check for correct chain of function spaces
 #     # We do this before we flatten composite operators, because they might have

@@ -540,3 +540,8 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
 is_diagonal(op::DelinearizationOperator) = true
+
+function SparseOperator(op::AbstractOperator; options...)
+    A = sparse_matrix(op; options...)
+    MultiplicationOperator(src(op), dest(op), A, inplace=false)
+end

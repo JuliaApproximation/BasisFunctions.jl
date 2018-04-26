@@ -12,7 +12,7 @@ function test_generic_periodicbsplinebasis(T)
         @test right(b)==1
 
         @test length(b)==5
-        @test degree(b)==3
+        @test BasisFunctions.degree(b)==3
         @test is_basis(b)
         @test is_biorthogonal(b)
         @test !is_orthogonal(b)
@@ -23,9 +23,9 @@ function test_generic_periodicbsplinebasis(T)
         @test 0 < BasisFunctions.right_of_compact_function(b) - BasisFunctions.left_of_compact_function(b) < BasisFunctions.period(b)
 
         @test instantiate(B, 4, Float16)==B(4,3,Float16)
-        @test promote_domaintype(b, Float16)==B(n,degree(b),Float16)
-        @test promote_domaintype(b, complex(Float64))==B(n,degree(b),Complex128)
-        @test resize(b, 20)==B(20,degree(b),T)
+        @test promote_domaintype(b, Float16)==B(n,BasisFunctions.degree(b),Float16)
+        @test promote_domaintype(b, complex(Float64))==B(n,BasisFunctions.degree(b),Complex128)
+        @test resize(b, 20)==B(20,BasisFunctions.degree(b),T)
         @test BasisFunctions.grid(b)==PeriodicEquispacedGrid(n,0,1)
         @test BasisFunctions.period(b)==T(1)
         @test BasisFunctions.stepsize(b)==T(1//5)
@@ -90,7 +90,7 @@ function test_translatedbsplines(T)
     @test !BasisFunctions.compatible_grid(b, PeriodicEquispacedGrid(n,0,1.1))
 
     grid(BSplineTranslatesBasis(n,2, T)) == MidpointEquispacedGrid(n,0,1)
-    @test degree(BSplineTranslatesBasis(5,2, T)) == 2
+    @test BasisFunctions.degree(BSplineTranslatesBasis(5,2, T)) == 2
     b = BSplineTranslatesBasis(n,2,T)
     @test BasisFunctions.compatible_grid(b, grid(b))
     @test !BasisFunctions.compatible_grid(b, PeriodicEquispacedGrid(n,0,1))
@@ -259,75 +259,75 @@ function test_translatedsymmetricbsplines(T)
     @test_throws AssertionError extension_operator(Span(SymBSplineTranslatesBasis(4,1)), Span(SymBSplineTranslatesBasis(6,1)))
 end
 
-function test_orthonormalsplinebasis(T)
-    b = OrthonormalSplineBasis(5,2,Float64)
-    b = OrthonormalSplineBasis(5,2,T)
-    @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized)"
-    @test instantiate(OrthonormalSplineBasis,5)==OrthonormalSplineBasis(5,3)
+# function test_orthonormalsplinebasis(T)
+#     b = OrthonormalSplineBasis(5,2,Float64)
+#     b = OrthonormalSplineBasis(5,2,T)
+#     @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized)"
+#     @test instantiate(OrthonormalSplineBasis,5)==OrthonormalSplineBasis(5,3)
+#
+#     G = sqrt(DualGram(Span(b.superdict)))
+#     e = zeros(eltype(G),size(G,1))
+#     e[1] = 1
+#     @test BasisFunctions.coefficients(b) ≈ G*e
+#
+#     d = BasisFunctions.primalgramcolumn(Span(b); abstol=1e-3)
+#     @test d ≈ e
+#     @test typeof(Gram(Span(b))) <: IdentityOperator
+#
+#     n = 8
+#     for degree in 0:3
+#         b = Span(OrthonormalSplineBasis(n, degree, T))
+#         basis_ext = extend(b)
+#         r = restriction_operator(basis_ext, b)
+#         e = extension_operator(b, basis_ext)
+#         @test eye(n) ≈ matrix(r*e)
+#
+#         grid_ext = grid(basis_ext)
+#         L = evaluation_operator(b, grid_ext)
+#         e = random_expansion(b)
+#         z = L*e
+#         L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
+#         z2 = L2*e
+#         @test 1+maximum(abs.(z-z2)) ≈ T(1)
+#     end
+# end
 
-    G = sqrt(DualGram(Span(b.superdict)))
-    e = zeros(eltype(G),size(G,1))
-    e[1] = 1
-    @test BasisFunctions.coefficients(b) ≈ G*e
-
-    d = BasisFunctions.primalgramcolumn(Span(b); abstol=1e-3)
-    @test d ≈ e
-    @test typeof(Gram(Span(b))) <: IdentityOperator
-
-    n = 8
-    for degree in 0:3
-        b = Span(OrthonormalSplineBasis(n, degree, T))
-        basis_ext = extend(b)
-        r = restriction_operator(basis_ext, b)
-        e = extension_operator(b, basis_ext)
-        @test eye(n) ≈ matrix(r*e)
-
-        grid_ext = grid(basis_ext)
-        L = evaluation_operator(b, grid_ext)
-        e = random_expansion(b)
-        z = L*e
-        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
-        z2 = L2*e
-        @test 1+maximum(abs.(z-z2)) ≈ T(1)
-    end
-end
-
-function test_discrete_orthonormalsplinebasis(T)
-    b = DiscreteOrthonormalSplineBasis(5,2,Float64)
-    b = DiscreteOrthonormalSplineBasis(5,2,T)
-    @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized, discrete)"
-    @test instantiate(DiscreteOrthonormalSplineBasis,5)==DiscreteOrthonormalSplineBasis(5,3)
-
-    E = evaluation_operator(Span(b))
-    e = zeros(eltype(E),size(E,1))
-    e[1] = 1
-    @test (E'*E*e) ≈ 5*e
-    @test typeof(E) <: CirculantOperator
-
-    n = 8
-    for degree in 0:3
-        b = Span(DiscreteOrthonormalSplineBasis(n, degree, T))
-        basis_ext = extend(b)
-        r = restriction_operator(basis_ext, b)
-        e = extension_operator(b, basis_ext)
-        @test eye(n) ≈ matrix(r*e)
-
-        grid_ext = grid(basis_ext)
-        L = evaluation_operator(b, grid_ext)
-        e = random_expansion(b)
-        z = L*e
-        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
-        z2 = L2*e
-        @test 1+maximum(abs.(z-z2)) ≈ T(1)
-    end
-    for dgr in 0:4, oversampling in 1:4, n in 10:11
-        b = DiscreteOrthonormalSplineBasis(n,dgr,T; oversampling=oversampling)
-
-        e = zeros(T,n); e[1] = 1
-        @test sqrt(DiscreteDualGram(Span(BSplineTranslatesBasis(n,dgr,T)); oversampling=oversampling))*e≈BasisFunctions.coefficients(b)
-        @test DiscreteGram(Span(b); oversampling=oversampling)*e≈e
-    end
-end
+# function test_discrete_orthonormalsplinebasis(T)
+#     b = DiscreteOrthonormalSplineBasis(5,2,Float64)
+#     b = DiscreteOrthonormalSplineBasis(5,2,T)
+#     @test name(b) == "Set of translates of a function (B spline of degree 2) (orthonormalized, discrete)"
+#     @test instantiate(DiscreteOrthonormalSplineBasis,5)==DiscreteOrthonormalSplineBasis(5,3)
+#
+#     E = evaluation_operator(Span(b))
+#     e = zeros(eltype(E),size(E,1))
+#     e[1] = 1
+#     @test (E'*E*e) ≈ 5*e
+#     @test typeof(E) <: BasisFunctions.MultiplicationOperator
+#
+#     n = 8
+#     for degree in 0:3
+#         b = Span(DiscreteOrthonormalSplineBasis(n, degree, T))
+#         basis_ext = extend(b)
+#         r = restriction_operator(basis_ext, b)
+#         e = extension_operator(b, basis_ext)
+#         @test eye(n) ≈ matrix(r*e)
+#
+#         grid_ext = grid(basis_ext)
+#         L = evaluation_operator(b, grid_ext)
+#         e = random_expansion(b)
+#         z = L*e
+#         L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(b, basis_ext)
+#         z2 = L2*e
+#         @test 1+maximum(abs.(z-z2)) ≈ T(1)
+#     end
+#     for dgr in 0:4, oversampling in 1:4, n in 10:11
+#         b = DiscreteOrthonormalSplineBasis(n,dgr,T; oversampling=oversampling)
+#
+#         e = zeros(T,n); e[1] = 1
+#         @test sqrt(DiscreteDualGram(Span(BSplineTranslatesBasis(n,dgr,T)); oversampling=oversampling))*e≈BasisFunctions.coefficients(b)
+#         @test DiscreteGram(Span(b); oversampling=oversampling)*e≈e
+#     end
+# end
 
 
 using QuadGK
@@ -439,13 +439,14 @@ function test_bspline_platform(T)
     B = primal(platform,i)
     D = dual(platform,i)
     g = grid(sampler(platform,i))
-    Aop = A(platform, i)
-    Zop = Z(platform, i)
+    Aop = BasisFunctions.A(platform, i)
+    Zop = BasisFunctions.Z(platform, i)
 
 
     e = map(T,rand(size(B)...))
     @test evaluation_operator(Span(B), g)*e≈Aop*e
     @test evaluation_operator(Span(D), g)*e≈Zop*e*length(D)
+    @test BasisFunctions.Zt(platform, i)*Aop*e ≈ e
 end
 
 using BasisFunctions: overlapping_elements, support_indices
@@ -483,20 +484,56 @@ function test_spline_approximation(T)
     @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 end
 
+function test_sparsity_speed(T)
+    for d in 0:4
+        B = BSplineTranslatesBasis(1<<10, d, T)
+        E1 = evaluation_operator(Span(B); sparse = false)
+        E2 = evaluation_operator(Span(B); sparse = true)
+        typeof(E1)
+        @test typeof(E1) <: CirculantOperator
+        @test typeof(E2) <: MultiplicationOperator
+        x = zeros(src(E1))
+        b = zeros(dest(E1))
+        # compilation
+        tic()
+        for i in 1:100
+            apply!(E1, x, b)
+        end
+        t1=toq()
+        tic()
+        for i in 1:100
+            apply!(E2, x, b)
+        end
+        t2=toq()
+
+        tic()
+        for i in 1:100
+            apply!(E1, x, b)
+        end
+        t1=toq()
+        tic()
+        for i in 1:100
+            apply!(E2, x, b)
+        end
+        t2=toq()
+        #check whether sparsity is still the good default
+        @test t2 < 10*t1
+    end
+end
 
 
 # exit()
 
-# @testset begin test_discrete_dualsplinebasis(Float64) end
-#
-# @testset begin test_dualsplinebasis(Float64) end
-# @testset begin test_discrete_orthonormalsplinebasis(Float64) end
-# @testset begin test_orthonormalsplinebasis(Float64) end
-# @testset begin test_translatedbsplines(Float64) end
-# @testset begin test_translatedsymmetricbsplines(Float64) end
-# @testset begin test_generic_periodicbsplinebasis(Float64) end
-# @testset begin test_bspline_platform(Float64) end
-# @testset begin test_spline_approximation(Float64) end
+# @testset begin test_discrete_dualsplinebasis(BigFloat) end
+# @testset begin test_dualsplinebasis(BigFloat) end
+# @testset begin test_discrete_orthonormalsplinebasis(BigFloat) end
+# @testset begin test_orthonormalsplinebasis(BigFloat) end
+# @testset begin test_translatedbsplines(BigFloat) end
+# @testset begin test_translatedsymmetricbsplines(BigFloat) end
+# @testset begin test_generic_periodicbsplinebasis(BigFloat) end
+# @testset begin test_bspline_platform(BigFloat) end
+# @testset begin test_sparsity_speed(BigFloat) end
+# @testset begin test_spline_approximation(BigFloat) end
 # using Plots
 # using BasisFunctions
 # n = 7

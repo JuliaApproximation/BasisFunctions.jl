@@ -81,26 +81,33 @@ function transform_to_grid(src::PeriodicTranslatesSpan, dest, grid; options...)
 end
 
 
-function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
+function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; sparse=true, options...)
+    r = nothing
     if periodic_compatible_grid(dictionary(s), grid)
         lg = length(grid)
         ls = length(s)
         if lg == ls
-            return CirculantOperator(s, dgs, sample(grid, fun(s)); options...)
+            r = CirculantOperator(s, dgs, sample(grid, fun(s)); options...)
         elseif lg > ls
-            return CirculantOperator(dgs, dgs, sample(grid, fun(s)); options...)*IndexExtensionOperator(s, dgs, 1:Int(lg/ls):length(dgs))
+            r = CirculantOperator(dgs, dgs, sample(grid, fun(s)); options...)*IndexExtensionOperator(s, dgs, 1:Int(lg/ls):length(dgs))
         elseif lg < ls && has_extension(grid)
-            return IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(s)); options...)
+            r = IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(s)); options...)
         else
-            return default_evaluation_operator(s, dgs; options...)
+            r = default_evaluation_operator(s, dgs; options...)
         end
+    else
+        r = default_evaluation_operator(s, dgs; options...)
     end
-    default_evaluation_operator(s, dgs; options...)
+    if sparse
+        return SparseOperator(r; options...)
+    else
+        return r
+    end
 end
 
 function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
         options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.PeriodicTranslationDict} where N,S,T}}}
-    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
+    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end
 
 unsafe_eval_element(b::PeriodicTranslationDict, idxn::TransIndex, x::Real) =

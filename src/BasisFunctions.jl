@@ -261,7 +261,7 @@ export sample
 
 # from sampling/platform.jl
 export Platform
-export primal, dual, sampler, A, Z
+export primal, dual, sampler, A, Z, Zt
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
