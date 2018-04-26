@@ -146,9 +146,7 @@ compose(op::AbstractOperator) = op
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
-<<<<<<< HEAD
 sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
-=======
 
 function stencil(op::CompositeOperator)
     A = Any[]
@@ -161,7 +159,6 @@ function stencil(op::CompositeOperator)
 end
 
 
->>>>>>> 0205f56dcd38ede6b727b8720cc4cc4d22cbd40a
 
 # function compose_verify_and_simplify(ops::AbstractOperator...)
 #     # Check for correct chain of function spaces

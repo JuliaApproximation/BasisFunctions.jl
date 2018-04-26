@@ -254,6 +254,7 @@ end
 
 SparseOperator(op::TensorProductOperator; options...) =
     TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
+    
 function stencil(op::TensorProductOperator)
     A = Any[]
     push!(A,element(op,1))
