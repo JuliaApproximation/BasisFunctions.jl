@@ -3,7 +3,6 @@
 function test_discrete_sets(T)
     n = 10
     s1 = DiscreteVectorSet{T}(n)
-
     @test domaintype(s1) == Int
     @test codomaintype(s1) == T
     @test length(s1) == n

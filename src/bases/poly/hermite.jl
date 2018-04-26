@@ -48,3 +48,5 @@ function gramdiagonal!(result, ::HermiteSpan; options...)
         result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
     end
 end
+
+domain(b::HermitePolynomials{T}) where {T} = FullSpace(T)

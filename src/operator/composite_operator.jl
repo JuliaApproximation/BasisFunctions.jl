@@ -25,6 +25,8 @@ element(op::CompositeOperator, j::Int) = op.operators[j]
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
+is_composite(op::CompositeOperator) = true
+
 
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
@@ -144,7 +146,22 @@ compose(op::AbstractOperator) = op
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
+<<<<<<< HEAD
 sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
+=======
+
+function stencil(op::CompositeOperator)
+    A = Any[]
+    push!(A,element(op,length(elements(op))))
+    for i=length(elements(op))-1:-1:1
+        push!(A," * ")
+        push!(A,element(op,i))
+    end
+    A
+end
+
+
+>>>>>>> 0205f56dcd38ede6b727b8720cc4cc4d22cbd40a
 
 # function compose_verify_and_simplify(ops::AbstractOperator...)
 #     # Check for correct chain of function spaces

@@ -19,6 +19,8 @@ end
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
+is_composite(op::TensorProductOperator) = true
+
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
     L = length(operators)
@@ -252,3 +254,12 @@ end
 
 SparseOperator(op::TensorProductOperator; options...) =
     TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
+function stencil(op::TensorProductOperator)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
+end

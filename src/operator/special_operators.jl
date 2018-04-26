@@ -52,7 +52,7 @@ function matrix!(op::CoefficientScalingOperator, a)
 end
 
 function apply_inplace!(op::CoefficientScalingOperator, coef_srcdest)
-    coef_srcdest[op.index] *= op.scalar
+    coef_srcdest[op.index] = coef_srcdest[op.index]*op.scalar
     coef_srcdest
 end
 
@@ -62,6 +62,7 @@ function diagonal(op::CoefficientScalingOperator)
     diag
 end
 
+string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.index) by $(op.scalar)"
 
 """
 A WrappedOperator has a source and destination, as well as an embedded operator with its own
@@ -74,7 +75,7 @@ operator are correct, for example if a derived set returns an operator of the em
 This operator can be wrapped to make sure it has the right source and destination sets, i.e.
 its source and destination would correspond to the derived set, and not to the embedded set.
 """
-struct WrappedOperator{OP,T} <: AbstractOperator{T}
+struct WrappedOperator{OP,T} <: DerivedOperator{T}
     src     ::  Span
     dest    ::  Span
     op      ::  OP
@@ -86,6 +87,9 @@ struct WrappedOperator{OP,T} <: AbstractOperator{T}
     end
 end
 
+src(op::WrappedOperator) = op.src
+dest(op::WrappedOperator) = op.dest
+
 WrappedOperator(src::Span, dest::Span, op) = WrappedOperator(eltype(op), src, dest, op)
 
 function WrappedOperator(::Type{T}, src::Span, dest::Span, op) where {T}
@@ -93,12 +97,33 @@ function WrappedOperator(::Type{T}, src::Span, dest::Span, op) where {T}
     WrappedOperator{typeof(op),A}(promote_coeftype(src, S), promote_coeftype(dest, D), op)
 end
 
-operator(op::WrappedOperator) = op.op
+superoperator(op::WrappedOperator) = op.op
 
 function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where {S}
-    subop = operator(op)
+    subop = superoperator(op)
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
+
+    
+## function stencil(op::WrappedOperator, S)
+##     if haskey(S,op)
+##         return op
+##     end
+##     A = Any[]
+##     push!(A,"W(")
+##     s = stencil(op.op)
+##     if isa(s,GenericOperator)
+##         push!(A,s)
+##     else
+##         for i=1:length(s)
+##             push!(A,s[i])
+##         end
+##         A = recurse_stencil(op.op,A,S)
+##     end
+##     push!(A,")")
+##     A
+## end
+
 
 """
 The function wrap_operator returns an operator with the given source and destination,
@@ -114,7 +139,7 @@ function wrap_operator(w_src, w_dest, op::AbstractOperator)
 end
 
 # No need to wrap a wrapped operator
-wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, operator(op))
+wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, superoperator(op))
 
 # No need to wrap an IdentityOperator, we can just change src and dest
 # Same for a few other operators
@@ -123,21 +148,11 @@ wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, dia
 wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
 wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
-for property in (:is_inplace, :is_diagonal)
-	@eval $property(op::WrappedOperator) = $property(operator(op))
-end
+inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
 
-apply_inplace!(op::WrappedOperator, coef_srcdest) = apply_inplace!(op.op, coef_srcdest)
+ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(superoperator(op)))
 
-apply!(op::WrappedOperator, coef_dest, coef_src) = apply!(op.op, coef_dest, coef_src)
-
-inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(op.op))
-
-ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(op.op))
-
-matrix!(op::WrappedOperator, a) = matrix!(op.op, a)
-
-simplify(op::WrappedOperator) = op.op
+simplify(op::WrappedOperator) = superoperator(op)
 
 
 """
@@ -182,6 +197,7 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
     coef_dest
 end
 
+string(op::IndexRestrictionOperator) = "Selecting coefficients "*string(op.subindices)
 
 
 """
@@ -229,7 +245,7 @@ ctranspose(op::IndexRestrictionOperator) =
 ctranspose(op::IndexExtensionOperator) =
     IndexRestrictionOperator(dest(op), src(op), subindices(op))
 
-
+string(op::IndexExtensionOperator) = "Placing original elements in "*string(op.subindices)
 """
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
@@ -398,6 +414,8 @@ inv(op::FunctionOperator) = inv_function(op, op.fun)
 # This can be overriden for types of functions that do not support inv
 inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
 
+string(op::FunctionOperator) = "Function "*string(op.fun)
+
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
 struct UnevenSignFlipOperator{T} <: AbstractOperator{T}
@@ -421,10 +439,12 @@ ctranspose(op::UnevenSignFlipOperator) = op
 inv(op::UnevenSignFlipOperator) = op
 
 function apply_inplace!(op::UnevenSignFlipOperator, coef_srcdest)
-    l = 1
+    flip = false
     for i in eachindex(coef_srcdest)
-        coef_srcdest[i] *= l
-        l = -l
+        if flip
+            coef_srcdest[i] = -coef_srcdest[i]
+        end
+        flip = !flip
     end
     coef_srcdest
 end
@@ -432,8 +452,9 @@ end
 diagonal{T}(op::UnevenSignFlipOperator{T}) = T[-(-1)^i for i in 1:length(src(op))]
 
 
+
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T}
+struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T} 
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
@@ -464,6 +485,7 @@ dest(op::OperatorSum) = dest(op.op1)
 
 ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), conj(op.val1), conj(op.val2))
 
+is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
 
 
@@ -496,8 +518,23 @@ function apply_sum!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperato
     coef_dest
 end
 
+elements(op::OperatorSum) = (op.op1,op.op2)
+
 (+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, -1)
+
+function stencil(op::OperatorSum,S)
+    s1=""
+    if op.val1==-1
+        s1="-"
+    end
+    s2=" + "
+    if op.val2==-1
+        s2=" - "
+    end
+    A = [s1,op.op1,s2,op.op2]
+    recurse_stencil(op,A,S)
+end
 
 """
 An operator that calls linearize on a native representation of a set, returning

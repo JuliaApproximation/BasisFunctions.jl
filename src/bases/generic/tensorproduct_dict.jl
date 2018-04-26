@@ -283,3 +283,14 @@ oversampled_grid(b::TensorProductDict, oversampling::Real) = ProductGrid([oversa
 
 BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductSpan; oversampling = 1) =
     tensorproduct([DiscreteGram(si, oversampling=oversampling) for si in elements(s)]...)
+
+function stencil(op::TensorProductDict)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
+end
+

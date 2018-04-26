@@ -189,6 +189,8 @@ left(b::PeriodicSplineBasis) = b.a
 
 right(b::PeriodicSplineBasis) = b.b
 
+domain(b::PeriodicSplineBasis) = interval(b.a,b.b)
+
 # There is something non-standard about these left and right routines: they currently
 # return points outside the interval [a,b] for the first few and last few
 # splines. This is due to periodicity: the first spline actually has its support near

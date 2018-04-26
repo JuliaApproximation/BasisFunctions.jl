@@ -88,10 +88,13 @@ src(op::BlockOperator, j) = j==1 && is_columnlike(op) ? src(op) : element(src(op
 dest(op::BlockOperator, i) = i==1 && is_rowlike(op) ? dest(op) : element(dest(op), i)
 
 element(op::BlockOperator, i::Int, j::Int) = op.operators[i,j]
+elements(op::BlockOperator) = op.operators
 
 composite_size(op::BlockOperator) = size(op.operators)
 
 composite_size(op::BlockOperator, dim) = size(op.operators, dim)
+
+is_composite(op::BlockOperator) = true
 
 is_rowlike(op::BlockOperator) = size(op.operators,1) == 1
 
@@ -201,6 +204,8 @@ BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
     BlockDiagonalOperator(operators, multispan(map(src, operators)), multispan(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
+elements(op::BlockDiagonalOperator) = op.operators
+is_composite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
     ops = Array(AbstractOperator{eltype(op)}, nb_elements(op), nb_elements(op))
@@ -268,3 +273,34 @@ ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, op
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(AbstractOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
+
+function stencil(op::BlockOperator)
+    A = Any[]
+    push!(A,"[")
+    for i=1:size(elements(op),1)
+        i!=1 && push!(A,";\t")
+        push!(A,element(op,i,1))
+        for j=2:size(elements(op),2)
+            push!(A,", \t")
+            push!(A,element(op,i,j))
+        end
+    end
+    push!(A,"]")
+    A
+end
+
+function stencil(op::BlockDiagonalOperator)
+    A = Any[]
+    push!(A,"[")
+    for i=1:composite_size(op)[1]
+        i!=1 && push!(A,";\t 0")
+        i==1 && push!(A,element(op,1,1))
+        for j=2:composite_size(op)[2]
+            push!(A,", \t")
+            i==j && push!(A,element(op,i,j))
+            i!=j && push!(A,"0")
+        end
+    end
+    push!(A,"]")
+    A
+end
