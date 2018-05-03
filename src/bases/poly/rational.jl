@@ -1,14 +1,14 @@
 # rational.jl
 
-immutable RationalBasis{T} <: FunctionSet1d{T}
-    roots :: AbstractArray{T}
+immutable RationalBasis{T} <: Dictionary1d{T,T}
+    roots   :: AbstractArray{T}
 
     RationalBasis{T}(roots) where {T} = new(roots)
 end
 
 RationalBasis(roots::AbstractArray{T}) where {T} = RationalBasis{T}(roots)
 
-function eval_element(b::RationalBasis, idx::Int, x)
+function unsafe_eval_element(b::RationalBasis, idx::Int, x)
     degree = 1
     for i = 1:(idx-1)
         if b.roots[i] == b.roots[idx]

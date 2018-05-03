@@ -1,6 +1,6 @@
 # BasisFunctions
 
-# __precompile__()
+__precompile__(true)
 
 module BasisFunctions
 
@@ -12,14 +12,19 @@ using SpecialMatrices
 using FastTransforms
 using Domains
 
-import Base: +, *, /, ==, |, &, -, \, ^, .+, .*, .-, .\, ./, .^
+using LinearAlgebra
+using AbstractTrees
+
+import Base: +, *, /, ==, |, &, -, \, ^
+import Base: <, <=, >, >=
 import Base: ≈, norm
 import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect, endof, checkbounds, first, last
+        range, collect, endof, first, last
+import Base: checkbounds, checkbounds_indices, checkindex
 
 import Base: cos, sin, exp, log
 
@@ -31,7 +36,7 @@ import Base: isreal, iseven, isodd, real, complex
 
 import Base: ctranspose, transpose, inv, hcat, vcat
 
-import Base: show, showcompact, convert, similar
+import Base: show, showcompact, convert, similar, string
 
 import Base: dct, idct
 
@@ -43,16 +48,18 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-# import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-# import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
-# import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
-# import Wavelets.Sequences: support
-# import Wavelets.Util: isdyadic
-
+import WaveletsCopy.DWT: Prl, Dul, Side
+import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!
+import WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, value, wavelet_index
+import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: inv_evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
+import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name
+import WaveletsCopy.Sequences: support
 
 ## Imports from Domains
 
-import Domains: domaintype, rangetype, dimension
+import Domains: domaintype, codomaintype, dimension, domain
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
@@ -65,9 +72,16 @@ import Domains: cartesianproduct, ×, product_eltype
 
 import Domains: forward_map, inverse_map
 
+import FastGaussQuadrature: gaussjacobi
 
+import AbstractTrees: children
 
 ## Exhaustive list of exports
+
+# from util/indexing.jl
+export LinearIndex, NativeIndex
+export DefaultNativeIndex, DefaultIndexList
+export value
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -82,10 +96,10 @@ export element, elements, nb_elements
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
-        AbstractIntervalGrid, eachelement, stepsize, ChebyshevGrid, ScatteredGrid,
-        ChebyshevNodeGrid, ChebyshevExtremaGrid
+        AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
+export ChebyshevNodeGrid, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremaGrid
 export Point
-export leftendpoint, rightendpoint, range, sample
+export leftendpoint, rightendpoint, range
 
 # from grid/productgrid.jl
 export ProductGrid
@@ -103,16 +117,16 @@ export FunctionSpace
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
-# from bases/sets/functionset.jl
-export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export domaintype, rangetype, coefficient_type
+# from bases/generic/dictionary.jl
+export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
+export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
-export grid, left, right, support
-export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,
-        eval_element_derivative
+export grid, left, right, support, domain, codomain
+export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, promote_eltype, set_promote_eltype, resize
-export native_index, linear_index, multilinear_index, native_size, linear_size
+export ordering
+export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
 export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
@@ -122,31 +136,35 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
     delinearize_coefficients!
 export moment, norm
 
-# from bases/sets/span.jl
+# from bases/generic/span.jl
 export Span, Span1d, Span2d
-export span, coefficient_type, coeftype, similar_span
+export coefficient_type, coeftype, similar_span
 
-# from bases/sets/subsets.jl
-export Subset, LargeSubset, SmallSubset, SingletonSubset, indices
+# from bases/generic/subdicts.jl
+export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
+export subdict, superindices
 
-# from bases/sets/tensorproductset.jl
-export TensorProductSet
+# from bases/generic/tensorproduct_dict.jl
+export TensorProductDict, TensorProductDict1, TensorProductDict2,
+        TensorProductDict3, ProductIndex
+export recursive_native_index
 
-# from bases/sets/derived_set.jl
-export DerivedSet
+# from bases/generic/derived_dict.jl
+export DerivedDict
 
-# from bases/sets/mapped_set.jl
-export MappedSet, mapped_set, mapping, superset, rescale
+# from bases/generic/mapped_dict.jl
+export MappedDict, mapped_dict, mapping, superdict, rescale
 
-#from bases/sets/expansions.jl
-export SetExpansion, TensorProductExpansion, coefficients, set, roots,
-        random_expansion, differentiate, antidifferentiate, call_set_expansion,
+#from bases/generic/expansions.jl
+export Expansion, TensorProductExpansion
+export expansion, coefficients, dictionary, roots,
+        random_expansion, differentiate, antidifferentiate,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operator.jl
 export AbstractOperator, operator, src, dest, apply!,
         apply, apply_multiple, apply_inplace!
-export matrix, diagonal, is_diagonal, is_inplace
+export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -162,7 +180,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
-export PseudoDiagonalOperator
+#export PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_space, full_transform_operator,
@@ -210,32 +228,42 @@ export BlockOperator, block_row_operator, block_column_operator, composite_size
 # from util/functors.jl
 export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
-# from bases/sets/weighted_set.jl
-export WeightedSet, WeightedSet1d, WeightedSet2d, WeightedSet3d,
+# from bases/generic/weighted_dict.jl
+export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
     weightfunction, weightfun_scaling_operator
 
 
-# from bases/sets/composite_set.jl
-export tail
+# from bases/generic/composite_dict.jl
+export tail, numelements
 
-# from bases/sets/multiple_set.jl
-export MultiSet, multiset, ⊕
+# from bases/generic/multiple_dict.jl
+export MultiDict, multidict, ⊕
 
-# from bases/sets/piecewise_set.jl
-export PiecewiseSet
+# from bases/generic/piecewise_dict.jl
+export PiecewiseDict, dictionaries
 
-# from bases/sets/operated_set.jl
-export OperatedSet
-export derivative, src_set, dest_set
+# from bases/generic/vector_dict.jl
+export VectorvaluedDict
 
-# from bases/sets/euclidean.jl
-export DiscreteVectorSpace, DiscreteSet
+# from bases/generic/operated_dict.jl
+export OperatedDict
+export derivative, src_dictionary, dest_dictionary
 
-# from bases/sets/gridset.jl
-export GridSet, DiscreteGridSpace, DiscreteGridSpace1d
-export gridset, gridspace
+# from bases/generic/discrete_sets.jl
+export DiscreteSet, DiscreteVectorSet, DiscreteArraySet
+export is_discrete
 
+# from bases/generic/gridbasis.jl
+export GridBasis, DiscreteGridSpace, DiscreteGridSpace1d
+export gridbasis, gridspace
 
+# from sampling/sampling_operator.jl
+export GridSamplingOperator
+export sample
+
+# from sampling/platform.jl
+export Platform
+export primal, dual, sampler, A, Z, Zt
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -263,28 +291,35 @@ export MultiArray
 export float_type, dimension
 
 # from bases/poly/orthopoly.jl and friends
-export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials, Monomials, RationalBasis
+export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
+export Monomials, RationalBasis, GenericOPS
 export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
-export jacobi_matrix, roots, gauss_rule, first_moment
+export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment
 export leading_order_coefficient
 
+# from specialOPS.jl
+export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
+
 # # from bases/wavelets/bf_wavelets.jl
-# export DaubechiesWaveletBasis, CDFWaveletBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
-# from bases/translates/set_of_translates.jl
-export CompactPeriodicSetOfTranslates, dual, discrete_dual
+# from bases/translates/translation_dict.jl
+export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
+export bspline_platform
 
 export degree, interval
+
+export gaussjacobi
 
 
 using Base.Cartesian
 
 
 include("util/common.jl")
-include("util/composite_index.jl")
+include("util/indexing.jl")
 include("util/multiarray.jl")
 include("util/slices.jl")
 include("util/functors.jl")
@@ -298,12 +333,12 @@ include("grid/derived_grid.jl")
 
 include("spaces/spaces.jl")
 
-include("bases/sets/functionset.jl")
-include("bases/sets/span.jl")
+include("bases/generic/dictionary.jl")
+include("bases/generic/span.jl")
 include("generic/gram.jl")
 
-include("bases/sets/euclidean.jl")
-include("bases/sets/gridset.jl")
+include("bases/generic/discrete_sets.jl")
+include("bases/generic/gridbasis.jl")
 
 include("operator/operator.jl")
 include("operator/derived_op.jl")
@@ -314,9 +349,9 @@ include("grid/intervalgrids.jl")
 include("grid/scattered_grid.jl")
 include("grid/subgrid.jl")
 
-include("bases/sets/derived_set.jl")
-include("bases/sets/tensorproductset.jl")
-include("bases/sets/mapped_set.jl")
+include("bases/generic/derived_dict.jl")
+include("bases/generic/tensorproduct_dict.jl")
+include("bases/generic/mapped_dict.jl")
 
 include("operator/dimop.jl")
 
@@ -324,12 +359,11 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/pseudo_diagonal.jl")
+#include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
 
 
-
-include("bases/sets/expansions.jl")
+include("bases/generic/expansions.jl")
 
 
 include("products.jl")
@@ -337,16 +371,24 @@ include("products.jl")
 include("generic/generic_operators.jl")
 
 ################################################################
-# Generic function sets
+# Generic dictionaries
 ################################################################
 
-include("bases/sets/subsets.jl")
-include("bases/sets/composite_set.jl")
-include("bases/sets/multiple_set.jl")
-include("bases/sets/piecewise_set.jl")
-include("bases/sets/operated_set.jl")
-include("bases/sets/weighted_set.jl")
+include("bases/generic/subdicts.jl")
+include("bases/generic/composite_dict.jl")
+include("bases/generic/multiple_dict.jl")
+include("bases/generic/piecewise_dict.jl")
+include("bases/generic/operated_dict.jl")
+include("bases/generic/weighted_dict.jl")
+include("bases/generic/vector_dict.jl")
 
+################################################################
+# Sampling
+################################################################
+
+include("sampling/synthesis.jl")
+include("sampling/sampling_operator.jl")
+include("sampling/platform.jl")
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines
@@ -363,9 +405,8 @@ include("bases/fourier/sineseries.jl")
 ################################################################
 
 include("bases/splines/bf_splines.jl")
-include("util/bsplines.jl")
 
-include("bases/translates/set_of_translates.jl")
+include("bases/translates/translation_dict.jl")
 include("bases/translates/translates_of_bsplines.jl")
 
 
@@ -373,22 +414,25 @@ include("bases/translates/translates_of_bsplines.jl")
 # Wavelets
 ################################################################
 
-# # include("bases/wavelets/bf_wavelets.jl")
+include("bases/wavelets/bf_wavelets.jl")
 
 ################################################################
 # Polynomials: monomials and (classical) orthogonal polynomials
 ################################################################
 
 include("bases/poly/polynomials.jl")
-include("bases/poly/orthopoly.jl")
 include("bases/poly/monomials.jl")
+include("bases/poly/orthopoly.jl")
 include("bases/poly/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
 include("bases/poly/hermite.jl")
+include("bases/poly/generic_op.jl")
+include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
+include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
 

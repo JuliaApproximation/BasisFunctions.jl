@@ -8,7 +8,8 @@ end
 
 default_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(real(T)))
 
-PseudoDiagonalOperator(diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(diagonal), tolerance)
+PseudoDiagonalOperator(diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) =
+    PseudoDiagonalOperator(DiagonalOperator(diagonal), tolerance)
 
 PseudoDiagonalOperator(src::Span, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal), tolerance)
 

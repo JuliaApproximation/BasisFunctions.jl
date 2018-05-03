@@ -5,11 +5,11 @@ A basis of the classicale Hermite polynomials. These polynomials are orthogonal
 on the real line `(-∞,∞)` with respect to the weight function
 `w(x)=exp(-x^2)`.
 """
-struct HermitePolynomials{T} <: OPS{T}
+struct HermitePolynomials{T} <: OPS{T,T}
     n           ::  Int
 end
 
-const HermiteSpan{A, F <: HermitePolynomials} = Span{A,F}
+const HermiteSpan{A,S,T,D <: HermitePolynomials} = Span{A,S,T,D}
 
 name(b::HermitePolynomials) = "Hermite OPS"
 
@@ -18,7 +18,7 @@ HermitePolynomials(n::Int, ::Type{T} = Float64) where {T} = HermitePolynomials{T
 
 instantiate(::Type{HermitePolynomials}, n, ::Type{T}) where {T} = HermitePolynomials{T}(n)
 
-set_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
+dict_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
 
 resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
 
@@ -48,3 +48,5 @@ function gramdiagonal!(result, ::HermiteSpan; options...)
         result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
     end
 end
+
+domain(b::HermitePolynomials{T}) where {T} = FullSpace(T)

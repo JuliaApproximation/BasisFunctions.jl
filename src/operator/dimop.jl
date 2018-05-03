@@ -112,7 +112,7 @@ end
 
 
 "Replace the j-th set of a tensor product set with a different one."
-replace(tpset::TensorProductSet, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:nb_elements(tpset)]...)
+replace(tpset::TensorProductDict, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:nb_elements(tpset)]...)
 
 inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)

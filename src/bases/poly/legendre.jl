@@ -4,11 +4,11 @@
 A basis of Legendre polynomials on the interval `[-1,1]`. These classical
 polynomials are orthogonal with respect to the weight function `w(x) = 1`.
 """
-struct LegendrePolynomials{T} <: OPS{T}
-    n           ::  Int
+struct LegendrePolynomials{T} <: OPS{T,T}
+    n   ::  Int
 end
 
-const LegendreSpan{A, F <: LegendrePolynomials} = Span{A,F}
+const LegendreSpan{A,S,T,D <: LegendrePolynomials} = Span{A,S,T,D}
 
 name(b::LegendrePolynomials) = "Legendre OPS"
 
@@ -17,7 +17,7 @@ LegendrePolynomials(n::Int, ::Type{T} = Float64) where {T} = LegendrePolynomials
 
 instantiate(::Type{LegendrePolynomials}, n, ::Type{T}) where {T} = LegendrePolynomials{T}(n)
 
-set_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendrePolynomials{S}(b.n)
+dict_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendrePolynomials{S}(b.n)
 
 resize(b::LegendrePolynomials{T}, n) where {T} = LegendrePolynomials{T}(n)
 
@@ -27,6 +27,8 @@ left(b::LegendrePolynomials, idx) = left(b)
 
 right(b::LegendrePolynomials{T}) where {T} = T(1)
 right(b::LegendrePolynomials, idx) = right(b)
+
+domain(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
 
 #grid(b::LegendrePolynomials) = LegendreGrid(b.n)
 

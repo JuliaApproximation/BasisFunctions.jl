@@ -15,6 +15,7 @@ before_script:
 script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.build("BasisFunctions")'
+  - julia -e "Pkg.checkout(\"WaveletsCopy\",\"development\")"
   - julia --check-bounds=yes -e 'Pkg.test("BasisFunctions", coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'

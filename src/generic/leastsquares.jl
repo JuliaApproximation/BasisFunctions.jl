@@ -5,17 +5,17 @@
 ########################
 
 
-function leastsquares_matrix(set::FunctionSet, pts)
-    @assert length(set) <= length(pts)
-    evaluation_matrix(set, pts)
+function leastsquares_matrix(dict::Dictionary, pts)
+    @assert length(dict) <= length(pts)
+    evaluation_matrix(dict, pts)
 end
 
 function leastsquares_operator(s::Span; samplingfactor = 2, options...)
     if has_grid(s)
-        set2 = resize(s, samplingfactor*length(s))
-        ls_grid = grid(set2)
+        dict2 = resize(s, samplingfactor*length(s))
+        ls_grid = grid(dict2)
     else
-        ls_grid = EquispacedGrid(samplingfactor*length(s), left(set(s)), right(set(s)))
+        ls_grid = EquispacedGrid(samplingfactor*length(s), left(dictionary(s)), right(dictionary(s)))
     end
     leastsquares_operator(s, ls_grid; options...)
 end
@@ -25,9 +25,9 @@ leastsquares_operator(s::Span, grid::AbstractGrid; options...) =
 
 function leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
     if has_grid(s)
-        larger_set = resize(s, size(dgs))
-        if grid(larger_set) == grid(dgs) && has_transform(larger_set, dgs)
-            R = restriction_operator(larger_set, s; options...)
+        larger_dict = resize(s, size(dgs))
+        if grid(larger_dict) == grid(dgs) && has_transform(larger_dict, dgs)
+            R = restriction_operator(larger_dict, s; options...)
             T = full_transform_operator(dgs, larger_s; options...)
             R * T
         else
@@ -39,5 +39,5 @@ function leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
 end
 
 function default_leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
-    SolverOperator(dgs, s, qrfact(evaluation_matrix(set(s), grid(dgs))))
+    SolverOperator(dgs, s, qrfact(evaluation_matrix(dictionary(s), grid(dgs))))
 end

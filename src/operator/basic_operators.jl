@@ -44,7 +44,7 @@ unsafe_diagonal(op::IdentityOperator, i) = one(eltype(op))
 
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
-
+string(op::IdentityOperator) = "Identity Operator"
 
 """
 A ScalingOperator is the identity operator up to a scaling.
@@ -120,7 +120,9 @@ unsafe_getindex(op::ScalingOperator{T}, i, j) where {T} = i == j ? convert(T, op
 # default implementation for scalar multiplication is a scaling operator
 *(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op), scalar) * op
 
+string(op::ScalingOperator) = "Scaling by $(scalar(op))"
 
+symbol(S::ScalingOperator) = "α"
 
 "The zero operator maps everything to zero."
 struct ZeroOperator{T} <: AbstractOperator{T}
@@ -175,7 +177,8 @@ struct DiagonalOperator{T} <: AbstractOperator{T}
     diagonal    ::  Vector{T}
 end
 
-DiagonalOperator(diagonal::AbstractVector) = DiagonalOperator(Span(DiscreteSet(length(diagonal)), eltype(diagonal)), diagonal)
+DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
+    DiagonalOperator(Span(DiscreteVectorSet{T}(length(diagonal))), diagonal)
 
 DiagonalOperator(src::Span, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
 

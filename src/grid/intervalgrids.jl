@@ -121,8 +121,7 @@ has_extension(::DyadicPeriodicEquispacedGrid) = true
 
 resize(g::DyadicPeriodicEquispacedGrid, n::Int) = DyadicPeriodicEquispacedGrid(n, g.a, g.b)
 
-# TODO: does this make sense for a dyadic grid? It is l that is being multiplied.
-extend(g::DyadicPeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.n)
+extend(g::DyadicPeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.l)
 
 stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
 
@@ -162,7 +161,8 @@ struct ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevPoints = ChebyshevNodeGrid
 
 ChebyshevNodeGrid(n::Int, ::Type{T} = Float64) where {T} = ChebyshevNodeGrid{T}(n)
 
@@ -187,3 +187,5 @@ rightendpoint(g::ChebyshevExtremaGrid{T}) where {T} = one(T)
 
 # Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevExtremaGrid{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
+
+strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)

@@ -1,3 +1,5 @@
+using BasisFunctions
+using Base.Test
 
 function discrete_gram_test(T)
     for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries,BSplineTranslatesBasis,)
@@ -7,6 +9,12 @@ function discrete_gram_test(T)
             @test ! (typeof(DiscreteGram(span)) <: CompositeOperator)
         end
     end
+    # Had to add these lines to get the terminal to run without errors. No idea why. VC
+    n = 10
+    B = ChebyshevBasis
+    oversampling = 1
+    basis = instantiate(B, n, T)
+    ##################################################################################
     for n in (10,11), oversampling in 1:4
         e = map(T,rand(n))
         for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries,BSplineTranslatesBasis,)
@@ -22,7 +30,7 @@ function discrete_gram_test(T)
             basis = instantiate(B, n, T)
             span = Span(basis)
             oversampling = 1
-            @test n*(inv(evaluation_operator(span; oversampling=oversampling))')*e ≈ discrete_dual_evaluation_operator(span, oversampling=oversampling)*e
+            @test n*(inv(evaluation_operator(span; oversampling=oversampling, sparse=false))')*e ≈ discrete_dual_evaluation_operator(span, oversampling=oversampling)*e
             for oversampling in 1:4
                 grid = BasisFunctions.oversampled_grid(basis, oversampling)
                 @test DiscreteDualGram(span; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(span; oversampling=oversampling)'discrete_dual_evaluation_operator(span; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis,oversampling))
@@ -33,19 +41,18 @@ function discrete_gram_test(T)
 end
 
 function general_gram_test(T)
-  tol = max(sqrt(eps(T)), 1e-10)
-  for method in (Gram, DualGram, MixedGram), B in (span(FourierBasis(11,T)), span(BSplineTranslatesBasis(5, 1,T)))
-    GBB = method(B,B; abstol=tol, reltol=tol)
-    GB = method(B; abstol=tol, reltol=tol)
+    tol = max(sqrt(eps(T)), 1e-10)
+    for method in (Gram, DualGram, MixedGram), B in (Span(FourierBasis{T}(11)), Span(BSplineTranslatesBasis(5, 1,T)))
+        GBB = method(B,B; abstol=tol, reltol=tol)
+        GB = method(B; abstol=tol, reltol=tol)
 
-    e = rand(length(B))
-    @test norm(GBB*e - GB*e) <= 1000*tol
-  end
+        e = rand(length(B))
+        @test norm(GBB*e - GB*e) <= 1000*tol
+    end
 end
 
-# using BasisFunctions
-# using Base.Test
-# #
+
+#
 # @testset begin discrete_gram_test(Float64) end
 # @testset begin general_gram_test(Float64) end
-# # #
+# #

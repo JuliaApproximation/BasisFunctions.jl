@@ -1,16 +1,17 @@
 # composite_operator.jl
 
 """
-A CompositeOperator consists of a sequence of operators that are applied
+A `CompositeOperator` consists of a sequence of operators that are applied
 consecutively.
-Memory is allocated at creation time to hold intermediate results.
+
+Whenever possible, scratch space is allocated to hold intermediate results.
 """
-struct CompositeOperator{ELT} <: AbstractOperator{ELT}
+struct CompositeOperator{T} <: AbstractOperator{T}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).
-    src     ::  Span
-    dest    ::  Span
+    src     ::  AbstractFunctionSpace
+    dest    ::  AbstractFunctionSpace
     "The list of operators"
     operators
     "Scratch space for the result of each operator, except the last one"
@@ -24,6 +25,8 @@ element(op::CompositeOperator, j::Int) = op.operators[j]
 
 is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
+is_composite(op::CompositeOperator) = true
+
 
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
@@ -143,81 +146,95 @@ compose(op::AbstractOperator) = op
 # compose(ops::AbstractOperator...) = compose_verify_and_simplify(ops...)
 compose(ops::AbstractOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
 
-function compose_verify_and_simplify(ops::AbstractOperator...)
-    # Check for correct chain of function spaces
-    # We do this before we flatten composite operators, because they might have
-    # been optimized already
-    for i in 1:length(ops)-1
-        dest(ops[i]) == src(ops[i+1]) ||
-            error("Source and destination don't match in composition of ", typeof(ops[i]),
-            " and ", typeof(ops[i+1]), ". Sources are: ", typeof(src(ops[i])),
-            " and ", typeof(src(ops[i+1])), ". Destinations are: ", typeof(dest(ops[i])),
-            " and ", typeof(dest(ops[i+1])))
+sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
+
+function stencil(op::CompositeOperator)
+    A = Any[]
+    push!(A,element(op,length(elements(op))))
+    for i=length(elements(op))-1:-1:1
+        push!(A," * ")
+        push!(A,element(op,i))
     end
-    composite_src = src(ops[1])
-    composite_dest = dest(ops[end])
-    flatlist = flatten(CompositeOperator, ops...)
-    # Initiate recursive simplification
-    compose_simplify_rec( composite_src, composite_dest, [], flatlist[1], flatlist[2:end]...)
+    A
 end
 
-# We attempt to simplify the composition of operators with the following rules:
-# - each operator is first simplified on its own (e.g. WrappedOperator can remove the wrap,
-#   IdentityOperator can disappear)
-# - Each operator is then compared with the next one, so that pairs of operators can be simplified
 
-# The function compose_simplify_rec expects the overall source and destination of the
-# chain, an array prev that has already been processed, and the remaining operators as
-# individual arguments.
 
-# Only prev is specified: we have processed all operators and we are done
-vcompose_simplify_rec(src, dest, prev) = compose_simplify_done(src, dest, prev...)
-
-# One extra argument: we have one operator left to examine
-function compose_simplify_rec(src, dest, prev, current)
-    simple_current = simplify(current)
-    if simple_current == nothing
-        compose_simplify_done(src, dest, prev...)
-    else
-        compose_simplify_done(src, dest, prev..., simple_current)
-    end
-end
-
-# There is a next operator and zero or more remaining operators
-function compose_simplify_rec(src, dest, prev, current, next, remaining::AbstractOperator...)
-    simple_current = simplify(current)
-    if simple_current == nothing
-        compose_simplify_rec(src, dest, prev, next, remaining...)
-    else
-        simple_pair = simplify(simple_current, next)
-        if length(simple_pair) == 0
-            compose_simplify_rec(src, dest, prev, remaining...)
-        elseif length(simple_pair) == 1
-            compose_simplify_rec(src, dest, prev, simple_pair[1], remaining...)
-        else
-            compose_simplify_rec(src, dest, [prev; simple_pair[1:end-1]...], simple_pair[end], remaining...)
-        end
-    end
-end
-
-# By default, simplification does nothing
-simplify(op::AbstractOperator) = op
-function simplify(op1::AbstractOperator, op2::AbstractOperator)
-    if is_diagonal(op1) && is_diagonal(op2)
-        (DiagonalOperator(src(op1), dest(op2), diagonal(op1) .* diagonal(op2)),)
-    else
-        (op1,op2)
-    end
-end
-
-# When nothing remains, construct an identity operator from src to dest.
-compose_simplify_done(src, dest) = IdentityOperator(src, dest)
-
-# Do nothing for a single operator, except wrap it properly if the spaces don't match
-# anymore
-compose_simplify_done(composite_src, composite_dest, op::AbstractOperator) =
-    (composite_src == src(op)) && (composite_dest == dest(op)) ? op : wrap_operator(composite_src, composite_dest, op)
-
-# Construct a composite operator
-compose_simplify_done(src, dest, op1::AbstractOperator, op2::AbstractOperator, ops::AbstractOperator...) =
-    CompositeOperator(src, dest, op1, op2, ops...)
+# function compose_verify_and_simplify(ops::AbstractOperator...)
+#     # Check for correct chain of function spaces
+#     # We do this before we flatten composite operators, because they might have
+#     # been optimized already
+#     for i in 1:length(ops)-1
+#         dest(ops[i]) == src(ops[i+1]) ||
+#             error("Source and destination don't match in composition of ", typeof(ops[i]),
+#             " and ", typeof(ops[i+1]), ". Sources are: ", typeof(src(ops[i])),
+#             " and ", typeof(src(ops[i+1])), ". Destinations are: ", typeof(dest(ops[i])),
+#             " and ", typeof(dest(ops[i+1])))
+#     end
+#     composite_src = src(ops[1])
+#     composite_dest = dest(ops[end])
+#     flatlist = flatten(CompositeOperator, ops...)
+#     # Initiate recursive simplification
+#     compose_simplify_rec( composite_src, composite_dest, [], flatlist[1], flatlist[2:end]...)
+# end
+#
+# # We attempt to simplify the composition of operators with the following rules:
+# # - each operator is first simplified on its own (e.g. WrappedOperator can remove the wrap,
+# #   IdentityOperator can disappear)
+# # - Each operator is then compared with the next one, so that pairs of operators can be simplified
+#
+# # The function compose_simplify_rec expects the overall source and destination of the
+# # chain, an array prev that has already been processed, and the remaining operators as
+# # individual arguments.
+#
+# # Only prev is specified: we have processed all operators and we are done
+# vcompose_simplify_rec(src, dest, prev) = compose_simplify_done(src, dest, prev...)
+#
+# # One extra argument: we have one operator left to examine
+# function compose_simplify_rec(src, dest, prev, current)
+#     simple_current = simplify(current)
+#     if simple_current == nothing
+#         compose_simplify_done(src, dest, prev...)
+#     else
+#         compose_simplify_done(src, dest, prev..., simple_current)
+#     end
+# end
+#
+# # There is a next operator and zero or more remaining operators
+# function compose_simplify_rec(src, dest, prev, current, next, remaining::AbstractOperator...)
+#     simple_current = simplify(current)
+#     if simple_current == nothing
+#         compose_simplify_rec(src, dest, prev, next, remaining...)
+#     else
+#         simple_pair = simplify(simple_current, next)
+#         if length(simple_pair) == 0
+#             compose_simplify_rec(src, dest, prev, remaining...)
+#         elseif length(simple_pair) == 1
+#             compose_simplify_rec(src, dest, prev, simple_pair[1], remaining...)
+#         else
+#             compose_simplify_rec(src, dest, [prev; simple_pair[1:end-1]...], simple_pair[end], remaining...)
+#         end
+#     end
+# end
+#
+# # By default, simplification does nothing
+# simplify(op::AbstractOperator) = op
+# function simplify(op1::AbstractOperator, op2::AbstractOperator)
+#     if is_diagonal(op1) && is_diagonal(op2)
+#         (DiagonalOperator(src(op1), dest(op2), diagonal(op1) .* diagonal(op2)),)
+#     else
+#         (op1,op2)
+#     end
+# end
+#
+# # When nothing remains, construct an identity operator from src to dest.
+# compose_simplify_done(src, dest) = IdentityOperator(src, dest)
+#
+# # Do nothing for a single operator, except wrap it properly if the spaces don't match
+# # anymore
+# compose_simplify_done(composite_src, composite_dest, op::AbstractOperator) =
+#     (composite_src == src(op)) && (composite_dest == dest(op)) ? op : wrap_operator(composite_src, composite_dest, op)
+#
+# # Construct a composite operator
+# compose_simplify_done(src, dest, op1::AbstractOperator, op2::AbstractOperator, ops::AbstractOperator...) =
+#     CompositeOperator(src, dest, op1, op2, ops...)

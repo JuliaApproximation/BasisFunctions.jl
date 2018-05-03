@@ -6,27 +6,31 @@
 
 
 """
-Cosine series on the interval [0,1].
+Cosine series on the interval `[0,1]`.
 """
-struct CosineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct CosineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
 
-const CosineSpan{A, F <: CosineSeries} = Span{A,F}
+const CosineSpan{A,S,T,D <: CosineSeries} = Span{A,S,T,D}
 
 name(b::CosineSeries) = "Cosine series"
 
+CosineSeries(n::Int) = CosineSeries{Float64}(n)
 
-CosineSeries(n, ::Type{T} = Float64) where {T} = CosineSeries{T}(n)
+CosineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(CosineSeries{T}(n), a, b)
 
-CosineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
-    rescale( CosineSeries(n,float(T)), a, b)
+function CosineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    CosineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
-set_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
+dict_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
 
-resize(b::CosineSeries, n) = CosineSeries(n, domaintype(b))
+resize(b::CosineSeries{T}, n) where {T} = CosineSeries{T}(n)
 
 is_basis(b::CosineSeries) = true
 is_orthogonal(b::CosineSeries) = true
@@ -48,16 +52,47 @@ right(b::CosineSeries, idx) = right(b)
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(domaintype(b)), one(domaintype(b)))
+grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
 
 
-native_index(b::CosineSeries, idx::Int) = idx-1
-linear_index(b::CosineSeries, idxn::Int) = idxn+1
+##################
+# Native indices
+##################
 
-eval_element(b::CosineSeries{T}, idx::Int, x) where {T} = cos(x * T(pi) * (idx-1))
+const CosineFrequency = NativeIndex{:cosine}
 
-function eval_element_derivative(b::CosineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * (idx-1)
+frequency(idxn::CosineFrequency) = value(idxn)
+
+"""
+`CosineIndices` defines the map from native indices to linear indices
+for a finite number of cosines.
+"""
+struct CosineIndices <: IndexList{CosineFrequency}
+	n	::	Int
+end
+
+size(list::CosineIndices) = (list.n,)
+
+getindex(list::CosineIndices, idx::Int) = CosineFrequency(idx-1)
+getindex(list::CosineIndices, idxn::CosineFrequency) = value(idxn)+1
+
+ordering(b::CosineSeries) = CosineIndices(length(b))
+
+
+##################
+# Evaluation
+##################
+
+domain(b::CosineSeries) = UnitInterval{domaintype(b)}()
+
+support(b::CosineSeries, i) = domain(b)
+
+
+unsafe_eval_element(b::CosineSeries{T}, idx::CosineFrequency, x) where {T} =
+    cospi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     -arg * sin(arg * x)
 end
 
@@ -84,15 +119,15 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
 end
 
 function Gram(s::CosineSpan; options...)
-    T = coeftype(s)
+    T = dict_codomaintype(s)
     diag = ones(T,length(s))/2
     diag[1] = 1
     DiagonalOperator(s, s, diag)
 end
 
 function UnNormalizedGram(s::CosineSpan, oversampling)
-    T = coeftype(s)
-    d = T(length_oversampled_grid(set(s), oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(set(s), oversampling)
+    T = dict_codomaintype(s)
+    d = T(length_oversampled_grid(dictionary(s), oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(dictionary(s), oversampling)
     DiagonalOperator(s, s, d)
 end

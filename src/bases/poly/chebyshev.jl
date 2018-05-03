@@ -9,35 +9,39 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevBasis{T} <: OPS{T}
+struct ChebyshevBasis{T} <: OPS{T,T}
     n			::	Int
 end
 
-ChebyshevT{T} = ChebyshevBasis{T}
+ChebyshevT = ChebyshevBasis
 
-const ChebyshevSpan{A,F<:ChebyshevBasis} = Span{A,F}
+const ChebyshevSpan{A,S,T,D<:ChebyshevBasis} = Span{A,S,T,D}
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
+ChebyshevBasis(n::Int) = ChebyshevBasis{Float64}(n)
 
-ChebyshevBasis(n, ::Type{T} = Float64) where {T} = ChebyshevBasis{T}(n)
+# Convenience constructor: map the Chebyshev basis to the interval [a,b]
+ChebyshevBasis{T}(n, a, b) where {T} = rescale(ChebyshevBasis{T}(n), a, b)
 
-ChebyshevBasis(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
-    rescale( ChebyshevBasis(n,float(T)), a, b)
+function ChebyshevBasis(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    ChebyshevBasis{T}(n, a, b)
+end
 
-instantiate{T}(::Type{ChebyshevBasis}, n, ::Type{T}) = ChebyshevBasis{T}(n)
+instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
-set_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
+dict_promote_domaintype(b::ChebyshevBasis, ::Type{S}) where {S} = ChebyshevBasis{S}(b.n)
 
-resize(b::ChebyshevBasis, n) = ChebyshevBasis(n, domaintype(b))
+resize(b::ChebyshevBasis{T}, n) where {T} = ChebyshevBasis{T}(n)
 
 has_grid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevNodeGrid) = length(b) == length(gs)
-has_grid_transform(b::ChebyshevBasis, gs, ::ChebyshevExtremaGrid) = length(b) == length(gs)
-has_grid_transform(b::ChebyshevBasis, gs, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodeGrid) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremaGrid) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
 left(b::ChebyshevBasis) = -one(domaintype(b))
@@ -53,7 +57,7 @@ secondgrid(b::ChebyshevBasis) = ChebyshevExtremaGrid(b.n, domaintype(b))
 
 # extends the default definition at transform.jl
 transform_space(s::ChebyshevSpan; nodegrid=true, options...) =
-    nodegrid ? gridspace(s) : gridspace(secondgrid(set(s)), coeftype(s))
+    nodegrid ? gridspace(s) : gridspace(secondgrid(dictionary(s)), coeftype(s))
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)
@@ -72,35 +76,36 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
-
+domain(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype
-function eval_element(b::ChebyshevBasis, idx::Int, x::Real)
-    abs(x) <= 1 ? cos((idx-1)*acos(x)) : recurrence_eval(b, idx, x)
+function unsafe_eval_element(b::ChebyshevBasis, idx::PolynomialDegree, x::Real)
+    abs(x) <= 1 ? cos(degree(idx)*acos(x)) : recurrence_eval(b, idx, x)
 end
 
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
-# eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+# unsafe_eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function eval_element_derivative(b::ChebyshevBasis, idx::Int, x)
-    T = rangetype(b)
-    if idx == 1
+function unsafe_eval_element_derivative(b::ChebyshevBasis, idx::PolynomialDegree, x)
+    T = codomaintype(b)
+    d = degree(idx)
+    if d == 0
         T(0)
     else
-        (idx-1) * eval_element(ChebyshevU(length(b)), idx-1, x)
+        d * unsafe_eval_element(ChebyshevU(length(b)), idx-1, x)
     end
 end
 
-function moment(b::ChebyshevBasis{T}, idx::Int) where {T}
-    n = idx-1
-    if n == 0
+function unsafe_moment(b::ChebyshevBasis{T}, idx::PolynomialDegree) where {T}
+    d = degree(idx)
+    if d == 0
         T(2)
     else
-        isodd(n) ? zero(T) : -T(2)/((n+1)*(n-1))
+        isodd(d) ? zero(T) : -T(2)/((d+1)*(d-1))
     end
 end
 
@@ -168,8 +173,8 @@ function gramdiagonal!(result, ::ChebyshevSpan; options...)
 end
 
 function UnNormalizedGram(s::ChebyshevSpan{A}, oversampling) where {A}
-    d = A(length_oversampled_grid(set(s), oversampling))/2*ones(A,length(s))
-    d[1] = length_oversampled_grid(set(s), oversampling)
+    d = A(length_oversampled_grid(dictionary(s), oversampling))/2*ones(A,length(s))
+    d[1] = length_oversampled_grid(dictionary(s), oversampling)
     DiagonalOperator(s, s, d)
 end
 
@@ -298,27 +303,28 @@ end
 # Chebyshev polynomials of the second kind
 ############################################
 
-"A basis of Chebyshev polynomials of the second kind (on the interval [-1,1])."
-struct ChebyshevU{T} <: OPS{T}
+"A basis of Chebyshev polynomials of the second kind on the interval `[-1,1]`."
+struct ChebyshevU{T} <: OPS{T,T}
     n			::	Int
 end
 
-const ChebyshevUSpace{A,F<:ChebyshevU} = Span{A,F}
+const ChebyshevUSpan{A,S,T,D<:ChebyshevU} = Span{A,S,T,D}
 
-ChebyshevU(n, ::Type{T} = Float64) where {T} = ChebyshevU{T}(n)
+ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
 instantiate(::Type{ChebyshevU}, n, ::Type{T}) where {T} = ChebyshevU{T}(n)
 
-set_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
+dict_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
     ChebyshevU{S}(b.n)
 
 resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
 
 name(b::ChebyshevU) = "Chebyshev series (second kind)"
 
-function eval_element(b::ChebyshevU, idx::Int, x::Real)
+function unsafe_eval_element(b::ChebyshevU, idx::PolynomialDegree, x::Real)
     # Don't use the formula when |x|=1, because it will generate NaN's
-    abs(x) < 1 ? sin(idx*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
+    d = degree(idx)
+    abs(x) < 1 ? sin((d+1)*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
 end
 
 left(b::ChebyshevU{T}) where {T} = -one(T)
@@ -331,7 +337,7 @@ first_moment(b::ChebyshevU{T}) where {T} = T(pi)/2
 
 grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 
-Gram(s::ChebyshevUSpace{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
+Gram(s::ChebyshevUSpan{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
 
 # The weight function
 weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-T(x)^2)
@@ -348,3 +354,5 @@ rec_An(b::ChebyshevU, n::Int) = 2
 rec_Bn(b::ChebyshevU, n::Int) = 0
 
 rec_Cn(b::ChebyshevU, n::Int) = 1
+
+domain(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()

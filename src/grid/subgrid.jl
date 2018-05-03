@@ -30,8 +30,6 @@ similar_subgrid(g::IndexSubGrid, g2::AbstractGrid) = IndexSubGrid(g2, subindices
 
 length(g::IndexSubGrid) = length(subindices(g))
 
-size(g::IndexSubGrid) = (length(g),)
-
 eachindex(g::IndexSubGrid) = eachindex(subindices(g))
 
 # The speed of this routine is the main reason why supergrid and subindices
@@ -41,6 +39,12 @@ unsafe_getindex(g::IndexSubGrid, idx) = unsafe_getindex(g.supergrid, g.subindice
 left(g::IndexSubGrid) = first(g)
 
 right(g::IndexSubGrid) = last(g)
+
+function mask(g::IndexSubGrid)
+    mask = zeros(Bool,size(supergrid(g)))
+    [mask[i]=true for i in g.subindices]
+    mask
+end
 
 
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
@@ -57,3 +61,5 @@ function grid_restriction_operator(src::DiscreteGridSpace, dest::DiscreteGridSpa
 end
 
 getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+
+strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))

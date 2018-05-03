@@ -6,26 +6,31 @@
 
 
 """
-Sine series on the interval [0,1].
+Sine series on the interval `[0,1]`.
 """
-struct SineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct SineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
 
-const SineSpan{A, F <: SineSeries} = Span{A,F}
+const SineSpan{A,S,T,D <: SineSeries} = Span{A,S,T,D}
 
 name(b::SineSeries) = "Sine series"
 
+SineSeries(n::Int) = SineSeries{Float64}(n)
 
-SineSeries(n, ::Type{T} = Float64) where {T} = SineSeries{T}(n)
+SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(SineSeries{T}(n), a, b)
 
-SineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale( SineSeries(n,float(T)), a, b)
+function SineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    SineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-set_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
+dict_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
 
-resize(b::SineSeries, n) = SineSeries(n, domaintype(b))
+resize(b::SineSeries{T}, n) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true
@@ -49,11 +54,42 @@ period(b::SineSeries{T}, idx) where {T} = T(2)
 
 grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
 
+##################
+# Native indices
+##################
 
-eval_element(b::SineSeries{T}, idx::Int, x) where {T} = sin(x * T(pi) * idx)
+const SineFrequency = NativeIndex{:sine}
 
-function eval_element_derivative(b::SineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * idx
+frequency(idxn::SineFrequency) = value(idxn)
+
+"""
+`SineIndices` defines the map from native indices to linear indices
+for a finite number of sines. It is merely the identity map.
+"""
+struct SineIndices <: IndexList{SineFrequency}
+	n	::	Int
+end
+
+size(list::SineIndices) = (list.n,)
+
+getindex(list::SineIndices, idx::Int) = SineFrequency(idx)
+getindex(list::SineIndices, idxn::SineFrequency) = value(idxn)
+
+ordering(b::SineSeries) = SineIndices(length(b))
+
+##################
+# Evaluation
+##################
+
+domain(b::SineSeries) = UnitInterval{domaintype(b)}()
+
+support(b::SineSeries, i) = domain(b)
+
+unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
+    sinpi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     arg * cos(arg * x)
 end
 

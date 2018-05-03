@@ -1,22 +1,29 @@
 # operator.jl
 
+"""
+A `GenericOperator` is the supertype of all objects that map between function
+spaces.
+"""
+abstract type GenericOperator
+end
+
 
 """
-AbstractOperator represents any linear operator that maps coefficients of
+`AbstractOperator` represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
 destination are of type `Span`.
 The action of the operator is defined by providing a method for apply!.
 
-The dimension of an operator are like a matrix: (length(dest),length(src)).
+The dimension of an operator are like a matrix: `(length(dest),length(src))`.
 
 Source and destination should at least implement the following:
-- length
-- size
-- eltype
+- `length`
+- `size`
+- `eltype`
 
-The element type (eltype) should be equal for src and dest.
+The element type should be equal for src and dest.
 """
-abstract type AbstractOperator{T}
+abstract type AbstractOperator{T} <: GenericOperator
 end
 
 eltype(::AbstractOperator{T}) where {T} = T
@@ -65,6 +72,9 @@ is_inplace(op::AbstractOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::AbstractOperator) = false
 
+"Is the operator a combination of other operators"
+is_composite(op::AbstractOperator) = false
+
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)
@@ -82,7 +92,7 @@ function apply!(op::AbstractOperator, coef_dest, coef_src)
 	else
 		# We pass on the sets, rather than the spans, because the coefficient
 		# type is implicit in the coefficients
-		apply!(op, set(dest(op)), set(src(op)), coef_dest, coef_src)
+		apply!(op, dictionary(dest(op)), dictionary(src(op)), coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.
@@ -153,6 +163,21 @@ end
 
 collect(op::AbstractOperator) = matrix(op)
 
+function sparse_matrix(op::AbstractOperator;sparse_tol = 1e-14, options...)
+	coef_src  = zeros(src(op))
+    coef_dest = zeros(dest(op))
+    R = spzeros(eltype(op),size(op,1),0)
+    for (i,si) in enumerate(eachindex(coef_src))
+        coef_src[si] = 1
+        apply!(op, coef_dest, coef_src)
+        coef_src[si] = 0
+        coef_dest[abs.(coef_dest).<sparse_tol] = 0
+        R = hcat(R,sparse(coef_dest))
+    end
+    R
+end
+
+
 function matrix(op::AbstractOperator)
     a = Array{eltype(op)}(size(op))
     matrix!(op, a)
@@ -201,6 +226,7 @@ function unsafe_getindex(op::AbstractOperator, i, j)
 	coef_dest[i]
 end
 
+
 "Return the diagonal of the operator."
 function diagonal(op::AbstractOperator)
     if is_diagonal(op)
@@ -226,11 +252,12 @@ end
 # Default behaviour: call unsafe_getindex
 unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
 
-
-function inv_diagonal(op::AbstractOperator)
+# We provide a default implementation for diagonal operators
+function pinv(op::AbstractOperator; tol=eps(eltype(op)))
     @assert is_diagonal(op)
     d = diagonal(op)
     # Avoid getting Inf values, we prefer a pseudo-inverse in this case
-    d[find(d.==0)] = Inf
+    d[find(d.<=tol)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
+
