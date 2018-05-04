@@ -30,6 +30,8 @@ similar_subgrid(g::IndexSubGrid, g2::AbstractGrid) = IndexSubGrid(g2, subindices
 
 length(g::IndexSubGrid) = length(subindices(g))
 
+size(g::IndexSubGrid) = (length(g),)
+
 eachindex(g::IndexSubGrid) = eachindex(subindices(g))
 
 # The speed of this routine is the main reason why supergrid and subindices

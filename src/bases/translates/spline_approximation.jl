@@ -64,12 +64,25 @@ function support_indices(B::TensorProductDict, g::ProductGrid, index::Int)
     create_indices(g,index_sets...)
 end
 
+function support_indices(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N}
+    index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+    create_indices(g,index_sets...)
+end
+
+# function create_indices(B, i1, i2)
+#     [linear_index(B,(i,j)) for i in i1 for j in i2]
+# end
+#
+# function create_indices(B, i1, i2, i3)
+#     [linear_index(B,(i,j,k)) for i in i1 for j in i2 for k in i3]
+# end
+
 function create_indices(B, i1, i2)
-    [linear_index(B,(i,j)) for i in i1 for j in i2]
+    [CartesianIndex(i,j) for i in i1 for j in i2]
 end
 
 function create_indices(B, i1, i2, i3)
-    [linear_index(B,(i,j,k)) for i in i1 for j in i2 for k in i3]
+    [CartesianIndex(i,j,k) for i in i1 for j in i2 for k in i3]
 end
 
 
