@@ -51,16 +51,12 @@ has_antiderivative(s::MappedDict) = has_antiderivative(superdict(s)) && islinear
 grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
 _grid(s::MappedDict1d, set, map) = mapped_grid(grid(set), map)
 
-for op in (:left, :right)
-    @eval $op(s::MappedDict1d) = applymap( mapping(s), $op(superdict(s)) )
-    @eval $op(s::MappedDict1d, idx) = applymap( mapping(s), $op(superdict(s), idx) )
-end
 
 function name(s::MappedDict)
-    if isa(domain(s), MappedDomain)
+    if isa(support(s), MappedDomain)
         return string(mapping(s))
     else
-        return "Mapping $(domain(superdict(s))) to $(domain(s))"
+        return "Mapping $(support(superdict(s))) to $(support(s))"
     end
 end
 
@@ -198,13 +194,16 @@ mapped_dict(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_g
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a, b)
     T = domaintype(s)
-    if abs(a-left(s)) < 10eps(T) && abs(b-right(s)) < 10eps(T)
+    if abs(a-infimum(support(s))) < 10eps(T) && abs(b-supremum(support(s))) < 10eps(T)
         s
     else
-        m = interval_map(left(s), right(s), T(a), T(b))
+        m = interval_map(infimum(support(s)), supremum(support(s)), T(a), T(b))
         apply_map(s, m)
     end
 end
+
+rescale(s::Dictionary1d,d::Domain1d) = rescale(s,infimum(d),supremum(d))
+    
 
 # "Preserve Tensor Product Structure"
 function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
@@ -238,5 +237,6 @@ _native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))
 
 symbol(op::MappedDict) = "M"
 
-domain(dict::MappedDict) = mapping(dict)*domain(superdict(dict))
+support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
+support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
 

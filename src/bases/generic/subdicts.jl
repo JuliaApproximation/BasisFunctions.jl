@@ -51,6 +51,10 @@ function stencil(s::Subdictionary,S)
 end
 myLeaves(s::Subdictionary) = myLeaves(superdict(s))
 
+support(s::Subdictionary) = support(superdict(s))
+
+support(s::Subdictionary, i) = support(superdict(s),superindices(s,i))
+
 length(s::Subdictionary) = length(superindices(s))
 
 size(s::Subdictionary) = size(superindices(s))
@@ -88,11 +92,7 @@ for op in (:isreal, :is_orthogonal, :is_basis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
 end
 
-for op in [:left, :right]
-    @eval $op(d::Subdictionary) = $op(superdict(d))
-end
-
-for op in [:left, :right, :moment, :norm]
+for op in [:moment, :norm]
     @eval $op(d::Subdictionary, i) = $op(superdict(d), superindices(d, i))
 end
 

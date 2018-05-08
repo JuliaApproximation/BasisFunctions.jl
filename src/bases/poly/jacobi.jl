@@ -33,13 +33,7 @@ dict_promote_domaintype(b::JacobiPolynomials, ::Type{S}) where {S} =
 
 resize(b::JacobiPolynomials, n) = JacobiPolynomials(n, b.α, b.β)
 
-left(b::JacobiPolynomials{T}) where {T} = -T(1)
-left(b::JacobiPolynomials, idx) = left(b)
-
-right(b::JacobiPolynomials{T}) where {T} = T(1)
-right(b::JacobiPolynomials, idx) = right(b)
-
-domain(b::JacobiPolynomials{T}) where {T} = ChebyshevInterval{T}()
+support(b::JacobiPolynomials{T}) where {T} = ChebyshevInterval{T}()
 
 first_moment(b::JacobiPolynomials) = b.α+b.β+1≈0 ?
     2.^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1) :

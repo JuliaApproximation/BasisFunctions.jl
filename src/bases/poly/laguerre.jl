@@ -30,11 +30,7 @@ dict_promote_domaintype(b::LaguerrePolynomials, ::Type{S}) where {S} =
 
 resize(b::LaguerrePolynomials, n) = LaguerrePolynomials(n, b.α)
 
-left(b::LaguerrePolynomials{T}) where {T} = T(0)
-left(b::LaguerrePolynomials, idx) = left(b)
-
-right(b::LaguerrePolynomials) = convert(domaintype(b), Inf)
-right(b::LaguerrePolynomials, idx) = right(b)
+support(b::LaguerrePolynomials{T}) where {T} = halfline(T)
 
 first_moment(b::LaguerrePolynomials{T}) where {T} = T(1)
 
@@ -60,4 +56,3 @@ rec_Bn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
 
 rec_Cn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
 
-domain(b::LaguerrePolynomials{T}) where {T} = halfline(T)

@@ -7,6 +7,7 @@ end
 # Some default implementations for interval grids follow
 leftendpoint(g::AbstractIntervalGrid) = g.a
 rightendpoint(g::AbstractIntervalGrid) = g.b
+support(g::AbstractIntervalGrid) = interval(g.a,g.b)
 length(g::AbstractIntervalGrid) = g.n
 
 # Perhaps we should add a stepsize field, for better efficiency?
@@ -42,9 +43,11 @@ struct EquispacedGrid{T} <: AbstractEquispacedGrid{T}
     EquispacedGrid{T}(n::Int, a = -one(T), b = one(T)) where {T} = (@assert a < b; new(n, a, b))
 end
 
-EquispacedGrid(n, ::Type{T} = Float64) where {T} = EquispacedGrid{T}(n)
+EquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = EquispacedGrid{T}(n)
 
-EquispacedGrid(n, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = EquispacedGrid{T}(n, a, b)
+EquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = EquispacedGrid{T}(n, a, b)
+
+EquispacedGrid(n::Int, d::AbstractInterval, ::Type{T}=eltype(d)) where {T} = EquispacedGrid{T}(n, infimum(d), supremum(d))
 
 similar_grid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
 
@@ -76,6 +79,8 @@ end
 PeriodicEquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = PeriodicEquispacedGrid{T}(n)
 
 PeriodicEquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = PeriodicEquispacedGrid{T}(n, a, b)
+
+PeriodicEquispacedGrid(n::Int, d::AbstractInterval, ::Type{T}=eltype(d)) where {T} = PeriodicEquispacedGrid{T}(n, infimum(d), supremum(d))
 
 similar_grid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
 
@@ -109,9 +114,11 @@ dyadic_length(g::DyadicPeriodicEquispacedGrid) = g.l
 
 length(g::DyadicPeriodicEquispacedGrid) = 1<<dyadic_length(g)
 
-DyadicPeriodicEquispacedGrid(l, ::Type{T} = Float64) where {T} = DyadicPeriodicEquispacedGrid{T}(l)
+DyadicPeriodicEquispacedGrid(l::Int, ::Type{T} = Float64) where {T} = DyadicPeriodicEquispacedGrid{T}(l)
 
-DyadicPeriodicEquispacedGrid(l, a, b, ::Type{T} = typeof((b-a)/l)) where {T} = DyadicPeriodicEquispacedGrid{T}(l, a, b)
+DyadicPeriodicEquispacedGrid(l::Int, a, b, ::Type{T} = typeof((b-a)/l)) where {T} = DyadicPeriodicEquispacedGrid{T}(l, a, b)
+
+DyadicPeriodicEquispacedGrid(l::Int, d::AbstractInterval, ::Type{T}=eltype(d)) where {T} = DyadicPeriodicEquispacedGrid{T}(l, infimum(d),supremum(d))
 
 PeriodicEquispacedGrid(g::DyadicPeriodicEquispacedGrid{T}) where {T} = PeriodicEquispacedGrid{T}(length(g), g.a, g.b)
 
@@ -144,9 +151,12 @@ struct MidpointEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     MidpointEquispacedGrid{T}(n, a = -one(T), b = one(T)) where {T} = (@assert a < b; new(n, a, b))
 end
 
-MidpointEquispacedGrid(n, ::Type{T} = Float64) where {T} = MidpointEquispacedGrid{T}(n)
+MidpointEquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = MidpointEquispacedGrid{T}(n)
 
-MidpointEquispacedGrid(n, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = MidpointEquispacedGrid{T}(n, a, b)
+MidpointEquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = MidpointEquispacedGrid{T}(n, a, b)
+
+MidpointEquispacedGrid(n::Int, d::AbstractInterval, ::Type{T} = eltype(d)) where {T} = MidpointEquispacedGrid{T}(n, infimum(d), supremum(d))
+
 
 similar_grid(g::MidpointEquispacedGrid, a, b, T) = MidpointEquispacedGrid{T}(length(g), a, b)
 

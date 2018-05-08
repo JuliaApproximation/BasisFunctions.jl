@@ -38,6 +38,9 @@ dimension(g::ProductGrid, j::Int) = dimension(element(g,j))
 
 length(g::ProductGrid) = prod(size(g))
 
+support(g::ProductGrid) = cartesianproduct(map(support,g.grids))
+support(g::ProductGrid, j) = support(g.grids[j])
+
 leftendpoint(g::ProductGrid) = SVector(map(leftendpoint, g.grids))
 leftendpoint(g::ProductGrid, j) = leftendpoint(g.grids[j])
 

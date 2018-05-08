@@ -77,13 +77,11 @@ resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, 
 # TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
 compatible_grid(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) where {K} = iseven(K) &&
-    (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
+    (1+(infimum(support(b)) - leftendpoint(grid))≈1) && (1+(supremum(support(b)) - rightendpoint(grid))≈1) && (length(b)==length(grid))
 compatible_grid(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) where {K}= isodd(K) &&
-    (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
-# we use a PeriodicEquispacedGrid in stead
-grid(b::BSplineTranslatesBasis{K}) where {K} = isodd(K) ?
-    PeriodicEquispacedGrid(length(b), left(b), right(b)) :
-    MidpointEquispacedGrid(length(b), left(b), right(b))
+    (1+(infimum(support(b)) - leftendpoint(grid))≈1) && (1+(supremum(support(b)) - rightendpoint(grid))≈1) && (length(b)==length(grid))
+    # we use a PeriodicEquispacedGrid in stead
+    grid(b::BSplineTranslatesBasis{K}) where {K} = isodd(K) ? PeriodicEquispacedGrid(length(b), support(b)) : MidpointEquispacedGrid(length(b), support(b))
 
 function _binomial_circulant(s::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}) where {A,S,K,T,SCALED}
     c = zeros(A, length(s))

@@ -31,46 +31,46 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 function test_generic_ops_from_quadrature()
     N = 10
     # LegendrePolynomials
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),interval(-1,1))
     c2 = LegendrePolynomials(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),interval(-1,1))
     c2 = JacobiPolynomials(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     # chebyshevI
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),interval(-1,1))
     c2 = ChebyshevBasis(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),interval(-1,1))
     c2 = JacobiPolynomials(N, -.5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # chebyshevII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),interval(-1,1))
     c2 = ChebyshevU(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),interval(-1,1))
     c2 = JacobiPolynomials(N, .5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     # ChebyshevIII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),interval(-1,1))
     c2 = JacobiPolynomials(N, -.5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # ChebyshevIIII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),interval(-1,1))
     c2 = JacobiPolynomials(N, .5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
@@ -90,8 +90,7 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
         @test maximum(y) < 1e-10
     end
 
-    @test left(c1,1) == left_point
-    @test right(c1,1) == right_point
+    @test support(c1,1) == interval(left_point,right_point)
     @test length(c1) == N
     @test name(c1) == "Generic OPS"
 

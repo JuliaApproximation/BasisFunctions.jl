@@ -21,14 +21,7 @@ dict_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendreP
 
 resize(b::LegendrePolynomials{T}, n) where {T} = LegendrePolynomials{T}(n)
 
-
-left(b::LegendrePolynomials{T}) where {T} = -T(1)
-left(b::LegendrePolynomials, idx) = left(b)
-
-right(b::LegendrePolynomials{T}) where {T} = T(1)
-right(b::LegendrePolynomials, idx) = right(b)
-
-domain(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
+support(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
 
 #grid(b::LegendrePolynomials) = LegendreGrid(b.n)
 

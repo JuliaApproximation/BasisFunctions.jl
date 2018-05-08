@@ -26,11 +26,11 @@ function bf_wavelets_implementation_test()
         624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test left(b,i) == supports[value(i)][1]
-            @test right(b,i) == supports[value(i)][2]
+            @test infimum(support(b,i)) == supports[value(i)][1]
+            @test supremum(support(b,i)) == supports[value(i)][2]
         end
         for i in ordering(b1)
-            @test support(b1,i) == (0.,1.)
+            @test support(b1,i) == interval(0.,1.)
         end
 
         @test BasisFunctions.subdict(b1,1:1) == BasisFunctions.DaubechiesWaveletBasis(3,0)

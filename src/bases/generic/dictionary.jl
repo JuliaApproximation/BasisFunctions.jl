@@ -284,7 +284,7 @@ has_transform(d::Dictionary, grid::AbstractGrid) =
 
 "Does the grid span the same interval as the dictionary"
 has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
-    (1+(left(set) - leftendpoint(grid))≈1) && (1+(right(set) - rightendpoint(grid))≈1)
+    (1+(infimum(support(set)) - leftendpoint(grid))≈1) && (1+(supremum(support(set)) - rightendpoint(grid))≈1)
 
 "Does the set support extension and restriction operators?"
 has_extension(d::Dictionary) = false
@@ -343,27 +343,23 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
 # And here we call checkbounds_indices with indices(dict)
 checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
 
-# TODO: reconsider the left and right functions, in favour of the support or domain
-# of a set. Left and right do not generalize beyond intervals.
-left(dict::Dictionary, idx) = left(dict, native_index(dict, idx))
-right(dict::Dictionary, idx) = right(dict, native_index(dict, idx))
-
-"Return the support of the idx-th basis function."
-support(d::Dictionary1d, idx) = (left(d,idx), right(d,idx))
+"Return the support of the idx-th basis function. Default is support of the dictionary."
+support(dict::Dictionary, idx) = support(dict)
 # Warning: the functions above and below may be wrong for certain concrete
 # dictionaries, for example for univariate functions with non-connected support.
 # Make sure to override, and make sure that the overridden version is called.
 
-"Does the given point lie inside the support of the given set function?"
-in_support(dict::Dictionary1d, idx, x) = default_in_support(dict, idx, x)
-
-default_in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
+"Does the given point lie inside the support of the given set function or dictionary?"
+in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
+in_support(dict::Dictionary, x) = default_in_support(dict,x)
+default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
+default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))
 
 # isless doesn't work when comparing complex numbers. It may happen that a real
 # function set uses a complex element type, or that the user evaluates at a
 # complex point.  Our default is to check for a zero imaginary part, and then
 # convert x to a real number. Genuinely complex function sets should override.
-in_support{T <: Complex}(dict::Dictionary1d, idx, x::T) =
+in_support{T <: Complex}(dict::Dictionary, idx, x::T) =
     abs(imag(x)) <= tolerance(dict) && in_support(dict, idx, real(x))
 
 
@@ -509,4 +505,4 @@ end
 unsafe_moment(dict::Dictionary1d, idx) = default_moment(dict, idx)
 
 # Default to numerical integration
-default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], left(d), right(d))[1]
+default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], infimum(support(d)), supremum(support(d)))[1]

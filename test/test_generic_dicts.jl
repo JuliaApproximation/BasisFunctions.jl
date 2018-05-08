@@ -21,11 +21,11 @@ supports_interpolation(s::Dictionary) = is_basis(s)
 supports_interpolation(s::SingletonSubdict) = false
 
 # Pick a simple function to approximate
-suitable_function(s::Dictionary1d) = x->exp(x/right(s))
+suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
-suitable_function(set::PeriodicSplineBasis) =  x -> 1/(10+cos(2*pi*x))
+#suitable_function(set::PeriodicSplineBasis) =  x -> 1/(10+cos(2*pi*x))
 suitable_function(set::BasisFunctions.PeriodicTranslationDict) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and even symmetric
 suitable_function(set::CosineSeries) =  x -> 1/(10+cos(2*pi*x))
@@ -139,19 +139,23 @@ function test_generic_dict_interface(basis, span = Span(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (dimension(basis) == 1) && ~(typeof(basis) <: PeriodicSplineBasis || typeof(basis) <: BasisFunctions.CompactPeriodicTranslationDict)
-        if ~isinf(left(basis, 1))
-            @test in_support(basis, 1, left(basis, 1))
-            @test in_support(basis, 1, left(basis, 1)-1/10*test_tolerance(ELT))
-            @test ~in_support(basis, 1, left(basis, 1)-1)
+    if (dimension(basis) == 1) && ~(typeof(basis) <: BasisFunctions.CompactPeriodicTranslationDict)
+        s = support(basis)
+        l = infimum(s)
+        r = supremum(s)
+        if ~isinf(l)
+            @test in_support(basis, l)
+            # This assumes test_tolerance(ELT) is equal to tolerance(dict), should probably use the latter here
+            @test in_support(basis, l.-1/10*test_tolerance(ELT))
+            @test ~in_support(basis, l.-1)
         end
-        if ~isinf(right(basis, 1))
-            @test in_support(basis, 1, right(basis, 1))
-            @test in_support(basis, 1, right(basis, 1)+1/10*test_tolerance(ELT))
-            @test ~in_support(basis, 1, right(basis, 1)+1)
+        if ~isinf(r)
+            @test in_support(basis, r)
+            @test in_support(basis, r.+1/10*test_tolerance(ELT))
+            @test ~in_support(basis, r.+1)
         end
-        if ~isinf(left(basis, 1)) && ~isinf(right(basis, 1))
-            @test in_support(basis, 1, 1/2*(left(basis, 1) + right(basis, 1)))
+        if ~isinf(l) && ~isinf(r) && ~(typeof(basis) <: BasisFunctions.PiecewiseDict)
+            @test in_support(basis, 1, 1/2*(l + r))
         end
     end
 
@@ -255,8 +259,8 @@ function test_generic_dict_interface(basis, span = Span(basis))
     if dimension(basis) == 1
 
         # Test evaluation on a different grid on the support of the basis
-        a = left(basis)
-        b = right(basis)
+        a = infimum(support(basis))
+        b = supremum(support(basis))
 
         if isinf(a)
             a = -T(1)

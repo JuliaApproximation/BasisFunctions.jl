@@ -15,7 +15,7 @@ function leastsquares_operator(s::Span; samplingfactor = 2, options...)
         dict2 = resize(s, samplingfactor*length(s))
         ls_grid = grid(dict2)
     else
-        ls_grid = EquispacedGrid(samplingfactor*length(s), left(dictionary(s)), right(dictionary(s)))
+        ls_grid = EquispacedGrid(samplingfactor*length(s), support(dictionary(s)))
     end
     leastsquares_operator(s, ls_grid; options...)
 end

@@ -82,7 +82,7 @@ parentheses(t::TensorProductOperator,a::CompositeOperator) = true
 show_dictionary(io::IO,d::Dictionary) = println(print_strings(strings(d),0,""))
 
 # Default string is the string of the type
-strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> $(codomaintype(d))","domain = $(domain(d))"))
+strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> $(codomaintype(d))","support = $(support(d))"))
 strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d))",strings(grid(d)))
 strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
@@ -101,7 +101,6 @@ _name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).m
     
 parentheses(t::Dictionary, d::Dictionary) = false
 parentheses(t::CompositeDict, a::TensorProductDict)=true
-parentheses(t::CompositeDict, a::TensorProductDict)=true
 
 
     
@@ -109,7 +108,7 @@ has_stencil(anything) = is_composite(anything)
 #### Actual printing methods.
 
 # extend children method from AbstractTrees
-children(A) = is_composite(A) ? elements(A) : ()
+children(A::Union{Dictionary,AbstractOperator}) = is_composite(A) ? elements(A) : ()
 function myLeaves(op::BasisFunctions.DerivedOperator)
     A = Any[]
     push!(A,op)

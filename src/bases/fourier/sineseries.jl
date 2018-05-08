@@ -44,12 +44,6 @@ has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n
 
-left(b::SineSeries{T}) where {T} = T(0)
-left(b::SineSeries, idx) = left(b)
-
-right(b::SineSeries{T}) where {T} = T(1)
-right(b::SineSeries, idx) = right(b)
-
 period(b::SineSeries{T}, idx) where {T} = T(2)
 
 grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
@@ -81,9 +75,7 @@ ordering(b::SineSeries) = SineIndices(length(b))
 # Evaluation
 ##################
 
-domain(b::SineSeries) = UnitInterval{domaintype(b)}()
-
-support(b::SineSeries, i) = domain(b)
+support(b::SineSeries) = UnitInterval{domaintype(b)}()
 
 unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
     sinpi(T(x) * frequency(idx))

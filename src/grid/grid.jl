@@ -33,7 +33,7 @@ last(g::AbstractGrid) = g[last(eachindex(g))]
 
 has_extension(::AbstractGrid) = false
 
-support(g::AbstractGrid) = (left(g),right(g))
+#support(g::AbstractGrid) = interval(left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 

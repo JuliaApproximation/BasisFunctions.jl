@@ -2,8 +2,8 @@
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
 function point_in_domain(basis::Dictionary, scalar)
     # Try to find an interval within the support of the basis
-    a = left(basis)
-    b = right(basis)
+    a = infimum(support(basis))
+    b = supremum(support(basis))
 
     if isinf(norm(a)) || isinf(norm(b))
         va = MVector(a)
@@ -36,8 +36,8 @@ end
 # Interpolate linearly between the left and right endpoint, using the value 0 <= scalar <= 1
 function point_in_domain(basis::Dictionary1d, scalar)
     # Try to find an interval within the support of the basis
-    a = left(basis)
-    b = right(basis)
+    a = infimum(support(basis))
+    b = supremum(support(basis))
 
     T = domaintype(basis)
     # Avoid infinities for some bases on the real line
@@ -63,7 +63,8 @@ point_outside_domain(basis::HermitePolynomials) = one(domaintype(basis))+im
 function random_point_in_domain(basis::Dictionary)
     T = float_type(domaintype(basis))
     w = one(T) * rand()
-    point_in_domain(basis, w)
+    p =  point_in_domain(basis, w)
+    in_support(basis, p) ? p : random_point_in_domain(basis)
 end
 
 function fixed_point_in_domain(basis::Dictionary)

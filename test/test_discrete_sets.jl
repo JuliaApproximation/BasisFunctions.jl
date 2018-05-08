@@ -20,7 +20,7 @@ function test_discrete_sets(T)
     @test !in_support(s1, 1, length(s1)+1)
     @test !in_support(s1, 1, 2.5)
 
-    @test domain(s1) == ClosedInterval{Int}(1, length(s1))
+    @test support(s1) == ClosedInterval{Int}(1, length(s1))
 
     # Evaluation
     @test eval_element(s1, 1, 1) == one(T)
