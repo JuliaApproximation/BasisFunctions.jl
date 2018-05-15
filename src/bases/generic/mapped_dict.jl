@@ -77,7 +77,7 @@ function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
     z = d / jacobian(mapping(s), y)
 end
 
-function eval_expansion(s::MappedDict, coef, y)
+function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
     if in_support(s, first(eachindex(s)), y)
         eval_expansion(superdict(s), coef, apply_left_inverse(mapping(s),y))
     else
