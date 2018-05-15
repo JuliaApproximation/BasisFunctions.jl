@@ -20,14 +20,12 @@ const MappedSpan1d{A,S,T,D <: MappedDict1d} = Span{A,S,T,D}
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
 # Hence, the domain type of the map has to equal the domain type of the dictionary.
-# Confusingly, the domain and codomain types of dictionaries and Maps are
-# defined in different order ({S,T} and {T,S}): below, parameter T1 has to equal.
-MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{S,T1}) where {S,T1,T} =
+MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{T1,S}) where {S,T1,T} =
     MappedDict{typeof(dict),typeof(map),S,T}(dict, map)
 
 # If the parameters don't match, we may have to promote the map.
 # This does not (currently) work for all maps.
-function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{T2,S2}) where {S1,S2,T1,T2}
+function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
     MappedDict(promote_domaintype(dict, S), update_eltype(map, S))
 end
