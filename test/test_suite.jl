@@ -18,6 +18,7 @@ const show_timings = false
 include("util_functions.jl")
 include("test_generic_grids.jl")
 include("test_generic_dicts.jl")
+include("test_mapped_dicts.jl")
 include("test_tensors.jl")
 include("test_derived_dict.jl")
 include("test_operators.jl")
@@ -70,7 +71,7 @@ for T in [Float64,BigFloat,]
 
             @test length(basis) == n
             @test domaintype(basis) == T
-        
+
             test_generic_dict_interface(basis, Span(basis))
     end
     # also try a Fourier series with an even length
@@ -139,8 +140,13 @@ end # for T in...
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
 @testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
+
 delimit("Generic OPS")
 include("test_generic_OPS.jl")
+
+delimit("Mapped dictionaries")
+test_mapped_dicts()
+
 println()
 println(" All tests passed!")
 

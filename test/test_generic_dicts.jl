@@ -195,9 +195,10 @@ function test_generic_dict_interface(basis, span = Span(basis))
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ eval_element(basis, idx, x)
 
-    x_outside = point_outside_domain(basis)
-    @test bf(x_outside) == 0
-#    @test isnan(eval_element(basis, idx, x_outside, FT(NaN)))
+    if ! (typeof(basis) <: HermitePolynomials)
+        x_outside = point_outside_domain(basis)
+        @test bf(x_outside) == 0
+    end
 
 
     # Create a random expansion in the basis to test expansion interface

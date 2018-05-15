@@ -47,7 +47,7 @@ has_derivative(s::MappedDict) = has_derivative(superdict(s)) && islinear(mapping
 has_antiderivative(s::MappedDict) = has_antiderivative(superdict(s)) && islinear(mapping(s))
 
 grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
-_grid(s::MappedDict1d, set, map) = mapped_grid(grid(set), map)
+_grid(s::MappedDict, set, map) = mapped_grid(grid(set), map)
 
 for op in (:left, :right)
     @eval $op(s::MappedDict1d) = applymap( mapping(s), $op(superdict(s)) )
@@ -69,20 +69,32 @@ end
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
 unsafe_eval_element(s::MappedDict, idx, y) =
-    unsafe_eval_element(superdict(s), idx, apply_inverse(mapping(s),y))
+    unsafe_eval_element(superdict(s), idx, apply_left_inverse(mapping(s),y))
 
 function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
-    x = apply_inverse(mapping(s), y)
+    x = apply_left_inverse(mapping(s), y)
     d = unsafe_eval_element_derivative(superdict(s), idx, x)
     z = d / jacobian(mapping(s), y)
 end
 
-eval_expansion(s::MappedDict, coef, y::Number) =
-    eval_expansion(superdict(s), coef, apply_inverse(mapping(s),y))
+function eval_expansion(s::MappedDict, coef, y)
+    if in_support(s, first(eachindex(s)), y)
+        eval_expansion(superdict(s), coef, apply_left_inverse(mapping(s),y))
+    else
+        zero(codomaintype(s))
+    end
+end
 
-#eval_expansion(s::MappedDict, coef, grid::AbstractGrid) = eval_expansion(superdict(s), coef, apply_map(grid, inv(mapping(s))))
 
-in_support(set::MappedDict, idx, y) = in_support(superdict(set), idx, apply_inverse(mapping(set), y))
+function in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
+    x = apply_left_inverse(mapping(set), y)
+    y1 = applymap(mapping(set), x)
+    if norm(y-y1) < threshold
+        in_support(superdict(set), idx, x)
+    else
+        false
+    end
+end
 
 is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superdict(s1),superdict(s2))
 
@@ -229,7 +241,7 @@ dot(s::MappedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(diction
     _dot(superspan(s), mapping(s), f1, f2, nodes; options...)
 
 _dot(s::Span1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
-    jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_inverse(map,nodes); options...)
+    jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_left_inverse(map,nodes); options...)
 
 native_nodes(s::MappedDict) = _native_nodes(superdict(s), mapping(s))
 _native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))
@@ -237,4 +249,3 @@ _native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))
 symbol(op::MappedDict) = "M"
 
 domain(dict::MappedDict) = mapping(dict)*domain(superdict(dict))
-

@@ -359,12 +359,6 @@ in_support(dict::Dictionary1d, idx, x) = default_in_support(dict, idx, x)
 
 default_in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
 
-# isless doesn't work when comparing complex numbers. It may happen that a real
-# function set uses a complex element type, or that the user evaluates at a
-# complex point.  Our default is to check for a zero imaginary part, and then
-# convert x to a real number. Genuinely complex function sets should override.
-in_support{T <: Complex}(dict::Dictionary1d, idx, x::T) =
-    abs(imag(x)) <= tolerance(dict) && in_support(dict, idx, real(x))
 
 
 ##############################################
