@@ -25,9 +25,10 @@ weightfunction(s::WeightedDictSpan) = weightfunction(dictionary(s))
 
 similar_dictionary(set1::WeightedDict, set2::Dictionary) = WeightedDict(set2, weightfunction(set1))
 
-name(set::WeightedDict) = _name(set, superdict(set), weightfunction(set))
-_name(set::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict)
-_name(set::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
+name(set::WeightedDict) = "Weightfunction " * string(weightfunction(set))
+
+## _name(set::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict) 
+## _name(set::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
 
 isreal(set::WeightedDict) = _isreal(set, superdict(set), weightfunction(set))
 _isreal(set::WeightedDict, superdict, fun::AbstractFunction) = isreal(superdict) && isreal(fun)
@@ -124,3 +125,11 @@ function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace,
     D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
 end
+
+function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...)
+    super_e = grid_evaluation_operator(superspan(set), dgs, grid; options...)
+    D = weightfun_scaling_operator(dgs, weightfunction(set))
+    D * wrap_operator(set, dgs, super_e)
+end
+
+symbol(s::WeightedDict) = "ω"

@@ -72,6 +72,9 @@ is_inplace(op::AbstractOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::AbstractOperator) = false
 
+"Is the operator a combination of other operators"
+is_composite(op::AbstractOperator) = false
+
 function apply(op::AbstractOperator, coef_src)
 	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)
@@ -160,6 +163,21 @@ end
 
 collect(op::AbstractOperator) = matrix(op)
 
+function sparse_matrix(op::AbstractOperator;sparse_tol = 1e-14, options...)
+	coef_src  = zeros(src(op))
+    coef_dest = zeros(dest(op))
+    R = spzeros(eltype(op),size(op,1),0)
+    for (i,si) in enumerate(eachindex(coef_src))
+        coef_src[si] = 1
+        apply!(op, coef_dest, coef_src)
+        coef_src[si] = 0
+        coef_dest[abs.(coef_dest).<sparse_tol] = 0
+        R = hcat(R,sparse(coef_dest))
+    end
+    R
+end
+
+
 function matrix(op::AbstractOperator)
     a = Array{eltype(op)}(size(op))
     matrix!(op, a)
@@ -208,6 +226,7 @@ function unsafe_getindex(op::AbstractOperator, i, j)
 	coef_dest[i]
 end
 
+
 "Return the diagonal of the operator."
 function diagonal(op::AbstractOperator)
     if is_diagonal(op)
@@ -233,11 +252,12 @@ end
 # Default behaviour: call unsafe_getindex
 unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
 
-
-function inv_diagonal(op::AbstractOperator)
+# We provide a default implementation for diagonal operators
+function pinv(op::AbstractOperator; tol=eps(eltype(op)))
     @assert is_diagonal(op)
     d = diagonal(op)
     # Avoid getting Inf values, we prefer a pseudo-inverse in this case
-    d[find(d.==0)] = Inf
+    d[find(d.<=tol)] = Inf
     DiagonalOperator(dest(op), src(op), d.^(-1))
 end
+

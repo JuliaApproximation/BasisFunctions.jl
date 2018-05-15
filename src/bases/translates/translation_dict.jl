@@ -1,5 +1,5 @@
 # translation_dict.jl
-
+using CardinalBSplines
 """
 Dictionary consisting of translates of one generating function.
 """
@@ -40,6 +40,7 @@ const PeriodicTranslatesSpan{A,S,T,D <: PeriodicTranslationDict} = Span{A,S,T,D}
 
 left{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.a)
 right{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.b)
+domain(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
 
 left(set::PeriodicTranslationDict, j::TransIndex) = left(set)
 right(set::PeriodicTranslationDict, j::TransIndex) = right(set)
@@ -80,21 +81,34 @@ function transform_to_grid(src::PeriodicTranslatesSpan, dest, grid; options...)
     CirculantOperator(src, dest, sample(grid, fun(src)); options...)
 end
 
-function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; options...)
+
+function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; sparse=true, options...)
+    r = nothing
     if periodic_compatible_grid(dictionary(s), grid)
         lg = length(grid)
         ls = length(s)
         if lg == ls
-            return CirculantOperator(s, dgs, sample(grid, fun(s)); options...)
+            r = CirculantOperator(s, dgs, sample(grid, fun(s)); options...)
         elseif lg > ls
-            return CirculantOperator(dgs, dgs, sample(grid, fun(s)); options...)*IndexExtensionOperator(s, dgs, 1:Int(lg/ls):length(dgs))
+            r = CirculantOperator(dgs, dgs, sample(grid, fun(s)); options...)*IndexExtensionOperator(s, dgs, 1:Int(lg/ls):length(dgs))
         elseif lg < ls && has_extension(grid)
-            return IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(s)); options...)
+            r = IndexRestrictionOperator(s, dgs, 1:Int(ls/lg):length(s))*CirculantOperator(s, s, sample(extend(grid, Int(ls/lg)), fun(s)); options...)
         else
-            return default_evaluation_operator(s, dgs; options...)
+            r = default_evaluation_operator(s, dgs; options...)
         end
+    else
+        r = default_evaluation_operator(s, dgs; options...)
     end
-    default_evaluation_operator(s, dgs; options...)
+    if sparse
+        return SparseOperator(r; options...)
+    else
+        return r
+    end
+end
+
+function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
+        options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.PeriodicTranslationDict} where N,S,T}}}
+    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end
 
 unsafe_eval_element(b::PeriodicTranslationDict, idxn::TransIndex, x::Real) =
@@ -170,8 +184,10 @@ length_compact_support{T}(b::CompactPeriodicTranslationDict{T})::real(T) = right
 function left_of_compact_function end
 function right_of_compact_function end
 
-overlapping_elements(b::CompactPeriodicTranslationDict, x) =
-   floor(Int, (x-right_of_compact_function(b))/stepsize(b)):ceil(Int, (x-left_of_compact_function(b))/stepsize(b))
+function overlapping_elements(b::CompactPeriodicTranslationDict, x)
+   indices = ceil(Int, (x-BasisFunctions.right_of_compact_function(b))/stepsize(b)):floor(Int, (x-BasisFunctions.left_of_compact_function(b))/stepsize(b))
+   Set(mod(i, length(b))+1 for i in indices)
+end
 
 left(b::CompactPeriodicTranslationDict, idx::TransIndex) =
     value(idx) * stepsize(b) + left_of_compact_function(b)
@@ -204,13 +220,12 @@ function in_compact_support(set::CompactPeriodicTranslationDict, idx::TransIndex
 end
 
 function eval_compact_expansion(b::CompactPeriodicTranslationDict, coef, x)
-	z = zero(typeof(x))
-	for idx_n = overlapping_elements(b, x)
-        idxn = TransIndex(mod(idx_n, length(b)))
-		idx = linear_index(b, idxn)
-		z = z + coef[idx] * unsafe_eval_element(b, idxn, x)
-	end
-	z
+    z = zero(typeof(x))
+    for idx = BasisFunctions.overlapping_elements(b, x)
+        idxn = native_index(b, idx)
+        z = z + coef[idx] * BasisFunctions.unsafe_eval_element(b, idxn, x)
+    end
+    z
 end
 
 """
@@ -225,12 +240,12 @@ const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicTranslationDi
 
 coefficients(b::LinearCombinationOfPeriodicTranslationDict) = b.coefficients
 
-for op in (:length, :left, :right, :has_grid, :grid)
+for op in (:length, :left, :right, :has_grid, :grid, :domain)
     @eval $op(b::LinearCombinationOfPeriodicTranslationDict) = $op(superdict(b))
 end
 
 function fun(b::LinearCombinationOfPeriodicTranslationDict)
-    x->eval_expansion(superdict(b), real(coefficients(b)), BasisFunctions.Cardinal_b_splines.periodize(x, period(superdict(b))))
+    x->eval_expansion(superdict(b), real(coefficients(b)), CardinalBSplines.periodize(x, period(superdict(b))))
 end
 
 ==(b1::LinearCombinationOfPeriodicTranslationDict, b2::LinearCombinationOfPeriodicTranslationDict) =

@@ -40,7 +40,16 @@ dict_promote_domaintype(s::Subdictionary, ::Type{S}) where {S} =
 apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
 
-name(s::Subdictionary) = "Subdictionary of " * name(superdict(s)) * " with indices " * string(superindices(s))
+has_stencil(s::Subdictionary) = true
+function stencil(s::Subdictionary,S)
+    A = Any[]
+    has_stencil(superdict(s)) && push!(A,"(")
+    push!(A,superdict(s))
+    has_stencil(superdict(s)) && push!(A,")")
+    push!(A,"["*string(superindices(s))*"]")
+    return recurse_stencil(s,A,S)
+end
+myLeaves(s::Subdictionary) = myLeaves(superdict(s))
 
 length(s::Subdictionary) = length(superindices(s))
 
@@ -241,6 +250,7 @@ function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)
     for idx in indices
         result &= checkbounds(Bool, dict, idx)
     end
+    result
 end
 
 

@@ -1,9 +1,9 @@
 # test_suite.jl
 module test_suite
 
-using Base.Test
 srand(1234)
 using StaticArrays
+using Base.Test
 using Domains
 using BasisFunctions
 
@@ -20,7 +20,6 @@ include("test_generic_grids.jl")
 include("test_generic_dicts.jl")
 include("test_tensors.jl")
 include("test_derived_dict.jl")
-include("test_bsplines.jl")
 include("test_operators.jl")
 include("test_generic_operators.jl")
 include("test_ops.jl")
@@ -30,6 +29,8 @@ include("test_bsplinetranslatedbasis.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
 
+delimit("Wavelets")
+include("test_wavelets.jl")
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well
@@ -49,8 +50,7 @@ d6 = plan_idct!(zeros(10), 1:1)
 
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
         LaguerrePolynomials, HermitePolynomials, PeriodicSplineBasis, CosineSeries, SineSeries,
-        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
-        DiscreteOrthonormalSplineBasis]
+        BSplineTranslatesBasis, SymBSplineTranslatesBasis]
 # SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 #         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 
@@ -70,7 +70,7 @@ for T in [Float64,BigFloat,]
 
             @test length(basis) == n
             @test domaintype(basis) == T
-
+        
             test_generic_dict_interface(basis, Span(basis))
     end
     # also try a Fourier series with an even length
@@ -106,16 +106,6 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
 
-    delimit("Test B splines")
-    @testset "$(rpad("Elementary properties",80))" begin
-        elementarypropsofsplinetest(T) end
-    @testset "$(rpad("periodic B splines",80))"  begin
-        periodicbsplinetest(T) end
-    @testset "$(rpad("symmetric B splines",80))"  begin
-        symmetricbsplinestest(T) end
-    @testset "$(rpad("integration of B splines",80))"  begin
-        test_spline_integration() end
-
     delimit("Gram")
     @testset "$(rpad("Gram functionality",80))" begin
         discrete_gram_test(T)
@@ -136,10 +126,12 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Translates of B spline expansions",80))" begin
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
-        test_orthonormalsplinebasis(T)
-        test_discrete_orthonormalsplinebasis(T)
+        # test_orthonormalsplinebasis(T)
+        # test_discrete_orthonormalsplinebasis(T)
         test_dualsplinebasis(T)
         test_discrete_dualsplinebasis(T)
+        test_bspline_platform(T)
+        test_sparsity_speed(T)
     end
 
 end # for T in...

@@ -51,6 +51,7 @@ matrix!(op::BoundOperator, a) = matrix!(action(op), a)
 simplify(op::BoundOperator) = op
 
 
+
 """
 An `UnboundOperator` defines an action that can be appied to many kinds of
 coefficients. Hence, it does not specify which coefficients it expects and

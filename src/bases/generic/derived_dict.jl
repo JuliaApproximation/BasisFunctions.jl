@@ -68,7 +68,7 @@ has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), 
 # has_antiderivative(s::ConcreteSet) = false
 # has_grid(s::ConcreteSet) = false
 # has_transform(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet, dgs) = false
+# has_transform(s::ConcreteSet, dgs::GridBasis) = false
 # has_extension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
@@ -77,7 +77,7 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
-    :elements, :tail, :ordering)
+    :elements, :tail, :ordering, :domain)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -202,3 +202,13 @@ end
 # Implementing similar_dictionary is all it takes.
 
 similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
+
+function stencil(d::DerivedDict,S)
+    A = Any[]
+    push!(A,S[d])
+    push!(A,"(")
+    push!(A,superdict(d))
+    push!(A,")")
+    return recurse_stencil(d,A,S)
+end
+has_stencil(d::DerivedDict) = true

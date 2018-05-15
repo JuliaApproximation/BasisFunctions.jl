@@ -69,7 +69,7 @@ has_extension(b::FourierBasis) = true
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
-	(1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && (length(b)==length(grid))
+	has_grid_equal_span(b,grid) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
 compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
@@ -326,18 +326,18 @@ function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options.
 	forward_fourier_operator(s1, s2, coeftype(s2); options...)
 end
 
+## function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
+## 	@assert compatible_grid(dictionary(dest), grid)
+##     L = convert(coeftype(dest), length(src))
+##     ScalingOperator(dest, 1/L)
+## end
+
+## function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
+## 	@assert compatible_grid(dictionary(src), grid)
+## 	inv(transform_from_grid_post(dest, src, grid; options...))
+## end
 
 
-function transform_from_grid_post(src, dest::FourierSpan, grid; options...)
-	@assert compatible_grid(dictionary(dest), grid)
-    L = convert(coeftype(dest), length(src))
-    ScalingOperator(dest, 1/sqrt(L))
-end
-
-function transform_to_grid_pre(src::FourierSpan, dest, grid; options...)
-	@assert compatible_grid(dictionary(src), grid)
-	inv(transform_from_grid_post(dest, src, grid; options...))
-end
 
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid

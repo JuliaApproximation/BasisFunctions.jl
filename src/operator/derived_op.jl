@@ -32,3 +32,13 @@ end
 
 similar_operator(op::ConcreteDerivedOperator, ::Type{S}, src, dest) where {S} =
 	ConcreteDerivedOperator(similar_operator(superoperator(op), S, src, dest))
+
+has_stencil(op::DerivedOperator) = true
+function stencil(op::DerivedOperator,S)
+    A = Any[]
+    push!(A,S[op])
+    push!(A,"(")
+    push!(A,superoperator(op))
+    push!(A,")")
+    return recurse_stencil(op,A,S)
+end

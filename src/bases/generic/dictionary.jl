@@ -282,6 +282,10 @@ has_transform(d::Dictionary) = has_grid(d) && has_transform(d, grid(d))
 has_transform(d::Dictionary, grid::AbstractGrid) =
     has_transform(d, gridbasis(grid, codomaintype(d)))
 
+"Does the grid span the same interval as the dictionary"
+has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
+    (1+(left(set) - leftendpoint(grid))≈1) && (1+(right(set) - rightendpoint(grid))≈1)
+
 "Does the set support extension and restriction operators?"
 has_extension(d::Dictionary) = false
 
@@ -351,7 +355,9 @@ support(d::Dictionary1d, idx) = (left(d,idx), right(d,idx))
 # Make sure to override, and make sure that the overridden version is called.
 
 "Does the given point lie inside the support of the given set function?"
-in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
+in_support(dict::Dictionary1d, idx, x) = default_in_support(dict, idx, x)
+
+default_in_support(dict::Dictionary1d, idx, x) = left(dict, idx)-tolerance(dict) <= x <= right(dict, idx)+tolerance(dict)
 
 # isless doesn't work when comparing complex numbers. It may happen that a real
 # function set uses a complex element type, or that the user evaluates at a
@@ -414,14 +420,16 @@ end
 
 # Convenience function: evaluate a function on a grid.
 # We implement unsafe_eval_element1, so the bounds check on idx has already happened
-function unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid)
+@inline unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid) =
+    _default_unsafe_eval_element_in_grid(dict, idx, grid)
+
+function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
     result = zeros(gridspace(grid, codomaintype(dict)))
     for k in eachindex(grid)
         @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
     result
 end
-
 
 
 """

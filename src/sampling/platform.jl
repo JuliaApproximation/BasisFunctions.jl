@@ -14,7 +14,8 @@ end
 A `GenericPlatform` stores a primal and dual dictionary generator, along with
 a sequence of parameter values.
 """
-struct GenericPlatform
+struct GenericPlatform <: Platform
+    super_platform
     primal_generator
     dual_generator
     sampler_generator
@@ -22,8 +23,8 @@ struct GenericPlatform
     name
 end
 
-GenericPlatform(; primal = None, dual = None, sampler = None, params = None,
-    name = "Generic Platform") = GenericPlatform(primal, dual, sampler, params, name)
+GenericPlatform(; super_platform=nothing, primal = None, dual = None, sampler = None, params = None,
+    name = "Generic Platform") = GenericPlatform(super_platform, primal, dual, sampler, params, name)
 
 function primal(platform::GenericPlatform, i)
     param = platform.parameter_sequence[i]
@@ -41,6 +42,27 @@ function sampler(platform::GenericPlatform, i)
 end
 
 name(platform::GenericPlatform) = platform.name
+
+A(platform::GenericPlatform, i; options...) = apply(sampler(platform, i), primal(platform, i); options...)
+
+function Z(platform::GenericPlatform, i; options...)
+    dict = dual(platform, i)
+    (coeftype(dict)(1)/length(dict))*apply(sampler(platform, i),dict; options...)
+end
+
+Zt(platform::GenericPlatform, i; options...) = Z(platform, i; options...)'
+
+"""
+Initalized with a series of generators, it generates tensorproduct dictionaries
+given a series of lengths.
+"""
+struct TensorGenerator{T}
+    fun
+end
+(TG::TensorGenerator)(n::Int...) = TG(collect(n))
+(TG::TensorGenerator)(n::AbstractVector{Int}) = tensorproduct(TG.fun(n))
+
+tensor_generator(::Type{T}, generators...) where {T} = TensorGenerator{T}( n ->([gi(ni)  for (ni, gi) in  zip(collect(n), collect(generators))]))
 
 
 #######################
@@ -65,3 +87,25 @@ DoublingSequence() = DoublingSequence(2)
 initial(s::DoublingSequence) = s.initial
 
 getindex(s::DoublingSequence, idx::Int) = initial(s) * 2<<(idx-2)
+
+
+"A doubling sequence with a given initial value."
+struct MultiplySequence <: DimensionSequence
+    initial ::  Int
+    t       ::  Real
+end
+
+# We arbitrarily choose a default initial value of 2
+MultiplySequence() = DoublingSequence()
+
+initial(s::MultiplySequence) = s.initial
+
+getindex(s::MultiplySequence, idx::Int) =  round(Int, initial(s) *s.t^(idx-1))
+
+
+"A tensor product sequences with given initial values."
+struct TensorSequence
+    sequences
+end
+
+getindex(s::TensorSequence, idx::Int) = [si[idx] for si in s.sequences]

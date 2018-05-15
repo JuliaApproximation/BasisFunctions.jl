@@ -4,4 +4,5 @@ RecipesBase
 SpecialMatrices
 QuadGK
 FastGaussQuadrature
+AbstractTrees
 # https://github.com/andreasnoack/LinearAlgebra.jl.git

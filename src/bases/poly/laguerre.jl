@@ -59,3 +59,5 @@ rec_An(b::LaguerrePolynomials{T}, n::Int) where {T} = -T(1) / T(n+1)
 rec_Bn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
 
 rec_Cn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
+
+domain(b::LaguerrePolynomials{T}) where {T} = halfline(T)

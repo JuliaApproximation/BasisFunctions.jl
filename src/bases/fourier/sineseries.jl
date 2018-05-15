@@ -16,7 +16,7 @@ const SineSpan{A,S,T,D <: SineSeries} = Span{A,S,T,D}
 
 name(b::SineSeries) = "Sine series"
 
-Sineseries(n::Int) = SineSeries{Float64}(n)
+SineSeries(n::Int) = SineSeries{Float64}(n)
 
 SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
     rescale(SineSeries{T}(n), a, b)

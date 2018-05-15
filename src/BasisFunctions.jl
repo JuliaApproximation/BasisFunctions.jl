@@ -1,6 +1,6 @@
 # BasisFunctions
 
-#__precompile__()
+__precompile__(true)
 
 module BasisFunctions
 
@@ -13,6 +13,7 @@ using FastTransforms
 using Domains
 
 using LinearAlgebra
+using AbstractTrees
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
@@ -35,7 +36,7 @@ import Base: isreal, iseven, isodd, real, complex
 
 import Base: ctranspose, transpose, inv, hcat, vcat
 
-import Base: show, showcompact, convert, similar
+import Base: show, showcompact, convert, similar, string
 
 import Base: dct, idct
 
@@ -47,12 +48,14 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-# import Wavelets: primal, dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-# import Wavelets.DWT: primal, dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound
-# import Wavelets.DWT: DaubechiesWavelet, CDFWavelet, name, wavelet_index, coefficient_index
-# import Wavelets.Sequences: support
-# import Wavelets.Util: isdyadic
-
+import WaveletsCopy.DWT: Prl, Dul, Side
+import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!
+import WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, value, wavelet_index
+import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: inv_evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
+import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name
+import WaveletsCopy.Sequences: support
 
 ## Imports from Domains
 
@@ -71,6 +74,7 @@ import Domains: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 
+import AbstractTrees: children
 
 ## Exhaustive list of exports
 
@@ -176,7 +180,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
-export PseudoDiagonalOperator
+#export PseudoDiagonalOperator
 
 # from generic/transform.jl
 export transform_operator, transform_space, full_transform_operator,
@@ -259,7 +263,7 @@ export sample
 
 # from sampling/platform.jl
 export Platform
-export primal, dual
+export primal, dual, sampler, A, Z, Zt
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -297,13 +301,14 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-# export DaubechiesWaveletBasis, CDFWaveletBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bases/translates/translation_dict.jl
 export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
 export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
+export bspline_platform
 
 export degree, interval
 
@@ -354,9 +359,8 @@ include("operator/basic_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/pseudo_diagonal.jl")
+#include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
-
 
 
 include("bases/generic/expansions.jl")
@@ -403,7 +407,6 @@ include("bases/fourier/sineseries.jl")
 ################################################################
 
 include("bases/splines/bf_splines.jl")
-include("util/bsplines.jl")
 
 include("bases/translates/translation_dict.jl")
 include("bases/translates/translates_of_bsplines.jl")
@@ -413,7 +416,7 @@ include("bases/translates/translates_of_bsplines.jl")
 # Wavelets
 ################################################################
 
-# # include("bases/wavelets/bf_wavelets.jl")
+include("bases/wavelets/bf_wavelets.jl")
 
 ################################################################
 # Polynomials: monomials and (classical) orthogonal polynomials
@@ -431,6 +434,7 @@ include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
 
+include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
 

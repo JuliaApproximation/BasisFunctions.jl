@@ -11,11 +11,11 @@ before_install:
 before_script:
   - julia -e 'Pkg.init()'
   - julia -e 'Pkg.clone("https://github.com/daanhb/Domains.jl")'
-  - julia -e 'Pkg.clone("https://github.com/andreasnoack/LinearAlgebra.jl")'
   - ./.travis/setup.sh
 script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.build("BasisFunctions")'
+  - julia -e "Pkg.checkout(\"WaveletsCopy\",\"development\")"
   - julia --check-bounds=yes -e 'Pkg.test("BasisFunctions", coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'

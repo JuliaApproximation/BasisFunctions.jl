@@ -278,3 +278,19 @@ function _index_set_hyperbolic_cross(s, n, α = 1)
         I
     end
 end
+
+oversampled_grid(b::TensorProductDict, oversampling::Real) = ProductGrid([oversampled_grid(bi, oversampling) for bi in elements(b)]...)
+
+BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductSpan; oversampling = 1) =
+    tensorproduct([DiscreteGram(si, oversampling=oversampling) for si in elements(s)]...)
+
+function stencil(op::TensorProductDict)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
+end
+

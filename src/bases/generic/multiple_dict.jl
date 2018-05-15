@@ -119,6 +119,7 @@ end
 
 left(set::MultiDict) = minimum(map(left, elements(set)))
 right(set::MultiDict) = maximum(map(right, elements(set)))
+domain(set::MultiDict) = UnionDomain(map(domain,elements(set)))
 
 resize(s::MultiDict, n::Int) = resize(s, approx_length(s, n))
 
@@ -164,3 +165,13 @@ apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))
 
 ## Projecting
 project(s::MultiDict, f::Function; options...) = MultiArray([project(el, f; options...) for el in elements(s)])
+
+function stencil(d::MultiDict)
+    A = Any[]
+    push!(A,element(d,1))
+    for i=2:length(elements(d))
+        push!(A," ⊕ ")
+        push!(A,element(d,i))
+    end
+    A
+end

@@ -40,6 +40,12 @@ left(g::IndexSubGrid) = first(g)
 
 right(g::IndexSubGrid) = last(g)
 
+function mask(g::IndexSubGrid)
+    mask = zeros(Bool,size(supergrid(g)))
+    [mask[i]=true for i in g.subindices]
+    mask
+end
+
 
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
@@ -55,3 +61,5 @@ function grid_restriction_operator(src::DiscreteGridSpace, dest::DiscreteGridSpa
 end
 
 getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+
+strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))

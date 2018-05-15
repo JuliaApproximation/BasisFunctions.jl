@@ -54,9 +54,17 @@ for op in (:left, :right)
     @eval $op(s::MappedDict1d, idx) = applymap( mapping(s), $op(superdict(s), idx) )
 end
 
-name(s::MappedDict) = _name(s, superdict(s), mapping(s))
-_name(s::MappedDict, set, map) = "A mapped set based on " * name(set)
-_name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
+function name(s::MappedDict)
+    if isa(domain(s), MappedDomain)
+        return string(mapping(s))
+    else
+        return "Mapping $(domain(superdict(s))) to $(domain(s))"
+    end
+end
+
+
+## _name(s::MappedDict, set, map) = "A mapped set based on " * name(set)
+## _name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
@@ -225,3 +233,8 @@ _dot(s::Span1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; option
 
 native_nodes(s::MappedDict) = _native_nodes(superdict(s), mapping(s))
 _native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))
+
+symbol(op::MappedDict) = "M"
+
+domain(dict::MappedDict) = mapping(dict)*domain(superdict(dict))
+
