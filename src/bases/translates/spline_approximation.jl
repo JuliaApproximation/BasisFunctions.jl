@@ -56,6 +56,7 @@ function support_indices(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i
         ((interval[1]-x0)/dx ≈ start) && (start += 1)
         push!(indices,(start+1:stop+1)...)
     end
+    indices
 end
 
 function support_indices(B::TensorProductDict, g::ProductGrid, index::Int)
