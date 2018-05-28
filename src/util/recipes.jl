@@ -97,7 +97,7 @@ plotgrid(S::Dictionary1d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)),i
 
 # NOTE: This only supoorts multi-dimensional tensor product dicts.
 plotgrid(F::Dictionary{Tuple{S1,S2},T}, n) where {S1,S2,T} = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
-
+plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
 ## Split complex plots in real and imaginary parts
 # 1D
 @recipe function f(A::AbstractArray{S}, B::Array{Complex{T}}) where {S<:Real, T<:Real}

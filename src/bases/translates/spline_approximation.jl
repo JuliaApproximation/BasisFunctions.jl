@@ -5,7 +5,7 @@ If x ≈ i/N it return -i
 """
 interval_index(B::BSplineTranslatesBasis,x::Real) = round(x*length(B))≈x*length(B) ? -round(Int,x*length(B))-1 : ceil(Int,x*length(B))
 
-function support(B::BSplineTranslatesBasis{K,T}, i) where {K,T}
+function support(B::BSplineTranslatesBasis{K,T}, i::Int) where {K,T}
     start = T(i-1)/length(B)
     width = T(degree(B)+1)/length(B)
     stop  = start+width

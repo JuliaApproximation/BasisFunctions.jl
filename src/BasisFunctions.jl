@@ -34,7 +34,7 @@ import Base: getindex, setindex!, unsafe_getindex, eltype
 
 import Base: isreal, iseven, isodd, real, complex
 
-import Base: ctranspose, transpose, inv, hcat, vcat
+import Base: ctranspose, transpose, inv, pinv, hcat, vcat
 
 import Base: show, showcompact, convert, similar, string
 
