@@ -5,11 +5,10 @@
 ####
 # Comment out these methods to disable pretty printing
 ####
-
 # Delegate to show_operator
-show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
-show(io::IO,s::Span) = show(io,dictionary(s))
-show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+# show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+# show(io::IO,s::Span) = show(io,dictionary(s))
+# show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
 
 ####
 # Stop commenting here
@@ -40,16 +39,16 @@ string(op::MultiplicationOperator,object) = "Multiplication by "*string(typeof(o
 symbol(op::MultiplicationOperator) = symbol(op,op.object)
 symbol(op::MultiplicationOperator,object) = "M"
 
-symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.cFFTWPlan{T,K}) where {T,K} = K<0 ? "FFT" : "iFFT" 
-symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.DCTPlan{T,K}) where {T,K} = K==Base.DFT.FFTW.REDFT10 ? "DCT" : "iDCT" 
+symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.cFFTWPlan{T,K}) where {T,K} = K<0 ? "FFT" : "iFFT"
+symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.DCTPlan{T,K}) where {T,K} = K==Base.DFT.FFTW.REDFT10 ? "DCT" : "iDCT"
 
-function string(op::MultiplicationOperator, object::Base.DFT.FFTW.cFFTWPlan) 
+function string(op::MultiplicationOperator, object::Base.DFT.FFTW.cFFTWPlan)
     io = IOBuffer()
     print(io,op.object)
     match(r"(.*?)(?=\n)",String(take!(io))).match
 end
 
-function string(op::MultiplicationOperator, object::Base.DFT.FFTW.DCTPlan) 
+function string(op::MultiplicationOperator, object::Base.DFT.FFTW.DCTPlan)
     io = IOBuffer()
     print(io,op.object)
     String(take!(io))
@@ -63,7 +62,7 @@ subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in re
 ####
 # Parentheses for operators
 ####
-    
+
 # Include parentheses based on precedence rules
 # By default, don't add parentheses
 parentheses(t::AbstractOperator,a::AbstractOperator) = false
@@ -77,7 +76,7 @@ parentheses(t::TensorProductOperator,a::CompositeOperator) = true
 ####
 # Dictionary symbols and strings
 ####
-    
+
 # Default is the operator string
 show_dictionary(io::IO,d::Dictionary) = println(print_strings(strings(d),0,""))
 
@@ -86,7 +85,7 @@ strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> 
 strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d))",strings(grid(d)))
 strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
-        
+
     symbol(d::Dictionary) = name(d)[1]
 ## Default names
 name(d::Dictionary) = _name(d)
@@ -96,14 +95,14 @@ _name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).m
 
 ####
 # Dictionary Parentheses
-####    
+####
 
-    
+
 parentheses(t::Dictionary, d::Dictionary) = false
 parentheses(t::CompositeDict, a::TensorProductDict)=true
 
 
-    
+
 has_stencil(anything) = is_composite(anything)
 #### Actual printing methods.
 
@@ -121,19 +120,19 @@ function myLeaves(op::BasisFunctions.DerivedDict)
     push!(A,myLeaves(superdict(op))...)
     return A
 end
-    
+
 function myLeaves(op)
     A = Any[]
     if !has_stencil(op)
         push!(A,op)
-    else 
+    else
         for child in BasisFunctions.children(op)
             push!(A,myLeaves(child)...)
         end
     end
     return A
 end
-    
+
 # Collect all symbols used
 function symbollist(op)
     # Find all leaves
@@ -167,7 +166,7 @@ function symbollist(op)
     end
     S
 end
-        
+
     # Stencils define the way ParentOperators are printed (to be moved to proper files)
 stencil(op)=op
 
@@ -180,7 +179,7 @@ function stencil(op,S)
     end
 end
 
-# Any remaining operator/dictionary that has a stencil will be 
+# Any remaining operator/dictionary that has a stencil will be
 function recurse_stencil(op,A,S)
     i=1
     k=length(A)
@@ -190,7 +189,7 @@ function recurse_stencil(op,A,S)
                 splice!(A,i+1:i,")")
                 splice!(A,i:i,stencil(A[i],S))
                  splice!(A,i:(i-1),"(")
-            else 
+            else
                 splice!(A,i:i,stencil(A[i],S))
             end
         end
@@ -211,14 +210,14 @@ function printstencil(io,op,S)
         end
     end
 end
-        
+
 
 # Main printing method, first print the stencil and any remaining composites, then show a full list of symbols and their strings.
 function show_composite(io::IO,op)
     S = symbollist(op)
     printstencil(io,op,S)
     print(io,"\n\n")
-    SortS=sort(collect(S),by=x->string(x[2]),rev=true)   
+    SortS=sort(collect(S),by=x->string(x[2]),rev=true)
     for (key,value) in SortS
         if is_composite(key) && !isa(key,DerivedOperator) && !isa(key,DerivedDict)
             print(io,value," = ")
@@ -227,7 +226,7 @@ function show_composite(io::IO,op)
             print(io,"\n\n")
         end
     end
-    SortS=sort(collect(S),by=x->string(x[2]),rev=true)   
+    SortS=sort(collect(S),by=x->string(x[2]),rev=true)
     for (key,value) in SortS
         print(io,value,"\t:\t",print_strings(strings(key),0,"\t\t"))
     end

@@ -191,74 +191,74 @@ end
 # restriction_operator{K,T}(s1::SymBSplineTranslatesBasis{K,T}, s2::SymBSplineTranslatesBasis{K,T}; options...) =
 #     bspline_restriction_operator(s1, s2; options...)
 
-"""
-  Basis consisting of orthonormal basis function in the spline space of degree K.
-"""
-struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
-  superdict     ::    BSplineTranslatesBasis{K,T}
-  coefficients ::    Array{T,1}
-
-  OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
-    new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
-end
-
-const OrthonormalSplineSpan{A,S,T,D <: OrthonormalSplineBasis} = Span{A,S,T,D}
-
-degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
-
-superdict(b::OrthonormalSplineBasis) = b.superdict
-coefficients(b::OrthonormalSplineBasis) = b.coefficients
-
-OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
-    OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
-
-name(b::OrthonormalSplineBasis) = name(b.superdict)*" (orthonormalized)"
-
-instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalSplineBasis(n,3,T)
-
-dict_promote_domaintype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
-
-resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
-
-Gram(b::OrthonormalSplineSpan) = IdentityOperator(b, b)
-
-change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DualGram(Span(b); options...))
-
-
-"""
-  Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
-"""
-struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
-  superdict     ::    BSplineTranslatesBasis{K,T}
-  coefficients ::    Array{T,1}
-
-  oversampling ::   T
-
-  DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) where {K,T} =
-    new(b, coefficients_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
-
-end
-
-const DiscreteOrthonormalSplineSpan{A,S,T,D <: DiscreteOrthonormalSplineBasis} = Span{A,S,T,D}
-
-degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
-
-superdict(b::DiscreteOrthonormalSplineBasis) = b.superdict
-coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
-default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
-
-==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
-    superdict(b1)==superdict(b2) && coefficients(b1) ≈ coefficients(b2) && default_oversampling(b1) == default_oversampling(b2)
-
-DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
-    DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
-
-name(b::DiscreteOrthonormalSplineBasis) = name(superdict(b))*" (orthonormalized, discrete)"
-
-instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
-
-dict_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
-
-resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
-
-change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(Span(b); options...))
+# """
+#   Basis consisting of orthonormal basis function in the spline space of degree K.
+# """
+# struct OrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
+#   superdict     ::    BSplineTranslatesBasis{K,T}
+#   coefficients ::    Array{T,1}
+#
+#   OrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; options...) where {K,T} =
+#     new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
+# end
+#
+# const OrthonormalSplineSpan{A,S,T,D <: OrthonormalSplineBasis} = Span{A,S,T,D}
+#
+# degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
+#
+# superdict(b::OrthonormalSplineBasis) = b.superdict
+# coefficients(b::OrthonormalSplineBasis) = b.coefficients
+#
+# OrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
+#     OrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
+#
+# name(b::OrthonormalSplineBasis) = name(b.superdict)*" (orthonormalized)"
+#
+# instantiate{T}(::Type{OrthonormalSplineBasis}, n::Int, ::Type{T}) = OrthonormalSplineBasis(n,3,T)
+#
+# dict_promote_domaintype{K,T,S}(b::OrthonormalSplineBasis{K,T}, ::Type{S}) = OrthonormalSplineBasis(length(b),K, S)
+#
+# resize{K,T}(b::OrthonormalSplineBasis{K,T}, n::Int) = OrthonormalSplineBasis(n, degree(b), T)
+#
+# Gram(b::OrthonormalSplineSpan) = IdentityOperator(b, b)
+#
+# change_of_basis{B<:OrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DualGram(Span(b); options...))
+#
+#
+# """
+#   Basis consisting of orthonormal (w.r.t. a discrete inner product) basis function in the spline space of degree K.
+# """
+# struct DiscreteOrthonormalSplineBasis{K,T} <: LinearCombinationOfPeriodicTranslationDict{BSplineTranslatesBasis,T}
+#   superdict     ::    BSplineTranslatesBasis{K,T}
+#   coefficients ::    Array{T,1}
+#
+#   oversampling ::   T
+#
+#   DiscreteOrthonormalSplineBasis{K,T}(b::BSplineTranslatesBasis{K,T}; oversampling=default_oversampling(b), options...) where {K,T} =
+#     new(b, coefficients_in_other_basis(b, DiscreteOrthonormalSplineBasis; oversampling=oversampling, options...), oversampling)
+#
+# end
+#
+# const DiscreteOrthonormalSplineSpan{A,S,T,D <: DiscreteOrthonormalSplineBasis} = Span{A,S,T,D}
+#
+# degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
+#
+# superdict(b::DiscreteOrthonormalSplineBasis) = b.superdict
+# coefficients(b::DiscreteOrthonormalSplineBasis) = b.coefficients
+# default_oversampling(b::DiscreteOrthonormalSplineBasis) = b.oversampling
+#
+# ==(b1::DiscreteOrthonormalSplineBasis, b2::DiscreteOrthonormalSplineBasis) =
+#     superdict(b1)==superdict(b2) && coefficients(b1) ≈ coefficients(b2) && default_oversampling(b1) == default_oversampling(b2)
+#
+# DiscreteOrthonormalSplineBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; options...) =
+#     DiscreteOrthonormalSplineBasis{DEGREE,T}(BSplineTranslatesBasis(n,DEGREE,T); options...)
+#
+# name(b::DiscreteOrthonormalSplineBasis) = name(superdict(b))*" (orthonormalized, discrete)"
+#
+# instantiate{T}(::Type{DiscreteOrthonormalSplineBasis}, n::Int, ::Type{T}) = DiscreteOrthonormalSplineBasis(n,3,T)
+#
+# dict_promote_domaintype{K,T,S}(b::DiscreteOrthonormalSplineBasis{K,T}, ::Type{S}) = DiscreteOrthonormalSplineBasis(length(b),K, S)
+#
+# resize{K,T}(b::DiscreteOrthonormalSplineBasis{K,T}, n::Int) = DiscreteOrthonormalSplineBasis(n, degree(b), T; oversampling=default_oversampling(b))
+#
+# change_of_basis{B<:DiscreteOrthonormalSplineBasis}(b::BSplineTranslatesBasis, ::Type{B}; options...) = sqrt(DiscreteDualGram(Span(b); options...))

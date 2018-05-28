@@ -92,9 +92,6 @@ apply_map(s::DerivedDict, map) = similar_dictionary(s, apply_map(superdict(s), m
 
 in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 
-# To avoid an ambiguity with a similar definition for abstract type Dictionary:
-in_support(set::DerivedDict, idx, x::T) where {T <: Complex} =
-    imag(x) == 0 && in_support(superdict(set), idx, real(x))
 
 #########################
 # Indexing and iteration

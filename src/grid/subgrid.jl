@@ -40,9 +40,16 @@ left(g::IndexSubGrid) = first(g)
 
 right(g::IndexSubGrid) = last(g)
 
-support(g::IndexSubGrid) = support(supergrid(g))
+function mask(g::IndexSubGrid)
+    mask = zeros(Bool,size(supergrid(g)))
+    [mask[i]=true for i in g.subindices]
+    mask
+end
+
 
 support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = interval(first(g), last(g))
+
+
 
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))

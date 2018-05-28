@@ -81,3 +81,9 @@ function insert_at(a::Vector, idx, b)
 end
 
 isdyadic(n::Int) = n == 1<<round(Int, log2(n))
+
+
+default_threshold(y) = default_threshold(typeof(y))
+default_threshold(::Type{T}) where {T <: AbstractFloat} = 100eps(T)
+default_threshold(::Type{Complex{T}}) where {T <: AbstractFloat} = 100eps(T)
+default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)

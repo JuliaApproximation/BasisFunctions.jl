@@ -32,7 +32,7 @@ resize(b::LaguerrePolynomials, n) = LaguerrePolynomials(n, b.α)
 
 support(b::LaguerrePolynomials{T}) where {T} = halfline(T)
 
-first_moment(b::LaguerrePolynomials{T}) where {T} = T(1)
+first_moment(b::LaguerrePolynomials{T}) where {T} = gamma(b.α+1)
 
 jacobi_α(b::LaguerrePolynomials) = b.α
 

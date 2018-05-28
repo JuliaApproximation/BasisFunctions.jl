@@ -30,7 +30,7 @@ function discrete_gram_test(T)
             basis = instantiate(B, n, T)
             span = Span(basis)
             oversampling = 1
-            @test n*(inv(evaluation_operator(span; oversampling=oversampling))')*e ≈ discrete_dual_evaluation_operator(span, oversampling=oversampling)*e
+            @test n*(inv(evaluation_operator(span; oversampling=oversampling, sparse=false))')*e ≈ discrete_dual_evaluation_operator(span, oversampling=oversampling)*e
             for oversampling in 1:4
                 grid = BasisFunctions.oversampled_grid(basis, oversampling)
                 @test DiscreteDualGram(span; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(span; oversampling=oversampling)'discrete_dual_evaluation_operator(span; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis,oversampling))

@@ -505,4 +505,4 @@ end
 unsafe_moment(dict::Dictionary1d, idx) = default_moment(dict, idx)
 
 # Default to numerical integration
-default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], infimum(support(d)), supremum(support(d)))[1]
+default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], left(d), right(d))[1]

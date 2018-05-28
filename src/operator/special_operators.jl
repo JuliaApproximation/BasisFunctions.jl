@@ -104,7 +104,7 @@ function similar_operator(op::WrappedOperator, ::Type{S}, op_src, op_dest) where
     WrappedOperator(op_src, op_dest, similar_operator(subop, S, src(subop), dest(subop)))
 end
 
-    
+
 ## function stencil(op::WrappedOperator, S)
 ##     if haskey(S,op)
 ##         return op
@@ -414,7 +414,7 @@ inv(op::FunctionOperator) = inv_function(op, op.fun)
 # This can be overriden for types of functions that do not support inv
 inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
 
-string(op::FunctionOperator) = "Function "*string(op.fun)
+string(op::FunctionOperator) = do_prettyprinting() ? "Function "*string(op.fun) : Base.print_to_string(op)
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
@@ -454,7 +454,7 @@ diagonal{T}(op::UnevenSignFlipOperator{T}) = T[-(-1)^i for i in 1:length(src(op)
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T} 
+struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T}
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
@@ -577,3 +577,8 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
 is_diagonal(op::DelinearizationOperator) = true
+
+function SparseOperator(op::AbstractOperator; options...)
+    A = sparse_matrix(op; options...)
+    MultiplicationOperator(src(op), dest(op), A, inplace=false)
+end

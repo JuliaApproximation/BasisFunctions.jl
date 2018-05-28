@@ -117,7 +117,7 @@ bspline_sampler(::Type{T}, primal, oversampling::Int) where {T} = n-> GridSampli
 # params
 bspline_param(init::Int) = DoublingSequence(init)
 
-bspline_param(init::AbstractVector{Int}) = TensorSequence([DoublingSequence(i) for i in init])
+bspline_param(init::AbstractVector{Int}) = TensorSequence([BasisFunctions.MultiplySequence(i,2.^(1/length(init))) for i in init])
 
 # Platform
 function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degree::Union{Int,AbstractVector{Int}}, oversampling::Int) where {T}

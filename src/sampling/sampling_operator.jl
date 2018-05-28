@@ -55,4 +55,4 @@ end
 
 (*)(S::GridSamplingOperator, D::Dictionary) = apply(S, D)
 
-apply(S::GridSamplingOperator, D::Dictionary) = evaluation_operator(Span(D, coeftype(gridspace(S))), grid(S))
+apply(S::GridSamplingOperator, D::Dictionary; options...) = evaluation_operator(Span(D, coeftype(gridspace(S))), grid(S); options...)

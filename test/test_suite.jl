@@ -18,6 +18,7 @@ const show_timings = false
 include("util_functions.jl")
 include("test_generic_grids.jl")
 include("test_generic_dicts.jl")
+include("test_mapped_dicts.jl")
 include("test_tensors.jl")
 include("test_derived_dict.jl")
 include("test_operators.jl")
@@ -49,9 +50,8 @@ d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
-        LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries,
-        BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis,
-        DiscreteOrthonormalSplineBasis]
+        LaguerrePolynomials, HermitePolynomials, PeriodicSplineBasis, CosineSeries, SineSeries,
+        BSplineTranslatesBasis, SymBSplineTranslatesBasis]
 # SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 #         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 
@@ -71,7 +71,7 @@ for T in [Float64,BigFloat,]
 
             @test length(basis) == n
             @test domaintype(basis) == T
-        
+
             test_generic_dict_interface(basis, Span(basis))
     end
     # also try a Fourier series with an even length
@@ -127,11 +127,12 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Translates of B spline expansions",80))" begin
         test_translatedbsplines(T)
         test_translatedsymmetricbsplines(T)
-        test_orthonormalsplinebasis(T)
-        test_discrete_orthonormalsplinebasis(T)
+        # test_orthonormalsplinebasis(T)
+        # test_discrete_orthonormalsplinebasis(T)
         test_dualsplinebasis(T)
         test_discrete_dualsplinebasis(T)
         test_bspline_platform(T)
+        test_sparsity_speed(T)
     end
 
 end # for T in...
@@ -139,8 +140,13 @@ end # for T in...
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
 @testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
+
 delimit("Generic OPS")
 include("test_generic_OPS.jl")
+
+delimit("Mapped dictionaries")
+test_mapped_dicts()
+
 println()
 println(" All tests passed!")
 
