@@ -193,6 +193,13 @@ for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, 
     end
 end
 
+struct EvalWaveletBasisFunction <: Function
+    w::DiscreteWavelet
+    s::Side
+    l::Int
+end
+(f::EvalWaveletBasisFunction)(c; options...) = evaluate_periodic_wavelet_basis_in_dyadic_points(f.s, f.w, c, f.l; options...)
+
 struct EvalDWTFunction <: Function
     w::DiscreteWavelet
     s::Side
@@ -242,7 +249,7 @@ Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.invEvalDWTFunction,
 
 function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
     if typeof(grid) <: DyadicPeriodicEquispacedGrid
-        FunctionOperator(s, dgs, EvalDWTFunction(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(grid)))
+        FunctionOperator(s, dgs, EvalWaveletBasisFunction(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(grid)))
     else
         default_evaluation_operator(s, dgs; options...)
     end
@@ -345,3 +352,49 @@ end
 
 
 plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), left(b), right(b))
+
+
+# include("quadrature.jl")
+"""
+A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficients.
+"""
+struct DWTSamplingOperator <: AbstractSamplingOperator
+    sampler :: GridSamplingOperator
+    weight  :: HorizontalBandedOperator
+    scratch :: Vector
+
+	# An inner constructor to enforce that the operators match
+	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::HorizontalBandedOperator{ELT}) where {ELT}
+        @assert real(ELT) == eltype(eltype(grid(sampler)))
+        @assert size(weight, 2) == length(grid(sampler))
+		new(sampler, weight, zeros(src(weight)))
+    end
+end
+using WaveletsCopy.DWT: quad_sf_weights
+function WeightOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
+    @assert isdyadic.(oversampling)
+    basis = dictionary(span)
+    wav = wavelet(basis)
+    j = dyadic_length(basis)
+    d = recursion
+    w = quad_sf_weights(Dual, scaling, wavelet(basis), oversampling*support_length(Dual, scaling, wav), recursion)
+
+    # rescaling of weights because the previous step assumed sum(w)==1
+    w .= w ./ sqrt(coeftype(span)(1<<j))
+    src_size = 1<<(d+j+oversampling>>1)
+    step = 1<<(d+oversampling>>1)
+    os = mod(step*Sequences.offset(filter(Dual, scaling, wav))-1, src_size)+1
+    HorizontalBandedOperator(Span(DiscreteVectorSet(src_size)), Span(DiscreteVectorSet(1<<j)), w, step, os)
+end
+
+function DWTSamplingOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
+    weight = WeightOperator(span, oversampling, recursion)
+    sampler = GridSamplingOperator(gridspace(oversampled_grid(dictionary(span), 1<<(recursion+oversampling>>1)), coeftype(span)))
+    DWTSamplingOperator(sampler, weight)
+end
+
+src(op::DWTSamplingOperator) = src(op.sampler)
+dest(op::DWTSamplingOperator) = dest(op.weight)
+
+apply(op::DWTSamplingOperator, f) = op.weight*apply(op.sampler, f)
+apply!(result, op::DWTSamplingOperator, f) = apply!(op.weight, result, sample!(op.scratch, op.sampler, f))

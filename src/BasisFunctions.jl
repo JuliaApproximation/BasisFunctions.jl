@@ -47,14 +47,15 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-import WaveletsCopy.DWT: Prl, Dul, Side
-import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!
+import WaveletsCopy.DWT: Prl, Dul, Side, filter
+import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points
 import WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, value, wavelet_index
-import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_in_dyadic_points
-import WaveletsCopy.DWT: inv_evaluate_periodic_in_dyadic_points
+import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points
 import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
 import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name
-import WaveletsCopy.Sequences: support
+import WaveletsCopy.Sequences
+import WaveletsCopy.Sequences: CompactSequence, shifted_conv, Sequence, firstindex, lastindex, PeriodicExtension
+import WaveletsCopy: support_length
 
 ## Imports from Domains
 
@@ -354,6 +355,7 @@ include("bases/generic/mapped_dict.jl")
 include("operator/dimop.jl")
 
 include("operator/basic_operators.jl")
+include("operator/banded_operators.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")

@@ -2,7 +2,7 @@
 using BasisFunctions
     BF = BasisFunctions
     using Base.Test
-    using WaveletsCopy.DWT: wavelet, scaling
+    using WaveletsCopy.DWT: wavelet, scaling, db3,  db4, Primal
     using StaticArrays
     using BasisFunctions: wavelet_dual
     try
@@ -12,6 +12,30 @@ using BasisFunctions
         include("util_functions.jl")
     end
     suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
+
+
+using WaveletsCopy.DWT: quad_trap, quad_sf, quad_sf_weights, quad_sf_N, quad_trap_N
+function test_wavelet_quadrature()
+        @testset begin
+            M1 = 5; M2 = 10; J = 3
+            wav = db3; g = x->sin(2pi*x)
+            reference = quad_sf_N(g, wav, M2, J, 5)
+
+            b = DaubechiesWaveletBasis(3,J)
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),0)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-3
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 0)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-8
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),7)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 3)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
+        end
+end
+
+test_wavelet_quadrature()
+
+
 function bf_wavelets_implementation_test()
     @testset begin
         # Note, following line only succceeds for this particular wavelet basis (since it is orthogonal and easily evaluated in a random point)
