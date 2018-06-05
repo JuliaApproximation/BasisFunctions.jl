@@ -14,7 +14,7 @@ end
 VerticalBandedOperator(src::Span, dest::Span, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     VerticalBandedOperator{ELT}(src, dest, array, step, offset)
 
-function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector{ELT}, src::Vector{ELT}) where {ELT}
+function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
     dest[:]=0
 
     # Crude, but works
@@ -55,7 +55,7 @@ end
 HorizontalBandedOperator(src::Span, dest::Span, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     HorizontalBandedOperator{ELT}(src, dest, array, step, offset)
 
-function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector{ELT}, src::Vector{ELT}) where {ELT}
+function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)
     dest[:]=0
 
     # Crude, but works

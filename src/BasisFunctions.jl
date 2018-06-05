@@ -47,15 +47,18 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-import WaveletsCopy.DWT: Prl, Dul, Side, filter
-import WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points
-import WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, value, wavelet_index
-import WaveletsCopy.DWT: Primal, Dual, scaling, filter, support, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points
-import WaveletsCopy.DWT: Primal, Dual, scaling, wavelet, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt, isdyadic
-import WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet, name
-import WaveletsCopy.Sequences
-import WaveletsCopy.Sequences: CompactSequence, shifted_conv, Sequence, firstindex, lastindex, PeriodicExtension
-import WaveletsCopy: support_length
+import WaveletsCopy.DWT: isdyadic, value, name, support, wavelet
+using WaveletsCopy.DWT: Prl, Dul, Side, filter
+using WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points
+using WaveletsCopy.DWT: _evaluate_periodic_scaling_basis_in_dyadic_points!, SFilterBank, WaveletBoundary, evaluate_in_dyadic_points, idwt!
+using WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, wavelet_index
+using WaveletsCopy.DWT: Primal, Dual, scaling, filter, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points
+using WaveletsCopy.DWT: Primal, Dual, scaling, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt
+using WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet
+using WaveletsCopy.Sequences
+using WaveletsCopy.Filterbanks: Filterbank
+using WaveletsCopy.Sequences: CompactSequence, shifted_conv, Sequence, firstindex, lastindex, PeriodicExtension
+using WaveletsCopy: support_length
 
 ## Imports from Domains
 

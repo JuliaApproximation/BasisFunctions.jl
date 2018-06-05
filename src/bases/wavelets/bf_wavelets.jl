@@ -193,12 +193,38 @@ for (ffun, iffun, FFun, iFFun) in zip(dwtfunctions, idwtfuncions, dwtFunctions, 
     end
 end
 
-struct EvalWaveletBasisFunction <: Function
-    w::DiscreteWavelet
-    s::Side
-    l::Int
-end
-(f::EvalWaveletBasisFunction)(c; options...) = evaluate_periodic_wavelet_basis_in_dyadic_points(f.s, f.w, c, f.l; options...)
+
+# struct EvalWaveletBasisFunction!{T <: Real} <: Function
+#     w::DiscreteWavelet{T}
+#     s::Side
+#     l::Int
+#     c::Vector
+#     d::Int
+#
+#     f::Vector{T}
+#     scratch::Vector{T}
+#     f_scaled::Vector{T}
+#
+#     function EvalWaveletBasisFunction!{T}(w::DiscreteWavelet{T}, s::Side, l::Int, d::Int) where {T}
+#         new(w, s, zeros(T, 1<<l), d,
+#             zeros(T, evaluate_periodic_in_dyadic_points_scratch_length(s, scaling, w, l, 0, d)),
+#             zeros(T, evaluate_periodic_in_dyadic_points_scratch2_length(s, scaling, w, l, 0, d)),
+#             zeros(T, evaluate_periodic_in_dyadic_points_scratch_length(s, scaling, w, l, 0, d))
+#         )
+#     end
+# end
+#
+# EvalWaveletBasisFunction!(w::DiscreteWavelet{T}, s::Side, l::Int, d::Int) where {T} =
+#     EvalWaveletBasisFunction!{T}(w, s, l, d)
+# (f::BasisFunctions.EvalWaveletBasisFunction!)(y; options...) =
+#         evaluate_periodic_wavelet_basis_in_dyadic_points!(y, f.s, f.w, f.c, f.d, f.f, f.f_scaled, f.scratch; options...)
+
+# struct EvalWaveletBasisFunction <: Function
+#     w::DiscreteWavelet
+#     s::Side
+#     l::Int
+# end
+# (f::EvalWaveletBasisFunction)(c; options...) = evaluate_periodic_wavelet_basis_in_dyadic_points(f.s, f.w, c, f.l; options...)
 
 struct EvalDWTFunction <: Function
     w::DiscreteWavelet
@@ -249,11 +275,52 @@ Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.invEvalDWTFunction,
 
 function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
     if typeof(grid) <: DyadicPeriodicEquispacedGrid
-        FunctionOperator(s, dgs, EvalWaveletBasisFunction(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(grid)))
+        # FunctionOperator(s, dgs, EvalWaveletBasisFunction(wavelet(dictionary(s)), side(dictionary(s)),
+        # FunctionOperator(s, dgs, EvalWaveletBasisFunction!(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(dictionary(s)), dyadic_length(grid)))
+        DWTEvalOperator(s, dgs, dyadic_length(grid))
     else
         default_evaluation_operator(s, dgs; options...)
     end
 end
+
+struct DWTEvalOperator{T} <: AbstractOperator{T}
+    src::Span
+    dest::Span
+
+    fb::Filterbank
+    j::Int
+    d::Int
+    bnd::WaveletBoundary
+
+    f::Vector{T}
+    f_scaled::Vector{T}
+    coefscopy::Vector{T}
+    coefscopy2::Vector{T}
+end
+
+function BasisFunctions.DWTEvalOperator(span::BasisFunctions.WaveletSpan{T}, dgs::DiscreteGridSpace, d::Int) where {T}
+    w = BasisFunctions.wavelet(dictionary(span))
+    j = BasisFunctions.dyadic_length(dictionary(span))
+    s = BasisFunctions.side(dictionary(span))
+    fb = BasisFunctions.SFilterBank(s, w)
+
+    # DWT.evaluate_in_dyadic_points!(f, s, scaling, w, j, 0, d, scratch)
+    f = BasisFunctions.evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
+    f_scaled = similar(f)
+    coefscopy = zeros(1<<j)
+    coefscopy2 = similar(coefscopy)
+
+    BasisFunctions.DWTEvalOperator{T}(span, dgs, fb, j, d, perbound, f, f_scaled, coefscopy, coefscopy2)
+end
+
+# BasisFunctions.apply!(op::BasisFunctions.DWTEvalOperator, dest, src; options...) =
+#     BasisFunctions.evaluate_periodic_wavelet_basis_in_dyadic_points!(dest, op.s, op.w, src, op.d, op.f, op.f_scaled, op.scratch, op.coefscopy; options...)
+
+function BasisFunctions.apply!(op::BasisFunctions.DWTEvalOperator, y, coefs; options... )
+    BasisFunctions.idwt!(op.coefscopy, coefs, op.fb, op.bnd, op.j, op.coefscopy2)
+    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.coefscopy, op.j, op.d, op.f_scaled)
+end
+
 
 function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
     # We make no attempt if the set has no associated grid
@@ -360,38 +427,44 @@ A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficie
 """
 struct DWTSamplingOperator <: AbstractSamplingOperator
     sampler :: GridSamplingOperator
-    weight  :: HorizontalBandedOperator
+    weight  :: AbstractOperator
     scratch :: Vector
 
 	# An inner constructor to enforce that the operators match
-	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::HorizontalBandedOperator{ELT}) where {ELT}
+	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::AbstractOperator{ELT}) where {ELT}
         @assert real(ELT) == eltype(eltype(grid(sampler)))
         @assert size(weight, 2) == length(grid(sampler))
 		new(sampler, weight, zeros(src(weight)))
     end
 end
 using WaveletsCopy.DWT: quad_sf_weights
+
 function WeightOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
-    @assert isdyadic.(oversampling)
     basis = dictionary(span)
     wav = wavelet(basis)
-    j = dyadic_length(basis)
-    d = recursion
-    w = quad_sf_weights(Dual, scaling, wavelet(basis), oversampling*support_length(Dual, scaling, wav), recursion)
+    @assert coeftype(span) == eltype(wav)
+    WeightOperator(wav, oversampling, dyadic_length(basis), recursion)
+end
 
+function WeightOperator(wav::DiscreteWavelet{T}, oversampling::Int, j::Int, d::Int) where {T}
+    @assert isdyadic.(oversampling)
+    w = quad_sf_weights(Dual, scaling, wav, oversampling*support_length(Dual, scaling, wav), d)
     # rescaling of weights because the previous step assumed sum(w)==1
-    w .= w ./ sqrt(coeftype(span)(1<<j))
+    w .= w ./ sqrt(T(1<<j))
     src_size = 1<<(d+j+oversampling>>1)
     step = 1<<(d+oversampling>>1)
     os = mod(step*Sequences.offset(filter(Dual, scaling, wav))-1, src_size)+1
     HorizontalBandedOperator(Span(DiscreteVectorSet(src_size)), Span(DiscreteVectorSet(1<<j)), w, step, os)
 end
 
-function DWTSamplingOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
+function DWTSamplingOperator(span::Span, oversampling::Int=1, recursion::Int=0)
     weight = WeightOperator(span, oversampling, recursion)
-    sampler = GridSamplingOperator(gridspace(oversampled_grid(dictionary(span), 1<<(recursion+oversampling>>1)), coeftype(span)))
+    sampler = GridSamplingOperator(gridspace(dwt_oversampled_grid(dictionary(span), oversampling, recursion), coeftype(span)))
     DWTSamplingOperator(sampler, weight)
 end
+
+dwt_oversampled_grid(dict::Dictionary, oversampling::Int, recursion::Int) =
+    oversampled_grid(dict, 1<<(recursion+oversampling>>1))
 
 src(op::DWTSamplingOperator) = src(op.sampler)
 dest(op::DWTSamplingOperator) = dest(op.weight)
