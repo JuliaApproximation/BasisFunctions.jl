@@ -5,11 +5,11 @@ If x ≈ i/N it return -i
 """
 interval_index(B::Dictionary,x::Real) = round(x*length(B))≈x*length(B) ? -round(Int,x*length(B))-1 : ceil(Int,x*length(B))
 
-function BasisFunctions.support(B::BSplineTranslatesBasis{K,T}, i) where {K,T}
+function support(B::BSplineTranslatesBasis{K,T}, i::Int) where {K,T}
     start = T(i-1)/length(B)
     width = T(degree(B)+1)/length(B)
     stop  = start+width
-    stop <=1 ? (return [start,stop]) : (return [T(0),stop-1], [start,T(1)])
+    stop <=1 ? (return interval(start,stop)) : (return union(interval(T(0),stop-1),interval(start,T(1))))
 end
 
 
@@ -97,23 +97,23 @@ function support_indices(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i
     dx = stepsize(g)
     x0 = g[1]
     s = support(B,i)
-    if length(s[1]) == 1
-        start = ceil(Int,(s[1]-x0)/dx)
-        stop = floor(Int,(s[2]-x0)/dx)
-        (degree(B) != 0) && ((s[1]-x0)/dx ≈ start) && (start += 1)
-        ((s[2]-x0)/dx ≈ stop) && (stop -= 1)
+    if isa(s,AbstractInterval)
+        start = ceil(Int,(infimum(s)-x0)/dx)
+        stop = floor(Int,(supremum(s)-x0)/dx)
+        (degree(B) != 0) && ((infimum(s)-x0)/dx ≈ start) && (start += 1)
+        ((supremum(s)-x0)/dx ≈ stop) && (stop -= 1)
         push!(indices,(start+1:stop+1)...)
     else
-        interval = s[1]
+        interval = elements(s)[1]
         start = 0
-        stop = floor(Int,(interval[2]-x0)/dx)
-        ((interval[2]-x0)/dx ≈ stop) && (stop -= 1)
+        stop = floor(Int,(supremum(interval)-x0)/dx)
+        ((supremum(interval)-x0)/dx ≈ stop) && (stop -= 1)
         push!(indices,(start+1:stop+1)...)
 
-        interval = s[2]
-        start = ceil(Int,(interval[1]-x0)/dx)
+        interval = elements(s)[2]
+        start = ceil(Int,(infimum(interval)-x0)/dx)
         stop = length(g)-1
-        ((interval[1]-x0)/dx ≈ start) && (start += 1)
+        ((infimum(interval)-x0)/dx ≈ start) && (start += 1)
         push!(indices,(start+1:stop+1)...)
     end
     indices

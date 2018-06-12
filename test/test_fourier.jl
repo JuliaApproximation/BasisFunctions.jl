@@ -14,7 +14,7 @@ function test_fourier_series(T)
     @test in_support(fb0, 1, zero(T)-0.9*sqrt(eps(T)))
     @test in_support(fb0, 1, one(T)+0.9*sqrt(eps(T)))
 
-    @test domain(fb0) == UnitInterval{T}()
+    @test support(fb0) == UnitInterval{T}()
 
     ## Even length
     n = 12
@@ -23,8 +23,8 @@ function test_fourier_series(T)
     fb = rescale(FourierBasis{T}(n), a, b)
     @test ~isreal(fb)
 
-    @test left(fb) ≈ a
-    @test right(fb) ≈ b
+    @test infimum(support(fb)) ≈ a
+    @test supremum(support(fb)) ≈ b
 
     g = grid(fb)
     @test typeof(g) <: PeriodicEquispacedGrid
@@ -83,7 +83,7 @@ function test_fourier_series(T)
     D = differentiation_operator(Span(fb))
     coef2 = D*coef
     e1 = Expansion(fb, coef)
-    e2 = Expansion(rescale(FourierBasis{T}(length(fb)+1),left(fb),right(fb)), coef2)
+    e2 = Expansion(rescale(FourierBasis{T}(length(fb)+1),support(fb)), coef2)
 
 
     x = T(2//10)

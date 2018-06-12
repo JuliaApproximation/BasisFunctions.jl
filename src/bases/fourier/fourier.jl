@@ -76,7 +76,7 @@ compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, left(b), right(b), domaintype(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b), domaintype(b))
 
 
 ##################
@@ -146,15 +146,7 @@ minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 # Evaluation
 #############
 
-domain(b::FourierBasis) = UnitInterval{domaintype(b)}()
-
-support(b::FourierBasis, i) = domain(b)
-
-left(b::FourierBasis) = zero(domaintype(b))
-left(b::FourierBasis, idx) = left(b)
-
-right(b::FourierBasis) = one(domaintype(b))
-right(b::FourierBasis, idx) = right(b)
+support(b::FourierBasis) = UnitInterval{domaintype(b)}()
 
 period(b::FourierBasis{T}) where {T} = T(1)
 
@@ -367,7 +359,7 @@ function grid_evaluation_operator(span::FourierSpan, dgs::DiscreteGridSpace, gri
 		else
 			default_evaluation_operator(span, dgs; options...)
 		end
-	elseif a ≈ left(fs) && b ≈ right(fs)
+	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
 		default_evaluation_operator(span, dgs; options...)

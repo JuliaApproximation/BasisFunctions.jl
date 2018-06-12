@@ -38,18 +38,16 @@ end
 
 const PeriodicTranslatesSpan{A,S,T,D <: PeriodicTranslationDict} = Span{A,S,T,D}
 
-left{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.a)
-right{T}(set::PeriodicTranslationDict{T})::real(T) = real(T)(set.b)
-domain(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
+support(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
 
-left(set::PeriodicTranslationDict, j::TransIndex) = left(set)
-right(set::PeriodicTranslationDict, j::TransIndex) = right(set)
+support(set::PeriodicTranslationDict, j::TransIndex) = support(set)
+
 
 has_grid(::PeriodicTranslationDict) = true
 
-grid(set::PeriodicTranslationDict) = PeriodicEquispacedGrid(length(set), left(set), right(set))
+grid(set::PeriodicTranslationDict) = PeriodicEquispacedGrid(length(set), support(set))
 
-period(set::PeriodicTranslationDict) = right(set)-left(set)
+period(set::PeriodicTranslationDict) = supremum(support(set))-infimum(support(set))
 
 stepsize(set::PeriodicTranslationDict) = period(set)/length(set)
 
@@ -67,7 +65,7 @@ function periodic_compatible_grid(b::Dictionary, grid::AbstractEquispacedGrid)
     l1 > l2 && ((l2,l1) = (l1, l2))
     n = l2/l1
     nInt = round(Int, n)
-    (1+(left(b) - leftendpoint(grid))≈1) && (1+(right(b) - rightendpoint(grid))≈1) && isdyadic(nInt) && (n≈nInt)
+    (1+(infimum(support(b)) - leftendpoint(grid))≈1) && (1+(supremum(support(b)) - rightendpoint(grid))≈1) && isdyadic(nInt) && (n≈nInt)
 end
 
 native_nodes(b::PeriodicTranslationDict) = [k*stepsize(b) for k in 0:length(b)]
@@ -191,11 +189,11 @@ function overlapping_elements(b::CompactPeriodicTranslationDict, x::Real)
    Set(mod(i, length(b))+1 for i in indices)
 end
 
-left(b::CompactPeriodicTranslationDict, idx::TransIndex) =
-    value(idx) * stepsize(b) + left_of_compact_function(b)
+support(b::CompactPeriodicTranslationDict, idx) = support(b, native_index(b, idx))
 
-right(b::CompactPeriodicTranslationDict, idx::TransIndex) =
-    left(b, idx) + length_compact_support(b)
+support(b::CompactPeriodicTranslationDict, idx::TransIndex) = value(idx)*stepsize(b)+compact_support(b)
+
+compact_support(b::CompactPeriodicTranslationDict) = interval(left_of_compact_function(b),right_of_compact_function(b))
 
 in_support(set::CompactPeriodicTranslationDict, idx::LinearIndex, x::Real) =
     in_support(set, native_index(set, idx), x)
@@ -215,9 +213,8 @@ end
 
 function in_compact_support(set::CompactPeriodicTranslationDict, idx::TransIndex, x::Real)
 	per = period(set)
-	A = left(set) <= x <= right(set)
-	B = (left(set, idx) <= x <= right(set, idx)) || (left(set, idx) <= x-per <= right(set, idx)) ||
-		(left(set, idx) <= x+per <= right(set, idx))
+        A = in(x,support(set))
+	B = in(x,support(set,idx)) || in(x-per,support(set,idx)) || in(x+per,support(set,idx))
 	A && B
 end
 
@@ -242,7 +239,7 @@ const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicTranslationDi
 
 coefficients(b::LinearCombinationOfPeriodicTranslationDict) = b.coefficients
 
-for op in (:length, :left, :right, :has_grid, :grid, :domain)
+for op in (:length, :has_grid, :grid, :support)
     @eval $op(b::LinearCombinationOfPeriodicTranslationDict) = $op(superdict(b))
 end
 

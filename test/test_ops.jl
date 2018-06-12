@@ -20,7 +20,7 @@ function test_chebyshev(T)
     x1 = T(4//10)
     @test bc[4](x1) ≈ cos(3*acos(x1))
 
-    @test domain(bc) == ChebyshevInterval{T}()
+    @test support(bc) == ChebyshevInterval{T}()
 
     n1 = 160
     b1 = ChebyshevBasis{T}(n1)

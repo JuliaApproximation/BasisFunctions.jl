@@ -8,8 +8,8 @@ function test_generic_periodicbsplinebasis(T)
         tol = sqrt(eps(real(T)))
         n = 5
         b = B(n,3, T)
-        @test left(b) == 0
-        @test right(b)==1
+        @test leftendpoint(support(b)) == 0
+        @test rightendpoint(support(b))==1
 
         @test length(b)==5
         @test BasisFunctions.degree(b)==3
@@ -63,16 +63,16 @@ function test_translatedbsplines(T)
 
     @test BasisFunctions.name(b) == "Set of translates of a function (B spline of degree 3)"
 
-    @test left(b,1)≈ 0
-    @test left(b,2)≈1//5
-    @test left(b,3)≈2//5
-    @test left(b,4)≈3//5
-    @test left(b,5)≈4//5
-    @test right(b,1)≈4//5
-    @test right(b,2)≈5//5
-    @test right(b,3)≈6//5
-    @test right(b,4)≈7//5
-    @test right(b,5)≈8//5
+    @test infimum(support(b,1))≈ 0
+    @test infimum(support(b,2))≈1//5
+    @test infimum(support(b,3))≈0
+    @test infimum(support(b,4))≈0
+    @test infimum(support(b,5))≈0
+    @test supremum(support(b,1))≈4//5
+    @test supremum(support(b,2))≈1
+    @test supremum(support(b,3))≈1
+    @test supremum(support(b,4))≈1
+    @test supremum(support(b,5))≈1
 
     t = .001
     @test in_support(b,1,.5)
@@ -181,16 +181,16 @@ function test_translatedsymmetricbsplines(T)
     @test BasisFunctions.name(b) == "Set of translates of a function (symmetric B spline of degree 3)"
 
 
-    @test left(b,1)≈ -4//10
-    @test left(b,2)≈ -2//10
-    @test left(b,3)≈ 0//10
-    @test left(b,4)≈ 2//10
-    @test left(b,5)≈ 4//10
-    @test right(b,1)≈4//10
-    @test right(b,2)≈6//10
-    @test right(b,3)≈8//10
-    @test right(b,4)≈10//10
-    @test right(b,5)≈12//10
+    @test infimum(support(b,1))≈ -4//10
+    @test infimum(support(b,2))≈ -2//10
+    @test infimum(support(b,3))≈ 0//10
+    @test infimum(support(b,4))≈ 2//10
+    @test infimum(support(b,5))≈ 4//10
+    @test supremum(support(b,1))≈4//10
+    @test supremum(support(b,2))≈6//10
+    @test supremum(support(b,3))≈8//10
+    @test supremum(support(b,4))≈10//10
+    @test supremum(support(b,5))≈12//10
 
     t = .001
     @test in_support(b,1,.0)
@@ -343,8 +343,8 @@ function test_dualsplinebasis(T)
     @test Gram(Span(b); abstol=tol, reltol=tol)*e ≈ DualGram(Span(bb); abstol=tol, reltol=tol)*e
     @test Gram(Span(bb); abstol=tol, reltol=tol)*e ≈ DualGram(Span(b); abstol=tol, reltol=tol)*e
     @test BasisFunctions.dualgramcolumn(Span(b); reltol=tol, abstol=tol) ≈ BasisFunctions.coefficients(bb)
-    @test QuadGK.quadgk(x->b[1](x)*bb[1](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
-    @test QuadGK.quadgk(x->b[1](x)*bb[2](x),left(b), right(b); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+    @test QuadGK.quadgk(x->b[1](x)*bb[1](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+    @test QuadGK.quadgk(x->b[1](x)*bb[2](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
 end
 
 function test_discrete_dualsplinebasis(T)

@@ -32,7 +32,7 @@ for op in (:length, :size, :eachindex, :indextype)
 	@eval $op(g::MappedGrid) = $op(supergrid(g))
 end
 
-for op in (:leftendpoint, :rightendpoint)
+for op in (:leftendpoint, :rightendpoint, :support)
 	@eval $op(g::MappedGrid1d) = applymap(g.map, $op(supergrid(g)))
 end
 

@@ -108,7 +108,7 @@ end
 
 
 
-for op in [:left, :right, :moment, :norm]
+for op in [:support, :moment, :norm]
     @eval $op(set::MultiDict, idx::Int) = $op(set, multilinear_index(set, idx))
     # Pass along a linear or a native index to the subset
     @eval function $op(set::MultiDict, idx::Union{MultilinearIndex,Tuple{Int,Any}})
@@ -117,9 +117,7 @@ for op in [:left, :right, :moment, :norm]
     end
 end
 
-left(set::MultiDict) = minimum(map(left, elements(set)))
-right(set::MultiDict) = maximum(map(right, elements(set)))
-domain(set::MultiDict) = UnionDomain(map(domain,elements(set)))
+support(set::MultiDict) = union(map(support,elements(set))...)
 
 resize(s::MultiDict, n::Int) = resize(s, approx_length(s, n))
 

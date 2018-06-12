@@ -73,7 +73,7 @@ length(d::DiscreteVectorSet) = d.n
 
 resize(d::DiscreteVectorSet{T}, n) where {T} = DiscreteVectorSet{T}(n)
 
-domain(d::DiscreteVectorSet) = ClosedInterval{Int}(1, length(d))
+support(d::DiscreteVectorSet) = ClosedInterval{Int}(1, length(d))
 
 
 """

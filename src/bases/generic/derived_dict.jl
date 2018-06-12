@@ -77,12 +77,12 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
-    :elements, :tail, :ordering, :domain)
+    :elements, :tail, :ordering, :support)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
 # Delegation of methods with an index parameter
-for op in (:size, :element)
+for op in (:size, :element, :support)
     @eval $op(s::DerivedDict, i) = $op(superdict(s), i)
 end
 
@@ -92,9 +92,6 @@ apply_map(s::DerivedDict, map) = similar_dictionary(s, apply_map(superdict(s), m
 
 in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 
-# To avoid an ambiguity with a similar definition for abstract type Dictionary:
-in_support(set::DerivedDict, idx, x::T) where {T <: Complex} =
-    imag(x) == 0 && in_support(superdict(set), idx, real(x))
 
 #########################
 # Indexing and iteration
@@ -116,10 +113,6 @@ approximate_native_size(s::DerivedDict, size_l) = approximate_native_size(superd
 
 linear_size(s::DerivedDict, size_n) = linear_size(superdict(s), size_n)
 
-for op in (:left, :right)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
-    @eval $op(s::DerivedDict, idx) = $op(superdict(s), idx)
-end
 
 unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
 

@@ -19,7 +19,7 @@ const PiecewiseDictSpan{A,S,T,D <: PiecewiseDict} = Span{A,S,T,D}
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
 function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(length(partition))*length(set))
-    dicts = [rescale(resize(set, n[i]), left(partition, i), right(partition, i)) for i in 1:length(partition)]
+    dicts = [rescale(resize(set, n[i]), support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end
 
@@ -36,17 +36,18 @@ end
 
 # Construct a piecewise set from a list of dicts in 1d
 function PiecewiseDict(dicts::Array{S}) where {S <: Dictionary1d}
+    # Is this not overly restrictive? A redefinition of the support of a piecewise set could allow disjointed intervals.
     for i in 1:length(dicts)-1
-        @assert right(dicts[i]) ≈ left(dicts[i+1])
+        @assert supremum(support(dicts[i])) ≈ infimum(support(dicts[i+1]))
     end
-    points = map(left, dicts)
-    push!(points, right(dicts[end]))
+    points = map(i->infimum(support(i)), dicts)
+    push!(points, supremum(support(dicts[end])))
     partition = PiecewiseInterval(points)
     PiecewiseDict(dicts, partition)
 end
 
 function PiecewiseDict(set::Dictionary, partition::Partition)
-    dicts = [rescale(set, left(partition[i]), right(partition[i])) for i in 1:length(partition)]
+     dicts = [rescale(set, support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end
 
@@ -77,7 +78,7 @@ for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
     @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 end
 
-for op in (:left, :right)
+for op in (:support,)
     @eval $op(set::PiecewiseDict) = $op(partition(set))
     @eval $op(set::PiecewiseDict, idx::Int) = $op(set, multilinear_index(set, idx))
     @eval $op(set::PiecewiseDict, idx) = $op(element(set, idx[1]), idx[2])
@@ -128,8 +129,8 @@ the partition [left(set), x, right(set)].
 The original set is duplicated and rescaled to the two subintervals.
 """
 function split_interval(set::Dictionary1d, x)
-    @assert left(set) < x < right(set)
-    points = [left(set), x, right(set)]
+    @assert infimum(support(set)) < x < supremum(support(set))
+    points = [infimum(support(set)), x, supremum(support(set))]
     PiecewiseDict(set, PiecewiseInterval(points))
 end
 
@@ -137,7 +138,7 @@ split_interval(set::PiecewiseDict, x) = split_interval(set, partition_index(part
 
 function split_interval(set::PiecewiseDict, i::Int, x)
     part = partition(set)
-    @assert left(part, i) < x < right(part, i)
+    @assert infimum(support(part, i)) < x < supremum(support(part, i))
 
     part2 = split_interval(part, i, x)
     two_sets = split_interval(element(set, i), x)
@@ -210,7 +211,7 @@ function dot(s::PiecewiseDictSpan, f1, f2::Function, nodes::Array=BasisFunctions
     # b = element(s, idxn[1])
     b = element(s, f1[1])
 
-    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, left(dictionary(b)), right(dictionary(b))); options...)
+    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, infimum(support(dictionary(b))), supremum(support(dictionary(b)))); options...)
 end
 
 function Gram(s::PiecewiseDictSpan; options...)

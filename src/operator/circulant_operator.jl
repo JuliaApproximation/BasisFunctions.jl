@@ -90,6 +90,9 @@ for op in (:inv, :ctranspose)
     @eval $op{T}(C::CirculantOperator{T}) = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
 end
 
+# What tolerance should be used for the pinv here?
+pinv(C::CirculantOperator{T}, tolerance = eps(numtype(C))) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(pinv(C.eigenvaluematrix), tolerance))
+
 for op in (:+, :-, :*)
     @eval $op{T}(c1::CirculantOperator{T}, c2::CirculantOperator{T}) = CirculantOperator(src(c2), dest(c1), DiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
 end

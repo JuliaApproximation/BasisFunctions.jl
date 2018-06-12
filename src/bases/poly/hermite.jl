@@ -22,12 +22,7 @@ dict_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePol
 
 resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
 
-
-left(b::HermitePolynomials{T}) where {T} = -convert(T, Inf)
-left(b::HermitePolynomials, idx) = left(b)
-
-right(b::HermitePolynomials{T}) where {T} = convert(T, Inf)
-right(b::HermitePolynomials, idx) = right(b)
+support(b::HermitePolynomials{T}) where {T} = FullSpace(T)
 
 first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 
@@ -49,4 +44,3 @@ function gramdiagonal!(result, ::HermiteSpan; options...)
     end
 end
 
-domain(b::HermitePolynomials{T}) where {T} = FullSpace(T)

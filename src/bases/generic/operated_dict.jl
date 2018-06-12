@@ -63,13 +63,13 @@ in_support(dict::OperatedDict, idx, x) = default_in_support(dict, idx, x)
 dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
     OperatedDict(similar_operator(operator(s), T, promote_domaintype(src(s), S), dest(s) ) )
 
-for op in (:left, :right, :domain, :length)
+for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src_dictionary(s))
 end
 
 # We don't know in general what the support of a specific basis functions is.
 # The safe option is to return the support of the set itself for each element.
-for op in (:left, :right, :domain)
+for op in (:support,)
     @eval $op(s::OperatedDict, idx) = $op(src_dictionary(s))
 end
 

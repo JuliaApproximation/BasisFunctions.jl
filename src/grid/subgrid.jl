@@ -49,6 +49,10 @@ function mask(g::IndexSubGrid)
 end
 
 
+support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = interval(first(g), last(g))
+
+
+
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
 

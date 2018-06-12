@@ -44,12 +44,6 @@ has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremaGrid) = length(b) ==
 has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
-left(b::ChebyshevBasis) = -one(domaintype(b))
-left(b::ChebyshevBasis, idx) = left(b)
-
-right(b::ChebyshevBasis) = one(domaintype(b))
-right(b::ChebyshevBasis, idx) = right(b)
-
 first_moment(b::ChebyshevBasis{T}) where {T} = T(pi)
 
 grid(b::ChebyshevBasis) = ChebyshevNodeGrid(b.n, domaintype(b))
@@ -76,7 +70,7 @@ rec_Bn(b::ChebyshevBasis, n::Int) = 0
 
 rec_Cn(b::ChebyshevBasis, n::Int) = 1
 
-domain(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
+support(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
@@ -355,4 +349,4 @@ rec_Bn(b::ChebyshevU, n::Int) = 0
 
 rec_Cn(b::ChebyshevU, n::Int) = 1
 
-domain(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
+support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()

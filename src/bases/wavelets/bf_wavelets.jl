@@ -71,6 +71,7 @@ compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
 has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 
+support(b::WaveletBasis) = UnitInterval{domaintype(b)}()
 left{T}(::WaveletBasis{T}) = T(0)
 right{T}(::WaveletBasis{T}) = T(1)
 
@@ -78,10 +79,10 @@ BasisFunctions.support(b::WaveletBasis, idx) = BasisFunctions.support(b, native_
 
 function BasisFunctions.support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
     l,r = support(S(), kind(idxn), wavelet(b), level(idxn), offset(idxn))
-    (r-l > 1) && (return (T(0),T(1)))
-    (l < 0) && (return (T(0),T(r)), (T(l+1), T(1)))
-    (r > 1) && (return (T(0),T(r-1)), (T(l), T(1)))
-    (T(l), T(r))
+    (r-l > 1) && (return support(b))
+    (l < 0) && (return union(interval(T(0),T(r)), interval(T(l+1), T(1))))
+    (r > 1) && (return union(interval(T(0),T(r-1)), interval(T(l), T(1))))
+    interval(T(l), T(r))
 end
 
 BasisFunctions.left(b::WaveletBasis{T}, i::WaveletIndex) where {T} = T(0)
@@ -93,7 +94,7 @@ _noelements(b::WaveletBasis) = support_length(side(b), kind(b), wavelet(b))
 
 period{T}(::WaveletBasis{T}) = T(1)
 
-grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), left(b), right(b), T)
+grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), support(b), T)
 
 
 ordering(b::WaveletBasis{T,S,Wvl}) where {T,S<:Side} = wavelet_indices(dyadic_length(b))
@@ -451,7 +452,7 @@ wavelet_dual(w::CDFWaveletBasis{P,Q,T,S,K}) where {P,Q,T,S,K} =
 end
 
 
-plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), left(b), right(b))
+plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), support(b))
 
 
 # include("quadrature.jl")

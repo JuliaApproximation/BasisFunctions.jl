@@ -65,7 +65,7 @@ default_indicator_nodes(ELT) = [-ELT(1),ELT(1)]
 
 function HalfRangeChebyshev(n::Int, α, T::ELT, indicator_function_nodes::Vector{ELT}; options...) where ELT
     my_quadrature_rule = n->_halfrangechebyshevweights(n, α, T, indicator_function_nodes)
-    OrthonormalOPSfromQuadrature(n, my_quadrature_rule, -one(ELT), one(ELT); options...)
+    OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)); options...)
 end
 
 function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes::Vector{ELT}) where {ELT}
@@ -114,7 +114,7 @@ indicator_function(nodes) = x-> reduce(|, false, nodes[1:2:end] .<= x .<= nodes[
 
 function WaveOPS(n::Int,omega::ELT; options...) where {ELT}
     my_quadrature_rule = n->_wavePolynomialweight(n, omega)
-    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, -one(ELT), one(ELT), (x->abs(x)<=1 ? exp(1im*omega*x):0.);options...)
+    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)), (x->abs(x)<=1 ? exp(1im*omega*x):0.);options...)
 end
 
 function _wavePolynomialweight(n, omega::ELT) where ELT

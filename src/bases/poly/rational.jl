@@ -2,11 +2,12 @@
 
 immutable RationalBasis{T} <: Dictionary1d{T,T}
     roots   :: AbstractArray{T}
+    support :: Domain
 
     RationalBasis{T}(roots) where {T} = new(roots)
 end
 
-RationalBasis(roots::AbstractArray{T}) where {T} = RationalBasis{T}(roots)
+RationalBasis(roots::AbstractArray{T}, d::Domain) where {T} = RationalBasis{T}(roots,d)
 
 function unsafe_eval_element(b::RationalBasis, idx::Int, x)
     degree = 1
@@ -21,8 +22,4 @@ end
 length(r::RationalBasis) = length(r.roots)
 is_basis(r::RationalBasis) = false
 
-left(r::RationalBasis, idx) = minimum(abs(r.roots)) - 1
-right(r::RationalBasis, idx) = maximum(abs(r.roots)) + 1
-
-left(r::RationalBasis) = minimum(abs(r.roots)) - 1
-right(r::RationalBasis) = maximum(abs(r.roots)) + 1
+support(r::RationalBasis) = r.support

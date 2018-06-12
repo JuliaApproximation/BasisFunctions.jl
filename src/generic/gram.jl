@@ -78,7 +78,7 @@ function dot(f::Function, nodes::Array{T,1}; abstol=0, reltol=sqrt(eps(T)), verb
     I
 end
 
-native_nodes(dict::Dictionary1d) = [left(dict), right(dict)]
+native_nodes(dict::Dictionary1d) = [infimum(support(dict)), supremum(support(dict))]
 
 dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
@@ -162,7 +162,7 @@ dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(di
     dot(span1, span2, x->unsafe_eval_element(dictionary(span1), f1, x),x->unsafe_eval_element(dictionary(span2), f2, x), nodes; options...)
 
 function native_nodes(dict1::Dictionary1d, dict2::Dictionary1d)
-    @assert left(dict1) ≈ left(dict2)
-    @assert right(dict1) ≈ right(dict2)
-    [left(dict1), right(dict1)]
+    @assert infimum(support(dict1)) ≈ infimum(support(dict2))
+    @assert supremum(support(dict1)) ≈ supremum(support(dict2))
+    native_nodes(dict1)
 end

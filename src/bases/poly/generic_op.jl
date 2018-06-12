@@ -17,18 +17,17 @@ struct GenericOPS{T} <: BasisFunctions.OPS{T,T}
     rec_a   ::  Vector{T}
     rec_b   ::  Vector{T}
     rec_c   ::  Vector{T}
-    left
-    right
+    support
     weight
 
-    function GenericOPS{T}(moment, rec_a, rec_b, rec_c, left, right, p0=one(T), weight=nothing) where {T}
+    function GenericOPS{T}(moment, rec_a, rec_b, rec_c, support, p0=one(T), weight=nothing) where {T}
         @assert length(rec_a) == length(rec_b) == length(rec_c)
-        new(moment, p0, rec_a, rec_b, rec_c, real(T)(left), real(T)(right), weight)
+        new(moment, p0, rec_a, rec_b, rec_c, support, weight)
     end
 end
 
-GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, left, right, p0=one(T), weight=nothing) where {T,A,B,C} =
-    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c, left, right, p0, weight)
+GenericOPS(moment::T, rec_a::Vector{A}, rec_b::Vector{B}, rec_c::Vector{C}, support, p0=one(T), weight=nothing) where {T,A,B,C} =
+    GenericOPS{promote_type(T,A,B,C)}(moment, rec_a, rec_b, rec_c, support, p0, weight)
 
 function MonicOPSfromQuadrature(n, my_quadrature_rule, other...; options...)
     α, β = adaptive_stieltjes(n,my_quadrature_rule; options...)
@@ -40,21 +39,18 @@ function OrthonormalOPSfromQuadrature(n, my_quadrature_rule, other...; options..
     ONPSfromMonicCoefficients(α, β, other...)
 end
 
-MonicOPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, left::T, right::T, other...) where {T,A,B} =
-    GenericOPS{promote_type(T,A,B)}(β[1], ones(T,length(α)), -α, β, left, right, one(T), other...)
+MonicOPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, support::Domain{T}, other...) where {T,A,B} =
+    GenericOPS{promote_type(T,A,B)}(β[1], ones(T,length(α)), -α, β, support, one(T), other...)
 
-function ONPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, left::T, right::T, other...) where {T,A,B}
+function ONPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, support::Domain{T}, other...) where {T,A,B}
     a,b,c = monic_to_orthonormal_recurrence_coefficients(α,β)
-    GenericOPS{promote_type(T,A,B)}(β[1], a, b, c, left, right, 1/sqrt(β[1]), other...)
+    GenericOPS{promote_type(T,A,B)}(β[1], a, b, c, support, 1/sqrt(β[1]), other...)
 end
 
 const GenericOPSpan{A,S,T,D <: GenericOPS} = Span{A,S,T,D}
 
-left(b::GenericOPS) = b.left
-left(b::GenericOPS, idx) = left(b)
-
-right(b::GenericOPS) = b.right
-right(b::GenericOPS, idx) = right(b)
+support(b::GenericOPS) = b.support
+support(b::GenericOPS, idx) = support(b)
 
 length(b::GenericOPS) = length(b.rec_a)
 
@@ -67,7 +63,7 @@ dict_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
 
 function resize(b::GenericOPS, n)
     @assert n <= length(b)
-    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.left, b.right, b.p0, b.weight)
+    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.support, b.p0, b.weight)
 end
 
 first_moment(b::GenericOPS) = b.moment

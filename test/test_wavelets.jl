@@ -5,6 +5,7 @@ using BasisFunctions
     using WaveletsCopy.DWT: wavelet, scaling, db3,  db4, Primal
     using StaticArrays
     using BasisFunctions: wavelet_dual
+    using Domains
     try
         test_generic_dict_interface
     catch
@@ -48,12 +49,14 @@ function bf_wavelets_implementation_test()
 
         BasisFunctions.unsafe_eval_element(b, 1, .1)
         624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
-        supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
+        supports = ((0.,1.),(0.,1.),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test support(b, i) == supports[value(i)]
+            @test support(b, i) == interval(supports[value(i)]...)
+            @test infimum(support(b,i)) == supports[value(i)][1]
+            @test supremum(support(b,i)) == supports[value(i)][2]
         end
         for i in ordering(b1)
-            @test support(b1,i) == (0.,1.)
+            @test support(b1,i) == UnitInterval()
         end
 
         @test BasisFunctions.subdict(b1,1:1) == BasisFunctions.DaubechiesWaveletBasis(3,0)

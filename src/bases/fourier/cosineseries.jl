@@ -44,11 +44,8 @@ has_extension(b::CosineSeries) = true
 
 length(b::CosineSeries) = b.n
 
-left(b::CosineSeries{T}) where {T} = T(0)
-left(b::CosineSeries, idx) = left(b)
 
-right(b::CosineSeries{T}) where {T} = T(1)
-right(b::CosineSeries, idx) = right(b)
+support(b::CosineSeries{T}) where {T} = UnitInterval{T}()
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
@@ -82,10 +79,6 @@ ordering(b::CosineSeries) = CosineIndices(length(b))
 ##################
 # Evaluation
 ##################
-
-domain(b::CosineSeries) = UnitInterval{domaintype(b)}()
-
-support(b::CosineSeries, i) = domain(b)
 
 
 unsafe_eval_element(b::CosineSeries{T}, idx::CosineFrequency, x) where {T} =
