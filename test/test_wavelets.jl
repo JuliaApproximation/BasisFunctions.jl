@@ -2,7 +2,7 @@
 using BasisFunctions
     BF = BasisFunctions
     using Base.Test
-    using WaveletsCopy.DWT: wavelet, scaling
+    using WaveletsCopy.DWT: wavelet, scaling, db3,  db4, Primal
     using StaticArrays
     using BasisFunctions: wavelet_dual
     try
@@ -12,6 +12,30 @@ using BasisFunctions
         include("util_functions.jl")
     end
     suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
+
+
+using WaveletsCopy.DWT: quad_trap, quad_sf, quad_sf_weights, quad_sf_N, quad_trap_N
+function test_wavelet_quadrature()
+        @testset begin
+            M1 = 5; M2 = 10; J = 3
+            wav = db3; g = x->sin(2pi*x)
+            reference = quad_sf_N(g, wav, M2, J, 5)
+
+            b = DaubechiesWaveletBasis(3,J)
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),0)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-3
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 0)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-8
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),7)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
+            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 3)
+            @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
+        end
+end
+
+test_wavelet_quadrature()
+
+
 function bf_wavelets_implementation_test()
     @testset begin
         # Note, following line only succceeds for this particular wavelet basis (since it is orthogonal and easily evaluated in a random point)
@@ -26,8 +50,7 @@ function bf_wavelets_implementation_test()
         624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test left(b,i) == supports[value(i)][1]
-            @test right(b,i) == supports[value(i)][2]
+            @test support(b, i) == supports[value(i)]
         end
         for i in ordering(b1)
             @test support(b1,i) == (0.,1.)
@@ -42,7 +65,7 @@ function bf_wavelets_implementation_test()
         @test length(b1) == 4
         @test length(b2) == 32
         @test BasisFunctions.dict_promote_domaintype(b1,Complex128) == DaubechiesWaveletBasis(3,2, Complex128)
-        @test BasisFunctions.dict_promote_domaintype(b2,Complex128) == CDFWaveletBasis(3,1,5, Complex128)
+        @test BasisFunctions.dict_promote_domaintype(b2, Complex128) == CDFWaveletBasis(3,1,5, BasisFunctions.Prl, Complex128)
         @test resize(b1,8) == BasisFunctions.DaubechiesWaveletBasis(3,3)
         @test BasisFunctions.name(b1) == "Basis of db3 wavelets"
         @test BasisFunctions.name(b2) == "Basis of cdf31 wavelets"

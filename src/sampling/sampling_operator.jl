@@ -1,9 +1,21 @@
 # sampling_operator.jl
 
+abstract type AbstractSamplingOperator <: GenericOperator
+end
+
+src(op::AbstractSamplingOperator) = op.src
+dest(op::AbstractSamplingOperator) = op.dest
+
+gridspace(op::AbstractSamplingOperator) = dest(op)
+
+grid(op::AbstractSamplingOperator) = grid(gridspace(op))
+
+(*)(op::AbstractSamplingOperator, f) = apply(op, f)
+
 """
 A `GridSamplingOperator` is an operator that maps a function to its samples.
 """
-struct GridSamplingOperator <: GenericOperator
+struct GridSamplingOperator <: AbstractSamplingOperator
     src     ::  AbstractFunctionSpace
     dest    ::  DiscreteGridSpace
 
@@ -18,20 +30,11 @@ GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}) where {S,T}
 GridSamplingOperator(gridspace::DiscreteGridSpace{A,S,T}) where {A,S,T} =
 	GridSamplingOperator(FunctionSpace{S,T}(), gridspace)
 
-src(op::GridSamplingOperator) = op.src
-dest(op::GridSamplingOperator) = op.dest
-
-gridspace(op::GridSamplingOperator) = dest(op)
-
-grid(op::GridSamplingOperator) = grid(gridspace(op))
-
 apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridspace(op)))
 apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f)
 
 "Sample the function f on the given grid."
 sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
-
-(*)(op::GridSamplingOperator, f) = apply(op, f)
 
 broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
