@@ -67,9 +67,11 @@ function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::
 
     # assumes step is smaller then L
     L = length(src)
-    for a_i in 1:length(op.array)
+    aL = length(op.array)
+    dL = length(dest)
+    @inbounds for a_i in 1:aL
         ind = mod(a_i+op.offset-1,L)+1
-        for d_i in 1:length(dest)
+        for d_i in 1:dL
             dest[d_i] += op.array[a_i]*src[ind]
             ind += op.step
             if ind > L

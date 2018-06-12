@@ -47,16 +47,16 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-import WaveletsCopy.DWT: isdyadic, value, name, support, wavelet
-using WaveletsCopy.DWT: Prl, Dul, Side, filter
+import WaveletsCopy.DWT: isdyadic, value, name, support, wavelet, kind
+using WaveletsCopy.DWT: Prl, Dul, Side, filter, Wvl, Scl
 using WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points
 using WaveletsCopy.DWT: _evaluate_periodic_scaling_basis_in_dyadic_points!, SFilterBank, WaveletBoundary, evaluate_in_dyadic_points, idwt!
-using WaveletsCopy.DWT: WaveletIndex, wavelet_indices, kind, offset, level, wavelet_index
+using WaveletsCopy.DWT: WaveletIndex, wavelet_indices, offset, level, wavelet_index, scaling_indices, scaling_value, scaling_index
 using WaveletsCopy.DWT: Primal, Dual, scaling, filter, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points
 using WaveletsCopy.DWT: Primal, Dual, scaling, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt
 using WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet
-using WaveletsCopy.Sequences
 using WaveletsCopy.Filterbanks: Filterbank
+using WaveletsCopy: Sequences
 using WaveletsCopy.Sequences: CompactSequence, shifted_conv, Sequence, firstindex, lastindex, PeriodicExtension
 using WaveletsCopy: support_length
 
@@ -303,7 +303,7 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis
 # from bases/splines/bf_splines.jl
 export SplineBasis, FullSplineBasis, PeriodicSplineBasis, NaturalSplineBasis, SplineDegree
 # from bases/translates/translation_dict.jl
