@@ -305,7 +305,7 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis, ScalingBasis
 # from bases/translates/translation_dict.jl
 export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl

@@ -440,7 +440,7 @@ function test_bspline_platform(T)
     D = dual(platform,i)
     g = grid(sampler(platform,i))
     Aop = BasisFunctions.A(platform, i)
-    Zop = BasisFunctions.Z(platform, i)
+    Zop = BasisFunctions.Zt(platform, i)'
 
 
     e = map(T,rand(size(B)...))

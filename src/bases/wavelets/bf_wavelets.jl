@@ -404,6 +404,9 @@ struct DaubechiesWaveletBasis{P,T,S,K} <: OrthogonalWaveletBasis{T,S,K}
     L   ::    Int
 end
 
+ScalingBasis(w::DaubechiesWavelet{P,T}, L::Int, ::Type{S}=Prl) where {P,T,S} =
+    DaubechiesScalingBasis(P, L, T)
+
 DaubechiesWaveletBasis(P::Int, L::Int, ::Type{T} = Float64) where {T} =
     DaubechiesWaveletBasis{P,T,Prl,Wvl}(DaubechiesWavelet{P,T}(), L)
 
@@ -422,6 +425,9 @@ struct CDFWaveletBasis{P,Q,T,S,K} <: BiorthogonalWaveletBasis{T,S,K}
     w   ::    CDFWavelet{P,Q,T}
     L   ::    Int
 end
+
+ScalingBasis(w::CDFWavelet{P,Q,T}, L::Int, ::Type{S}=Prl) where {P,Q,T,S} =
+    CDFScalingBasis(P, Q, L, S, T)
 
 CDFWaveletBasis(P::Int, Q::Int, L::Int, ::Type{S}=Prl, ::Type{T} = Float64) where {T,S<:Side} =
     CDFWaveletBasis{P,Q,T,S,Wvl}(CDFWavelet{P,Q,T}(),L)
@@ -505,3 +511,37 @@ dest(op::DWTSamplingOperator) = dest(op.weight)
 
 apply(op::DWTSamplingOperator, f) = op.weight*apply(op.sampler, f)
 apply!(result, op::DWTSamplingOperator, f) = apply!(op.weight, result, sample!(op.scratch, op.sampler, f))
+
+##################
+# Platform
+##################
+
+# 1D generators
+primal_scaling_generator(wavelet::DiscreteWavelet) = n->ScalingBasis(wavelet,n)
+dual_scaling_generator(wavelet::DiscreteWavelet) = n->ScalingBasis(wavelet,n, Dul)
+
+# ND generators
+primal_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::DiscreteWavelet...) = primal_scaling_generator([wav1, wav2, wav...])
+
+primal_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->primal_scaling_generator(w), wav)...)
+
+dual_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::DiscreteWavelet...) = dual_scaling_generator([wav1, wav2, wav...])
+
+dual_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->dual_scaling_generator(w), wav)...)
+# Sampler
+scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridspace(grid(primal(n+Int(log2(oversampling))))))
+
+# params
+scaling_param(init::Int) = SteppingSequence(init)
+
+scaling_param(init::AbstractVector{Int}) = TensorSequence([SteppingSequence(i) for i in init])
+
+# Platform
+function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,AbstractVector{W}}, oversampling::Int) where {W<:DiscreteWavelet}
+	primal = primal_scaling_generator(wav)
+	dual = dual_scaling_generator(wav)
+	sampler = scaling_sampler(primal, oversampling)
+	params = scaling_param(init)
+	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
+		params = params, name = "Scaling functions")
+end
