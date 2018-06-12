@@ -50,8 +50,7 @@ function bf_wavelets_implementation_test()
         624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
         supports = ((0,1),(0,1),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
         for i in ordering(b)
-            @test left(b,i) == supports[value(i)][1]
-            @test right(b,i) == supports[value(i)][2]
+            @test support(b, i) == supports[value(i)]
         end
         for i in ordering(b1)
             @test support(b1,i) == (0.,1.)
@@ -66,7 +65,7 @@ function bf_wavelets_implementation_test()
         @test length(b1) == 4
         @test length(b2) == 32
         @test BasisFunctions.dict_promote_domaintype(b1,Complex128) == DaubechiesWaveletBasis(3,2, Complex128)
-        @test BasisFunctions.dict_promote_domaintype(b2,Complex128) == CDFWaveletBasis(3,1,5, Complex128)
+        @test BasisFunctions.dict_promote_domaintype(b2, Complex128) == CDFWaveletBasis(3,1,5, BasisFunctions.Prl, Complex128)
         @test resize(b1,8) == BasisFunctions.DaubechiesWaveletBasis(3,3)
         @test BasisFunctions.name(b1) == "Basis of db3 wavelets"
         @test BasisFunctions.name(b2) == "Basis of cdf31 wavelets"

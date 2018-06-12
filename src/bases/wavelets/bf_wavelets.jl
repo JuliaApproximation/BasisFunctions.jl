@@ -78,7 +78,6 @@ BasisFunctions.support(b::WaveletBasis, idx) = BasisFunctions.support(b, native_
 
 function BasisFunctions.support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
     l,r = support(S(), kind(idxn), wavelet(b), level(idxn), offset(idxn))
-    println((l,r))
     (r-l > 1) && (return (T(0),T(1)))
     (l < 0) && (return (T(0),T(r)), (T(l+1), T(1)))
     (r > 1) && (return (T(0),T(r-1)), (T(l), T(1)))
