@@ -20,7 +20,7 @@ _noelements(b::BSplineTranslatesBasis) = degree(b)+1
 """
 The linear index of the spline elements of B that are non-zero in x.
 """
-function overlapping_elements(B::Dictionary, x::Real)
+function unique_overlapping_elements(B::Union{BasisFunctions.WaveletBasis,BSplineTranslatesBasis}, x::Real)
     # The interval_index is the starting index of all spline elements that overlap with x
     init_index = BasisFunctions.interval_index(B,x)
     init_index -= _offset(B)
@@ -29,6 +29,20 @@ function overlapping_elements(B::Dictionary, x::Real)
     # The number of elements that overlap with one point
     no_elements = _noelements(B)
     no_elements == 1 && return abs(init_index)
+    if init_index < 0
+        init_index = -init_index-1
+        no_elements = no_elements-1
+    end
+    [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
+end
+
+function unique_overlapping_elements_old(B::BSplineTranslatesBasis, x::Real)
+    # The interval_index is the starting index of all spline elements that overlap with x
+    init_index = interval_index(B,x)
+    (init_index == -1-length(B)) && (init_index += length(B))
+    degree(B) == 0 && return abs(init_index)
+    # The number of elements that overlap with one interval
+    no_elements = degree(B)+1
     if init_index < 0
         init_index = -init_index-1
         no_elements = no_elements-1
@@ -69,74 +83,90 @@ function overlapping_elements(B::Dictionary, g::AbstractGrid)
                 end
             end
         end
-        copy!(a, aos, ai, 1, no_elements)
+        Base.copy!(a, aos, ai, 1, no_elements)
         aos += no_elements
     end
-    unique(a)
+    a
 end
 
-# function overlapping_elements(B::BSplineTranslatesBasis, x::Real)
-#     # The interval_index is the starting index of all spline elements that overlap with x
-#     init_index = interval_index(B,x)
-#     (init_index == -1-length(B)) && (init_index += length(B))
-#     degree(B) == 0 && return abs(init_index)
-#     # The number of elements that overlap with one interval
-#     no_elements = degree(B)+1
-#     if init_index < 0
-#         init_index = -init_index-1
-#         no_elements = no_elements-1
-#     end
-#     [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
-# end
+unique_overlapping_elements(B::Dictionary, g::AbstractGrid) = unique(overlapping_elements(B, g))
 
-"""
-The linear indices of the points of `g` at which B[i] is not zero.
-"""
-function support_indices(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i)
-    indices = Vector{Int}()
+function _support_indices_start_stop(B::Dictionary, g::AbstractEquispacedGrid, i)
     dx = stepsize(g)
     x0 = g[1]
     s = support(B,i)
     if isa(s,AbstractInterval)
         start = ceil(Int,(infimum(s)-x0)/dx)
         stop = floor(Int,(supremum(s)-x0)/dx)
-        (degree(B) != 0) && ((infimum(s)-x0)/dx ≈ start) && (start += 1)
+        (_noelements(B) != 1) && ((infimum(s)-x0)/dx ≈ start) && (start += 1)
         ((supremum(s)-x0)/dx ≈ stop) && (stop -= 1)
-        push!(indices,(start+1:stop+1)...)
+        return (start+1, stop+1)
     else
         interval = elements(s)[1]
-        start = 0
+        # start = 0
         stop = floor(Int,(supremum(interval)-x0)/dx)
         ((supremum(interval)-x0)/dx ≈ stop) && (stop -= 1)
-        push!(indices,(start+1:stop+1)...)
-
+        # push!(indices,(start+1:stop+1)...)
         interval = elements(s)[2]
         start = ceil(Int,(infimum(interval)-x0)/dx)
-        stop = length(g)-1
+        # stop = length(g)-1
         ((infimum(interval)-x0)/dx ≈ start) && (start += 1)
-        push!(indices,(start+1:stop+1)...)
+        return (start+1-length(g), stop+1)
     end
-    indices
 end
 
-function support_indices(B::TensorProductDict, g::ProductGrid, index::Int)
-    cartindex = ind2sub(size(B),index)
-    index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
-    create_indices(g,index_sets...)
-end
 
-function support_indices(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N}
-    index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
-    create_indices(g,index_sets...)
-end
-
-# function create_indices(B, i1, i2)
-#     [linear_index(B,(i,j)) for i in i1 for j in i2]
+# """
+# The linear indices of the points of `g` at which B[i] is not zero.
+# """
+# function support_indices(B::Dictionary, g::AbstractEquispacedGrid, i)
+#     indices = Vector{Int}()
+#     dx = stepsize(g)
+#     x0 = g[1]
+#     s = support(B,i)
+#     if isa(s,AbstractInterval)
+#         start = ceil(Int,(infimum(s)-x0)/dx)
+#         stop = floor(Int,(supremum(s)-x0)/dx)
+#         (_noelements(B) != 1) && ((infimum(s)-x0)/dx ≈ start) && (start += 1)
+#         ((supremum(s)-x0)/dx ≈ stop) && (stop -= 1)
+#         push!(indices,(start+1:stop+1)...)
+#     else
+#         interval = elements(s)[1]
+#         start = 0
+#         stop = floor(Int,(supremum(interval)-x0)/dx)
+#         ((supremum(interval)-x0)/dx ≈ stop) && (stop -= 1)
+#         push!(indices,(start+1:stop+1)...)
+#
+#         interval = elements(s)[2]
+#         start = ceil(Int,(infimum(interval)-x0)/dx)
+#         stop = length(g)-1
+#         ((infimum(interval)-x0)/dx ≈ start) && (start += 1)
+#         push!(indices,(start+1:stop+1)...)
+#     end
+#     indices
 # end
 #
-# function create_indices(B, i1, i2, i3)
-#     [linear_index(B,(i,j,k)) for i in i1 for j in i2 for k in i3]
+# function support_indices(B::TensorProductDict, g::ProductGrid, index::Int)
+#     cartindex = ind2sub(size(B),index)
+#     index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+#     create_indices(g,index_sets...)
 # end
+#
+# function support_indices(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N}
+#     index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+#     create_indices(g,index_sets...)
+# end
+
+support_indices_start_stop(B::Dictionary, g::AbstractGrid, i::Int) = tuple(_support_indices_start_stop(B, g, i))
+
+support_indices_start_stop(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N} =
+    [_support_indices_start_stop(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+
+function support_index_range(B::Dictionary, g::AbstractGrid, index)
+    t = support_indices_start_stop(B, g, index)
+    CartesianRange(CartesianIndex([i[1]for i in t]...), CartesianIndex([i[2]for i in t]...))
+end
+
 
 function create_indices(B, i1, i2)
     [CartesianIndex(i,j) for i in i1 for j in i2]
@@ -145,7 +175,6 @@ end
 function create_indices(B, i1, i2, i3)
     [CartesianIndex(i,j,k) for i in i1 for j in i2 for k in i3]
 end
-
 
 function overlapping_elements(B::TensorProductDict, x::SVector)
     index_sets = [overlapping_elements(s,x[i]) for (i,s) in enumerate(elements(B))]

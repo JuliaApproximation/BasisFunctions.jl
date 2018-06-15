@@ -321,6 +321,8 @@ struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
     src::Span
     dest::Span
 
+    s::Side
+    w::DiscreteWavelet
     fb::Filterbank
     j::Int
     d::Int
@@ -339,11 +341,11 @@ function BasisFunctions.DWTScalingEvalOperator(span::BasisFunctions.WaveletSpan{
     f = BasisFunctions.evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
     f_scaled = similar(f)
 
-    BasisFunctions.DWTScalingEvalOperator{T}(span, dgs, fb, j, d, perbound, f, f_scaled, coefscopy, coefscopy2)
+    BasisFunctions.DWTScalingEvalOperator{T}(span, dgs, s, w, fb, j, d, perbound, f, f_scaled)
 end
 
 function BasisFunctions.apply!(op::BasisFunctions.DWTScalingEvalOperator, y, coefs; options...)
-    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, coefs, op.j, op.d, op.f_scaled)
+    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.s, op.w, coefs, op.j, op.d, op.f_scaled)
     y
 end
 
@@ -478,6 +480,8 @@ struct DWTSamplingOperator <: AbstractSamplingOperator
     end
 end
 using WaveletsCopy.DWT: quad_sf_weights
+Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:AbstractOperator} = dwt.weight
+Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:AbstractOperator} = OP
 
 function WeightOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
     basis = dictionary(span)
@@ -531,6 +535,21 @@ dual_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tens
 # Sampler
 scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridspace(grid(primal(n+Int(log2(oversampling))))))
 
+dual_scaling_sampler(primal, oversampling) =
+    n -> (
+        basis = primal(n+Int(log2(oversampling)));
+        wav = BasisFunctions.wavelet(basis);
+        if oversampling==1; # Just a choice I made.
+            W = BasisFunctions.WeightOperator(wav, 1, n, 0);
+        elseif oversampling == 2 ;
+            W = BasisFunctions.WeightOperator(wav, 2, n, 0);
+        else ;
+            W = BasisFunctions.WeightOperator(wav, 2, n, Int(log2(oversampling>>1))) ;
+        end;
+        sampler = GridSamplingOperator(gridspace(grid(basis)));
+        DWTSamplingOperator(sampler, W);
+    )
+
 # params
 scaling_param(init::Int) = SteppingSequence(init)
 
@@ -541,7 +560,11 @@ function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,Abs
 	primal = primal_scaling_generator(wav)
 	dual = dual_scaling_generator(wav)
 	sampler = scaling_sampler(primal, oversampling)
+    # dual_sampler = dual_scaling_sampler(wav, oversampling)
+    dual_sampler = dual_scaling_sampler(primal, oversampling)
 	params = scaling_param(init)
-	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
+	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "Scaling functions")
 end
+
+Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = AbstractOperator(dual_sampler)

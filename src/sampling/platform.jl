@@ -20,7 +20,7 @@ end
 A `GenericPlatform` stores a primal and dual dictionary generator, along with
 a sequence of parameter values.
 """
-struct GenericPlatform{ST} <: Platform
+struct GenericPlatform <: Platform
     super_platform
     primal_generator
     dual_generator
@@ -30,10 +30,8 @@ struct GenericPlatform{ST} <: Platform
     name
 end
 
-GenericPlatform(; ST=default_solve_type(), super_platform=nothing, primal = None, dual = primal, sampler = None, dual_sampler=sampler, params = None,
-    name = "Generic Platform") = GenericPlatform{ST}(super_platform, primal, dual, sampler, dual_sampler, params, name)
-
-default_solve_type() = COLLOCATION
+GenericPlatform(; super_platform=nothing, primal = None, dual = primal, sampler = None, dual_sampler=sampler, params = None,
+    name = "Generic Platform") = GenericPlatform(super_platform, primal, dual, sampler, dual_sampler, params, name)
 
 function primal(platform::GenericPlatform, i)
     param = platform.parameter_sequence[i]
@@ -59,10 +57,9 @@ name(platform::GenericPlatform) = platform.name
 
 A(platform::GenericPlatform, i; options...) = apply(sampler(platform, i), primal(platform, i); options...)
 
-function Zt(platform::GenericPlatform{COLLOCATION}, i; options...)
-    dict = dual(platform, i)
-    (coeftype(dict)(1)/length(dict))*apply(dual_sampler(platform, i),dict; options...)'
-end
+Zt(platform::GenericPlatform, i; options...) = Zt(dual(platform, i; options...), dual_sampler(platform, i; options...); options...)
+
+Zt(dual::Dictionary, dual_sampler::GenericOperator; options...) = (coeftype(dual)(1)/length(dual))*apply(dual_sampler,dual; options...)'
 
 """
 Initalized with a series of generators, it generates tensorproduct dictionaries
@@ -121,11 +118,11 @@ struct SteppingSequence <: DimensionSequence
 end
 
 # We arbitrarily choose a default initial value of 2
-SteppingSequence() = SteppingSequence()
-
+SteppingSequence() = SteppingSequence(1,1)
+SteppingSequence(init::Int) = SteppingSequence(init,1)
 initial(s::SteppingSequence) = s.initial
 
-getindex(s::SteppingSequence, idx::Int) = initial(s) + step*(idx-1)
+getindex(s::SteppingSequence, idx::Int) = initial(s) + s.step*(idx-1)
 
 
 "A tensor product sequences with given initial values."
