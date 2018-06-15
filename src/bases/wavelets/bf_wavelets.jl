@@ -1,6 +1,6 @@
 # bf_wavelets.jl
 
-abstract type WaveletBasis{T,S} <: Dictionary1d{T,T} where {S <: Side}
+abstract type WaveletBasis{T,S,K} <: Dictionary1d{T,T} where {S <: Side,K<:Kind}
 end
 
 const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
@@ -26,6 +26,8 @@ BasisFunctions.wavelet(b::WaveletBasis) = b.w
 BasisFunctions.name(b::WaveletBasis) = "Basis of "*name(wavelet(b))*" wavelets"
 
 side(::WaveletBasis{T,S}) where {T,S} = S()
+
+kind(::WaveletBasis{T,S,K}) where {T,S,K} = K()
 
 # If only the first 2^L basis elements remain, this is equivalent to a smaller wavelet basis
 function subdict(b::WaveletBasis, idx::OrdinalRange)
@@ -69,23 +71,44 @@ compatible_grid(set::WaveletBasis, grid::DyadicPeriodicEquispacedGrid) =
 compatible_grid(set::WaveletBasis, grid::AbstractGrid) = false
 has_grid_transform(b::WaveletBasis, gb, grid) = compatible_grid(b, grid)
 
-function support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
+support(b::WaveletBasis) = UnitInterval{domaintype(b)}()
+left{T}(::WaveletBasis{T}) = T(0)
+right{T}(::WaveletBasis{T}) = T(1)
+
+BasisFunctions.support(b::WaveletBasis, idx) = BasisFunctions.support(b, native_index(b, idx))
+
+function BasisFunctions.support(b::WaveletBasis{T,S}, idxn::WaveletIndex) where {T,S}
     l,r = support(S(), kind(idxn), wavelet(b), level(idxn), offset(idxn))
-    l < 0 || r > 1 ? interval(T(0),T(1)) : interval(T(l),T(r))
+    (r-l > 1) && (return support(b))
+    (l < 0) && (return union(interval(T(0),T(r)), interval(T(l+1), T(1))))
+    (r > 1) && (return union(interval(T(0),T(r-1)), interval(T(l), T(1))))
+    interval(T(l), T(r))
 end
 
-support(b::WaveletBasis) = UnitInterval{domaintype(b)}()
+BasisFunctions.left(b::WaveletBasis{T}, i::WaveletIndex) where {T} = T(0)
+BasisFunctions.right(b::WaveletBasis{T}, i::WaveletIndex) where {T} = T(1)
+
+
+_offset(b::WaveletBasis) = support(side(b), kind(b), wavelet(b))[1]
+_noelements(b::WaveletBasis) = support_length(side(b), kind(b), wavelet(b))
 
 period{T}(::WaveletBasis{T}) = T(1)
 
 grid{T}(b::WaveletBasis{T}) = DyadicPeriodicEquispacedGrid(dyadic_length(b), support(b), T)
 
 
-ordering(b::WaveletBasis) = wavelet_indices(dyadic_length(b))
+ordering(b::WaveletBasis{T,S,Wvl}) where {T,S<:Side} = wavelet_indices(dyadic_length(b))
+ordering(b::WaveletBasis{T,S,Scl}) where {T,S<:Side} = scaling_indices(dyadic_length(b))
 
 
-BasisFunctions.native_index(b::WaveletBasis, idx::Int)::WaveletIndex = wavelet_index(dyadic_length(b), idx)
-BasisFunctions.linear_index(b::WaveletBasis, idxn::WaveletIndex)::Int = value(idxn)
+BasisFunctions.native_index(b::WaveletBasis{T,S,Wvl}, idx::Int) where {T,S<:Side} =
+    wavelet_index(dyadic_length(b), idx)
+BasisFunctions.linear_index(b::WaveletBasis{T,S,Wvl}, idxn::WaveletIndex) where {T,S<:Side} =
+    value(idxn)
+BasisFunctions.native_index(b::WaveletBasis{T,S,Scl}, idx::Int) where {T,S<:Side} =
+    scaling_index(dyadic_length(b), idx)
+BasisFunctions.linear_index(b::WaveletBasis{T,S,Scl}, idxn::WaveletIndex) where {T,S<:Side} =
+    scaling_value(idxn)
 
 approximate_native_size(::WaveletBasis, size_l) = 1<<ceil(Int, log2(size_l))
 
@@ -236,13 +259,94 @@ Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.EvalDWTFunction,T} 
 Base.inv(op::FunctionOperator{F,T}) where {F<:BasisFunctions.invEvalDWTFunction,T} =
     FunctionOperator(src(op), dest(op), inv(op.fun))*ScalingOperator(src(op), src(op), T(1//(1<<op.fun.l)))
 
-function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
-    if typeof(grid) <: DyadicPeriodicEquispacedGrid
-        FunctionOperator(s, dgs, EvalDWTFunction(wavelet(dictionary(s)), side(dictionary(s)), dyadic_length(grid)))
-    else
-        default_evaluation_operator(s, dgs; options...)
-    end
+grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+    default_evaluation_operator(s, dgs; options...)
+
+grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::DyadicPeriodicEquispacedGrid; options...) =
+    grid_evaluation_operator(s, dgs, grid, kind(dictionary(s)); options...)
+
+grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::DyadicPeriodicEquispacedGrid, ::Wvl; options...) =
+    DWTEvalOperator(s, dgs, dyadic_length(grid))
+
+grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::DyadicPeriodicEquispacedGrid, ::Scl; options...) =
+    DWTScalingEvalOperator(s, dgs, dyadic_length(grid))
+
+# function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
+#     if typeof(grid) <: DyadicPeriodicEquispacedGrid
+#         DWTEvalOperator(s, dgs, dyadic_length(grid))
+#     else
+#         default_evaluation_operator(s, dgs; options...)
+#     end
+# end
+
+struct DWTEvalOperator{T} <: AbstractOperator{T}
+    src::Span
+    dest::Span
+
+    s::Side
+    w::DiscreteWavelet
+    fb::Filterbank
+    j::Int
+    d::Int
+    bnd::WaveletBoundary
+
+    f::Vector{T}
+    f_scaled::Vector{T}
+    coefscopy::Vector{T}
+    coefscopy2::Vector{T}
 end
+
+function BasisFunctions.DWTEvalOperator(span::BasisFunctions.WaveletSpan{T}, dgs::DiscreteGridSpace, d::Int) where {T}
+    w = BasisFunctions.wavelet(dictionary(span))
+    j = BasisFunctions.dyadic_length(dictionary(span))
+    s = BasisFunctions.side(dictionary(span))
+    fb = BasisFunctions.SFilterBank(s, w)
+
+    # DWT.evaluate_in_dyadic_points!(f, s, scaling, w, j, 0, d, scratch)
+    f = BasisFunctions.evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
+    f_scaled = similar(f)
+    coefscopy = zeros(1<<j)
+    coefscopy2 = similar(coefscopy)
+
+    BasisFunctions.DWTEvalOperator{T}(span, dgs, s, w, fb, j, d, perbound, f, f_scaled, coefscopy, coefscopy2)
+end
+
+function BasisFunctions.apply!(op::BasisFunctions.DWTEvalOperator, y, coefs; options...)
+    BasisFunctions.idwt!(op.coefscopy, coefs, op.fb, op.bnd, op.j, op.coefscopy2)
+    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.s, op.w, op.coefscopy, op.j, op.d, op.f_scaled)
+    y
+end
+
+struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
+    src::Span
+    dest::Span
+
+    fb::Filterbank
+    j::Int
+    d::Int
+    bnd::WaveletBoundary
+
+    f::Vector{T}
+    f_scaled::Vector{T}
+end
+
+function BasisFunctions.DWTScalingEvalOperator(span::BasisFunctions.WaveletSpan{T}, dgs::DiscreteGridSpace, d::Int) where {T}
+    w = BasisFunctions.wavelet(dictionary(span))
+    j = BasisFunctions.dyadic_length(dictionary(span))
+    s = BasisFunctions.side(dictionary(span))
+    fb = BasisFunctions.SFilterBank(s, w)
+
+    f = BasisFunctions.evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
+    f_scaled = similar(f)
+
+    BasisFunctions.DWTScalingEvalOperator{T}(span, dgs, fb, j, d, perbound, f, f_scaled, coefscopy, coefscopy2)
+end
+
+function BasisFunctions.apply!(op::BasisFunctions.DWTScalingEvalOperator, y, coefs; options...)
+    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, coefs, op.j, op.d, op.f_scaled)
+    y
+end
+
 
 function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, subgrid::AbstractSubGrid; options...)
     # We make no attempt if the set has no associated grid
@@ -281,11 +385,13 @@ function evaluation_matrix!(a::AbstractMatrix, dict::WaveletBasis, pts::DyadicPe
     a
 end
 
-abstract type BiorthogonalWaveletBasis{T,S} <: WaveletBasis{T,S} end
+Gram(b::WaveletSpan{T,S,Wvl}) where {S,T} = IdentityOperator(b, b)
+
+abstract type BiorthogonalWaveletBasis{T,S,K} <: WaveletBasis{T,S,K} end
 
 is_basis(b::BiorthogonalWaveletBasis) = true
 
-abstract type OrthogonalWaveletBasis{T,S} <: BiorthogonalWaveletBasis{T,S} end
+abstract type OrthogonalWaveletBasis{T,S,K} <: BiorthogonalWaveletBasis{T,S,K} end
 
 is_basis(b::OrthogonalWaveletBasis) = true
 is_orthogonal(b::OrthogonalWaveletBasis) = true
@@ -293,39 +399,45 @@ is_orthogonal(b::OrthogonalWaveletBasis) = true
 wavelet_dual(w::OrthogonalWaveletBasis) = w
 
 
-struct DaubechiesWaveletBasis{P,T,S} <: OrthogonalWaveletBasis{T,S}
+struct DaubechiesWaveletBasis{P,T,S,K} <: OrthogonalWaveletBasis{T,S,K}
     w   ::    DaubechiesWavelet{P,T}
     L   ::    Int
 end
 
-DaubechiesWaveletBasis{T}(P::Int, L::Int, ::Type{T} = Float64) =
-    DaubechiesWaveletBasis{P,T,Prl}(DaubechiesWavelet{P,T}(), L)
+DaubechiesWaveletBasis(P::Int, L::Int, ::Type{T} = Float64) where {T} =
+    DaubechiesWaveletBasis{P,T,Prl,Wvl}(DaubechiesWavelet{P,T}(), L)
 
-dict_promote_domaintype(b::DaubechiesWaveletBasis{P,T,SIDE}, ::Type{S}) where {P,T,S,SIDE} =
-    DaubechiesWaveletBasis{P,promote_type(T,S),SIDE}(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
+DaubechiesScalingBasis(P::Int, L::Int, ::Type{T} = Float64) where {T} =
+    DaubechiesWaveletBasis{P,T,Prl,Scl}(DaubechiesWavelet{P,T}(), L)
+
+dict_promote_domaintype(b::DaubechiesWaveletBasis{P,T,SIDE,KIND}, ::Type{S}) where {P,T,S,SIDE,KIND} =
+    DaubechiesWaveletBasis{P,promote_type(T,S),SIDE,KIND}(DaubechiesWavelet{P,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{DaubechiesWaveletBasis}, n, ::Type{T}) = DaubechiesWaveletBasis(3, approx_length(n), T)
 
-is_compatible{P,T1,T2}(src1::DaubechiesWaveletBasis{P,T1}, src2::DaubechiesWaveletBasis{P,T2}) = true
+is_compatible{P,T1,T2,S1,S2,K1,K2}(src1::DaubechiesWaveletBasis{P,T1,S1,K1}, src2::DaubechiesWaveletBasis{P,T2,S2,K2}) = true
 
 # Note no check on existence of CDFXY is present.
-struct CDFWaveletBasis{P,Q,T,S} <: BiorthogonalWaveletBasis{T,S}
+struct CDFWaveletBasis{P,Q,T,S,K} <: BiorthogonalWaveletBasis{T,S,K}
     w   ::    CDFWavelet{P,Q,T}
     L   ::    Int
 end
 
-CDFWaveletBasis{T}(P::Int, Q::Int, L::Int, ::Type{T} = Float64) =
-    CDFWaveletBasis{P,Q,T,Prl}(CDFWavelet{P,Q,T}(),L)
+CDFWaveletBasis(P::Int, Q::Int, L::Int, ::Type{S}=Prl, ::Type{T} = Float64) where {T,S<:Side} =
+    CDFWaveletBasis{P,Q,T,S,Wvl}(CDFWavelet{P,Q,T}(),L)
 
-dict_promote_domaintype(b::CDFWaveletBasis{P,Q,T,SIDE}, ::Type{S}) where {P,Q,T,S,SIDE} =
-    CDFWaveletBasis{P,Q,promote_type(T,S),SIDE}(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
+CDFScalingBasis(P::Int, Q::Int, L::Int, ::Type{S}=Prl, ::Type{T} = Float64) where {T,S<:Side} =
+    CDFWaveletBasis{P,Q,T,S,Scl}(CDFWavelet{P,Q,T}(),L)
+
+dict_promote_domaintype(b::CDFWaveletBasis{P,Q,T,SIDE,KIND}, ::Type{S}) where {P,Q,T,S,SIDE,KIND} =
+    CDFWaveletBasis{P,Q,promote_type(T,S),SIDE,KIND}(CDFWavelet{P,Q,promote_type(T,S)}(), dyadic_length(b))
 
 instantiate{T}(::Type{CDFWaveletBasis}, n, ::Type{T}) = CDFWaveletBasis(2, 4, approx_length(n), T)
 
-is_compatible{P,Q,T1,T2}(src1::CDFWaveletBasis{P,Q,T1}, src2::CDFWaveletBasis{P,Q,T2}) = true
+is_compatible{P,Q,T1,T2,S1,S2,K1,K2}(src1::CDFWaveletBasis{P,Q,T1,S1,K1}, src2::CDFWaveletBasis{P,Q,T2,S2,K2}) = true
 
-wavelet_dual(w::CDFWaveletBasis{P,Q,T,S}) where {P,Q,T,S} =
-    CDFWaveletBasis{P,Q,T,inv(S)}(CDFWavelet{P,Q,T}(),dyadic_length(w))
+wavelet_dual(w::CDFWaveletBasis{P,Q,T,S,K}) where {P,Q,T,S,K} =
+    CDFWaveletBasis{P,Q,T,inv(S),K}(CDFWavelet{P,Q,T}(),dyadic_length(w))
 
 @recipe function f(F::WaveletBasis; plot_complex = false, n=200)
     legend --> false
@@ -341,3 +453,55 @@ end
 
 
 plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), support(b))
+
+
+# include("quadrature.jl")
+"""
+A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficients.
+"""
+struct DWTSamplingOperator <: AbstractSamplingOperator
+    sampler :: GridSamplingOperator
+    weight  :: AbstractOperator
+    scratch :: Vector
+
+	# An inner constructor to enforce that the operators match
+	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::AbstractOperator{ELT}) where {ELT}
+        @assert real(ELT) == eltype(eltype(grid(sampler)))
+        @assert size(weight, 2) == length(grid(sampler))
+		new(sampler, weight, zeros(src(weight)))
+    end
+end
+using WaveletsCopy.DWT: quad_sf_weights
+
+function WeightOperator(span::WaveletSpan, oversampling::Int=1, recursion::Int=0)
+    basis = dictionary(span)
+    wav = wavelet(basis)
+    @assert coeftype(span) == eltype(wav)
+    WeightOperator(wav, oversampling, dyadic_length(basis), recursion)
+end
+
+function WeightOperator(wav::DiscreteWavelet{T}, oversampling::Int, j::Int, d::Int) where {T}
+    @assert isdyadic.(oversampling)
+    w = quad_sf_weights(Dual, scaling, wav, oversampling*support_length(Dual, scaling, wav), d)
+    # rescaling of weights because the previous step assumed sum(w)==1
+    w .= w ./ sqrt(T(1<<j))
+    src_size = 1<<(d+j+oversampling>>1)
+    step = 1<<(d+oversampling>>1)
+    os = mod(step*Sequences.offset(filter(Dual, scaling, wav))-1, src_size)+1
+    HorizontalBandedOperator(Span(DiscreteVectorSet(src_size)), Span(DiscreteVectorSet(1<<j)), w, step, os)
+end
+
+function DWTSamplingOperator(span::Span, oversampling::Int=1, recursion::Int=0)
+    weight = WeightOperator(span, oversampling, recursion)
+    sampler = GridSamplingOperator(gridspace(dwt_oversampled_grid(dictionary(span), oversampling, recursion), coeftype(span)))
+    DWTSamplingOperator(sampler, weight)
+end
+
+dwt_oversampled_grid(dict::Dictionary, oversampling::Int, recursion::Int) =
+    oversampled_grid(dict, 1<<(recursion+oversampling>>1))
+
+src(op::DWTSamplingOperator) = src(op.sampler)
+dest(op::DWTSamplingOperator) = dest(op.weight)
+
+apply(op::DWTSamplingOperator, f) = op.weight*apply(op.sampler, f)
+apply!(result, op::DWTSamplingOperator, f) = apply!(op.weight, result, sample!(op.scratch, op.sampler, f))

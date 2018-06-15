@@ -182,7 +182,9 @@ length_compact_support{T}(b::CompactPeriodicTranslationDict{T})::real(T) = right
 function left_of_compact_function end
 function right_of_compact_function end
 
-function overlapping_elements(b::CompactPeriodicTranslationDict, x)
+support_length_of_compact_function(f::CompactPeriodicTranslationDict) = right_of_compact_function(f::CompactPeriodicTranslationDict)-left_of_compact_function(f::CompactPeriodicTranslationDict)
+
+function overlapping_elements(b::CompactPeriodicTranslationDict, x::Real)
    indices = ceil(Int, (x-BasisFunctions.right_of_compact_function(b))/stepsize(b)):floor(Int, (x-BasisFunctions.left_of_compact_function(b))/stepsize(b))
    Set(mod(i, length(b))+1 for i in indices)
 end
