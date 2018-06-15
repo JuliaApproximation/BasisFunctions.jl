@@ -5,22 +5,13 @@ If x ≈ i/N it return -i
 """
 interval_index(B::Dictionary,x::Real) = round(x*length(B))≈x*length(B) ? -round(Int,x*length(B))-1 : ceil(Int,x*length(B))
 
-function support(B::BSplineTranslatesBasis{K,T}, i::Int) where {K,T}
-    start = T(i-1)/length(B)
-    width = T(degree(B)+1)/length(B)
-    stop  = start+width
-    stop <=1 ? (return interval(start,stop)) : (return union(interval(T(0),stop-1),interval(start,T(1))))
-end
-
-
 _offset(b::BSplineTranslatesBasis) = 0
 _noelements(b::BSplineTranslatesBasis) = degree(b)+1
 
-
 """
-The linear index of the spline elements of B that are non-zero in x.
+The linear index of the elements of `B` that are non-zero in `x`.
 """
-function overlapping_elements(B::Dictionary, x::Real)
+function overlapping_element_coefficient_indices(B::Dictionary, x::Real)
     # The interval_index is the starting index of all spline elements that overlap with x
     init_index = BasisFunctions.interval_index(B,x)
     init_index -= _offset(B)
@@ -36,11 +27,21 @@ function overlapping_elements(B::Dictionary, x::Real)
     [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
 end
 
+function overlapping_element_coefficient_indices(B::TensorProductDict, x::SVector)
+    index_sets = [overlapping_element_coefficient_indices(s,x[i]) for (i,s) in enumerate(elements(B))]
+    create_indices(B,index_sets...)
+end
+
 """
-The linear index of the spline elements of B that are non-zero in x.
+The linear index of the elements of `B` that are non-zero in a point of the grid `g`.
 """
-function overlapping_elements(B::Dictionary, g::AbstractGrid)
-    # The interval_index is the starting index of all spline elements that overlap with x
+overlapping_element_coefficient_indices(B::Dictionary1d, g::AbstractGrid1d) =
+    unique(non_unique_overlapping_element_coefficient_indices(B, g))
+# util function
+non_unique_overlapping_element_coefficient_indices(B::Dictionary, x::Real) =
+    overlapping_element_coefficient_indices(B, x)
+
+function non_unique_overlapping_element_coefficient_indices(B::Dictionary1d, g::AbstractGrid1d)
     L = length(B)
     os = BasisFunctions._offset(B)
     no_elements = BasisFunctions._noelements(B)
@@ -50,6 +51,7 @@ function overlapping_elements(B::Dictionary, g::AbstractGrid)
     AIm1 = 1:no_elements-1
     aos = 1
     for (i, x) in enumerate(g)
+        # The interval_index is the starting index of all spline elements that overlap with x
         init_index = BasisFunctions.interval_index(B,x)
         (init_index == -1-L) && (init_index += L)
         if no_elements == 1
@@ -69,30 +71,16 @@ function overlapping_elements(B::Dictionary, g::AbstractGrid)
                 end
             end
         end
-        copy!(a, aos, ai, 1, no_elements)
+        Base.copy!(a, aos, ai, 1, no_elements)
         aos += no_elements
     end
-    unique(a)
+    a
 end
-
-# function overlapping_elements(B::BSplineTranslatesBasis, x::Real)
-#     # The interval_index is the starting index of all spline elements that overlap with x
-#     init_index = interval_index(B,x)
-#     (init_index == -1-length(B)) && (init_index += length(B))
-#     degree(B) == 0 && return abs(init_index)
-#     # The number of elements that overlap with one interval
-#     no_elements = degree(B)+1
-#     if init_index < 0
-#         init_index = -init_index-1
-#         no_elements = no_elements-1
-#     end
-#     [mod(init_index+i-2,length(B)) + 1 for i in 1:-1:2-no_elements]
-# end
 
 """
 The linear indices of the points of `g` at which B[i] is not zero.
 """
-function support_indices(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i)
+function grid_indices_in_element_support(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i)
     indices = Vector{Int}()
     dx = stepsize(g)
     x0 = g[1]
@@ -119,24 +107,16 @@ function support_indices(B::BSplineTranslatesBasis, g::AbstractEquispacedGrid, i
     indices
 end
 
-function support_indices(B::TensorProductDict, g::ProductGrid, index::Int)
+function grid_indices_in_element_support(B::TensorProductDict, g::ProductGrid, index::Int)
     cartindex = ind2sub(size(B),index)
-    index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+    index_sets = [grid_indices_in_element_support(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
     create_indices(g,index_sets...)
 end
 
-function support_indices(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N}
-    index_sets = [support_indices(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
+function grid_indices_in_element_support(B::TensorProductDict, g::ProductGrid, cartindex::CartesianIndex{N}) where {N}
+    index_sets = [grid_indices_in_element_support(s,element(g,i),cartindex[i]) for (i,s) in enumerate(elements(B))]
     create_indices(g,index_sets...)
 end
-
-# function create_indices(B, i1, i2)
-#     [linear_index(B,(i,j)) for i in i1 for j in i2]
-# end
-#
-# function create_indices(B, i1, i2, i3)
-#     [linear_index(B,(i,j,k)) for i in i1 for j in i2 for k in i3]
-# end
 
 function create_indices(B, i1, i2)
     [CartesianIndex(i,j) for i in i1 for j in i2]
@@ -147,10 +127,6 @@ function create_indices(B, i1, i2, i3)
 end
 
 
-function overlapping_elements(B::TensorProductDict, x::SVector)
-    index_sets = [overlapping_elements(s,x[i]) for (i,s) in enumerate(elements(B))]
-    create_indices(B,index_sets...)
-end
 
 ##################
 # Platform

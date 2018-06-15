@@ -449,7 +449,7 @@ function test_bspline_platform(T)
     @test BasisFunctions.Zt(platform, i)*Aop*e ≈ e
 end
 
-using BasisFunctions: overlapping_elements, support_indices
+using BasisFunctions: overlapping_elements, grid_indices_in_element_support
 function test_spline_approximation(T)
 
     B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
@@ -471,16 +471,16 @@ function test_spline_approximation(T)
     B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
     g = BasisFunctions.grid(B)
     set = [1,length(B)-1]
-    indices = support_indices.(B,g,set)
-    @which support_indices(B,g,set[1])
+    indices = grid_indices_in_element_support.(B,g,set)
+    @which grid_indices_in_element_support(B,g,set[1])
     @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 
     # Select the points that are in the support of the function
     B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)⊗BSplineTranslatesBasis(5,1,T)
     g = BasisFunctions.grid(B)
     set = [1,length(B)-1]
-    indices = support_indices.(B,g,set)
-    @which support_indices(B,g,set[1])
+    indices = grid_indices_in_element_support.(B,g,set)
+    @which grid_indices_in_element_support(B,g,set[1])
     @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 end
 

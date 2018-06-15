@@ -454,8 +454,6 @@ end
 
 plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), support(b))
 
-
-# include("quadrature.jl")
 """
 A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficients.
 """
