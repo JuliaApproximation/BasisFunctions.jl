@@ -31,7 +31,7 @@ has_extension(s::OperatedDict) = false
 
 is_basis(::OperatedDict) = false
 
-superdict(dict::OperatedDict) = dictionary(src(dict))
+superdict(dict::OperatedDict) = src(dict)
 
 function OperatedDict(op::AbstractOperator{T}) where {T}
     S = domaintype(src(op))
@@ -43,16 +43,16 @@ function stencil(s::OperatedDict,S)
     A = Any[]
     push!(A,operator(s))
     push!(A," * ")
-    push!(A,dictionary(src(s)))
+    push!(A,src(s))
     return recurse_stencil(s,A,S)
 end
-myLeaves(s::OperatedDict) = (operator(s),myLeaves(dictionary(src(s)))...)
+myLeaves(s::OperatedDict) = (operator(s),myLeaves(src(s))...)
 
 src(s::OperatedDict) = src(s.op)
-src_dictionary(s::OperatedDict) = dictionary(src(s))
+src_dictionary(s::OperatedDict) = src(s)
 
 dest(s::OperatedDict) = dest(s.op)
-dest_dictionary(s::OperatedDict) = dictionary(dest(s))
+dest_dictionary(s::OperatedDict) = dest(s)
 
 domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 
@@ -101,11 +101,11 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
 end
 
-grid_evaluation_operator(span::OperatedDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
-    WrappedOperator(span, dgs, grid_evaluation_operator(src(dictionary(span)), dgs, grid; options...)*operator(dictionary(span)))
+grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
+    WrappedOperator(dict, dgs, grid_evaluation_operator(src(dict), dgs, grid; options...)*operator(dict))
 
-grid_evaluation_operator(span::OperatedDictSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
-    WrappedOperator(span, dgs, grid_evaluation_operator(src(dictionary(span)), dgs, grid; options...)*operator(dictionary(span)))
+grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
+    WrappedOperator(dict, dgs, grid_evaluation_operator(src(dict), dgs, grid; options...)*operator(dict))
 
 ## Properties
 
@@ -123,20 +123,20 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-derivative(s::Span; options...) = OperatedDict(differentiation_operator(s; options...))
-derivative(dict::Dictionary; options...) = derivative(Span(dict); options...)
+derivative(s::Span; options...) = similar_span(s,derivative(dictionary(s)))
+derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
 
-function (*)(a::Number, s::Span)
+function (*)(a::Number, s::Dictionary)
     T = promote_type(typeof(a), coeftype(s))
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 
-function (*)(op::AbstractOperator, s::Span)
+function (*)(op::AbstractOperator, s::Dictionary)
     @assert src(op) == s
     OperatedDict(op)
 end
 
-function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
-        options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}}
+function BasisFunctions.grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
+        options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}
     tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end

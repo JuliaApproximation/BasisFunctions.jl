@@ -59,7 +59,7 @@ function test_tensor_operators(T)
 end
 
 function test_diagonal_operators(T)
-    for SRC in (Span(FourierBasis{T}(10)), Span(ChebyshevBasis{T}(11)))
+    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
         operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, map(coeftype(SRC),rand())), ScalingOperator(SRC,3),
@@ -69,13 +69,13 @@ function test_diagonal_operators(T)
             m = matrix(Op)
             # Test in-place
             if is_inplace(Op)
-                coef_src = rand(src(Op))
+                coef_src = rand(Span(src(Op)))
                 coef_dest_m = m * coef_src
                 coef_dest = apply!(Op, coef_src)
                 @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             end
             # Test out-of-place
-            coef_src = rand(src(Op))
+            coef_src = rand(Span(src(Op)))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
@@ -106,7 +106,7 @@ function test_diagonal_operators(T)
 end
 
 function test_multidiagonal_operators(T)
-    MSet = Span(FourierBasis{T}(10)⊕ChebyshevBasis{T}(11))
+    MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
     operators = (CoefficientScalingOperator(MSet, 3, rand()*one(coeftype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
@@ -214,14 +214,14 @@ function test_circulant_operator(ELT)
 end
 
 function test_invertible_operators(T)
-    for SRC in (Span(FourierBasis{T}(10)), Span(ChebyshevBasis{T}(11), Complex{T}), Span(ChebyshevBasis{T}(10)))
+    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
         operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = rand(src(Op))
+            coef_src = rand(Span(src(Op)))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
@@ -239,13 +239,13 @@ end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (Span(FourierBasis{T}(10)), Span(ChebyshevBasis{T}(11), Complex{T}))
+    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
         operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
             ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = rand(src(Op))
+            coef_src = rand(Span(src(Op)))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1

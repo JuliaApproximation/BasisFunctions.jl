@@ -11,7 +11,7 @@ end
 """
 `AbstractOperator` represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
-destination are of type `Span`.
+destination are of type `Dictionary`.
 The action of the operator is defined by providing a method for apply!.
 
 The dimension of an operator are like a matrix: `(length(dest),length(src))`.
@@ -36,8 +36,8 @@ dest(op::AbstractOperator) = op.dest
 
 isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
 
-"Return a suitable element type for an operator between the given spans."
-op_eltype(src::Span, dest::Span) = _op_eltype(coeftype(src), coeftype(dest))
+"Return a suitable element type for an operator between the given dictionaries."
+op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coeftype(src), coeftype(dest))
 _op_eltype(::Type{T}, ::Type{T}) where {T <: Number} = T
 _op_eltype(::Type{T}, ::Type{S}) where {T <: Number, S <: Number} = promote_type(T,S)
 _op_eltype(::Type{SVector{N,T}}, ::Type{SVector{M,S}}) where {M,N,S,T} = SMatrix{M,N,promote_type(T,S)}
@@ -46,7 +46,7 @@ _op_eltype(::Type{T}, ::Type{S}) where {T,S} = promote_type(T,S)
 """
 Return suitably promoted types such that `D = A*S` are the types of the multiplication.
 """
-op_eltypes(src::Span, dest::Span, T = op_eltype(src, dest)) = _op_eltypes(coeftype(src), coeftype(dest), T)
+op_eltypes(src::Dictionary, dest::Dictionary, T = op_eltype(src, dest)) = _op_eltypes(coeftype(src), coeftype(dest), T)
 _op_eltypes(::Type{S}, ::Type{D}, ::Type{A}) where {S <: Number, D <: Number, A <: Number} =
 	(promote_type(S, D, A), promote_type(S, D, A), promote_type(S, D, A))
 _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) where {N,M,S <: Number, D <: Number, A <: Number} =
@@ -56,7 +56,7 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 "Promote the element type of the given operator."
 promote_eltype(op::AbstractOperator{T}, ::Type{T}) where {T} = op
 promote_eltype(op::AbstractOperator{T}, ::Type{S}) where {T,S} =
-	similar_operator(op, S, src(op), dest(op))
+	similar_operator(op, S, src(op), promote_coeftype(dest(op),S))
 
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
@@ -90,9 +90,7 @@ function apply!(op::AbstractOperator, coef_dest, coef_src)
 		copy!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
-		# We pass on the sets, rather than the spans, because the coefficient
-		# type is implicit in the coefficients
-		apply!(op, dictionary(dest(op)), dictionary(src(op)), coef_dest, coef_src)
+		apply!(op, dest(op), src(op), coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.
@@ -113,13 +111,13 @@ end
 
 # Catch-all for missing implementations
 function apply!(op::AbstractOperator, dest, src, coef_dest, coef_src)
-	println("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
+	warn("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 	throw(InexactError())
 end
 
 # Catch-all for missing implementations
 function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
-	println("In-place operation of ", typeof(op), " not implemented.")
+	warn("In-place operation of ", typeof(op), " not implemented.")
 	throw(InexactError())
 end
 

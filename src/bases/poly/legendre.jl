@@ -18,6 +18,7 @@ LegendrePolynomials(n::Int, ::Type{T} = Float64) where {T} = LegendrePolynomials
 instantiate(::Type{LegendrePolynomials}, n, ::Type{T}) where {T} = LegendrePolynomials{T}(n)
 
 dict_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendrePolynomials{S}(b.n)
+dict_promote_coeftype(b::LegendrePolynomials, ::Type{S}) where {S<:Real} = LegendrePolynomials{S}(b.n)
 
 resize(b::LegendrePolynomials{T}, n) where {T} = LegendrePolynomials{T}(n)
 
@@ -32,7 +33,7 @@ jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)
 
 weight(b::LegendrePolynomials{T}, x) where {T} = T(1)
 
-function gramdiagonal!(result, ::LegendreSpan; options...)
+function gramdiagonal!(result, ::LegendrePolynomials; options...)
     T = eltype(result)
     for i in 1:length(result)
         result[i] = T(2//(2(i-1)+1))

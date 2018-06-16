@@ -22,16 +22,11 @@ The concrete subtypes differ in what evaluation means. Examples include:
 abstract type CompositeDict{S,T} <: Dictionary{S,T}
 end
 
-const CompositeDictSpan{A,S,T,D <: CompositeDict} = Span{A,S,T,D}
-
 # We assume that every subset has an indexable field called dicts
 is_composite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
 element(set::CompositeDict, j) = set.dicts[j]
 numelements(set::CompositeDict) = length(elements(set))
-
-similar_compositespan(s::CompositeDictSpan, spans) =
-    Span(similar_dictionary(dictionary(s), map(dictionary, spans)), coeftype(s))
 
 # For a generic implementation of range indexing, we need a 'similar_dictionary' function
 # to create a new set of the same type as the given set.
@@ -124,7 +119,7 @@ eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(se
 extension_size(set::CompositeDict) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
-    @eval $op(s1::CompositeDictSpan, s2::CompositeDictSpan; options...) =
+    @eval $op(s1::CompositeDict, s2::CompositeDict; options...) =
         BlockDiagonalOperator( AbstractOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
 end
 
@@ -141,10 +136,9 @@ function unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,
     convert(T, unsafe_eval_element_derivative( element(set, idx[1]), idx[2], x))
 end
 
-## Differentiation
 
-derivative_space(s::CompositeDictSpan, order; options...) =
-    similar_compositespan(s, map(u->derivative_space(u, order; options...), elements(s)))
+derivative_space(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->derivative_space(u, order; options...), elements(s)))
 
-antiderivative_space(s::CompositeDictSpan, order; options...) =
-    similar_compositespan(s, map(u-> antiderivative_space(u, order; options...), elements(s)))
+antiderivative_space(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->antiderivative_space(u, order; options...), elements(s)))

@@ -4,8 +4,8 @@
 The identity operator between two (possibly different) function sets.
 """
 struct IdentityOperator{T} <: AbstractOperator{T}
-    src     ::  Span
-    dest    ::  Span
+    src     ::  Dictionary
+    dest    ::  Dictionary
 
     function IdentityOperator{T}(src, dest) where {T}
         @assert length(src) == length(dest)
@@ -13,11 +13,10 @@ struct IdentityOperator{T} <: AbstractOperator{T}
     end
 end
 
-IdentityOperator(src::Span, dest::Span = src) = IdentityOperator(op_eltype(src, dest), src, dest)
+IdentityOperator(src::Dictionary, dest::Dictionary = src) = IdentityOperator(op_eltype(src, dest), src, dest)
 
 function IdentityOperator(::Type{T}, src, dest) where {T}
-    S, D, A = op_eltypes(src, dest, T)
-    IdentityOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
+    IdentityOperator{T}(src, dest)
 end
 
 similar_operator(::IdentityOperator, ::Type{S}, src, dest) where {S} = IdentityOperator(S, src, dest)
@@ -50,8 +49,8 @@ string(op::IdentityOperator) = "Identity Operator"
 A ScalingOperator is the identity operator up to a scaling.
 """
 struct ScalingOperator{T} <: AbstractOperator{T}
-    src     ::  Span
-    dest    ::  Span
+    src     ::  Dictionary
+    dest    ::  Dictionary
     scalar  ::  T
 
     function ScalingOperator{T}(src, dest, scalar) where {T}
@@ -60,14 +59,13 @@ struct ScalingOperator{T} <: AbstractOperator{T}
     end
 end
 
-ScalingOperator(src::Span, scalar::Number) = ScalingOperator(src, src, scalar)
+ScalingOperator(src::Dictionary, scalar::Number) = ScalingOperator(src, src, scalar)
 
-ScalingOperator(src::Span, dest::Span, scalar) =
-    ScalingOperator(typeof(scalar), src, dest, scalar)
+ScalingOperator(src::Dictionary, dest::Dictionary, scalar) =
+    ScalingOperator(promote_type(op_eltype(src,dest),typeof(scalar)), src, dest, scalar)
 
 function ScalingOperator(::Type{T}, src, dest, scalar) where {T}
-    S, D, A = op_eltypes(src, dest, T)
-    ScalingOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D), scalar)
+    ScalingOperator{T}(src, dest, scalar)
 end
 
 similar_operator(op::ScalingOperator, ::Type{S}, src, dest) where {S} =
@@ -126,15 +124,14 @@ symbol(S::ScalingOperator) = "α"
 
 "The zero operator maps everything to zero."
 struct ZeroOperator{T} <: AbstractOperator{T}
-    src     ::  Span
-    dest    ::  Span
+    src     ::  Dictionary
+    dest    ::  Dictionary
 end
 
-ZeroOperator(src::Span, dest::Span = src) = ZeroOperator(op_eltype(src, dest), src, dest)
+ZeroOperator(src::Dictionary, dest::Dictionary = src) = ZeroOperator(op_eltype(src, dest), src, dest)
 
-function ZeroOperator(::Type{T}, src::Span, dest::Span) where {T}
-    S, D, A = op_eltypes(src, dest, T)
-    ZeroOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
+function ZeroOperator(::Type{T}, src::Dictionary, dest::Dictionary) where {T}
+    ZeroOperator{T}(src, dest)
 end
 
 similar_operator(op::ZeroOperator, ::Type{S}, src, dest) where {S} =
@@ -171,23 +168,23 @@ conversion happens automatically when such operators are combined into a composi
 operator.
 """
 struct DiagonalOperator{T} <: AbstractOperator{T}
-    src         ::  Span
-    dest        ::  Span
+    src         ::  Dictionary
+    dest        ::  Dictionary
     # We store the diagonal in a vector
     diagonal    ::  Vector{T}
 end
 
 DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
-    DiagonalOperator(Span(DiscreteVectorSet{T}(length(diagonal))), diagonal)
+    DiagonalOperator(DiscreteVectorSet{T}(length(diagonal)), diagonal)
 
-DiagonalOperator(src::Span, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
+DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
 
 # Intercept the default constructor
-DiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector{T}) where {T} = DiagonalOperator(T, src, dest, diagonal)
+DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector{T}) where {T} = DiagonalOperator(T, src, dest, diagonal)
 
-function DiagonalOperator(::Type{T}, src::Span, dest::Span, diagonal) where {T}
-    S, D, A = op_eltypes(src, dest, T)
-    DiagonalOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D), convert(Vector{A}, diagonal))
+function DiagonalOperator(::Type{T}, src::Dictionary, dest::Dictionary, diagonal) where {T}
+    T1 = promote_type(coeftype(src),coeftype(dest))
+    DiagonalOperator{T1}(src, dest, convert(Vector{T1}, diagonal))
 end
 
 similar_operator(op::DiagonalOperator, ::Type{S}, src, dest) where {S} =
@@ -304,8 +301,8 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 # A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
 # """
 # struct ComplexifyOperator{T} <: AbstractOperator{T}
-#     src   ::  Span
-#     dest  ::  Span
+#     src   ::  Dictionary
+#     dest  ::  Dictionary
 #
 #     function ComplexifyOperator{T}(src, dest) where T
 #         @assert length(src) == length(dest)
@@ -314,14 +311,14 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 #     end
 # end
 #
-# ComplexifyOperator(src::Span, dest::Span) = ComplexifyOperator(op_eltype(src, dest), src, dest)
+# ComplexifyOperator(src::Dictionary, dest::Dictionary) = ComplexifyOperator(op_eltype(src, dest), src, dest)
 #
-# function ComplexifyOperator(::Type{T}, src::Span, dest::Span) = ComplexifyOperator{T}(src, dest)
+# function ComplexifyOperator(::Type{T}, src::Dictionary, dest::Dictionary) = ComplexifyOperator{T}(src, dest)
 #     S, D, A = op_eltypes(src, dest, T)
 #     ComplexifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
 # end
 #
-# similar_operator(::ComplexifyOperator, ::Type{S}, src::Span, dest::Span) = ComplexifyOperator(S, src, dest)
+# similar_operator(::ComplexifyOperator, ::Type{S}, src::Dictionary, dest::Dictionary) = ComplexifyOperator(S, src, dest)
 #
 # inv(op::ComplexifyOperator) = RealifyOperator(dest(op), src(op))
 #
@@ -345,8 +342,8 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 # A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
 # """
 # struct RealifyOperator{T} <: AbstractOperator{T}
-#     src   ::  Span
-#     dest  ::  Span
+#     src   ::  Dictionary
+#     dest  ::  Dictionary
 #
 #     function RealifyOperator{T}(src, dest) where T
 #         @assert length(src) == length(dest)
@@ -355,14 +352,14 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 #     end
 # end
 #
-# RealifyOperator(src::Span, dest::Span) = RealifyOperator(op_eltype(src, dest), src, dest)
+# RealifyOperator(src::Dictionary, dest::Dictionary) = RealifyOperator(op_eltype(src, dest), src, dest)
 #
-# function RealifyOperator(::Type{T}, src::Span, dest::Span) = RealifyOperator{T}(src, dest)
+# function RealifyOperator(::Type{T}, src::Dictionary, dest::Dictionary) = RealifyOperator{T}(src, dest)
 #     S, D, A = op_eltypes(src, dest, T)
 #     RealifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
 # end
 #
-# similar_operator(::RealifyOperator, ::Type{S}, src::Span, dest::Span) = RealifyOperator(S, src, dest)
+# similar_operator(::RealifyOperator, ::Type{S}, src::Dictionary, dest::Dictionary) = RealifyOperator(S, src, dest)
 #
 #
 # inv(op::RealifyOperator) = ComplexifyOperator(dest(op), src(op))

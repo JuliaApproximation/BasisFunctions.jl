@@ -105,7 +105,7 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_space(s::MappedSpan; options...) = apply_map(transform_space(superspan(s); options...), mapping(s))
+transform_space(s::MappedDict; options...) = apply_map(transform_space(superdict(s); options...), mapping(s))
 
 has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
@@ -139,9 +139,9 @@ mapping(s::MappedSpan) = mapping(dictionary(s))
 
 # If the set is mapped and the grid is mapped, and if the maps are identical,
 # we can use the evaluation operator of the underlying set and grid
-function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::MappedGrid; options...)
+function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::MappedGrid; options...)
     if is_compatible(mapping(s), mapping(g))
-        E = evaluation_operator(superspan(s), supergrid(g); options...)
+        E = evaluation_operator(superdict(s), supergrid(g); options...)
         wrap_operator(s, dgs, E)
     else
         default_evaluation_operator(s, dgs; options...)
@@ -150,9 +150,9 @@ end
 
 # If the grid is not mapped, we proceed by performing the inverse map on the grid,
 # like we do for transforms above
-function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::AbstractGrid; options...)
+function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractGrid; options...)
     g2 = apply_map(g, inv(mapping(s)))
-    E = evaluation_operator(superspan(s), gridspace(superspan(s), g2); options...)
+    E = evaluation_operator(superdict(s), gridbasis(superdict(s), g2); options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -160,11 +160,11 @@ end
 # for subgrids and abstract Dictionary's in generic/evaluation that causes an
 # ambiguity. We proceed here by applying the inverse map to the underlying grid
 # of the subgrid.
-function grid_evaluation_operator(s::MappedSpan, dgs::DiscreteGridSpace, g::AbstractSubGrid; options...)
+function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractSubGrid; options...)
     mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
     g2 = similar_subgrid(g, mapped_supergrid)
-    g2_dgs = gridspace(superspan(s), g2)
-    E = evaluation_operator(superspan(s), g2_dgs; options...)
+    g2_dgs = gridbasis(superdict(s), g2)
+    E = evaluation_operator(superdict(s), g2_dgs; options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -173,20 +173,20 @@ end
 ###################
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::MappedSpan1d, order::Int; options...) =
-        (@assert islinear(mapping(s)); apply_map( $op(superspan(s), order; options...), mapping(s) ))
+    @eval $op(s::MappedDict1d, order::Int; options...) =
+        (@assert islinear(mapping(s)); apply_map( $op(superdict(s), order; options...), mapping(s) ))
 end
 
-function differentiation_operator(s1::MappedSpan1d, s2::MappedSpan1d, order::Int; options...)
+function differentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order::Int; options...)
     @assert islinear(mapping(s1))
-    D = differentiation_operator(superspan(s1), superspan(s2), order; options...)
+    D = differentiation_operator(superdict(s1), superdict(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order))
     wrap_operator(s1, s2, S*D)
 end
 
-function antidifferentiation_operator(s1::MappedSpan1d, s2::MappedSpan1d, order::Int; options...)
+function antidifferentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order::Int; options...)
     @assert islinear(mapping(s1))
-    D = antidifferentiation_operator(superspan(s1), superspan(s2), order; options...)
+    D = antidifferentiation_operator(superdict(s1), superdict(s2), order; options...)
     S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order))
     wrap_operator(s1, s2, S*D)
 end
@@ -199,7 +199,7 @@ end
 # TODO: check for promotions here
 mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapping(s))
 
-mapped_dict(s::DiscreteGridSpace, map::AbstractMap) = DiscreteGridSpace(mapped_grid(grid(s), map), eltype(s))
+mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficient_type(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a, b)
@@ -232,14 +232,14 @@ function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
     (MappedDict(mset, mapping(s1)), mcoef)
 end
 
-Gram(s::MappedSpan; options...) = wrap_operator(s, s, _gram(superspan(s), mapping(s); options...))
+Gram(s::MappedDict; options...) = wrap_operator(s, s, _gram(superdict(s), mapping(s); options...))
 
-_gram(s::Span, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
+_gram(s::Dictionary, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
 
-dot(s::MappedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
-    _dot(superspan(s), mapping(s), f1, f2, nodes; options...)
+dot(s::MappedDict, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
+    _dot(superdict(s), mapping(s), f1, f2, nodes; options...)
 
-_dot(s::Span1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
+_dot(s::Dictionary1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
     jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_left_inverse(map,nodes); options...)
 
 native_nodes(s::MappedDict) = _native_nodes(superdict(s), mapping(s))

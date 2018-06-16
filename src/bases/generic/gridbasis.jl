@@ -27,6 +27,12 @@ GridBasis(grid::AbstractGrid, T = Float64) =
 
 gridbasis(grid::AbstractGrid) = GridBasis(grid)
 gridbasis(grid::AbstractGrid, T) = GridBasis(grid, T)
+gridbasis(d::Dictionary, g::AbstractGrid = grid(d)) = gridbasis(g, coeftype(d))
+
+# This looks incorrect for multiple reasons: The complex and real assignments hint there's a problem with the design.
+# Also, this means GridBasis is to be interpreted differently to other bases (which it already is tbh)
+dict_promote_coeftype(gb::GridBasis, ::Type{T}) where {T<:Complex} = GridBasis(grid(gb),T)
+dict_promote_coeftype(gb::GridBasis, ::Type{T}) where {T<:Real} = GridBasis(grid(gb),T)
 
 grid(b::GridBasis) = b.grid
 
@@ -36,10 +42,11 @@ end
 
 dimension(b::GridBasis) = dimension(grid(b))
 
-name(b::GridBasis) = "a discrete basis associated with a grid"
+name(b::GridBasis) = "a discrete basis associated with a grid
+"
+tensorproduct(dicts::GridBasis...) = GridBasis(cartesianproduct(map(grid, dicts)...),promote_type(map(coeftype,dicts)...))
 
-tensorproduct(dicts::GridBasis...) = GridBasis(cartesianproduct(map(grid, dicts)...))
-
+support(s::GridBasis) = support(grid(s))
 # Convenience function: add grid as extra parameter to has_transform
 has_transform(s1::Dictionary, s2::GridBasis) =
 	has_grid_transform(s1, s2, grid(s2))
@@ -48,11 +55,12 @@ has_transform(s1::GridBasis, s2::Dictionary) =
 # and provide a default
 has_grid_transform(s1::Dictionary, s2, grid) = false
 
-elements(s::ProductGridBasis) = map(GridBasis, elements(grid(s)))
-element(s::ProductGridBasis, i) = GridBasis(element(grid(s), i))
+elements(s::ProductGridBasis) = map(d->GridBasis(d,coeftype(s)), elements(grid(s)))
+element(s::ProductGridBasis, i) = GridBasis(element(grid(s), i),coeftype(s))
 
-apply_map(s::GridBasis, map) = GridBasis(apply_map(grid(s), map))
+apply_map(s::GridBasis, map) = GridBasis(apply_map(grid(s), map), coeftype(s))
 
+sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
 
 ###############################################
 # A DiscreteGridSpace is the span of a GridBasis

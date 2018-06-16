@@ -10,8 +10,8 @@ struct CompositeOperator{T} <: AbstractOperator{T}
     # We explicitly store src and dest, because that information may be lost
     # when the list of operators is optimized (for example, an Identity mapping
     # between two spaces could disappear).
-    src     ::  AbstractFunctionSpace
-    dest    ::  AbstractFunctionSpace
+    src     ::  Dictionary
+    dest    ::  Dictionary
     "The list of operators"
     operators
     "Scratch space for the result of each operator, except the last one"
@@ -31,14 +31,15 @@ is_composite(op::CompositeOperator) = true
 CompositeOperator(operators::AbstractOperator...) =
     CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
 
-function CompositeOperator(composite_src::Span, composite_dest::Span, operators::AbstractOperator...)
+function CompositeOperator(composite_src::Dictionary, composite_dest::Dictionary, operators::AbstractOperator...)
     L = length(operators)
     # Check operator compatibility
     for i in 1:length(operators)-1
         @assert size(dest(operators[i])) == size(src(operators[i+1]))
     end
 
-    T = promote_type(map(eltype, operators)...)
+    # TODO: Not sure if this is the right thing to do here
+    T = promote_type(map(eltype, operators)...,coeftype(composite_src),coeftype(composite_dest))
     c_operators = map(o -> promote_eltype(o, T), operators)
     # We are going to reserve scratch space, but only for operators that are not
     # in-place. We do reserve scratch space for the first operator, even if it
@@ -55,7 +56,7 @@ function CompositeOperator(composite_src::Span, composite_dest::Span, operators:
 end
 
 similar_operator(op::CompositeOperator, ::Type{S}, src, dest) where {S} =
-    CompositeOperator(promote_coeftype(src, S), promote_coeftype(dest, S), elements(op)...)
+    CompositeOperator(promote_coeftype(src, S), promote_coeftype(dest, S), map(o-> promote_eltype(o,S),elements(op))...)
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
     apply_inplace_composite!(op, coef_srcdest, op.operators)

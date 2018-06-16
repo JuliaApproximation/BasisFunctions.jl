@@ -7,8 +7,8 @@ A TensorProductOperator represents the tensor product of other operators.
 struct TensorProductOperator{T} <: AbstractOperator{T}
 """
 struct TensorProductOperator{T} <: AbstractOperator{T}
-    src             ::  Span
-    dest            ::  Span
+    src             ::  Dictionary
+    dest            ::  Dictionary
     operators
     scratch
     src_scratch
@@ -24,8 +24,8 @@ is_composite(op::TensorProductOperator) = true
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
     L = length(operators)
-    tp_src = Span(tensorproduct(map(dictionary, map(src, operators))...), T)
-    tp_dest = Span(tensorproduct(map(dictionary, map(dest, operators))...), T)
+    tp_src = tensorproduct(map(src, operators)...)
+    tp_dest = tensorproduct(map(dest, operators)...)
 
     # Scratch contains matrices of sufficient size to hold intermediate results
     # in the application of the tensor product operator.
@@ -65,6 +65,7 @@ inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...
 is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
 
+    
 
 apply!(op::TensorProductOperator, coef_dest, coef_src) =
     apply_tensor!(op, coef_dest, coef_src, op.operators, op.scratch, op.src_scratch, op.dest_scratch)

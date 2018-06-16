@@ -6,9 +6,9 @@
 # Comment out these methods to disable pretty printing
 ####
 # Delegate to show_operator
-# show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
-# show(io::IO,s::Span) = show(io,dictionary(s))
-# show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+show(io::IO,s::Span) = show(io,dictionary(s))
+show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
 
 ####
 # Stop commenting here

@@ -38,8 +38,7 @@ unsafe_eval_element(set::DiscreteSet{I,T}, idx::I, x::I) where {I,T} =
 # In the routine above, we made sure that idx and x have the same type, so that
 # they can be compared. If they do not have the same type, we can try to
 # promote the indices.
-unsafe_eval_element(set::DiscreteSet, idx, x) =
-    unsafe_eval_element(set, promote_product_indices(size(set), idx, x)...)
+unsafe_eval_element(set::DiscreteSet, idx, x) = unsafe_eval_element(set, promote_product_indices(size(set), idx, x)...)
 
 
 is_discrete(dict::Dictionary) = false

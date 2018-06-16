@@ -24,9 +24,9 @@ function test_chebyshev(T)
 
     n1 = 160
     b1 = ChebyshevBasis{T}(n1)
-    A = approximation_operator(Span(b1))
+    A = approximation_operator(b1)
     f = exp
-    e = approximate(Span(b1), exp)
+    e = approximate(b1, exp)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 

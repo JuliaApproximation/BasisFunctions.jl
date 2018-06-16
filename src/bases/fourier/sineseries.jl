@@ -12,8 +12,6 @@ struct SineSeries{T} <: Dictionary{T,T}
     n   ::  Int
 end
 
-const SineSpan{A,S,T,D <: SineSeries} = Span{A,S,T,D}
-
 name(b::SineSeries) = "Sine series"
 
 SineSeries(n::Int) = SineSeries{Float64}(n)
@@ -39,7 +37,7 @@ is_orthogonal(b::SineSeries) = true
 has_grid(b::SineSeries) = false
 has_derivative(b::SineSeries) = false #for now
 has_antiderivative(b::SineSeries) = false #for now
-has_transform{G <: PeriodicEquispacedGrid}(b::SineSeries, d::DiscreteGridSpace{G}) = false #for now
+has_transform{G <: PeriodicEquispacedGrid}(b::SineSeries, d::GridBasis{G}) = false #for now
 has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n
@@ -107,4 +105,4 @@ function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, c
     coef_dest
 end
 
-Gram(s::SineSpan; options...) = ScalingOperator(s, s, one(coeftype(s))/2)
+Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coeftype(s))/2)

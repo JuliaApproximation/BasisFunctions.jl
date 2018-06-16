@@ -31,7 +31,7 @@ include("test_DCTI.jl")
 include("test_gram.jl")
 
 delimit("Wavelets")
-include("test_wavelets.jl")
+#include("test_wavelets.jl")
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well
@@ -59,6 +59,21 @@ for T in [Float64,BigFloat,]
     println()
     delimit("T is $T", )
 
+    @testset "$(rpad("$(name(basis))",80," "))" for basis in
+                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
+                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
+                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
+                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
+                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
+        test_generic_dict_interface(basis, Span(basis))
+    end
+
+    delimit("Tensor specific tests")
+    @testset "$(rpad("test iteration",80))" begin
+        test_tensor_sets(T) end
+
+    test_derived_dicts(T)
     delimit("Operators")
     test_operators(T)
     test_generic_operators(T)
@@ -89,20 +104,7 @@ for T in [Float64,BigFloat,]
     delimit("Tensor product set interfaces")
 
     # TODO: all sets in the test below should use type T!
-    @testset "$(rpad("$(name(basis))",80," "))" for basis in
-                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
-                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
-                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
-                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
-                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
-        test_generic_dict_interface(basis, Span(basis))
-    end
-
-    delimit("Tensor specific tests")
-    @testset "$(rpad("test iteration",80))" begin
-        test_tensor_sets(T) end
-
+    
     delimit("Test Grids")
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
@@ -121,19 +123,19 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Orthogonal polynomials",80))" begin
         test_ops(T) end
 
-    @testset "$(rpad("Periodic translate expansions",80))" begin
-        test_generic_periodicbsplinebasis(T) end
+    ## @testset "$(rpad("Periodic translate expansions",80))" begin
+    ##     test_generic_periodicbsplinebasis(T) end
 
-    @testset "$(rpad("Translates of B spline expansions",80))" begin
-        test_translatedbsplines(T)
-        test_translatedsymmetricbsplines(T)
-        # test_orthonormalsplinebasis(T)
-        # test_discrete_orthonormalsplinebasis(T)
-        test_dualsplinebasis(T)
-        test_discrete_dualsplinebasis(T)
-        test_bspline_platform(T)
-        test_sparsity_speed(T)
-    end
+    ## @testset "$(rpad("Translates of B spline expansions",80))" begin
+    ##     test_translatedbsplines(T)
+    ##     test_translatedsymmetricbsplines(T)
+    ##     # test_orthonormalsplinebasis(T)
+    ##     # test_discrete_orthonormalsplinebasis(T)
+    ##     test_dualsplinebasis(T)
+    ##     test_discrete_dualsplinebasis(T)
+    ##     test_bspline_platform(T)
+    ##     test_sparsity_speed(T)
+    ## end
 
 end # for T in...
 

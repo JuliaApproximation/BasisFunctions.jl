@@ -25,12 +25,13 @@ struct Differentiation <: OperatorConcept
 end
 
 specialize(op::Differentiation, span::Span) =
-    differentiation_operator(span, order = op.order)
+    differentiation_operator(dictionary(span), order = op.order)
 
 specialize(op::Differentiation, dict::Dictionary) =
-    differentiation_operator(Span(dict), order = op.order)
+    differentiation_operator(dict, order = op.order)
 
-(*)(op::Differentiation, span::Span) = specialize(op, span)
+(*)(op::Differentiation, s::Dictionary) = specialize(op, s)
+(*)(op::Differentiation, s::Span) = specialize(op, s)
 
 apply(op::Differentiation, f::Expansion) =
-    apply(specialize(op, Span(f)), f)
+    apply(specialize(op, dictionary(f)), f)

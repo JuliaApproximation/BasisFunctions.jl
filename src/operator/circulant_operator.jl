@@ -8,13 +8,13 @@ conversion happens automatically when such operators are combined into a composi
 operator.
 """
 struct CirculantOperator{T} <: DerivedOperator{T}
-    src                 :: Span
-    dest                :: Span
+    src                 :: Dictionary
+    dest                :: Dictionary
     superoperator       :: AbstractOperator
     eigenvaluematrix    :: DiagonalOperator
     scratch
 
-    CirculantOperator{T}(op_src::Span, op_dest::Span, op::AbstractOperator, opD::DiagonalOperator) where {T} =
+    CirculantOperator{T}(op_src::Dictionary, op_dest::Dictionary, op::AbstractOperator, opD::DiagonalOperator) where {T} =
       new(op_src, op_dest, op, opD, zeros(dest(op)))
 end
 
@@ -23,51 +23,37 @@ dest(c::CirculantOperator) = c.dest
 
 function CirculantOperator(firstcolumn::AbstractVector; options...)
     T = eltype(firstcolumn)
-    CirculantOperator(Span(DiscreteVectorSet{T}(length(firstcolumn))), firstcolumn; options...)
+    CirculantOperator(DiscreteVectorSet{T}(length(firstcolumn)), firstcolumn; options...)
 end
 
-CirculantOperator(src::Span, firstcolumn::AbstractVector; options...) = CirculantOperator(src, src, firstcolumn; options...)
+CirculantOperator(src::Dictionary, firstcolumn::AbstractVector; options...) = CirculantOperator(src, src, firstcolumn; options...)
 
-# TODO: Make CirculantOperator between real type sets work again... currently everything is transformed into
-# complex becase Realification is not a linear operation
-function CirculantOperator(op_src::Span, op_dest::Span, firstcolumn::AbstractVector; options...)
-    D = DiagonalOperator(op_src, op_dest, fft(firstcolumn))
-    # Using src(D) and dest(D) ensures that they have complex types, because the fft
-    # in the line above will result in complex numbers
-    # Note that this makes all CirculantOperators complex! TODO: fix
+function CirculantOperator(op_src::Dictionary, op_dest::Dictionary, firstcolumn::AbstractVector; options...) 
+    Dsrc = DiscreteVectorSet{complex(eltype(firstcolumn))}(length(firstcolumn))
+    D = DiagonalOperator(Dsrc, Dsrc, fft(firstcolumn))
     CirculantOperator(op_src, op_dest, D; options...)
 end
 
-CirculantOperator(src::Span, dest::Span, D::DiagonalOperator; options...) =
-    CirculantOperator(eltype(D), src, dest, D; options...)
+CirculantOperator(src::Dictionary, dest::Dictionary, D::DiagonalOperator; options...) = CirculantOperator(eltype(D), src, dest, D; options...)
 
-function CirculantOperator(::Type{T}, op_src::Span, op_dest::Span, opD::DiagonalOperator;
-  realify_circulant_operator=true, real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
-    cpx_src = src(opD)
-    cpx_dest = dest(opD)
-
-    S, D, A = op_eltypes(cpx_src, cpx_dest, T)
-    c_src = promote_coeftype(cpx_src, S)
-    c_dest = promote_coeftype(cpx_dest, D)
-    c_D = similar_operator(opD, A, c_src, c_dest)
-    F = forward_fourier_operator(c_src, c_src, A; verbose=verbose, options...)
-    iF = backward_fourier_operator(c_dest, c_dest, A; verbose=verbose, options...)
-    iF = wrap_operator(c_dest,c_dest,inv(F))
-    #realify a circulant operator if asked, both spans are real and if it contains almost real elements
-    if realify_circulant_operator && isreal(op_src) && isreal(op_dest)
+function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator; real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
+    cpx_src = DiscreteVectorSet{eltype(opD)}(length(src(opD)))
+    A = promote_type(eltype(opD),T)
+    
+    F = forward_fourier_operator(cpx_src, cpx_src, A; verbose=verbose, options...)
+    iF = inv(F)
+    #realify a circulant operator if src and dest are real (one should imply the other).
+    if isreal(op_src) && isreal(op_dest)
         imag_norm = Base.norm(imag(fft(diagonal(opD))))
-        if  imag_norm < real_circulant_tol
-            verbose && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
-            r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
-            r_src = promote_coeftype(op_src, r_S)
-            r_dest = promote_coeftype(op_dest, r_D)
+        imag_norm > real_circulant_tol && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
+        r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
+        r_src = promote_coeftype(op_src, r_S)
+        r_dest = promote_coeftype(op_dest, r_D)
 
-            return CirculantOperator{r_A}(r_src, r_dest, iF*c_D*F, c_D)
-        else
-            verbose && warn("was not able to realify circulant operator")
-        end
+        return CirculantOperator{r_A}(r_src, r_dest, iF*opD*F, opD)
+        
     end
-    CirculantOperator{A}(src(F), dest(iF), iF*c_D*F, c_D)
+    CirculantOperator{A}(op_src, op_dest, iF*opD*F, opD)
 end
 
 function CirculantOperator(op::AbstractOperator{T}) where {T}

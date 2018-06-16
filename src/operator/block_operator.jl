@@ -12,8 +12,8 @@ the source set of the operator is not necessarily a multidict.
 """
 struct BlockOperator{T} <: AbstractOperator{T}
     operators   ::  Array{AbstractOperator{T}, 2}
-    src         ::  Span
-    dest        ::  Span
+    src         ::  Dictionary
+    dest        ::  Dictionary
 
     # scratch_src and scratch_dest hold scratch memory for each subset of the
     # source and destination sets, for allocation-free implementation of the
@@ -29,8 +29,8 @@ struct BlockOperator{T} <: AbstractOperator{T}
 end
 
 function BlockOperator(operators::Array{OP,2},
-    op_src = multispan(map(src, operators[1,:])),
-    op_dest = multispan(map(dest, operators[:,1]))) where {OP <: AbstractOperator}
+    op_src = multidict(map(src, operators[1,:])),
+    op_dest = multidict(map(dest, operators[:,1]))) where {OP <: AbstractOperator}
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
 
@@ -39,7 +39,7 @@ function BlockOperator(operators::Array{OP,2},
 end
 
 # sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
-function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::Span...)
+function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::Dictionary...)
     T = promote_type(eltype(op1), eltype(op2))
     operators = Array{AbstractOperator{T}}(1, 2)
     operators[1] = op1
@@ -47,7 +47,7 @@ function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::
     BlockOperator(operators, sets...)
 end
 
-function block_row_operator(ops::Array{OP, 1}, sets::Span...) where {OP <: AbstractOperator}
+function block_row_operator(ops::Array{OP, 1}, sets::Dictionary...) where {OP <: AbstractOperator}
     T = promote_type(map(eltype, ops)...)
     operators = Array{AbstractOperator{T}}(1, length(ops))
     operators[:] = ops
@@ -191,8 +191,8 @@ with only blocks on the diagonal.
 """
 struct BlockDiagonalOperator{T} <: AbstractOperator{T}
     operators   ::  Array{AbstractOperator{T}, 1}
-    src         ::  Span
-    dest        ::  Span
+    src         ::  Dictionary
+    dest        ::  Dictionary
 end
 
 function BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}, src, dest)
@@ -201,7 +201,7 @@ function BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}, src, 
 end
 
 BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
-    BlockDiagonalOperator(operators, multispan(map(src, operators)), multispan(map(dest, operators)))
+    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators

@@ -12,8 +12,6 @@ struct CosineSeries{T} <: Dictionary{T,T}
     n   ::  Int
 end
 
-const CosineSpan{A,S,T,D <: CosineSeries} = Span{A,S,T,D}
-
 name(b::CosineSeries) = "Cosine series"
 
 CosineSeries(n::Int) = CosineSeries{Float64}(n)
@@ -39,7 +37,7 @@ is_orthogonal(b::CosineSeries) = true
 has_grid(b::CosineSeries) = true
 has_derivative(b::CosineSeries) = false #for now
 has_antiderivative(b::CosineSeries) = false #for now
-has_transform{G <: PeriodicEquispacedGrid}(b::CosineSeries, d::DiscreteGridSpace{G}) = false #for now
+has_transform{G <: PeriodicEquispacedGrid}(b::CosineSeries, d::GridBasis{G}) = false #for now
 has_extension(b::CosineSeries) = true
 
 length(b::CosineSeries) = b.n
@@ -111,16 +109,16 @@ function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_des
     coef_dest
 end
 
-function Gram(s::CosineSpan; options...)
-    T = dict_codomaintype(s)
+function Gram(s::CosineSeries; options...)
+    T = codomaintype(s)
     diag = ones(T,length(s))/2
     diag[1] = 1
     DiagonalOperator(s, s, diag)
 end
 
-function UnNormalizedGram(s::CosineSpan, oversampling)
-    T = dict_codomaintype(s)
-    d = T(length_oversampled_grid(dictionary(s), oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(dictionary(s), oversampling)
+function UnNormalizedGram(s::CosineSeries, oversampling)
+    T = codomaintype(s)
+    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(s, oversampling)
     DiagonalOperator(s, s, d)
 end

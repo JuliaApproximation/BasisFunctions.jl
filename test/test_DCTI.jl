@@ -4,7 +4,7 @@ using Base.Test
 
 n = 121
 # Check some implementation
-# full_transform_operator(DiscreteGridSpace(ChebyshevNodeGrid(n)), ChebyshevBasis(n))
+# full_transform_operator(DiscreteGridbasis(ChebyshevNodeGrid(n)), ChebyshevBasis(n))
 # full_transform_operator(ChebyshevBasis(n), nodegrid=true)
 # full_transform_operator(ChebyshevBasis(n), nodegrid=false)
 
@@ -19,7 +19,7 @@ function test_full_transform_extremagrid()
                 G = BasisFunctions.secondgrid(B)
                 coef[i] = 1
                 SE = Expansion(B, coef)
-                O = full_transform_operator(Span(B), nodegrid=false)
+                O = full_transform_operator(B, nodegrid=false)
 
                 f1 = coefficients(O*SE)
                 f2 = BasisFunctions.broadcast(SE,G)
@@ -42,7 +42,7 @@ function test_inverse_transform_extremagrid()
                 G = BasisFunctions.secondgrid(B)
                 coef[i] = 1
                 SE = Expansion(B, coef)
-                O = full_transform_operator(Span(B), nodegrid=false)
+                O = full_transform_operator(B, nodegrid=false)
                 Oinv = full_transform_operator(dest(O), src(O))
                 c = coefficients(Oinv*O*SE)
                 @test(norm(coef-c) < tol)

@@ -7,25 +7,25 @@ const PeriodicBSplineSpan{A,S,T,D <: PeriodicBSplineBasis} = Span{A,S,T,D}
 
 degree(b::B) where {K,T, B<:PeriodicBSplineBasis{K,T}} = K
 
-Gram(b::PeriodicBSplineSpan; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
+Gram(b::PeriodicBSplineBasis; options...) = CirculantOperator(b, b, primalgramcolumn(b; options...); options...)
 
-function extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
-    @assert degree(dictionary(s1)) == degree(dictionary(s2))
+function extension_operator(s1::PeriodicBSplineBasis, s2::PeriodicBSplineBasis; options...)
+    @assert degree(s1) == degree(s2)
     bspline_extension_operator(s1, s2; options...)
 end
 
-function restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
-    @assert degree(dictionary(s1)) == degree(dictionary(s2))
+function restriction_operator(s1::PeriodicBSplineBasis, s2::PeriodicBSplineBasis; options...)
+    @assert degree(s1) == degree(s2)
     bspline_restriction_operator(s1, s2; options...)
 end
 
-function bspline_extension_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
+function bspline_extension_operator(s1::PeriodicBSplineBasis, s2::PeriodicBSplineBasis; options...)
     @assert 2*length(s1) == length(s2)
     _binomial_circulant(s2)*IndexExtensionOperator(s1, s2, 1:2:length(s2))
 end
 
 # The calculation done in this function is equivalent to finding the pseudoinverse of the bspline_extension_operator.
-function bspline_restriction_operator(s1::PeriodicBSplineSpan, s2::PeriodicBSplineSpan; options...)
+function bspline_restriction_operator(s1::PeriodicBSplineBasis, s2::PeriodicBSplineBasis; options...)
     @assert length(s1) == 2*length(s2)
     r = BasisFunctions._binomial_circulant(s1)
     e = BasisFunctions.eigenvalues(r)
@@ -83,7 +83,8 @@ compatible_grid(b::BSplineTranslatesBasis{K}, grid::PeriodicEquispacedGrid) wher
     # we use a PeriodicEquispacedGrid in stead
     grid(b::BSplineTranslatesBasis{K}) where {K} = isodd(K) ? PeriodicEquispacedGrid(length(b), support(b)) : MidpointEquispacedGrid(length(b), support(b))
 
-function _binomial_circulant(s::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}) where {A,S,K,T,SCALED}
+function _binomial_circulant(s::BSplineTranslatesBasis{K,T,SCALED}) where {K,T,SCALED}
+    A = coeftype(s)
     c = zeros(A, length(s))
     for k in 1:K+2
         c[k] = binomial(K+1, k-1)
@@ -95,27 +96,28 @@ function _binomial_circulant(s::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}) 
     end
 end
 
-function primalgramcolumnelement(span::Span{A,S,T,BSplineTranslatesBasis{K,T,SCALED}}, i::Int; options...) where {A,S,K,T,SCALED}
+function primalgramcolumnelement(s::BSplineTranslatesBasis{K,T,SCALED}, i::Int; options...) where {K,T,SCALED}
     r = 0
+    A = coeftype(s)
     # If size of functionspace is too small there is overlap and we can not use the
     # function squared_spline_integral which assumes no overlap.
     # Use integration as long as there is no more efficient way is implemented.
-    if length(span) <= 2K+1
-        return defaultprimalgramcolumnelement(span, i; options...)
+    if length(s) <= 2K+1
+        return defaultprimalgramcolumnelement(s, i; options...)
     else
         # squared_spline_integral gives the exact integral (in a rational number)
         if i==1
             r = BasisFunctions.squared_spline_integral(K)
         elseif 1 < i <= K+1
             r = BasisFunctions.shifted_spline_integral(K,i-1)
-        elseif i > length(span)-K
-            r = BasisFunctions.shifted_spline_integral(K,length(span)-i+1)
+        elseif i > length(s)-K
+            r = BasisFunctions.shifted_spline_integral(K,length(s)-i+1)
         end
     end
     if SCALED
         A(r)
     else
-        A(r)/length(span)
+        A(r)/length(s)
     end
 end
 
@@ -153,7 +155,7 @@ dict_promote_domaintype{K,T,S}(b::SymBSplineTranslatesBasis{K,T}, ::Type{S}) = S
 
 resize{K,T}(b::SymBSplineTranslatesBasis{K,T}, n::Int) = SymBSplineTranslatesBasis(n, degree(b), T)
 
-function _binomial_circulant(s::Span{A,S,T,SymBSplineTranslatesBasis{K,T}}) where {A,S,T,K}
+function _binomial_circulant(s::SymBSplineTranslatesBasis{K,T}) where {K,T}
   if iseven(K)
     warn("Extension and restriction work with odd degrees only.")
     throw(MethodError())

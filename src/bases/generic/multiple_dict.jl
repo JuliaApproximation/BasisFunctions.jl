@@ -38,7 +38,8 @@ end
 function MultiDict(dicts)
     S = reduce(promote_type, map(domaintype, dicts))
     T = reduce(promote_type, map(codomaintype, dicts))
-    MultiDict(map(s->promote_domaintype(s,S), dicts), S, T)
+    C = reduce(promote_type, map(coefficient_type, dicts))
+    MultiDict(map(s->promote_coefficient_type(s,C), dicts), S, T)
 end
 
 similar_dictionary(set::MultiDict, dicts) = MultiDict(dicts)
@@ -125,14 +126,14 @@ approx_length(s::MultiDict, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_e
 
 ## Differentiation
 
-# derivative_space(s::MultiDict, order; options...) =
-#     MultiDict(map(b-> derivative_space(b, order; options...), elements(s)))
-#
-# antiderivative_space(s::MultiDict, order; options...) =
-#     MultiDict(map(b-> antiderivative_space(b, order; options...), elements(s)))
+derivative_space(s::MultiDict, order; options...) =
+    MultiDict(map(b-> derivative_space(b, order; options...), elements(s)))
+
+antiderivative_space(s::MultiDict, order; options...) =
+    MultiDict(map(b-> antiderivative_space(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::MultiDictSpan, s2::MultiDictSpan, order; options...)
+    @eval function $op(s1::MultiDict, s2::MultiDict, order; options...)
         if nb_elements(s1) == nb_elements(s2)
             BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
         else
@@ -150,11 +151,11 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-grid_evaluation_operator(set::MultiDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
+grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractGrid; options...) =
     block_row_operator( AbstractOperator{coeftype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
 ## Avoid ambiguity
-grid_evaluation_operator(set::MultiDictSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
+grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
     block_row_operator( AbstractOperator{coeftype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
 ## Rescaling
@@ -173,3 +174,5 @@ function stencil(d::MultiDict)
     end
     A
 end
+
+## Differentiation

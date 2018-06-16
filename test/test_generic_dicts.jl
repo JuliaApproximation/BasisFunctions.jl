@@ -233,7 +233,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
         z1 = e(grid1)
         z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
         @test z1 ≈ z2
-        E = evaluation_operator(span, gridspace(span))
+        E = evaluation_operator(basis, gridbasis(basis))
         z3 = E * coefficients(e)
         @test z1 ≈ z3
     end
@@ -285,15 +285,15 @@ function test_generic_dict_interface(basis, span = Span(basis))
     if BF.has_extension(basis)
         n2 = extension_size(basis)
         basis2 = resize(basis, n2)
-        E = extension_operator(span, similar_span(span, basis2))
-        e1 = random_expansion(span)
+        E = extension_operator(basis, basis2)
+        e1 = random_expansion(basis)
         e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
         x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
-        R = restriction_operator(similar_span(span, basis2), span)
+        R = restriction_operator(basis2, basis)
         e3 = R * e2
         @test e2(x1) ≈ e3(x1)
         @test e2(x2) ≈ e3(x2)
@@ -302,12 +302,11 @@ function test_generic_dict_interface(basis, span = Span(basis))
     # Verify whether evaluation in a larger grid works
     if BF.has_extension(basis) && BF.has_grid(basis)
         basis_ext = extend(basis)
-        span_ext = similar_span(span, basis_ext)
         grid_ext = grid(basis_ext)
-        L = evaluation_operator(span, grid_ext)
-        e = random_expansion(span)
+        L = evaluation_operator(basis, grid_ext)
+        e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(span_ext, grid_ext) * extension_operator(span, span_ext)
+        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators
@@ -317,11 +316,16 @@ function test_generic_dict_interface(basis, span = Span(basis))
     ## Test derivatives
     if BF.has_derivative(basis)
         for dim in 1:dimension(basis)
-            D = differentiation_operator(span; dim=dim)
-            @test basis == dictionary(src(D))
-            diff_dest = dictionary(dest(D))
+            # TODO: Sort out problem with dim and multidict
+            if dimension(basis)>1
+                D = differentiation_operator(basis; dim=dim)
+            else
+                D = differentiation_operator(basis)
+            end
+            @test basis == src(D)
+            diff_dest = dest(D)
 
-            coef1 = random_expansion(span)
+            coef1 = random_expansion(basis)
             coef2 = D*coef
             e1 = Expansion(basis, coef)
             e2 = Expansion(diff_dest, coef2)
@@ -341,7 +345,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
 
         if dimension(basis) == 1
             x = fixed_point_in_domain(basis)
-            D = differentiation_operator(span)
+            D = differentiation_operator(basis)
             # Verify derivatives in three basis functions: the first, the last,
             # and the middle one
             i1 = 1
@@ -368,11 +372,11 @@ function test_generic_dict_interface(basis, span = Span(basis))
     ## Test antiderivatives
     if BF.has_antiderivative(basis)
         for dim in 1:dimension(basis)
-            D = antidifferentiation_operator(span; dim=dim)
-            @test basis == dictionary(src(D))
-            antidiff_dest = dictionary(dest(D))
+            D = antidifferentiation_operator(basis; dim=dim)
+            @test basis == src(D)
+            antidiff_dest = dest(D)
 
-            coef1 = random_expansion(span)
+            coef1 = random_expansion(basis)
             coef2 = D*coef
             e1 = Expansion(basis, coef)
             e2 = Expansion(antidiff_dest, coef2)
@@ -392,13 +396,13 @@ function test_generic_dict_interface(basis, span = Span(basis))
     end
 
     ## Test associated transform
-    if BF.has_transform(span)
+    if BF.has_transform(basis)
         # We have to look into this test
-        @test has_transform(span) == has_transform(span, gridspace(span))
+        @test has_transform(basis) == has_transform(basis, gridbasis(basis))
         # Check whether it is unitary
-        tspan = transform_space(span)
-        t = transform_operator(tspan, span)
-        it = transform_operator(span, tspan)
+        tbasis = transform_space(basis)
+        t = transform_operator(tbasis, basis)
+        it = transform_operator(basis, tbasis)
         A = matrix(t)
         if has_unitary_transform(basis)
             if T == Float64
@@ -415,17 +419,17 @@ function test_generic_dict_interface(basis, span = Span(basis))
         end
 
         # Verify the pre and post operators and their inverses
-        pre1 = transform_operator_pre(tspan, span)
-        post1 = transform_operator_post(tspan, span)
-        pre2 = transform_operator_pre(span, tspan)
-        post2 = transform_operator_post(span, tspan)
+        pre1 = transform_operator_pre(tbasis, basis)
+        post1 = transform_operator_post(tbasis, basis)
+        pre2 = transform_operator_pre(basis, tbasis)
+        post2 = transform_operator_post(basis, tbasis)
         # - try interpolation using transform+pre/post-normalization
-        x = rand(tspan)
+        x = rand(Span(tbasis))
         e = Expansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
         # - try evaluation using transform+pre/post-normalization
-        e = random_expansion(span)
+        e = random_expansion(basis)
         x1 = (post2*it*pre2)*coefficients(e)
         x2 = e(grid(basis))
         @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
@@ -444,22 +448,22 @@ function test_generic_dict_interface(basis, span = Span(basis))
     ## Test interpolation operator on a suitable interpolation grid
     if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
-        I = interpolation_operator(span, g)
-        x = rand(gridspace(g, coeftype(span)))
+        I = interpolation_operator(basis, g)
+        x = rand(gridspace(g, coeftype(basis)))
         e = Expansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
     end
 
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
-    E = evaluation_operator(span, g)
-    e = random_expansion(span)
+    E = evaluation_operator(basis, g)
+    e = random_expansion(basis)
     y = E*e
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < test_tolerance(ELT)
 
     ## Test approximation operator
     if supports_approximation(basis)
-        A = approximation_operator(span)
+        A = approximation_operator(basis)
         f = suitable_function(basis)
         e = Expansion(basis, A*f)
         x = random_point_in_domain(basis)
@@ -473,7 +477,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedDict) || (typeof(basis)<:BasisFunctions.ConcreteDerivedDict) || typeof(basis)<:WeightedDict) && eltype(basis)==BigFloat)
         if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedDict) && real(codomaintype(basis))==BigFloat)
-            e = approximate(span, f; discrete=false, reltol=1e-6, abstol=1e-6)
+            e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end

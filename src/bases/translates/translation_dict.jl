@@ -70,19 +70,19 @@ end
 
 native_nodes(b::PeriodicTranslationDict) = [k*stepsize(b) for k in 0:length(b)]
 
-function transform_from_grid(src, dest::PeriodicTranslatesSpan, grid; options...)
+function transform_from_grid(src, dest::PeriodicTranslationDict, grid; options...)
     inv(transform_to_grid(dest, src, grid; options...))
 end
 
-function transform_to_grid(src::PeriodicTranslatesSpan, dest, grid; options...)
-    @assert compatible_grid(dictionary(src), grid)
+function transform_to_grid(src::PeriodicTranslationDict, dest, grid; options...)
+    @assert compatible_grid(src, grid)
     CirculantOperator(src, dest, sample(grid, fun(src)); options...)
 end
 
 
-function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSpace, grid::AbstractEquispacedGrid; sparse=true, options...)
+function grid_evaluation_operator(s::PeriodicTranslationDict, dgs::GridBasis, grid::AbstractEquispacedGrid; sparse=true, options...)
     r = nothing
-    if periodic_compatible_grid(dictionary(s), grid)
+    if periodic_compatible_grid(s, grid)
         lg = length(grid)
         ls = length(s)
         if lg == ls
@@ -104,8 +104,8 @@ function grid_evaluation_operator(s::PeriodicTranslatesSpan, dgs::DiscreteGridSp
     end
 end
 
-function BasisFunctions.grid_evaluation_operator(s::S, dgs::DiscreteGridSpace, grid::ProductGrid;
-        options...) where {S<:BasisFunctions.Span{A,S,T,D} where {A,S,T,D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.PeriodicTranslationDict} where N,S,T}}}
+function BasisFunctions.grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
+        options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.PeriodicTranslationDict} where N,S,T}}
     tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end
 
@@ -116,21 +116,21 @@ eval_dualelement(b::PeriodicTranslationDict, idx::LinearIndex, x::Real) =
     eval_dualelement(b, native_index(b, idx), x)
 
 eval_dualelement(b::PeriodicTranslationDict, idxn::TransIndex, x::Real) =
-    eval_expansion(b, circshift(dualgramcolumn(Span(b)),value(idxn)), x)
+    eval_expansion(b, circshift(dualgramcolumn(b),value(idxn)), x)
 
-Gram(s::PeriodicTranslatesSpan; options...) = CirculantOperator(s, s, primalgramcolumn(s; options...))
+Gram(s::PeriodicTranslationDict; options...) = CirculantOperator(s, s, primalgramcolumn(s; options...))
 
-function UnNormalizedGram(s::PeriodicTranslatesSpan, oversampling = 1)
-    grid = oversampled_grid(dictionary(s), oversampling)
+function UnNormalizedGram(s::PeriodicTranslationDict, oversampling = 1)
+    grid = oversampled_grid(s, oversampling)
     CirculantOperator(evaluation_operator(s, grid)'*evaluation_operator(s, grid))
 end
 
-grammatrix(b::PeriodicTranslatesSpan; options...) = matrix(Gram(b; options...))
+grammatrix(b::PeriodicTranslationDict; options...) = matrix(Gram(b; options...))
 
-dualgrammatrix(b::PeriodicTranslatesSpan; options...) = matrix(inv(Gram(b; options...)))
+dualgrammatrix(b::PeriodicTranslationDict; options...) = matrix(inv(Gram(b; options...)))
 
 # All inner products between elements of PeriodicTranslationDict are known by the first column of the (circulant) gram matrix.
-function primalgramcolumn(s::PeriodicTranslatesSpan; options...)
+function primalgramcolumn(s::PeriodicTranslationDict; options...)
     n = length(s)
     result = zeros(coeftype(s), n)
     for i in 1:length(result)
@@ -139,12 +139,12 @@ function primalgramcolumn(s::PeriodicTranslatesSpan; options...)
     result
 end
 
-primalgramcolumnelement(s::PeriodicTranslatesSpan, i::Int; options...) =
+primalgramcolumnelement(s::PeriodicTranslationDict, i::Int; options...) =
     defaultprimalgramcolumnelement(s, i; options...)
 
-defaultprimalgramcolumnelement(s::Span1d, i::Int; options...)  = dot(s, 1, i; options...)
+defaultprimalgramcolumnelement(s::Dictionary1d, i::Int; options...)  = dot(s, 1, i; options...)
 
-function dualgramcolumn(s::PeriodicTranslatesSpan; options...)
+function dualgramcolumn(s::PeriodicTranslationDict; options...)
     G = inv(Gram(s; options...))
     e = zeros(eltype(G),size(G,1))
     e[1] = 1
@@ -251,9 +251,9 @@ end
     superdict(b1)==superdict(b2) && coefficients(b1) ≈ coefficients(b2)
 
 change_of_basis(b::LinearCombinationOfPeriodicTranslationDict; options...) =
-    wrap_operator(Span(superdict(b)), Span(b), inv(change_of_basis(superdict(b), typeof(b))))
+    wrap_operator(superdict(b), b, inv(change_of_basis(superdict(b), typeof(b))))
 
-change_of_basis(b::PeriodicTranslationDict, ::Type{LinearCombinationOfPeriodicTranslationDict}; options...) = DualGram(Span(b); options...)
+change_of_basis(b::PeriodicTranslationDict, ::Type{LinearCombinationOfPeriodicTranslationDict}; options...) = DualGram(b; options...)
 
 function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicTranslationDict}(b::PeriodicTranslationDict, ::Type{B}; options...)
     e = zeros(b)
@@ -263,11 +263,11 @@ end
 
 superspan(s::LinearCombinationsSpan) = Span(superdict(dictionary(s)), coeftype(s))
 
-extension_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
-    wrap_operator(s1, s2, change_of_basis(dictionary(s2); options...)*extension_operator(superspan(s1), superspan(s2))*inv(change_of_basis(dictionary(s1); options...)))
+extension_operator(s1::LinearCombinationOfPeriodicTranslationDict, s2::LinearCombinationOfPeriodicTranslationDict; options...) =
+    wrap_operator(s1, s2, change_of_basis(s2; options...)*extension_operator(superdict(s1), superdict(s2))*inv(change_of_basis(s1; options...)))
 
-restriction_operator(s1::LinearCombinationsSpan, s2::LinearCombinationsSpan; options...) =
-    wrap_operator(s1, s2, change_of_basis(dictionary(s2); options...)*restriction_operator(superspan(s1), superspan(s2))*inv(change_of_basis(dictionary(s1); options...)))
+restriction_operator(s1::LinearCombinationOfPeriodicTranslationDict, s2::LinearCombinationOfPeriodicTranslationDict; options...) =
+    wrap_operator(s1, s2, change_of_basis(s2; options...)*restriction_operator(superdict(s1), superdict(s2))*inv(change_of_basis(s1; options...)))
 
 """
   Set representing the dual basis.
@@ -286,7 +286,7 @@ superdict(b::DualPeriodicTranslationDict) = b.superdict
 
 dual(b::DualPeriodicTranslationDict; options...) = superdict(b)
 
-Gram(b::DualPeriodicTranslatesSpan; options...) = inv(Gram(superspan(b); options...))
+Gram(b::DualPeriodicTranslationDict; options...) = inv(Gram(superdict(b); options...))
 
 """
   Set representing the dual basis with respect to a discrete norm on the oversampled grid.

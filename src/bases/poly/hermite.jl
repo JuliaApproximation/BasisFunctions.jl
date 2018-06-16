@@ -37,7 +37,7 @@ rec_Bn(b::HermitePolynomials, n::Int) = 0
 
 rec_Cn(b::HermitePolynomials, n::Int) = 2*n
 
-function gramdiagonal!(result, ::HermiteSpan; options...)
+function gramdiagonal!(result, ::HermitePolynomials; options...)
     T = eltype(result)
     for i in 1:length(result)
         result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)

@@ -7,12 +7,12 @@
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-Gram(s::Span; options...) = Gram(s, Val{is_orthonormal(dictionary(s))}; options...)
+Gram(s::Dictionary; options...) = Gram(s, Val{is_orthonormal(s)}; options...)
 
-Gram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
+Gram(s::Dictionary, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
-function Gram(s::Span, ::Type{Val{false}}; options...)
-    if is_orthogonal(dictionary(s))
+function Gram(s::Dictionary, ::Type{Val{false}}; options...)
+    if is_orthogonal(s)
         d = zeros(s)
         gramdiagonal!(d, s; options...)
         DiagonalOperator(s, s, d)
@@ -26,18 +26,18 @@ end
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """
-DualGram(s::Span; options...) = DualGram(s, Val{is_biorthogonal(dictionary(s))}; options...)
+DualGram(s::Dictionary; options...) = DualGram(s, Val{is_biorthogonal(s)}; options...)
 
-DualGram(s::Span, ::Type{Val{true}}; options...) = inv(Gram(s; options...))
+DualGram(s::Dictionary, ::Type{Val{true}}; options...) = inv(Gram(s; options...))
 
 """
 The mixed gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ψ_j>, if ϕ_i is the ith dual basisfunction and ψ_j the jth basisfunction
 """
-MixedGram(s::Span; options...) = MixedGram(s, Val{is_biorthogonal(dictionary(s))}; options...)
+MixedGram(s::Dictionary; options...) = MixedGram(s, Val{is_biorthogonal(s)}; options...)
 
-MixedGram(s::Span, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
+MixedGram(s::Dictionary, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
 
-function grammatrix!(result, s::Span; options...)
+function grammatrix!(result, s::Dictionary; options...)
     for i in 1:size(result,1)
         for j in i:size(result,2)
             I = dot(s, i, j; options...)
@@ -50,7 +50,7 @@ function grammatrix!(result, s::Span; options...)
     result
 end
 
-function gramdiagonal!(result, s::Span; options...)
+function gramdiagonal!(result, s::Dictionary; options...)
     for i in 1:size(result,1)
         result[i] = dot(s, i, i; options...)
     end
@@ -80,14 +80,14 @@ end
 
 native_nodes(dict::Dictionary1d) = [infimum(support(dict)), supremum(support(dict))]
 
-dot(s::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)  =
+dot(s::Dictionary1d, f1::Function, f2::Function, nodes::Array=native_nodes(s); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-dot(s::Span, f1::Int, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
-    dot(s, x->unsafe_eval_element(dictionary(s), native_index(dictionary(s), f1), x), f2, nodes; options...)
+dot(s::Dictionary, f1::Int, f2::Function, nodes::Array=native_nodes(s); options...) =
+    dot(s, x->unsafe_eval_element(s, native_index(s, f1), x), f2, nodes; options...)
 
-dot(s::Span, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(s)); options...) =
-    dot(s, x->unsafe_eval_element(dictionary(s), f1, x), x->unsafe_eval_element(dictionary(s), f2, x), nodes; options...)
+dot(s::Dictionary, f1::Int, f2::Int, nodes::Array=native_nodes(s); options...) =
+    dot(s, x->unsafe_eval_element(s, f1, x), x->unsafe_eval_element(s, f2, x), nodes; options...)
 
 ##########################
 ## Discrete Gram operators
@@ -101,11 +101,11 @@ basis_oversampling(dict::Dictionary, sampling_factor::Real) =  sampling_factor
 
 default_oversampling(b::Dictionary) = 1
 # E'E/N
-DiscreteGram(s::Span; oversampling = default_oversampling(dictionary(s))) =
-  codomaintype(s)(1)/discrete_gram_scaling(dictionary(s), oversampling)*UnNormalizedGram(s, oversampling)
+DiscreteGram(s::Dictionary; oversampling = default_oversampling(s)) =
+  codomaintype(s)(1)/discrete_gram_scaling(s, oversampling)*UnNormalizedGram(s, oversampling)
 
-function UnNormalizedGram(s::Span, oversampling = 1)
-    grid = oversampled_grid(dictionary(s), oversampling)
+function UnNormalizedGram(s::Dictionary, oversampling = 1)
+    grid = oversampled_grid(s, oversampling)
     evaluation_operator(s, grid)'*evaluation_operator(s, grid)
 end
 
@@ -113,11 +113,13 @@ end
 discrete_gram_scaling(b::Dictionary, oversampling) = length(b)
 
 # Ẽ'Ẽ/N and since Ẽ = NE^{-1}'
-DiscreteDualGram(s::Span; oversampling = default_oversampling(dictionary(s))) =
+DiscreteDualGram(s::Dictionary; oversampling = default_oversampling(s)) =
     inv(DiscreteGram(s; oversampling=oversampling))
 
+
 # Ẽ'E/N
-DiscreteMixedGram(s::Span; oversampling=default_oversampling(dictionary(s))) = IdentityOperator(s,s)
+DiscreteMixedGram(s::Dictionary; oversampling=default_oversampling(s)) = IdentityOperator(s,s)
+
 
 
 
@@ -125,26 +127,26 @@ DiscreteMixedGram(s::Span; oversampling=default_oversampling(dictionary(s))) = I
 ## Gram operators extended
 #################
 
-dual(span::Span; options...) = dual(span, Val{is_orthonormal(dictionary(span))}; options...)
-dual(span::Span, ::Type{Val{true}}; options...) = span
-dual(dict::Dictionary; options...) = error("Dual of $(dict) is not known.")
-dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(dictionary(span); options...))
+dual(dict::Dictionary; options...) = dual(dict, Val{is_orthonormal(dict)}; options...)
+dual(dict::Dictionary, ::Type{Val{true}}; options...) = dict
+#dual(dict::Dictionary; options...) = error("Dual of $(dict) is not known.")
+dual(dict::Dictionary, ::Type{Val{false}}; options...) = error("Dual of nonorthonormal $(dict) is not known")
 
 """
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
-function Gram(src::Span, dest::Span; options...)
+function Gram(src::Dictionary, dest::Dictionary; options...)
     T = promote_type(codomaintype(src), codomaintype(dest))
     A = zeros(T,length(dest),length(src))*NaN
     grammatrix!(A, src, dest; options...)
     MatrixOperator(src, dest, A)
 end
 
-DualGram(span1::Span, span2::Span; options...) = inv(Gram(span1, span2; options...))
+DualGram(dict1::Dictionary, dict2::Dictionary; options...) = inv(Gram(dict1, dict2; options...))
 
-MixedGram(span1::Span, span2::Span; options...) = Gram(dual(span1; options...), span2; options...)
+MixedGram(dict1::Dictionary, dict2::Dictionary; options...) = Gram(dual(dict1; options...), dict2; options...)
 
-function grammatrix!(result, src::Span, dest::Span; options...)
+function grammatrix!(result, src::Dictionary, dest::Dictionary; options...)
     @assert size(result, 1) == length(dest)
     @assert size(result, 2) == length(src)
     for i in 1:size(result,1)
@@ -155,11 +157,11 @@ function grammatrix!(result, src::Span, dest::Span; options...)
     result
 end
 
-dot(span1::Span1d, span2::Span1d, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...)  =
+dot(dict1::Dictionary1d, dict2::Dictionary1d, f1::Function, f2::Function, nodes::Array=native_nodes(dict1, dict2); options...)  =
     dot(x->conj(f1(x))*f2(x), nodes; options...)
 
-dot(span1::Span1d, span2::Span1d, f1::Int, f2::Int, nodes::Array=native_nodes(dictionary(span1), dictionary(span2)); options...) =
-    dot(span1, span2, x->unsafe_eval_element(dictionary(span1), f1, x),x->unsafe_eval_element(dictionary(span2), f2, x), nodes; options...)
+dot(dict1::Dictionary1d, dict2::Dictionary1d, f1::Int, f2::Int, nodes::Array=native_nodes(dict1, dict2); options...) =
+    dot(dict1, dict2, x->unsafe_eval_element(dict1, f1, x),x->unsafe_eval_element(dict2, f2, x), nodes; options...)
 
 function native_nodes(dict1::Dictionary1d, dict2::Dictionary1d)
     @assert infimum(support(dict1)) ≈ infimum(support(dict2))

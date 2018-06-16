@@ -9,14 +9,14 @@ function interpolation_matrix(dict::Dictionary, pts)
     evaluation_matrix(dict, pts)
 end
 
-interpolation_operator(s::Span; options...) =
+interpolation_operator(s::Dictionary; options...) =
     interpolation_operator(s, grid(s); options...)
 
-interpolation_operator(s::Span, grid::AbstractGrid; options...) =
-    interpolation_operator(s, gridspace(s, grid); options...)
+interpolation_operator(s::Dictionary, grid::AbstractGrid; options...) =
+    interpolation_operator(s, gridbasis(s, grid); options...)
 
 # Interpolate dict in the grid of dgs
-function interpolation_operator(s::Span, dgs::DiscreteGridSpace; options...)
+function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
     if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
         full_transform_operator(dgs, s; options...)
     else
@@ -24,12 +24,12 @@ function interpolation_operator(s::Span, dgs::DiscreteGridSpace; options...)
     end
 end
 
-function default_interpolation_operator(s::Span, dgs::DiscreteGridSpace; options...)
-    SolverOperator(dgs, s, qrfact(evaluation_matrix(dictionary(s), grid(dgs))))
+function default_interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
+    SolverOperator(dgs, s, qrfact(evaluation_matrix(s, grid(dgs))))
 end
 
-function interpolate(s::Span, pts, f)
-    A = interpolation_matrix(dictionary(s), pts)
+function interpolate(s::Dictionary, pts, f)
+    A = interpolation_matrix(s, pts)
     B = coeftype(s)[f(x...) for x in pts]
-    Expansion(dictionary(s), A\B)
+    Expansion(s, A\B)
 end

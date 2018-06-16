@@ -166,7 +166,7 @@ end
 
 function (DG::DualBSplineGenerator)(n::Int)
     B = DG.primal_generator(n)
-    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
+    DG = DiscreteDualGram(B, oversampling=DG.oversampling)
     OperatedDict(DG)
 end
 
@@ -181,7 +181,7 @@ primal_bspline_generator(::Type{T}, degree::AbstractVector{Int}) where {T} = ten
 
 function (DG::DualBSplineGenerator)(n::AbstractVector{Int})
     B = DG.primal_generator(n)
-    DG = DiscreteDualGram(Span(B), oversampling=DG.oversampling)
+    DG = DiscreteDualGram(B, oversampling=DG.oversampling)
     tensorproduct([OperatedDict(DGi) for DGi in elements(DG)]...)
 end
 

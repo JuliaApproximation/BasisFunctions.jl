@@ -86,23 +86,23 @@ _eval_expansion(set::WeightedDict, w, coefficients, grid::AbstractGrid) =
 (*)(f::Function, s::Span) = Span(f*dictionary(s), coeftype(s))
 (*)(f::AbstractFunction, s::Span) = Span(f*dictionary(s), coeftype(s))
 
-weightfun_scaling_operator(dgs::DiscreteGridSpace1d, weightfunction) =
+weightfun_scaling_operator(dgs::GridBasis1d, weightfunction) =
     DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x) for x in grid(dgs)])
 
-weightfun_scaling_operator(dgs::DiscreteGridSpace, weightfunction) =
+weightfun_scaling_operator(dgs::GridBasis, weightfunction) =
     DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x...) for x in grid(dgs)])
 
-transform_to_grid_post(src::WeightedDictSpan, dest::DiscreteGridSpace, grid; options...) =
+transform_to_grid_post(src::WeightedDict, dest::GridBasis, grid; options...) =
     weightfun_scaling_operator(dest, weightfunction(src))
 
-transform_from_grid_pre(src::DiscreteGridSpace, dest::WeightedDictSpan, grid; options...) =
+transform_from_grid_pre(src::GridBasis, dest::WeightedDict, grid; options...) =
 	inv(transform_to_grid_post(dest, src, grid; options...))
 
 
-function derivative_space(src::WeightedDictSpan, order; options...)
+function derivative_space(src::WeightedDict, order; options...)
     @assert order == 1
 
-    s = superspan(src)
+    s = superdict(src)
     f = weightfunction(src)
     f_prime = derivative(f)
     s_prime = derivative_space(s, order)
@@ -110,24 +110,24 @@ function derivative_space(src::WeightedDictSpan, order; options...)
 end
 
 # Assume order = 1...
-function differentiation_operator(s1::WeightedDictSpan, s2::MultiDictSpan, order; options...)
+function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; options...)
     @assert order == 1
     @assert s2 == derivative_space(s1, order)
 
     I = IdentityOperator(s1, element(s2, 1))
-    D = differentiation_operator(superspan(s1))
+    D = differentiation_operator(superdict(s1))
     DW = wrap_operator(s1, element(s2, 2), D)
     block_column_operator([I,DW])
 end
 
-function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
-    super_e = grid_evaluation_operator(superspan(set), dgs, grid; options...)
+function grid_evaluation_operator(set::WeightedDict, dgs::GridBasis, grid::AbstractGrid; options...)
+    super_e = grid_evaluation_operator(superdict(set), dgs, grid; options...)
     D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
 end
 
-function grid_evaluation_operator(set::WeightedDictSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...)
-    super_e = grid_evaluation_operator(superspan(set), dgs, grid; options...)
+function grid_evaluation_operator(set::WeightedDict, dgs::GridBasis, grid::AbstractSubGrid; options...)
+    super_e = grid_evaluation_operator(superdict(set), dgs, grid; options...)
     D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
 end

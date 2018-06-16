@@ -45,9 +45,11 @@ product_domaintype(dict::Dictionary...) = Tuple{map(domaintype, dict)...}
 
 function TensorProductDict(dicts::Dictionary...)
     N = length(dicts)
-    DT = typeof(dicts)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
+    c = promote_type(map(coeftype, dicts)...)
+    dicts = map(s->promote_coeftype(s,c),dicts)
+    DT = typeof(dicts)
     TensorProductDict{N,DT,S,T}(dicts)
 end
 
@@ -73,6 +75,12 @@ dict_promote_domaintype(s::TensorProductDict4, ::Type{Tuple{A,B,C,D}}) where {A,
                         promote_domaintype(element(s, 2), B),
                         promote_domaintype(element(s, 3), C),
                         promote_domaintype(element(s, 4), D))
+
+coefficient_type(s::TensorProductDict) = promote_type(map(coefficient_type,elements(s))...)
+# We need a more generic definition, but one can't iterate over a tuple type nor index it
+dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Real} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
+dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Complex} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
+
 
 
 ^(s::Dictionary, n::Int) = tensorproduct(s, n)
@@ -124,7 +132,7 @@ has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
 has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::TensorProductSpan, order; options...) =
+    @eval $op(s::TensorProductDict, order; options...) =
         tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end
 
@@ -287,7 +295,7 @@ end
 
 oversampled_grid(b::TensorProductDict, oversampling::Real) = ProductGrid([oversampled_grid(bi, oversampling) for bi in elements(b)]...)
 
-BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductSpan; oversampling = 1) =
+BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductDict; oversampling = 1) =
     tensorproduct([DiscreteGram(si, oversampling=oversampling) for si in elements(s)]...)
 
 function stencil(op::TensorProductDict)

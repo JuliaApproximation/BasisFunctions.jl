@@ -20,7 +20,7 @@ element(grid::ProductGrid, range::Range) = cartesianproduct(grid.grids[range]...
 
 # Disallow cartesian products of a single grid
 function ProductGrid(grid::AbstractGrid)
-	println("Use cartesianproduct instead of ProductGrid.")
+	warn("Use cartesianproduct instead of ProductGrid.")
 	grid
 end
 

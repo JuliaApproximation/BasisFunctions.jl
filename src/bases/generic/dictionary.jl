@@ -116,7 +116,7 @@ instantiate{S <: Dictionary}(::Type{S}, n) = instantiate(S, n, Float64)
 promote_domaintype(dict::Dictionary{S,T}, ::Type{S}) where {S,T} = dict
 promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_domaintype(dict, U)
 
-promote_domaintype(dict1::Dictionary{S,T}, dict2::Dictionary{S,T}) where {S,T} = (dict1,dict2)
+promote_domaintype(dict1::Dictionary{S,T1}, dict2::Dictionary{S,T2}) where {S,T1,T2} = (dict1,dict2)
 
 function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
@@ -138,6 +138,19 @@ promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{S}) where {N,S<:Nu
 promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{U}) where {N,S<:Number,T,U} =
     promote_domaintype(dict, NTuple{N,U})
 
+"Promote the coefficient type of the dictionary."
+promote_coefficient_type(dict::Dictionary{S,T}, ::Type{T}) where {S,T} = dict
+promote_coefficient_type(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_coeftype(dict, U)
+
+promote_coefficient_type(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+
+function promote_coefficient_type(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
+    T = promote_type(T1,T2)
+    promote_coefficient_type(dict1, T), promote_coefficient_type(dict2, T)
+end
+
+
+
 widen(d::Dictionary) = promote_domaintype(d, widen(domaintype(d)))
 
 # similar returns a similar basis of a given size and numeric type
@@ -152,10 +165,13 @@ resize(s::Dictionary1d, n::NTuple{1,Int}) = resize(s, n[1])
 
 "Return a set of zero coefficients in the native format of the set."
 zeros(s::Dictionary) = zeros(coefficient_type(s), s)
+ones(s::Dictionary) = ones(coefficient_type(s), s)
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multidicts.
 zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
+ones(::Type{T}, s::Dictionary) where {T} = ones(T, size(s))
+
 
 
 
@@ -412,7 +428,7 @@ end
     _default_unsafe_eval_element_in_grid(dict, idx, grid)
 
 function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
-    result = zeros(gridspace(grid, codomaintype(dict)))
+    result = zeros(gridbasis(grid, codomaintype(dict)))
     for k in eachindex(grid)
         @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
@@ -471,9 +487,8 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)
 
-    span = Span(dict, eltype(coefficients))
-    T = codomaintype(span)
-    E = evaluation_operator(span, gridspace(grid, T))
+    T = coeftype(dict)
+    E = evaluation_operator(dict, gridbasis(grid, T))
     E * coefficients
 end
 

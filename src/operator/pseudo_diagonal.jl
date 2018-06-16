@@ -11,9 +11,9 @@ default_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(real(T)))
 PseudoDiagonalOperator(diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) =
     PseudoDiagonalOperator(DiagonalOperator(diagonal), tolerance)
 
-PseudoDiagonalOperator(src::Span, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal), tolerance)
+PseudoDiagonalOperator(src::Dictionary, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) = PseudoDiagonalOperator(DiagonalOperator(src, diagonal), tolerance)
 
-PseudoDiagonalOperator(src::Span, dest::Span, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) =
+PseudoDiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector, tolerance = default_tolerance(eltype(diagonal))) =
     PseudoDiagonalOperator(DiagonalOperator(src, promote_coeftype(dest, eltype(diagonal)), diagonal), tolerance)
 
 PseudoDiagonalOperator(op::DiagonalOperator{T}, tolerance = default_tolerance(T)) where {T} =

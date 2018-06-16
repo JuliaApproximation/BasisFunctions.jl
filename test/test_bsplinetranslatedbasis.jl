@@ -32,8 +32,8 @@ function test_generic_periodicbsplinebasis(T)
 
         n = 3
         b=B(n,1,T)
-        @test abs(sum(BasisFunctions.grammatrix(Span(b)) - [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n)) < tol
-        @test abs(sum(BasisFunctions.dualgrammatrix(Span(b)) - [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n)) < tol
+        @test abs(sum(BasisFunctions.grammatrix(b) - [2//3 1//6 1//6; 1//6 2//3 1//6;1//6 1//6 2//3]//n)) < tol
+        @test abs(sum(BasisFunctions.dualgrammatrix(b) - [5/3 -1/3 -1/3; -1/3 5/3 -1/3; -1/3 -1/3 5/3]*n)) < tol
 
         n = 8
         b=B(n,0,T)
@@ -57,7 +57,7 @@ function test_translatedbsplines(T)
     bb = BSplineTranslatesBasis(n, 1, T; scaled=true)
     b = BSplineTranslatesBasis(n, 1, T)
     e = rand(n)
-    @test norm(Gram(Span(b))*e-Gram(Span(bb))*e/n) < tol
+    @test norm(Gram(b)*e-Gram(bb)*e/n) < tol
 
     b = BSplineTranslatesBasis(n,3, T)
 
@@ -101,7 +101,7 @@ function test_translatedbsplines(T)
     # Test extension_operator and invertability of restriction_operator w.r.t. extension_operator.
     n = 8
     for degree in 0:3
-        b = Span(BSplineTranslatesBasis(n, degree, T))
+        b = BSplineTranslatesBasis(n, degree, T)
         basis_ext = extend(b)
         r = restriction_operator(basis_ext, b)
         e = extension_operator(b, basis_ext)
@@ -121,8 +121,8 @@ function test_translatedbsplines(T)
         for K in 0:3
             for s2 in 5:6
                 s1 = s2<<1
-                b1 = Span(BSplineTranslatesBasis(s1,K,T))
-                b2 = Span(BSplineTranslatesBasis(s2,K,T))
+                b1 = BSplineTranslatesBasis(s1,K,T)
+                b2 = BSplineTranslatesBasis(s2,K,T)
 
                 e1 = random_expansion(b1)
                 e2 = random_expansion(b2)
@@ -143,8 +143,8 @@ function test_translatedbsplines(T)
         for K in 0:3
             for s2 in 5:6
                 s1 = s2<<1
-                b1 = Span(BSplineTranslatesBasis(s1,K,T; scaled=true))
-                b2 = Span(BSplineTranslatesBasis(s2,K,T; scaled=true))
+                b1 = BSplineTranslatesBasis(s1,K,T; scaled=true)
+                b2 = BSplineTranslatesBasis(s2,K,T; scaled=true)
 
                 e1 = random_expansion(b1)
                 e2 = random_expansion(b2)
@@ -163,8 +163,8 @@ function test_translatedbsplines(T)
         end
     end
 
-    @test_throws AssertionError restriction_operator(Span(BSplineTranslatesBasis(4,0,T)), Span(BSplineTranslatesBasis(3,0,T)))
-    @test_throws AssertionError extension_operator(Span(BSplineTranslatesBasis(4,0,T)), Span(BSplineTranslatesBasis(6,0,T)))
+    @test_throws AssertionError restriction_operator(BSplineTranslatesBasis(4,0,T), BSplineTranslatesBasis(3,0,T))
+    @test_throws AssertionError extension_operator(BSplineTranslatesBasis(4,0,T), BSplineTranslatesBasis(6,0,T))
 end
 
 
@@ -174,7 +174,7 @@ function test_translatedsymmetricbsplines(T)
 
     b = SymBSplineTranslatesBasis(n,1,T)
     bb = BSplineTranslatesBasis(n,1,T)
-    @test norm((Gram(Span(b))-Gram(Span(bb)))*rand(n)) < tol
+    @test norm((Gram(b)-Gram(bb))*rand(n)) < tol
 
     b = SymBSplineTranslatesBasis(n,3, T)
 
@@ -217,7 +217,7 @@ function test_translatedsymmetricbsplines(T)
     # Test extension_operator and invertability of restriction_operator w.r.t. extension_operator.
     n = 8
     for degree in 1:2:3
-        b = Span(SymBSplineTranslatesBasis(n, degree, T))
+        b = SymBSplineTranslatesBasis(n, degree, T)
         basis_ext = extend(b)
         r = restriction_operator(basis_ext, b)
         e = extension_operator(b, basis_ext)
@@ -236,8 +236,8 @@ function test_translatedsymmetricbsplines(T)
     for K in 1:2:3
         for s2 in 5:6
             s1 = s2<<1
-            b1 = Span(SymBSplineTranslatesBasis(s1,K))
-            b2 = Span(SymBSplineTranslatesBasis(s2,K))
+            b1 = SymBSplineTranslatesBasis(s1,K)
+            b2 = SymBSplineTranslatesBasis(s2,K)
 
             e1 = random_expansion(b1)
             e2 = random_expansion(b2)
@@ -255,8 +255,8 @@ function test_translatedsymmetricbsplines(T)
         end
     end
 
-    @test_throws AssertionError restriction_operator(Span(SymBSplineTranslatesBasis(4,1)), Span(SymBSplineTranslatesBasis(3,1)))
-    @test_throws AssertionError extension_operator(Span(SymBSplineTranslatesBasis(4,1)), Span(SymBSplineTranslatesBasis(6,1)))
+    @test_throws AssertionError restriction_operator(SymBSplineTranslatesBasis(4,1), SymBSplineTranslatesBasis(3,1))
+    @test_throws AssertionError extension_operator(SymBSplineTranslatesBasis(4,1), SymBSplineTranslatesBasis(6,1))
 end
 
 # function test_orthonormalsplinebasis(T)
@@ -338,11 +338,11 @@ function test_dualsplinebasis(T)
     b = BSplineTranslatesBasis(n,degree)
     bb = BasisFunctions.dual(b; reltol=tol, abstol=tol)
     @test dual(bb) == b
-    e = coefficients(random_expansion(Span(b)))
+    e = coefficients(random_expansion(b))
 
-    @test Gram(Span(b); abstol=tol, reltol=tol)*e ≈ DualGram(Span(bb); abstol=tol, reltol=tol)*e
-    @test Gram(Span(bb); abstol=tol, reltol=tol)*e ≈ DualGram(Span(b); abstol=tol, reltol=tol)*e
-    @test BasisFunctions.dualgramcolumn(Span(b); reltol=tol, abstol=tol) ≈ BasisFunctions.coefficients(bb)
+    @test Gram(b; abstol=tol, reltol=tol)*e ≈ DualGram(bb; abstol=tol, reltol=tol)*e
+    @test Gram(bb; abstol=tol, reltol=tol)*e ≈ DualGram(b; abstol=tol, reltol=tol)*e
+    @test BasisFunctions.dualgramcolumn(b; reltol=tol, abstol=tol) ≈ BasisFunctions.coefficients(bb)
     @test QuadGK.quadgk(x->b[1](x)*bb[1](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
     @test QuadGK.quadgk(x->b[1](x)*bb[2](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
 end
@@ -353,8 +353,8 @@ function test_discrete_dualsplinebasis(T)
         d = discrete_dual(b; oversampling=oversampling)
 
         e = zeros(T,n); e[1] = 1
-        @test DiscreteDualGram(Span(b); oversampling=oversampling)*e≈BasisFunctions.coefficients(d)
-        E1 = matrix(discrete_dual_evaluation_operator(Span(b); oversampling=oversampling))
+        @test DiscreteDualGram(b; oversampling=oversampling)*e≈BasisFunctions.coefficients(d)
+        E1 = matrix(discrete_dual_evaluation_operator(b; oversampling=oversampling))
         oss = []
         # For even degrees points on a coarse grid do not overlap with those on e fine grid.
         if isodd(degree)
@@ -363,7 +363,7 @@ function test_discrete_dualsplinebasis(T)
             oss = [oversampling,]
         end
         for os in oss
-            E2 = matrix(evaluation_operator(Span(d); oversampling = os))
+            E2 = matrix(evaluation_operator(d; oversampling = os))
             E2test = E1[1:Int(oversampling/os):end,:]
             @test E2test*e ≈ E2*e
         end
@@ -382,14 +382,14 @@ function test_bspline_platform(T)
 
         B = P
         g = BasisFunctions.oversampled_grid(B, oversampling)
-        E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(Span(B),gridspace(g),1:oversampling:length(g))
+        E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(B,gridspace(g),1:oversampling:length(g))
         G = CirculantOperator(E'E*[1,zeros(length(g)-1)...]/length(B))
-        DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
+        DG = BasisFunctions.wrap_operator(B, B, inv(G))
 
         e = map(T,rand(length(B)))
-        @test evaluation_operator(Span(D),g)*e≈evaluation_matrix(D,g)*e
-        @test evaluation_operator(Span(D),g)*e≈evaluation_operator(Span(P),g)*(matrix(DG)*e)
-        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈length(B)e
+        @test evaluation_operator(D,g)*e≈evaluation_matrix(D,g)*e
+        @test evaluation_operator(D,g)*e≈evaluation_operator(P,g)*(matrix(DG)*e)
+        @test evaluation_operator(D,g)'*evaluation_operator(P,g)*e ≈length(B)e
         @test S*exp≈exp.(g)
     end
 
@@ -412,19 +412,19 @@ function test_bspline_platform(T)
         g2 = BasisFunctions.oversampled_grid(B2,oversampling)
         g = g1×g2
 
-        E1 = CirculantOperator(evaluation_matrix(B1[1],g1)[:])*IndexExtensionOperator(Span(B1),gridspace(g1),1:oversampling:length(g1))
-        E2 = CirculantOperator(evaluation_matrix(B2[1],g2)[:])*IndexExtensionOperator(Span(B2),gridspace(g2),1:oversampling:length(g2))
+        E1 = CirculantOperator(evaluation_matrix(B1[1],g1)[:])*IndexExtensionOperator(B1,gridspace(g1),1:oversampling:length(g1))
+        E2 = CirculantOperator(evaluation_matrix(B2[1],g2)[:])*IndexExtensionOperator(B2,gridspace(g2),1:oversampling:length(g2))
 
         G1 = CirculantOperator(E1'E1*[1,zeros(length(g1)-1)...]/length(B1));
         G2 = CirculantOperator(E2'E2*[1,zeros(length(g2)-1)...]/length(B2));
         G = G1⊗G2
 
-        DG = BasisFunctions.wrap_operator(Span(B), Span(B), inv(G))
+        DG = BasisFunctions.wrap_operator(B, B, inv(G))
 
         e = map(T,rand(size(B)...))
-        @test (evaluation_operator(Span(D),g)*e)[:]≈evaluation_matrix(D,g)*e[:]
-        @test (evaluation_operator(Span(D),g)*e)[:]≈(evaluation_operator(Span(P),g)*reshape(matrix(DG)*e[:],size(P)...))[:]
-        @test evaluation_operator(Span(D),g)'*evaluation_operator(Span(P),g)*e ≈length(B)e
+        @test (evaluation_operator(D,g)*e)[:]≈evaluation_matrix(D,g)*e[:]
+        @test (evaluation_operator(D,g)*e)[:]≈(evaluation_operator(P,g)*reshape(matrix(DG)*e[:],size(P)...))[:]
+        @test evaluation_operator(D,g)'*evaluation_operator(P,g)*e ≈length(B)e
         f = (x,y)->exp(x*y)
         @test S*f≈f.(g)
     end
@@ -444,8 +444,8 @@ function test_bspline_platform(T)
 
 
     e = map(T,rand(size(B)...))
-    @test evaluation_operator(Span(B), g)*e≈Aop*e
-    @test evaluation_operator(Span(D), g)*e≈Zop*e*length(D)
+    @test evaluation_operator(B, g)*e≈Aop*e
+    @test evaluation_operator(D, g)*e≈Zop*e*length(D)
     @test BasisFunctions.Zt(platform, i)*Aop*e ≈ e
 end
 
@@ -487,8 +487,8 @@ end
 function test_sparsity_speed(T)
     for d in 0:4
         B = BSplineTranslatesBasis(1<<10, d, T)
-        E1 = evaluation_operator(Span(B); sparse = false)
-        E2 = evaluation_operator(Span(B); sparse = true)
+        E1 = evaluation_operator(B; sparse = false)
+        E2 = evaluation_operator(B; sparse = true)
         typeof(E1)
         @test typeof(E1) <: CirculantOperator
         @test typeof(E2) <: MultiplicationOperator

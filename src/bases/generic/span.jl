@@ -172,12 +172,12 @@ linear_index(s::Span, idxn) = linear_index(dictionary(s), idxn)
 # where order is either an Int (in 1D) or a tuple of Int's (in higher dimensions).
 
 # The default order is 1 for 1d sets:
-derivative_space(s::Span1d) = derivative_space(s, 1)
-antiderivative_space(s::Span1d) = antiderivative_space(s, 1)
+derivative_space(s::Dictionary1d) = derivative_space(s, 1)
+antiderivative_space(s::Dictionary1d) = antiderivative_space(s, 1)
 
 # Catch tuples with just one element and convert to Int
-derivative_space(s::Span1d, order::Tuple{Int}) = derivative_space(s, order[1])
-antiderivative_space(s::Span1d, order::Tuple{Int}) = antiderivative_space(s, order[1])
+derivative_space(s::Dictionary1d, order::Tuple{Int}) = derivative_space(s, order[1])
+antiderivative_space(s::Dictionary1d, order::Tuple{Int}) = antiderivative_space(s, order[1])
 
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?

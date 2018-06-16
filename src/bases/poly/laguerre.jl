@@ -39,10 +39,10 @@ jacobi_α(b::LaguerrePolynomials) = b.α
 
 weight(b::LaguerrePolynomials{T}, x) where {T} = exp(-T(x)) * T(x)^(b.α)
 
-function gramdiagonal!(result, b::LaguerreSpan; options...)
+function gramdiagonal!(result, b::LaguerrePolynomials; options...)
     T = eltype(result)
     for i in 1:length(result)
-        result[i] = gamma(T(i+jacobi_α(dictionary(b))))/factorial(i-1)
+        result[i] = gamma(T(i+jacobi_α(b)))/factorial(i-1)
     end
 end
 

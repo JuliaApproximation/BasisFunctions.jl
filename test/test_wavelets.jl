@@ -46,7 +46,6 @@ function bf_wavelets_implementation_test()
         b1 = DaubechiesWaveletBasis(3,2)
         b2 = CDFWaveletBasis(3,1,5)
         b = CDFWaveletBasis(1,1,3)
-
         BasisFunctions.unsafe_eval_element(b, 1, .1)
         624 == @allocated BasisFunctions.unsafe_eval_element(b, 1, .1)
         supports = ((0.,1.),(0.,1.),(0.0,0.5),(0.5,1.0),(0.0,0.25),(0.25,0.5),(0.5,0.75),(0.75,1.0));
@@ -57,7 +56,6 @@ function bf_wavelets_implementation_test()
         for i in ordering(b1)
             @test support(b1,i) == UnitInterval()
         end
-
         @test BasisFunctions.subdict(b1,1:1) == BasisFunctions.DaubechiesWaveletBasis(3,0)
         @test BasisFunctions.subdict(b2,1:3) == BasisFunctions.LargeSubdict(b2,1:3)
         @test b2[1:5] == BasisFunctions.LargeSubdict(b2,1:5)
@@ -79,14 +77,13 @@ function bf_wavelets_implementation_test()
         @test BasisFunctions.native_index(b,6) == (wavelet, 2, 1)
         @test BasisFunctions.native_index(b,7) == (wavelet, 2, 2)
         @test BasisFunctions.native_index(b,8) == (wavelet, 2, 3)
-
         for i in 1:length(b)
             @test(linear_index(b,BasisFunctions.native_index(b,i))==i )
         end
         @test grid(b1) == PeriodicEquispacedGrid(4,0,1)
         @test grid(b2) == PeriodicEquispacedGrid(32,0,1)
         @test BasisFunctions.period(b1)==1.
-
+        
         # test grid eval functions
         for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,0,1))
             for i in ordering(b)
@@ -104,9 +101,9 @@ function bf_wavelets_implementation_test()
             @test evaluation_matrix(basis, BasisFunctions.grid(basis))≈evaluation_matrix(basis, collect(BasisFunctions.grid(basis)))
             T = Float64
             ELT = Float64
-            span = Span(basis)
+            span = basis
             tspan = transform_space(span)
-            x = rand(tspan)
+            x = rand(Span(tspan))
             t = BasisFunctions.unitary_dwt(tspan, span)
             it = BasisFunctions.unitary_idwt(span, tspan)
             @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)

@@ -15,20 +15,27 @@ grid(op::AbstractSamplingOperator) = grid(gridspace(op))
 """
 A `GridSamplingOperator` is an operator that maps a function to its samples.
 """
-struct GridSamplingOperator <: AbstractSamplingOperator
-    src     ::  AbstractFunctionSpace
-    dest    ::  DiscreteGridSpace
+struct GridSamplingOperator <: GenericOperator
+    src     ::  Dictionary
+    dest    ::  GridBasis
 
-	# An inner constructor to enforce that the spaces match
-	GridSamplingOperator(src::AbstractFunctionSpace{S,T}, dest::DiscreteGridSpace{A,S,T}) where {A,S,T} =
-		new(src, dest)
+	## # An inner constructor to enforce that the spaces match
+	## GridSamplingOperator(src::Dictionary{S,T}, dest::GridBasis{S,T}) where {S,T} =
+	## 	new(src, dest)
 end
 
-GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}) where {S,T} =
-	GridSamplingOperator(src, gridspace(grid, T))
+GridSamplingOperator(src::Dictionary{S,T}, grid::AbstractGrid{S}) where {S,T} =
+	GridSamplingOperator(src, gridbasis(grid, T))
 
-GridSamplingOperator(gridspace::DiscreteGridSpace{A,S,T}) where {A,S,T} =
-	GridSamplingOperator(FunctionSpace{S,T}(), gridspace)
+GridSamplingOperator(gridbasis::GridBasis{S,T}) where {S,T} =
+	GridSamplingOperator(DiscreteVectorSet{T}(length(gridbasis)), gridbasis)
+
+src(op::GridSamplingOperator) = op.src
+dest(op::GridSamplingOperator) = op.dest
+
+gridbasis(op::GridSamplingOperator) = dest(op)
+
+grid(op::GridSamplingOperator) = grid(gridbasis(op))
 
 apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridspace(op)))
 apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f)
@@ -50,7 +57,7 @@ call_function_with_vector(f, x::SVector{N}) where {N} = f(x...)
 call_function_with_vector(f, x::AbstractVector) = f(x...)
 
 function sample!(result, g::AbstractGrid, f)
-	for i in eachindex(g)
+    for i in eachindex(g)
 		result[i] = call_function_with_vector(f, g[i])
 	end
 	result
@@ -58,4 +65,4 @@ end
 
 (*)(S::GridSamplingOperator, D::Dictionary) = apply(S, D)
 
-apply(S::GridSamplingOperator, D::Dictionary; options...) = evaluation_operator(Span(D, coeftype(gridspace(S))), grid(S); options...)
+apply(S::GridSamplingOperator, D::Dictionary; options...) = evaluation_operator(D, grid(S); options...)

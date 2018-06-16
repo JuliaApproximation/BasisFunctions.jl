@@ -16,17 +16,17 @@ is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)-order)
-antiderivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)+order)
+derivative_space(s::OPS, order::Int; options...) = resize(s, length(s)-order)
+antiderivative_space(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
 length(o::OrthogonalPolynomials) = o.n
 
 p0(::OPS{T}) where {T} = one(T)
 
-function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
+function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
     T = real(coeftype(s))
 	# To avoid difficult points at the ends of the domain.
-	dot(x->weight(dictionary(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end
 
 clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
@@ -57,12 +57,12 @@ has_extension(b::OPS) = true
 # Using OPSpan as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPSpan{A,S,T,D}, s2::OPSpan{A,S,T,D}; options...) where {A,S,T,D <: OrthogonalPolynomials}
+function extension_operator(s1::OPS, s2::OPS; options...) 
     @assert length(s2) >= length(s1)
     IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::OPSpan{A,S,T,D}, s2::OPSpan{A,S,T,D}; options...) where {A,S,T,D <: OrthogonalPolynomials}
+function restriction_operator(s1::OPS, s2::OPS; options...) 
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end

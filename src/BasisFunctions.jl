@@ -352,6 +352,7 @@ include("grid/scattered_grid.jl")
 include("grid/subgrid.jl")
 
 include("bases/generic/derived_dict.jl")
+include("bases/generic/complexified_dict.jl")
 include("bases/generic/tensorproduct_dict.jl")
 include("bases/generic/mapped_dict.jl")
 

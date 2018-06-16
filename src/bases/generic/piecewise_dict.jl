@@ -108,13 +108,13 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-evaluation_operator(s::PiecewiseDictSpan, dgs::DiscreteGridSpace; options...) =
-    MultiplicationOperator(s, dgs, evaluation_matrix(dictionary(s), grid(dgs))) *
+evaluation_operator(s::PiecewiseDict, dgs::GridBasis; options...) =
+    MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))) *
         LinearizationOperator(s)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::PiecewiseDictSpan, s2::PiecewiseDictSpan, order; options...)
+    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
         @assert nb_elements(s1) == nb_elements(s2)
         # TODO: improve the type of the array elements below
         BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
@@ -202,18 +202,18 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
     PiecewiseDict(dicts), MultiArray(coefs)
 end
 
-dot(s::PiecewiseDictSpan, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(dictionary(s)); options...) =
+dot(s::PiecewiseDict, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...) =
     dot(s, native_index(s, f1), f2, nodes; options...)
 
-function dot(s::PiecewiseDictSpan, f1, f2::Function, nodes::Array=BasisFunctions.native_nodes(dictionary(s)); options...)
+function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...)
     # idxn = native_index(s, f1)
     # set.dicts[idxn[1]]
     # b = element(s, idxn[1])
     b = element(s, f1[1])
 
-    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, infimum(support(dictionary(b))), supremum(support(dictionary(b)))); options...)
+    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, infimum(support(b)), supremum(support(b))); options...)
 end
 
-function Gram(s::PiecewiseDictSpan; options...)
+function Gram(s::PiecewiseDict; options...)
     BlockDiagonalOperator(AbstractOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:nb_elements(s)], s, s)
 end

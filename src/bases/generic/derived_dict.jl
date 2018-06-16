@@ -12,8 +12,6 @@ may override the evaluation routine to apply the map first.
 abstract type DerivedDict{S,T} <: Dictionary{S,T}
 end
 
-const DerivedSpan{A,S,T,D <: DerivedDict} = Span{A,S,T,D}
-
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
 # underlying set, as if the derived set does not want to change any of that
@@ -24,11 +22,6 @@ const DerivedSpan{A,S,T,D <: DerivedDict} = Span{A,S,T,D}
 # Assume the concrete set has a field called set -- override if it doesn't
 superdict(s::DerivedDict) = s.superdict
 
-superdict(s::DerivedSpan) = superdict(dictionary(s))
-
-"Return the span of the superdict of the given derived set."
-superspan(s::DerivedSpan) = Span(superdict(s), coeftype(s))
-
 # The concrete subset should implement similar_dictionary, as follows:
 #
 # similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
@@ -37,8 +30,6 @@ superspan(s::DerivedSpan) = Span(superdict(s), coeftype(s))
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
 
-similar_span(s::DerivedSpan, s2::Span) = Span(similar_dictionary(dictionary(s), dictionary(s2)), coeftype(s2))
-
 resize(s::DerivedDict, n) = similar_dictionary(s, resize(superdict(s),n))
 
 # To avoid ambiguity with a similar definition for abstract type Dictionary:
@@ -46,7 +37,10 @@ resize(s::DerivedDict, n::Tuple{Int}) = resize(s, n[1])
 
 dict_promote_domaintype(s::DerivedDict{T}, ::Type{S}) where {T,S} =
     similar_dictionary(s, promote_domaintype(superdict(s), S))
-
+dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Complex} =
+    similar_dictionary(s, promote_coeftype(superdict(s), S))
+    dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Real} =
+    similar_dictionary(s, promote_coeftype(superdict(s), S))
 for op in (:coefficient_type,)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
@@ -125,17 +119,17 @@ unsafe_eval_element_derivative(s::DerivedDict, idx, x) =
 #########################
 
 for op in (:transform_space,)
-    @eval $op(s::DerivedSpan; options...) = $op(superspan(s); options...)
+    @eval $op(s::DerivedDict; options...) = $op(superdict(s); options...)
 end
 
 for op in (:derivative_space, :antiderivative_space)
-    @eval $op(s::DerivedSpan, order; options...) = similar_span(s, $op(superspan(s), order; options...))
+    @eval $op(s::DerivedDict, order; options...) = similar_dictionary(s, $op(superdict(s), order; options...))
 end
 
 
 for op in (:extension_operator, :restriction_operator)
-    @eval $op(s1::DerivedSpan, s2::DerivedSpan; options...) =
-        wrap_operator(s1, s2, $op(superspan(s1), superspan(s2); options...))
+    @eval $op(s1::DerivedDict, s2::DerivedDict; options...) =
+        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); options...))
 end
 
 # By default we return the underlying set when simplifying transforms
@@ -146,8 +140,8 @@ for op in ( (:transform_from_grid, :s1, :s2),
             (:transform_from_grid_pre, :s1, :s1),
             (:transform_from_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1, s2::DerivedSpan, grid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
+    @eval function $(op[1])(s1, s2::DerivedDict, grid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
@@ -157,8 +151,8 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_pre, :s1, :s1),
             (:transform_to_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1::DerivedSpan, s2, grid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
+    @eval function $(op[1])(s1::DerivedDict, s2, grid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
         operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
@@ -166,18 +160,18 @@ end
 
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedSpan, s2::DerivedSpan, order; options...) =
-        wrap_operator(s1, s2, $op(superspan(s1), superspan(s2), order; options...))
+    @eval $op(s1::DerivedDict, s2::DerivedDict, order; options...) =
+        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; options...))
 end
 
-grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superspan(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
 
-grid_evaluation_operator(set::DerivedSpan, dgs::DiscreteGridSpace, grid::AbstractSubGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superspan(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
 
-dot(s::DerivedSpan, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
-    dot(superspan(s), f1, f2, nodes; options...)
+dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
+    dot(superdict(s), f1, f2, nodes; options...)
 
 
 #########################

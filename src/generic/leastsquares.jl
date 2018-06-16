@@ -10,20 +10,20 @@ function leastsquares_matrix(dict::Dictionary, pts)
     evaluation_matrix(dict, pts)
 end
 
-function leastsquares_operator(s::Span; samplingfactor = 2, options...)
+function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
     if has_grid(s)
         dict2 = resize(s, samplingfactor*length(s))
         ls_grid = grid(dict2)
     else
-        ls_grid = EquispacedGrid(samplingfactor*length(s), support(dictionary(s)))
+        ls_grid = EquispacedGrid(samplingfactor*length(s), support(s))
     end
     leastsquares_operator(s, ls_grid; options...)
 end
 
-leastsquares_operator(s::Span, grid::AbstractGrid; options...) =
-    leastsquares_operator(s, gridspace(grid, coeftype(s)); options...)
+leastsquares_operator(s::Dictionary, grid::AbstractGrid; options...) =
+    leastsquares_operator(s, gridbasis(grid, coeftype(s)); options...)
 
-function leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
+function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
     if has_grid(s)
         larger_dict = resize(s, size(dgs))
         if grid(larger_dict) == grid(dgs) && has_transform(larger_dict, dgs)
@@ -38,6 +38,6 @@ function leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
     end
 end
 
-function default_leastsquares_operator(s::Span, dgs::DiscreteGridSpace; options...)
-    SolverOperator(dgs, s, qrfact(evaluation_matrix(dictionary(s), grid(dgs))))
+function default_leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
+    SolverOperator(dgs, s, qrfact(evaluation_matrix(s, grid(dgs))))
 end

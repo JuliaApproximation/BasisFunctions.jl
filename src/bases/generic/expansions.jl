@@ -41,6 +41,7 @@ coefficients(e::Expansion) = e.coefficients
 
 Span(e::Expansion) = Span(dictionary(e), eltype(e))
 
+random_expansion(d::Dictionary) = Expansion(d,rand(Span(d)))
 # For expansions of composite types, return a Expansion of a subdict
 element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
 
@@ -77,13 +78,13 @@ call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
     eval_expansion(dict, coefficients, x; options...)
 
 function differentiate(e::Expansion, order=1)
-    op = differentiation_operator(Span(e), order)
-    Expansion(dictionary(dest(op)), apply(op,e.coefficients))
+    op = differentiation_operator(dictionary(e), order)
+    Expansion(dest(op), apply(op,e.coefficients))
 end
 
 function antidifferentiate(e::Expansion, order=1)
-    op = antidifferentiation_operator(Span(e), order)
-    Expansion(dictionary(dest(op)), apply(op,e.coefficients))
+    op = antidifferentiation_operator(dictionary(e), order)
+    Expansion(dest(op), apply(op,e.coefficients))
 end
 
 Base.broadcast(e::Expansion, grid::AbstractGrid) = eval_expansion(dictionary(e), coefficients(e), grid)
@@ -115,15 +116,15 @@ roots(f::Expansion) = roots(dictionary(f), coefficients(f))
 
 # Delegate generic operators
 for op in (:extension_operator, :restriction_operator, :transform_operator)
-    @eval $op(s1::Expansion, s2::Expansion) = $op(Span(s1), Span(s2))
+    @eval $op(s1::Expansion, s2::Expansion) = $op(dictionary(s1), dictionary(s2))
 end
 
 for op in (:interpolation_operator, :evaluation_operator, :approximation_operator)
-    @eval $op(s::Expansion) = $op(Span(s))
+    @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
-differentiation_operator(s1::Expansion, s2::Expansion, var::Int...) = differentiation_operator(Span(s1), Span(s2), var...)
-differentiation_operator(s1::Expansion, var::Int...) = differentiation_operator(Span(s1), var...)
+differentiation_operator(s1::Expansion, s2::Expansion, var::Int...) = differentiation_operator(dictionary(s1), dictionary(s2), var...)
+differentiation_operator(s1::Expansion, var::Int...) = differentiation_operator(dictionary(s1), var...)
 
 
 show(io::IO, fun::Expansion) = show_setexpansion(io, fun, dictionary(fun))
@@ -157,10 +158,10 @@ for op in (:+, :-)
         if size(s1) == size(s2)
             Expansion(dictionary(s1), $op(coefficients(s1), coefficients(s2)))
         elseif length(s1) < length(s2)
-            s3 = extension_operator(Span(s1), Span(s2)) * s1
+            s3 = extension_operator(dictionary(s1), dictionary(s2)) * s1
             Expansion(dictionary(s2), $op(coefficients(s3), coefficients(s2)))
         else
-            s3 = extension_operator(Span(s2), Span(s1)) * s2
+            s3 = extension_operator(dictionary(s2), dictionary(s1)) * s2
             Expansion(dictionary(s1), $op(coefficients(s1), coefficients(s3)))
         end
     end
@@ -180,5 +181,5 @@ end
 function apply(op::AbstractOperator, e::Expansion)
     #@assert dictionary(e) == dictionary(src(op))
 
-    Expansion(dictionary(dest(op)), op * coefficients(e))
+    Expansion(dest(op), op * coefficients(e))
 end

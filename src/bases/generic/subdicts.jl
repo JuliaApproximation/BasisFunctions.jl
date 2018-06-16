@@ -73,8 +73,8 @@ has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), super
 has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
 has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
 
-derivative_space(s::SubdictSpan, order; options...) = subdict_derivative_space(s, order, superspan(s), superindices(s); options...)
-antiderivative_space(s::SubdictSpan, order; options...) = subdict_antiderivative_space(s, order, superspan(s), superindices(s); options...)
+derivative_space(s::Subdictionary, order; options...) = subdict_derivative_space(s, order, superdict(s), superindices(s); options...)
+antiderivative_space(s::Subdictionary, order; options...) = subdict_antiderivative_space(s, order, superdict(s), superindices(s); options...)
 
 grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
 
@@ -136,13 +136,13 @@ similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superi
 
 grid(d::LargeSubdict) = grid(superdict(d))
 
-function extension_operator(s1::LargeSubdictSpan, s2::Span; options...)
-    @assert dictionary(s2) == superdict(s1)
+function extension_operator(s1::LargeSubdict, s2::Dictionary; options...)
+    @assert s2 == superdict(s1)
     IndexExtensionOperator(s1, s2, superindices(s1))
 end
 
-function restriction_operator(s1::Span, s2::LargeSubdictSpan; options...)
-    @assert dictionary(s1) == superdict(s2)
+function restriction_operator(s1::Dictionary, s2::LargeSubdict; options...)
+    @assert s1 == superdict(s2)
     IndexRestrictionOperator(s1, s2, superindices(s2))
 end
 
@@ -155,22 +155,22 @@ end
 subdict_has_derivative(s::LargeSubdict, superdict, superindices) = has_derivative(superdict)
 subdict_has_antiderivative(s::LargeSubdict, superdict, superindices) = has_antiderivative(superdict)
 
-subdict_derivative_space(s::LargeSubdictSpan, order, superdict, superindices; options...) =
+subdict_derivative_space(s::LargeSubdict, order, superdict, superindices; options...) =
     derivative_space(superdict, order; options...)
-subdict_antiderivative_space(s::LargeSubdictSpan, order, superdict, superindices; options...) =
+subdict_antiderivative_space(s::LargeSubdict, order, superdict, superindices; options...) =
     antiderivative_space(superdict, order; options...)
 
-function differentiation_operator(s1::LargeSubdictSpan, s2::Span, order::Int; options...)
+function differentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
     @assert s2 == derivative_space(s1, order)
-    D = differentiation_operator(superspan(s1), s2, order; options...)
-    E = extension_operator(s1, superspan(s1); options...)
+    D = differentiation_operator(superdict(s1), s2, order; options...)
+    E = extension_operator(s1, superdict(s1); options...)
     D*E
 end
 
-function antidifferentiation_operator(s1::LargeSubdictSpan, s2::Span, order::Int; options...)
+function antidifferentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
     @assert s2 == antiderivative_space(s1, order)
-    D = antidifferentiation_operator(superspan(s1), s2, order; options...)
-    E = extension_operator(s1, superspan(s1); options...)
+    D = antidifferentiation_operator(superdict(s1), s2, order; options...)
+    E = extension_operator(s1, superdict(s1); options...)
     D*E
 end
 
