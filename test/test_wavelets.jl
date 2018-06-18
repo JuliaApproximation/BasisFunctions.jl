@@ -23,13 +23,13 @@ function test_wavelet_quadrature()
             reference = quad_sf_N(g, wav, M2, J, 5)
 
             b = DaubechiesWaveletBasis(3,J)
-            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),0)
+            S = BasisFunctions.DWTSamplingOperator(b, Int(M1/5),0)
             @test norm(S*g-reference/sqrt(1<<J)) < 1e-3
-            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 0)
+            S = BasisFunctions.DWTSamplingOperator(b, Int(M2/5), 0)
             @test norm(S*g-reference/sqrt(1<<J)) < 1e-8
-            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M1/5),7)
+            S = BasisFunctions.DWTSamplingOperator(b, Int(M1/5),7)
             @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
-            S = BasisFunctions.DWTSamplingOperator(Span(b), Int(M2/5), 3)
+            S = BasisFunctions.DWTSamplingOperator(b, Int(M2/5), 3)
             @test norm(S*g-reference/sqrt(1<<J)) < 1e-15
         end
 end
@@ -83,7 +83,7 @@ function bf_wavelets_implementation_test()
         @test grid(b1) == PeriodicEquispacedGrid(4,0,1)
         @test grid(b2) == PeriodicEquispacedGrid(32,0,1)
         @test BasisFunctions.period(b1)==1.
-        
+
         # test grid eval functions
         for g in (plotgrid(b,200), PeriodicEquispacedGrid(128,0,1))
             for i in ordering(b)

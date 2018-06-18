@@ -222,6 +222,7 @@ SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
 
 similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
 
+Base.length(::SingletonSubdict) = 1
 
 # Override the default `superindices` because the field has a different name
 superindices(s::SingletonSubdict) = s.index

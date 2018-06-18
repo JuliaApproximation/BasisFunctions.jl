@@ -1,17 +1,17 @@
 
 struct VerticalBandedOperator{ELT} <: BasisFunctions.AbstractOperator{ELT}
-    src::Span
-    dest::Span
+    src::Dictionary
+    dest::Dictionary
     array::Vector{ELT}
     step::Int
     offset::Int
-    function VerticalBandedOperator{ELT}(src::Span, dest::Span, array::Vector{ELT}, step::Int, offset::Int) where ELT
+    function VerticalBandedOperator{ELT}(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int, offset::Int) where ELT
         @assert length(array) <= length(dest)
         new{ELT}(src, dest, array, step, offset)
     end
 end
 
-VerticalBandedOperator(src::Span, dest::Span, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
+VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     VerticalBandedOperator{ELT}(src, dest, array, step, offset)
 
 function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
@@ -40,19 +40,19 @@ function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Ve
     dest
 end
 struct HorizontalBandedOperator{ELT} <: BasisFunctions.AbstractOperator{ELT}
-    src::Span
-    dest::Span
+    src::Dictionary
+    dest::Dictionary
     array::Vector{ELT}
     step::Int
     offset::Int
-    function HorizontalBandedOperator{ELT}(src::Span, dest::Span, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT
+    function HorizontalBandedOperator{ELT}(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT
         @assert length(array) <= length(src)
         new{ELT}(src, dest, array, step, offset)
     end
 end
 
 
-HorizontalBandedOperator(src::Span, dest::Span, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
+HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     HorizontalBandedOperator{ELT}(src, dest, array, step, offset)
 
 function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)

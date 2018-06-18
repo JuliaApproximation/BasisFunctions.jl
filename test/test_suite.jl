@@ -31,7 +31,9 @@ include("test_DCTI.jl")
 include("test_gram.jl")
 
 delimit("Wavelets")
-#include("test_wavelets.jl")
+include("test_wavelets.jl")
+delimit("Compact approximation")
+include("test_compact_approximation.jl")
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well
@@ -104,7 +106,7 @@ for T in [Float64,BigFloat,]
     delimit("Tensor product set interfaces")
 
     # TODO: all sets in the test below should use type T!
-    
+
     delimit("Test Grids")
     @testset "$(rpad("Grids",80))" begin
         test_grids(T) end
