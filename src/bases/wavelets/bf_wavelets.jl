@@ -88,9 +88,21 @@ end
 BasisFunctions.left(b::WaveletBasis{T}, i::WaveletIndex) where {T} = T(0)
 BasisFunctions.right(b::WaveletBasis{T}, i::WaveletIndex) where {T} = T(1)
 
-
-_offset(b::WaveletBasis) = support(side(b), kind(b), wavelet(b))[1]
-_noelements(b::WaveletBasis) = support_length(side(b), kind(b), wavelet(b))
+function first_index(b::WaveletBasis, x::Real)
+    ii, on_edge = BasisFunctions.interval_index(b, x)
+    s = support(BasisFunctions.side(b), BasisFunctions.kind(b), wavelet(b))
+    s1 = Int(s[1])
+    L = Int(s[2]) - s1
+    if L == 1
+        return mod(ii-s1-1,length(b))+1, 1
+    end
+    if on_edge
+        return mod(ii-s1-2,length(b))+1, L - 1
+    else
+        return mod(ii-s1-1,length(b))+1, L
+    end
+end
+_element_spans_one(b::WaveletBasis) = support_length(side(b), kind(b), wavelet(b)) == 1
 
 period{T}(::WaveletBasis{T}) = T(1)
 
@@ -321,6 +333,8 @@ struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
     src::Span
     dest::Span
 
+    s::Side
+    w::DiscreteWavelet
     fb::Filterbank
     j::Int
     d::Int
@@ -339,11 +353,11 @@ function BasisFunctions.DWTScalingEvalOperator(span::BasisFunctions.WaveletBasis
     f = BasisFunctions.evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
     f_scaled = similar(f)
 
-    BasisFunctions.DWTScalingEvalOperator{T}(span, dgs, fb, j, d, perbound, f, f_scaled, coefscopy, coefscopy2)
+    BasisFunctions.DWTScalingEvalOperator{T}(span, dgs, s, w, fb, j, d, perbound, f, f_scaled)
 end
 
 function BasisFunctions.apply!(op::BasisFunctions.DWTScalingEvalOperator, y, coefs; options...)
-    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, coefs, op.j, op.d, op.f_scaled)
+    BasisFunctions._evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.s, op.w, coefs, op.j, op.d, op.f_scaled)
     y
 end
 
@@ -404,6 +418,9 @@ struct DaubechiesWaveletBasis{P,T,S,K} <: OrthogonalWaveletBasis{T,S,K}
     L   ::    Int
 end
 
+ScalingBasis(w::DaubechiesWavelet{P,T}, L::Int, ::Type{S}=Prl) where {P,T,S} =
+    DaubechiesScalingBasis(P, L, T)
+
 DaubechiesWaveletBasis(P::Int, L::Int, ::Type{T} = Float64) where {T} =
     DaubechiesWaveletBasis{P,T,Prl,Wvl}(DaubechiesWavelet{P,T}(), L)
 
@@ -422,6 +439,9 @@ struct CDFWaveletBasis{P,Q,T,S,K} <: BiorthogonalWaveletBasis{T,S,K}
     w   ::    CDFWavelet{P,Q,T}
     L   ::    Int
 end
+
+ScalingBasis(w::CDFWavelet{P,Q,T}, L::Int, ::Type{S}=Prl) where {P,Q,T,S} =
+    CDFScalingBasis(P, Q, L, S, T)
 
 CDFWaveletBasis(P::Int, Q::Int, L::Int, ::Type{S}=Prl, ::Type{T} = Float64) where {T,S<:Side} =
     CDFWaveletBasis{P,Q,T,S,Wvl}(CDFWavelet{P,Q,T}(),L)
@@ -454,8 +474,6 @@ end
 
 plotgrid(b::WaveletBasis, n) = DyadicPeriodicEquispacedGrid(round(Int,log2(n)), support(b))
 
-
-# include("quadrature.jl")
 """
 A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficients.
 """
@@ -472,6 +490,8 @@ struct DWTSamplingOperator <: AbstractSamplingOperator
     end
 end
 using WaveletsCopy.DWT: quad_sf_weights
+Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:AbstractOperator} = dwt.weight
+Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:AbstractOperator} = OP
 
 function WeightOperator(basis::WaveletBasis, oversampling::Int=1, recursion::Int=0)
     wav = wavelet(basis)
@@ -504,3 +524,56 @@ dest(op::DWTSamplingOperator) = dest(op.weight)
 
 apply(op::DWTSamplingOperator, f) = op.weight*apply(op.sampler, f)
 apply!(result, op::DWTSamplingOperator, f) = apply!(op.weight, result, sample!(op.scratch, op.sampler, f))
+
+##################
+# Platform
+##################
+
+# 1D generators
+primal_scaling_generator(wavelet::DiscreteWavelet) = n->ScalingBasis(wavelet,n)
+dual_scaling_generator(wavelet::DiscreteWavelet) = n->ScalingBasis(wavelet,n, Dul)
+
+# ND generators
+primal_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::DiscreteWavelet...) = primal_scaling_generator([wav1, wav2, wav...])
+
+primal_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->primal_scaling_generator(w), wav)...)
+
+dual_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::DiscreteWavelet...) = dual_scaling_generator([wav1, wav2, wav...])
+
+dual_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->dual_scaling_generator(w), wav)...)
+# Sampler
+scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridspace(grid(primal(n+Int(log2(oversampling))))))
+
+dual_scaling_sampler(primal, oversampling) =
+    n -> (
+        basis = primal(n+Int(log2(oversampling)));
+        wav = BasisFunctions.wavelet(basis);
+        if oversampling==1; # Just a choice I made.
+            W = BasisFunctions.WeightOperator(wav, 1, n, 0);
+        elseif oversampling == 2 ;
+            W = BasisFunctions.WeightOperator(wav, 2, n, 0);
+        else ;
+            W = BasisFunctions.WeightOperator(wav, 2, n, Int(log2(oversampling>>1))) ;
+        end;
+        sampler = GridSamplingOperator(gridspace(grid(basis)));
+        DWTSamplingOperator(sampler, W);
+    )
+
+# params
+scaling_param(init::Int) = SteppingSequence(init)
+
+scaling_param(init::AbstractVector{Int}) = TensorSequence([SteppingSequence(i) for i in init])
+
+# Platform
+function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,AbstractVector{W}}, oversampling::Int) where {W<:DiscreteWavelet}
+	primal = primal_scaling_generator(wav)
+	dual = dual_scaling_generator(wav)
+	sampler = scaling_sampler(primal, oversampling)
+    # dual_sampler = dual_scaling_sampler(wav, oversampling)
+    dual_sampler = dual_scaling_sampler(primal, oversampling)
+	params = scaling_param(init)
+	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
+		params = params, name = "Scaling functions")
+end
+
+Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = AbstractOperator(dual_sampler)

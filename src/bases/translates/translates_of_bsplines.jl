@@ -74,6 +74,13 @@ dict_promote_domaintype{K,T,S}(b::BSplineTranslatesBasis{K,T}, ::Type{S}) = BSpl
 
 resize{K,T}(b::BSplineTranslatesBasis{K,T}, n::Int) = BSplineTranslatesBasis(n, degree(b), T)
 
+function support(B::BSplineTranslatesBasis{K,T}, i::Int) where {K,T}
+    start = T(i-1)/length(B)
+    width = T(degree(B)+1)/length(B)
+    stop  = start+width
+    stop <=1 ? (return interval(start,stop)) : (return union(interval(T(0),stop-1),interval(start,T(1))))
+end
+
 # TODO find an explination for this (splines are no Chebyshev system)
 # For the B spline with degree 1 (hat functions) the MidpointEquispacedGrid does not lead to evaluation_matrix that is non singular
 compatible_grid(b::BSplineTranslatesBasis{K}, grid::MidpointEquispacedGrid) where {K} = iseven(K) &&

@@ -12,6 +12,8 @@ grid(op::AbstractSamplingOperator) = grid(gridspace(op))
 
 (*)(op::AbstractSamplingOperator, f) = apply(op, f)
 
+apply(op::AbstractSamplingOperator, f::AbstractVector) = (@assert length(f)==size(op,2); f)
+
 """
 A `GridSamplingOperator` is an operator that maps a function to its samples.
 """

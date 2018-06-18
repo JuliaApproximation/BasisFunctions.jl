@@ -114,6 +114,8 @@ recursive_native_index(d::TensorProductDict, idx::LinearIndex) =
 #   the user wanted to use a CartesianIndex
 checkbounds(::Type{Bool}, d::TensorProductDict{N}, idx::NTuple{N,Int}) where {N} =
     checkbounds(Bool, d, CartesianIndex(idx))
+checkbounds(::Type{Bool}, d::TensorProductDict{2}, idx::NTuple{2,Int}) =
+    checkbounds(Bool, d, CartesianIndex(idx))
 # - Any other tuple we assume is a recursive native index, which we convert
 #   elementwise to a tuple of linear indices
 checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
@@ -307,4 +309,3 @@ function stencil(op::TensorProductDict)
     end
     A
 end
-

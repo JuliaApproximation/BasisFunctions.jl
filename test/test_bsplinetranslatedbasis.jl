@@ -14,9 +14,9 @@ function test_generic_periodicbsplinebasis(T)
         @test length(b)==5
         @test BasisFunctions.degree(b)==3
         @test is_basis(b)
-        @test is_biorthogonal(b)
-        @test !is_orthogonal(b)
-        @test !is_orthonormal(b)
+        @test BasisFunctions.is_biorthogonal(b)
+        @test !BasisFunctions.is_orthogonal(b)
+        @test !BasisFunctions.is_orthonormal(b)
         @test !has_unitary_transform(b)
 
         @test BasisFunctions.left_of_compact_function(b) <= 0 <= BasisFunctions.right_of_compact_function(b)
@@ -44,12 +44,12 @@ function test_generic_periodicbsplinebasis(T)
     end
 end
 
-using BasisFunctions: overlapping_elements, interval_index
+using BasisFunctions: interval_index, coefficient_index_range_of_overlapping_elements
 function test_translatedbsplines(T)
     B = BSplineTranslatesBasis(10,1)
     x = [1e-4,.23,.94]
-    @test interval_index.(B,x) == [1,3,10]
-    indices = overlapping_elements.(B,x)
+    @test [interval_index(B,t)[1] for t in x] == [1,3,10]
+    indices = coefficient_index_range_of_overlapping_elements.(B,x)
     @test reduce(&,true,[B[i].(x[j]) for j in 1:length(x) for i in indices[j]].>0)
 
     tol = sqrt(eps(real(T)))
@@ -440,48 +440,13 @@ function test_bspline_platform(T)
     D = dual(platform,i)
     g = grid(sampler(platform,i))
     Aop = BasisFunctions.A(platform, i)
-    Zop = BasisFunctions.Z(platform, i)
+    Zop = BasisFunctions.Zt(platform, i)'
 
 
     e = map(T,rand(size(B)...))
     @test evaluation_operator(B, g)*e≈Aop*e
     @test evaluation_operator(D, g)*e≈Zop*e*length(D)
     @test BasisFunctions.Zt(platform, i)*Aop*e ≈ e
-end
-
-using BasisFunctions: overlapping_elements, support_indices
-function test_spline_approximation(T)
-
-    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
-
-    x = [SVector(1e-4,1e-5),SVector(.23,.94)]
-    indices = overlapping_elements.(B,x)
-
-    @test reduce(&,true,[B[i].(x[j]...) for j in 1:length(x) for i in indices[j]].>0)
-
-    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)⊗BSplineTranslatesBasis(5,1,T)
-
-    x = [SVector(1e-4,1e-5,1e-4),SVector(.23,.94,.93)]
-    indices = overlapping_elements.(B,x)
-
-    @test reduce(&,true,[B[i].(x[j]...) for j in 1:length(x) for i in indices[j]].>0)
-
-
-    # Select the points that are in the support of the function
-    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)
-    g = BasisFunctions.grid(B)
-    set = [1,length(B)-1]
-    indices = support_indices.(B,g,set)
-    @which support_indices(B,g,set[1])
-    @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
-
-    # Select the points that are in the support of the function
-    B = BSplineTranslatesBasis(10,3,T)⊗BSplineTranslatesBasis(15,5,T)⊗BSplineTranslatesBasis(5,1,T)
-    g = BasisFunctions.grid(B)
-    set = [1,length(B)-1]
-    indices = support_indices.(B,g,set)
-    @which support_indices(B,g,set[1])
-    @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 end
 
 function test_sparsity_speed(T)
@@ -526,14 +491,19 @@ end
 
 # @testset begin test_discrete_dualsplinebasis(BigFloat) end
 # @testset begin test_dualsplinebasis(BigFloat) end
-# @testset begin test_discrete_orthonormalsplinebasis(BigFloat) end
-# @testset begin test_orthonormalsplinebasis(BigFloat) end
+#
 # @testset begin test_translatedbsplines(BigFloat) end
 # @testset begin test_translatedsymmetricbsplines(BigFloat) end
 # @testset begin test_generic_periodicbsplinebasis(BigFloat) end
 # @testset begin test_bspline_platform(BigFloat) end
 # @testset begin test_sparsity_speed(BigFloat) end
-# @testset begin test_spline_approximation(BigFloat) end
+
+
+
+# @testset begin test_discrete_orthonormalsplinebasis(BigFloat) end
+# @testset begin test_orthonormalsplinebasis(BigFloat) end
+
+
 # using Plots
 # using BasisFunctions
 # n = 7

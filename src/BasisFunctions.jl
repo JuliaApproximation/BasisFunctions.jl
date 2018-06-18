@@ -167,7 +167,7 @@ export expansion, coefficients, dictionary, roots,
 
 # from operator/operator.jl
 export AbstractOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!
+        apply, apply_multiple, apply_inplace!, GenericOperator
 export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl
@@ -267,7 +267,7 @@ export sample
 
 # from sampling/platform.jl
 export Platform
-export primal, dual, sampler, A, Z, Zt
+export primal, dual, sampler, A, Zt, dual_sampler
 
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
@@ -305,7 +305,8 @@ export leading_order_coefficient
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 # # from bases/wavelets/bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis
+export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis, ScalingBasis
+export scaling_platform
 # from bases/translates/translation_dict.jl
 export CompactPeriodicTranslationDict, dual, discrete_dual
 # from bases/translates/translates_of_bsplines.jl
@@ -403,6 +404,11 @@ include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 
+################################################################
+# Wavelets
+################################################################
+
+include("bases/wavelets/bf_wavelets.jl")
 
 ################################################################
 # Splines: natural splines, periodic splines, B-splines, ....
@@ -412,12 +418,6 @@ include("bases/fourier/sineseries.jl")
 include("bases/translates/translation_dict.jl")
 include("bases/translates/translates_of_bsplines.jl")
 
-
-################################################################
-# Wavelets
-################################################################
-
-include("bases/wavelets/bf_wavelets.jl")
 
 ################################################################
 # Polynomials: monomials and (classical) orthogonal polynomials
