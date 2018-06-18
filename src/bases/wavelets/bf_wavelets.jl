@@ -283,17 +283,9 @@ grid_evaluation_operator(s::WaveletBasis, dgs::GridBasis, grid::DyadicPeriodicEq
 grid_evaluation_operator(s::WaveletBasis, dgs::GridBasis, grid::DyadicPeriodicEquispacedGrid, ::Scl; options...) =
     DWTScalingEvalOperator(s, dgs, dyadic_length(grid))
 
-# function grid_evaluation_operator(s::WaveletSpan, dgs::DiscreteGridSpace, grid::AbstractGrid; options...)
-#     if typeof(grid) <: DyadicPeriodicEquispacedGrid
-#         DWTEvalOperator(s, dgs, dyadic_length(grid))
-#     else
-#         default_evaluation_operator(s, dgs; options...)
-#     end
-# end
-
 struct DWTEvalOperator{T} <: AbstractOperator{T}
-    src::Span
-    dest::Span
+    src::Dictionary
+    dest::Dictionary
 
     s::Side
     w::DiscreteWavelet
@@ -330,8 +322,8 @@ function BasisFunctions.apply!(op::BasisFunctions.DWTEvalOperator, y, coefs; opt
 end
 
 struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
-    src::Span
-    dest::Span
+    src::Dictionary
+    dest::Dictionary
 
     s::Side
     w::DiscreteWavelet
@@ -495,7 +487,7 @@ Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:AbstractOperator}
 
 function WeightOperator(basis::WaveletBasis, oversampling::Int=1, recursion::Int=0)
     wav = wavelet(basis)
-    @assert coeftype(span) == eltype(wav)
+    @assert coeftype(basis) == eltype(wav)
     WeightOperator(wav, oversampling, dyadic_length(basis), recursion)
 end
 
@@ -507,12 +499,12 @@ function WeightOperator(wav::DiscreteWavelet{T}, oversampling::Int, j::Int, d::I
     src_size = 1<<(d+j+oversampling>>1)
     step = 1<<(d+oversampling>>1)
     os = mod(step*Sequences.offset(filter(Dual, scaling, wav))-1, src_size)+1
-    HorizontalBandedOperator(Span(DiscreteVectorSet(src_size)), Span(DiscreteVectorSet(1<<j)), w, step, os)
+    HorizontalBandedOperator(DiscreteVectorSet(src_size), DiscreteVectorSet(1<<j), w, step, os)
 end
 
-function DWTSamplingOperator(span::Span, oversampling::Int=1, recursion::Int=0)
+function DWTSamplingOperator(span::Dictionary, oversampling::Int=1, recursion::Int=0)
     weight = WeightOperator(span, oversampling, recursion)
-    sampler = GridSamplingOperator(gridspace(dwt_oversampled_grid(span, oversampling, recursion), coeftype(span)))
+    sampler = GridSamplingOperator(gridbasis(dwt_oversampled_grid(span, oversampling, recursion)))
     DWTSamplingOperator(sampler, weight)
 end
 
@@ -542,7 +534,7 @@ dual_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::Discre
 
 dual_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->dual_scaling_generator(w), wav)...)
 # Sampler
-scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridspace(grid(primal(n+Int(log2(oversampling))))))
+scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridbasis(grid(primal(n+Int(log2(oversampling))))))
 
 dual_scaling_sampler(primal, oversampling) =
     n -> (
@@ -555,7 +547,7 @@ dual_scaling_sampler(primal, oversampling) =
         else ;
             W = BasisFunctions.WeightOperator(wav, 2, n, Int(log2(oversampling>>1))) ;
         end;
-        sampler = GridSamplingOperator(gridspace(grid(basis)));
+        sampler = GridSamplingOperator(gridbasis(grid(basis)));
         DWTSamplingOperator(sampler, W);
     )
 

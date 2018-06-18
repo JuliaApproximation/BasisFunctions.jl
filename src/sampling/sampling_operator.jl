@@ -6,9 +6,9 @@ end
 src(op::AbstractSamplingOperator) = op.src
 dest(op::AbstractSamplingOperator) = op.dest
 
-gridspace(op::AbstractSamplingOperator) = dest(op)
+gridsbasis(op::AbstractSamplingOperator) = dest(op)
 
-grid(op::AbstractSamplingOperator) = grid(gridspace(op))
+grid(op::AbstractSamplingOperator) = grid(gridbasis(op))
 
 (*)(op::AbstractSamplingOperator, f) = apply(op, f)
 
@@ -39,7 +39,7 @@ gridbasis(op::GridSamplingOperator) = dest(op)
 
 grid(op::GridSamplingOperator) = grid(gridbasis(op))
 
-apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridspace(op)))
+apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridbasis(op)))
 apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f)
 
 "Sample the function f on the given grid."
