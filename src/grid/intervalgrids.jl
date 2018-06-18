@@ -7,7 +7,8 @@ end
 # Some default implementations for interval grids follow
 leftendpoint(g::AbstractIntervalGrid) = g.a
 rightendpoint(g::AbstractIntervalGrid) = g.b
-support(g::AbstractIntervalGrid) = interval(g.a,g.b)
+support(g::AbstractIntervalGrid) = interval(leftendpoint(g), rightendpoint(g))
+# support(g::AbstractIntervalGrid) = interval(g.a, g.b)
 length(g::AbstractIntervalGrid) = g.n
 
 # Perhaps we should add a stepsize field, for better efficiency?
