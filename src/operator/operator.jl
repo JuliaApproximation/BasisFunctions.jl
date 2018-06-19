@@ -1,10 +1,10 @@
 # operator.jl
 
 """
-A `GenericOperator` is the supertype of all objects that map between function
+A `AbstractOperator` is the supertype of all objects that map between function
 spaces.
 """
-abstract type GenericOperator
+abstract type AbstractOperator
 end
 
 
@@ -23,7 +23,7 @@ Source and destination should at least implement the following:
 
 The element type should be equal for src and dest.
 """
-abstract type DictionaryOperator{T} <: GenericOperator
+abstract type DictionaryOperator{T} <: AbstractOperator
 end
 
 eltype(::DictionaryOperator{T}) where {T} = T

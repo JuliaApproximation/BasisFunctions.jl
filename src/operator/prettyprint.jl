@@ -6,7 +6,7 @@
 # Comment out these methods to disable pretty printing
 ####
 # Delegate to show_operator
-show(io::IO, op::GenericOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
 show(io::IO,s::Span) = show(io,dictionary(s))
 show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
 
@@ -20,14 +20,14 @@ show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dicti
 
 
 # Default is the operator string
-show_operator(io::IO,op::GenericOperator) = println(string(op))
+show_operator(io::IO,op::AbstractOperator) = println(string(op))
 
 # Default string is the string of the type
-string(op::GenericOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
+string(op::AbstractOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
 
 # Complex expressions substitute strings for symbols.
 # Default symbol is first letter of the string
-symbol(op::GenericOperator) = string(op)[1]
+symbol(op::AbstractOperator) = string(op)[1]
 
 # Common symbols (to be moved to respective files)
 symbol(E::IndexRestrictionOperator) = "R"

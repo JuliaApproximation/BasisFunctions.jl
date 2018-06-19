@@ -167,7 +167,7 @@ export expansion, coefficients, dictionary, roots,
 
 # from operator/operator.jl
 export DictionaryOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!, GenericOperator
+        apply, apply_multiple, apply_inplace!, AbstractOperator
 export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl

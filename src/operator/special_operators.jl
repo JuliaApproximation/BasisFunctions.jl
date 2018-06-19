@@ -112,7 +112,7 @@ end
 ##     A = Any[]
 ##     push!(A,"W(")
 ##     s = stencil(op.op)
-##     if isa(s,GenericOperator)
+##     if isa(s,AbstractOperator)
 ##         push!(A,s)
 ##     else
 ##         for i=1:length(s)

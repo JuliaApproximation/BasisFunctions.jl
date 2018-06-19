@@ -1,6 +1,6 @@
 # sampling_operator.jl
 
-abstract type AbstractSamplingOperator <: GenericOperator
+abstract type AbstractSamplingOperator <: AbstractOperator
 end
 
 src(op::AbstractSamplingOperator) = op.src
