@@ -80,4 +80,4 @@ dictionary(op::AnalysisOperator) = op.dictionary
 src(op::AnalysisOperator{S,T}) where {S,T} = FunctionSpace{S,T}()
 dest(op::AnalysisOperator) = discrete_set(dictionary(op))
 
-apply(A::AnalysisOperator, D::Dictionary; options...) = Gram(D; options...)
+apply(op::AnalysisOperator, span::Span; options...) = Gram(D; options...)
