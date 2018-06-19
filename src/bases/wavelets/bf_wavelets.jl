@@ -511,7 +511,7 @@ end
 dwt_oversampled_grid(dict::Dictionary, oversampling::Int, recursion::Int) =
     oversampled_grid(dict, 1<<(recursion+oversampling>>1))
 
-src(op::DWTSamplingOperator) = src(op.sampler)
+src_space(op::DWTSamplingOperator) = src_space(op.sampler)
 dest(op::DWTSamplingOperator) = dest(op.weight)
 
 apply(op::DWTSamplingOperator, f) = op.weight*apply(op.sampler, f)

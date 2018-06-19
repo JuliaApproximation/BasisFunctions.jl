@@ -1,7 +1,7 @@
 # operator.jl
 
 """
-A `AbstractOperator` is the supertype of all objects that map between function
+An `AbstractOperator` is the supertype of all objects that map between function
 spaces.
 """
 abstract type AbstractOperator
@@ -33,6 +33,9 @@ eltype(::Type{OP}) where {OP <: DictionaryOperator} = eltype(supertype(OP))
 # Default implementation of src and dest: assume they are fields
 src(op::DictionaryOperator) = op.src
 dest(op::DictionaryOperator) = op.dest
+
+src_space(op::DictionaryOperator) = Span(src(op))
+dest_space(op::DictionaryOperator) = Span(dest(op))
 
 isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
 
