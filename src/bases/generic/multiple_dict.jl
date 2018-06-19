@@ -63,9 +63,9 @@ function multidict(dicts::AbstractArray)
     end
 end
 
-multispan(spans::Span...) = Span(multidict(map(dictionary, spans)...), reduce(promote_type, map(coeftype, spans)))
+multispan(spans::Span...) = Span(multidict(map(dictionary, spans)...))
 
-multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)), reduce(promote_type, map(coeftype, spans)))
+multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 
 # Perhaps we don't want this behaviour, that [b;b] creates a MultiDict, rather
 # than an array of Dictionary's
@@ -126,11 +126,11 @@ approx_length(s::MultiDict, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_e
 
 ## Differentiation
 
-derivative_space(s::MultiDict, order; options...) =
-    MultiDict(map(b-> derivative_space(b, order; options...), elements(s)))
+derivative_dict(s::MultiDict, order; options...) =
+    MultiDict(map(b-> derivative_dict(b, order; options...), elements(s)))
 
-antiderivative_space(s::MultiDict, order; options...) =
-    MultiDict(map(b-> antiderivative_space(b, order; options...), elements(s)))
+antiderivative_dict(s::MultiDict, order; options...) =
+    MultiDict(map(b-> antiderivative_dict(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiDict, s2::MultiDict, order; options...)

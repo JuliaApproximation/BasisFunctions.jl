@@ -16,8 +16,8 @@ is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_space(s::OPS, order::Int; options...) = resize(s, length(s)-order)
-antiderivative_space(s::OPS, order::Int; options...) = resize(s, length(s)+order)
+derivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)-order)
+antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
 length(o::OrthogonalPolynomials) = o.n
 
@@ -54,15 +54,15 @@ has_extension(b::OPS) = true
 
 # CAVE: we have to add D <: OrthogonalPolynomials at the end, otherwise
 
-# Using OPSpan as types of the arguments, i.e. without parameters, is fine and
+# Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPS, s2::OPS; options...) 
+function extension_operator(s1::OPS, s2::OPS; options...)
     @assert length(s2) >= length(s1)
     IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::OPS, s2::OPS; options...) 
+function restriction_operator(s1::OPS, s2::OPS; options...)
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end

@@ -68,7 +68,7 @@ for T in [Float64,BigFloat,]
                   ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
                   FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
                   ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
-        test_generic_dict_interface(basis, Span(basis))
+        test_generic_dict_interface(basis)
     end
 
     delimit("Tensor specific tests")
@@ -89,7 +89,7 @@ for T in [Float64,BigFloat,]
             @test length(basis) == n
             @test domaintype(basis) == T
 
-            test_generic_dict_interface(basis, Span(basis))
+            test_generic_dict_interface(basis)
     end
     # also try a Fourier series with an even length
     test_generic_dict_interface(FourierBasis{T}(8))

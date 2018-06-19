@@ -69,13 +69,13 @@ function test_diagonal_operators(T)
             m = matrix(Op)
             # Test in-place
             if is_inplace(Op)
-                coef_src = rand(Span(src(Op)))
+                coef_src = rand(src(Op))
                 coef_dest_m = m * coef_src
                 coef_dest = apply!(Op, coef_src)
                 @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
             end
             # Test out-of-place
-            coef_src = rand(Span(src(Op)))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
@@ -221,7 +221,7 @@ function test_invertible_operators(T)
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = rand(Span(src(Op)))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1
@@ -245,7 +245,7 @@ function test_noninvertible_operators(T)
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
-            coef_src = rand(Span(src(Op)))
+            coef_src = rand(src(Op))
             coef_dest = apply(Op, coef_src)
             coef_dest_m = m * coef_src
             @test sum(abs.(coef_dest-coef_dest_m)) + 1 ≈ 1

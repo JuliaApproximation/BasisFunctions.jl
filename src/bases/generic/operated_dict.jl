@@ -123,7 +123,6 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-derivative(s::Span; options...) = similar_span(s,derivative(dictionary(s)))
 derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
 
 function (*)(a::Number, s::Dictionary)

@@ -137,8 +137,8 @@ function unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,
 end
 
 
-derivative_space(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->derivative_space(u, order; options...), elements(s)))
+derivative_dict(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->derivative_dict(u, order; options...), elements(s)))
 
-antiderivative_space(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->antiderivative_space(u, order; options...), elements(s)))
+antiderivative_dict(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))

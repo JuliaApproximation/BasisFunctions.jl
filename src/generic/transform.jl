@@ -28,12 +28,12 @@
 
 
 # The default transform space is the space associated with the grid of the set
-transform_space(s::Dictionary; options...) = gridbasis(s)
+transform_dict(s::Dictionary; options...) = gridbasis(s)
 
 for op in (:transform_operator, :transform_operator_pre, :transform_operator_post)
     # With only one argument, use the default transform space
     @eval $op(src::Dictionary; options...) =
-        $op(src, transform_space(src; options...); options...)
+        $op(src, transform_dict(src; options...); options...)
 end
 
 # If the destination is a GridBasis, invoke the "to_grid" routines

@@ -18,7 +18,6 @@ name(b::TranslationDict) = "Set of translates of a function"
 name(::Type{B}) where {B<:TranslationDict}= "Set of translates of a function"
 
 fun(b::TranslationDict) = b.fun
-fun(s::TranslatesSpan) = fun(dictionary(s))
 
 # Indices of translates naturally range from 0 to n-1
 const TransIndex = ShiftedIndex{1}
@@ -260,8 +259,6 @@ function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicTranslationDi
     e[1] = 1
     change_of_basis(b, B; options...)*e
 end
-
-superspan(s::LinearCombinationsSpan) = Span(superdict(dictionary(s)), coeftype(s))
 
 extension_operator(s1::LinearCombinationOfPeriodicTranslationDict, s2::LinearCombinationOfPeriodicTranslationDict; options...) =
     wrap_operator(s1, s2, change_of_basis(s2; options...)*extension_operator(superdict(s1), superdict(s2))*inv(change_of_basis(s1; options...)))

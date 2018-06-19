@@ -26,8 +26,6 @@ end
 Expansion(dict::Dictionary) = Expansion(dict, zeros(dict))
 Expansion(dict::Dictionary, coef) = Expansion{typeof(dict),typeof(coef)}(dict, coef)
 
-Expansion(span::Span) = Expansion(dictionary(span), zeros(span))
-
 expansion(dict::Dictionary, coefficients) =
     Expansion(dict, native_coefficients(dict, coefficients))
 
@@ -39,9 +37,8 @@ dictionary(e::Expansion) = e.dictionary
 
 coefficients(e::Expansion) = e.coefficients
 
-Span(e::Expansion) = Span(dictionary(e), eltype(e))
+Span(e::Expansion) = Span(dictionary(e))
 
-random_expansion(d::Dictionary) = Expansion(d,rand(Span(d)))
 # For expansions of composite types, return a Expansion of a subdict
 element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
 

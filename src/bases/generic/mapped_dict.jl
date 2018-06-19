@@ -34,8 +34,6 @@ apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
 
 apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map*mapping(dict))
 
-apply_map(span::Span, map) = Span(apply_map(dictionary(span), map), coeftype(span))
-
 mapping(dict::MappedDict) = dict.map
 
 similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
@@ -102,7 +100,7 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_space(s::MappedDict; options...) = apply_map(transform_space(superdict(s); options...), mapping(s))
+transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
 has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
@@ -131,8 +129,6 @@ end
 ###################
 # Evaluation
 ###################
-
-mapping(s::MappedSpan) = mapping(dictionary(s))
 
 # If the set is mapped and the grid is mapped, and if the maps are identical,
 # we can use the evaluation operator of the underlying set and grid
@@ -169,7 +165,7 @@ end
 # Differentiation
 ###################
 
-for op in (:derivative_space, :antiderivative_space)
+for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::MappedDict1d, order::Int; options...) =
         (@assert islinear(mapping(s)); apply_map( $op(superdict(s), order; options...), mapping(s) ))
 end

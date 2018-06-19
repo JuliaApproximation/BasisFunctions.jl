@@ -21,13 +21,11 @@ const WeightedDict4d{S <: Number,T} = WeightedDict{SVector{4,S},T}
 
 weightfunction(set::WeightedDict) = set.weightfun
 
-weightfunction(s::WeightedDictSpan) = weightfunction(dictionary(s))
-
 similar_dictionary(set1::WeightedDict, set2::Dictionary) = WeightedDict(set2, weightfunction(set1))
 
 name(set::WeightedDict) = "Weightfunction " * string(weightfunction(set))
 
-## _name(set::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict) 
+## _name(set::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict)
 ## _name(set::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
 
 isreal(set::WeightedDict) = _isreal(set, superdict(set), weightfunction(set))
@@ -83,9 +81,6 @@ _eval_expansion(set::WeightedDict, w, coefficients, grid::AbstractGrid) =
 # and our own functors:
 (*)(f::AbstractFunction, set::Dictionary) = WeightedDict(set, f)
 
-(*)(f::Function, s::Span) = Span(f*dictionary(s), coeftype(s))
-(*)(f::AbstractFunction, s::Span) = Span(f*dictionary(s), coeftype(s))
-
 weightfun_scaling_operator(dgs::GridBasis1d, weightfunction) =
     DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x) for x in grid(dgs)])
 
@@ -99,20 +94,20 @@ transform_from_grid_pre(src::GridBasis, dest::WeightedDict, grid; options...) =
 	inv(transform_to_grid_post(dest, src, grid; options...))
 
 
-function derivative_space(src::WeightedDict, order; options...)
+function derivative_dict(src::WeightedDict, order; options...)
     @assert order == 1
 
     s = superdict(src)
     f = weightfunction(src)
     f_prime = derivative(f)
-    s_prime = derivative_space(s, order)
+    s_prime = derivative_dict(s, order)
     (f_prime * s) ⊕ (f * s_prime)
 end
 
 # Assume order = 1...
 function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; options...)
     @assert order == 1
-    @assert s2 == derivative_space(s1, order)
+    @assert s2 == derivative_dict(s1, order)
 
     I = IdentityOperator(s1, element(s2, 1))
     D = differentiation_operator(superdict(s1))

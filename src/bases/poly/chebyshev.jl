@@ -55,7 +55,7 @@ grid(b::ChebyshevTLike) = ChebyshevNodeGrid(length(b), domaintype(b))
 secondgrid(b::ChebyshevTLike) = ChebyshevExtremaGrid(length(b), domaintype(b))
 
 # extends the default definition at transform.jl
-transform_space(s::ChebyshevTLike; nodegrid=true, options...) =
+transform_dict(s::ChebyshevTLike; nodegrid=true, options...) =
     nodegrid ? gridbasis(s) : gridbasis(secondgrid(s), coeftype(s))
 
 # The weight function
