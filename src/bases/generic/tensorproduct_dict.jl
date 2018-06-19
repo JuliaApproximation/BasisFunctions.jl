@@ -48,7 +48,7 @@ function TensorProductDict(dicts::Dictionary...)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
     c = promote_type(map(coeftype, dicts)...)
-    dicts2 = map(s->promote_coefficient_type(s,c),dicts)
+    dicts2 = map(s->promote_coeftype(s,c),dicts)
     DT = typeof(dicts2)
     TensorProductDict{N,DT,S,T}(dicts2)
 end

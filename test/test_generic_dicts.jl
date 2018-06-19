@@ -344,17 +344,17 @@ function test_generic_dict_interface(basis)
             i2 = length(basis)
             i3 = (i1+i2) >> 1
 
-            c1 = zero(coeftype(basis))
+            c1 = Expansion(basis,zeros(basis))
             c1[i1] = 1
             u1 = D*c1
             @test abs(u1(x) - eval_element_derivative(basis, i1, x)) < test_tolerance(ELT)
 
-            c2 = zero(coeftype(basis))
+            c2 = Expansion(basis,zeros(basis))
             c2[i2] = 1
             u2 = D*c2
             @test abs(u2(x) - eval_element_derivative(basis, i2, x)) < test_tolerance(ELT)
 
-            c3 = zero(coeftype(basis))
+            c3 = Expansion(basis,zeros(basis))
             c3[i3] = 1
             u3 = D*c3
             @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)

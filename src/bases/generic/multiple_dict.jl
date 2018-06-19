@@ -39,7 +39,7 @@ function MultiDict(dicts)
     S = reduce(promote_type, map(domaintype, dicts))
     T = reduce(promote_type, map(codomaintype, dicts))
     C = reduce(promote_type, map(coefficient_type, dicts))
-    MultiDict(map(s->promote_coefficient_type(s,C), dicts), S, T)
+    MultiDict(map(s->promote_coeftype(s,C), dicts), S, T)
 end
 
 similar_dictionary(set::MultiDict, dicts) = MultiDict(dicts)
