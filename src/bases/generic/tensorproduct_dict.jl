@@ -25,7 +25,7 @@ const TensorProductDict2{DT,S,T} = TensorProductDict{2,DT,S,T}
 const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
 const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
-const TensorProductSpan{A,S,T,D <: TensorProductDict} = Span{A,S,T,D}
+
 
 # Generic functions for composite types:
 is_composite(dict::TensorProductDict) = true

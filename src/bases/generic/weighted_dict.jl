@@ -17,7 +17,7 @@ const WeightedDict2d{S <: Number,T} = WeightedDict{SVector{2,S},T}
 const WeightedDict3d{S <: Number,T} = WeightedDict{SVector{3,S},T}
 const WeightedDict4d{S <: Number,T} = WeightedDict{SVector{4,S},T}
 
-const WeightedDictSpan{A,S,T,D <: WeightedDict} = Span{A,S,T,D}
+
 
 weightfunction(set::WeightedDict) = set.weightfun
 

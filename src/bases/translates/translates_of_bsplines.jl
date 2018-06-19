@@ -3,7 +3,7 @@ using CardinalBSplines
 abstract type PeriodicBSplineBasis{K,T} <: CompactPeriodicTranslationDict{T}
 end
 
-const PeriodicBSplineSpan{A,S,T,D <: PeriodicBSplineBasis} = Span{A,S,T,D}
+
 
 degree(b::B) where {K,T, B<:PeriodicBSplineBasis{K,T}} = K
 
@@ -53,7 +53,7 @@ struct BSplineTranslatesBasis{K,T,SCALED} <: PeriodicBSplineBasis{K,T}
   fun             :: Function
 end
 
-const BSplineTranslatesSpan{A,S,T,D <: BSplineTranslatesBasis} = Span{A,S,T,D}
+
 
 BSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64; scaled = false) = scaled?
     BSplineTranslatesBasis{DEGREE,T,true}(n, T(0), T(1), x->sqrt(n)*evaluate_periodic_Bspline(DEGREE, n*x, n, real(T))) :
@@ -142,7 +142,7 @@ struct SymBSplineTranslatesBasis{K,T} <: PeriodicBSplineBasis{K,T}
     fun             :: Function
 end
 
-const SymBSplineTranslatesSpan{A,S,T,D <: SymBSplineTranslatesBasis} = Span{A,S,T,D}
+
 
 SymBSplineTranslatesBasis{T}(n::Int, DEGREE::Int, ::Type{T} = Float64) =
     SymBSplineTranslatesBasis{DEGREE,T}(n, T(0), T(1), x->evaluate_symmetric_periodic_Bspline(DEGREE, n*x, n, real(T)))
@@ -211,7 +211,7 @@ end
 #     new(b, coefficients_in_other_basis(b, OrthonormalSplineBasis; options...))
 # end
 #
-# const OrthonormalSplineSpan{A,S,T,D <: OrthonormalSplineBasis} = Span{A,S,T,D}
+
 #
 # degree{K,T}(::OrthonormalSplineBasis{K,T}) = K
 #
@@ -248,7 +248,7 @@ end
 #
 # end
 #
-# const DiscreteOrthonormalSplineSpan{A,S,T,D <: DiscreteOrthonormalSplineBasis} = Span{A,S,T,D}
+
 #
 # degree{K,T}(::DiscreteOrthonormalSplineBasis{K,T}) = K
 #

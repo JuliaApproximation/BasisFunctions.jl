@@ -22,7 +22,7 @@ struct MultiDict{DICTS,S,T} <: CompositeDict{S,T}
     end
 end
 
-const MultiDictSpan{A,S,T,D <: MultiDict} = Span{A,S,T,D}
+
 
 # Is this constructor type-stable? Probably not, even if T is given, because
 # of the use of dimension below.

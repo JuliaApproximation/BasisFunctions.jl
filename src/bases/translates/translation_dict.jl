@@ -6,7 +6,7 @@ Dictionary consisting of translates of one generating function.
 abstract type TranslationDict{T} <: Dictionary{T,T}
 end
 
-const TranslatesSpan{A,S,T,D <: TranslationDict} = Span{A,S,T,D}
+
 
 length(set::TranslationDict) = set.n
 
@@ -36,7 +36,7 @@ has_unitary_transform(::TranslationDict) = false
 abstract type PeriodicTranslationDict{T} <: TranslationDict{T}
 end
 
-const PeriodicTranslatesSpan{A,S,T,D <: PeriodicTranslationDict} = Span{A,S,T,D}
+
 
 support(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
 
@@ -172,7 +172,7 @@ discrete_dual(set::PeriodicTranslationDict; options...) =
 abstract type CompactPeriodicTranslationDict{T} <: PeriodicTranslationDict{T}
 end
 
-const CompactPeriodicTranslatesSpan{A,S,T,D <: CompactPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 """
   Length of the function of a CompactPeriodicTranslationDict.
@@ -235,7 +235,7 @@ end
 abstract type LinearCombinationOfPeriodicTranslationDict{PSoT<:PeriodicTranslationDict, T} <: PeriodicTranslationDict{T}
 end
 
-const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 coefficients(b::LinearCombinationOfPeriodicTranslationDict) = b.coefficients
 
@@ -277,7 +277,7 @@ struct DualPeriodicTranslationDict{T} <: LinearCombinationOfPeriodicTranslationD
     coefficients    :: Array{T,1}
 end
 
-const DualPeriodicTranslatesSpan{A,S,T,D <: DualPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 DualPeriodicTranslationDict(set::PeriodicTranslationDict{T}; options...) where {T} =
     DualPeriodicTranslationDict{T}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicTranslationDict; options...))
@@ -298,7 +298,7 @@ struct DiscreteDualPeriodicTranslationDict{T} <: LinearCombinationOfPeriodicTran
     oversampling    :: T
 end
 
-const DiscreteDualPeriodicTranslatesSpan{A,S,T,D <: DiscreteDualPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 function DiscreteDualPeriodicTranslationDict(set::PeriodicTranslationDict{T}; oversampling=default_oversampling(set), options...) where {T}
     DiscreteDualPeriodicTranslationDict{T}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicTranslationDict; oversampling=oversampling, options...), oversampling)

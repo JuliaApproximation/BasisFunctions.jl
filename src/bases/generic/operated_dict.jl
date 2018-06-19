@@ -19,7 +19,7 @@ struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
     end
 end
 
-const OperatedDictSpan{A,S,T,D <: OperatedDict} = Span{A,S,T,D}
+
 
 # TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
 has_derivative(s::OperatedDict) = false

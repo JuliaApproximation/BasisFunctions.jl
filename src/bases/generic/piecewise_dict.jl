@@ -15,7 +15,7 @@ struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
     end
 end
 
-const PiecewiseDictSpan{A,S,T,D <: PiecewiseDict} = Span{A,S,T,D}
+
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
 function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(length(partition))*length(set))

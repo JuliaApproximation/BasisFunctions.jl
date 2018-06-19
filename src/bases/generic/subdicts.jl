@@ -15,7 +15,7 @@ the underlying larger dictionary, and a subcollection of its indices.
 abstract type Subdictionary{S,T} <: Dictionary{S,T}
 end
 
-const SubdictSpan{A,S,T,D <: Subdictionary} = Span{A,S,T,D}
+
 
 # We assume that the underlying set is stored in a field called superdict
 superdict(dict::Subdictionary) = dict.superdict
@@ -127,7 +127,7 @@ struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const LargeSubdictSpan{A,S,T,D <: LargeSubdict} = Span{A,S,T,D}
+
 
 LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
@@ -193,7 +193,7 @@ struct SmallSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const SmallSubdictSpan{A,S,T,D <: SmallSubdict} = Span{A,S,T,D}
+
 
 SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
@@ -215,7 +215,7 @@ struct SingletonSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const SingletonSubdictSpan{A,S,T,D <: SingletonSubdict} = Span{A,S,T,D}
+
 
 SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
     SingletonSubdict{typeof(dict),typeof(index),S,T}(dict, index)

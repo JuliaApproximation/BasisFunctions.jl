@@ -3,7 +3,7 @@
 abstract type WaveletBasis{T,S,K} <: Dictionary1d{T,T} where {S <: Side,K<:Kind}
 end
 
-const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
+
 
 checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))

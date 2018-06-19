@@ -17,7 +17,7 @@ ChebyshevT = ChebyshevBasis
 ## Most of these methods apply to Chebyshev-like dictionaries as well
 ChebyshevTLike = Union{ChebyshevBasis, ComplexifiedDict{D} where D<:ChebyshevBasis}
 
-const ChebyshevSpan{A,S,T,D<:ChebyshevBasis} = Span{A,S,T,D}
+
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
@@ -320,7 +320,7 @@ struct ChebyshevU{T} <: OPS{T,T}
     n			::	Int
 end
 
-const ChebyshevUSpan{A,S,T,D<:ChebyshevU} = Span{A,S,T,D}
+
 
 ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
@@ -343,7 +343,7 @@ first_moment(b::ChebyshevU{T}) where {T} = T(pi)/2
 
 grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
 
-Gram(s::ChebyshevUSpan{A}; options...) where {A} = ScalingOperator(s, s, A(pi)/2)
+
 Gram(s::ChebyshevU; options...) = ScalingOperator(s, s, coeftype(s)(pi)/2)
 
 # The weight function
