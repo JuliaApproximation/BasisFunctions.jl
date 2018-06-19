@@ -166,7 +166,7 @@ export expansion, coefficients, dictionary, roots,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operator.jl
-export AbstractOperator, operator, src, dest, apply!,
+export DictionaryOperator, operator, src, dest, apply!,
         apply, apply_multiple, apply_inplace!, GenericOperator
 export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 

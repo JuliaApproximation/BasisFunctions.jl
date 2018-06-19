@@ -173,12 +173,12 @@ function (*)(s1::Expansion, s2::Expansion)
     Expansion(mset,mcoefficients)
 end
 
-(*)(op::AbstractOperator, e::Expansion) = apply(op, e)
+(*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
 
 (*)(a::Number, e::Expansion) = Expansion(dictionary(e), a*coefficients(e))
 (*)(e::Expansion, a::Number) = a*e
 
-function apply(op::AbstractOperator, e::Expansion)
+function apply(op::DictionaryOperator, e::Expansion)
     #@assert dictionary(e) == dictionary(src(op))
 
     Expansion(dest(op), op * coefficients(e))

@@ -7,12 +7,12 @@ set of the operator, but each basis function is acted on by the operator.
 """
 struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
     "The operator that acts on the set"
-    op          ::  AbstractOperator{T}
+    op          ::  DictionaryOperator{T}
 
     scratch_src
     scratch_dest
 
-    function OperatedDict{S,T}(op::AbstractOperator) where {S,T}
+    function OperatedDict{S,T}(op::DictionaryOperator) where {S,T}
         scratch_src = zeros(src(op))
         scratch_dest = zeros(dest(op))
         new(op, scratch_src, scratch_dest)
@@ -33,7 +33,7 @@ is_basis(::OperatedDict) = false
 
 superdict(dict::OperatedDict) = src(dict)
 
-function OperatedDict(op::AbstractOperator{T}) where {T}
+function OperatedDict(op::DictionaryOperator{T}) where {T}
     S = domaintype(src(op))
     OperatedDict{S,T}(op)
 end
@@ -131,7 +131,7 @@ function (*)(a::Number, s::Dictionary)
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 
-function (*)(op::AbstractOperator, s::Dictionary)
+function (*)(op::DictionaryOperator, s::Dictionary)
     @assert src(op) == s
     OperatedDict(op)
 end

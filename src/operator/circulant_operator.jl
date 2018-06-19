@@ -10,11 +10,11 @@ operator.
 struct CirculantOperator{T} <: DerivedOperator{T}
     src                 :: Dictionary
     dest                :: Dictionary
-    superoperator       :: AbstractOperator
+    superoperator       :: DictionaryOperator
     eigenvaluematrix    :: DiagonalOperator
     scratch
 
-    CirculantOperator{T}(op_src::Dictionary, op_dest::Dictionary, op::AbstractOperator, opD::DiagonalOperator) where {T} =
+    CirculantOperator{T}(op_src::Dictionary, op_dest::Dictionary, op::DictionaryOperator, opD::DiagonalOperator) where {T} =
       new(op_src, op_dest, op, opD, zeros(dest(op)))
 end
 
@@ -56,7 +56,7 @@ function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, o
     CirculantOperator{A}(op_src, op_dest, iF*opD*F, opD)
 end
 
-function CirculantOperator(op::AbstractOperator{T}) where {T}
+function CirculantOperator(op::DictionaryOperator{T}) where {T}
     e = zeros(T, size(op,1))
     e[1] = one(T)
     C = CirculantOperator(src(op), dest(op), op*e)

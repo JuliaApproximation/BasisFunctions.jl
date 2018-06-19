@@ -9,7 +9,7 @@ end
 
 
 """
-`AbstractOperator` represents any linear operator that maps coefficients of
+`DictionaryOperator` represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
 destination are of type `Dictionary`.
 The action of the operator is defined by providing a method for apply!.
@@ -23,18 +23,18 @@ Source and destination should at least implement the following:
 
 The element type should be equal for src and dest.
 """
-abstract type AbstractOperator{T} <: GenericOperator
+abstract type DictionaryOperator{T} <: GenericOperator
 end
 
-eltype(::AbstractOperator{T}) where {T} = T
-eltype(::Type{AbstractOperator{T}}) where {T} = T
-eltype(::Type{OP}) where {OP <: AbstractOperator} = eltype(supertype(OP))
+eltype(::DictionaryOperator{T}) where {T} = T
+eltype(::Type{DictionaryOperator{T}}) where {T} = T
+eltype(::Type{OP}) where {OP <: DictionaryOperator} = eltype(supertype(OP))
 
 # Default implementation of src and dest: assume they are fields
-src(op::AbstractOperator) = op.src
-dest(op::AbstractOperator) = op.dest
+src(op::DictionaryOperator) = op.src
+dest(op::DictionaryOperator) = op.dest
 
-isreal(op::AbstractOperator) = isreal(src(op)) && isreal(dest(op))
+isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
 
 "Return a suitable element type for an operator between the given dictionaries."
 op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coeftype(src), coeftype(dest))
@@ -54,28 +54,28 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 
 
 "Promote the element type of the given operator."
-promote_eltype(op::AbstractOperator{T}, ::Type{T}) where {T} = op
-promote_eltype(op::AbstractOperator{T}, ::Type{S}) where {T,S} =
+promote_eltype(op::DictionaryOperator{T}, ::Type{T}) where {T} = op
+promote_eltype(op::DictionaryOperator{T}, ::Type{S}) where {T,S} =
 	similar_operator(op, S, src(op), promote_coeftype(dest(op),S))
 
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
-size(op::AbstractOperator) = (length(dest(op)), length(src(op)))
+size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))
 
-size(op::AbstractOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
+size(op::DictionaryOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
 
-#+(op1::AbstractOperator, op2::AbstractOperator) = +(promote(op1,op2)...)
+#+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
 "Is the action of the operator in-place?"
-is_inplace(op::AbstractOperator) = false
+is_inplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
-is_diagonal(op::AbstractOperator) = false
+is_diagonal(op::DictionaryOperator) = false
 
 "Is the operator a combination of other operators"
-is_composite(op::AbstractOperator) = false
+is_composite(op::DictionaryOperator) = false
 
-function apply(op::AbstractOperator, coef_src)
+function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)
 	coef_dest
@@ -85,7 +85,7 @@ end
 # - call inline implementation of operator if available
 # - call apply!(op, dest(op), src(op), coef_dest, coef_src), which can be
 #   implemented by operators whose action depends on src and/or dest.
-function apply!(op::AbstractOperator, coef_dest, coef_src)
+function apply!(op::DictionaryOperator, coef_dest, coef_src)
 	if is_inplace(op)
 		copy!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
@@ -98,35 +98,35 @@ function apply!(op::AbstractOperator, coef_dest, coef_src)
 end
 
 # Provide a general dispatchable definition for in-place operators also
-function apply!(op::AbstractOperator, coef_srcdest)
+function apply!(op::DictionaryOperator, coef_srcdest)
 		apply_inplace!(op, coef_srcdest)
 		coef_srcdest
 end
 
-function apply_inplace!(op::AbstractOperator, coef_srcdest)
+function apply_inplace!(op::DictionaryOperator, coef_srcdest)
 		apply_inplace!(op, dest(op), src(op), coef_srcdest)
 		coef_srcdest
 end
 
 
 # Catch-all for missing implementations
-function apply!(op::AbstractOperator, dest, src, coef_dest, coef_src)
+function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
 	warn("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 	throw(InexactError())
 end
 
 # Catch-all for missing implementations
-function apply_inplace!(op::AbstractOperator, dest, src, coef_srcdest)
+function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
 	warn("In-place operation of ", typeof(op), " not implemented.")
 	throw(InexactError())
 end
 
-(*)(op::AbstractOperator, coef_src) = apply(op, coef_src)
+(*)(op::DictionaryOperator, coef_src) = apply(op, coef_src)
 
 """
 Apply an operator multiple times, to each column of the given argument.
 """
-function apply_multiple(op::AbstractOperator, matrix_src)
+function apply_multiple(op::DictionaryOperator, matrix_src)
 	ELT = eltype(op)
 	matrix_dest = zeros(ELT, size(op,1), size(matrix_src)[2:end]...)
 	coef_src = zeros(ELT, size(src(op)))
@@ -134,7 +134,7 @@ function apply_multiple(op::AbstractOperator, matrix_src)
 	apply_multiple!(op, matrix_dest, matrix_src, coef_dest, coef_src)
 end
 
-function apply_multiple!(op::AbstractOperator, matrix_dest, matrix_src,
+function apply_multiple!(op::DictionaryOperator, matrix_dest, matrix_src,
 	coef_dest = zeros(eltype(matrix_dest), size(dest(op))),
 	coef_src  = zeros(eltype(matrix_src), size(src(op))))
 
@@ -159,9 +159,9 @@ function apply_multiple!(op::AbstractOperator, matrix_dest, matrix_src,
 end
 
 
-collect(op::AbstractOperator) = matrix(op)
+collect(op::DictionaryOperator) = matrix(op)
 
-function sparse_matrix(op::AbstractOperator;sparse_tol = 1e-14, options...)
+function sparse_matrix(op::DictionaryOperator;sparse_tol = 1e-14, options...)
 	coef_src  = zeros(src(op))
     coef_dest = zeros(dest(op))
     R = spzeros(eltype(op),size(op,1),0)
@@ -176,12 +176,12 @@ function sparse_matrix(op::AbstractOperator;sparse_tol = 1e-14, options...)
 end
 
 
-function matrix(op::AbstractOperator)
+function matrix(op::DictionaryOperator)
     a = Array{eltype(op)}(size(op))
     matrix!(op, a)
 end
 
-function matrix!(op::AbstractOperator, a)
+function matrix!(op::DictionaryOperator, a)
     n = length(src(op))
     m = length(dest(op))
 
@@ -193,7 +193,7 @@ function matrix!(op::AbstractOperator, a)
     matrix_fill!(op, a, coef_src, coef_dest)
 end
 
-function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
+function matrix_fill!(op::DictionaryOperator, a, coef_src, coef_dest)
 	T = eltype(op)
     for (i,si) in enumerate(eachindex(coef_src))
 		coef_src[si] = one(T)
@@ -206,17 +206,17 @@ function matrix_fill!(op::AbstractOperator, a, coef_src, coef_dest)
     a
 end
 
-function checkbounds(op::AbstractOperator, i::Int, j::Int)
+function checkbounds(op::DictionaryOperator, i::Int, j::Int)
 	1 <= i <= size(op,1) || throw(BoundsError())
 	1 <= j <= size(op,2) || throw(BoundsError())
 end
 
-function getindex(op::AbstractOperator, i, j)
+function getindex(op::DictionaryOperator, i, j)
 	checkbounds(op, i, j)
 	unsafe_getindex(op, i, j)
 end
 
-function unsafe_getindex(op::AbstractOperator, i, j)
+function unsafe_getindex(op::DictionaryOperator, i, j)
 	coef_src = zeros(src(op))
 	coef_dest = zeros(dest(op))
 	coef_src[j] = one(eltype(op))
@@ -226,7 +226,7 @@ end
 
 
 "Return the diagonal of the operator."
-function diagonal(op::AbstractOperator)
+function diagonal(op::DictionaryOperator)
     if is_diagonal(op)
         # Make data of all ones in the native representation of the operator
         all_ones = ones(src(op))
@@ -241,17 +241,17 @@ function diagonal(op::AbstractOperator)
 end
 
 "Return the diagonal element op[i,i] of the operator."
-function diagonal(op::AbstractOperator, i)
+function diagonal(op::DictionaryOperator, i)
 	# Perform bounds checking and call unsafe_diagonal
 	checkbounds(op, i, i)
 	unsafe_diagonal(op, i)
 end
 
 # Default behaviour: call unsafe_getindex
-unsafe_diagonal(op::AbstractOperator, i) = unsafe_getindex(op, i, i)
+unsafe_diagonal(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
-function pinv(op::AbstractOperator, tolerance=eps(real(eltype(op))))
+function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
     @assert is_diagonal(op)
     newdiag = copy(diagonal(op))
     for i = 1:length(newdiag)
@@ -259,5 +259,3 @@ function pinv(op::AbstractOperator, tolerance=eps(real(eltype(op))))
     end
     DiagonalOperator(dest(op),src(op), newdiag)
 end
-
-

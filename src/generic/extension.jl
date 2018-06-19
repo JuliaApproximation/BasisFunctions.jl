@@ -21,7 +21,7 @@
 #
 # apply!(op::Extension, s1::SomeSet, s2::SomeSet, coef_dest, coef_src) = ...
 
-struct Extension{SRC <: Dictionary,DEST <: Dictionary,ELT} <: AbstractOperator{ELT}
+struct Extension{SRC <: Dictionary,DEST <: Dictionary,ELT} <: DictionaryOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end
@@ -67,7 +67,7 @@ extension_operator(s1::Dictionary; options...) =
     extension_operator(s1, extend(s1); options...)
 
 
-struct Restriction{SRC <: Dictionary,DEST <: Dictionary,ELT} <: AbstractOperator{ELT}
+struct Restriction{SRC <: Dictionary,DEST <: Dictionary,ELT} <: DictionaryOperator{ELT}
     src     ::  SRC
     dest    ::  DEST
 end

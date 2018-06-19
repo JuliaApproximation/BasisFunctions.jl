@@ -1,6 +1,6 @@
 ## OPERATORS
 
-# Methods that override the standard show(io::IO,op::AbstractOperator), to be better understandable.
+# Methods that override the standard show(io::IO,op::DictionaryOperator), to be better understandable.
 
 ####
 # Comment out these methods to disable pretty printing
@@ -65,7 +65,7 @@ subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in re
 
 # Include parentheses based on precedence rules
 # By default, don't add parentheses
-parentheses(t::AbstractOperator,a::AbstractOperator) = false
+parentheses(t::DictionaryOperator,a::DictionaryOperator) = false
 # Sums inside everything need parentheses
 parentheses(t::CompositeOperator,a::OperatorSum) = true
 parentheses(t::TensorProductOperator,a::OperatorSum) = true
@@ -90,7 +90,7 @@ strings(d::DerivedDict) = (name(d),)
 ## Default names
 name(d::Dictionary) = _name(d)
 name(g::AbstractGrid) = _name(g)
-name(o::AbstractOperator) = _name(o)
+name(o::DictionaryOperator) = _name(o)
 _name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
 
 ####
@@ -107,7 +107,7 @@ has_stencil(anything) = is_composite(anything)
 #### Actual printing methods.
 
 # extend children method from AbstractTrees
-children(A::Union{Dictionary,AbstractOperator}) = is_composite(A) ? elements(A) : ()
+children(A::Union{Dictionary,DictionaryOperator}) = is_composite(A) ? elements(A) : ()
 function myLeaves(op::BasisFunctions.DerivedOperator)
     A = Any[]
     push!(A,op)
@@ -232,7 +232,7 @@ function show_composite(io::IO,op)
     end
 end
 # Strings allow a dictionary or operator to return a multiline representation (each tuple is a line, each subtuple indicates a sublevel adding a downright arrow)
-function strings(op::AbstractOperator)
+function strings(op::DictionaryOperator)
     tuple(String(string(op)))
 end
 

@@ -283,7 +283,7 @@ grid_evaluation_operator(s::WaveletBasis, dgs::GridBasis, grid::DyadicPeriodicEq
 grid_evaluation_operator(s::WaveletBasis, dgs::GridBasis, grid::DyadicPeriodicEquispacedGrid, ::Scl; options...) =
     DWTScalingEvalOperator(s, dgs, dyadic_length(grid))
 
-struct DWTEvalOperator{T} <: AbstractOperator{T}
+struct DWTEvalOperator{T} <: DictionaryOperator{T}
     src::Dictionary
     dest::Dictionary
 
@@ -321,7 +321,7 @@ function BasisFunctions.apply!(op::BasisFunctions.DWTEvalOperator, y, coefs; opt
     y
 end
 
-struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
+struct DWTScalingEvalOperator{T} <: DictionaryOperator{T}
     src::Dictionary
     dest::Dictionary
 
@@ -471,19 +471,19 @@ A `DWTSamplingOperator` is an operator that maps a function to wavelet coefficie
 """
 struct DWTSamplingOperator <: AbstractSamplingOperator
     sampler :: GridSamplingOperator
-    weight  :: AbstractOperator
+    weight  :: DictionaryOperator
     scratch :: Vector
 
 	# An inner constructor to enforce that the operators match
-	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::AbstractOperator{ELT}) where {ELT}
+	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::DictionaryOperator{ELT}) where {ELT}
         @assert real(ELT) == eltype(eltype(grid(sampler)))
         @assert size(weight, 2) == length(grid(sampler))
 		new(sampler, weight, zeros(src(weight)))
     end
 end
 using WaveletsCopy.DWT: quad_sf_weights
-Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:AbstractOperator} = dwt.weight
-Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:AbstractOperator} = OP
+Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:DictionaryOperator} = dwt.weight
+Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:DictionaryOperator} = OP
 
 function WeightOperator(basis::WaveletBasis, oversampling::Int=1, recursion::Int=0)
     wav = wavelet(basis)
@@ -568,4 +568,4 @@ function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,Abs
 		params = params, name = "Scaling functions")
 end
 
-Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = AbstractOperator(dual_sampler)
+Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = DictionaryOperator(dual_sampler)

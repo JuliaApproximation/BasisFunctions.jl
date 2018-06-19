@@ -11,7 +11,7 @@ A dictionary can support different differentiation operators, with different
 result dicts. For example, an expansion of Chebyshev polynomials up to degree n
 may map to polynomials up to degree n, or to polynomials up to degree n-1.
 """
-struct Differentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: AbstractOperator{T}
+struct Differentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: DictionaryOperator{T}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
@@ -54,7 +54,7 @@ expansion of its antiderivative. The result may be an expansion in a different
 dictionary. A dictionary can have different antidifferentiation operators,
 with different result dictionaries.
 """
-struct AntiDifferentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: AbstractOperator{T}
+struct AntiDifferentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: DictionaryOperator{T}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
