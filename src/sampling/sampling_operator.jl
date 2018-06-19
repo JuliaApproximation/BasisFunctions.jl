@@ -17,7 +17,7 @@ apply(op::AbstractSamplingOperator, f::AbstractVector) = (@assert length(f)==siz
 """
 A `GridSamplingOperator` is an operator that maps a function to its samples.
 """
-struct GridSamplingOperator <: GenericOperator
+struct GridSamplingOperator <: AbstractSamplingOperator
     src     ::  Dictionary
     dest    ::  GridBasis
 
@@ -64,7 +64,5 @@ function sample!(result, g::AbstractGrid, f)
 	end
 	result
 end
-
-(*)(S::GridSamplingOperator, D::Dictionary) = apply(S, D)
 
 apply(S::GridSamplingOperator, D::Dictionary; options...) = evaluation_operator(D, grid(S); options...)

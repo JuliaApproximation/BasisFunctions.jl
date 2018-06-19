@@ -23,7 +23,7 @@ function discrete_approximation_operator(s::Dictionary; options...)
     end
 end
 
-continuous_approximation_operator(s::Dictionary; options...) = DualGram(s)
+continuous_approximation_operator(s::Dictionary; options...) = DualGram(s; options...)
 
 # Automatically sample a function if an operator is applied to it with a
 # source that is a grid space.
