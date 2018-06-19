@@ -94,9 +94,11 @@ postprocess(S::Subdictionary, grid, vals) = postprocess(superdict(S), grid, vals
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
 plotgrid(S::Dictionary1d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)),infimum(support(S)),supremum(support(S)))
-
+# look at first element by default
+plotgrid(S::MultiDict, n) = plotgrid(element(S,1), n)
+plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)
 # NOTE: This only supoorts multi-dimensional tensor product dicts.
-plotgrid(F::Dictionary{Tuple{S1,S2},T}, n) where {S1,S2,T} = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
+plotgrid(F::TensorProductDict2, n) = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
 plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
 ## Split complex plots in real and imaginary parts
 # 1D
