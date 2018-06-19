@@ -61,30 +61,3 @@ element(s::ProductGridBasis, i) = GridBasis(element(grid(s), i),coeftype(s))
 apply_map(s::GridBasis, map) = GridBasis(apply_map(grid(s), map), coeftype(s))
 
 sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
-
-###############################################
-# A DiscreteGridSpace is the span of a GridBasis
-###############################################
-
-"""
-A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
-"""
-const DiscreteGridSpace{A,S,T,D <: GridBasis} = Span{A,S,T,D}
-const DiscreteGridSpace1d{A,S,T,D <: GridBasis1d} = Span{A,S,T,D}
-
-gridspace(grid::AbstractGrid, T = subeltype(eltype(grid))) = Span(GridBasis(grid, T))
-
-gridspace(s::Span, g::AbstractGrid = grid(s)) = Span(gridbasis(g, dict_codomaintype(s)), coeftype(s))
-
-name(s::DiscreteGridSpace) = "A discrete grid space"
-
-gridbasis(s::DiscreteGridSpace) = dictionary(s)
-
-similar(s::DiscreteGridSpace, grid::AbstractGrid) = Span(grid, coeftype(s))
-
-grid(span::DiscreteGridSpace) = grid(dictionary(span))
-
-# Delegate a map to the underlying grid, but retain the element type of the space
-apply_map(s::DiscreteGridSpace, map) = Span(apply_map(dictionary(s), map), coeftype(s))
-
-sample(s::DiscreteGridSpace, f) = sample(grid(s), f, coeftype(s))

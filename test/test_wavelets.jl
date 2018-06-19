@@ -101,22 +101,21 @@ function bf_wavelets_implementation_test()
             @test evaluation_matrix(basis, BasisFunctions.grid(basis))≈evaluation_matrix(basis, collect(BasisFunctions.grid(basis)))
             T = Float64
             ELT = Float64
-            span = basis
-            tspan = transform_space(span)
-            x = rand(Span(tspan))
-            t = BasisFunctions.unitary_dwt(tspan, span)
-            it = BasisFunctions.unitary_idwt(span, tspan)
+            tdict = transform_dict(basis)
+            x = rand(tdict)
+            t = BasisFunctions.unitary_dwt(tdict, basis)
+            it = BasisFunctions.unitary_idwt(basis, tdict)
             @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (it' * it)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
             @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
-            pre1 = transform_operator_pre(tspan, span)
-            post1 = transform_operator_post(tspan, span)
-            pre2 = transform_operator_pre(span, tspan)
-            post2 = transform_operator_post(span, tspan)
-            t = transform_operator(tspan, span)
-            it = transform_operator(span, tspan)
+            pre1 = transform_operator_pre(tdict, basis)
+            post1 = transform_operator_post(tdict, basis)
+            pre2 = transform_operator_pre(basis, tdict)
+            post2 = transform_operator_post(basis, tdict)
+            t = transform_operator(tdict, basis)
+            it = transform_operator(basis, tdict)
         end
     end
 end

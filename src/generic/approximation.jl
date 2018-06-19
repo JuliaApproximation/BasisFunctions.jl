@@ -27,7 +27,7 @@ continuous_approximation_operator(s::Dictionary; options...) = DualGram(s; optio
 
 # Automatically sample a function if an operator is applied to it with a
 # source that is a grid space.
-function (*)(op::AbstractOperator, f::Function; discrete=nothing, solver=nothing, cutoff=nothing, options...)
+function (*)(op::DictionaryOperator, f::Function; discrete=nothing, solver=nothing, cutoff=nothing, options...)
     op * project(src(op), f; options...)
 end
 

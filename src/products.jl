@@ -52,7 +52,7 @@ end
 # All tensor products are created using the generic 'tensorproduct' function.
 # This function calls a suitable constructor for the tensor product.
 
-for (BaseType,TPType) in [(:AbstractOperator,:TensorProductOperator),
+for (BaseType,TPType) in [(:DictionaryOperator,:TensorProductOperator),
            (:Dictionary,:TensorProductDict)]
     # In order to avoid strange nested structures, we flatten the arguments
     @eval tensorproduct(args::$BaseType...) = $TPType(flatten($TPType, args...)...)
@@ -87,7 +87,7 @@ end
 # https://github.com/JuliaLang/julia/issues/10340
 
 
-# function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
+# function tensorproduct(op1::DictionaryOperator, op2::DictionaryOperator)
 #     if dimension(src(op1)) == 1 && dimension(src(op2)) == 1
 #         d1 = dimension_operator(src(op1) ⊗ src(op2), dest(op1) ⊗ src(op2), op1, 1)
 #         d2 = dimension_operator(dest(op1) ⊗ src(op2), dest(op1) ⊗ dest(op2), op2, 2)
@@ -97,7 +97,7 @@ end
 #     end
 # end
 #
-# function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator; options...)
+# function tensorproduct(op1::DictionaryOperator, op2::DictionaryOperator, op3::DictionaryOperator; options...)
 #     if dimension(src(op1)) == 1 && dimension(src(op2)) == 1 && dimension(src(op3)) == 1
 #         d1 = dimension_operator(src(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ src(op2) ⊗ src(op3), op1, 1; options...)
 #         d2 = dimension_operator(dest(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ src(op3), op2, 2; options...)

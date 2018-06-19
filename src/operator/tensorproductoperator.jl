@@ -4,9 +4,9 @@
 """
 A TensorProductOperator represents the tensor product of other operators.
 
-struct TensorProductOperator{T} <: AbstractOperator{T}
+struct TensorProductOperator{T} <: DictionaryOperator{T}
 """
-struct TensorProductOperator{T} <: AbstractOperator{T}
+struct TensorProductOperator{T} <: DictionaryOperator{T}
     src             ::  Dictionary
     dest            ::  Dictionary
     operators

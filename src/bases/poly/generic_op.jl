@@ -47,7 +47,7 @@ function ONPSfromMonicCoefficients(α::Vector{A}, β::Vector{B}, support::Domain
     GenericOPS{promote_type(T,A,B)}(β[1], a, b, c, support, 1/sqrt(β[1]), other...)
 end
 
-const GenericOPSpan{A,S,T,D <: GenericOPS} = Span{A,S,T,D}
+
 
 support(b::GenericOPS) = b.support
 support(b::GenericOPS, idx) = support(b)

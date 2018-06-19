@@ -118,11 +118,11 @@ unsafe_eval_element_derivative(s::DerivedDict, idx, x) =
 # Wrapping of operators
 #########################
 
-for op in (:transform_space,)
+for op in (:transform_dict,)
     @eval $op(s::DerivedDict; options...) = $op(superdict(s); options...)
 end
 
-for op in (:derivative_space, :antiderivative_space)
+for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::DerivedDict, order; options...) = similar_dictionary(s, $op(superdict(s), order; options...))
 end
 

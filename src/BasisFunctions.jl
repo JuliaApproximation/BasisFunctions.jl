@@ -141,8 +141,8 @@ export linearize_coefficients, delinearize_coefficients, linearize_coefficients!
 export moment, norm
 
 # from bases/generic/span.jl
-export Span, Span1d, Span2d
-export coefficient_type, coeftype, similar_span
+export Span
+export coefficient_type, coeftype
 
 # from bases/generic/subdicts.jl
 export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
@@ -166,8 +166,8 @@ export expansion, coefficients, dictionary, roots,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operator.jl
-export AbstractOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!, GenericOperator
+export DictionaryOperator, operator, src, dest, apply!,
+        apply, apply_multiple, apply_inplace!, AbstractOperator
 export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl
@@ -187,7 +187,7 @@ export CirculantOperator
 #export PseudoDiagonalOperator
 
 # from generic/transform.jl
-export transform_operator, transform_space, full_transform_operator,
+export transform_operator, transform_dict, full_transform_operator,
     transform_operator_pre, transform_operator_post,
     transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
     transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
@@ -217,8 +217,8 @@ export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
 
 # from generic/differentiation.jl
-export differentiation_operator, antidifferentiation_operator, derivative_space,
-    antiderivative_space, Differentiation, Antidifferentiation
+export differentiation_operator, antidifferentiation_operator, derivative_dict,
+    antiderivative_dict, Differentiation, Antidifferentiation
 
 # from products.jl
 export is_homogeneous, basetype, tensorproduct
@@ -258,8 +258,8 @@ export DiscreteSet, DiscreteVectorSet, DiscreteArraySet
 export is_discrete
 
 # from bases/generic/gridbasis.jl
-export GridBasis, DiscreteGridSpace, DiscreteGridSpace1d
-export gridbasis, gridspace
+export GridBasis
+export gridbasis
 
 # from sampling/sampling_operator.jl
 export GridSamplingOperator

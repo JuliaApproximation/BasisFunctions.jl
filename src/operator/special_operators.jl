@@ -3,7 +3,7 @@
 """
 A CoefficientScalingOperator scales a single coefficient.
 """
-struct CoefficientScalingOperator{T} <: AbstractOperator{T}
+struct CoefficientScalingOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     index   ::  Int
@@ -112,7 +112,7 @@ end
 ##     A = Any[]
 ##     push!(A,"W(")
 ##     s = stencil(op.op)
-##     if isa(s,GenericOperator)
+##     if isa(s,AbstractOperator)
 ##         push!(A,s)
 ##     else
 ##         for i=1:length(s)
@@ -130,7 +130,7 @@ The function wrap_operator returns an operator with the given source and destina
 and with the action of the given operator. Depending on the operator, the result is
 a WrappedOperator, but sometimes that can be avoided.
 """
-function wrap_operator(w_src, w_dest, op::AbstractOperator)
+function wrap_operator(w_src, w_dest, op::DictionaryOperator)
     if (w_src == src(op)) && (w_dest == dest(op))
         op
     else
@@ -158,7 +158,7 @@ simplify(op::WrappedOperator) = superoperator(op)
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.
 """
-struct IndexRestrictionOperator{I,T} <: AbstractOperator{T}
+struct IndexRestrictionOperator{I,T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
     subindices  ::  I
@@ -202,7 +202,7 @@ string(op::IndexRestrictionOperator) = "Selecting coefficients "*string(op.subin
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
 """
-struct IndexExtensionOperator{I,T} <: AbstractOperator{T}
+struct IndexExtensionOperator{I,T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
     subindices  ::  I
@@ -252,7 +252,7 @@ otherwise it is not in-place.
 An alias MatrixOperator is provided, for which type parameter ARRAY equals
 Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
-struct MultiplicationOperator{ARRAY,INPLACE,T} <: AbstractOperator{T}
+struct MultiplicationOperator{ARRAY,INPLACE,T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     object  ::  ARRAY
@@ -353,7 +353,7 @@ A SolverOperator wraps around a solver that is used when the SolverOperator is a
 should implement the \ operator.
 Examples include a QR or SVD factorization, or a dense matrix.
 """
-struct SolverOperator{Q,T} <: AbstractOperator{T}
+struct SolverOperator{Q,T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     solver  ::  Q
@@ -379,7 +379,7 @@ ctranspose(op::SolverOperator) = warn("not implemented")
 A FunctionOperator applies a given function to the set of coefficients and
 returns the result.
 """
-struct FunctionOperator{F,T} <: AbstractOperator{T}
+struct FunctionOperator{F,T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     fun     ::  F
@@ -412,7 +412,7 @@ inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), in
 string(op::FunctionOperator) = "Function "*string(op.fun)
 
 
-## sruct ChebyTDiffOperator{T} <: AbstractOperator{T}
+## sruct ChebyTDiffOperator{T} <: DictionaryOperator{T}
 ##     src :: Dictionary
 ##     dest :: Dictionary
 ##     end
@@ -429,7 +429,7 @@ string(op::FunctionOperator) = "Function "*string(op.fun)
 
 
 # An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
-struct UnevenSignFlipOperator{T} <: AbstractOperator{T}
+struct UnevenSignFlipOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
 end
@@ -465,14 +465,14 @@ diagonal{T}(op::UnevenSignFlipOperator{T}) = T[-(-1)^i for i in 1:length(src(op)
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: AbstractOperator{T}
+struct OperatorSum{OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S} <: DictionaryOperator{T}
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
     val2        ::  T
     scratch     ::  S
 
-    function OperatorSum{OP1,OP2,T,S}(op1::OP1, op2::OP2, val1::T, val2::T, scratch::S) where {OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S}
+    function OperatorSum{OP1,OP2,T,S}(op1::OP1, op2::OP2, val1::T, val2::T, scratch::S) where {OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S}
         # We don't enforce that source and destination of op1 and op2 are the same, but at least
         # their sizes must match.
         @assert size(src(op1)) == size(src(op2))
@@ -482,7 +482,7 @@ struct OperatorSum{OP1 <: AbstractOperator,OP2 <: AbstractOperator,T,S} <: Abstr
     end
 end
 
-function OperatorSum(op1::AbstractOperator, op2::AbstractOperator, val1::Number, val2::Number)
+function OperatorSum(op1::DictionaryOperator, op2::DictionaryOperator, val1::Number, val2::Number)
     T = promote_type(eltype(op1), eltype(op2), typeof(val1), typeof(val2))
     c_op1 = promote_eltype(op1, T)
     c_op2 = promote_eltype(op2, T)
@@ -503,7 +503,7 @@ is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
 apply_inplace!(op::OperatorSum, dest, src, coef_srcdest) =
     apply_sum_inplace!(op, op.op1, op.op2, coef_srcdest)
 
-function apply_sum_inplace!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_srcdest)
+function apply_sum_inplace!(op::OperatorSum, op1::DictionaryOperator, op2::DictionaryOperator, coef_srcdest)
     scratch = op.scratch
 
     apply!(op1, scratch, coef_srcdest)
@@ -517,7 +517,7 @@ end
 
 apply!(op::OperatorSum, dest, src, coef_dest, coef_src) = apply_sum!(op, op.op1, op.op2, coef_dest, coef_src)
 
-function apply_sum!(op::OperatorSum, op1::AbstractOperator, op2::AbstractOperator, coef_dest, coef_src)
+function apply_sum!(op::OperatorSum, op1::DictionaryOperator, op2::DictionaryOperator, coef_dest, coef_src)
     scratch = op.scratch
 
     apply!(op1, scratch, coef_src)
@@ -531,8 +531,8 @@ end
 
 elements(op::OperatorSum) = (op.op1,op.op2)
 
-(+)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, 1)
-(-)(op1::AbstractOperator, op2::AbstractOperator) = OperatorSum(op1, op2, 1, -1)
+(+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
+(-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
 function stencil(op::OperatorSum,S)
     s1=""
@@ -553,7 +553,7 @@ a Vector with the length of the set. For example, one can not apply a matrix
 to a non-arraylike representation, hence the representation has to be linearized
 first.
 """
-struct LinearizationOperator{T} <: AbstractOperator{T}
+struct LinearizationOperator{T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
 end
@@ -572,7 +572,7 @@ is_diagonal(op::LinearizationOperator) = true
 
 
 "The inverse of a LinearizationOperator."
-struct DelinearizationOperator{T} <: AbstractOperator{T}
+struct DelinearizationOperator{T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
 end
@@ -589,7 +589,7 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
 
 is_diagonal(op::DelinearizationOperator) = true
 
-function SparseOperator(op::AbstractOperator; options...)
+function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)
     MultiplicationOperator(src(op), dest(op), A, inplace=false)
 end

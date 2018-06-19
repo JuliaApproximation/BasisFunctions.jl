@@ -59,7 +59,7 @@ A(platform::Platform, i; options...) = apply(sampler(platform, i), primal(platfo
 
 Zt(platform::GenericPlatform, i; options...) = Zt(dual(platform, i; options...), dual_sampler(platform, i; options...); options...)
 
-Zt(dual::Dictionary, dual_sampler::GenericOperator; options...) = (coeftype(dual)(1)/length(dual))*apply(dual_sampler,dual; options...)'
+Zt(dual::Dictionary, dual_sampler::AbstractOperator; options...) = (coeftype(dual)(1)/length(dual))*apply(dual_sampler,dual; options...)'
 
 """
 Initalized with a series of generators, it generates tensorproduct dictionaries

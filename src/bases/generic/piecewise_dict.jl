@@ -15,7 +15,7 @@ struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
     end
 end
 
-const PiecewiseDictSpan{A,S,T,D <: PiecewiseDict} = Span{A,S,T,D}
+
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
 function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(length(partition))*length(set))
@@ -117,7 +117,7 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
         @assert nb_elements(s1) == nb_elements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
     end
 end
 
@@ -215,5 +215,5 @@ function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.nat
 end
 
 function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(AbstractOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:nb_elements(s)], s, s)
+    BlockDiagonalOperator(DictionaryOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:nb_elements(s)], s, s)
 end

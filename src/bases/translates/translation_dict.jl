@@ -6,7 +6,7 @@ Dictionary consisting of translates of one generating function.
 abstract type TranslationDict{T} <: Dictionary{T,T}
 end
 
-const TranslatesSpan{A,S,T,D <: TranslationDict} = Span{A,S,T,D}
+
 
 length(set::TranslationDict) = set.n
 
@@ -18,7 +18,6 @@ name(b::TranslationDict) = "Set of translates of a function"
 name(::Type{B}) where {B<:TranslationDict}= "Set of translates of a function"
 
 fun(b::TranslationDict) = b.fun
-fun(s::TranslatesSpan) = fun(dictionary(s))
 
 # Indices of translates naturally range from 0 to n-1
 const TransIndex = ShiftedIndex{1}
@@ -36,7 +35,7 @@ has_unitary_transform(::TranslationDict) = false
 abstract type PeriodicTranslationDict{T} <: TranslationDict{T}
 end
 
-const PeriodicTranslatesSpan{A,S,T,D <: PeriodicTranslationDict} = Span{A,S,T,D}
+
 
 support(set::PeriodicTranslationDict{T}) where {T} = interval(set.a,set.b)
 
@@ -172,7 +171,7 @@ discrete_dual(set::PeriodicTranslationDict; options...) =
 abstract type CompactPeriodicTranslationDict{T} <: PeriodicTranslationDict{T}
 end
 
-const CompactPeriodicTranslatesSpan{A,S,T,D <: CompactPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 """
   Length of the function of a CompactPeriodicTranslationDict.
@@ -235,7 +234,7 @@ end
 abstract type LinearCombinationOfPeriodicTranslationDict{PSoT<:PeriodicTranslationDict, T} <: PeriodicTranslationDict{T}
 end
 
-const LinearCombinationsSpan{A,S,T,D <: LinearCombinationOfPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 coefficients(b::LinearCombinationOfPeriodicTranslationDict) = b.coefficients
 
@@ -261,8 +260,6 @@ function coefficients_in_other_basis{B<:LinearCombinationOfPeriodicTranslationDi
     change_of_basis(b, B; options...)*e
 end
 
-superspan(s::LinearCombinationsSpan) = Span(superdict(dictionary(s)), coeftype(s))
-
 extension_operator(s1::LinearCombinationOfPeriodicTranslationDict, s2::LinearCombinationOfPeriodicTranslationDict; options...) =
     wrap_operator(s1, s2, change_of_basis(s2; options...)*extension_operator(superdict(s1), superdict(s2))*inv(change_of_basis(s1; options...)))
 
@@ -277,7 +274,7 @@ struct DualPeriodicTranslationDict{T} <: LinearCombinationOfPeriodicTranslationD
     coefficients    :: Array{T,1}
 end
 
-const DualPeriodicTranslatesSpan{A,S,T,D <: DualPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 DualPeriodicTranslationDict(set::PeriodicTranslationDict{T}; options...) where {T} =
     DualPeriodicTranslationDict{T}(set, coefficients_in_other_basis(set, LinearCombinationOfPeriodicTranslationDict; options...))
@@ -298,7 +295,7 @@ struct DiscreteDualPeriodicTranslationDict{T} <: LinearCombinationOfPeriodicTran
     oversampling    :: T
 end
 
-const DiscreteDualPeriodicTranslatesSpan{A,S,T,D <: DiscreteDualPeriodicTranslationDict} = Span{A,S,T,D}
+
 
 function DiscreteDualPeriodicTranslationDict(set::PeriodicTranslationDict{T}; oversampling=default_oversampling(set), options...) where {T}
     DiscreteDualPeriodicTranslationDict{T}(set, coefficients_in_other_basis(set, DiscreteDualPeriodicTranslationDict; oversampling=oversampling, options...), oversampling)

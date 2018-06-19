@@ -120,7 +120,7 @@ extension_size(set::CompositeDict) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
     @eval $op(s1::CompositeDict, s2::CompositeDict; options...) =
-        BlockDiagonalOperator( AbstractOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator( DictionaryOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
 end
 
 # Calling and evaluation
@@ -137,8 +137,8 @@ function unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,
 end
 
 
-derivative_space(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->derivative_space(u, order; options...), elements(s)))
+derivative_dict(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->derivative_dict(u, order; options...), elements(s)))
 
-antiderivative_space(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->antiderivative_space(u, order; options...), elements(s)))
+antiderivative_dict(s::CompositeDict, order; options...) =
+    similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))

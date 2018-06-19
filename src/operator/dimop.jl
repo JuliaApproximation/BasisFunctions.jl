@@ -20,15 +20,15 @@ A tensor product operation can be implemented as a sequence of DimensionOperator
 # 2: use sub
 # 3: use ArrayViews.view
 # The first is the default.
-struct DimensionOperator{VIEW,ELT} <: AbstractOperator{ELT}
+struct DimensionOperator{VIEW,ELT} <: DictionaryOperator{ELT}
     src             ::  Dictionary
     dest            ::  Dictionary
-    op              ::  AbstractOperator{ELT}
+    op              ::  DictionaryOperator{ELT}
     dim             ::  Int
     scratch_src     ::  AbstractArray{ELT}
     scratch_dest    ::  AbstractArray{ELT}
 
-    function DimensionOperator{VIEW,ELT}(set_src::Dictionary, set_dest::Dictionary, op::AbstractOperator, dim::Int) where {VIEW,ELT}
+    function DimensionOperator{VIEW,ELT}(set_src::Dictionary, set_dest::Dictionary, op::DictionaryOperator, dim::Int) where {VIEW,ELT}
         scratch_src = zeros(src(op))
         scratch_dest = zeros(dest(op))
         new(set_src, set_dest, op, dim, scratch_src, scratch_dest)
@@ -43,7 +43,7 @@ is_inplace(op::DimensionOperator) = is_inplace(op.op)
 
 # Generic function to create a DimensionOperator
 # This function can be intercepted for operators that have a more efficient implementation.
-dimension_operator(src, dest, op::AbstractOperator, dim; viewtype = VIEW_DEFAULT, options...) =
+dimension_operator(src, dest, op::DictionaryOperator, dim; viewtype = VIEW_DEFAULT, options...) =
     DimensionOperator(src, dest, op, dim, viewtype)
 
 
@@ -79,7 +79,7 @@ function copy!(a::AbstractArray, slice::Slices.SliceIndex, b::AbstractVector)
     end
 end
 
-function apply_dim!(dimop::DimensionOperator{1}, coef_dest, coef_src, op::AbstractOperator, dim,
+function apply_dim!(dimop::DimensionOperator{1}, coef_dest, coef_src, op::DictionaryOperator, dim,
     scratch_dest = dimop.scratch_dest,
     scratch_src = dimop.scratch_src)
 
@@ -91,7 +91,7 @@ function apply_dim!(dimop::DimensionOperator{1}, coef_dest, coef_src, op::Abstra
     coef_dest
 end
 
-function apply_dim!(dimop::DimensionOperator{2}, coef_dest, coef_src, op::AbstractOperator, dim)
+function apply_dim!(dimop::DimensionOperator{2}, coef_dest, coef_src, op::DictionaryOperator, dim)
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
         src_view = sub(coef_src, s_slice)
         dest_view = sub(coef_dest, d_slice)
@@ -100,7 +100,7 @@ function apply_dim!(dimop::DimensionOperator{2}, coef_dest, coef_src, op::Abstra
     coef_dest
 end
 
-function apply_dim!(dimop::DimensionOperator{3}, coef_dest, coef_src, op::AbstractOperator, dim)
+function apply_dim!(dimop::DimensionOperator{3}, coef_dest, coef_src, op::DictionaryOperator, dim)
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
         src_view = view(coef_src, s_slice)
         dest_view = view(coef_dest, d_slice)

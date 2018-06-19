@@ -1,5 +1,5 @@
 
-struct VerticalBandedOperator{ELT} <: BasisFunctions.AbstractOperator{ELT}
+struct VerticalBandedOperator{ELT} <: BasisFunctions.DictionaryOperator{ELT}
     src::Dictionary
     dest::Dictionary
     array::Vector{ELT}
@@ -39,7 +39,7 @@ function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Ve
 
     dest
 end
-struct HorizontalBandedOperator{ELT} <: BasisFunctions.AbstractOperator{ELT}
+struct HorizontalBandedOperator{ELT} <: BasisFunctions.DictionaryOperator{ELT}
     src::Dictionary
     dest::Dictionary
     array::Vector{ELT}

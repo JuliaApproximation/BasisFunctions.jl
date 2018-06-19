@@ -15,7 +15,7 @@ struct JacobiPolynomials{T} <: OPS{T,T}
     JacobiPolynomials{T}(n, α = zero(T), β = zero(T)) where {T} = new{T}(n, α, β)
 end
 
-const JacobiSpan{A,S,T,D <: JacobiPolynomials} = Span{A,S,T,D}
+
 
 name(b::JacobiPolynomials) = "Jacobi OPS"
 

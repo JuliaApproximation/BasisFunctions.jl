@@ -261,7 +261,7 @@ function apply!(op::Restriction, dest::FourierBasis, src::FourierBasis, coef_des
 	coef_dest
 end
 
-function derivative_space(s::FourierBasis, order; options...)
+function derivative_dict(s::FourierBasis, order; options...)
 	if oddlength(s)
 		s
 	else
@@ -348,7 +348,7 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
-			super_dgs = gridspace(fs, super_grid)
+			super_dgs = gridbasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; options...)
 			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
 			R*E
