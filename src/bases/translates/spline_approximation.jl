@@ -26,58 +26,6 @@ end
 
 _element_spans_one(b::BSplineTranslatesBasis) = degree(b) == 0
 
-# function overlapping_element_coefficient_indices(B::TensorProductDict, x::SVector)
-#     index_sets = [overlapping_element_coefficient_indices(s,x[i]) for (i,s) in enumerate(elements(B))]
-#     create_indices(B,index_sets...)
-# end
-
-"""
-The linear index of the elements of `B` that are non-zero in a point of the grid `g`.
-"""
-overlapping_element_coefficient_indices(B::Dictionary1d, g::AbstractGrid1d) =
-    unique(non_unique_overlapping_element_coefficient_indices(B, g))
-# util function
-# non_unique_overlapping_element_coefficient_indices(B::Dictionary, x::Real) =
-#     overlapping_element_coefficient_indices(B, x)
-
-function non_unique_overlapping_element_coefficient_indices(B::Dictionary1d, g::AbstractGrid1d)
-    L = length(B)
-    os = BasisFunctions._offset(B)
-    no_elements = BasisFunctions._noelements(B)
-    a = Array{Int}(no_elements*length(g))
-    ai = Array{Int}(no_elements)
-    AI = 1:no_elements
-    AIm1 = 1:no_elements-1
-    aos = 1
-    for (i, x) in enumerate(g)
-        # The interval_index is the starting index of all spline elements that overlap with x
-        init_index = BasisFunctions.interval_index(B,x)
-        (init_index == -1-L) && (init_index += L)
-        if no_elements == 1
-            ai[1] = abs(init_index)
-        else
-            if init_index < 0
-                init_index = -init_index-1
-                init_index -= os
-                for i in AIm1
-                    ai[i] = mod(init_index-i,L) + 1
-                end
-                ai[no_elements] = ai[no_elements-1]
-            else
-                init_index -= os
-                for i in AI
-                    ai[i] = mod(init_index-i,L) + 1
-                end
-            end
-        end
-        Base.copy!(a, aos, ai, 1, no_elements)
-        aos += no_elements
-    end
-    a
-end
-
-unique_overlapping_elements(B::Dictionary, g::AbstractGrid) = unique(overlapping_elements(B, g))
-
 function _grid_index_limits_in_element_support(B::Dictionary, g::AbstractEquispacedGrid, i)
     dx = stepsize(g)
     x0 = g[1]
@@ -250,7 +198,7 @@ function (DG::DualBSplineGenerator)(n::AbstractVector{Int})
 end
 
 # Sampler
-bspline_sampler(::Type{T}, primal, oversampling::Int) where {T} = n-> GridSamplingOperator(gridspace(grid(primal(n*oversampling)),T))
+bspline_sampler(::Type{T}, primal, oversampling::Int) where {T} = n-> GridSamplingOperator(gridbasis(grid(primal(n*oversampling)),T))
 
 # params
 bspline_param(init::Int) = DoublingSequence(init)

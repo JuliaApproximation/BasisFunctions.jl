@@ -127,10 +127,10 @@ function test_translatedbsplines(T)
                 e1 = random_expansion(b1)
                 e2 = random_expansion(b2)
 
-                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b2), grid(b2))*e2)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b1), grid(b1))*e2)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b1), grid(b1))*e1)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b2), grid(b2))*e1)
 
                 mr = matrix(restriction_operator(b1, b2))
                 me = matrix(extension_operator(b2, b1))
@@ -149,10 +149,10 @@ function test_translatedbsplines(T)
                 e1 = random_expansion(b1)
                 e2 = random_expansion(b2)
 
-                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
-                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b2), grid(b2))*e2)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b1), grid(b1))*e2)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b1), grid(b1))*e1)
+                @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b2), grid(b2))*e1)
 
                 mr = matrix(restriction_operator(b1, b2))
                 me = matrix(extension_operator(b2, b1))
@@ -242,10 +242,10 @@ function test_translatedsymmetricbsplines(T)
             e1 = random_expansion(b1)
             e2 = random_expansion(b2)
 
-            @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b2), grid(b2))*e2)
-            @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridspace(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridspace(b1), grid(b1))*e2)
-            @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b1), grid(b1))*e1)
-            @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridspace(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridspace(b2), grid(b2))*e1)
+            @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b2))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b2), grid(b2))*e2)
+            @test coefficients(BasisFunctions.default_evaluation_operator(b2, gridbasis(b1))*e2) ≈ coefficients(grid_evaluation_operator(b2, gridbasis(b1), grid(b1))*e2)
+            @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b1))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b1), grid(b1))*e1)
+            @test coefficients(BasisFunctions.default_evaluation_operator(b1, gridbasis(b2))*e1) ≈ coefficients(grid_evaluation_operator(b1, gridbasis(b2), grid(b2))*e1)
 
             mr = matrix(restriction_operator(b1, b2))
             me = matrix(extension_operator(b2, b1))
@@ -382,7 +382,7 @@ function test_bspline_platform(T)
 
         B = P
         g = BasisFunctions.oversampled_grid(B, oversampling)
-        E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(B,gridspace(g),1:oversampling:length(g))
+        E = CirculantOperator(evaluation_matrix(B[1],g)[:])*IndexExtensionOperator(B,gridbasis(g),1:oversampling:length(g))
         G = CirculantOperator(E'E*[1,zeros(length(g)-1)...]/length(B))
         DG = BasisFunctions.wrap_operator(B, B, inv(G))
 
@@ -412,8 +412,8 @@ function test_bspline_platform(T)
         g2 = BasisFunctions.oversampled_grid(B2,oversampling)
         g = g1×g2
 
-        E1 = CirculantOperator(evaluation_matrix(B1[1],g1)[:])*IndexExtensionOperator(B1,gridspace(g1),1:oversampling:length(g1))
-        E2 = CirculantOperator(evaluation_matrix(B2[1],g2)[:])*IndexExtensionOperator(B2,gridspace(g2),1:oversampling:length(g2))
+        E1 = CirculantOperator(evaluation_matrix(B1[1],g1)[:])*IndexExtensionOperator(B1,gridbasis(g1),1:oversampling:length(g1))
+        E2 = CirculantOperator(evaluation_matrix(B2[1],g2)[:])*IndexExtensionOperator(B2,gridbasis(g2),1:oversampling:length(g2))
 
         G1 = CirculantOperator(E1'E1*[1,zeros(length(g1)-1)...]/length(B1));
         G2 = CirculantOperator(E2'E2*[1,zeros(length(g2)-1)...]/length(B2));

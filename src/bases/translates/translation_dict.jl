@@ -311,7 +311,7 @@ default_oversampling(b::DiscreteDualPeriodicTranslationDict) = b.oversampling
 
 dual(b::DiscreteDualPeriodicTranslationDict; options...) = superdict(b)
 
-change_of_basis(b::PeriodicTranslationDict, ::Type{DiscreteDualPeriodicTranslationDict}; options...) = DiscreteDualGram(Span(b); options...)
+change_of_basis(b::PeriodicTranslationDict, ::Type{DiscreteDualPeriodicTranslationDict}; options...) = DiscreteDualGram(b; options...)
 
 resize(b::DiscreteDualPeriodicTranslationDict, n::Int) = discrete_dual(resize(dual(b), n); oversampling=default_oversampling(b))
 
