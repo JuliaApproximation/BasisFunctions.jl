@@ -9,8 +9,6 @@ The elements of the set are the Euclidean unit vectors, with a finite index set.
 abstract type DiscreteSet{I,T} <: Dictionary{I,T}
 end
 
-const DiscreteSpace{A,S,T,D <: DiscreteSet} = Span{A,S,T,D}
-
 coefficient_type(::Type{DiscreteSet{I,T}}) where {I,T} = T
 
 # We can't update the domain type of a discrete set
@@ -63,8 +61,6 @@ immutable DiscreteVectorSet{T} <: DiscreteSet{Int,T}
     n   ::  Int
 end
 
-const DiscreteVectorSpace{A,S,T,D <: DiscreteVectorSet} = Span{A,S,T,D}
-
 # We set a default codomain type Float64
 DiscreteVectorSet(n::Int) = DiscreteVectorSet{Float64}(n)
 
@@ -82,8 +78,6 @@ A `DiscreteArraySet{N,T}` describes the linear space of arrays of finite size
 immutable DiscreteArraySet{N,T} <: DiscreteSet{ProductIndex{N},T}
     size    ::  NTuple{N,Int}
 end
-
-const DiscreteArraySpace{A,S,T,D <: DiscreteArraySet} = Span{A,S,T,D}
 
 DiscreteArraySet(size::NTuple{N,Int}, ::Type{T} = Float64) where {N,T} =
     DiscreteArraySet{N,T}(size)

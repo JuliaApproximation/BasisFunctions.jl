@@ -13,9 +13,6 @@ end
 
 const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
 
-const MappedSpan{A,S,T,D <: MappedDict} = Span{A,S,T,D}
-const MappedSpan1d{A,S,T,D <: MappedDict1d} = Span{A,S,T,D}
-
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
@@ -213,7 +210,7 @@ function rescale(s::Dictionary1d, a, b)
 end
 
 rescale(s::Dictionary1d,d::Domain1d) = rescale(s,infimum(d),supremum(d))
-    
+
 
 # "Preserve Tensor Product Structure"
 function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
@@ -249,4 +246,3 @@ symbol(op::MappedDict) = "M"
 
 support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
 support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
-

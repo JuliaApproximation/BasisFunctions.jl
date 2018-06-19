@@ -87,3 +87,14 @@ default_threshold(y) = default_threshold(typeof(y))
 default_threshold(::Type{T}) where {T <: AbstractFloat} = 100eps(T)
 default_threshold(::Type{Complex{T}}) where {T <: AbstractFloat} = 100eps(T)
 default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)
+
+# This is a candidate for a better implementation. How does one generate a
+# unit vector in a tuple?
+# ASK is this indeed a better implementation?
+dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
+
+# Generate a random value of type T
+# Can be removed after 0.7
+random_value(::Type{T}) where {T <: Number} = convert(T, rand())
+random_value(::Type{Complex{T}}) where {T <: Real} = T(rand()) + im*T(rand())
+random_value(::Type{T}) where {T} = rand() * one(T)

@@ -69,8 +69,6 @@ sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
 """
 A DiscreteGridSpace is a discrete basis that can represent a sampled function on a grid.
 """
-const DiscreteGridSpace{A,S,T,D <: GridBasis} = Span{A,S,T,D}
-const DiscreteGridSpace1d{A,S,T,D <: GridBasis1d} = Span{A,S,T,D}
 
 gridspace(grid::AbstractGrid, T = subeltype(eltype(grid))) = Span(GridBasis(grid, T))
 
