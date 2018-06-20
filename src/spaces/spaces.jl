@@ -22,3 +22,9 @@ no additional information apart from their domain and codomain types.
 """
 struct FunctionSpace{S,T} <: AbstractFunctionSpace{S,T}
 end
+
+# The zero element of a generic function space
+zero(space::FunctionSpace{S,T}) where {S,T} = x::S -> zero(T)
+
+# The multiplicative identity element of a generic function space
+one(space::FunctionSpace{S,T}) where {S,T} = x::S -> one(T)

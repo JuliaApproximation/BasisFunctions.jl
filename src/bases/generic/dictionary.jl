@@ -208,9 +208,10 @@ eachindex(d::Dictionary) = eachindex(ordering(d))
 native_index(dict::Dictionary, idx) = _native_index(dict, idx)
 # We redirect to a fallback _native_index in case the concrete dictionary
 # did not implement native_index.  We explicitly convert a linear index using the ordering.
-# Anything else we return unchanged because we do not know what to do at this level.
+# Anything else we throw an error because the index looks invalid
 _native_index(dict::Dictionary, idx::LinearIndex) = ordering(dict)[idx]
-_native_index(dict::Dictionary, idxn) = idxn
+_native_index(dict::Dictionary, idx::NativeIndex) = idx
+_native_index(dict::Dictionary, idx) = throw(ArgumentError("invalid index: $idx"))
 
 "Compute the linear index corresponding to the given index."
 linear_index(dict::Dictionary, idx) = _linear_index(dict, idx)
@@ -433,6 +434,7 @@ end
 
 # Convenience function: evaluate a function on a grid.
 # We implement unsafe_eval_element1, so the bounds check on idx has already happened
+# TODO: implement using broadcast instead, because evaluation in a grid is like vectorization
 @inline unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid) =
     _default_unsafe_eval_element_in_grid(dict, idx, grid)
 

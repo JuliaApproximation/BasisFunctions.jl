@@ -119,6 +119,5 @@ unsafe_getindex(g::ProductGrid, i::Int...) = unsafe_getindex(g, tuple(i...))
 
 @generated function unsafe_getindex(g::ProductGrid, i::NTuple{N,Int}) where {N}
 	t = [:(g.grids[$k][i[$k]]) for k in 1:N]
-    Core.println(i)
 	:(FlatVector($(t...)))
 end

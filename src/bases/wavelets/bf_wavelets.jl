@@ -3,6 +3,7 @@
 abstract type WaveletBasis{T,S,K} <: Dictionary1d{T,T} where {S <: Side,K<:Kind}
 end
 
+native_index(dict::WaveletBasis, idx::WaveletIndex) = idx
 
 
 checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =

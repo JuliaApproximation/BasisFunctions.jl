@@ -18,7 +18,15 @@ dict_promote_domaintype(d::DiscreteSet, S) =
 # The point x is in the support of d exactly when it is within the bounds of
 # the index set, so we can do a checkbounds with Bool argument (which does not
 # throw an error but returns true or false).
-in_support(d::DiscreteSet, idx, x) = checkbounds(Bool, d, x)
+in_support(d::DiscreteSet{I}, idx, x::I) where I = checkbounds(Bool, d, x)
+
+function in_support(d::DiscreteSet, idx, x)
+    try
+        in_support(d, idx, native_index(d, x))
+    catch e
+        false
+    end
+end
 
 # Evaluation of discrete sets works as follows:
 # -> eval_element: does bounds check on idx

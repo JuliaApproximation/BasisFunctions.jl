@@ -9,8 +9,6 @@ gridbasis(op::AbstractSamplingOperator) = dest(op)
 
 grid(op::AbstractSamplingOperator) = grid(gridbasis(op))
 
-(*)(op::AbstractSamplingOperator, f) = apply(op, f)
-
 apply(op::AbstractSamplingOperator, f::AbstractVector) = (@assert length(f)==size(op,2); f)
 
 

@@ -7,6 +7,14 @@ spaces.
 abstract type AbstractOperator
 end
 
+"Is the operator a combination of other operators"
+is_composite(op::AbstractOperator) = false
+
+(*)(op::AbstractOperator, fun) = apply(op, fun)
+
+dest(op::AbstractOperator) = _dest(op, dest_space(op))
+_dest(op::AbstractOperator, span::Span) = dictionary(span)
+_dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
 
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of
@@ -75,9 +83,6 @@ is_inplace(op::DictionaryOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::DictionaryOperator) = false
 
-"Is the operator a combination of other operators"
-is_composite(op::DictionaryOperator) = false
-
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(dest(op))
 	apply!(op, coef_dest, coef_src)
@@ -124,7 +129,6 @@ function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
 	throw(InexactError())
 end
 
-(*)(op::DictionaryOperator, coef_src) = apply(op, coef_src)
 
 """
 Apply an operator multiple times, to each column of the given argument.
