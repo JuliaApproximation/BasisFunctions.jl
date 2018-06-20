@@ -6,7 +6,7 @@ end
 src(op::AbstractSamplingOperator) = op.src
 dest(op::AbstractSamplingOperator) = op.dest
 
-gridsbasis(op::AbstractSamplingOperator) = dest(op)
+gridbasis(op::AbstractSamplingOperator) = dest(op)
 
 grid(op::AbstractSamplingOperator) = grid(gridbasis(op))
 
