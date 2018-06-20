@@ -205,7 +205,7 @@ function rescale(s::Dictionary1d, a, b)
     end
 end
 
-rescale(s::Dictionary1d,d::Domain1d) = rescale(s,infimum(d),supremum(d))
+rescale(s::Dictionary,d::Domain) = rescale(s,infimum(d),supremum(d))
 
 
 # "Preserve Tensor Product Structure"
