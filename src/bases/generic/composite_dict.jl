@@ -78,6 +78,8 @@ end
 # Indexing
 ##################
 
+native_index(dict::CompositeDict, idx::MultilinearIndex) = idx
+
 multilinear_index(dict::CompositeDict, idx::LinearIndex) =
     offsets_multilinear_index(unsafe_offsets(dict), idx)
 

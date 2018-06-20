@@ -35,11 +35,34 @@ struct MultiArray{A,T}
     arrays  ::  A
     # The cumulative sum of the lengths of the subarrays. Used to compute indices.
     # The linear index for the i-th subarray starts at offsets[i]+1.
-    offsets ::  Array{Int,1}
+    offsets ::  Vector{Int}
 
     MultiArray{A,T}(arrays) where {A,T} = new(arrays, compute_offsets(arrays))
+
+    function MultiArray{A,T}(offsets::Vector{Int}) where {A,T}
+        @assert eltype(eltype(A)) == T
+        new(zeros_oftype(A, offsets), offsets)
+    end
 end
 
+"Generate zeros of type `A`, suitable for a `MultiArray{A,T}`."
+function zeros_oftype(::Type{A}, offsets::Vector{Int}) where {A}
+end
+
+# - the outer array is a Vector
+zeros_oftype(::Type{Vector{A}}, offsets::Vector{Int}) where {A} =
+    [zeros_oftype(A, offsets[i+1]-offsets[i]) for i in 1:length(offsets)-1]
+# - the outer array is an NTuple
+function zeros_oftype(::Type{NTuple{N,A}}, offsets::Vector{Int}) where {N,A}
+    @assert length(offsets) == N+1
+    ntuple(i->zeros_oftype(A, offsets[i+1]-offsets[i]), Val{N})
+end
+
+zeros_oftype(::Type{Vector{T}}, len::Int) where {T} = zeros(T, len)
+function zeros_oftype(::Type{NTuple{N,T}}, len::Int) where {N,T}
+    @assert len == N
+    ntuple(i->zero(T), Val{N})
+end
 
 function MultiArray(arrays, T = eltype(arrays[1]))
     for array in arrays

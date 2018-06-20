@@ -1,12 +1,20 @@
 # operator.jl
 
 """
-A `AbstractOperator` is the supertype of all objects that map between function
+An `AbstractOperator` is the supertype of all objects that map between function
 spaces.
 """
 abstract type AbstractOperator
 end
 
+"Is the operator a combination of other operators"
+is_composite(op::AbstractOperator) = false
+
+(*)(op::AbstractOperator, fun) = apply(op, fun)
+
+dest(op::AbstractOperator) = _dest(op, dest_space(op))
+_dest(op::AbstractOperator, span::Span) = dictionary(span)
+_dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
 
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of
@@ -33,6 +41,9 @@ eltype(::Type{OP}) where {OP <: DictionaryOperator} = eltype(supertype(OP))
 # Default implementation of src and dest: assume they are fields
 src(op::DictionaryOperator) = op.src
 dest(op::DictionaryOperator) = op.dest
+
+src_space(op::DictionaryOperator) = Span(src(op))
+dest_space(op::DictionaryOperator) = Span(dest(op))
 
 isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
 
@@ -71,9 +82,6 @@ is_inplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
 is_diagonal(op::DictionaryOperator) = false
-
-"Is the operator a combination of other operators"
-is_composite(op::DictionaryOperator) = false
 
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(dest(op))
@@ -121,7 +129,6 @@ function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
 	throw(InexactError())
 end
 
-(*)(op::DictionaryOperator, coef_src) = apply(op, coef_src)
 
 """
 Apply an operator multiple times, to each column of the given argument.

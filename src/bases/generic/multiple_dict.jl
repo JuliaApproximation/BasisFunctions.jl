@@ -2,7 +2,7 @@
 
 
 """
-A `MultiDict` is the concatenation of several dictonaries. The elements are contained
+A `MultiDict` is the concatenation of several dictionaries. The elements are contained
 in an indexable set, such as a tuple or an array. In case of an array, the number
 of dictionaries may be large.
 
