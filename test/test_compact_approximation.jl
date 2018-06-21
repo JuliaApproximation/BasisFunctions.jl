@@ -59,7 +59,7 @@ function test_spline_approximation(T)
     @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 end
 
-using BasisFunctions: grid_index_mask_in_element_support, coefficient_index_mask_of_overlapping_elements
+using BasisFunctions: grid_index_mask_in_element_support, coefficient_index_mask_of_overlapping_elements, coefficient_indices_of_overlapping_elements
 function test_index_masks()
     B = BSplineTranslatesBasis(10,3)⊗BSplineTranslatesBasis(15,5)
     g = grid(B)
@@ -118,6 +118,11 @@ function test_index_masks()
             @test norm(B[i](g)) ==0
         end
     end
+    indices = coefficient_indices_of_overlapping_elements(B, g)
+    m = BitArray(size(B))
+    fill!(m, 0)
+    m[indices] = 1
+    @test m==indexmask
 
 end
 

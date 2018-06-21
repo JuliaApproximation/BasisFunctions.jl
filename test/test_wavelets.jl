@@ -14,6 +14,10 @@ using BasisFunctions
     end
     suitable_function(set::BasisFunctions.WaveletBasis) =  x -> 1/(10+cos(2*pi*x))
 
+    BasisFunctions.has_transform(::WaveletBasis) = false
+
+    supports_interpolation(::WaveletBasis) = false
+
 
 using WaveletsCopy.DWT: quad_trap, quad_sf, quad_sf_weights, quad_sf_N, quad_trap_N
 function test_wavelet_quadrature()
@@ -39,9 +43,9 @@ test_wavelet_quadrature()
 
 function bf_wavelets_implementation_test()
     @testset begin
-        # Note, following line only succceeds for this particular wavelet basis (since it is orthogonal and easily evaluated in a random point)
-        test_generic_dict_interface(CDFWaveletBasis(1,1,6))
-        test_generic_dict_interface(wavelet_dual(CDFWaveletBasis(1,1,6)))
+        test_generic_dict_interface(CDFWaveletBasis(3,5,6))
+        test_generic_dict_interface(wavelet_dual(CDFWaveletBasis(3,5,6)))
+        test_generic_dict_interface(CDFScalingBasis(1,1,6))
 
         b1 = DaubechiesWaveletBasis(3,2)
         b2 = CDFWaveletBasis(3,1,5)
@@ -97,25 +101,19 @@ function bf_wavelets_implementation_test()
                 @test t2 < t1
             end
         end
-        for basis in (b,b1,b2,BasisFunctions.wavelet_dual(b))
+
+        b1 = DaubechiesWaveletBasis(3,6)
+        b2 = CDFWaveletBasis(3,1,5)
+        b = CDFWaveletBasis(1,1,6)
+        for basis in (b,b1,b2,BasisFunctions.wavelet_dual(b), ScalingBasis(b))
             @test evaluation_matrix(basis, BasisFunctions.grid(basis))≈evaluation_matrix(basis, collect(BasisFunctions.grid(basis)))
             T = Float64
             ELT = Float64
-            tdict = transform_dict(basis)
-            x = rand(tdict)
-            t = BasisFunctions.unitary_dwt(tdict, basis)
-            it = BasisFunctions.unitary_idwt(basis, tdict)
-            @test maximum(abs.( (t' * t)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (it' * it)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (inv(t) * t)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (inv(it) * it)*x-x)) < test_tolerance(ELT)
-            @test maximum(abs.( (it * t)*x-x)) < test_tolerance(ELT)
-            pre1 = transform_operator_pre(tdict, basis)
-            post1 = transform_operator_post(tdict, basis)
-            pre2 = transform_operator_pre(basis, tdict)
-            post2 = transform_operator_post(basis, tdict)
-            t = transform_operator(tdict, basis)
-            it = transform_operator(basis, tdict)
+            tbasis = transform_dict(basis)
+            x = ones(length(basis))
+            t = transform_operator(tbasis, basis)
+            it = transform_operator(basis, tbasis)
+            @test norm((it*t*x-x))+1≈1
         end
     end
 end
@@ -127,3 +125,4 @@ plot(b,layout=2)
 plot(wavelet_dual(b)[3:4],layout=2,subplot=1)
 plot!(BasisFunctions.Dual, wavelet, wavelet(b),j=1,k=0,subplot=2,periodic=true)
 plot!(BasisFunctions.Dual, wavelet, wavelet(b),j=1,k=1,subplot=2,periodic=true)
+BasisFunctions.has_transform(::WaveletBasis) = true

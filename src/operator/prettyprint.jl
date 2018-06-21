@@ -1,6 +1,6 @@
 ## OPERATORS
 
-# Methods that override the standard show(io::IO,op::DictionaryOperator), to be better understandable.
+# Methods that override the standard show(io::IO,op::AbstractOperator), to be better understandable.
 
 ####
 # Comment out these methods to disable pretty printing

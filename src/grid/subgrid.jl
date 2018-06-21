@@ -66,6 +66,8 @@ function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::Ab
     IndexRestrictionOperator(src, dest, subindices(dest_grid))
 end
 
-getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+# getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+
+getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
 
 strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))
