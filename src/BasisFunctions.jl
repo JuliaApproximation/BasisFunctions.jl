@@ -257,7 +257,7 @@ export OperatedDict
 export derivative, src_dictionary, dest_dictionary
 
 # from bases/generic/discrete_sets.jl
-export DiscreteSet, DiscreteVectorSet, DiscreteArraySet
+export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary
 export is_discrete
 
 # from bases/generic/gridbasis.jl

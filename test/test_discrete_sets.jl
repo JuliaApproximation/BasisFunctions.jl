@@ -2,7 +2,7 @@
 
 function test_discrete_sets(T)
     n = 10
-    s1 = DiscreteVectorSet{T}(n)
+    s1 = DiscreteVectorDictionary{T}(n)
     @test domaintype(s1) == Int
     @test codomaintype(s1) == T
     @test length(s1) == n
@@ -27,7 +27,7 @@ function test_discrete_sets(T)
     @test eval_element(s1, 1, 2) == zero(T)
     @test eval_element(s1, n, n) == one(T)
 
-    t1 = DiscreteArraySet((10,10), T)
+    t1 = DiscreteArrayDictionary((10,10), T)
     @test codomaintype(t1) == T
     @test domaintype(t1) == ProductIndex{2}
     @test size(t1) == (10,10)

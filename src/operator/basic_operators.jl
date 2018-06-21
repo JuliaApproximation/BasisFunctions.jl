@@ -175,7 +175,7 @@ struct DiagonalOperator{T} <: DictionaryOperator{T}
 end
 
 DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
-    DiagonalOperator(DiscreteVectorSet{T}(length(diagonal)), diagonal)
+    DiagonalOperator(DiscreteVectorDictionary{T}(length(diagonal)), diagonal)
 
 DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
 

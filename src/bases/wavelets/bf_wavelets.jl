@@ -500,7 +500,7 @@ function WeightOperator(wav::DiscreteWavelet{T}, oversampling::Int, j::Int, d::I
     src_size = 1<<(d+j+oversampling>>1)
     step = 1<<(d+oversampling>>1)
     os = mod(step*Sequences.offset(filter(Dual, scaling, wav))-1, src_size)+1
-    HorizontalBandedOperator(DiscreteVectorSet(src_size), DiscreteVectorSet(1<<j), w, step, os)
+    HorizontalBandedOperator(DiscreteVectorDictionary(src_size), DiscreteVectorDictionary(1<<j), w, step, os)
 end
 
 function DWTSamplingOperator(span::Dictionary, oversampling::Int=1, recursion::Int=0)
