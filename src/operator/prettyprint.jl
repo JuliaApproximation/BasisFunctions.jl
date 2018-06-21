@@ -1,12 +1,12 @@
 ## OPERATORS
 
-# Methods that override the standard show(io::IO,op::DictionaryOperator), to be better understandable.
+# Methods that override the standard show(io::IO,op::AbstractOperator), to be better understandable.
 
 ####
 # Comment out these methods to disable pretty printing
 ####
 # Delegate to show_operator
-show(io::IO, op::DictionaryOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
 show(io::IO,s::Span) = show(io,dictionary(s))
 show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
 
@@ -20,14 +20,15 @@ show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dicti
 
 
 # Default is the operator string
-show_operator(io::IO,op::DictionaryOperator) = println(string(op))
+show_operator(io::IO,op::AbstractOperator) = println(string(op))
 
 # Default string is the string of the type
 string(op::DictionaryOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
+string(op::AbstractOperator) = string(typeof(op))
 
 # Complex expressions substitute strings for symbols.
 # Default symbol is first letter of the string
-symbol(op::DictionaryOperator) = string(op)[1]
+symbol(op::AbstractOperator) = string(op)[1]
 
 # Common symbols (to be moved to respective files)
 symbol(E::IndexRestrictionOperator) = "R"
@@ -65,13 +66,13 @@ subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in re
 
 # Include parentheses based on precedence rules
 # By default, don't add parentheses
-parentheses(t::DictionaryOperator,a::DictionaryOperator) = false
+parentheses(t::AbstractOperator,a::AbstractOperator) = false
 # Sums inside everything need parentheses
-parentheses(t::CompositeOperator,a::OperatorSum) = true
+parentheses(t::CompositeOperators,a::OperatorSum) = true
 parentheses(t::TensorProductOperator,a::OperatorSum) = true
 # Mixing and matching products need parentheses
-parentheses(t::CompositeOperator,a::TensorProductOperator) = true
-parentheses(t::TensorProductOperator,a::CompositeOperator) = true
+parentheses(t::CompositeOperators,a::TensorProductOperator) = true
+parentheses(t::TensorProductOperator,a::CompositeOperators) = true
 
 ####
 # Dictionary symbols and strings
@@ -90,7 +91,7 @@ strings(d::DerivedDict) = (name(d),)
 ## Default names
 name(d::Dictionary) = _name(d)
 name(g::AbstractGrid) = _name(g)
-name(o::DictionaryOperator) = _name(o)
+name(o::AbstractOperator) = _name(o)
 _name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
 
 ####
@@ -107,7 +108,7 @@ has_stencil(anything) = is_composite(anything)
 #### Actual printing methods.
 
 # extend children method from AbstractTrees
-children(A::Union{Dictionary,DictionaryOperator}) = is_composite(A) ? elements(A) : ()
+children(A::Union{Dictionary,AbstractOperator}) = is_composite(A) ? elements(A) : ()
 function myLeaves(op::BasisFunctions.DerivedOperator)
     A = Any[]
     push!(A,op)
@@ -232,7 +233,7 @@ function show_composite(io::IO,op)
     end
 end
 # Strings allow a dictionary or operator to return a multiline representation (each tuple is a line, each subtuple indicates a sublevel adding a downright arrow)
-function strings(op::DictionaryOperator)
+function strings(op::AbstractOperator)
     tuple(String(string(op)))
 end
 

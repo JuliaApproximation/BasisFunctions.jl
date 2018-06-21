@@ -166,8 +166,9 @@ export expansion, coefficients, dictionary, roots,
         ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
 
 # from operator/operator.jl
-export DictionaryOperator, operator, src, dest, apply!,
-        apply, apply_multiple, apply_inplace!, AbstractOperator
+export AbstractOperator, DictionaryOperator
+export src, dest, src_space, dest_space
+export apply!, apply, apply_multiple, apply_inplace!
 export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
 
 # from operator/derived_op.jl
@@ -185,6 +186,8 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
 #export PseudoDiagonalOperator
+# from operator/generic_operators.jl
+export GenericIdentityOperator
 
 # from generic/transform.jl
 export transform_operator, transform_dict, full_transform_operator,
@@ -366,6 +369,8 @@ include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 #include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
+
+include("operator/generic_operators.jl")
 
 
 include("bases/generic/expansions.jl")

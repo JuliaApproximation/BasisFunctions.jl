@@ -18,13 +18,15 @@ dict_promote_domaintype(d::DiscreteSet, S) =
 # The point x is in the support of d exactly when it is within the bounds of
 # the index set, so we can do a checkbounds with Bool argument (which does not
 # throw an error but returns true or false).
-in_support(d::DiscreteSet{I}, idx, x::I) where {I} = checkbounds(Bool, d, x)
+in_support(d::DiscreteSet{I}, idx, x::I) where I = checkbounds(Bool, d, x)
 
-# If x does not have type I, we call _in_support and then return false.
-# Concrete subsets have a chance to override _in_support and convert to native
-# index.
-in_support(d::DiscreteSet, idx, x) = _in_support(d, idx, x)
-_in_support(d::DiscreteSet, idx, x) = false
+function in_support(d::DiscreteSet, idx, x)
+    try
+        in_support(d, idx, native_index(d, x))
+    catch e
+        false
+    end
+end
 
 # Evaluation of discrete sets works as follows:
 # -> eval_element: does bounds check on idx
@@ -36,7 +38,8 @@ unsafe_eval_element(set::DiscreteSet{I,T}, idx::I, x::I) where {I,T} =
 # In the routine above, we made sure that idx and x have the same type, so that
 # they can be compared. If they do not have the same type, we can try to
 # promote the indices.
-unsafe_eval_element(set::DiscreteSet, idx, x) = unsafe_eval_element(set, promote_product_indices(size(set), idx, x)...)
+unsafe_eval_element(set::DiscreteSet, idx, x) =
+    unsafe_eval_element(set, native_index(set, idx), native_index(set, x))
 
 
 is_discrete(dict::Dictionary) = false
@@ -94,5 +97,19 @@ ordering(d::DiscreteArraySet{N}) where {N} = ProductIndexList{N}(size(d))
 
 native_index(d::DiscreteArraySet, idx) = product_native_index(size(d), idx)
 
-_in_support(d::DiscreteArraySet, idx, x::ProductIndices) =
-    in_support(d, idx, native_index(d, x))
+
+"""
+A `DiscreteMultiArraySet{A,T}` describes the linear space of multi-arrays
+with element type `T`.
+"""
+immutable DiscreteMultiArraySet{T} <: DiscreteSet{MultilinearIndex,T}
+    offsets ::  Vector{Int}
+end
+
+length(d::DiscreteMultiArraySet) = d.offsets[end]
+
+unsafe_offsets(d::DiscreteMultiArraySet) = d.offsets
+
+ordering(d::DiscreteMultiArraySet) = MultilinearIndexList(unsafe_offsets(d))
+
+support(d::DiscreteMultiArraySet) = ClosedInterval{Int}(1, length(d))
