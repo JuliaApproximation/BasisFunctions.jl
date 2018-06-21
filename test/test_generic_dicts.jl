@@ -139,7 +139,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (dimension(basis) == 1) && ~(typeof(basis) <: BasisFunctions.CompactPeriodicTranslationDict)
+    if (dimension(basis) == 1) && ~isa(basis,BasisFunctions.CompactPeriodicTranslationDict)
         s = support(basis)
         l = infimum(s)
         r = supremum(s)
@@ -154,7 +154,8 @@ function test_generic_dict_interface(basis, span = Span(basis))
             @test in_support(basis, r.+1/10*test_tolerance(ELT))
             @test ~in_support(basis, r.+1)
         end
-        if ~isinf(l) && ~isinf(r) && ~(typeof(basis) <: BasisFunctions.PiecewiseDict)
+        if ~isinf(l) && ~isinf(r) && ~isa(basis,BasisFunctions.PiecewiseDict) &&
+                ~isa(basis,BasisFunctions.WaveletBasis)
             @test in_support(basis, 1, 1/2*(l + r))
         end
     end
@@ -398,7 +399,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
     ## Test associated transform
     if BF.has_transform(basis)
         # We have to look into this test
-        @test has_transform(basis) == has_transform(basis, gridbasis(basis))
+        @test BF.has_transform(basis) == BF.has_transform(basis, gridbasis(basis))
         # Check whether it is unitary
         tbasis = transform_space(basis)
         t = transform_operator(tbasis, basis)

@@ -50,7 +50,7 @@ import Base.LinAlg: dot
 
 import WaveletsCopy.DWT: isdyadic, value, name, support, wavelet, kind
 using WaveletsCopy.DWT: Prl, Dul, Side, filter, Wvl, Scl
-using WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points
+using WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points, dwt!
 using WaveletsCopy.DWT: _evaluate_periodic_scaling_basis_in_dyadic_points!, SFilterBank, WaveletBoundary, evaluate_in_dyadic_points, idwt!
 using WaveletsCopy.DWT: WaveletIndex, wavelet_indices, offset, level, wavelet_index, scaling_indices, scaling_value, scaling_index
 using WaveletsCopy.DWT: Primal, Dual, scaling, filter, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points

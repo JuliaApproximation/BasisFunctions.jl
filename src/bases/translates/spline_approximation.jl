@@ -72,7 +72,7 @@ end
 Grid indices of `g` of points in the support of `B[index]`.
 """
 grid_index_range_in_element_support(B::Dictionary, g::AbstractGrid, index) =
-    ModCartesianRange(size(B), grid_cartesian_index_limits_in_element_support(B, g, index)...)
+    ModCartesianRange(size(g), grid_cartesian_index_limits_in_element_support(B, g, index)...)
 
 grid_index_mask_in_element_support(B::Dictionary, g::AbstractGrid, indices) =
     grid_index_mask_in_element_support!(BitArray(size(g)), B, g, indices)
@@ -153,7 +153,7 @@ ModCartesianRange(size::NTuple{N,Int}, index1::CartesianIndex{N}, index2::Cartes
 Base.length(m::ModCartesianRange) = length(m.range)
 Base.start(m::ModCartesianRange{N}) where {N} = start(m.range)
 @generated function Base.next(m::ModCartesianRange{N}, state) where N
-    t = Expr(:tuple, [:(if index[$i] < 1; index[$i]+m.size[$i];else; index[$i];end) for i in 1:N]...)
+    t = Expr(:tuple, [:(mod(index[$i]-1,m.size[$i])+1) for i in 1:N]...)
     return quote
         index, state = next(m.range, state)
         CartesianIndex($t), state
@@ -161,13 +161,19 @@ Base.start(m::ModCartesianRange{N}) where {N} = start(m.range)
 end
 
 @generated function Base.next(m::ModCartesianRange{1}, state)
-    t = :(if index[1] < 1; index[1]+m.size[1];else; index[1];end)
+    t = :(mod(index[1]-1,m.size[1])+1)
     return quote
         index, state = next(m.range, state)
         $t, state
     end
 end
+
 Base.done(m::ModCartesianRange{N}, state) where N= done(m.range,  state)
+
+function restriction_operator(dict::Dictionary, mask::BitArray)
+     indices = find(mask)
+     IndexRestrictionOperator(dict, dict[indices], indices)
+end
 
 ##################
 # Platform
