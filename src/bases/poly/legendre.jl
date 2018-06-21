@@ -8,7 +8,7 @@ struct LegendrePolynomials{T} <: OPS{T,T}
     n   ::  Int
 end
 
-const LegendreSpan{A,S,T,D <: LegendrePolynomials} = Span{A,S,T,D}
+
 
 name(b::LegendrePolynomials) = "Legendre OPS"
 

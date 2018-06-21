@@ -15,7 +15,7 @@ the underlying larger dictionary, and a subcollection of its indices.
 abstract type Subdictionary{S,T} <: Dictionary{S,T}
 end
 
-const SubdictSpan{A,S,T,D <: Subdictionary} = Span{A,S,T,D}
+
 
 # We assume that the underlying set is stored in a field called superdict
 superdict(dict::Subdictionary) = dict.superdict
@@ -24,13 +24,6 @@ superdict(dict::Subdictionary) = dict.superdict
 superindices(dict::Subdictionary) = dict.superindices
 superindices(dict::Subdictionary, idx::Int) = dict.superindices[idx]
 superindices(dict::Subdictionary, idx::DefaultNativeIndex) = superindices(dict, value(idx))
-
-for op in (:superindices, :superdict)
-    @eval $op(span::SubdictSpan) = $op(dictionary(span))
-end
-superspan(span::SubdictSpan) = Span(superdict(span), coefficient_type(span))
-
-
 
 # The concrete subdict should implement `similar_subdict`, a routine that
 # returns a subdict of a similar type as itself, but with a different underlying set.
@@ -73,8 +66,8 @@ has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), super
 has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
 has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
 
-derivative_space(s::Subdictionary, order; options...) = subdict_derivative_space(s, order, superdict(s), superindices(s); options...)
-antiderivative_space(s::Subdictionary, order; options...) = subdict_antiderivative_space(s, order, superdict(s), superindices(s); options...)
+derivative_dict(s::Subdictionary, order; options...) = subdict_derivative_dict(s, order, superdict(s), superindices(s); options...)
+antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivative_dict(s, order, superdict(s), superindices(s); options...)
 
 grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
 
@@ -127,7 +120,7 @@ struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const LargeSubdictSpan{A,S,T,D <: LargeSubdict} = Span{A,S,T,D}
+
 
 LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
@@ -155,20 +148,20 @@ end
 subdict_has_derivative(s::LargeSubdict, superdict, superindices) = has_derivative(superdict)
 subdict_has_antiderivative(s::LargeSubdict, superdict, superindices) = has_antiderivative(superdict)
 
-subdict_derivative_space(s::LargeSubdict, order, superdict, superindices; options...) =
-    derivative_space(superdict, order; options...)
-subdict_antiderivative_space(s::LargeSubdict, order, superdict, superindices; options...) =
-    antiderivative_space(superdict, order; options...)
+subdict_derivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
+    derivative_dict(superdict, order; options...)
+subdict_antiderivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
+    antiderivative_dict(superdict, order; options...)
 
 function differentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
-    @assert s2 == derivative_space(s1, order)
+    @assert s2 == derivative_dict(s1, order)
     D = differentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)
     D*E
 end
 
 function antidifferentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
-    @assert s2 == antiderivative_space(s1, order)
+    @assert s2 == antiderivative_dict(s1, order)
     D = antidifferentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)
     D*E
@@ -193,7 +186,7 @@ struct SmallSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const SmallSubdictSpan{A,S,T,D <: SmallSubdict} = Span{A,S,T,D}
+
 
 SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
@@ -215,7 +208,7 @@ struct SingletonSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-const SingletonSubdictSpan{A,S,T,D <: SingletonSubdict} = Span{A,S,T,D}
+
 
 SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
     SingletonSubdict{typeof(dict),typeof(index),S,T}(dict, index)
@@ -278,5 +271,3 @@ subdict(s::Dictionary, ::Colon) = s
 
 # Avoid creating nested subdicts
 subdict(s::Subdictionary, idx) = subdict(superdict(s), superindices(s)[idx])
-
-getindex(s::Span, idx) = Span(subdict(dictionary(s), idx), coeftype(s))

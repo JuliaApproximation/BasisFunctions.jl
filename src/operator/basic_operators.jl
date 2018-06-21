@@ -3,7 +3,7 @@
 """
 The identity operator between two (possibly different) function sets.
 """
-struct IdentityOperator{T} <: AbstractOperator{T}
+struct IdentityOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
 
@@ -48,7 +48,7 @@ string(op::IdentityOperator) = "Identity Operator"
 """
 A ScalingOperator is the identity operator up to a scaling.
 """
-struct ScalingOperator{T} <: AbstractOperator{T}
+struct ScalingOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     scalar  ::  T
@@ -116,14 +116,14 @@ unsafe_getindex(op::ScalingOperator{T}, i, j) where {T} = i == j ? convert(T, op
 
 
 # default implementation for scalar multiplication is a scaling operator
-*(scalar::Number, op::AbstractOperator) = ScalingOperator(dest(op), scalar) * op
+*(scalar::Number, op::DictionaryOperator) = ScalingOperator(dest(op), scalar) * op
 
 string(op::ScalingOperator) = "Scaling by $(scalar(op))"
 
 symbol(S::ScalingOperator) = "α"
 
 "The zero operator maps everything to zero."
-struct ZeroOperator{T} <: AbstractOperator{T}
+struct ZeroOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
 end
@@ -167,7 +167,7 @@ Several other operators can be converted into a diagonal matrix, and this
 conversion happens automatically when such operators are combined into a composite
 operator.
 """
-struct DiagonalOperator{T} <: AbstractOperator{T}
+struct DiagonalOperator{T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
     # We store the diagonal in a vector
@@ -273,16 +273,16 @@ convert(::Type{DiagonalOperator{S}}, op::DiagonalOperator{T}) where {S,T} = prom
 # The identity operator is, well, the identity
 simplify(op::IdentityOperator) = nothing
 simplify(op1::IdentityOperator, op2::IdentityOperator) = (op1,)
-simplify(op1::IdentityOperator, op2::AbstractOperator) = (op2,)
-simplify(op1::AbstractOperator, op2::IdentityOperator) = (op1,)
+simplify(op1::IdentityOperator, op2::DictionaryOperator) = (op2,)
+simplify(op1::DictionaryOperator, op2::IdentityOperator) = (op1,)
 
 (*)(a::Number, op::IdentityOperator) = ScalingOperator(src(op), dest(op), a)
 (*)(op::IdentityOperator, a::Number) = a*op
 
 # The zero operator annihilates all other operators
 simplify(op1::ZeroOperator, op2::ZeroOperator) = (op1,)
-simplify(op1::ZeroOperator, op2::AbstractOperator) = (op1,)
-simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
+simplify(op1::ZeroOperator, op2::DictionaryOperator) = (op1,)
+simplify(op1::DictionaryOperator, op2::ZeroOperator) = (op2,)
 
 
 
@@ -300,7 +300,7 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 #
 # A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
 # """
-# struct ComplexifyOperator{T} <: AbstractOperator{T}
+# struct ComplexifyOperator{T} <: DictionaryOperator{T}
 #     src   ::  Dictionary
 #     dest  ::  Dictionary
 #
@@ -341,7 +341,7 @@ simplify(op1::AbstractOperator, op2::ZeroOperator) = (op2,)
 # If the complex numbers should have no significant imaginary part.
 # A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
 # """
-# struct RealifyOperator{T} <: AbstractOperator{T}
+# struct RealifyOperator{T} <: DictionaryOperator{T}
 #     src   ::  Dictionary
 #     dest  ::  Dictionary
 #

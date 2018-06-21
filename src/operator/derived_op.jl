@@ -1,6 +1,6 @@
 # derived_op.jl
 
-abstract type DerivedOperator{T} <: AbstractOperator{T}
+abstract type DerivedOperator{T} <: DictionaryOperator{T}
 end
 
 superoperator(op::DerivedOperator) = op.superoperator
@@ -27,7 +27,7 @@ end
 
 
 struct ConcreteDerivedOperator{T} <: DerivedOperator{T}
-	superoperator		:: AbstractOperator{T}
+	superoperator		:: DictionaryOperator{T}
 end
 
 similar_operator(op::ConcreteDerivedOperator, ::Type{S}, src, dest) where {S} =

@@ -13,9 +13,6 @@ end
 
 const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
 
-const MappedSpan{A,S,T,D <: MappedDict} = Span{A,S,T,D}
-const MappedSpan1d{A,S,T,D <: MappedDict1d} = Span{A,S,T,D}
-
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
@@ -36,8 +33,6 @@ mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
 
 apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map*mapping(dict))
-
-apply_map(span::Span, map) = Span(apply_map(dictionary(span), map), coeftype(span))
 
 mapping(dict::MappedDict) = dict.map
 
@@ -105,7 +100,7 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_space(s::MappedDict; options...) = apply_map(transform_space(superdict(s); options...), mapping(s))
+transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
 has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
@@ -134,8 +129,6 @@ end
 ###################
 # Evaluation
 ###################
-
-mapping(s::MappedSpan) = mapping(dictionary(s))
 
 # If the set is mapped and the grid is mapped, and if the maps are identical,
 # we can use the evaluation operator of the underlying set and grid
@@ -172,7 +165,7 @@ end
 # Differentiation
 ###################
 
-for op in (:derivative_space, :antiderivative_space)
+for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::MappedDict1d, order::Int; options...) =
         (@assert islinear(mapping(s)); apply_map( $op(superdict(s), order; options...), mapping(s) ))
 end
@@ -213,7 +206,7 @@ function rescale(s::Dictionary1d, a, b)
 end
 
 rescale(s::Dictionary1d,d::Domain1d) = rescale(s,infimum(d),supremum(d))
-    
+
 
 # "Preserve Tensor Product Structure"
 function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
@@ -249,4 +242,3 @@ symbol(op::MappedDict) = "M"
 
 support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
 support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
-

@@ -12,7 +12,7 @@ struct LaguerrePolynomials{T} <: OPS{T,T}
     LaguerrePolynomials{T}(n::Int, α = zero(T)) where {T} = new(n, α)
 end
 
-const LaguerreSpan{A,S,T,D <: LaguerrePolynomials} = Span{A,S,T,D}
+
 
 name(b::LaguerrePolynomials) = "Laguerre OPS"
 

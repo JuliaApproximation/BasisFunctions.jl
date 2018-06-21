@@ -3,7 +3,7 @@
 abstract type WaveletBasis{T,S,K} <: Dictionary1d{T,T} where {S <: Side,K<:Kind}
 end
 
-const WaveletSpan{A,S,T,D <: WaveletBasis} = Span{A,S,T,D}
+
 
 checkbounds(::Type{Bool}, dict::WaveletBasis, i::WaveletIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
@@ -287,7 +287,7 @@ end
 """
 Transformation of wavelet coefficients to function values.
 """
-struct DWTEvalOperator{T} <: AbstractOperator{T}
+struct DWTEvalOperator{T} <: DictionaryOperator{T}
     src::WaveletBasis
     dest::GridBasis
 
@@ -328,7 +328,7 @@ end
 """
 Transformation of scaling coefficients to function values.
 """
-struct DWTScalingEvalOperator{T} <: AbstractOperator{T}
+struct DWTScalingEvalOperator{T} <: DictionaryOperator{T}
     src::WaveletBasis
     dest::GridBasis
 
@@ -360,7 +360,7 @@ function apply!(op::DWTScalingEvalOperator, y, coefs; options...)
     y
 end
 
-struct DiscreteWaveletTransform{T} <: AbstractOperator{T}
+struct DiscreteWaveletTransform{T} <: DictionaryOperator{T}
     src::WaveletBasis{T,S,Scl} where S
     dest::WaveletBasis{T,S,Wvl} where S
 
@@ -532,19 +532,19 @@ A `DWTSamplingOperator` is an operator that maps a function to scaling coefficie
 """
 struct DWTSamplingOperator <: AbstractSamplingOperator
     sampler :: GridSamplingOperator
-    weight  :: AbstractOperator
+    weight  :: DictionaryOperator
     scratch :: Vector
 
 	# An inner constructor to enforce that the operators match
-	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::AbstractOperator{ELT}) where {ELT}
+	function DWTSamplingOperator(sampler::GridSamplingOperator, weight::DictionaryOperator{ELT}) where {ELT}
         @assert real(ELT) == eltype(eltype(grid(sampler)))
         @assert size(weight, 2) == length(grid(sampler))
 		new(sampler, weight, zeros(src(weight)))
     end
 end
 using WaveletsCopy.DWT: quad_sf_weights
-Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:AbstractOperator} = dwt.weight
-Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:AbstractOperator} = OP
+Base.convert(::Type{OP}, dwt::DWTSamplingOperator) where {OP<:DictionaryOperator} = dwt.weight
+Base.promote_rule(::Type{OP}, ::DWTSamplingOperator) where{OP<:DictionaryOperator} = OP
 
 """
 A `WeightOperator` is an operator that maps function values to scaling coefficients.
@@ -646,4 +646,4 @@ function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,Abs
 		params = params, name = "Scaling functions")
 end
 
-Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = AbstractOperator(dual_sampler)
+Zt(dual::WaveletBasis, dual_sampler::DWTSamplingOperator; options...) = DictionaryOperator(dual_sampler)

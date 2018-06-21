@@ -149,7 +149,7 @@ function promote_coefficient_type(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2
     promote_coefficient_type(dict1, T), promote_coefficient_type(dict2, T)
 end
 
-
+promote_coeftype = promote_coefficient_type
 
 widen(d::Dictionary) = promote_domaintype(d, widen(domaintype(d)))
 
@@ -173,7 +173,16 @@ zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
 ones(::Type{T}, s::Dictionary) where {T} = ones(T, size(s))
 
 
+function rand(dict::Dictionary)
+    c = zeros(dict)
+    T = coeftype(dict)
+    for i in eachindex(c)
+        c[i] = random_value(T)
+    end
+    c
+end
 
+random_expansion(dict::Dictionary) = Expansion(dict,rand(dict))
 
 ###########
 # Indexing
@@ -471,7 +480,7 @@ Evaluate an expansion given by the set of coefficients in the point x.
 function eval_expansion(dict::Dictionary, coefficients, x)
     @assert size(coefficients) == size(dict)
 
-    T = span_codomaintype(dict, coefficients)
+    T = span_codomaintype(dict)
     z = zero(T)
     # It is safer below to use eval_element than unsafe_eval_element, because of
     # the check on the support.

@@ -109,7 +109,7 @@ function bf_wavelets_implementation_test()
             @test evaluation_matrix(basis, BasisFunctions.grid(basis))≈evaluation_matrix(basis, collect(BasisFunctions.grid(basis)))
             T = Float64
             ELT = Float64
-            tbasis = transform_space(basis)
+            tbasis = transform_dict(basis)
             x = ones(length(basis))
             t = transform_operator(tbasis, basis)
             it = transform_operator(basis, tbasis)

@@ -9,7 +9,7 @@ struct HermitePolynomials{T} <: OPS{T,T}
     n           ::  Int
 end
 
-const HermiteSpan{A,S,T,D <: HermitePolynomials} = Span{A,S,T,D}
+
 
 name(b::HermitePolynomials) = "Hermite OPS"
 

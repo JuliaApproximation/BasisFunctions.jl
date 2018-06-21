@@ -98,13 +98,6 @@ function simplify_transform_sets(s1::Dictionary, s2::GridBasis, grid)
     simple_s1, simple_s2, simple_grid
 end
 
-function simplify_transform_spaces(s1::Span, s2::Span, grid)
-    T1 = coeftype(s1)
-    T2 = coeftype(s2)
-    simple_s1, simple_s2, simple_grid = simplify_transform_sets(dictionary(s1), dictionary(s2), grid)
-    Span(simple_s1, T1), Span(simple_s2, T2), simple_grid
-end
-
 
 # The main logic is implemented in the functions below.
 #

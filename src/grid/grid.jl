@@ -49,7 +49,7 @@ getindex(g::AbstractGrid, idx1, idx2, idx3) = getindex(g, (idx1, idx2, idx3))
 getindex(g::AbstractGrid, idx1, idx2, idx3, idx4) = getindex(g, (idx1, idx2, idx3, idx4))
 getindex(g::AbstractGrid, idx1, idx2, idx3, idx4, indices...) = getindex(g, (idx1, idx2, idx3, idx4, indices...))
 
-function getindex(g::AbstractGrid, idx::Union{Int,CartesianIndex,Tuple{Int}})
+function getindex(g::AbstractGrid, idx)
 	checkbounds(g, idx)
 	unsafe_getindex(g, idx)
 end

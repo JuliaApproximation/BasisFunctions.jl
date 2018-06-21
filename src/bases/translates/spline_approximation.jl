@@ -138,10 +138,8 @@ function coefficient_index_mask_of_overlapping_elements!(mask::BitArray, B::Dict
     mask
 end
 
-function coefficient_indices_of_overlapping_elements(dict::Dictionary, boundary::AbstractGrid)
-    warn("Do you realy need  coefficient_indices_of_overlapping_elements")
+coefficient_indices_of_overlapping_elements(dict::Dictionary, boundary::AbstractGrid) =
     find(BasisFunctions.coefficient_index_mask_of_overlapping_elements(dict, boundary))
-end
 
 struct ModCartesianRange{N}
     size::NTuple{N,Int}

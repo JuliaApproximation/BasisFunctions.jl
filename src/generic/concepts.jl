@@ -8,7 +8,7 @@ The operator can be specialized to a certain type of arguments by invoking
 `specialize`. For example, the `Differentiation` operator specializes to
 a differentiation operator when applied to a dictionary.
 """
-abstract type OperatorConcept <: GenericOperator
+abstract type OperatorConcept <: AbstractOperator
 end
 
 

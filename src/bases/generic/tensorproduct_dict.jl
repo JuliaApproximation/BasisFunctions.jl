@@ -25,7 +25,7 @@ const TensorProductDict2{DT,S,T} = TensorProductDict{2,DT,S,T}
 const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
 const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
-const TensorProductSpan{A,S,T,D <: TensorProductDict} = Span{A,S,T,D}
+
 
 # Generic functions for composite types:
 is_composite(dict::TensorProductDict) = true
@@ -48,9 +48,9 @@ function TensorProductDict(dicts::Dictionary...)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
     c = promote_type(map(coeftype, dicts)...)
-    dicts = map(s->promote_coeftype(s,c),dicts)
-    DT = typeof(dicts)
-    TensorProductDict{N,DT,S,T}(dicts)
+    dicts2 = map(s->promote_coeftype(s,c),dicts)
+    DT = typeof(dicts2)
+    TensorProductDict{N,DT,S,T}(dicts2)
 end
 
 size(d::TensorProductDict) = d.size
@@ -133,7 +133,7 @@ has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
 
 has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
-for op in (:derivative_space, :antiderivative_space)
+for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =
         tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end

@@ -101,19 +101,11 @@ test_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{Complex{T}}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{T}) where {T} = test_tolerance(float_type(T))
 
-function test_generic_dict_interface(basis, span = Span(basis))
-    ELT = coefficient_type(span)
+function test_generic_dict_interface(basis)
+    ELT = coefficient_type(basis)
     T = domaintype(basis)
     FT = float_type(T)
     RT = codomaintype(basis)
-    SY = codomaintype(span)
-
-    # Does the set of the span agree with the basis?
-    @test typeof(dictionary(span)) == typeof(basis)
-
-    # Do the domain types of basis and span agree?
-    @test domaintype(basis) == domaintype(span)
-    @test typeof(one(coefficient_type(span)) * one(codomaintype(basis))) == codomaintype(span)
 
     n = length(basis)
     if is_basis(basis)
@@ -207,7 +199,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
 
 
     # Create a random expansion in the basis to test expansion interface
-    e = random_expansion(span)
+    e = random_expansion(basis)
     coef = coefficients(e)
 
     ## Does evaluating an expansion equal the sum of coefficients times basis function calls?
@@ -220,7 +212,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
     # Test linearization of coefficients
-    linear_coefs = zeros(coeftype(span), length(basis))
+    linear_coefs = zeros(coeftype(basis), length(basis))
     BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
     coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
     @test coef ≈ coef2
@@ -353,17 +345,17 @@ function test_generic_dict_interface(basis, span = Span(basis))
             i2 = length(basis)
             i3 = (i1+i2) >> 1
 
-            c1 = zero(span)
+            c1 = Expansion(basis,zeros(basis))
             c1[i1] = 1
             u1 = D*c1
             @test abs(u1(x) - eval_element_derivative(basis, i1, x)) < test_tolerance(ELT)
 
-            c2 = zero(span)
+            c2 = Expansion(basis,zeros(basis))
             c2[i2] = 1
             u2 = D*c2
             @test abs(u2(x) - eval_element_derivative(basis, i2, x)) < test_tolerance(ELT)
 
-            c3 = zero(span)
+            c3 = Expansion(basis,zeros(basis))
             c3[i3] = 1
             u3 = D*c3
             @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)
@@ -401,7 +393,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
         # We have to look into this test
         @test BF.has_transform(basis) == BF.has_transform(basis, gridbasis(basis))
         # Check whether it is unitary
-        tbasis = transform_space(basis)
+        tbasis = transform_dict(basis)
         t = transform_operator(tbasis, basis)
         it = transform_operator(basis, tbasis)
         A = matrix(t)
@@ -425,7 +417,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
         pre2 = transform_operator_pre(basis, tbasis)
         post2 = transform_operator_post(basis, tbasis)
         # - try interpolation using transform+pre/post-normalization
-        x = rand(Span(tbasis))
+        x = rand(tbasis)
         e = Expansion(basis, (post1*t*pre1)*x)
         g = grid(basis)
         @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
@@ -450,7 +442,7 @@ function test_generic_dict_interface(basis, span = Span(basis))
     if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(basis, g)
-        x = rand(gridspace(g, coeftype(basis)))
+        x = rand(gridbasis(g,coeftype(basis)))
         e = Expansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
     end

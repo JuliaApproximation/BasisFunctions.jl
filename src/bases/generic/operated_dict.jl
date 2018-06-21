@@ -7,19 +7,19 @@ set of the operator, but each basis function is acted on by the operator.
 """
 struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
     "The operator that acts on the set"
-    op          ::  AbstractOperator{T}
+    op          ::  DictionaryOperator{T}
 
     scratch_src
     scratch_dest
 
-    function OperatedDict{S,T}(op::AbstractOperator) where {S,T}
+    function OperatedDict{S,T}(op::DictionaryOperator) where {S,T}
         scratch_src = zeros(src(op))
         scratch_dest = zeros(dest(op))
         new(op, scratch_src, scratch_dest)
     end
 end
 
-const OperatedDictSpan{A,S,T,D <: OperatedDict} = Span{A,S,T,D}
+
 
 # TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
 has_derivative(s::OperatedDict) = false
@@ -33,7 +33,7 @@ is_basis(::OperatedDict) = false
 
 superdict(dict::OperatedDict) = src(dict)
 
-function OperatedDict(op::AbstractOperator{T}) where {T}
+function OperatedDict(op::DictionaryOperator{T}) where {T}
     S = domaintype(src(op))
     OperatedDict{S,T}(op)
 end
@@ -123,7 +123,6 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-derivative(s::Span; options...) = similar_span(s,derivative(dictionary(s)))
 derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
 
 function (*)(a::Number, s::Dictionary)
@@ -131,7 +130,7 @@ function (*)(a::Number, s::Dictionary)
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 
-function (*)(op::AbstractOperator, s::Dictionary)
+function (*)(op::DictionaryOperator, s::Dictionary)
     @assert src(op) == s
     OperatedDict(op)
 end

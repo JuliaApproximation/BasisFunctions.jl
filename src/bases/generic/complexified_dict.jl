@@ -1,7 +1,7 @@
 # complexified_dict.jl
 
 """
-A 'ComplexifiedDict' is a dictionary for which the coefficient type is the complex version of the original dictionary. It is obtained by calling promote_coeftype() on a dictionary that does not implement this method.
+A 'ComplexifiedDict' is a dictionary for which the coefficient type is the complex version of the original dictionary. It is obtained by calling dict_promote_coeftype() on a dictionary that does not implement this method.
 
 """
 struct ComplexifiedDict{D,S,T} <: DerivedDict{S,T}
@@ -29,9 +29,7 @@ dict_promote_coeftype(d::Dictionary{S,T},::Type{U}) where {S,T,U<:Real} = warn("
 
 coefficient_type(dict::ComplexifiedDict) = complex(coefficient_type(superdict(dict)))
 
-transform_space(dict::ComplexifiedDict) = dict_promote_coeftype(transform_space(superdict(dict)),coefficient_type(dict))
+transform_dict(dict::ComplexifiedDict) = dict_promote_coeftype(transform_dict(superdict(dict)),coefficient_type(dict))
 
 grid_evaluation_operator(s::ComplexifiedDict, dgs::GridBasis, grid::AbstractGrid; options...) = select_grid_evaluation_operator(s,dgs,grid;options...)
 grid_evaluation_operator(s::ComplexifiedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) = select_grid_evaluation_operator(s,dgs,grid;options...)
-
-
