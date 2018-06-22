@@ -23,13 +23,13 @@ dest(c::CirculantOperator) = c.dest
 
 function CirculantOperator(firstcolumn::AbstractVector; options...)
     T = eltype(firstcolumn)
-    CirculantOperator(DiscreteVectorSet{T}(length(firstcolumn)), firstcolumn; options...)
+    CirculantOperator(DiscreteVectorDictionary{T}(length(firstcolumn)), firstcolumn; options...)
 end
 
 CirculantOperator(src::Dictionary, firstcolumn::AbstractVector; options...) = CirculantOperator(src, src, firstcolumn; options...)
 
 function CirculantOperator(op_src::Dictionary, op_dest::Dictionary, firstcolumn::AbstractVector; options...) 
-    Dsrc = DiscreteVectorSet{complex(eltype(firstcolumn))}(length(firstcolumn))
+    Dsrc = DiscreteVectorDictionary{complex(eltype(firstcolumn))}(length(firstcolumn))
     D = DiagonalOperator(Dsrc, Dsrc, fft(firstcolumn))
     CirculantOperator(op_src, op_dest, D; options...)
 end
@@ -37,7 +37,7 @@ end
 CirculantOperator(src::Dictionary, dest::Dictionary, D::DiagonalOperator; options...) = CirculantOperator(eltype(D), src, dest, D; options...)
 
 function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator; real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
-    cpx_src = DiscreteVectorSet{eltype(opD)}(length(src(opD)))
+    cpx_src = DiscreteVectorDictionary{eltype(opD)}(length(src(opD)))
     A = promote_type(eltype(opD),T)
     
     F = forward_fourier_operator(cpx_src, cpx_src, A; verbose=verbose, options...)

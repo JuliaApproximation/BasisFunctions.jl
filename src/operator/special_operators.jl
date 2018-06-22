@@ -278,7 +278,7 @@ function MultiplicationOperator(::Type{T}, src::Dictionary, dest::Dictionary, ob
 end
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
-    MultiplicationOperator(DiscreteVectorSet{T}(size(matrix, 2)), DiscreteVectorSet{T}(size(matrix, 1)), matrix)
+    MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
 
 # Provide aliases for when the object is an actual matrix.
 MatrixOperator(matrix::Matrix) = MultiplicationOperator(matrix)
@@ -560,7 +560,7 @@ end
 
 function LinearizationOperator(src::Dictionary)
     A = coeftype(src)
-    LinearizationOperator{A}(src, DiscreteVectorSet{A}(length(src)))
+    LinearizationOperator{A}(src, DiscreteVectorDictionary{A}(length(src)))
 end
 
 similar_operator(::LinearizationOperator, ::Type{S}, src) where {S} = LinearizationOperator(promote_coeftype(src, S))
@@ -579,7 +579,7 @@ end
 
 function DelinearizationOperator(dest::Dictionary)
     A = coeftype(dest)
-    DelinearizationOperator{A}(DiscreteVectorSet{A}(length(dest)), src)
+    DelinearizationOperator{A}(DiscreteVectorDictionary{A}(length(dest)), src)
 end
 
 similar_operator(::DelinearizationOperator, ::Type{S}, src) where {S} = DelinearizationOperator(promote_coeftype(src, S))

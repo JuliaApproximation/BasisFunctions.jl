@@ -5,7 +5,7 @@ A `GridBasis` is a discrete basis that is associated with a grid.
 
 The domain of the grid basis is the index set of the grid.
 """
-immutable GridBasis{G <: AbstractGrid,T} <: DiscreteSet{LinearIndex,T}
+immutable GridBasis{G <: AbstractGrid,T} <: DiscreteDictionary{LinearIndex,T}
     grid    ::  G
 end
 
@@ -61,3 +61,6 @@ element(s::ProductGridBasis, i) = GridBasis(element(grid(s), i),coeftype(s))
 apply_map(s::GridBasis, map) = GridBasis(apply_map(grid(s), map), coeftype(s))
 
 sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
+
+grid_multiplication_operator(a::Function,GB::GridBasis) = DiagonalOperator(GB,GB,a.(grid(GB)))
+grid_multiplication_opearator(a::Function,grid::AbstractGrid) = grid_multiplication_operator(a,GridBasis(grid))

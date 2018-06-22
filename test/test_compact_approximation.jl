@@ -59,7 +59,7 @@ function test_spline_approximation(T)
     @test reduce(&,true,[B[set[j]](x...) for j in 1:length(set) for x in [g[i] for i in indices[j]]] .> 0)
 end
 
-using BasisFunctions: grid_index_mask_in_element_support, coefficient_index_mask_of_overlapping_elements
+using BasisFunctions: grid_index_mask_in_element_support, coefficient_index_mask_of_overlapping_elements, coefficient_indices_of_overlapping_elements
 function test_index_masks()
     B = BSplineTranslatesBasis(10,3)⊗BSplineTranslatesBasis(15,5)
     g = grid(B)
@@ -118,10 +118,56 @@ function test_index_masks()
             @test norm(B[i](g)) ==0
         end
     end
+    indices = coefficient_indices_of_overlapping_elements(B, g)
+    m = BitArray(size(B))
+    fill!(m, 0)
+    m[indices] = 1
+    @test m==indexmask
 
 end
 
-@testset begin test_coefficient_index_range_of_overlapping_elements() end
-@testset begin test_spline_approximation(Float64) end
-@testset begin test_spline_approximation(BigFloat) end
-@testset begin test_index_masks() end
+function test_scaling_platform()
+    platform = scaling_platform([4,5], [db3,db3], 2)
+    B = primal(platform, 1)
+    e = rand(B)
+    @test B == ScalingBasis(db3, 4)⊗ScalingBasis(db3, 5)
+    @test dual(platform, 1) == BasisFunctions.wavelet_dual(B)
+    @test sampler(platform, 1)==GridSamplingOperator( BasisFunctions.oversampled_grid(B, 2))
+    @test dual_sampler(platform, 1).sampler==sampler(platform, 1)
+    e = rand(src(dual_sampler(platform, 1).weight))
+    @test dual_sampler(platform, 1).weight*e≈BasisFunctions.WeightOperator(primal(platform, 1), [2,2], [0,0])*e
+    @test BasisFunctions.Zt(platform, 1)*(sampler(platform, 1)*((x,y)->1.))≈ones(B)/sqrt(length(B))
+    e = rand(src(BasisFunctions.A(platform, 1)))
+    @test BasisFunctions.A(platform, 1)*e≈evaluation_operator(B, BasisFunctions.oversampled_grid(B, 2))*e
+
+    platform = scaling_platform([4,5], [db3,cdf13], 2)
+    B = primal(platform, 2)
+    @test B == ScalingBasis(db3, 5)⊗ScalingBasis(cdf13, 6)
+    @test dual(platform, 2) == BasisFunctions.wavelet_dual(B)
+    @test sampler(platform, 2)==GridSamplingOperator( BasisFunctions.oversampled_grid(B, 2))
+    @test dual_sampler(platform, 2).sampler==sampler(platform, 2)
+    e = rand(src(dual_sampler(platform, 2).weight))
+    @test dual_sampler(platform, 2).weight*e≈BasisFunctions.WeightOperator(primal(platform, 2), [2,2], [0,0])*e
+    @test BasisFunctions.Zt(platform, 2)*(sampler(platform, 2)*((x,y)->1.))≈ones(B)/sqrt(length(B))
+    e = rand(src(BasisFunctions.A(platform, 2)))
+    @test BasisFunctions.A(platform, 2)*e≈evaluation_operator(B, BasisFunctions.oversampled_grid(B, 2))*e
+
+    platform = scaling_platform([4,5], [db3,cdf13], 4)
+    B = primal(platform, 2)
+    @test B == ScalingBasis(db3, 5)⊗ScalingBasis(cdf13, 6)
+    @test dual(platform, 2) == BasisFunctions.wavelet_dual(B)
+    @test sampler(platform, 2)==GridSamplingOperator( BasisFunctions.oversampled_grid(B, 4))
+    @test dual_sampler(platform, 2).sampler==sampler(platform, 2)
+    e = rand(src(dual_sampler(platform, 2).weight))
+    @test dual_sampler(platform, 2).weight*e≈BasisFunctions.WeightOperator(primal(platform, 2), [2,2], [1,1])*e
+    @test BasisFunctions.Zt(platform, 2)*(sampler(platform, 2)*((x,y)->1.))≈ones(B)/sqrt(length(B))
+    e = rand(src(BasisFunctions.A(platform, 2)))
+    @test BasisFunctions.A(platform, 2)*e≈evaluation_operator(B, BasisFunctions.oversampled_grid(B, 4))*e
+
+end
+
+@testset "Spline util (1)" begin test_coefficient_index_range_of_overlapping_elements() end
+@testset "Spline util (2)" begin test_index_masks() end
+@testset "Spline approx (float64)" begin test_spline_approximation(Float64) end
+@testset "Spline approx (BigFloat)" begin test_spline_approximation(BigFloat) end
+@testset "Scaling platform" begin test_scaling_platform() end

@@ -111,7 +111,6 @@ function has_grid_transform(s::MappedDict, gb, g::AbstractGrid)
     has_grid_transform(superdict(s), gridbasis(g2, codomaintype(gb)), g2)
 end
 
-
 function simplify_transform_pair(s::MappedDict, g::MappedGrid)
     if is_compatible(mapping(s), mapping(g))
         superdict(s), supergrid(g)
@@ -214,6 +213,7 @@ function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
     tensorproduct(scaled_sets...)
 end
 
+plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), mapping(S))
 #################
 # Arithmetic
 #################

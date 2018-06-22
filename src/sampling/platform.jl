@@ -10,12 +10,6 @@ or dual dictionary.
 abstract type Platform
 end
 
-abstract type SOLVETYPE end
-
-struct COLLOCATION <: SOLVETYPE
-end
-
-
 """
 A `GenericPlatform` stores a primal and dual dictionary generator, along with
 a sequence of parameter values.

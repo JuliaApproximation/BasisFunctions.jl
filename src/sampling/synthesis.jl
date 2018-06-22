@@ -9,13 +9,13 @@ discrete_set(dict::Dictionary) = discrete_set(dict, containertype(dict))
 # We dispatch on the container type:
 # - it is a vector
 discrete_set(dict::Dictionary, ::Type{Vector{T}}) where {T} =
-    DiscreteVectorSet{T}(length(dict))
+    DiscreteVectorDictionary{T}(length(dict))
 # - it is an array
 discrete_set(dict::Dictionary, ::Type{Array{T,N}}) where {T,N} =
-    DiscreteArraySet{T}(size(dict))
+    DiscreteArrayDictionary{T}(size(dict))
 # - it is something else that we don't know about here: return a vector set
 discrete_set(dict::Dictionary, ::Type{F}) where {F} =
-    DiscreteVectorSet{coefficient_type(dict)}(length(dict))
+    DiscreteVectorDictionary{coefficient_type(dict)}(length(dict))
 
 
 """
@@ -36,7 +36,7 @@ dest_space(op::SynthesisOperator) = Span(dictionary(op))
 apply(op::SynthesisOperator, coef) = _apply(op, coef, dictionary(op))
 _apply(op::SynthesisOperator, coef, dict) = Expansion(dict, convert(containertype(dict), coef))
 
-apply(op::SynthesisOperator, expansion::Expansion{D}) where {D <: DiscreteSet} =
+apply(op::SynthesisOperator, expansion::Expansion{D}) where {D <: DiscreteDictionary} =
     apply(op, coefficients(expansion))
 apply(op::SynthesisOperator, coef::Expansion) =
     error("A synthesis operator applies only to coefficients or expansions in discrete sets.")

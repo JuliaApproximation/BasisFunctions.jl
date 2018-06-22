@@ -1,18 +1,21 @@
 ## OPERATORS
 
-# Methods that override the standard show(io::IO,op::DictionaryOperator), to be better understandable.
+# Methods that override the standard show(io::IO,op::AbstractOperator), to be better understandable.
 
 ####
-# Comment out these methods to disable pretty printing
+# set DO_PRETTYPRINTING to false to disable pretty printing
 ####
 # Delegate to show_operator
-show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
-show(io::IO,s::Span) = show(io,dictionary(s))
-show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+DO_PRETTYPRINTING = true
+try
+    DO_PRETTYPRINTING = !(ENV["LOGNAME"]=="vincentcp")
+end
+if DO_PRETTYPRINTING
+    show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
+    show(io::IO,s::Span) = show(io,dictionary(s))
+    show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+end
 
-####
-# Stop commenting here
-####
 
 ####
 # Operator symbols and strings
