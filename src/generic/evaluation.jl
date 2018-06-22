@@ -72,7 +72,7 @@ function select_grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::Ab
     end
 end
 
-grid_evaluation_operator(s::Dictionary, dgs::GridBasis, subgrid::AbstractSubGrid; options...) = 
+grid_evaluation_operator(s::Dictionary, dgs::GridBasis, subgrid::AbstractSubGrid; options...) =
     _grid_evaluation_operator(s, dgs, subgrid; options...)
 
 # Try to do efficient evaluation also for subgrids
