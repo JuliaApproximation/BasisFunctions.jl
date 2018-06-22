@@ -31,7 +31,7 @@ GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}) where {S,T}
 	GridSamplingOperator(src, gridbasis(grid, T))
 
 GridSamplingOperator(gridbasis::GridBasis{S,T}) where {S,T} =
-	GridSamplingOperator(FunctionSpace{S,T}(), gridbasis)
+	GridSamplingOperator(grid(gridbasis), coeftype(gridbasis))
 
 dest(op::GridSamplingOperator) = op.dest
 
