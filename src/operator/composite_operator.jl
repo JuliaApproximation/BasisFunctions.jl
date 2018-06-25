@@ -14,7 +14,7 @@ end
 # default inner constructor directly with a vector or tuple of operators instead.
 function GenericCompositeOperator(operators::AbstractOperator...)
     for i in 1:length(operators)-1
-        @assert codomaintype(dest_space(operators[i])) == domaintype(src_space(operators[i+1]))
+        @assert coeftype(dest_space(operators[i])) == coeftype(src_space(operators[i+1]))
     end
     # Pass the tuple of operators to the inner constructor
     GenericCompositeOperator(operators)
@@ -188,6 +188,8 @@ ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
 
 (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
 (∘)(ops::AbstractOperator...) = (*)(ops...)
+apply(op1::AbstractOperator, op2::AbstractOperator) = compose(op2,op1)
+apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)
 
 # Don't do anything if we have just one operator
 compose(op::AbstractOperator) = op
