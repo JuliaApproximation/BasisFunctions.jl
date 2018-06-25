@@ -175,8 +175,6 @@ function _weight_operator(dest::WaveletBasis, dyadic_os)
     wav = wavelet(dest)
     if dyadic_os == 0 # Just a choice I made.
         return WeightOperator(wav, 1, j, 0)
-    elseif dyadic_os == 1
-        return WeightOperator(wav, 2, j, 0)
     else
         return WeightOperator(wav, 2, j, dyadic_os-1)
     end
@@ -207,7 +205,7 @@ struct DWTEvalOperator{T} <: DictionaryOperator{T}
     coefscopy2::Vector{T}
 end
 
-function EvalOperator(dict::WaveletBasis{T,S,Wvl}, dgs::GridBasis, d::Int) where {T,S}
+function EvalOperator(dict::WaveletBasis{T,S,Wvl}, dgs::GridBasis, d::Int; options...) where {T,S}
     w = wavelet(dict)
     j = dyadic_length(dict)
     s = side(dict)
@@ -246,7 +244,7 @@ struct DWTScalingEvalOperator{T} <: DictionaryOperator{T}
     f_scaled::Vector{T}
 end
 
-function EvalOperator(dict::WaveletBasis{T,S,Scl}, dgs::GridBasis, d::Int) where {T,S}
+function EvalOperator(dict::WaveletBasis{T,S,Scl}, dgs::GridBasis, d::Int; options...) where {T,S}
     w = wavelet(dict)
     j = dyadic_length(dict)
     s = side(dict)
@@ -500,7 +498,11 @@ dual_scaling_generator(wav1::DiscreteWavelet, wav2::DiscreteWavelet, wav::Discre
 
 dual_scaling_generator(wav::AbstractVector{T}) where {T<:DiscreteWavelet} = tensor_generator(promote_eltype(map(eltype, wav)...), map(w->dual_scaling_generator(w), wav)...)
 # Sampler
-scaling_sampler(primal, oversampling::Int) = n-> GridSamplingOperator(gridbasis(grid(primal(n+Int(log2(oversampling))))))
+scaling_sampler(primal, oversampling::Int) =
+    n->(
+        basis = primal(n+Int(log2(oversampling)));
+        GridSamplingOperator(gridbasis(grid(basis), coeftype(basis)));
+    )
 
 dual_scaling_sampler(primal, oversampling) =
     n -> (
@@ -518,6 +520,7 @@ scaling_param(init::AbstractVector{Int}) = TensorSequence([SteppingSequence(i) f
 
 # Platform
 function scaling_platform(init::Union{Int,AbstractVector{Int}}, wav::Union{W,AbstractVector{W}}, oversampling::Int) where {W<:DiscreteWavelet}
+    @assert isdyadic(oversampling)
 	primal = primal_scaling_generator(wav)
 	dual = dual_scaling_generator(wav)
 	sampler = scaling_sampler(primal, oversampling)

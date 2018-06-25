@@ -51,7 +51,7 @@ name(platform::GenericPlatform) = platform.name
 
 A(platform::Platform, i; options...) = apply(sampler(platform, i), primal(platform, i); options...)
 
-Zt(platform::GenericPlatform, i; options...) = Zt(dual(platform, i; options...), dual_sampler(platform, i; options...); options...)
+Zt(platform::GenericPlatform, i; options...) = Zt(dual(platform, i), dual_sampler(platform, i); options...)
 
 Zt(dual::Dictionary, dual_sampler::AbstractOperator; options...) = (coeftype(dual)(1)/length(dual))*apply(dual_sampler,dual; options...)'
 
