@@ -435,8 +435,8 @@ function fourier_platform(::Type{T}, n::Int) where {T}
 	primal = FourierBasis{T}
 	dual = FourierBasis{T}
         sampler = n -> GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(n, UnitInterval{T}()), T))
-        dual_sampler = n->ScalingOperator(dest(sampler(n)),1/length(sampler(n)))*GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(n, UnitInterval{T}()), T))
+        dual_sampler = n->ScalingOperator(dest(sampler(n)),1/length(dest(sampler(n))))*GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(n, UnitInterval{T}()), T))
 	params = isodd(n) ? OddDoublingSequence(n) : DoublingSequence(n)
-	GenericPlatform(primal = primal, dual = dual, sampler = sampler,
+	GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "Fourier series")
 end

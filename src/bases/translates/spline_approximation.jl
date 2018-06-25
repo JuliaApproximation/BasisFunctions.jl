@@ -218,8 +218,9 @@ bspline_param(init::AbstractVector{Int}) = TensorSequence([BasisFunctions.Multip
 function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degree::Union{Int,AbstractVector{Int}}, oversampling::Int) where {T}
 	primal = primal_bspline_generator(T, degree)
 	dual = dual_bspline_generator(primal, oversampling)
-	sampler = bspline_sampler(T, primal, oversampling)
+        sampler = bspline_sampler(T, primal, oversampling)
+        dual_sampler = n->ScalingOperator(dest(sampler(n)),1/length(dual(n)))*sampler(n)
 	params = bspline_param(init)
-	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler,
+	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "B-Spline translates")
 end
