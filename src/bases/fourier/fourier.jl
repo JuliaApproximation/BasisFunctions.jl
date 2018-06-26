@@ -272,11 +272,13 @@ function derivative_dict(s::FourierBasis, order; options...)
 end
 
 # Both differentiation and antidifferentiation are diagonal operations
-function diff_scaling_function(b::FourierBasis, idx, order)
+function diff_scaling_function(b::FourierBasis, idx, f)
 	T = domaintype(b)
-	k = idx2frequency(b, idx)
-	(2 * T(pi) * im * k)^order
+	k = idx2frequency(b,idx)
+	f(2 * T(pi) * im * k)
 end
+
+diff_scaling_function(b::FourierBasis, idx, order::Int) = diff_scaling_function(b,idx,x->x^order)
 
 function antidiff_scaling_function(b::FourierBasis, idx, order)
 	T = domaintype(b)
@@ -285,15 +287,16 @@ function antidiff_scaling_function(b::FourierBasis, idx, order)
 end
 
 
-function differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Int; options...) where {T}
+differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Real; options...) where {T} = differentiation_operator(s1,s2,x->x^order; options...)
+
+function differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, f; options...) where {T}
 	if isodd(length(s1))
 		@assert s1 == s2
-		DiagonalOperator(s1, [diff_scaling_function(s1, idx, order) for idx in eachindex(s1)])
+		DiagonalOperator(s1, [diff_scaling_function(s1, idx, f) for idx in eachindex(s1)])
 	else
-		differentiation_operator(s2, s2, order; options...) * extension_operator(s1, s2; options...)
+		differentiation_operator(s2, s2, f; options...) * extension_operator(s1, s2; options...)
 	end
 end
-
 
 function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)
