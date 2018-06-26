@@ -428,17 +428,17 @@ OddDoublingSequence() = OddDoublingSequence(1)
 getindex(s::OddDoublingSequence, idx::Int) = initial(s) * 2<<(idx-1) - 1
 
 
-fourier_platform() = fourier_platform(Float64)
+fourier_platform(;options...) = fourier_platform(Float64; options...)
 
-fourier_platform(n::Int) = fourier_platform(Float64, n)
+fourier_platform(n::Int; options...) = fourier_platform(Float64, n; options...)
 
-fourier_platform(::Type{T}) where {T} = fourier_platform(T, 1)
+fourier_platform(::Type{T};options...) where {T} = fourier_platform(T, 1; options...)
 
-function fourier_platform(::Type{T}, n::Int) where {T}
+function fourier_platform(::Type{T}, n::Int; oversampling=1) where {T}
 	primal = FourierBasis{T}
 	dual = FourierBasis{T}
-        sampler = n -> GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(n, UnitInterval{T}()), T))
-        dual_sampler = n->ScalingOperator(dest(sampler(n)),1/length(dest(sampler(n))))*GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(n, UnitInterval{T}()), T))
+        sampler = n -> GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(round(Int,oversampling*n), UnitInterval{T}()), T))
+        dual_sampler = n->(1/length(dest(sampler(n))))*sampler(n)
 	params = isodd(n) ? OddDoublingSequence(n) : DoublingSequence(n)
 	GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "Fourier series")

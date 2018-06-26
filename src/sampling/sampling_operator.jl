@@ -18,30 +18,31 @@ A `GridSamplingOperator` is an operator that maps a function to its samples.
 struct GridSamplingOperator <: AbstractSamplingOperator
     src     ::  AbstractFunctionSpace
     dest    ::  GridBasis
+    scaling :: Number
 
 	## # An inner constructor to enforce that the spaces match
 	## GridSamplingOperator(src::Dictionary{S,T}, dest::GridBasis{S,T}) where {S,T} =
 	## 	new(src, dest)
 end
 
-GridSamplingOperator(grid::AbstractGrid{S}, ::Type{T} = subeltype(S)) where {S,T} =
-    GridSamplingOperator(FunctionSpace{S,T}(), grid)
+GridSamplingOperator(grid::AbstractGrid{S}, ::Type{T} = subeltype(S); scaling=one(T)) where {S,T} =
+    GridSamplingOperator(FunctionSpace{S,T}(), grid; scaling= scaling)
 
-GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}) where {S,T} =
-	GridSamplingOperator(src, gridbasis(grid, T))
+GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}; scaling = one(T)) where {S,T} =
+	GridSamplingOperator(src, gridbasis(grid, T), scaling)
 
-GridSamplingOperator(gridbasis::GridBasis{S,T}) where {S,T} =
-	GridSamplingOperator(grid(gridbasis), coeftype(gridbasis))
+GridSamplingOperator(gridbasis::GridBasis{S,T}; scaling = one(T)) where {S,T} =
+	GridSamplingOperator(grid(gridbasis), coeftype(gridbasis); scaling= scaling)
 
 dest(op::GridSamplingOperator) = op.dest
 
 src_space(op::GridSamplingOperator) = op.src
 
-apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridbasis(op)))
-apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f)
+apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridbasis(op)), op.scaling)
+apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f, op.scaling)
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
+sample(g::AbstractGrid, f, T = float_type(eltype(g)), scaling=one(T)) = sample!(zeros(T, size(g)), g, f, scaling)
 
 broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
@@ -56,12 +57,15 @@ call_function_with_vector(f, x::SVector{4}) = f(x[1], x[2], x[3], x[4])
 call_function_with_vector(f, x::SVector{N}) where {N} = f(x...)
 call_function_with_vector(f, x::AbstractVector) = f(x...)
 
-function sample!(result, g::AbstractGrid, f)
+function sample!(result, g::AbstractGrid, f, scaling)
     for i in eachindex(g)
-		result[i] = call_function_with_vector(f, g[i])
+		result[i] = scaling*call_function_with_vector(f, g[i])
 	end
 	result
 end
 
 apply(op::GridSamplingOperator, dict::Dictionary; options...) =
-    evaluation_operator(dict, grid(op); options...)
+    op.scaling*evaluation_operator(dict, grid(op); options...)
+
+*(op::GridSamplingOperator, scalar::Number) = GridSamplingOperator(op.src, op.dest, op.scaling*scalar)
+*(scalar::Number, op::GridSamplingOperator) = GridSamplingOperator(op.src, op.dest, op.scaling*scalar)

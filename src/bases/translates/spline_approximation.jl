@@ -219,7 +219,7 @@ function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degre
 	primal = primal_bspline_generator(T, degree)
 	dual = dual_bspline_generator(primal, oversampling)
         sampler = bspline_sampler(T, primal, oversampling)
-        dual_sampler = n->ScalingOperator(dest(sampler(n)),1/length(dual(n)))*sampler(n)
+        dual_sampler = n->(1/length(dual(n)))*sampler(n)
 	params = bspline_param(init)
 	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "B-Spline translates")
