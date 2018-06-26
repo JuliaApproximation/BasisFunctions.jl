@@ -262,7 +262,7 @@ export is_discrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
-export gridbasis
+export gridbasis, grid_multiplication_operator
 
 # from sampling/sampling_operator.jl
 export GridSamplingOperator
