@@ -39,7 +39,7 @@ evaluation_operator(s::Dictionary, dgs::GridBasis; options...) =
     grid_evaluation_operator(s, dgs, grid(dgs); options...)
 
 default_evaluation_operator(s::Dictionary, dgs::GridBasis; options...) =
-    MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs)))
+    (warn("default evaluation operator might be slow");MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))))
 
 # Evaluate s in the grid of dgs
 # We try to see if any fast transform is available

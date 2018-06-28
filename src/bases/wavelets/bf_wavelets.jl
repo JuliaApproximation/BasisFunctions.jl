@@ -267,7 +267,7 @@ function EvalOperator(dict::WaveletBasis{T,S,Scl}, dgs::GridBasis, d::Int; optio
     coefs[1] = 1
     y = evaluate_periodic_scaling_basis_in_dyadic_points(s, w, coefs, d)
     a, offset = _get_array_offset(y)
-    BasisFunctions.VerticalBandedOperator(dict, dgs, a, 1<<(d-j), offset-1; options...)
+    BasisFunctions.VerticalBandedOperator(dict, dgs, a, 1<<(d-j), offset-1)
 end
 
 function _get_array_offset(a)
