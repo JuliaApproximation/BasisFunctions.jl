@@ -224,3 +224,7 @@ function bspline_platform(::Type{T}, init::Union{Int,AbstractVector{Int}}, degre
 	BasisFunctions.GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
 		params = params, name = "B-Spline translates")
 end
+
+
+wavelet_dual(dict::BSplineTranslatesBasis) =
+    (warn("wavelet_dual of B-spline basis not mathematically accurate");dict)

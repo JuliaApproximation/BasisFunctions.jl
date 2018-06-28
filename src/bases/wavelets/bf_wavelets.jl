@@ -226,39 +226,64 @@ function apply!(op::DWTEvalOperator, y, coefs; options...)
     y
 end
 
-"""
-Transformation of scaling coefficients to function values.
-"""
-struct DWTScalingEvalOperator{T} <: DictionaryOperator{T}
-    src::WaveletBasis
-    dest::GridBasis
-
-    s::Side
-    w::DiscreteWavelet
-    fb::Filterbank
-    j::Int
-    d::Int
-    bnd::WaveletBoundary
-
-    f::Vector{T}
-    f_scaled::Vector{T}
-end
-
+# """
+# Transformation of scaling coefficients to function values.
+# """
+# struct DWTScalingEvalOperator{T} <: DictionaryOperator{T}
+#     src::WaveletBasis
+#     dest::GridBasis
+#
+#     s::Side
+#     w::DiscreteWavelet
+#     fb::Filterbank
+#     j::Int
+#     d::Int
+#     bnd::WaveletBoundary
+#
+#     f::Vector{T}
+#     f_scaled::Vector{T}
+# end
+#
+# function EvalOperator(dict::WaveletBasis{T,S,Scl}, dgs::GridBasis, d::Int; options...) where {T,S}
+#     w = wavelet(dict)
+#     j = dyadic_length(dict)
+#     s = side(dict)
+#     fb = SFilterBank(s, w)
+#
+#     f = evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
+#     f_scaled = similar(f)
+#
+#     DWTScalingEvalOperator{T}(dict, dgs, s, w, fb, j, d, perbound, f, f_scaled)
+# end
+# function apply!(op::DWTScalingEvalOperator, y, coefs; options...)
+#     _evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.s, op.w, coefs, op.j, op.d, op.f_scaled)
+#     y
+# end
 function EvalOperator(dict::WaveletBasis{T,S,Scl}, dgs::GridBasis, d::Int; options...) where {T,S}
     w = wavelet(dict)
-    j = dyadic_length(dict)
-    s = side(dict)
-    fb = SFilterBank(s, w)
-
-    f = evaluate_in_dyadic_points(s, scaling, w, j, 0, d)
-    f_scaled = similar(f)
-
-    DWTScalingEvalOperator{T}(dict, dgs, s, w, fb, j, d, perbound, f, f_scaled)
+    j = BasisFunctions.dyadic_length(dict)
+    s = BasisFunctions.side(dict)
+    coefs = zeros(dict)
+    coefs[1] = 1
+    y = evaluate_periodic_scaling_basis_in_dyadic_points(s, w, coefs, d)
+    a, offset = _get_array_offset(y)
+    BasisFunctions.VerticalBandedOperator(dict, dgs, a, 1<<(d-j), offset-1; options...)
 end
 
-function apply!(op::DWTScalingEvalOperator, y, coefs; options...)
-    _evaluate_periodic_scaling_basis_in_dyadic_points!(y, op.f, op.s, op.w, coefs, op.j, op.d, op.f_scaled)
-    y
+function _get_array_offset(a)
+    b = a.!=0
+    f = findfirst(b)
+    if f==1
+        if b[end]
+            f = findlast(.!b)+1
+            L = sum(b)
+            vcat(a[f:end],a[1:L-length(a)+f]), f
+        else
+            a[f:f+sum(b)-1], f
+        end
+    else
+        a[f:f+sum(b)-1], f
+    end
 end
 
 struct DiscreteWaveletTransform{T} <: DictionaryOperator{T}
@@ -552,3 +577,10 @@ BasisFunctions.grid_evaluation_operator(s::BasisFunctions.WaveletTensorDict, dgs
 BasisFunctions.grid_evaluation_operator(s::BasisFunctions.WaveletTensorDict, dgs::GridBasis, grid::ProductGrid; options...) =
     TensorProductOperator([grid_evaluation_operator(dict, gridbasis(g, coeftype(s)), g) for (dict, g) in zip(elements(s), elements(grid))]...)
 BasisFunctions.Zt(dual::WaveletTensorDict, dual_sampler::DWTSamplingOperator; options...) = DictionaryOperator(dual_sampler)
+
+
+
+
+
+wavelet_dual(dict::TensorProductDict) =
+    tensorproduct([wavelet_dual(d) for d in elements(dict)])
