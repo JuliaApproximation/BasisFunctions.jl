@@ -39,6 +39,8 @@ coefficients(e::Expansion) = e.coefficients
 
 Span(e::Expansion) = Span(dictionary(e))
 
+random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
+
 # For expansions of composite types, return a Expansion of a subdict
 element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
 
