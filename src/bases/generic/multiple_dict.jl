@@ -77,7 +77,7 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 ∪(d1::Dictionary, d2::Dictionary) =
     error("Union of dictionaries is not supported: use ⊕ instead")
 
-name(s::MultiDict) = "A dictionary consisting of $(nb_elements(s)) dictionaries"
+name(s::MultiDict) = "A dictionary consisting of $(numelements(s)) dictionaries"
 
 for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
     # Redirect the calls to multiple_is_basis with the elements as extra arguments,
@@ -122,7 +122,7 @@ support(set::MultiDict) = union(map(support,elements(set))...)
 
 resize(s::MultiDict, n::Int) = resize(s, approx_length(s, n))
 
-approx_length(s::MultiDict, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_elements(s))
+approx_length(s::MultiDict, n::Int) = ntuple(t->ceil(Int,n/numelements(s)), numelements(s))
 
 ## Differentiation
 
@@ -134,8 +134,8 @@ antiderivative_dict(s::MultiDict, order; options...) =
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiDict, s2::MultiDict, order; options...)
-        if nb_elements(s1) == nb_elements(s2)
-            BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
+        if numelements(s1) == numelements(s2)
+            BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
         else
             # We have a situation because the sizes of the multidicts don't match.
             # The derivative set may have been a nested multidict that was flattened. This

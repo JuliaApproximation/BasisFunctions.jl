@@ -52,7 +52,7 @@ for op in (:length, :size, :support, :grid)
 end
 
 # Delegation of property methods
-for op in (:numtype, :dimension, :nb_elements)
+for op in (:numtype, :dimension, :numelements)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
