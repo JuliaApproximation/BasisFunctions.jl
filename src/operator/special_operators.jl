@@ -243,7 +243,9 @@ ctranspose(op::IndexRestrictionOperator) =
 ctranspose(op::IndexExtensionOperator) =
     IndexRestrictionOperator(dest(op), src(op), subindices(op))
 
-string(op::IndexExtensionOperator) = "Placing original elements in "*string(op.subindices)
+string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
+
+
 """
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
