@@ -128,7 +128,7 @@ export promote_domaintype, promote_domainsubtype
 export grid, left, right, support, domain, codomain
 export eval_expansion, eval_element, eval_element_derivative
 export name
-export instantiate, promote_eltype, set_promote_eltype, resize
+export instantiate, resize
 export ordering
 export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
 export is_composite

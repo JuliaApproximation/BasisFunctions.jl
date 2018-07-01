@@ -86,25 +86,20 @@ function CompositeOperator(composite_src::Dictionary, composite_dest::Dictionary
         @assert size(dest(operators[i])) == size(src(operators[i+1]))
     end
 
-    # TODO: Not sure if this is the right thing to do here
-    T = promote_type(map(eltype, operators)...,coeftype(composite_src),coeftype(composite_dest))
-    c_operators = map(o -> promote_eltype(o, T), operators)
+    T = promote_type(map(eltype, operators)...)
     # We are going to reserve scratch space, but only for operators that are not
     # in-place. We do reserve scratch space for the first operator, even if it
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
-    scratch_array = Any[zeros(dest(c_operators[1]))]
+    scratch_array = Any[zeros(dest(operators[1]))]
     for m = 2:L-1
-        if ~is_inplace(c_operators[m])
-            push!(scratch_array, zeros(dest(c_operators[m])))
+        if ~is_inplace(operators[m])
+            push!(scratch_array, zeros(dest(operators[m])))
         end
     end
     scratch = tuple(scratch_array...)
-    CompositeOperator{T}(composite_src, composite_dest, c_operators, scratch)
+    CompositeOperator{T}(composite_src, composite_dest, operators, scratch)
 end
-
-similar_operator(op::CompositeOperator, ::Type{S}, src, dest) where {S} =
-    CompositeOperator(promote_coeftype(src, S), promote_coeftype(dest, S), map(o-> promote_eltype(o,S),elements(op))...)
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
     apply_inplace_composite!(op, coef_srcdest, op.operators)

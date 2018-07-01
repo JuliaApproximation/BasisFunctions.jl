@@ -61,7 +61,7 @@ operator(set::OperatedDict) = set.op
 in_support(dict::OperatedDict, idx, x) = default_in_support(dict, idx, x)
 
 dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
-    OperatedDict(similar_operator(operator(s), T, promote_domaintype(src(s), S), dest(s) ) )
+    OperatedDict(similar_operator(operator(s), promote_domaintype(src(s), S), dest(s) ) )
 
 for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src_dictionary(s))

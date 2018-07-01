@@ -28,7 +28,7 @@ end
 
 CirculantOperator(src::Dictionary, firstcolumn::AbstractVector; options...) = CirculantOperator(src, src, firstcolumn; options...)
 
-function CirculantOperator(op_src::Dictionary, op_dest::Dictionary, firstcolumn::AbstractVector; options...) 
+function CirculantOperator(op_src::Dictionary, op_dest::Dictionary, firstcolumn::AbstractVector; options...)
     Dsrc = DiscreteVectorDictionary{complex(eltype(firstcolumn))}(length(firstcolumn))
     D = DiagonalOperator(Dsrc, Dsrc, fft(firstcolumn))
     CirculantOperator(op_src, op_dest, D; options...)
@@ -39,7 +39,7 @@ CirculantOperator(src::Dictionary, dest::Dictionary, D::DiagonalOperator; option
 function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator; real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
     cpx_src = DiscreteVectorDictionary{eltype(opD)}(length(src(opD)))
     A = promote_type(eltype(opD),T)
-    
+
     F = forward_fourier_operator(cpx_src, cpx_src, A; verbose=verbose, options...)
     iF = inv(F)
     #realify a circulant operator if src and dest are real (one should imply the other).
@@ -51,7 +51,7 @@ function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, o
         r_dest = promote_coeftype(op_dest, r_D)
 
         return CirculantOperator{r_A}(r_src, r_dest, iF*opD*F, opD)
-        
+
     end
     CirculantOperator{A}(op_src, op_dest, iF*opD*F, opD)
 end
@@ -67,8 +67,8 @@ end
 
 eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
 
-similar_operator(op::CirculantOperator, ::Type{S}, src, dest) where {S} =
-    CirculantOperator(S, src, dest, op.eigenvaluematrix)
+similar_operator(op::CirculantOperator, src, dest) =
+    CirculantOperator(src, dest, op.eigenvaluematrix)
 
 Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(sqrt.(eigenvalues(c))))
 
