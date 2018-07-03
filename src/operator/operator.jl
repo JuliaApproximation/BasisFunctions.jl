@@ -64,11 +64,6 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 	(SVector{N,S}, SVector{M, promote_type(S, D, A)}, SMatrix{M,N,promote_type(S, D, A)})
 
 
-"Promote the element type of the given operator."
-promote_eltype(op::DictionaryOperator{T}, ::Type{T}) where {T} = op
-promote_eltype(op::DictionaryOperator{T}, ::Type{S}) where {T,S} =
-	similar_operator(op, S, src(op), promote_coeftype(dest(op),S))
-
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
 size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))

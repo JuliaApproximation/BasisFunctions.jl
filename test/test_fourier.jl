@@ -130,8 +130,8 @@ function test_fourier_series(T)
     b1 = FourierBasis{T}(n)
     b2 = FourierBasis{T}(n+1)
     b3 = FourierBasis{T}(n+15)
-    E2 = Extension(b1, b2)
-    E3 = Extension(b1, b3)
+    E2 = extension_operator(b1, b2)
+    E3 = extension_operator(b1, b3)
     e1 = Expansion(b1, coef)
     e2 = Expansion(b2, E2*coef)
     e3 = Expansion(b3, E3*coef)
@@ -144,8 +144,8 @@ function test_fourier_series(T)
     b1 = FourierBasis{T}(n)
     b2 = FourierBasis{T}(n-1)
     b3 = FourierBasis{T}(n-5)
-    E1 = Restriction(b1, b2)    # source has even length
-    E2 = Restriction(b2, b3)    # source has odd length
+    E1 = restriction_operator(b1, b2)    # source has even length
+    E2 = restriction_operator(b2, b3)    # source has odd length
     coef1 = map(complex(T), rand(length(b1)))
     coef2 = E1*coef1
     coef3 = E2*coef2

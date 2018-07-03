@@ -15,9 +15,9 @@
 # The Fast Fourier transform
 #############################
 
-function fftw_scaling_operator(span::Dictionary)
-    scalefactor = 1/(convert(coeftype(span), length(span)))
-    ScalingOperator(span, span, scalefactor)
+function fftw_scaling_operator(dict::Dictionary)
+    scalefactor = 1/(convert(coeftype(dict), length(dict)))
+    ScalingOperator(dict, dict, scalefactor)
 end
 
 for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
@@ -104,11 +104,11 @@ ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
     fftw_operator(dest(op), src(op), 1:dimension(dest(op)),object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-#        ctranspose_multiplication(op, object) 
+#        ctranspose_multiplication(op, object)
 ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-#        ctranspose_multiplication(op, object) 
+#        ctranspose_multiplication(op, object)
     ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 

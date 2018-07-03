@@ -76,35 +76,60 @@ is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
 is_composite(op::CompositeOperator) = true
 
 
-CompositeOperator(operators::DictionaryOperator...) =
-    CompositeOperator(src(operators[1]), dest(operators[end]), operators...)
-
-function CompositeOperator(composite_src::Dictionary, composite_dest::Dictionary, operators::DictionaryOperator...)
-    L = length(operators)
+function compose_and_simplify(composite_src::Dictionary, composite_dest::Dictionary, operators::DictionaryOperator...; simplify = true)
     # Check operator compatibility
     for i in 1:length(operators)-1
         @assert size(dest(operators[i])) == size(src(operators[i+1]))
+#       TODO: at one point we should enable strict checking again as follows:
+#        @assert dest(operators[i]) == src(operators[i+1])
     end
 
-    # TODO: Not sure if this is the right thing to do here
-    T = promote_type(map(eltype, operators)...,coeftype(composite_src),coeftype(composite_dest))
-    c_operators = map(o -> promote_eltype(o, T), operators)
+    # Checks pass, now apply some simplifications
+    if simplify
+        # Flatten away nested CompositeOperators
+        operators = flatten(CompositeOperator, operators...)
+        # Iterate over the operators and remove the ones that don't do anything
+        c_operators = Array{AbstractOperator}(0)
+        for op in operators
+            add_this_one = true
+            # We forget about identity operators
+            if isa(op, IdentityOperator)
+                add_this_one = false
+            end
+            if isa(op, ScalingOperator) && scalar(op) == 1
+                add_this_one = false
+            end
+            if add_this_one
+                push!(c_operators, op)
+            end
+        end
+        operators = tuple(c_operators...)
+    end
+
+    L = length(operators)
+    if L == 0
+        return IdentityOperator(composite_src, composite_dest)
+    end
+    if L == 1
+        return wrap_operator(composite_src, composite_dest, operators[1])
+    end
+    T = promote_type(map(eltype, operators)...)
     # We are going to reserve scratch space, but only for operators that are not
     # in-place. We do reserve scratch space for the first operator, even if it
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
-    scratch_array = Any[zeros(dest(c_operators[1]))]
+    scratch_array = Any[zeros(dest(operators[1]))]
     for m = 2:L-1
-        if ~is_inplace(c_operators[m])
-            push!(scratch_array, zeros(dest(c_operators[m])))
+        if ~is_inplace(operators[m])
+            push!(scratch_array, zeros(dest(operators[m])))
         end
     end
     scratch = tuple(scratch_array...)
-    CompositeOperator{T}(composite_src, composite_dest, c_operators, scratch)
+    CompositeOperator{T}(composite_src, composite_dest, operators, scratch)
 end
 
-similar_operator(op::CompositeOperator, ::Type{S}, src, dest) where {S} =
-    CompositeOperator(promote_coeftype(src, S), promote_coeftype(dest, S), map(o-> promote_eltype(o,S),elements(op))...)
+unsafe_wrap_operator(src, dest, op::CompositeOperator{T}) where T =
+    CompositeOperator{T}(src, dest, op.operators, op.scratch)
 
 apply_inplace!(op::CompositeOperator, coef_srcdest) =
     apply_inplace_composite!(op, coef_srcdest, op.operators)
@@ -194,8 +219,7 @@ apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)
 # Don't do anything if we have just one operator
 compose(op::AbstractOperator) = op
 
-# Here we have at least two operators. Remove nested compositions with flatten and continue.
-compose(ops::DictionaryOperator...) = CompositeOperator(flatten(CompositeOperator, ops...)...)
+compose(ops::DictionaryOperator...) = compose_and_simplify(src(ops[1]), dest(ops[end]), ops...)
 compose(ops::AbstractOperator...) = GenericCompositeOperator(flatten(GenericCompositeOperator, ops...)...)
 
 sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
