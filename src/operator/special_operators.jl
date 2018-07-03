@@ -125,7 +125,19 @@ The function wrap_operator returns an operator with the given source and destina
 and with the action of the given operator. Depending on the operator, the result is
 a WrappedOperator, but sometimes that can be avoided.
 """
-function wrap_operator(w_src, w_dest, op::DictionaryOperator)
+function wrap_operator(w_src, w_dest, op)
+    # We do some consistency checks
+    @assert size(w_src) == size(src(op))
+    @assert size(w_dest) == size(dest(op))
+    @assert op_eltype(w_src,w_dest) == eltype(op)
+    unsafe_wrap_operator(w_src, w_dest, op)
+end
+
+# No need to wrap a wrapped operator
+unsafe_wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, superoperator(op))
+
+# default fallback routine
+function unsafe_wrap_operator(w_src, w_dest, op::DictionaryOperator)
     if (w_src == src(op)) && (w_dest == dest(op))
         op
     else
@@ -133,15 +145,6 @@ function wrap_operator(w_src, w_dest, op::DictionaryOperator)
     end
 end
 
-# No need to wrap a wrapped operator
-wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, superoperator(op))
-
-# No need to wrap an IdentityOperator, we can just change src and dest
-# Same for a few other operators
-wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, dest)
-wrap_operator(src, dest, op::DiagonalOperator) = DiagonalOperator(src, dest, diagonal(op))
-wrap_operator(src, dest, op::ScalingOperator) = ScalingOperator(src, dest, scalar(op))
-wrap_operator(src, dest, op::ZeroOperator) = ZeroOperator(src, dest)
 
 inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
 
@@ -175,6 +178,8 @@ subindices(op::IndexRestrictionOperator) = op.subindices
 
 similar_operator(op::IndexRestrictionOperator, src, dest) =
     IndexRestrictionOperator(src, dest, subindices(op))
+
+unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
 
 is_diagonal(::IndexRestrictionOperator) = true
 
@@ -212,6 +217,8 @@ subindices(op::IndexExtensionOperator) = op.subindices
 
 similar_operator(op::IndexExtensionOperator, src, dest) =
     IndexExtensionOperator(src, dest, subindices(op))
+
+unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
 
 is_diagonal(::IndexExtensionOperator) = true
 

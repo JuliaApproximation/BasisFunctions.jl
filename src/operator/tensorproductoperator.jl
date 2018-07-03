@@ -65,7 +65,8 @@ inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...
 is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
 
-    
+unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
+    TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 
 apply!(op::TensorProductOperator, coef_dest, coef_src) =
     apply_tensor!(op, coef_dest, coef_src, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
@@ -255,7 +256,7 @@ end
 
 SparseOperator(op::TensorProductOperator; options...) =
     TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
-    
+
 function stencil(op::TensorProductOperator)
     A = Any[]
     push!(A,element(op,1))

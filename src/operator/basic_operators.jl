@@ -18,6 +18,8 @@ IdentityOperator(src::Dictionary, dest::Dictionary = src) =
 
 similar_operator(::IdentityOperator, src, dest) = IdentityOperator(src, dest)
 
+unsafe_wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, dest)
+
 @add_properties(IdentityOperator, is_inplace, is_diagonal)
 
 inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
@@ -59,9 +61,11 @@ ScalingOperator(src::Dictionary, scalar::Number) = ScalingOperator(src, src, sca
 ScalingOperator(src::Dictionary, dest::Dictionary, scalar) =
     ScalingOperator{op_eltype(src,dest)}(src, dest, scalar)
 
+scalar(op::ScalingOperator) = op.scalar
+
 similar_operator(op::ScalingOperator, src, dest) = ScalingOperator(src, dest, scalar(op))
 
-scalar(op::ScalingOperator) = op.scalar
+unsafe_wrap_operator(src, dest, op::ScalingOperator) = similar_operator(op, src, dest)
 
 @add_properties(ScalingOperator, is_inplace, is_diagonal)
 
@@ -121,6 +125,8 @@ ZeroOperator(src::Dictionary, dest::Dictionary = src) = ZeroOperator{op_eltype(s
 
 similar_operator(op::ZeroOperator, src, dest) = ZeroOperator(src, dest)
 
+unsafe_wrap_operator(src, dest, op::ZeroOperator) = similar_operator(op, src, dest)
+
 # We can only be in-place if the numbers of coefficients of src and dest match
 is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
 
@@ -172,6 +178,8 @@ DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
     DiagonalOperator(DiscreteVectorDictionary{T}(length(diagonal)), diagonal)
 
 similar_operator(op::DiagonalOperator, src, dest) = DiagonalOperator(src, dest, diagonal(op))
+
+unsafe_wrap_operator(src, dest, op::DiagonalOperator) = similar_operator(op, src, dest)
 
 @add_properties(DiagonalOperator, is_inplace, is_diagonal)
 
@@ -262,8 +270,8 @@ simplify(op1::DictionaryOperator, op2::ZeroOperator) = (op2,)
 
 
 
-(*)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) .* diagonal(op2))
-(*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) * diagonal(op2))
+(*)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op2), dest(op1), diagonal(op1) .* diagonal(op2))
+(*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op2), dest(op1), scalar(op1) * diagonal(op2))
 (*)(op2::DiagonalOperator, op1::ScalingOperator) = op1 * op2
 
 (+)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2))
