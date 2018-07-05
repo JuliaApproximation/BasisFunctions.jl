@@ -270,7 +270,7 @@ end
 #     e[1] = 1
 #     @test BasisFunctions.coefficients(b) ≈ G*e
 #
-#     d = BasisFunctions.primalgramcolumn(Span(b); abstol=1e-3)
+#     d = BasisFunctions.primalgramcolumn(Span(b); atol=1e-3)
 #     @test d ≈ e
 #     @test typeof(Gram(Span(b))) <: IdentityOperator
 #
@@ -336,15 +336,15 @@ function test_dualsplinebasis(T)
     n = 10; degree = 2;
     tol = max(sqrt(eps(real(T))), 1e-16)
     b = BSplineTranslatesBasis(n,degree)
-    bb = BasisFunctions.dual(b; reltol=tol, abstol=tol)
+    bb = BasisFunctions.dual(b; rtol=tol, atol=tol)
     @test dual(bb) == b
     e = coefficients(random_expansion(b))
 
-    @test Gram(b; abstol=tol, reltol=tol)*e ≈ DualGram(bb; abstol=tol, reltol=tol)*e
-    @test Gram(bb; abstol=tol, reltol=tol)*e ≈ DualGram(b; abstol=tol, reltol=tol)*e
-    @test BasisFunctions.dualgramcolumn(b; reltol=tol, abstol=tol) ≈ BasisFunctions.coefficients(bb)
-    @test QuadGK.quadgk(x->b[1](x)*bb[1](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
-    @test QuadGK.quadgk(x->b[1](x)*bb[2](x),infimum(support(b)), supremum(support(b)); reltol=tol, abstol=tol)[1] - T(1) < sqrt(tol)
+    @test Gram(b; atol=tol, rtol=tol)*e ≈ DualGram(bb; atol=tol, rtol=tol)*e
+    @test Gram(bb; atol=tol, rtol=tol)*e ≈ DualGram(b; atol=tol, rtol=tol)*e
+    @test BasisFunctions.dualgramcolumn(b; rtol=tol, atol=tol) ≈ BasisFunctions.coefficients(bb)
+    @test QuadGK.quadgk(x->b[1](x)*bb[1](x),infimum(support(b)), supremum(support(b)); rtol=tol, atol=tol)[1] - T(1) < sqrt(tol)
+    @test QuadGK.quadgk(x->b[1](x)*bb[2](x),infimum(support(b)), supremum(support(b)); rtol=tol, atol=tol)[1] - T(1) < sqrt(tol)
 end
 
 function test_discrete_dualsplinebasis(T)
