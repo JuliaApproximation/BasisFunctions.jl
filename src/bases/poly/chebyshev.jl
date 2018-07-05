@@ -213,10 +213,10 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order; options...) =
+differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int; options...) =
     ChebyshevDifferentiation(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order; options...) =
+antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int; options...) =
     ChebyshevAntidifferentiation(src, dest, order)
 
 function gramdiagonal!(result, ::ChebyshevTLike; options...)
