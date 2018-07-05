@@ -108,12 +108,39 @@ function unsafe_moment(b::ChebyshevBasis{T}, idx::PolynomialDegree) where {T}
     end
 end
 
-function apply!(op::Differentiation, dest::ChebyshevTLike, src::ChebyshevTLike, result, coef)
+##################
+# Differentiation
+##################
+
+# Chebyshev differentiation is so common that we make it its own type
+struct ChebyshevDifferentiation{T} <: DictionaryOperator{T}
+	src		::	Dictionary
+	dest	::	Dictionary
+    order   ::  Int
+end
+
+ChebyshevDifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
+	ChebyshevDifferentiation{op_eltype(src,dest)}(src, dest, order)
+
+ChebyshevDifferentiation(src::Dictionary, order::Int = 1) =
+    ChebyshevDifferentiation(src, src, order)
+
+order(op::ChebyshevDifferentiation) = op.order
+
+string(op::ChebyshevDifferentiation) = "Chebyshev differentiation matrix of order $(order(op)) and size $(length(src(op)))"
+
+similar_operator(op::ChebyshevDifferentiation, src, dest) =
+    ChebyshevDifferentiation(src, dest, order(op))
+
+wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+
+# TODO: this allocates lots of memory...
+function apply!(op::ChebyshevDifferentiation, coef_dest, coef_src)
     #	@assert period(dest)==period(src)
-    n = length(src)
-    T = eltype(coef)
-    tempc = coef[:]
-    tempr = coef[:]
+    n = length(coef_src)
+    T = eltype(coef_src)
+    tempc = coef_src[:]
+    tempr = coef_src[:]
     for o = 1:order(op)
         tempr = zeros(T,n)
         # 'even' summation
@@ -136,19 +163,41 @@ function apply!(op::Differentiation, dest::ChebyshevTLike, src::ChebyshevTLike, 
         tempr[1]=s
         tempc = tempr
     end
-    result[1:n-order(op)] = tempr[1:n-order(op)]
-    result
+    coef_dest[1:n-order(op)] = tempr[1:n-order(op)]
+    coef_dest
 end
 
-function apply!(op::AntiDifferentiation, dest::ChebyshevTLike, src::ChebyshevTLike, result, coef)
+struct ChebyshevAntidifferentiation{T} <: DictionaryOperator{T}
+	src		::	Dictionary
+	dest	::	Dictionary
+    order   ::  Int
+end
+
+ChebyshevAntidifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
+	ChebyshevAntidifferentiation{op_eltype(src,dest)}(src, dest, order)
+
+ChebyshevAntidifferentiation(src::Dictionary, order::Int = 1) =
+    ChebyshevAntidifferentiation(src, src, order)
+
+order(op::ChebyshevAntidifferentiation) = op.order
+
+string(op::ChebyshevAntidifferentiation) = "Chebyshev antidifferentiation matrix of order $(order(op)) and size $(length(src(op)))"
+
+similar_operator(op::ChebyshevAntidifferentiation, src, dest) =
+    ChebyshevAntidifferentiation(src, dest, order(op))
+
+wrap_operator(src, dest, op::ChebyshevAntidifferentiation) = similar_operator(op, src, dest)
+
+# TODO: this allocates lots of memory...
+function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     #	@assert period(dest)==period(src)
-    T = eltype(coef)
-    tempc = zeros(T,length(result))
-    tempc[1:length(src)] = coef[1:length(src)]
-    tempr = zeros(T,length(result))
-    tempr[1:length(src)] = coef[1:length(src)]
+    T = eltype(coef_src)
+    tempc = zeros(T,length(coef_dest))
+    tempc[1:length(coef_src)] = coef_src[1:length(coef_src)]
+    tempr = zeros(T,length(coef_dest))
+    tempr[1:length(coef_src)] = coef_src[1:length(coef_src)]
     for o = 1:order(op)
-        n = length(src)+o
+        n = length(coef_src)+o
         tempr = zeros(T,n)
         tempr[2]+=tempc[1]
         tempr[3]=tempc[2]/4
@@ -160,12 +209,16 @@ function apply!(op::AntiDifferentiation, dest::ChebyshevTLike, src::ChebyshevTLi
         end
         tempc = tempr
     end
-    result[:]=tempr[:]
-    result
+    coef_dest[:]=tempr[:]
+    coef_dest
 end
-differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int) = Differentiation(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int) = AntiDifferentiation(src, dest, order)
+differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order; options...) =
+    ChebyshevDifferentiation(src, dest, order)
+
+antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order; options...) =
+    ChebyshevAntidifferentiation(src, dest, order)
+
 function gramdiagonal!(result, ::ChebyshevTLike; options...)
     T = eltype(result)
     for i in 1:length(result)

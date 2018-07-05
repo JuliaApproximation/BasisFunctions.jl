@@ -87,26 +87,14 @@ function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency
     -arg * sin(arg * x)
 end
 
-function apply!(op::Extension, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)
-    @assert length(dest) > length(src)
-
-    for i = 1:length(src)
-        coef_dest[i] = coef_src[i]
-    end
-    for i = length(src)+1:length(dest)
-        coef_dest[i] = 0
-    end
-    coef_dest
+function extension_operator(s1::CosineSeries, s2::CosineSeries; options...)
+    @assert length(s2) >= length(s1)
+    IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-
-function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)
-    @assert length(dest) < length(src)
-
-    for i = 1:length(dest)
-        coef_dest[i] = coef_src[i]
-    end
-    coef_dest
+function restriction_operator(s1::CosineSeries, s2::CosineSeries; options...)
+    @assert length(s2) <= length(s1)
+    IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
 
 function Gram(s::CosineSeries; options...)

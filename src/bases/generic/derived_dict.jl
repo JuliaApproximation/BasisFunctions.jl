@@ -70,7 +70,7 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
+for op in (:length, :extension_size, :size, :grid, :is_composite, :numelements,
     :elements, :tail, :ordering, :support)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end

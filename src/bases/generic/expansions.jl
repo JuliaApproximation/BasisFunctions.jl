@@ -39,6 +39,8 @@ coefficients(e::Expansion) = e.coefficients
 
 Span(e::Expansion) = Span(dictionary(e))
 
+random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
+
 # For expansions of composite types, return a Expansion of a subdict
 element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
 
@@ -50,7 +52,7 @@ for op in (:length, :size, :support, :grid)
 end
 
 # Delegation of property methods
-for op in (:numtype, :dimension, :nb_elements)
+for op in (:numtype, :dimension, :numelements)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
