@@ -277,7 +277,7 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
-    fourier_basis_even, fourier_basis_odd
+    fourier_basis_even, fourier_basis_odd, pseudodifferential_operator
 
 # from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries

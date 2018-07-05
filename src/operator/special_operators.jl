@@ -192,8 +192,16 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
     coef_dest
 end
 
-string(op::IndexRestrictionOperator) = "Selecting coefficients "*string(op.subindices)
-
+function string(op::IndexRestrictionOperator)
+    # If there are many indices being selected, then the printed operator
+    # takes up many many lines. The first six indices should be fine for the
+    # purposes of getting the jist of the operator
+    if length(op.subindices) < 6
+        return "Selecting coefficients "*string(op.subindices)
+    else
+        return "Selecting coefficients "*string(op.subindices[1:6])*"..."
+    end
+end
 
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
