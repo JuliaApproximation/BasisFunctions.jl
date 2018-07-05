@@ -163,9 +163,9 @@ function apply!(op::AntiDifferentiation, dest::ChebyshevTLike, src::ChebyshevTLi
     result[:]=tempr[:]
     result
 end
-differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order) = Differentiation(src, dest, order)
+differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int) = Differentiation(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order) = AntiDifferentiation(src, dest, order)
+antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int) = AntiDifferentiation(src, dest, order)
 function gramdiagonal!(result, ::ChebyshevTLike; options...)
     T = eltype(result)
     for i in 1:length(result)
@@ -173,19 +173,19 @@ function gramdiagonal!(result, ::ChebyshevTLike; options...)
     end
 end
 
-function UnNormalizedGram(s::ChebyshevTLike, oversampling) 
+function UnNormalizedGram(s::ChebyshevTLike, oversampling)
     A = coeftype(s)
     d = A(length_oversampled_grid(s, oversampling))/2*ones(A,length(s))
     d[1] = length_oversampled_grid(s, oversampling)
     DiagonalOperator(s, s, d)
 end
 
-function extension_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...) 
+function extension_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...)
     @assert length(s2) >= length(s1)
     IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...) 
+function restriction_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...)
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end

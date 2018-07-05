@@ -164,6 +164,9 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
         wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; options...))
 end
 
+pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol;options...)
+pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
+
 grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
     wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
 

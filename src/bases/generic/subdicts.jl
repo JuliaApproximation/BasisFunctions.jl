@@ -153,14 +153,14 @@ subdict_derivative_dict(s::LargeSubdict, order, superdict, superindices; options
 subdict_antiderivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
     antiderivative_dict(superdict, order; options...)
 
-function differentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
+function differentiation_operator(s1::LargeSubdict, s2::Dictionary, order; options...)
     @assert s2 == derivative_dict(s1, order)
     D = differentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)
     D*E
 end
 
-function antidifferentiation_operator(s1::LargeSubdict, s2::Dictionary, order::Int; options...)
+function antidifferentiation_operator(s1::LargeSubdict, s2::Dictionary, order; options...)
     @assert s2 == antiderivative_dict(s1, order)
     D = antidifferentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)

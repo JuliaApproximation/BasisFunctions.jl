@@ -85,8 +85,8 @@ function test_fourier_series(T)
     e1 = Expansion(fb, coef)
     e2 = Expansion(rescale(FourierBasis{T}(length(fb)+1),support(fb)), coef2)
 
-    zero_orderD = differentiation_operator(fb,x->1)
-    pseudoD = differentiation_operator(fb,x->x^2+x)
+    zero_orderD = pseudodifferential_operator(fb,x->1)
+    pseudoD = pseudodifferential_operator(fb,x->x^2+x)
 
     x = T(2//10)
     delta = sqrt(eps(T))

@@ -62,5 +62,5 @@ apply_map(s::GridBasis, map) = GridBasis(apply_map(grid(s), map), coeftype(s))
 
 sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
 
-grid_multiplication_operator(a::Function,GB::GridBasis) = DiagonalOperator{coefficient_type(GB)}(GB,GB,a.(grid(GB)))
+grid_multiplication_operator(a::Function,GB::GridBasis) = DiagonalOperator(GB,GB,map(a,grid(GB)))
 grid_multiplication_opearator(a::Function,grid::AbstractGrid) = grid_multiplication_operator(a,GridBasis(grid))

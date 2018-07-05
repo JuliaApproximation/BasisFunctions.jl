@@ -154,8 +154,9 @@ for op in (:approximation_operator, )
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    # TODO: this assumes that the number of elements of the tensor product equals the dimension
     @eval function $op(s1::TensorProductDict, s2::TensorProductDict, order::NTuple; options...)
+        @assert length(order) == dimension(s1)
+        @assert length(order) == dimension(s2)
         tensorproduct(map( (u,v,w) -> $op(u, v, w; options...), elements(s1), elements(s2), order)...)
     end
 end
