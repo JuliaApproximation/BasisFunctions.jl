@@ -470,7 +470,7 @@ function test_generic_dict_interface(basis)
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedDict) || (typeof(basis)<:BasisFunctions.ConcreteDerivedDict) || typeof(basis)<:WeightedDict) && eltype(basis)==BigFloat)
         if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedDict) && real(codomaintype(basis))==BigFloat)
-            e = approximate(basis, f; discrete=false, reltol=1e-6, abstol=1e-6)
+            e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end
