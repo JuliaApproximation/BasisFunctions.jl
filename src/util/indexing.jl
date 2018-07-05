@@ -59,6 +59,13 @@ end
 
 (-)(a::NativeIndex) = typeof(a)(-value(a))
 
+# Convenience: make a vector indexable using native indices, if possible
+# It is possible whenever the size and element type of the vector completely
+# determine the index map from native to linear indices
+getindex(v::Array, idxn::NativeIndex) =
+	getindex(v, linear_index(idxn, size(v), eltype(v)))
+
+
 
 
 """

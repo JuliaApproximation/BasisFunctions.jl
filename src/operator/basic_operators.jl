@@ -13,19 +13,18 @@ struct IdentityOperator{T} <: DictionaryOperator{T}
     end
 end
 
-IdentityOperator(src::Dictionary, dest::Dictionary = src) = IdentityOperator(op_eltype(src, dest), src, dest)
+IdentityOperator(src::Dictionary, dest::Dictionary = src) =
+    IdentityOperator{op_eltype(src, dest)}(src, dest)
 
-function IdentityOperator(::Type{T}, src, dest) where {T}
-    IdentityOperator{T}(src, dest)
-end
+similar_operator(::IdentityOperator, src, dest) = IdentityOperator(src, dest)
 
-similar_operator(::IdentityOperator, ::Type{S}, src, dest) where {S} = IdentityOperator(S, src, dest)
+unsafe_wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, dest)
 
 @add_properties(IdentityOperator, is_inplace, is_diagonal)
 
-inv(op::IdentityOperator) = IdentityOperator(eltype(op), dest(op), src(op))
+inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
-ctranspose(op::IdentityOperator) = IdentityOperator(eltype(op), dest(op), src(op))
+ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
 function matrix!(op::IdentityOperator, a)
     @assert size(a,1) == size(a,2)
@@ -45,15 +44,13 @@ apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 string(op::IdentityOperator) = "Identity Operator"
 
-"""
-A ScalingOperator is the identity operator up to a scaling.
-"""
+"A ScalingOperator represents multiplication by a scalar."
 struct ScalingOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     scalar  ::  T
 
-    function ScalingOperator{T}(src, dest, scalar) where {T}
+    function ScalingOperator{T}(src, dest, scalar) where T
         @assert length(src) == length(dest)
         new(src, dest, scalar)
     end
@@ -62,19 +59,15 @@ end
 ScalingOperator(src::Dictionary, scalar::Number) = ScalingOperator(src, src, scalar)
 
 ScalingOperator(src::Dictionary, dest::Dictionary, scalar) =
-    ScalingOperator(promote_type(op_eltype(src,dest),typeof(scalar)), src, dest, scalar)
-
-function ScalingOperator(::Type{T}, src, dest, scalar) where {T}
-    ScalingOperator{T}(src, dest, scalar)
-end
-
-similar_operator(op::ScalingOperator, ::Type{S}, src, dest) where {S} =
-    ScalingOperator(S, src, dest, scalar(op))
+    ScalingOperator{op_eltype(src,dest)}(src, dest, scalar)
 
 scalar(op::ScalingOperator) = op.scalar
 
-is_inplace(::ScalingOperator) = true
-is_diagonal(::ScalingOperator) = true
+similar_operator(op::ScalingOperator, src, dest) = ScalingOperator(src, dest, scalar(op))
+
+unsafe_wrap_operator(src, dest, op::ScalingOperator) = similar_operator(op, src, dest)
+
+@add_properties(ScalingOperator, is_inplace, is_diagonal)
 
 ctranspose(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
 
@@ -128,14 +121,11 @@ struct ZeroOperator{T} <: DictionaryOperator{T}
     dest    ::  Dictionary
 end
 
-ZeroOperator(src::Dictionary, dest::Dictionary = src) = ZeroOperator(op_eltype(src, dest), src, dest)
+ZeroOperator(src::Dictionary, dest::Dictionary = src) = ZeroOperator{op_eltype(src, dest)}(src, dest)
 
-function ZeroOperator(::Type{T}, src::Dictionary, dest::Dictionary) where {T}
-    ZeroOperator{T}(src, dest)
-end
+similar_operator(op::ZeroOperator, src, dest) = ZeroOperator(src, dest)
 
-similar_operator(op::ZeroOperator, ::Type{S}, src, dest) where {S} =
-    ZeroOperator(S, src, dest)
+unsafe_wrap_operator(src, dest, op::ZeroOperator) = similar_operator(op, src, dest)
 
 # We can only be in-place if the numbers of coefficients of src and dest match
 is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
@@ -146,54 +136,54 @@ ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
 
 matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
-apply_inplace!(op::ZeroOperator, coef_srcdest) = (fill!(coef_srcdest, zero(eltype(op))); coef_srcdest)
+function apply_inplace!(op::ZeroOperator, coef_srcdest)
+    fill!(coef_srcdest, 0)
+    coef_srcdest
+end
 
-apply!(op::ZeroOperator, coef_dest, coef_src) = (fill!(coef_dest, zero(eltype(op))); coef_dest)
+function apply!(op::ZeroOperator, coef_dest, coef_src)
+    fill!(coef_dest, 0)
+    coef_dest
+end
 
 diagonal(op::ZeroOperator) = zeros(eltype(op), min(length(src(op)), length(dest(op))))
 
 unsafe_diagonal(op::ZeroOperator, i) = zero(eltype(op))
 
-unsafe_getindex{T}(op::ZeroOperator{T}, i, j) = zero(eltype(op))
+unsafe_getindex(op::ZeroOperator, i, j) = zero(eltype(op))
 
 
 
-
-
-"""
-A diagonal operator is represented by a diagonal matrix.
-
-Several other operators can be converted into a diagonal matrix, and this
-conversion happens automatically when such operators are combined into a composite
-operator.
-"""
+"A diagonal operator is represented by a diagonal matrix."
 struct DiagonalOperator{T} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
-    # We store the diagonal in a vector
-    diagonal    ::  Vector{T}
+    diagonal    ::  Vector{T}    # We store the diagonal in a vector
+
+    function DiagonalOperator{T}(src, dest, diagonal) where T
+        @assert length(src) == length(dest)
+        new(src, dest, diagonal)
+    end
 end
+
+DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::Vector) =
+    DiagonalOperator{op_eltype(src,dest)}(src, dest, diagonal)
+
+DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector) =
+    DiagonalOperator(src, dest, collect(diagonal))
+
+DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(src, src, diagonal)
 
 DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
     DiagonalOperator(DiscreteVectorDictionary{T}(length(diagonal)), diagonal)
 
-DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(eltype(diagonal), src, src, diagonal)
+similar_operator(op::DiagonalOperator, src, dest) = DiagonalOperator(src, dest, diagonal(op))
 
-# Intercept the default constructor
-DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector{T}) where {T} = DiagonalOperator(T, src, dest, diagonal)
+unsafe_wrap_operator(src, dest, op::DiagonalOperator) = similar_operator(op, src, dest)
 
-function DiagonalOperator(::Type{T}, src::Dictionary, dest::Dictionary, diagonal) where {T}
-    T1 = promote_type(coeftype(src),coeftype(dest))
-    DiagonalOperator{T1}(src, dest, convert(Vector{T1}, diagonal))
-end
-
-similar_operator(op::DiagonalOperator, ::Type{S}, src, dest) where {S} =
-    DiagonalOperator(S, src, dest, diagonal(op))
+@add_properties(DiagonalOperator, is_inplace, is_diagonal)
 
 diagonal(op::DiagonalOperator) = copy(op.diagonal)
-
-is_inplace(::DiagonalOperator) = true
-is_diagonal(::DiagonalOperator) = true
 
 inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
 
@@ -231,33 +221,27 @@ matrix(op::DiagonalOperator) = diagm(diagonal(op))
 
 ## PROMOTION RULES
 
-promote_rule(::Type{IdentityOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = IdentityOperator{promote_type(S,T)}
-promote_rule(::Type{ScalingOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
-promote_rule(::Type{DiagonalOperator{S}}, ::Type{IdentityOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{T}}, ::Type{IdentityOperator{T}}) where T = ScalingOperator{T}
+promote_rule(::Type{DiagonalOperator{T}}, ::Type{IdentityOperator{T}}) where T = DiagonalOperator{T}
 
-promote_rule(::Type{ScalingOperator{S}}, ::Type{ScalingOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
-promote_rule(::Type{DiagonalOperator{S}}, ::Type{ScalingOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{T}}, ::Type{ScalingOperator{T}}) where T = ScalingOperator{T}
+promote_rule(::Type{DiagonalOperator{T}}, ::Type{ScalingOperator{T}}) where T = DiagonalOperator{T}
 
-promote_rule(::Type{ScalingOperator{S}}, ::Type{ZeroOperator{T}}) where {S,T} = ScalingOperator{promote_type(S,T)}
-promote_rule(::Type{DiagonalOperator{S}}, ::Type{ZeroOperator{T}}) where {S,T} = DiagonalOperator{promote_type(S,T)}
+promote_rule(::Type{ScalingOperator{T}}, ::Type{ZeroOperator{T}}) where T = ScalingOperator{T}
+promote_rule(::Type{DiagonalOperator{T}}, ::Type{ZeroOperator{T}}) where T = DiagonalOperator{T}
 
 ## CONVERSIONS
 
-convert(::Type{IdentityOperator{S}}, op::IdentityOperator{T}) where {S,T} = promote_eltype(op, S)
-convert(::Type{ScalingOperator{S}}, op::IdentityOperator{T}) where {S,T} =
-    ScalingOperator(src(op), dest(op), one(S))
-convert(::Type{DiagonalOperator{S}}, op::IdentityOperator{T}) where {S,T} =
-    DiagonalOperator(src(op), dest(op), ones(S, length(src(op))))
+convert(::Type{ScalingOperator{T}}, op::IdentityOperator{T}) where T =
+    ScalingOperator(src(op), dest(op), one(T))
+convert(::Type{DiagonalOperator{T}}, op::IdentityOperator{T}) where T =
+    DiagonalOperator(src(op), dest(op), ones(T, length(src(op))))
 
-convert(::Type{ScalingOperator{S}}, op::ScalingOperator{T}) where {S,T} = promote_eltype(op, S)
-convert(::Type{DiagonalOperator{S}}, op::ScalingOperator{T}) where {S,T} =
-    DiagonalOperator(src(op), dest(op), S(scalar(op))*ones(S,length(src(op))))
+convert(::Type{DiagonalOperator{T}}, op::ScalingOperator{T}) where T =
+    DiagonalOperator(src(op), dest(op), T(scalar(op))*ones(T,length(src(op))))
 
-convert(::Type{ZeroOperator{S}}, op::ZeroOperator{T}) where {S,T} = promote_eltype(op, S)
-convert(::Type{DiagonalOperator{S}}, op::ZeroOperator{T}) where {S,T} =
-    DiagonalOperator(src(op), dest(op), zeros(S, length(src(op))))
-
-convert(::Type{DiagonalOperator{S}}, op::DiagonalOperator{T}) where {S,T} = promote_eltype(op, S)
+convert(::Type{DiagonalOperator{T}}, op::ZeroOperator{T}) where T =
+    DiagonalOperator(src(op), dest(op), zeros(T, length(src(op))))
 
 
 ## SIMPLIFICATIONS
@@ -286,95 +270,10 @@ simplify(op1::DictionaryOperator, op2::ZeroOperator) = (op2,)
 
 
 
-(*)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) .* diagonal(op2))
-(*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) * diagonal(op2))
+(*)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op2), dest(op1), diagonal(op1) .* diagonal(op2))
+(*)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op2), dest(op1), scalar(op1) * diagonal(op2))
 (*)(op2::DiagonalOperator, op1::ScalingOperator) = op1 * op2
 
 (+)(op1::DiagonalOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), diagonal(op1) + diagonal(op2))
 (+)(op1::ScalingOperator, op2::DiagonalOperator) = DiagonalOperator(src(op1), dest(op1), scalar(op1) +  diagonal(op2))
 (+)(op2::DiagonalOperator, op1::ScalingOperator) = op1 + op2
-
-
-# """
-# A ComplexifyOperator converts real numbers to their complex counterparts.
-#
-# A ComplexifyOperator applied to a complex basis is simplified to the IdentityOperator.
-# """
-# struct ComplexifyOperator{T} <: DictionaryOperator{T}
-#     src   ::  Dictionary
-#     dest  ::  Dictionary
-#
-#     function ComplexifyOperator{T}(src, dest) where T
-#         @assert length(src) == length(dest)
-#         @assert complex(eltype(src)) == eltype(dest)
-#         new(src, dest)
-#     end
-# end
-#
-# ComplexifyOperator(src::Dictionary, dest::Dictionary) = ComplexifyOperator(op_eltype(src, dest), src, dest)
-#
-# function ComplexifyOperator(::Type{T}, src::Dictionary, dest::Dictionary) = ComplexifyOperator{T}(src, dest)
-#     S, D, A = op_eltypes(src, dest, T)
-#     ComplexifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
-# end
-#
-# similar_operator(::ComplexifyOperator, ::Type{S}, src::Dictionary, dest::Dictionary) = ComplexifyOperator(S, src, dest)
-#
-# inv(op::ComplexifyOperator) = RealifyOperator(dest(op), src(op))
-#
-# is_diagonal(::ComplexifyOperator) = true
-#
-# ctranspose(op::ComplexifyOperator) = inv(op)
-#
-# function apply!(op::ComplexifyOperator, coef_dest, coef_src)
-#     for i in eachindex(coef_src)
-#         coef_dest[i] = complex(coef_src[i])
-#     end
-# end
-#
-
-## A RealifyOperator is problematic because it is not a linear operator.
-#
-# """
-# A RealifyOperator converts complex numbers to their real counterparts.
-#
-# If the complex numbers should have no significant imaginary part.
-# A RealifyOperator applied to a real basis is simplified to the IdentityOperator.
-# """
-# struct RealifyOperator{T} <: DictionaryOperator{T}
-#     src   ::  Dictionary
-#     dest  ::  Dictionary
-#
-#     function RealifyOperator{T}(src, dest) where T
-#         @assert length(src) == length(dest)
-#         @assert real(eltype(src)) == eltype(dest)
-#         new(src, dest)
-#     end
-# end
-#
-# RealifyOperator(src::Dictionary, dest::Dictionary) = RealifyOperator(op_eltype(src, dest), src, dest)
-#
-# function RealifyOperator(::Type{T}, src::Dictionary, dest::Dictionary) = RealifyOperator{T}(src, dest)
-#     S, D, A = op_eltypes(src, dest, T)
-#     RealifyOperator{A}(promote_coeftype(src, S), promote_coeftype(dest, D))
-# end
-#
-# similar_operator(::RealifyOperator, ::Type{S}, src::Dictionary, dest::Dictionary) = RealifyOperator(S, src, dest)
-#
-#
-# inv(op::RealifyOperator) = ComplexifyOperator(dest(op), src(op))
-#
-# is_diagonal(::RealifyOperator) = true
-#
-# ctranspose(op::RealifyOperator) = inv(op)
-#
-# function apply!(op::RealifyOperator, coef_dest, coef_src)
-#     exact = true
-#     for i in eachindex(coef_src)
-#         coef_dest[i] = real(coef_src[i])
-#         if !(abs(imag(coef_src[i]))<sqrt(eps(real(eltype(op)))))
-#             exact =  false
-#         end
-#     end
-#     !exact && (warn("Realify operator can not realify exactly."))
-# end

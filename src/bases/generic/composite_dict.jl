@@ -32,7 +32,7 @@ numelements(set::CompositeDict) = length(elements(set))
 # to create a new set of the same type as the given set.
 element(set::CompositeDict, range::Range) = similar_dictionary(set, set.dicts[range])
 
-tail(set::CompositeDict) = nb_elements(set) == 2 ? element(set, 2) : element(set, 2:nb_elements(set))
+tail(set::CompositeDict) = numelements(set) == 2 ? element(set, 2) : element(set, 2:numelements(set))
 
 # We compute offsets of the individual dicts using a cumulative sum
 compute_offsets(dicts::Array) = [0; cumsum(map(length, dicts))]
@@ -122,7 +122,7 @@ extension_size(set::CompositeDict) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
     @eval $op(s1::CompositeDict, s2::CompositeDict; options...) =
-        BlockDiagonalOperator( DictionaryOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator( DictionaryOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
 end
 
 # Calling and evaluation

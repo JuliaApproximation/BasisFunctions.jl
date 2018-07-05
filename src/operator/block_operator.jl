@@ -128,9 +128,9 @@ function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_sr
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::MultiArray, scratch_src, scratch_dest)
-    for m in 1:nb_elements(coef_dest)
+    for m in 1:numelements(coef_dest)
         fill!(element(coef_dest, m), 0)
-        for n in 1:nb_elements(coef_src)
+        for n in 1:numelements(coef_src)
             apply_block_element!(element(op, m, n), element(coef_dest, m),
                 element(coef_src,n), element(op.scratch_dest, m))
         end
@@ -147,7 +147,7 @@ end
 
 function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::MultiArray, scratch_src, scratch_dest)
     fill!(coef_dest, 0)
-    for n in 1:nb_elements(coef_src)
+    for n in 1:numelements(coef_src)
         apply!(op.operators[1,n], scratch_dest, element(coef_src,n))
         for i in eachindex(coef_dest)
             coef_dest[i] += scratch_dest[i]
@@ -161,7 +161,7 @@ function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::AbstractVect
 end
 
 function apply_columnoperator!(op::BlockOperator, coef_dest::MultiArray, coef_src, scratch_src, scratch_dest)
-    for m in 1:nb_elements(coef_dest)
+    for m in 1:numelements(coef_dest)
         apply!(op.operators[m,1], element(coef_dest, m), coef_src)
     end
 end
@@ -208,7 +208,7 @@ elements(op::BlockDiagonalOperator) = op.operators
 is_composite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
-    ops = Array(DictionaryOperator{eltype(op)}, nb_elements(op), nb_elements(op))
+    ops = Array(DictionaryOperator{eltype(op)}, numelements(op), numelements(op))
     n = length(op.operators)
     for i in 1:n,j in 1:n
         ops[i,j] = element(op, i, j)
@@ -263,7 +263,7 @@ apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Array{T,1}) w
     apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
 
 function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::MultiArray)
-    for i in 1:nb_elements(coef_src)
+    for i in 1:numelements(coef_src)
         apply!(op.operators[i], element(coef_dest, i), element(coef_src, i))
     end
     coef_dest

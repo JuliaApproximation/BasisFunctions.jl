@@ -115,9 +115,9 @@ evaluation_operator(s::PiecewiseDict, dgs::GridBasis; options...) =
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
-        @assert nb_elements(s1) == nb_elements(s2)
+        @assert numelements(s1) == numelements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
     end
 end
 
@@ -180,12 +180,12 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
     C = eltype(coefficients.arrays)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
-    # Technicalities arise when i is 1 or i equals the nb_elements of the set
+    # Technicalities arise when i is 1 or i equals the numelements of the set
     local dicts, coefs
     old_dicts = elements(set)
     old_coef = elements(coefficients)
     if i > 1
-        if i < nb_elements(set)
+        if i < numelements(set)
             # We retain the old elements before and after the new ones
             dicts = S[old_dicts[1:i-1]..., element(split_set, 1), element(split_set, 2), old_dicts[i+1:end]...]
             coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
@@ -215,5 +215,5 @@ function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.nat
 end
 
 function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(DictionaryOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:nb_elements(s)], s, s)
+    BlockDiagonalOperator(DictionaryOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
 end

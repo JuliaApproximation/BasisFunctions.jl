@@ -83,26 +83,15 @@ function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x)
     arg * cos(arg * x)
 end
 
-function apply!(op::Extension, dest::SineSeries, src::SineSeries, coef_dest, coef_src)
-    @assert length(dest) > length(src)
-
-    for i = 1:length(src)
-        coef_dest[i] = coef_src[i]
-    end
-    for i = length(src)+1:length(dest)
-        coef_dest[i] = 0
-    end
-    coef_dest
+function extension_operator(s1::SineSeries, s2::SineSeries; options...)
+    @assert length(s2) >= length(s1)
+    IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-
-function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, coef_src)
-    @assert length(dest) < length(src)
-
-    for i = 1:length(dest)
-        coef_dest[i] = coef_src[i]
-    end
-    coef_dest
+function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
+    @assert length(s2) <= length(s1)
+    IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
+
 
 Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coeftype(s))/2)

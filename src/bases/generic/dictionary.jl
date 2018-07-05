@@ -54,7 +54,7 @@ codomaintype(D::Type{Dictionary{S,T}}) where {S,T} = T
 codomaintype(::Type{D}) where {D <: Dictionary} = codomaintype(supertype(D))
 codomaintype(dict::Dictionary{S,T}) where {S,T} = T
 
-"The default type of the expansion coefficients in a dictionary."
+"The type of the expansion coefficients in a dictionary."
 # By default we set it equal to the codomaintype
 coefficient_type(dict::Dictionary) = codomaintype(dict)
 
@@ -123,9 +123,8 @@ function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) 
     promote_domaintype(dict1, S), promote_domaintype(dict2, S)
 end
 
-function promote_eltype(dict::Dictionary, args...)
-    error("Calling promote_eltype on a dictionary is deprecated.")
-end
+promote_domaintype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+    promote_domaintype(promote_domaintype(dict1,dict2), dicts...)
 
 "Promote the domain sub type of the dictionary."
 promote_domainsubtype(d::Dictionary{S,T}, ::Type{U}) where {S<:Number,T,U<:Number} = promote_domaintype(d, U)
@@ -148,6 +147,10 @@ function promote_coefficient_type(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2
     T = promote_type(T1,T2)
     promote_coefficient_type(dict1, T), promote_coefficient_type(dict2, T)
 end
+
+promote_coefficient_type(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+    promote_coefficient_type(promote_coefficient_type(dict1,dict2), dicts...)
+
 
 promote_coeftype = promote_coefficient_type
 
@@ -182,7 +185,6 @@ function rand(dict::Dictionary)
     c
 end
 
-random_expansion(dict::Dictionary) = Expansion(dict,rand(dict))
 
 ###########
 # Indexing
@@ -218,12 +220,6 @@ linear_index(dict::Dictionary, idx) = _linear_index(dict, idx)
 # We can accept an integer unchanged, anything else we pass to the ordering
 _linear_index(dict::Dictionary, idx::LinearIndex) = idx
 _linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
-
-# Convenience: make a vector indexable using native indices, if possible
-# It is possible whenever the size and element type of the vector completely
-# determine the index map from native to linear indices
-getindex(v::Array, idxn::NativeIndex) =
-	getindex(v, linear_index(idxn, size(v), eltype(v)))
 
 
 ##################################################
@@ -295,10 +291,10 @@ has_antiderivative(d::Dictionary) = false
 "Does the dictionary have an associated interpolation grid?"
 has_grid(d::Dictionary) = false
 
-"Does the set have a transform associated with some space?"
+"Does the dictionary have a transform associated with some space?"
 has_transform(d1::Dictionary, d2) = false
 
-"Does the set have a transform associated with some space that is unitary"
+"Does the dictionary have a transform associated with some space that is unitary"
 has_unitary_transform(d::Dictionary) = has_transform(d)
 # If a dict has a transform, we assume it is unitary. If it is not,
 # this function has to be over written.
@@ -312,7 +308,7 @@ has_transform(d::Dictionary, grid::AbstractGrid) =
 has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
     (1+(infimum(support(set)) - leftendpoint(grid))≈1) && (1+(supremum(support(set)) - rightendpoint(grid))≈1)
 
-"Does the set support extension and restriction operators?"
+"Does the dictionary support extension and restriction operators?"
 has_extension(d::Dictionary) = false
 
 
@@ -341,7 +337,6 @@ end
 done(d::Dictionary, state) = done(state[1], state[2])
 
 
-tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 
 
 ####################
@@ -375,16 +370,18 @@ support(dict::Dictionary, idx) = support(dict)
 # dictionaries, for example for univariate functions with non-connected support.
 # Make sure to override, and make sure that the overridden version is called.
 
+tolerance(dict::Dictionary) = tolerance(domaintype(dict))
+
 "Does the given point lie inside the support of the given set function or dictionary?"
 in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
 in_support(dict::Dictionary, x) = default_in_support(dict,x)
 default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
 default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))
 
+
 ##############################################
 ## Evaluating set elements and expansions
 ##############################################
-
 
 """
 A member function of a dictionary is evaluated using the `eval_element` routine.

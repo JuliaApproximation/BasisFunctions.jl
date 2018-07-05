@@ -133,7 +133,8 @@ linear_index(idxn::FourierFrequency, size::Tuple{Int}, T) = FFTIndexList(size[1]
 idx2frequency(b::FourierBasis, idx) = frequency(native_index(b, idx))
 frequency2idx(b::FourierBasis, k) = linear_index(b, FourierFrequency(k))
 
-nhalf(b::FourierBasis) = length(b)>>1
+nhalf(b::FourierBasis) = nhalf(length(b))
+nhalf(n::Int) = n>>1
 
 maxfrequency(b::FourierBasis) = nhalf(b)
 minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
@@ -205,13 +206,42 @@ function shift(b::FourierBasis, coefficients, delta)
 	coef2
 end
 
-function apply!(op::Extension, dest::FourierBasis, src::FourierBasis, coef_dest, coef_src)
+############################
+# Extension and restriction
+############################
+
+# We make special-purpose operators for the extension of a Fourier series,
+# since we have to add zeros in the middle of the given Fourier coefficients.
+# This can not be achieved with a single IndexExtensionOperator.
+# It could be a composition of two, but this special case is widespread and hence
+# we make it more efficient.
+struct FourierIndexExtensionOperator{T} <: DictionaryOperator{T}
+	src		::	Dictionary
+	dest	::	Dictionary
+	n1		::	Int
+	n2		::	Int
+end
+
+FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest)) =
+	FourierIndexExtensionOperator{op_eltype(src,dest)}(src, dest, n1, n2)
+
+string(op::FourierIndexExtensionOperator) = "Fourier series extension from length $(op.n1) to length $(op.n2)"
+
+wrap_operator(src, dest, op::FourierIndexExtensionOperator{T}) where T =
+	FourierIndexExtensionOperator{T}(src, dest, op.n1, op.n2)
+
+function extension_operator(b1::FourierBasis, b2::FourierBasis; options...)
+	@assert length(b1) <= length(b2)
+	FourierIndexExtensionOperator(b1, b2)
+end
+
+function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
 	## @assert length(dest) > length(src)
 
-	nh = nhalf(src)
+	nh = nhalf(length(coef_src))
 	# We have to distinguish between even and odd length Fourier series
 	# because the memory layout is slightly different
-	if evenlength(src)
+	if iseven(length(coef_src))
 		for i = 0:nh-1
 			coef_dest[i+1] = coef_src[i+1]
 		end
@@ -238,11 +268,32 @@ function apply!(op::Extension, dest::FourierBasis, src::FourierBasis, coef_dest,
 end
 
 
-function apply!(op::Restriction, dest::FourierBasis, src::FourierBasis, coef_dest, coef_src)
+struct FourierIndexRestrictionOperator{T} <: DictionaryOperator{T}
+	src		::	Dictionary
+	dest	::	Dictionary
+	n1		::	Int
+	n2		::	Int
+end
+
+FourierIndexRestrictionOperator(src, dest, n1 = length(src), n2 = length(dest)) =
+	FourierIndexRestrictionOperator{op_eltype(src,dest)}(src, dest, n1, n2)
+
+string(op::FourierIndexRestrictionOperator) = "Fourier series restriction from length $(op.n1) to length $(op.n2)"
+
+wrap_operator(src, dest, op::FourierIndexRestrictionOperator{T}) where T =
+	FourierIndexRestrictionOperator{T}(src, dest, op.n1, op.n2)
+
+function restriction_operator(b1::FourierBasis, b2::FourierBasis; options...)
+	@assert length(b1) >= length(b2)
+	FourierIndexRestrictionOperator(b1, b2)
+end
+
+
+function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 	## @assert length(dest) < length(src)
 
-	nh = nhalf(dest)
-	if oddlength(dest)
+	nh = nhalf(length(coef_dest))
+	if isodd(length(coef_dest))
 		for i = 0:nh
 			coef_dest[i+1] = coef_src[i+1]
 		end
@@ -260,6 +311,16 @@ function apply!(op::Restriction, dest::FourierBasis, src::FourierBasis, coef_des
 	end
 	coef_dest
 end
+
+is_diagonal(::FourierIndexExtensionOperator) = true
+is_diagonal(::FourierIndexRestrictionOperator) = true
+
+ctranspose(op::FourierIndexExtensionOperator{T}) where {T} =
+	FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
+
+ctranspose(op::FourierIndexRestrictionOperator{T}) where {T} =
+	FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)
+
 
 function derivative_dict(s::FourierBasis, order; options...)
 	if oddlength(s)

@@ -32,7 +32,7 @@ is_composite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::Range) = tensorproduct(dict.dicts[range]...)
-nb_elements(dict::TensorProductDict{N}) where {N} = N
+numelements(dict::TensorProductDict{N}) where {N} = N
 
 tolerance(dict::TensorProductDict)=minimum(map(tolerance,elements(dict)))
 
@@ -169,7 +169,7 @@ function approx_length(s::TensorProductDict, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
     N = dimension(s)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(element(s, j), m^dimension(s, j)) for j in 1:nb_elements(s)]...)
+    tuple([approx_length(element(s, j), m^dimension(s, j)) for j in 1:numelements(s)]...)
 end
 
 extension_size(s::TensorProductDict) = map(extension_size, elements(s))
@@ -181,20 +181,20 @@ names(s1::Dictionary) = " x " * name(s1)
 names(s1::Dictionary, s::Dictionary...) = " x " * name(s1) * names(s...)
 
 
-getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert nb_elements(s)==2; element(s,1))
-getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert nb_elements(s)==2; element(s,2))
-getindex(s::TensorProductDict, ::Colon, ::Colon) = (@assert nb_elements(s)==2; s)
+getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
+getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert numelements(s)==2; element(s,2))
+getindex(s::TensorProductDict, ::Colon, ::Colon) = (@assert numelements(s)==2; s)
 
-getindex(s::TensorProductDict, ::Colon, i::Int, j::Int) = (@assert nb_elements(s)==3; element(s,1))
-getindex(s::TensorProductDict, i::Int, ::Colon, j::Int) = (@assert nb_elements(s)==3; element(s,2))
-getindex(s::TensorProductDict, i::Int, j::Int, ::Colon) = (@assert nb_elements(s)==3; element(s,3))
+getindex(s::TensorProductDict, ::Colon, i::Int, j::Int) = (@assert numelements(s)==3; element(s,1))
+getindex(s::TensorProductDict, i::Int, ::Colon, j::Int) = (@assert numelements(s)==3; element(s,2))
+getindex(s::TensorProductDict, i::Int, j::Int, ::Colon) = (@assert numelements(s)==3; element(s,3))
 getindex(s::TensorProductDict, ::Colon, ::Colon, i::Int) =
-    (@assert nb_elements(s)==3; TensorProductDict(element(s,1),element(s,2)))
+    (@assert numelements(s)==3; TensorProductDict(element(s,1),element(s,2)))
 getindex(s::TensorProductDict, ::Colon, i::Int, ::Colon) =
-    (@assert nb_elements(s)==3; TensorProductDict(element(s,1),element(s,3)))
+    (@assert numelements(s)==3; TensorProductDict(element(s,1),element(s,3)))
 getindex(s::TensorProductDict, i::Int, ::Colon, ::Colon) =
-    (@assert nb_elements(s)==3; TensorProductDict(element(s,2),element(s,3)))
-getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert nb_elements(s)==3; s)
+    (@assert numelements(s)==3; TensorProductDict(element(s,2),element(s,3)))
+getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements(s)==3; s)
 
 
 grid(s::TensorProductDict) = ProductGrid(map(grid, elements(s))...)
@@ -203,12 +203,12 @@ grid(s::TensorProductDict) = ProductGrid(map(grid, elements(s))...)
 # In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.
 # The methods below follow this convention.
 #left(s::TensorProductDict) = SVector(map(left, elements(s)))
-# left(s::TensorProductDict, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
+# left(s::TensorProductDict, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:numelements(s)])
 #left(b::TensorProductDict, idx::Int, j) = left(b, multilinear_index(b,j), j)
 #left(b::TensorProductDict, idxt::NTuple, j) = left(b.dicts[j], idxt[j])
 
 #right(s::TensorProductDict) = SVector(map(right, elements(s)))
-# right{DT,N,T}(s::TensorProductDict{DT,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:nb_elements(s)])
+# right{DT,N,T}(s::TensorProductDict{DT,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:numelements(s)])
 #right(b::TensorProductDict, j::Int) = right(element(b,j))
 #right(b::TensorProductDict, idx::Int, j) = right(b, multilinear_index(b,j), j)
 #right(b::TensorProductDict, idxt::NTuple, j) = right(b.dicts[j], idxt[j])
