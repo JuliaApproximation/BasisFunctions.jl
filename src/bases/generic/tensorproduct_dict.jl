@@ -148,6 +148,9 @@ resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 in_support(dict::TensorProductDict, idx, x) =
     _in_support(dict, elements(dict), idx, x)
 
+in_support(dict::TensorProductDict, idx::Int, x) =
+    in_support(dict, native_index(dict, idx), x)
+
 # This line is a bit slower than the lines below:
 _in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
 
@@ -223,7 +226,7 @@ support(s::TensorProductDict, idx::ProductIndex) = cartesianproduct(map(support,
 # We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
 # unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
-unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), idx, x)
+unsafe_eval_element(set::TensorProductDict, idx::ProductIndex, x) = _unsafe_eval_element(set, elements(set), idx, x)
 
 # We assume that x has exactly as many components as the index i does
 # We can call unsafe_eval_element on the subsets because we have already done bounds checking
