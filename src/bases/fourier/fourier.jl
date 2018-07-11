@@ -333,31 +333,54 @@ function derivative_dict(s::FourierBasis, order; options...)
 end
 
 # Both differentiation and antidifferentiation are diagonal operations
-function diff_scaling_function(b::FourierBasis, idx, f)
+function diff_scaling_function(b::FourierBasis, idx, symbol)
 	T = domaintype(b)
 	k = idx2frequency(b,idx)
-	f(2 * T(pi) * im * k)
+	symbol(2 * T(pi) * im * k)
 end
 
 diff_scaling_function(b::FourierBasis, idx, order::Int) = diff_scaling_function(b,idx,x->x^order)
 
-function antidiff_scaling_function(b::FourierBasis, idx, order)
+function antidiff_scaling_function(b::FourierBasis, idx, order::Int)
 	T = domaintype(b)
 	k = idx2frequency(b, idx)
 	k==0 ? Complex{T}(0) : 1 / (k * 2 * T(pi) * im)^order
 end
 
+differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Int; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
 
-differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Real; options...) where {T} = differentiation_operator(s1,s2,x->x^order; options...)
+pseudodifferential_operator(s::FourierBasis, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 
-function differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, f; options...) where {T}
+function pseudodifferential_operator(s1::FourierBasis{T},s2::FourierBasis{T}, symbol::Function; options...) where {T}
 	if isodd(length(s1))
 		@assert s1 == s2
-		DiagonalOperator(s1, [diff_scaling_function(s1, idx, f) for idx in eachindex(s1)])
-	else
-		differentiation_operator(s2, s2, f; options...) * extension_operator(s1, s2; options...)
+		_pseudodifferential_operator(s2, symbol; options...)
+	else # The internal representation of Fourier is not closed under differentiation unless it is odd order
+		_pseudodifferential_operator(s2, symbol; options...) * extension_operator(s1, s2; options...)
 	end
 end
+
+_pseudodifferential_operator(s::FourierBasis{T}, symbol::Function; options...) where {T} = DiagonalOperator(s, [diff_scaling_function(s, idx, symbol) for idx in eachindex(s)])
+
+pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
+
+function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; options...)
+	#@assert length(first(methods(symbol)).sig.parameters) = dimension(s1) + 1
+	@assert s1 == s2 # There is currently no support for s1 != s2
+	# Build a vector of the first order differential operators in each spatial direction:
+	Diffs = map(differentiation_operator,elements(s1))
+	@assert is_diagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
+	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
+	N = prod(size(s1))
+	diag = zeros(N)
+	for k = 1:N
+		vec = [diagonal(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
+		diag[k] = symbol(vec)
+	end
+	DiagonalOperator(s1,diag)
+end
+
+
 
 function transform_from_grid(src, dest::FourierBasis, grid; options...)
 	@assert compatible_grid(dest, grid)

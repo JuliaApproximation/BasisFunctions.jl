@@ -89,3 +89,23 @@ function antidifferentiation_operator(s1::Dictionary, order; options...)
     s2 = antiderivative_dict(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
 end
+
+"""
+The pseudodifferential_operator function returns an operator representing a function of the
+derivative operator.
+"""
+struct PseudodifferentialOperator{SRC <: Dictionary,DEST <: Dictionary, T} <: DictionaryOperator{T}
+    src     ::  SRC
+    dest    ::  DEST
+    symbol  ::  Function
+end
+
+PseudodifferentialOperator(src::Dictionary, dest::Dictionary, symbol::Function) =
+    PseudodifferentialOperator{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, symbol)
+
+symbol(op::PseudodifferentialOperator) = op.symbol
+
+function pseudodifferential_operator(s1::Dictionary, s2::Dictionary, symbol::Function; options...)
+    @assert has_derivative(s1)
+    PseudodifferentialOperator(s1, s2, symbol)
+end
