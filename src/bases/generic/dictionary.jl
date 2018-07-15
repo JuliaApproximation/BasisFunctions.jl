@@ -374,7 +374,13 @@ tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 
 "Does the given point lie inside the support of the given set function or dictionary?"
 in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
-in_support(dict::Dictionary, x) = default_in_support(dict,x)
+in_support(dict::Dictionary, x) = default_in_support(dict, x)
+
+# Add a fallback for linear indices, convert to native index so that it is sufficient
+# for dictionaries to implement native indices
+in_support(dict::Dictionary, idx::LinearIndex, x) =
+    in_support(dict, native_index(dict, idx), x)
+
 default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
 default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))
 
