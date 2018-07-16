@@ -89,7 +89,7 @@ for op in [:moment, :norm]
     @eval $op(d::Subdictionary, i) = $op(superdict(d), superindices(d, i))
 end
 
-in_support(d::Subdictionary, i, x) = in_support(superdict(d), superindices(d, i), x)
+in_support(d::Subdictionary, i::LinearIndex, x) = in_support(superdict(d), superindices(d, i), x)
 
 unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), superindices(d, i), x)
 

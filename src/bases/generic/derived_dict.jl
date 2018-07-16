@@ -85,7 +85,7 @@ approx_length(s::DerivedDict, n::Int) = approx_length(superdict(s), n)
 apply_map(s::DerivedDict, map) = similar_dictionary(s, apply_map(superdict(s), map))
 
 in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
-
+in_support(set::DerivedDict, i::LinearIndex, x) = in_support(superdict(set), i, x)
 
 #########################
 # Indexing and iteration

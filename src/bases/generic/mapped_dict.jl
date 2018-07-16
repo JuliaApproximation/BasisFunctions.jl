@@ -76,8 +76,17 @@ function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
     end
 end
 
-
 function in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
+    x = apply_left_inverse(mapping(set), y)
+    y1 = applymap(mapping(set), x)
+    if norm(y-y1) < threshold
+        in_support(superdict(set), idx, x)
+    else
+        false
+    end
+end
+
+function in_support(set::MappedDict, idx::LinearIndex, y, threshold = default_threshold(y))
     x = apply_left_inverse(mapping(set), y)
     y1 = applymap(mapping(set), x)
     if norm(y-y1) < threshold

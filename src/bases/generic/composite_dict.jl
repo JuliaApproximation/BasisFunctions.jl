@@ -109,6 +109,7 @@ getindex(set::CompositeDict, i, j) = set.dicts[i][j]
 
 # Translate a linear index into a multilinear index
 in_support(set::CompositeDict, idx, x) = _in_support(set, elements(set), idx, x)
+in_support(set::CompositeDict, idx::LinearIndex, x) = _in_support(set, elements(set), idx, x)
 
 _in_support(set::CompositeDict, dicts, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
 
