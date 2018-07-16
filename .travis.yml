@@ -1,12 +1,6 @@
 language: julia
 julia:
-    - nightly
-    - 0.6
     - 0.6.3
-    
-matrix:
-  include:
-    - julia: "0.6"
 
 notifications:
   email: false
