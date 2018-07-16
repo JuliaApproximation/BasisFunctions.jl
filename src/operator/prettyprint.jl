@@ -8,7 +8,7 @@
 # Delegate to show_operator
 DO_PRETTYPRINTING = true
 try
-    DO_PRETTYPRINTING = !(ENV["LOGNAME"]=="vincentcp")
+    DO_PRETTYPRINTING = !(ENV["LOGNAME"] == "vincentcp")
 end
 if DO_PRETTYPRINTING
     show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
