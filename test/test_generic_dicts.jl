@@ -144,8 +144,7 @@ function test_generic_dict_interface(basis)
             @test in_support(basis, r.+1/10*test_tolerance(ELT))
             @test ~in_support(basis, r.+1)
         end
-        if ~isinf(l) && ~isinf(r) && ~isa(basis,BasisFunctions.PiecewiseDict) &&
-                ~isa(basis,BasisFunctions.WaveletBasis)
+        if ~isinf(l) && ~isinf(r) && ~isa(basis,BasisFunctions.PiecewiseDict)
             @test in_support(basis, 1, 1/2*(l + r))
         end
     end

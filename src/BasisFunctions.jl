@@ -48,19 +48,6 @@ import Base: cross, ×
 
 import Base.LinAlg: dot
 
-import WaveletsCopy.DWT: isdyadic, value, name, support, wavelet, kind
-using WaveletsCopy.DWT: Prl, Dul, Side, filter, Wvl, Scl
-using WaveletsCopy.DWT: EvalPeriodicScratchSpace, evaluate_periodic_in_dyadic_points!, evaluate_periodic_in_dyadic_points, dwt!
-using WaveletsCopy.DWT: _evaluate_periodic_scaling_basis_in_dyadic_points!, SFilterBank, WaveletBoundary, evaluate_in_dyadic_points, idwt!, evaluate_periodic_scaling_basis_in_dyadic_points
-using WaveletsCopy.DWT: WaveletIndex, wavelet_indices, offset, level, wavelet_index, scaling_indices, scaling_value, scaling_index
-using WaveletsCopy.DWT: Primal, Dual, scaling, filter, evaluate_periodic, evaluate_periodic_wavelet_basis_in_dyadic_points
-using WaveletsCopy.DWT: Primal, Dual, scaling, Side, Kind, DiscreteWavelet, full_dwt, full_idwt, perbound, dwt, idwt
-using WaveletsCopy.DWT: DaubechiesWavelet, CDFWavelet
-using WaveletsCopy.Filterbanks: Filterbank
-using WaveletsCopy: Sequences
-using WaveletsCopy.Sequences: CompactSequence, shifted_conv, Sequence, firstindex, lastindex, PeriodicExtension
-using WaveletsCopy: support_length
-
 ## Imports from Domains
 
 import Domains: domaintype, codomaintype, dimension, domain
@@ -307,11 +294,6 @@ export leading_order_coefficient
 # from specialOPS.jl
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
-# # from bases/wavelets/bf_wavelets.jl
-export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis, ScalingBasis
-export scaling_platform
-
-
 export gaussjacobi
 
 
@@ -402,12 +384,6 @@ include("bases/fourier/fouriertransforms.jl")
 include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
-
-################################################################
-# Wavelets
-################################################################
-
-include("bases/wavelets/bf_wavelets.jl")
 
 
 ################################################################
