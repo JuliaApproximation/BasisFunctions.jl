@@ -467,7 +467,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
         if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
-            e = approximate(span, f; discrete=false, reltol=1e-6, abstol=1e-6)
+            e = approximate(span, f; discrete=false, rtol=1e-6, atol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end

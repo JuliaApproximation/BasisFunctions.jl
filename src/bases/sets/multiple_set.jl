@@ -74,7 +74,7 @@ multispan(spans::AbstractArray) = Span(multiset(map(set, spans)), reduce(promote
 ⊕(s1::FunctionSet, s2::FunctionSet) = multiset(s1, s2)
 ⊕(s1::Span, s2::Span) = multispan(s1, s2)
 
-name(s::MultiSet) = "A set consisting of $(nb_elements(s)) sets"
+name(s::MultiSet) = "A set consisting of $(numelements(s)) sets"
 
 for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
     # Redirect the calls to multiple_is_basis with the elements as extra arguments,
@@ -120,7 +120,7 @@ right(set::MultiSet) = maximum(map(right, elements(set)))
 
 resize(s::MultiSet, n::Int) = resize(s, approx_length(s, n))
 
-approx_length(s::MultiSet, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_elements(s))
+approx_length(s::MultiSet, n::Int) = ntuple(t->ceil(Int,n/numelements(s)), numelements(s))
 
 ## Differentiation
 
@@ -132,8 +132,8 @@ approx_length(s::MultiSet, n::Int) = ntuple(t->ceil(Int,n/nb_elements(s)), nb_el
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::MultiSetSpan, s2::MultiSetSpan, order; options...)
-        if nb_elements(s1) == nb_elements(s2)
-            BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:nb_elements(s1)], s1, s2)
+        if numelements(s1) == numelements(s2)
+            BlockDiagonalOperator(AbstractOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
         else
             # We have a situation because the sizes of the multisets don't match.
             # The derivative set may have been a nested multiset that was flattened. This

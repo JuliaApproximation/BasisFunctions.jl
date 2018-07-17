@@ -7,7 +7,7 @@ function elementarypropsofsplinetest(T)
     f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N-1, x, T)
     # Integral should be 1
     if !(T <: BigFloat)
-      I,e = QuadGK.quadgk(f, 0, N, reltol = tol)
+      I,e = QuadGK.quadgk(f, 0, N, rtol = tol)
       @test I≈T(1)
     end
     # Infinite summation of shifted versions is 1
@@ -62,7 +62,7 @@ function test_spline_integration()
     @test BasisFunctions.Cardinal_b_splines.squared_spline_integral(N) == BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,0)
     for t in 0:4
       f = x->BasisFunctions.Cardinal_b_splines.evaluate_Bspline(N,x,T)
-      @test abs(QuadGK.quadgk(x->f(x)*f(x+t),(-N-2:N+2)..., reltol=sqrt(eps(T)))[1]-BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,t))<10*sqrt(eps(T))
+      @test abs(QuadGK.quadgk(x->f(x)*f(x+t),(-N-2:N+2)..., rtol=sqrt(eps(T)))[1]-BasisFunctions.Cardinal_b_splines.shifted_spline_integral(N,t))<10*sqrt(eps(T))
     end
   end
 end

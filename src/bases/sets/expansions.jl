@@ -48,7 +48,7 @@ for op in (:length, :size, :left, :right, :grid)
 end
 
 # Delegation of property methods
-for op in (:numtype, :dimension, :nb_elements)
+for op in (:numtype, :dimension, :numelements)
     @eval $op(s::SetExpansion) = $op(set(s))
 end
 

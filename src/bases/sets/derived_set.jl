@@ -72,7 +72,7 @@ zeros(::Type{T}, s::DerivedSet) where {T} = zeros(T, superset(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :size, :grid, :is_composite, :nb_elements,
+for op in (:length, :extension_size, :size, :grid, :is_composite, :numelements,
     :elements, :tail)
     @eval $op(s::DerivedSet) = $op(superset(s))
 end

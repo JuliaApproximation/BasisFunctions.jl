@@ -42,7 +42,7 @@ rangetype(::Type{CompositeSet{S,T}}) where {S,T} = S
 # to create a new set of the same type as the given set.
 element(set::CompositeSet, range::Range) = similar_set(set, set.sets[range])
 
-tail(set::CompositeSet) = nb_elements(set) == 2 ? element(set, 2) : element(set, 2:nb_elements(set))
+tail(set::CompositeSet) = numelements(set) == 2 ? element(set, 2) : element(set, 2:numelements(set))
 
 # We compute offsets of the individual sets using a cumulative sum
 compute_offsets(sets::Array) = [0; cumsum(map(length, sets))]
@@ -137,7 +137,7 @@ extension_size(set::CompositeSet) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
     @eval $op(s1::CompositeSetSpan, s2::CompositeSetSpan; options...) =
-        BlockDiagonalOperator( AbstractOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:nb_elements(s1)], s1, s2)
+        BlockDiagonalOperator( AbstractOperator{coeftype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
 end
 
 # Calling and evaluation

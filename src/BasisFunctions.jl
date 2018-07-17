@@ -61,7 +61,7 @@ import Domains: interval, leftendpoint, rightendpoint
 import Domains: matrix, vector, tensorproduct
 
 # composite type interface
-import Domains: element, elements, nb_elements
+import Domains: element, elements, numelements
 # cartesian product utility functions
 import Domains: cartesianproduct, ×, product_eltype
 
@@ -77,7 +77,7 @@ export split_interval
 
 # from src/products.jl
 export tensorproduct, ⊗
-export element, elements, nb_elements
+export element, elements, numelements
 
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
