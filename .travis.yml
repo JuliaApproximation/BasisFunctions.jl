@@ -9,12 +9,10 @@ before_install:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 before_script:
   - julia -e 'Pkg.init()'
-  - ./.travis/setup.sh
-script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.build("BasisFunctions")'
-  - julia -e "Pkg.checkout(\"WaveletsCopy\",\"development\")"
-  - julia WaveletsCopy.jl/src/build.jl
+  - ./.travis/setup.sh
+script:
   - julia --check-bounds=yes -e 'Pkg.test("BasisFunctions", coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
