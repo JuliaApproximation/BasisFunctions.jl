@@ -197,7 +197,7 @@ export transform_operator, transform_dict, full_transform_operator,
     transform_operators
 
 # from generic/gram.jl
-export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
+export Gram, DualGram, MixedGram
 export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
 export dual
 
