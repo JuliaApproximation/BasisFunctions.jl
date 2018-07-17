@@ -25,8 +25,6 @@ suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
-#suitable_function(set::PeriodicSplineBasis) =  x -> 1/(10+cos(2*pi*x))
-suitable_function(set::BasisFunctions.PeriodicTranslationDict) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and even symmetric
 suitable_function(set::CosineSeries) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and odd symmetric
@@ -131,7 +129,7 @@ function test_generic_dict_interface(basis)
     # Bounds checking
     # disable periodic splines for now, since sometimes left(basis,idx) is not
     # in_support currently...
-    if (dimension(basis) == 1) && ~isa(basis,BasisFunctions.CompactPeriodicTranslationDict)
+    if (dimension(basis) == 1)
         s = support(basis)
         l = infimum(s)
         r = supremum(s)

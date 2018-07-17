@@ -310,13 +310,7 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 # # from bases/wavelets/bf_wavelets.jl
 export DaubechiesWaveletBasis, CDFWaveletBasis, WaveletIndex, WaveletBasis, DaubechiesScalingBasis, CDFScalingBasis, ScalingBasis
 export scaling_platform
-# from bases/translates/translation_dict.jl
-export CompactPeriodicTranslationDict, dual, discrete_dual
-# from bases/translates/translates_of_bsplines.jl
-export BSplineTranslatesBasis, SymBSplineTranslatesBasis, OrthonormalSplineBasis, DiscreteOrthonormalSplineBasis
-export bspline_platform
 
-export degree, interval
 
 export gaussjacobi
 
@@ -414,14 +408,6 @@ include("bases/fourier/sineseries.jl")
 ################################################################
 
 include("bases/wavelets/bf_wavelets.jl")
-
-################################################################
-# Splines: natural splines, periodic splines, B-splines, ....
-################################################################
-
-
-include("bases/translates/translation_dict.jl")
-include("bases/translates/translates_of_bsplines.jl")
 
 
 ################################################################

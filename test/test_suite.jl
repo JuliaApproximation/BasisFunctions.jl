@@ -26,7 +26,6 @@ include("test_generic_operators.jl")
 include("test_ops.jl")
 include("test_fourier.jl")
 include("test_discrete_sets.jl")
-include("test_bsplinetranslatedbasis.jl")
 include("test_DCTI.jl")
 include("test_gram.jl")
 
@@ -50,8 +49,7 @@ d6 = plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
 
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
-        LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries,
-        BSplineTranslatesBasis, SymBSplineTranslatesBasis]
+        LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 # SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 #         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 
@@ -121,27 +119,10 @@ for T in [Float64,BigFloat,]
     @testset "$(rpad("Orthogonal polynomials",80))" begin
         test_ops(T) end
 
-    @testset "$(rpad("Periodic translate expansions",80))" begin
-        test_generic_periodicbsplinebasis(T) end
-
-    @testset "$(rpad("Translates of B spline expansions",80))" begin
-        test_translatedbsplines(T)
-        test_translatedsymmetricbsplines(T)
-        # test_orthonormalsplinebasis(T)
-        # test_discrete_orthonormalsplinebasis(T)
-        test_dualsplinebasis(T)
-        test_discrete_dualsplinebasis(T)
-        test_bspline_platform(T)
-        test_sparsity_speed(T)
-    end
-
 end # for T in...
 
 delimit("Wavelets")
 include("test_wavelets.jl")
-delimit("Compact approximation")
-include("test_compact_approximation.jl")
-
 
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
