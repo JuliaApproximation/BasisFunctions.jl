@@ -33,13 +33,13 @@ end
 # TODO: what should be the domaintype of the tensor product set?
 function TensorProductSet(sets::FunctionSet...)
     T = product_domaintype(sets...)
-    S = promote_type(map(rangetype, sets)...)
+    S = promote_type(map(codomaintype, sets)...)
     TensorProductSet{typeof(sets),S,T}(sets)
 end
 
-# We almost have to make rangetype a parameter, since it may differ from the rangetypes
+# We almost have to make codomaintype a parameter, since it may differ from the codomaintypes
 # of the individual elements: it is a promoted type
-rangetype(::Type{TensorProductSet{TS,S,T}}) where {TS,S,T} = S
+codomaintype(::Type{TensorProductSet{TS,S,T}}) where {TS,S,T} = S
 
 # We need a more generic definition, but one can't iterate over a tuple type nor index it
 set_promote_domaintype(s::TensorProductSet, ::Type{NTuple{N,T}}) where {N,T} = TensorProductSet(map(x->promote_domaintype(x, T), elements(s))...)

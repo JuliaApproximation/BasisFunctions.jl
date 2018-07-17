@@ -7,7 +7,7 @@
 # Compute the evaluation matrix of the given basis on the given set of points
 # (a grid or any iterable set of points)
 function evaluation_matrix(set::FunctionSet, pts)
-    a = Array{rangetype(set)}(length(pts), length(set))
+    a = Array{codomaintype(set)}(length(pts), length(set))
     evaluation_matrix!(a, set, pts)
 end
 

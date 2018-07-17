@@ -101,7 +101,7 @@ basis_oversampling(set::FunctionSet, sampling_factor::Real) =  sampling_factor
 default_oversampling(b::FunctionSet) = 1
 # E'E/N
 DiscreteGram(s::Span; oversampling = default_oversampling(set(s))) =
-  rangetype(s)(1)/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
+  codomaintype(s)(1)/discrete_gram_scaling(set(s), oversampling)*UnNormalizedGram(s, oversampling)
 
 function UnNormalizedGram(s::Span, oversampling = 1)
     grid = oversampled_grid(set(s), oversampling)
@@ -133,7 +133,7 @@ dual(span::Span, ::Type{Val{false}}; options...) = Span(dual(set(span); options.
 The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
 """
 function Gram(src::Span, dest::Span; options...)
-    A = zeros(rangetype(src, dest),length(dest),length(src))*NaN
+    A = zeros(codomaintype(src, dest),length(dest),length(src))*NaN
     grammatrix!(A, src, dest; options...)
     MatrixOperator(src, dest, A)
 end

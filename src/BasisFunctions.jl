@@ -54,7 +54,7 @@ import Base.LinAlg: dot
 
 ## Imports from Domains
 
-import Domains: domaintype, rangetype, dimension
+import Domains: domaintype, codomaintype, dimension
 # For intervals
 import Domains: interval, leftendpoint, rightendpoint
 # For maps
@@ -106,7 +106,7 @@ export DimensionOperator, dimension_operator
 
 # from bases/sets/functionset.jl
 export FunctionSet, FunctionSet1d, FunctionSet2d, FunctionSet3d
-export domaintype, rangetype, coefficient_type
+export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support
 export eval_expansion, eval_set_element, eval_element, eval_set_element_derivative,

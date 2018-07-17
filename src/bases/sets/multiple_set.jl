@@ -30,14 +30,14 @@ function MultiSet(sets, S, T)
     for set in sets
         # Is this the right check here?
         @assert promote_type(domaintype(set), T) == T
-        @assert promote_type(rangetype(set), S) == S
+        @assert promote_type(codomaintype(set), S) == S
     end
     MultiSet{typeof(sets),S,T}(sets)
 end
 
 function MultiSet(sets)
     T = reduce(promote_type, map(domaintype, sets))
-    S = reduce(promote_type, map(rangetype, sets))
+    S = reduce(promote_type, map(codomaintype, sets))
     MultiSet(map(s->promote_domaintype(s,T), sets), S, T)
 end
 

@@ -86,7 +86,7 @@ functions and with the initial value implemented with the `p0` function.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
 function recurrence_eval(b::OPS, idx::Int, x)
-	T = rangetype(b)
+	T = codomaintype(b)
     z0 = T(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
 
@@ -152,7 +152,7 @@ Evaluate the derivative of an orthogonal polynomial, based on taking the
 derivative of the three-term recurrence relation (see `recurrence_eval`).
 """
 function recurrence_eval_derivative(b::OPS, idx::Int, x)
-	T = rangetype(b)
+	T = codomaintype(b)
     z0 = one(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
     z0_d = zero(T)
@@ -190,7 +190,7 @@ The result is a vector with indices starting at `1` (such that `α_n` above is
 given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 """
 function monic_recurrence_coefficients(b::OPS)
-    T = rangetype(b)
+    T = codomaintype(b)
     # n is the maximal degree polynomial
     n = length(b)
     α = zeros(T, n)
@@ -254,7 +254,7 @@ function monic_recurrence_eval(α, β, idx, x)
 end
 
 function symmetric_jacobi_matrix(b::OPS)
-    T = rangetype(b)
+    T = codomaintype(b)
     n = length(b)
     α, β = monic_recurrence_coefficients(b)
     J = zeros(T, n, n)

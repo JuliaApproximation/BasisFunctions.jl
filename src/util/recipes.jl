@@ -26,8 +26,8 @@ end
     title --> "Error"
     legend --> false
     yscale --> :log10
-    ylims --> [.1eps(real(rangetype(S))),Inf]
-    vals[vals.==0] = eps(real(rangetype(S)))^2
+    ylims --> [.1eps(real(codomaintype(S))),Inf]
+    vals[vals.==0] = eps(real(codomaintype(S)))^2
     # yaxis --> (:log10, (,Inf))
     grid, vals
 end

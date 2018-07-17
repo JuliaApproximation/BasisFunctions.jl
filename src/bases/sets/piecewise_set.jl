@@ -27,7 +27,7 @@ end
 # Make a PiecewiseSet from a list of sets and a given partition
 function PiecewiseSet(sets, partition::Partition)
     T = reduce(promote_type, map(domaintype, sets))
-    S = reduce(promote_type, map(rangetype, sets))
+    S = reduce(promote_type, map(codomaintype, sets))
     # Make sure that the sets are an indexable list of FunctionSet's
     @assert indexable_set(sets, FunctionSet)
     # TODO: We should check that the supports of the sets match the partition pieces

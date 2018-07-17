@@ -71,7 +71,7 @@ end
 
 
 function test_ops_generic(ops)
-    T = rangetype(ops)
+    T = codomaintype(ops)
     tol = test_tolerance(T)
 
     x = fixed_point_in_domain(ops)
@@ -87,7 +87,7 @@ function test_ops_generic(ops)
     d2 = recurrence_eval_derivative(ops, length(ops), x)
     @test abs(d1-d2) < tol
 
-    if rangetype(ops) == Float64
+    if codomaintype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
         r = roots(ops)
         @test maximum(abs.(eval_element.(ops, length(ops)+1, r))) < 100tol

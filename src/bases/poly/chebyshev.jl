@@ -87,7 +87,7 @@ end
 # eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
 function eval_element_derivative(b::ChebyshevBasis, idx::Int, x)
-    T = rangetype(b)
+    T = codomaintype(b)
     if idx == 1
         T(0)
     else

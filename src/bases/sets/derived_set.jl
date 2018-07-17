@@ -43,7 +43,7 @@ resize(s::DerivedSet, n::Tuple{Int}) = resize(s, n[1])
 set_promote_domaintype(s::DerivedSet{T}, ::Type{S}) where {T,S} =
     similar_set(s, promote_domaintype(superset(s), S))
 
-for op in (:rangetype, :coefficient_type)
+for op in (:codomaintype, :coefficient_type)
     @eval $op(s::DerivedSet) = $op(superset(s))
 end
 

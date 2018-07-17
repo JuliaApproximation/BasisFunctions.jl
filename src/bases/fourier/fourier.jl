@@ -49,8 +49,8 @@ set_promote_domaintype(b::FourierBasis{EVEN,T}, ::Type{S}) where {EVEN,T,S} = Fo
 
 resize(b::FourierBasis, n) = FourierBasis(n, domaintype(b))
 
-# The rangetype of a Fourier series is complex
-rangetype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T} = Complex{T}
+# The codomaintype of a Fourier series is complex
+codomaintype(::Type{FourierBasis{EVEN,T}}) where {EVEN,T} = Complex{T}
 
 
 # Properties

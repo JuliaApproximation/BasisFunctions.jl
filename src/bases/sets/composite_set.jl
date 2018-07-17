@@ -20,7 +20,7 @@ The concrete subtypes differ in what evaluation means. Examples include:
 subsets
 - PiecewiseSet, where evaluation depends on the location of the evaluation point
 """
-# The type parameter S is the rangetype.
+# The type parameter S is the codomaintype.
 abstract type CompositeSet{S,T} <: FunctionSet{T}
 end
 
@@ -36,7 +36,7 @@ similar_compositespan(s::CompositeSetSpan, spans) =
 
 # TODO: think about these and verify correctness. Maybe the types depend on the
 # nature of the composite set.
-rangetype(::Type{CompositeSet{S,T}}) where {S,T} = S
+codomaintype(::Type{CompositeSet{S,T}}) where {S,T} = S
 
 # For a generic implementation of range indexing, we need a 'similar_set' function
 # to create a new set of the same type as the given set.

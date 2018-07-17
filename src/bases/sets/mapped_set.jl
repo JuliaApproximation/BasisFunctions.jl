@@ -35,8 +35,8 @@ mapping(set::MappedSet) = set.map
 
 similar_set(s::MappedSet, s2::FunctionSet) = MappedSet(s2, mapping(s))
 
-rangetype(::Type{MappedSet{S,M,T}}) where {S,M,T} = promote_type(rangetype(S), rangetype(M))
-coefficienttype(F::Type{MappedSet{S,M,T}}) where {S,M,T} = rangetype(F)
+codomaintype(::Type{MappedSet{S,M,T}}) where {S,M,T} = promote_type(codomaintype(S), codomaintype(M))
+coefficienttype(F::Type{MappedSet{S,M,T}}) where {S,M,T} = codomaintype(F)
 
 has_derivative(s::MappedSet) = has_derivative(superset(s)) && islinear(mapping(s))
 has_antiderivative(s::MappedSet) = has_antiderivative(superset(s)) && islinear(mapping(s))

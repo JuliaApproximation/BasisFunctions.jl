@@ -40,21 +40,21 @@ function promote_domaintype(span::Span, ::Type{S}) where {S}
     Span(newset, promote_type(coeftype(span), coeftype(newset)))
 end
 
-# What is the rangetype of a span? It depends on the type of the coefficients,
-# and on the rangetype of the set.
-rangetype(span::Span) = _rangetype(coefficient_type(span), rangetype(set(span)))
+# What is the codomaintype of a span? It depends on the type of the coefficients,
+# and on the codomaintype of the set.
+codomaintype(span::Span) = _codomaintype(coefficient_type(span), codomaintype(set(span)))
 # - When the types are the same, it is the result
-_rangetype(::Type{T}, ::Type{T}) where {T <: Number} = T
+_codomaintype(::Type{T}, ::Type{T}) where {T <: Number} = T
 # - the coefficient types are complex and the set itself is real
-_rangetype(::Type{Complex{T}}, ::Type{T}) where {T <: Number} = Complex{T}
+_codomaintype(::Type{Complex{T}}, ::Type{T}) where {T <: Number} = Complex{T}
 # Default fallback
-_rangetype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
+_codomaintype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
 
 # For convenience
-rangetype(set::FunctionSet, coefficients) = rangetype(set, eltype(coefficients))
-rangetype(set::FunctionSet, ::Type{A}) where {A} = rangetype(Span(set, A))
+codomaintype(set::FunctionSet, coefficients) = codomaintype(set, eltype(coefficients))
+codomaintype(set::FunctionSet, ::Type{A}) where {A} = codomaintype(Span(set, A))
 
-rangetype(span1::Span, span2::Span) = promote_eltype(rangetype(span1), rangetype(span2))
+codomaintype(span1::Span, span2::Span) = promote_eltype(codomaintype(span1), codomaintype(span2))
 
 elements(span::Span) = map(s -> Span(s, coeftype(span)), elements(set(span)))
 element(span::Span, i) = Span(element(set(span), i), coeftype(span))

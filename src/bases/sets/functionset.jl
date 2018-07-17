@@ -52,13 +52,13 @@ domaintype(::Type{S}) where {S <: FunctionSet} = domaintype(supertype(S))
 domaintype(set::FunctionSet) = domaintype(typeof(set))
 
 "The type of the elements of the codomain of the set."
-rangetype(F::Type{FunctionSet{T}}) where {T} = T
-rangetype(::Type{S}) where {S <: FunctionSet} = rangetype(supertype(S))
-rangetype(set::FunctionSet) = rangetype(typeof(set))
+codomaintype(F::Type{FunctionSet{T}}) where {T} = T
+codomaintype(::Type{S}) where {S <: FunctionSet} = codomaintype(supertype(S))
+codomaintype(set::FunctionSet) = codomaintype(typeof(set))
 
 "The default type of the expansion coefficients in a function set."
-# By default we set it equal to the rangetype
-coefficient_type(set::FunctionSet) = rangetype(set)
+# By default we set it equal to the codomaintype
+coefficient_type(set::FunctionSet) = codomaintype(set)
 
 function eltype(set::FunctionSet)
     error("Error: calling eltype on a function set is deprecated. Use a span instead.")
@@ -74,7 +74,7 @@ dimension(set::FunctionSet) = dimension(domaintype(set))
 dimension(set::FunctionSet, i) = dimension(element(set, i))
 
 "Property to indicate whether the functions in the set are real-valued (for real arguments)."
-isreal(s::FunctionSet) = isreal(rangetype(s))
+isreal(s::FunctionSet) = isreal(codomaintype(s))
 
 
 
@@ -341,7 +341,7 @@ the support. This value can be changed with an optional extra argument.
 
 After the checks, this routine calls eval_element on the concrete set.
 """
-function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)); extend=false)
+function eval_set_element(set::FunctionSet, idx, x, outside_value = zero(codomaintype(set)); extend=false)
     checkbounds(set, idx)
     extend || in_support(set, idx, x) ? eval_element(set, idx, x) : outside_value
 end
@@ -349,11 +349,11 @@ end
 # We use a special routine for evaluation on a grid, since we can hoist the boundscheck.
 # We pass on any extra arguments to eval_set_element!, hence the outside_val... argument here
 function eval_set_element(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(gridspace(grid, rangetype(set)))
+    result = zeros(gridspace(grid, codomaintype(set)))
     eval_set_element!(result, set, idx, grid, outside_value...)
 end
 
-function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(rangetype(set)))
+function eval_set_element!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(codomaintype(set)))
     @assert size(result) == size(grid)
     checkbounds(set, idx)
 
@@ -368,17 +368,17 @@ end
 This function is exactly like `eval_set_element`, but it evaluates the derivative
 of the element instead.
 """
-function eval_set_element_derivative(set::FunctionSet, idx, x, outside_value = zero(rangetype(set)); extend=false)
+function eval_set_element_derivative(set::FunctionSet, idx, x, outside_value = zero(codomaintype(set)); extend=false)
     checkbounds(set, idx)
     extend || in_support(set, idx, x) ? eval_element_derivative(set, idx, x) : outside_value
 end
 
 function eval_set_element_derivative(set::FunctionSet, idx, grid::AbstractGrid, outside_value...)
-    result = zeros(gridspace(grid, rangetype(set)))
+    result = zeros(gridspace(grid, codomaintype(set)))
     eval_set_element_derivative!(result, set, idx, grid, outside_value...)
 end
 
-function eval_set_element_derivative!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(rangetype(set)))
+function eval_set_element_derivative!(result, set::FunctionSet, idx, grid::AbstractGrid, outside_value = zero(codomaintype(set)))
     @assert size(result) == size(grid)
     checkbounds(set, idx)
 
@@ -393,7 +393,7 @@ end
 Evaluate an expansion given by the set of coefficients `coefficients` in the point x.
 """
 function eval_expansion(set::FunctionSet, coefficients, x; options...)
-    T = rangetype(set, coefficients)
+    T = codomaintype(set, coefficients)
     z = zero(T)
 
     # It is safer below to use eval_set_element than eval_element, because of
@@ -411,7 +411,7 @@ function eval_expansion(set::FunctionSet, coefficients, grid::AbstractGrid)
     # @assert eltype(grid) == domaintype(set)
 
     span = Span(set, eltype(coefficients))
-    T = rangetype(span)
+    T = codomaintype(span)
     E = evaluation_operator(span, gridspace(grid, T))
     E * coefficients
 end

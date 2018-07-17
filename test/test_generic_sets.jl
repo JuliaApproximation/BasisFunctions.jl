@@ -104,15 +104,15 @@ function test_generic_set_interface(basis, span = Span(basis))
     ELT = coefficient_type(span)
     T = domaintype(basis)
     FT = float_type(T)
-    RT = rangetype(basis)
-    SY = rangetype(span)
+    RT = codomaintype(basis)
+    SY = codomaintype(span)
 
     # Does the set of the span agree with the basis?
     @test typeof(set(span)) == typeof(basis)
 
     # Do the domain types of basis and span agree?
     @test domaintype(basis) == domaintype(span)
-    @test typeof(one(coefficient_type(span)) * one(rangetype(basis))) == rangetype(span)
+    @test typeof(one(coefficient_type(span)) * one(codomaintype(basis))) == codomaintype(span)
 
     n = length(basis)
     if is_basis(basis)
@@ -466,7 +466,7 @@ function test_generic_set_interface(basis, span = Span(basis))
         # # continuous operator only supported for 1 D
         # No efficient implementation for BigFloat to construct full gram matrix.
         # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedSet) || (typeof(basis)<:BasisFunctions.ConcreteDerivedSet) || typeof(basis)<:WeightedSet) && eltype(basis)==BigFloat)
-        if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(rangetype(basis))==BigFloat)
+        if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedSet) && real(codomaintype(basis))==BigFloat)
             e = approximate(span, f; discrete=false, rtol=1e-6, atol=1e-6)
             @test abs(e(x)-f(x...)) < 1e-3
         end

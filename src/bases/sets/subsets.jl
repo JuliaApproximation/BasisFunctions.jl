@@ -141,7 +141,7 @@ LargeSubset(set::FunctionSet{T}, indices) where {T} =
 
 similar_subset(s::LargeSubset, set, indices) = LargeSubset(set, indices)
 
-rangetype(::Type{LargeSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
+codomaintype(::Type{LargeSubset{SET,IDX,T}}) where {SET,IDX,T} = codomaintype(SET)
 
 grid(s::LargeSubset) = grid(superset(s))
 
@@ -210,7 +210,7 @@ SmallSubset(set::FunctionSet{T}, indices) where {T} =
 
 similar_subset(s::SmallSubset, set, indices) = SmallSubset(set, indices)
 
-rangetype(::Type{SmallSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
+codomaintype(::Type{SmallSubset{SET,IDX,T}}) where {SET,IDX,T} = codomaintype(SET)
 
 """
 A SingletonSubset represent a single element from an underlying set.
@@ -232,7 +232,7 @@ SingletonSubset(set::FunctionSet{T}, index) where {T} =
 
 similar_subset(s::SingletonSubset, set, index) = SingletonSubset(set, index)
 
-rangetype(::Type{SingletonSubset{SET,IDX,T}}) where {SET,IDX,T} = rangetype(SET)
+codomaintype(::Type{SingletonSubset{SET,IDX,T}}) where {SET,IDX,T} = codomaintype(SET)
 
 # Override the default `indices` because the field has a different name
 indices(s::SingletonSubset) = s.index
