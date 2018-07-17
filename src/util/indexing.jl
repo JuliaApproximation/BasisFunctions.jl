@@ -43,11 +43,14 @@ end
 NativeIndex{S}(a::NativeIndex{S}) where {S} = a
 
 convert(::Type{NativeIndex{S}}, value::LinearIndex) where {S} = NativeIndex{S}(value)
+convert(::Type{T}, idx::NativeIndex) where {T <: Number} = T(value(idx))
 
 value(idx::NativeIndex) = idx.value
 
 # With this line we inherit binary operations involving integers and native indices
 Base.promote_rule(::Type{NativeIndex{S}}, ::Type{LinearIndex}) where {S} = NativeIndex{S}
+# For floating points, we choose to convert to the numeric value
+Base.promote_rule(::Type{N}, ::Type{T}) where {N<:NativeIndex,T<:AbstractFloat} = T
 
 for op in (:+, :-, :*)
     @eval $op(a::NativeIndex{S}, b::NativeIndex{S}) where {S} = typeof(a)($op(value(a),value(b)))

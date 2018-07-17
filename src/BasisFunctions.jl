@@ -126,6 +126,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
 export promote_domaintype, promote_domainsubtype
 export grid, left, right, support, domain, codomain
+export measure
 export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, resize
@@ -198,6 +199,7 @@ export transform_operator, transform_dict, full_transform_operator,
 
 # from generic/gram.jl
 export grammatrix, dualgrammatrix, mixedgrammatrix, Gram, DualGram, MixedGram, eval_dualelement
+export gram_entry
 export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
 export dual
 
@@ -337,7 +339,9 @@ include("grid/grid.jl")
 include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
 
+include("spaces/measure.jl")
 include("spaces/spaces.jl")
+include("spaces/integral.jl")
 
 include("bases/generic/dictionary.jl")
 include("bases/generic/span.jl")

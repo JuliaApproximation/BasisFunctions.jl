@@ -1,18 +1,17 @@
 # gram.jl
 
 #################
-## Gram operators
+## Gram matrices
 #################
 
 """
-The gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith basisfunction
+The gram matrix A of the given dictionary. It is defined as A_ij = <ϕ_i,ϕ_j>,
+where ϕ_i is the ith element of the dictionary.
 """
-Gram(s::Dictionary; options...) = Gram(s, Val{is_orthonormal(s)}; options...)
-
-Gram(s::Dictionary, ::Type{Val{true}}; options...) = IdentityOperator(s, s)
-
-function Gram(s::Dictionary, ::Type{Val{false}}; options...)
-    if is_orthogonal(s)
+function Gram(s::Dictionary; options...)
+    if is_orthonormal(s)
+        IdentityOperator(s, s)
+    elseif is_orthogonal(s)
         d = zeros(s)
         gramdiagonal!(d, s; options...)
         DiagonalOperator(s, s, d)
@@ -60,6 +59,35 @@ end
 ################################################################################################
 ## Take inner products between function and basisfunctions. Used in continous approximation case.
 ################################################################################################
+
+gram_entry(dict::Dictionary, i::Int, j::Int) =
+    gram_entry(dict, native_index(dict, i), native_index(dict, j))
+
+gram_entry(dict::Dictionary, i, j) = innerproduct(dict, i, dict, j, measure(dict))
+
+innerproduct(dict1::Dictionary, i, dict2::Dictionary, j) =
+    innerproduct(dict1, i, dict2, j, measure(dict1))
+
+# Convert linear indices to native indices
+innerproduct(dict1::Dictionary, i::LinearIndex, dict2::Dictionary, j::LinearIndex, measure) =
+    innerproduct(dict1, native_index(dict1, i), dict2, native_index(dict2, j), measure)
+
+# By default we evaluate the integral numerically
+innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure) =
+    default_dict_innerproduct(dict1, i, dict2, j, measure)
+
+# We make this a separate routine so that it can also be called directly, in
+# order to compare to the value reported by a dictionary overriding innerproduct
+default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, m = measure(dict1)) =
+    integral(x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x), m)
+
+# Call this routine in order to evaluate the Gram matrix entry numerically
+default_gram_entry(dict::Dictionary, i::Int, j::Int) =
+    default_gram_entry(dict, native_index(dict, i), native_index(dict, j))
+default_gram_entry(dict::Dictionary, i, j) =
+    default_dict_innerproduct(dict, i, dict, j, measure(dict))
+
+
 """
 Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
 """

@@ -83,6 +83,7 @@ grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b), domaintype(b))
 ##################
 
 const FourierFrequency = NativeIndex{:fourier}
+const FFreq = FourierFrequency
 
 frequency(idxn::FourierFrequency) = value(idxn)
 
@@ -146,7 +147,9 @@ minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 # Evaluation
 #############
 
-support(b::FourierBasis) = UnitInterval{domaintype(b)}()
+support(b::FourierBasis{T}) where T = UnitInterval{T}()
+
+measure(b::FourierBasis{T}) where T = FourierMeasure{T}()
 
 period(b::FourierBasis{T}) where {T} = T(1)
 
@@ -475,6 +478,82 @@ function (*)(src1::FourierBasis, src2::FourierBasis, coef_src1, coef_src2)
 	    coef_dest = conv(coef_src1,coef_src2)
 	    coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
 	    (dest,coef_dest)
+	end
+end
+
+iscosine(b::FourierBasis, i::FourierFrequency) = iseven(length(b)) && (i==length(b)>>1)
+
+
+# Evaluate the inner product of two Fourier basis functions on the full domain
+function innerproduct_fourier_full(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq)
+	T = codomaintype(b1)
+	# The outcome can be zero, one or 1/2.
+	# The latter happens when integrating a cosine with another cosine, or with
+	# a complex exponential that contains a cosine with the same frequency.
+	# Apart from that special case, the integral is zero when the indices differ
+	# and one when they are equal.
+	if (iscosine(b1, i) && abs(j) == i) || (iscosine(b2, j) && abs(i) == j)
+		one(T)/2
+	elseif i != j
+		zero(T)
+	else
+		one(T)
+	end
+end
+
+# Evaluate the inner product on the interval [a,b]
+function innerproduct_fourier_part(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, a, b)
+	S = domaintype(b1)
+	T = codomaintype(b1)
+	# convert 2π to type S and 2πi to type T
+	twopi = 2*S(pi)
+	tpi = 2im*T(pi)
+	if iscosine(b1, i)
+		if iscosine(b2, j)
+			if i == j
+				T(-cos(twopi*i*a)*sin(twopi*i*a)+cos(twopi*i*b)*sin(twopi*i*b)-twopi*i*(a-b))/(2*twopi*i)
+			else
+				T((-i-j)*sin(twopi*(i-j)*a)+(i+j)*sin(twopi*(i-j)*b)-(sin(twopi*(i+j)*a)-sin(twopi*(i+j)*b))*(i-j))/(2*i^2*twopi-2*j^2*twopi)
+			end
+		else
+			if i == j
+				((-cos(twopi*i*a)-sin(twopi*i*a))*exp(tpi*a)+exp(tpi*b)*(sin(twopi*i*b)+cos(twopi*i*b)))/(2*twopi*i)
+			else
+				(-T(im)*j*exp(tpi*j*a)*cos(twopi*i*a)+T(im)*j*exp(tpi*j*b)*cos(twopi*i*b)-i*exp(tpi*j*a)*sin(twopi*i*a)+i*exp(tpi*j*b)*sin(twopi*i*b))/((2*i^2-2*j^2)*S(pi))
+			end
+		end
+	else
+		if iscosine(b2, j)
+			if i == j
+				(-T(im)*cos(twopi*i*a)^2-cos(twopi*i*a)*sin(twopi*i*a)+T(im)*cos(twopi*i*b)^2+cos(twopi*i*b)*sin(twopi*i*b)-twopi*i*(a-b))/(2*twopi*i)
+			else
+				(-T(im)*i*exp(-tpi*i*a)*cos(twopi*j*a)+T(im)*i*exp(-tpi*i*b)*cos(twopi*j*b)+j*exp(-tpi*i*a)*sin(twopi*j*a)-j*exp(-tpi*i*b)*sin(twopi*j*b))/((2*i^2-2*j^2)*pi)
+			end
+		else
+			if i == j
+				T(b-a)
+			else
+				-T(1im)/(twopi*(j-i)) * (exp(tpi*b*(j-i)) - exp(tpi*a*(j-i)))
+			end
+		end
+	end
+end
+
+
+# For the uniform measure on [0,1], invoke innerproduct_fourier_full
+innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::FourierMeasure) =
+	innerproduct_fourier_full(b1, i, b2, j)
+
+function innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::LebesgueMeasure)
+	d = support(m)
+	if typeof(d) <: AbstractInterval
+		if leftendpoint(d) == 0 && rightendpoint(d) == 1
+			innerproduct_fourier_full(b1, i, b2, j)
+		else
+			innerproduct_fourier_part(b1, i, b2, j, leftendpoint(d), rightendpoint(d))
+		end
+	else
+		default_innerproduct(b1, i, b2, j, m)
 	end
 end
 
