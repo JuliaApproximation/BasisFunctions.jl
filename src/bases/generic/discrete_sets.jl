@@ -28,6 +28,16 @@ function in_support(d::DiscreteDictionary, idx, x)
     end
 end
 
+in_support(d::DiscreteDictionary{I}, idx::LinearIndex, x::I) where I = checkbounds(Bool, d, x)
+
+function in_support(d::DiscreteDictionary, idx::LinearIndex, x)
+    try
+        in_support(d, idx, native_index(d, x))
+    catch e
+        false
+    end
+end
+
 # Evaluation of discrete sets works as follows:
 # -> eval_element: does bounds check on idx
 #   -> unsafe_eval_element1: in_support corresponds to bounds check on x

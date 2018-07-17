@@ -148,7 +148,7 @@ resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 in_support(dict::TensorProductDict, idx, x) =
     _in_support(dict, elements(dict), idx, x)
 
-in_support(dict::TensorProductDict, idx::Int, x) =
+in_support(dict::TensorProductDict, idx::LinearIndex, x) =
     in_support(dict, native_index(dict, idx), x)
 
 # This line is a bit slower than the lines below:

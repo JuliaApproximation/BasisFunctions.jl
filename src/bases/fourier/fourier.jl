@@ -367,7 +367,7 @@ _pseudodifferential_operator(s::FourierBasis{T}, symbol::Function; options...) w
 
 pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 
-function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; options...)
+function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symb::Function; options...)
 	#@assert length(first(methods(symbol)).sig.parameters) = dimension(s1) + 1
 	@assert s1 == s2 # There is currently no support for s1 != s2
 	# Build a vector of the first order differential operators in each spatial direction:
@@ -375,10 +375,10 @@ function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict
 	@assert is_diagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
 	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
 	N = prod(size(s1))
-	diag = zeros(N)
+	diag = zeros(eltype(Diffs[1]),N)
 	for k = 1:N
 		vec = [diagonal(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
-		diag[k] = symbol(vec)
+		diag[k] = symb(vec)
 	end
 	DiagonalOperator(s1,diag)
 end
