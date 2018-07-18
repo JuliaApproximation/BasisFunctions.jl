@@ -38,7 +38,7 @@ function test_tensor_sets(T)
 
     # Indexing with ranges
     # @test try
-    #     d[CartesianRange(CartesianIndex(1,1,1),CartesianIndex(3,4,5))]
+    #     d[CartesianIndices(CartesianIndex(1,1,1),CartesianIndex(3,4,5))]
     #     true
     # catch
     #     false

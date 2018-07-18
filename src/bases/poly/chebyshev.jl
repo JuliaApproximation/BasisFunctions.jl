@@ -222,7 +222,7 @@ antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::I
 function gramdiagonal!(result, ::ChebyshevTLike; options...)
     T = eltype(result)
     for i in 1:length(result)
-        i==1? result[i] = T(pi) : result[i] = T(pi)/2
+        (i==1) ? result[i] = T(pi) : result[i] = T(pi)/2
     end
 end
 

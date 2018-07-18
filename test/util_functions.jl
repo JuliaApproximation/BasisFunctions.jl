@@ -22,8 +22,8 @@ function point_in_domain(basis::Dictionary, scalar)
     end
     x = (1-scalar) * a + scalar * b
 end
-Base.rationalize{N}(x::SVector{N,Float64}) = SVector{N,Rational{Int}}([rationalize(x_i) for x_i in x])
-Base.rationalize{N}(x::SVector{N,BigFloat}) = SVector{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
+Base.rationalize(x::SVector{N,Float64}) where {N} = SVector{N,Rational{Int}}([rationalize(x_i) for x_i in x])
+Base.rationalize(x::SVector{N,BigFloat}) where {N} = SVector{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
 
 
 function delimit(s::AbstractString)

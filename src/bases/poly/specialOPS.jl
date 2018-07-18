@@ -114,7 +114,7 @@ indicator_function(nodes) = x-> reduce(|, false, nodes[1:2:end] .<= x .<= nodes[
 
 function WaveOPS(n::Int,omega::ELT; options...) where {ELT}
     my_quadrature_rule = n->_wavePolynomialweight(n, omega)
-    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)), (x->abs(x)<=1 ? exp(1im*omega*x):0.);options...)
+    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)), (x->(abs(x)<=1) ? exp(1im*omega*x) : ELT(0)); options...)
 end
 
 function _wavePolynomialweight(n, omega::ELT) where ELT

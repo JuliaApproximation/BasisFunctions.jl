@@ -56,7 +56,7 @@ length(b::GenericOPS) = length(b.rec_a)
 
 name(b::GenericOPS) = "Generic OPS"
 
-weight(b::GenericOPS, x) = b.weight==nothing? error("weight not defined for this Generic OPS"): b.weight(x)
+weight(b::GenericOPS, x) = (b.weight==nothing) ? error("weight not defined for this Generic OPS") : b.weight(x)
 
 dict_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
     GenericOPS{S}(b.rec_a, b.rec_b, b.rec_c)

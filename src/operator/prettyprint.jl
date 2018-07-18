@@ -6,14 +6,15 @@
 # set DO_PRETTYPRINTING to false to disable pretty printing
 ####
 # Delegate to show_operator
-DO_PRETTYPRINTING = true
+global DO_PRETTYPRINTING = true
 try
-    DO_PRETTYPRINTING = !(ENV["LOGNAME"] == "vincentcp")
-end
-if DO_PRETTYPRINTING
-    show(io::IO, op::AbstractOperator) = has_stencil(op) ? show_composite(io,op) : show_operator(io, op)
-    show(io::IO,s::Span) = show(io,dictionary(s))
-    show(io::IO, d::Dictionary) = has_stencil(d) ? show_composite(io,d) : show_dictionary(io, d)
+    global DO_PRETTYPRINTING = !(ENV["LOGNAME"] == "vincentcp")
+finally
+    if DO_PRETTYPRINTING
+        show(io::IO, op::AbstractOperator) = (has_stencil(op)) ? show_composite(io,op) : show_operator(io, op)
+        show(io::IO,s::Span) = show(io,dictionary(s))
+        show(io::IO, d::Dictionary) = (has_stencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
+    end
 end
 
 
@@ -43,16 +44,16 @@ string(op::MultiplicationOperator,object) = "Multiplication by "*string(typeof(o
 symbol(op::MultiplicationOperator) = symbol(op,op.object)
 symbol(op::MultiplicationOperator,object) = "M"
 
-symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.cFFTWPlan{T,K}) where {T,K} = K<0 ? "FFT" : "iFFT"
-symbol(op::MultiplicationOperator,object::Base.DFT.FFTW.DCTPlan{T,K}) where {T,K} = K==Base.DFT.FFTW.REDFT10 ? "DCT" : "iDCT"
+symbol(op::MultiplicationOperator,object::FFTW.cFFTWPlan{T,K}) where {T,K} = K<0 ? "FFT" : "iFFT"
+symbol(op::MultiplicationOperator,object::FFTW.DCTPlan{T,K}) where {T,K} = K==FFTW.REDFT10 ? "DCT" : "iDCT"
 
-function string(op::MultiplicationOperator, object::Base.DFT.FFTW.cFFTWPlan)
+function string(op::MultiplicationOperator, object::FFTW.cFFTWPlan)
     io = IOBuffer()
     print(io,op.object)
     match(r"(.*?)(?=\n)",String(take!(io))).match
 end
 
-function string(op::MultiplicationOperator, object::Base.DFT.FFTW.DCTPlan)
+function string(op::MultiplicationOperator, object::FFTW.DCTPlan)
     io = IOBuffer()
     print(io,op.object)
     String(take!(io))

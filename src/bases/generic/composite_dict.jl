@@ -30,7 +30,7 @@ numelements(set::CompositeDict) = length(elements(set))
 
 # For a generic implementation of range indexing, we need a 'similar_dictionary' function
 # to create a new set of the same type as the given set.
-element(set::CompositeDict, range::Range) = similar_dictionary(set, set.dicts[range])
+element(set::CompositeDict, range::AbstractRange) = similar_dictionary(set, set.dicts[range])
 
 tail(set::CompositeDict) = numelements(set) == 2 ? element(set, 2) : element(set, 2:numelements(set))
 

@@ -72,15 +72,15 @@ similar_operator(op::CirculantOperator, src, dest) =
 
 Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(sqrt.(eigenvalues(c))))
 
-for op in (:inv, :ctranspose)
-    @eval $op{T}(C::CirculantOperator{T}) = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
+for op in (:inv, :ctranspose, :adjoint)
+    @eval $op(C::CirculantOperator{T}) where {T} = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
 end
 
 # What tolerance should be used for the pinv here?
 pinv(C::CirculantOperator{T}, tolerance = eps(numtype(C))) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(pinv(C.eigenvaluematrix), tolerance))
 
 for op in (:+, :-, :*)
-    @eval $op{T}(c1::CirculantOperator{T}, c2::CirculantOperator{T}) = CirculantOperator(src(c2), dest(c1), DiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
+    @eval $op(c1::CirculantOperator{T}, c2::CirculantOperator{T}) where {T} = CirculantOperator(src(c2), dest(c1), DiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
 end
 
 *(scalar::Real, c::CirculantOperator) = CirculantOperator(src(c), dest(c), DiagonalOperator(scalar*eigenvalues(c)))

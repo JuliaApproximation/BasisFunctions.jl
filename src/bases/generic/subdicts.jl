@@ -236,7 +236,7 @@ index(s::SingletonSubdict) = s.index
 
 # First some additions to the checkbounds ecosystem
 
-checkbounds(::Type{Bool}, dict::Dictionary, indices::CartesianRange) =
+checkbounds(::Type{Bool}, dict::Dictionary, indices::CartesianIndices) =
     checkbounds(Bool, dict, first(indices)) && checkbounds(Bool, dict, last(indices))
 
 function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)

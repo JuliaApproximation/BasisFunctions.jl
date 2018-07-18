@@ -8,6 +8,11 @@ const VIEW_VIEW = 3
 
 const VIEW_DEFAULT = VIEW_COPY
 
+# Parameter VIEW determines the view type:
+# 1: make a copy
+# 2: use sub
+# 3: use ArrayViews.view
+# The first is the default.
 """
 A DimensionOperator applies a given operator along one dimension in a higher-dimensional
 data set. For example, an operator can be applied to each row (dim=1) or column (dim=2)
@@ -15,11 +20,6 @@ of a 2D array of coefficients.
 
 A tensor product operation can be implemented as a sequence of DimensionOperator's.
 """
-# Parameter VIEW determines the view type:
-# 1: make a copy
-# 2: use sub
-# 3: use ArrayViews.view
-# The first is the default.
 struct DimensionOperator{VIEW,ELT} <: DictionaryOperator{ELT}
     src             ::  Dictionary
     dest            ::  Dictionary
@@ -114,8 +114,12 @@ end
 "Replace the j-th set of a tensor product set with a different one."
 replace(tpset::TensorProductDict, j, s) = tensorproduct([element(tpset, i) for i in 1:j-1]..., s, [element(tpset, i) for i in j+1:numelements(tpset)]...)
 
-inv{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+inv(op::DimensionOperator{VIEW}) where {VIEW}= DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)
-
-ctranspose{VIEW}(op::DimensionOperator{VIEW}) = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
-    replace(dest(op), op.dim, element(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)
+if VERSION < v"0.7-"
+    ctranspose(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+        replace(dest(op), op.dim, element(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)
+else
+    adjoint(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+        replace(dest(op), op.dim, element(src(op), op.dim)), adjoint(op.op), op.dim, VIEW)
+end

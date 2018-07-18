@@ -88,7 +88,7 @@ end
 
 Base.broadcast(e::Expansion, grid::AbstractGrid) = eval_expansion(dictionary(e), coefficients(e), grid)
 
-Base.broadcast{T}(e::Expansion, x::LinSpace{T}) = broadcast(e, EquispacedGrid(x))
+Base.broadcast(e::Expansion, x::LinRange{T}) where {T} = broadcast(e, EquispacedGrid(x))
 
 # Shorthands for partial derivatives
 ∂x(f::Expansion) = differentiate(f, 1, 1)
@@ -108,7 +108,11 @@ antidifferentiate(f::Expansion, var, order) = antidifferentiate(f, ei(dimension(
 ## Δ(f::Expansion)
 
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
-ctranspose(f::Expansion) = differentiate(f)
+if VERSION < v"0.7-"
+    ctranspose(f::Expansion) = differentiate(f)
+else
+    adjoint(f::Expansion) = differentiate(f)
+end
 ∫(f::Expansion) = antidifferentiate(f)
 
 roots(f::Expansion) = roots(dictionary(f), coefficients(f))
@@ -143,7 +147,7 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 ##############################
 
 # Arithmetics are only possible when the basis type is equal.
-is_compatible{S<:Dictionary}(s1::S, s2::S) = true
+is_compatible(s1::S, s2::S) where {S<:Dictionary} = true
 is_compatible(s1::Dictionary, s2::Dictionary) = false
 
 Base.broadcast(abs, e::Expansion) = abs.(coefficients(e))

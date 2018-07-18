@@ -55,8 +55,8 @@ codomaintype(::Type{D}) where {D <: Dictionary} = codomaintype(supertype(D))
 codomaintype(dict::Dictionary{S,T}) where {S,T} = T
 
 "The type of the expansion coefficients in a dictionary."
-# By default we set it equal to the codomaintype
 coefficient_type(dict::Dictionary) = codomaintype(dict)
+# By default we set it equal to the codomaintype
 
 # The dimension of a function set is the dimension of its domain type
 dimension(dict::Dictionary) = dimension(domaintype(dict))
@@ -105,7 +105,7 @@ since it is given without parameters.
 
 This function is mainly used to create instances for testing purposes.
 """
-instantiate{S <: Dictionary}(::Type{S}, n) = instantiate(S, n, Float64)
+instantiate(::Type{S}, n) where {S <: Dictionary}= instantiate(S, n, Float64)
 
 
 ##############################

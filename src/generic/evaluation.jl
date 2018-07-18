@@ -31,7 +31,7 @@ evaluation_operator(s::Dictionary, grid::AbstractGrid; options...) =
     evaluation_operator(s, gridbasis(s, grid); options...)
 
 # Convert a linear range to an equispaced grid
-evaluation_operator(s::Dictionary, r::LinSpace; options...) =
+evaluation_operator(s::Dictionary, r::LinRange; options...) =
     evaluation_operator(s, EquispacedGrid(r))
 
 # For easier dispatch, if the destination is a GridBasis we add the grid as parameter

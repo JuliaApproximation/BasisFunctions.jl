@@ -11,7 +11,7 @@ The approximation_operator function returns an operator that can be used to appr
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
 approximation_operator(s; discrete = true, options...) =
-  discrete?
+  (discrete) ?
     discrete_approximation_operator(s; options...) :
     continuous_approximation_operator(s; options...)
 

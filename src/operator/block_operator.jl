@@ -177,7 +177,11 @@ vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(o
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
+if VERSION < v"0.7-"
+    ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
+else
+    adjoint(op::BlockOperator) = BlockOperator(adjoint(op.operators))
+end
 
 
 
@@ -195,12 +199,12 @@ struct BlockDiagonalOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-function BlockDiagonalOperator{O<:DictionaryOperator}(operators::Array{O,1}, src, dest)
+function BlockDiagonalOperator(operators::Array{O,1}, src, dest) where {O<:DictionaryOperator}
   T = promote_type(map(eltype, operators)...)
   BlockDiagonalOperator{T}(operators, src, dest)
 end
 
-BlockDiagonalOperator{O<:DictionaryOperator}(operators::Array{O,1}) =
+BlockDiagonalOperator(operators::Array{O,1}) where {O<:DictionaryOperator} =
     BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
@@ -269,7 +273,11 @@ function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Mult
     coef_dest
 end
 
-ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, operators(op)))
+if VERSION < v"0.7-"
+    ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, operators(op)))
+else
+    adjoint(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(adjoint, operators(op)))
+end
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])

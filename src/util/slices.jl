@@ -10,14 +10,14 @@ export eachslice, joint, view
 abstract type SliceIterator{N} end
 
 struct SliceIteratorCartesian{N} <: SliceIterator{N}
-    range   ::  CartesianRange{CartesianIndex{N}}
+    range   ::  CartesianIndices{N}
     dim     ::  Int
     len     ::  Int
 end
 
 
 struct SliceIteratorLinear{N} <: SliceIterator{N}
-    range   ::  CartesianRange{CartesianIndex{N}}
+    range   ::  CartesianIndices{N}
     dim     ::  Int
     strides ::  NTuple{N,Int}
     stride  ::  Int
@@ -43,7 +43,7 @@ end
 
 
 # TODO: more efficient implementation for all N
-function remaining_size{N}(siz::NTuple{N,Int}, dim)
+function remaining_size(siz::NTuple{N,Int}, dim) where {N}
     if dim == 1
         tuple(siz[2:N]...)
     elseif 1 < dim < N
@@ -121,31 +121,31 @@ end
 
 
 # Todo: efficient implementation for general N
-strides{N}(siz::NTuple{N,Int}) = (strides(siz[1:N-1])..., stride(siz,N))
+strides(siz::NTuple{N,Int}) where {N} = (strides(siz[1:N-1])..., stride(siz,N))
 
 
 eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
 
 # Type inference does not work with the N-1 argument below:
 #eachslice{T,N}(a::AbstractArray{T,N}, dim) =
-#    SliceIterator(CartesianRange(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
+#    SliceIterator(CartesianIndices(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
 
 # So we do a generated function for the time being:
-@generated function eachslice{T,N}(::Base.IndexCartesian, a::AbstractArray{T,N}, dim)
+@generated function eachslice(::Base.IndexCartesian, a::AbstractArray{T,N}, dim) where {T,N}
     one_tuple = onetuple(Val{N-1})
     quote
         SliceIteratorCartesian(
-            CartesianRange( CartesianIndex($one_tuple),
+            CartesianIndices( CartesianIndex($one_tuple),
                             CartesianIndex(remaining_size(size(a), dim))),
                             dim, size(a, dim) )
     end
 end
 
-@generated function eachslice{T,N}(::Base.IndexLinear, a::AbstractArray{T,N}, dim)
+@generated function eachslice(::Base.IndexLinear, a::AbstractArray{T,N}, dim) where {T,N}
     one_tuple = onetuple(Val{N-1})
     quote
         SliceIteratorLinear(
-            CartesianRange( CartesianIndex($one_tuple),
+            CartesianIndices( CartesianIndex($one_tuple),
                             CartesianIndex(remaining_size(size(a), dim))),
                             dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
     end
@@ -158,7 +158,7 @@ Base.next(it::SliceIteratorCartesian, sidx::SliceIndex) =
 
 Base.done(it::SliceIteratorCartesian, sidx::SliceIndex) = done(it.range, sidx.cartidx)
 
-function Base.getindex{T}(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::Int)
+function Base.getindex(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::Int) where {T}
     if sidx.dim == 1
         a[i, sidx.cartidx[1]]
     else

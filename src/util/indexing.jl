@@ -184,7 +184,7 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 # We have to override eachindex, because the default eachindex in Base returns
 # a linear index for a vector (because any IndexList is an AbstractVector), and
 # the most efficient iteration over product dictionaries is using cartesian indices.
-eachindex(list::ProductIndexList) = CartesianRange(indices(list))
+eachindex(list::ProductIndexList) = CartesianIndices(indices(list))
 
 # We convert between integers and product indices using ind2sub and sub2ind
 product_native_index(size, idx::LinearIndex) = ProductIndex(ind2sub(size, idx))

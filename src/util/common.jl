@@ -9,8 +9,8 @@ macro add_properties(T, props...)
     e
 end
 
-tolerance{T}(::Type{T}) = sqrt(eps(T))
-tolerance{T <: Real}(::Type{Complex{T}}) = tolerance(T)
+tolerance(::Type{T}) where {T} = sqrt(eps(T))
+tolerance(::Type{Complex{T}}) where {T} = tolerance(T)
 
 
 # Convenience definitions for the implementation of traits
@@ -57,18 +57,18 @@ end
 
 
 "Return true if the set is indexable and has elements whose type is a subtype of T."
-indexable_list{T}(set, ::Type{T}) = typeof(set[1]) <: T
+indexable_list(set, ::Type{T}) where {T} = typeof(set[1]) <: T
 
-indexable_list{S,T}(set::Array{S}, ::Type{T}) = S <: T
-indexable_list{N,S,T}(set::NTuple{N,S}, ::Type{T}) = S <: T
+indexable_list(set::Array{S}, ::Type{T}) where {S,T} = S <: T
+indexable_list(set::NTuple{N,S}, ::Type{T}) where {N,S,T}= S <: T
 
 
 #An efficient way to access elements of a Tuple type using index j
-@generated function tuple_index{T <: Tuple}(::Type{T}, j)
+@generated function tuple_index(::Type{T}, j) where {T <: Tuple}
     :($T.parameters[j])
 end
 
-@generated function tuple_length{T <: Tuple}(::Type{T})
+@generated function tuple_length(::Type{T}) where {T <: Tuple}
     :($length(T.parameters))
 end
 
@@ -91,7 +91,7 @@ default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?
 # ASK is this indeed a better implementation?
-dimension_tuple(n, dim) = ntuple(k -> (k==dim? 1: 0), n)
+dimension_tuple(n, dim) = ntuple(k -> ((k==dim) ? 1 : 0), n)
 
 # Generate a random value of type T
 # Can be removed after 0.7

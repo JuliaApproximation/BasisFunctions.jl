@@ -1,7 +1,11 @@
 # test_half_range_chebyshev
-using BasisFunctions
-using Base.Test
-using FastGaussQuadrature
+
+using BasisFunctions, FastGaussQuadrature
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
 
 function test_half_range_chebyshev()
     n = 60
