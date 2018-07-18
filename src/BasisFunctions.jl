@@ -16,9 +16,11 @@ if VERSION < v"0.7-"
     mul! = A_mul_B!
     IteratorSize = Base.iteratorsize
     axes = indices
+    Nothing = Void
 else
-    using GenericLinearAlgebra, FFTW, LinearAlgebra#, FastTransforms
+    using FFTW, LinearAlgebra#, FastTransforms, GenericLinearAlgebra
     warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
+    warn("GenericLinearAlgebra has not known version, problem for FrameFun")
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
     using Base:IteratorSize
     using SpecialFunctions: gamma

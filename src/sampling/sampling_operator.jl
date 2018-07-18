@@ -62,7 +62,7 @@ function sample!(result, grid, f, scaling::Number)
 	result
 end
 
-function sample!(result, grid, f, scaling::Void)
+function sample!(result, grid, f, scaling::Nothing)
     for i in eachindex(grid)
 		result[i] = call_function_with_vector(f, grid[i])
 	end
@@ -79,7 +79,7 @@ end
 
 apply(op::GridSamplingOperator, dict::Dictionary; options...) =
     _apply(op.scaling, op, dict; options...)
-_apply(scaling::Void, op::GridSamplingOperator, dict; options...) =
+_apply(scaling::Nothing, op::GridSamplingOperator, dict; options...) =
     evaluation_operator(dict, grid(op); options...)
 _apply(scaling::Number, op::GridSamplingOperator, dict; options...) =
     scaling*evaluation_operator(dict, grid(op); options...)
@@ -89,7 +89,7 @@ _apply(scaling::AbstractArray, op::GridSamplingOperator, dict; options...) =
 *(op::GridSamplingOperator, scalar::Number) = times_by(op.scaling, op, scalar)
 *(scalar::Number, op::GridSamplingOperator) = times_by(op.scaling, op, scalar)
 
-times_by(scaling::Void, op::GridSamplingOperator, scalar::Number) =
+times_by(scaling::Nothing, op::GridSamplingOperator, scalar::Number) =
     GridSamplingOperator(op.src, op.dest, scalar)
 
 times_by(scaling, op::GridSamplingOperator, scalar::Number) =

@@ -78,14 +78,6 @@ git-tree-sha1 = "1452ac1d6931ad5fb1d058bf6f94c83c965f4ef7"
 uuid = "442a2c76-b920-505d-bb47-c5924d526838"
 version = "0.3.0"
 
-[[GenericLinearAlgebra]]
-deps = ["LinearAlgebra", "Printf", "Test"]
-git-tree-sha1 = "81b473866d8cbfa999f27b1153d281071cc9ae10"
-repo-rev = "master"
-repo-url = "https://github.com/andreasnoack/GenericLinearAlgebra.jl.git"
-uuid = "68167eab-4858-5bc0-b60f-9fa0a04dd39f"
-version = "0.0.0"
-
 [[InteractiveUtils]]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
