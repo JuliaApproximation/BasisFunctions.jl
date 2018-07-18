@@ -348,8 +348,13 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
-inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-    SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}) )
+if (VERSION < v"0.7-")
+    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
+        SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}) )
+else
+    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
+        SolverOperator(dest(op), src(op), ar(matrix, Val(true)) )
+end
 
 
 

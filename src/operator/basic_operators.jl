@@ -206,7 +206,7 @@ else
 end
 
 function matrix!(op::DiagonalOperator, a)
-    a[:] = 0
+    a[:] .= 0
     for i in 1:min(size(a,1),size(a,2))
         a[i,i] = op.diagonal[i]
     end

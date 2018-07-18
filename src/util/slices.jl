@@ -2,11 +2,6 @@
 
 module Slices
 
-if VERSION < v"0.7-"
-    nothing
-else
-    using LinearAlgebra
-end
 # In this module we implement `eachslice`, a way of iterating over all slices along one
 # dimension in a multidimensional array.
 
@@ -59,17 +54,21 @@ else
     end
 
     struct SliceIndexCartesian{N} <: SliceIndex
-        cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        # cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        cartidx ::  Base.LegacyIterationCompat{R,CartesianIndex{N},CartesianIndex{N}} where {R}
         dim     ::  Int
         len     ::  Int
     end
 
     struct SliceIndexLinear{N} <: SliceIndex
-        cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        # cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        cartidx ::  Base.LegacyIterationCompat{R,CartesianIndex{N},CartesianIndex{N}} where {R}
         offset  ::  Int
         stride  ::  Int
         len     ::  Int
     end
+
+    offset(strides::NTuple{N,Int}, idx::Base.LegacyIterationCompat{R,CartesianIndex{N},CartesianIndex{N}} where {R}) where {N} = offset(strides, idx.state)
 end
 
 # TODO: more efficient implementation for all N
@@ -185,7 +184,8 @@ Base.start(it::SliceIteratorCartesian) = SliceIndexCartesian(start(it.range), it
 Base.next(it::SliceIteratorCartesian, sidx::SliceIndex) =
     (sidx, SliceIndexCartesian(next(it.range, sidx.cartidx)[2], it.dim, it.len))
 
-Base.done(it::SliceIteratorCartesian, sidx::SliceIndex) = done(it.range, sidx.cartidx)
+Base.done(it::SliceIteratorCartesian, sidx::SliceIndex) = Base.done(it.range, sidx.cartidx)
+
 
 function Base.getindex(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::Int) where {T}
     if sidx.dim == 1
@@ -194,6 +194,7 @@ function Base.getindex(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::I
         a[sidx.cartidx[1], i]
     end
 end
+
 
 offset(strides::NTuple{1,Int}, idx::CartesianIndex{1}) = 1 + (idx[1]-1) * strides[1]
 
