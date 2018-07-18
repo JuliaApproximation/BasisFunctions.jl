@@ -43,7 +43,9 @@ end
 NativeIndex{S}(a::NativeIndex{S}) where {S} = a
 
 convert(::Type{NativeIndex{S}}, value::LinearIndex) where {S} = NativeIndex{S}(value)
-convert(::Type{T}, idx::NativeIndex) where {T <: Number} = T(value(idx))
+convert(::Type{T}, idx::NativeIndex) where {T <: Number} = convert(T, value(idx))
+# Resolve an ambiguity with mpfr code...
+convert(::Type{BigFloat}, idx::NativeIndex) = convert(BigFloat, value(idx))
 
 value(idx::NativeIndex) = idx.value
 
