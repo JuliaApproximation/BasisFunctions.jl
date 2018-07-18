@@ -7,11 +7,5 @@ julia:
     - nightly
 notifications:
     email: false
-before_script:
-    - git fetch --unshallow
-    - julia --color=yes -e "if VERSION < v\"0.7.0-DEV.5183\" || (!isfile(\"Project.toml\") && !isfile(\"JuliaProject.toml\")); Pkg.clone(pwd()); end"
-    - julia --color=yes -e "Pkg.build(\"${JL_PKG}\")"
-    - ./.travis/setup.sh  
-
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
