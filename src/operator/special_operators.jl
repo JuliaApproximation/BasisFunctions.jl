@@ -353,7 +353,7 @@ if (VERSION < v"0.7-")
         SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}) )
 else
     inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), ar(matrix, Val(true)) )
+        SolverOperator(dest(op), src(op), qr(matrix, Val(true)) )
 end
 
 

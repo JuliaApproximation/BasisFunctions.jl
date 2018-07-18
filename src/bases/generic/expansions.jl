@@ -150,7 +150,7 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 is_compatible(s1::S, s2::S) where {S<:Dictionary} = true
 is_compatible(s1::Dictionary, s2::Dictionary) = false
 
-Base.broadcast(abs, e::Expansion) = abs.(coefficients(e))
+Base.broadcast(abs, e::Expansion) = (@info("abs");abs.(coefficients(e)))
 
 for op in (:+, :-)
     @eval function ($op)(s1::Expansion, s2::Expansion)

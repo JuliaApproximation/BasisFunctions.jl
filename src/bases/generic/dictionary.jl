@@ -323,18 +323,36 @@ restriction_set(d::Dictionary, n) = resize(d, n)
 ###############################
 
 # Default iterator over sets of functions: based on underlying index iterator.
-function start(d::Dictionary)
-    iter = eachindex(d)
-    (iter, start(iter))
-end
+if VERSION < v"0.7-"
+    function start(d::Dictionary)
+        iter = eachindex(d)
+        (iter, start(iter))
+    end
 
-function next(d::Dictionary, state)
-    iter, iter_state = state
-    idx, iter_newstate = next(iter,iter_state)
-    (d[idx], (iter,iter_newstate))
-end
+    function next(d::Dictionary, state)
+        iter, iter_state = state
+        idx, iter_newstate = next(iter,iter_state)
+        (d[idx], (iter,iter_newstate))
+    end
 
-done(d::Dictionary, state) = done(state[1], state[2])
+    done(d::Dictionary, state) = done(state[1], state[2])
+else
+    function Base.iterate(d::Dictionary)
+        iter = eachindex(d)
+        first_item, first_state = iterate(iter)
+        (d[first_item], (iter, (first_item, first_state)))
+    end
+
+    function Base.iterate(d::Dictionary, state)
+        iter, iter_tuple = state
+        iter_item, iter_state = iter_tuple
+        next_tuple = iterate(iter, iter_state)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            (d[next_item], (iter,next_tuple))
+        end
+    end
+end
 
 
 
@@ -351,7 +369,7 @@ done(d::Dictionary, state) = done(state[1], state[2])
 checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
 # We make a special case for a linear index
-checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, linearindices(dict), i)
+checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, Base.OneTo(length(dict)), i)
 
 # We also convert native indices to linear indices, before moving on.
 # (This is more difficult to do later on, e.g. in checkindex, because that routine
