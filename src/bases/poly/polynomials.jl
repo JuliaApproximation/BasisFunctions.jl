@@ -16,7 +16,7 @@ const PolynomialDegree = ShiftedIndex{1}
 degree(idx::PolynomialDegree) = value(idx)
 
 Base.show(io::IO, idx::BasisFunctions.ShiftedIndex{1}) =
-	print(io, "Polynomial degree: $(degree(idx))")
+	print(io, "Index shifted by 1: $(degree(idx))")
 
 ordering(b::PolynomialBasis) = ShiftedIndexList{1}(length(b))
 

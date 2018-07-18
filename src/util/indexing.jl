@@ -43,11 +43,16 @@ end
 NativeIndex{S}(a::NativeIndex{S}) where {S} = a
 
 convert(::Type{NativeIndex{S}}, value::LinearIndex) where {S} = NativeIndex{S}(value)
+convert(::Type{T}, idx::NativeIndex) where {T <: Number} = convert(T, value(idx))
+# Resolve an ambiguity with mpfr code...
+convert(::Type{BigFloat}, idx::NativeIndex) = convert(BigFloat, value(idx))
 
 value(idx::NativeIndex) = idx.value
 
 # With this line we inherit binary operations involving integers and native indices
 Base.promote_rule(::Type{NativeIndex{S}}, ::Type{LinearIndex}) where {S} = NativeIndex{S}
+# For floating points, we choose to convert to the numeric value
+Base.promote_rule(::Type{N}, ::Type{T}) where {N<:NativeIndex,T<:AbstractFloat} = T
 
 for op in (:+, :-, :*)
     @eval $op(a::NativeIndex{S}, b::NativeIndex{S}) where {S} = typeof(a)($op(value(a),value(b)))
@@ -211,10 +216,10 @@ getindex(list::ProductIndexList{N}, idx1::Int, idx2::Int, idx::Int...) where {N}
 # We leave the indices unchanged if it is not possible.
 
 # This is an exhaustive list of types we know how to convert
-ProductIndices = Union{NTuple,ProductIndex,Int}
+ProductIndices = Union{NTuple,ProductIndex}
 
 # - Both indices are fine:
-promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where {N} = (idx1,idx2)
+promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where N = (idx1,idx2)
 # - One or both of them are not fine, but they are both in PTI. The formulation
 #   includes the case above, since they could both be ProductIndex{N}. By leaving
 #   out the type of size, we make sure that the line above is more specific and

@@ -14,31 +14,29 @@ apply(op::AbstractSamplingOperator, f::AbstractVector) = (@assert length(f)==siz
 
 """
 A `GridSamplingOperator` is an operator that maps a function to its samples.
+
+The operator optionally applies a scaling to the result. This may be, e.g.,
+multiplication by a scalar number, or pointwise multiplication by a vector.
 """
 struct GridSamplingOperator <: AbstractSamplingOperator
     src     ::  AbstractFunctionSpace
     dest    ::  GridBasis
-    scaling :: Number
-
-	## # An inner constructor to enforce that the spaces match
-	## GridSamplingOperator(src::Dictionary{S,T}, dest::GridBasis{S,T}) where {S,T} =
-	## 	new(src, dest)
+    scaling
 end
 
-GridSamplingOperator(grid::AbstractGrid{S}, ::Type{T} = subeltype(S); scaling=one(T)) where {S,T} =
-    GridSamplingOperator(FunctionSpace{S,T}(), grid; scaling= scaling)
+GridSamplingOperator(grid::AbstractGrid{S}, ::Type{T} = subeltype(S), args...; options...) where {S,T} =
+    GridSamplingOperator(FunctionSpace{S,T}(), gridbasis(grid, T), args...; options...)
 
-GridSamplingOperator(src::FunctionSpace{S,T}, grid::AbstractGrid{S}; scaling = one(T)) where {S,T} =
-	GridSamplingOperator(src, gridbasis(grid, T), scaling)
+GridSamplingOperator(gridbasis::GridBasis{S,T}, args...; options...) where {S,T} =
+	GridSamplingOperator(FunctionSpace{eltype(grid(gridbasis)),T}(), gridbasis, args...; options...)
 
-GridSamplingOperator(gridbasis::GridBasis{S,T}; scaling = one(T)) where {S,T} =
-	GridSamplingOperator(grid(gridbasis), coeftype(gridbasis); scaling= scaling)
+GridSamplingOperator(src::AbstractFunctionSpace, dest::GridBasis; scaling = nothing) =
+    GridSamplingOperator(src, dest, scaling)
 
 dest(op::GridSamplingOperator) = op.dest
 
 src_space(op::GridSamplingOperator) = op.src
 
-apply(op::GridSamplingOperator, f) = sample(grid(op), f, coeftype(gridbasis(op)), op.scaling)
 apply!(result, op::GridSamplingOperator, f) = sample!(result, grid(op), f, op.scaling)
 
 "Sample the function f on the given grid."
@@ -57,15 +55,42 @@ call_function_with_vector(f, x::SVector{4}) = f(x[1], x[2], x[3], x[4])
 call_function_with_vector(f, x::SVector{N}) where {N} = f(x...)
 call_function_with_vector(f, x::AbstractVector) = f(x...)
 
-function sample!(result, g::AbstractGrid, f, scaling)
-    for i in eachindex(g)
-		result[i] = scaling*call_function_with_vector(f, g[i])
+function sample!(result, grid, f, scaling::Number)
+    for i in eachindex(grid)
+		result[i] = scaling*call_function_with_vector(f, grid[i])
 	end
 	result
 end
 
-apply(op::GridSamplingOperator, dict::Dictionary; options...) =
-    op.scaling*evaluation_operator(dict, grid(op); options...)
+function sample!(result, grid, f, scaling::Void)
+    for i in eachindex(grid)
+		result[i] = call_function_with_vector(f, grid[i])
+	end
+	result
+end
 
-*(op::GridSamplingOperator, scalar::Number) = GridSamplingOperator(op.src, op.dest, op.scaling*scalar)
-*(scalar::Number, op::GridSamplingOperator) = GridSamplingOperator(op.src, op.dest, op.scaling*scalar)
+function sample!(result, grid, f, scaling::AbstractArray)
+    for i in eachindex(grid)
+		result[i] = scaling[i] * call_function_with_vector(f, grid[i])
+	end
+	result
+end
+
+
+apply(op::GridSamplingOperator, dict::Dictionary; options...) =
+    _apply(op.scaling, op, dict; options...)
+_apply(scaling::Void, op::GridSamplingOperator, dict; options...) =
+    evaluation_operator(dict, grid(op); options...)
+_apply(scaling::Number, op::GridSamplingOperator, dict; options...) =
+    scaling*evaluation_operator(dict, grid(op); options...)
+_apply(scaling::AbstractArray, op::GridSamplingOperator, dict; options...) =
+    DiagonalOperator(dest(op), dest(op), scaling)*evaluation_operator(dict, grid(op); options...)
+
+*(op::GridSamplingOperator, scalar::Number) = times_by(op.scaling, op, scalar)
+*(scalar::Number, op::GridSamplingOperator) = times_by(op.scaling, op, scalar)
+
+times_by(scaling::Void, op::GridSamplingOperator, scalar::Number) =
+    GridSamplingOperator(op.src, op.dest, scalar)
+
+times_by(scaling, op::GridSamplingOperator, scalar::Number) =
+    GridSamplingOperator(op.src, op.dest, scalar*scaling)

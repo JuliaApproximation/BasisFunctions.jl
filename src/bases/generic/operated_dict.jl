@@ -58,9 +58,6 @@ domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 
 operator(set::OperatedDict) = set.op
 
-in_support(dict::OperatedDict, idx, x) = default_in_support(dict, idx, x)
-in_support(dict::OperatedDict, idx::LinearIndex, x) = default_in_support(dict, idx, x)
-
 dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
     OperatedDict(similar_operator(operator(s), promote_domaintype(src(s), S), dest(s) ) )
 

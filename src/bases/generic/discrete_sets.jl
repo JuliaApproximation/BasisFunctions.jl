@@ -11,6 +11,7 @@ end
 
 coefficient_type(::Type{DiscreteDictionary{I,T}}) where {I,T} = T
 
+
 # We can't update the domain type of a discrete set
 dict_promote_domaintype(d::DiscreteDictionary, S) =
     error("The domain type of a discrete set is fixed.")
@@ -18,25 +19,18 @@ dict_promote_domaintype(d::DiscreteDictionary, S) =
 # The point x is in the support of d exactly when it is within the bounds of
 # the index set, so we can do a checkbounds with Bool argument (which does not
 # throw an error but returns true or false).
-in_support(d::DiscreteDictionary{I}, idx, x::I) where I = checkbounds(Bool, d, x)
+dict_in_support(d::DiscreteDictionary{I}, idx, x::I) where I = checkbounds(Bool, d, x)
 
-function in_support(d::DiscreteDictionary, idx, x)
+function dict_in_support(d::DiscreteDictionary{I}, idx, x) where I
     try
-        in_support(d, idx, native_index(d, x))
+        # Attempt to convert x to a native index. If that fails, the result is false.
+        idxn = native_index(d, x)
+        checkbounds(Bool, d, idxn)
     catch e
         false
     end
 end
 
-in_support(d::DiscreteDictionary{I}, idx::LinearIndex, x::I) where I = checkbounds(Bool, d, x)
-
-function in_support(d::DiscreteDictionary, idx::LinearIndex, x)
-    try
-        in_support(d, idx, native_index(d, x))
-    catch e
-        false
-    end
-end
 
 # Evaluation of discrete sets works as follows:
 # -> eval_element: does bounds check on idx
