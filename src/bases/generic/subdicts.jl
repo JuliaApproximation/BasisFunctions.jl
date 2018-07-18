@@ -85,11 +85,11 @@ for op in (:isreal, :is_orthogonal, :is_basis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
 end
 
-for op in [:moment, :norm]
+for op in (:moment, :norm)
     @eval $op(d::Subdictionary, i) = $op(superdict(d), superindices(d, i))
 end
 
-in_support(d::Subdictionary, i::LinearIndex, x) = in_support(superdict(d), superindices(d, i), x)
+dict_in_support(d::Subdictionary, i, x) = in_support(superdict(d), superindices(d, i), x)
 
 unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), superindices(d, i), x)
 
@@ -248,9 +248,10 @@ function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)
 end
 
 
-# We define the behaviour of getindex for function sets: `subdict` create a
+# We define the behaviour of getindex for function sets: `subdict` creates a
 # suitable subdict based on the type of the indices
 getindex(dict::Dictionary, idx) = subdict(dict, idx)
+# convert multiple indices to a single tuple
 getindex(dict::Dictionary, idx, superindices...) = subdict(dict, (idx, superindices...))
 
 # - By default we generate a large subdict

@@ -199,6 +199,8 @@ in_support(set::CompactPeriodicTranslationDict, idx::LinearIndex, x::Real) =
 
 in_support(set::CompactPeriodicTranslationDict, idx::TransIndex, x::Real) =
     in_compact_support(set, idx, x)
+#dict_in_support(set::CompactPeriodicTranslationDict, idx::TransIndex, x::Real) =
+#    in_compact_support(set, idx, x)
 
 unsafe_eval_element(b::CompactPeriodicTranslationDict, idx::TransIndex, x::Real) =
     eval_compact_element(b, idx, x)

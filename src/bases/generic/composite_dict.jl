@@ -78,6 +78,8 @@ end
 # Indexing
 ##################
 
+const MultilinearIndices = Union{MultilinearIndex,Tuple{Int,Any}}
+
 native_index(dict::CompositeDict, idx::MultilinearIndex) = idx
 
 multilinear_index(dict::CompositeDict, idx::LinearIndex) =
@@ -93,27 +95,20 @@ ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
 # We have to amend the boundscheck ecosystem to catch some cases:
 # - This line will catch indexing with tuples of integers, and we assume
 #   the user wanted to use a CartesianIndex
-checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Any}) =
+checkbounds(::Type{Bool}, d::CompositeDict, idx::MultilinearIndices) =
     checkbounds(Bool, d, (idx[1], linear_index(element(d,idx[1]), idx[2])))
 # - and this line to avoid an ambiguity
 checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
     checkbounds(Bool, d, linear_index(d, idx))
 
-getindex(set::CompositeDict, i::Int) = getindex(set, multilinear_index(set, i))
-
 # For getindex: return indexed basis function of the underlying set
-getindex(set::CompositeDict, idx::Tuple{Int,Any}) = getindex(set, idx[1], idx[2])
-
+getindex(set::CompositeDict, idx::LinearIndex) = getindex(set, native_index(set, idx))
+getindex(set::CompositeDict, idx::MultilinearIndices) = getindex(set, idx[1], idx[2])
 getindex(set::CompositeDict, i, j) = set.dicts[i][j]
 
 
-# Translate a linear index into a multilinear index
-in_support(set::CompositeDict, idx, x) = _in_support(set, elements(set), idx, x)
-in_support(set::CompositeDict, idx::LinearIndex, x) = _in_support(set, elements(set), idx, x)
-
-_in_support(set::CompositeDict, dicts, idx::Int, x) = in_support(set, multilinear_index(set, idx), x)
-
-_in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[idx[1]], idx[2], x)
+dict_in_support(set::CompositeDict, idx, x) = _dict_in_support(set, elements(set), idx, x)
+_dict_in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[idx[1]], idx[2], x)
 
 eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(set)))
 

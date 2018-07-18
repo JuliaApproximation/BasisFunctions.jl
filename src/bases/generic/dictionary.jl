@@ -348,12 +348,12 @@ done(d::Dictionary, state) = done(state[1], state[2])
 # One thing to take into account in our setting is that the map from linear indices
 # to native indices and vice-versa requires knowledge of the dictionary. Hence,
 # we do some conversions before `indices(dict)` is called and passed on.
-checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
+@inline checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
 # We make a special case for a linear index
 checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, linearindices(dict), i)
 
-# We also convert native indices to linear indices, before moving on.
+# We also convert some native indices to linear indices, before moving on.
 # (This is more difficult to do later on, e.g. in checkindex, because that routine
 #  does not have access to the dict anymore)
 checkbounds(::Type{Bool}, dict::Dictionary, i::NativeIndex) =
@@ -362,7 +362,7 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 
 # And here we call checkbounds_indices with indices(dict)
-checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
+@inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
 
 "Return the support of the idx-th basis function. Default is support of the dictionary."
 support(dict::Dictionary, idx) = support(dict)
@@ -372,14 +372,31 @@ support(dict::Dictionary, idx) = support(dict)
 
 tolerance(dict::Dictionary) = tolerance(domaintype(dict))
 
-"Does the given point lie inside the support of the given set function or dictionary?"
-in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
-in_support(dict::Dictionary, x) = default_in_support(dict, x)
+"Does the given point lie inside the support of the given function or dictionary?"
+in_support(dict::Dictionary, idx) = dict_in_support(dict, idx)
+in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
+# The mechanism is as follows:
+# - in_support(dict::Dictionary, ...) calls dict_in_support
+# - any linear index is converted to a native index
+# - concrete dictionary should implement dict_in_support
+# The reasoning is that concrete dictionaries need not all worry about handling
+# linear indices. Yet, they are free to implement other types of indices.
+# If a more efficient algorithm is available for linear indices, then the concrete
+# dictionary can still intercept the call to in_support.
+# The delegation to a method with a different name (dict_in_support) makes it
+# substantially easier to deal with ambiguity errors.
 
-# Add a fallback for linear indices, convert to native index so that it is sufficient
-# for dictionaries to implement native indices
+# This is the standard conversion to a native_index for any index of type
+# LinearIndex. This calls a different function, hence it is fine if the native
+# index happens to be a linear index.
+in_support(dict::Dictionary, idx::LinearIndex) =
+    dict_in_support(dict, native_index(dict, idx))
 in_support(dict::Dictionary, idx::LinearIndex, x) =
-    in_support(dict, native_index(dict, idx), x)
+    dict_in_support(dict, native_index(dict, idx), x)
+
+# The default fallback is implemented below in terms of the support of the dictionary:
+dict_in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
+dict_in_support(dict::Dictionary, idx) = default_in_support(dict, idx)
 
 default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
 default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))

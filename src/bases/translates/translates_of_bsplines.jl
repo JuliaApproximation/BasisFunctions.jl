@@ -65,6 +65,12 @@ left_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = real(T)
 
 right_of_compact_function{K,T}(b::BSplineTranslatesBasis{K,T})::real(T) = stepsize(b)*real(T)(degree(b)+1)
 
+eval_kernel(b::BSplineTranslatesBasis{K,T,true}, x) where {K,T} = (n = length(b); sqrt(n)*evaluate_periodic_Bspline(K, n*x, n, T))
+eval_kernel(b::BSplineTranslatesBasis{K,T,false}, x) where {K,T} = (n = length(b); evaluate_periodic_Bspline(K, n*x, n, T))
+
+unsafe_eval_element(b::BSplineTranslatesBasis, idxn::TransIndex, x::Real) =
+    eval_kernel(b, x-idxn*stepsize(b))
+
 
 =={K1,K2,T1,T2}(b1::BSplineTranslatesBasis{K1,T1}, b2::BSplineTranslatesBasis{K2,T2}) = T1==T2 && K1==K2 && length(b1)==length(b2)
 

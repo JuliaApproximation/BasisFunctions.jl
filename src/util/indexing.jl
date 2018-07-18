@@ -214,10 +214,10 @@ getindex(list::ProductIndexList{N}, idx1::Int, idx2::Int, idx::Int...) where {N}
 # We leave the indices unchanged if it is not possible.
 
 # This is an exhaustive list of types we know how to convert
-ProductIndices = Union{NTuple,ProductIndex,Int}
+ProductIndices = Union{NTuple,ProductIndex}
 
 # - Both indices are fine:
-promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where {N} = (idx1,idx2)
+promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where N = (idx1,idx2)
 # - One or both of them are not fine, but they are both in PTI. The formulation
 #   includes the case above, since they could both be ProductIndex{N}. By leaving
 #   out the type of size, we make sure that the line above is more specific and

@@ -143,28 +143,25 @@ resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 
 
 
-# Delegate in_support to _in_support with the composing dicts as extra arguments,
+# Delegate dict_in_support to _dict_in_support with the composing dicts as extra arguments,
 # in order to avoid extra memory allocation.
-in_support(dict::TensorProductDict, idx, x) =
-    _in_support(dict, elements(dict), idx, x)
-
-in_support(dict::TensorProductDict, idx::LinearIndex, x) =
-    in_support(dict, native_index(dict, idx), x)
+dict_in_support(dict::TensorProductDict, idx, x) =
+    _dict_in_support(dict, elements(dict), idx, x)
 
 # This line is a bit slower than the lines below:
-_in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
+_dict_in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
 
 # That is why we handcode a few cases:
-_in_support(::TensorProductDict1, dicts, idx, x) =
+_dict_in_support(::TensorProductDict1, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1])
 
-_in_support(::TensorProductDict2, dicts, idx, x) =
+_dict_in_support(::TensorProductDict2, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2])
 
-_in_support(::TensorProductDict3, dicts, idx, x) =
+_dict_in_support(::TensorProductDict3, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3])
 
-_in_support(::TensorProductDict4, dicts, idx, x) =
+_dict_in_support(::TensorProductDict4, dicts, idx, x) =
     in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3]) && in_support(dicts[4], idx[4], x[4])
 
 
