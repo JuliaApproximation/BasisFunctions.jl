@@ -62,7 +62,7 @@ stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
 # (What about more general ranges?)
-EquispacedGrid(x::LinSpace) = EquispacedGrid(length(x), first(x), last(x))
+EquispacedGrid(x::LinRange) = EquispacedGrid(length(x), first(x), last(x))
 
 
 """
@@ -163,7 +163,7 @@ similar_grid(g::MidpointEquispacedGrid, a, b, T) = MidpointEquispacedGrid{T}(len
 
 resize(g::MidpointEquispacedGrid, n::Int) = MidpointEquispacedGrid(n, g.a, g.b)
 
-unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsize(g)
+unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*stepsize(g)
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 

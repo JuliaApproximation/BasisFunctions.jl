@@ -16,7 +16,7 @@ end
 # Generic functions for composite types:
 elements(grid::ProductGrid) = grid.grids
 element(grid::ProductGrid, j::Int) = grid.grids[j]
-element(grid::ProductGrid, range::Range) = cartesianproduct(grid.grids[range]...)
+element(grid::ProductGrid, range::AbstractRange) = cartesianproduct(grid.grids[range]...)
 
 # Disallow cartesian products of a single grid
 function ProductGrid(grid::AbstractGrid)
@@ -49,7 +49,8 @@ rightendpoint(g::ProductGrid, j) = rightendpoint(g.grids[j])
 
 # Convert to linear index. If the argument is a tuple of integers, it can be assumed to
 # be a multilinear index. Same for CartesianIndex.
-linear_index(grid::ProductGrid, i::NTuple{N,Int}) where {N} = sub2ind(size(grid), i...)
+linear_index(grid::ProductGrid, i::NTuple{N,Int}) where {N} = (VERSION < v"0.7-") ?
+	sub2ind(size(grid), i...) : LinearIndices(size(grid))[i...]
 linear_index(grid::ProductGrid, i::CartesianIndex) = linear_index(grid, i.I)
 
 # If its type is anything else, it may be a tuple of native indices
@@ -57,11 +58,11 @@ linear_index(grid::ProductGrid, idxn::Tuple) = linear_index(grid, map(linear_ind
 
 multilinear_index(grid::ProductGrid, idx::Int) = ind2sub(size(grid), idx)
 
-@generated function eachindex{TG}(g::ProductGrid{TG})
+@generated function eachindex(g::ProductGrid{TG}) where {TG}
 	LEN = tuple_length(TG)
 	startargs = fill(1, LEN)
 	stopargs = [:(size(g,$i)) for i=1:LEN]
-	:(CartesianRange(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
+	:(CartesianIndices(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
 end
 
 # unsafe_getindex(grid::ProductGrid, idx::CartesianIndex{2}) =
@@ -114,7 +115,7 @@ end
 
 FlatVector(x::T...) where {T<:Number} =  SVector(x...)
 FlatVector(x::Union{SVector,Number}...) =
-FlatVector( vcat([typeof(xi)<:SVector ? ([xii for xii in xi]): [xi] for xi in x]...)...)
+FlatVector( vcat([(typeof(xi)<:SVector) ? ([xii for xii in xi]) : [xi] for xi in x]...)...)
 unsafe_getindex(g::ProductGrid, i::Int...) = unsafe_getindex(g, tuple(i...))
 
 @generated function unsafe_getindex(g::ProductGrid, i::NTuple{N,Int}) where {N}

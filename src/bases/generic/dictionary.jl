@@ -55,8 +55,8 @@ codomaintype(::Type{D}) where {D <: Dictionary} = codomaintype(supertype(D))
 codomaintype(dict::Dictionary{S,T}) where {S,T} = T
 
 "The type of the expansion coefficients in a dictionary."
-# By default we set it equal to the codomaintype
 coefficient_type(dict::Dictionary) = codomaintype(dict)
+# By default we set it equal to the codomaintype
 
 # The dimension of a function set is the dimension of its domain type
 dimension(dict::Dictionary) = dimension(domaintype(dict))
@@ -105,7 +105,7 @@ since it is given without parameters.
 
 This function is mainly used to create instances for testing purposes.
 """
-instantiate{S <: Dictionary}(::Type{S}, n) = instantiate(S, n, Float64)
+instantiate(::Type{S}, n) where {S <: Dictionary}= instantiate(S, n, Float64)
 
 
 ##############################
@@ -323,18 +323,38 @@ restriction_set(d::Dictionary, n) = resize(d, n)
 ###############################
 
 # Default iterator over sets of functions: based on underlying index iterator.
-function start(d::Dictionary)
-    iter = eachindex(d)
-    (iter, start(iter))
-end
+if VERSION < v"0.7-"
+    function start(d::Dictionary)
+        iter = eachindex(d)
+        (iter, start(iter))
+    end
 
-function next(d::Dictionary, state)
-    iter, iter_state = state
-    idx, iter_newstate = next(iter,iter_state)
-    (d[idx], (iter,iter_newstate))
-end
+    function next(d::Dictionary, state)
+        iter, iter_state = state
+        idx, iter_newstate = next(iter,iter_state)
+        (d[idx], (iter,iter_newstate))
+    end
 
-done(d::Dictionary, state) = done(state[1], state[2])
+    done(d::Dictionary, state) = done(state[1], state[2])
+else
+    function Base.iterate(d::Dictionary)
+        iter = eachindex(d)
+        first_item, first_state = iterate(iter)
+        (d[first_item], (iter, (first_item, first_state)))
+    end
+
+    function Base.iterate(d::Dictionary, state)
+        iter, iter_tuple = state
+        iter_item, iter_state = iter_tuple
+        next_tuple = iterate(iter, iter_state)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            (d[next_item], (iter,next_tuple))
+        end
+    end
+
+    Base.eltype(::Type{Dict}) where {Dict<:Dictionary}= SingletonSubdict
+end
 
 
 
@@ -351,7 +371,7 @@ done(d::Dictionary, state) = done(state[1], state[2])
 @inline checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
 # We make a special case for a linear index
-checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, linearindices(dict), i)
+checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, Base.OneTo(length(dict)), i)
 
 # We also convert some native indices to linear indices, before moving on.
 # (This is more difficult to do later on, e.g. in checkindex, because that routine
@@ -362,7 +382,7 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 
 # And here we call checkbounds_indices with indices(dict)
-@inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
+@inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, axes(dict), I)
 
 "Return the support of the idx-th basis function. Default is support of the dictionary."
 support(dict::Dictionary, idx) = support(dict)

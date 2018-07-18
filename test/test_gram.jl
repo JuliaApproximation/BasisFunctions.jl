@@ -1,5 +1,9 @@
 using BasisFunctions
-using Base.Test
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
 
 function discrete_gram_test(T)
     for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries)#,BSplineTranslatesBasis,)

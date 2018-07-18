@@ -24,12 +24,16 @@ unsafe_wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, de
 
 inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
-ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+if VERSION < v"0.7-"
+    ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+else
+    adjoint(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+end
 
 function matrix!(op::IdentityOperator, a)
     @assert size(a,1) == size(a,2)
 
-    a[:] = zero(eltype(op))
+    a[:] .= zero(eltype(op))
     for i in 1:size(a,1)
         a[i,i] = one(eltype(op))
     end
@@ -69,7 +73,11 @@ unsafe_wrap_operator(src, dest, op::ScalingOperator) = similar_operator(op, src,
 
 @add_properties(ScalingOperator, is_inplace, is_diagonal)
 
-ctranspose(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
+if VERSION < v"0.7-"
+    ctranspose(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
+else
+    adjoint(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
+end
 
 inv(op::ScalingOperator) = ScalingOperator(dest(op), src(op), inv(scalar(op)))
 
@@ -98,7 +106,7 @@ diagonal(op::ScalingOperator) = [scalar(op) for i in 1:length(src(op))]
 unsafe_diagonal(op::ScalingOperator, i) = scalar(op)
 
 function matrix!(op::ScalingOperator, a)
-    a[:] = 0
+    a[:] .= 0
     for i in 1:min(size(a,1),size(a,2))
         a[i,i] = scalar(op)
     end
@@ -132,7 +140,11 @@ is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
 
 is_diagonal(::ZeroOperator) = true
 
-ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
+if VERSION < v"0.7-"
+    ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
+else
+    adjoint(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
+end
 
 matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
@@ -187,10 +199,14 @@ diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
 inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
 
-ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
+if VERSION < v"0.7-"
+    ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
+else
+    adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
+end
 
 function matrix!(op::DiagonalOperator, a)
-    a[:] = 0
+    a[:] .= 0
     for i in 1:min(size(a,1),size(a,2))
         a[i,i] = op.diagonal[i]
     end
@@ -212,7 +228,7 @@ function apply!(op::DiagonalOperator, coef_dest, coef_src)
     coef_dest
 end
 
-matrix(op::DiagonalOperator) = diagm(diagonal(op))
+matrix(op::DiagonalOperator) = Matrix(Diagonal(diagonal(op)))
 
 
 ##################################

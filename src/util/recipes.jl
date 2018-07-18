@@ -77,7 +77,7 @@ end
     for i in eachindex(F)
         @series begin
             grid = plotgrid(F[i],n)
-            vals = plot_complex? F[i](grid) : real(F[i](grid))
+            vals = (plot_complex) ? F[i](grid) : real(F[i](grid))
             grid, postprocess(F[i],grid,vals)
         end
     end
@@ -121,7 +121,7 @@ plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
 end
 
 # 2D
-@recipe function f(A::LinSpace{S},B::LinSpace{S},C::Array{T}) where {S<:Real,T<:Complex}
+@recipe function f(A::LinRange{S},B::LinRange{S},C::Array{T}) where {S<:Real,T<:Complex}
     # Force double layout
     layout := 2
     # Legend is useless here

@@ -192,7 +192,7 @@ end
 
 
 function matrix(op::DictionaryOperator)
-    a = Array{eltype(op)}(size(op))
+    a = (VERSION < v"0.7-") ? Array{eltype(op)}(size(op)) : Array{eltype(op)}(undef, size(op)) 
     matrix!(op, a)
 end
 

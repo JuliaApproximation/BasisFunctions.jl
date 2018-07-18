@@ -1,12 +1,20 @@
 # test_suite.jl
 module test_suite
 
-srand(1234)
-using StaticArrays
-using Base.Test
-using Domains
-using BasisFunctions
+using BasisFunctions, Domains, StaticArrays
 
+if VERSION < v"0.7-"
+    using Base.Test
+    my_rand(T, a...) = map(T, rand(a...))
+    ComplexF64 = Complex128
+    ComplexF32 = Complex64
+else
+    using Test, Random, FFTW, LinearAlgebra
+    linspace(a,b,c) = range(a, stop=b, length=c)
+    my_rand = rand
+end
+
+srand(1234)
 BF = BasisFunctions
 
 const show_timings = false
@@ -34,26 +42,31 @@ delimit("Utilities")
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well
-d1 = plan_fft!(zeros(Complex{Float64}, 10), 1:1)
-@test typeof(d1) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,1}
-d2 = plan_fft!(zeros(Complex{Float64}, 10, 10), 1:2)
-@test typeof(d2) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,true,2}
-d3 = plan_bfft!(zeros(Complex{Float64}, 10), 1:1)
-@test typeof(d3) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,1}
-d4 = plan_bfft!(zeros(Complex{Float64}, 10, 10), 1:2)
-@test typeof(d4) == Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,true,2}
+d1 = FFTW.plan_fft!(zeros(Complex{Float64}, 10), 1:1)
+@test typeof(d1) == FFTW.cFFTWPlan{Complex{Float64},-1,true,1}
+d2 = FFTW.plan_fft!(zeros(Complex{Float64}, 10, 10), 1:2)
+@test typeof(d2) == FFTW.cFFTWPlan{Complex{Float64},-1,true,2}
+d3 = FFTW.plan_bfft!(zeros(Complex{Float64}, 10), 1:1)
+@test typeof(d3) == FFTW.cFFTWPlan{Complex{Float64},1,true,1}
+d4 = FFTW.plan_bfft!(zeros(Complex{Float64}, 10, 10), 1:2)
+@test typeof(d4) == FFTW.cFFTWPlan{Complex{Float64},1,true,2}
 
-d5 = plan_dct!(zeros(10), 1:1)
-@test typeof(d5) == Base.DFT.FFTW.DCTPlan{Float64,5,true}
-d6 = plan_idct!(zeros(10), 1:1)
-@test typeof(d6) == Base.DFT.FFTW.DCTPlan{Float64,4,true}
+d5 = FFTW.plan_dct!(zeros(10), 1:1)
+@test typeof(d5) == FFTW.DCTPlan{Float64,5,true}
+d6 = FFTW.plan_idct!(zeros(10), 1:1)
+@test typeof(d6) == FFTW.DCTPlan{Float64,4,true}
 
 SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 # SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 #         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
-
-for T in [Float64,BigFloat,]
+if VERSION < v"0.7-"
+    types = [Float64,BigFloat,]
+else
+    warn("Postpone BigFloat testing until FastTransforms is fixed. ")
+    types = [Float64,]
+end
+for T in types
     println()
     delimit("T is $T", )
 

@@ -84,9 +84,9 @@ ifft_scalefactor(src, ::Type{Complex{Float32}}) = 1
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific FFT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-FFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
-IFFTPLAN{T,N,S} = Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
-#IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,Base.DFT.FFTW.cFFTWPlan{T,1,true,N},S}
+FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N}
+IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N}
+#IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,FFTW.cFFTWPlan{T,1,true,N},S}
 
 dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
     dim, object::FFTPLAN; options...) =
@@ -159,9 +159,9 @@ end
 # We have to know the precise type of the DCT plan in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific DCT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-DCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,5,true}
-IDCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,4,true}
-DCTIPLAN{T} = Base.DFT.FFTW.r2rFFTWPlan{T,(3,),false,1}
+DCTPLAN{T} = FFTW.DCTPlan{T,5,true}
+IDCTPLAN{T} = FFTW.DCTPlan{T,4,true}
+DCTIPLAN{T} = FFTW.r2rFFTWPlan{T,(3,),false,1}
 
 for (plan, transform, invtransform) in (
       (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
@@ -184,8 +184,14 @@ end
 # FunctionOperator that uses dct/idct:
 inv(fun::typeof(dct)) = idct
 inv(fun::typeof(idct)) = dct
-ctranspose(fun::typeof(dct)) = idct
-ctranspose(fun::typeof(idct)) = dct
+
+if VERSION < v"0.7-"
+    ctranspose(fun::typeof(dct)) = idct
+    ctranspose(fun::typeof(idct)) = dct
+else
+    adjoint(fun::typeof(dct)) = idct
+    adjoint(fun::typeof(idct)) = dct
+end
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.

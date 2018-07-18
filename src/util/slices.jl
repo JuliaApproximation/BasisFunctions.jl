@@ -9,23 +9,37 @@ export eachslice, joint, view
 
 abstract type SliceIterator{N} end
 
-struct SliceIteratorCartesian{N} <: SliceIterator{N}
-    range   ::  CartesianRange{CartesianIndex{N}}
-    dim     ::  Int
-    len     ::  Int
-end
-
-
-struct SliceIteratorLinear{N} <: SliceIterator{N}
-    range   ::  CartesianRange{CartesianIndex{N}}
-    dim     ::  Int
-    strides ::  NTuple{N,Int}
-    stride  ::  Int
-    len     ::  Int
-end
-
-
 abstract type SliceIndex end
+
+if VERSION < v"0.7-"
+    struct SliceIteratorCartesian{N} <: SliceIterator{N}
+        range   ::  CartesianRange{CartesianIndex{N}}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIteratorLinear{N} <: SliceIterator{N}
+        range   ::  CartesianRange{CartesianIndex{N}}
+        dim     ::  Int
+        strides ::  NTuple{N,Int}
+        stride  ::  Int
+        len     ::  Int
+    end
+else
+    struct SliceIteratorCartesian{N} <: SliceIterator{N}
+        range   ::  CartesianIndices{N}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIteratorLinear{N} <: SliceIterator{N}
+        range   ::  CartesianIndices{N}
+        dim     ::  Int
+        strides ::  NTuple{N,Int}
+        stride  ::  Int
+        len     ::  Int
+    end
+end
 
 struct SliceIndexCartesian{N} <: SliceIndex
     cartidx ::  CartesianIndex{N}
@@ -41,9 +55,8 @@ struct SliceIndexLinear{N} <: SliceIndex
 end
 
 
-
 # TODO: more efficient implementation for all N
-function remaining_size{N}(siz::NTuple{N,Int}, dim)
+function remaining_size(siz::NTuple{N,Int}, dim) where {N}
     if dim == 1
         tuple(siz[2:N]...)
     elseif 1 < dim < N
@@ -121,50 +134,71 @@ end
 
 
 # Todo: efficient implementation for general N
-strides{N}(siz::NTuple{N,Int}) = (strides(siz[1:N-1])..., stride(siz,N))
+strides(siz::NTuple{N,Int}) where {N} = (strides(siz[1:N-1])..., stride(siz,N))
 
 
 eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
 
 # Type inference does not work with the N-1 argument below:
 #eachslice{T,N}(a::AbstractArray{T,N}, dim) =
-#    SliceIterator(CartesianRange(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
+#    SliceIterator(CartesianIndices(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
 
 # So we do a generated function for the time being:
-@generated function eachslice{T,N}(::Base.IndexCartesian, a::AbstractArray{T,N}, dim)
+@generated function eachslice(::Base.IndexLinear, a::AbstractArray{T,N}, dim) where {T,N}
     one_tuple = onetuple(Val{N-1})
-    quote
-        SliceIteratorCartesian(
-            CartesianRange( CartesianIndex($one_tuple),
-                            CartesianIndex(remaining_size(size(a), dim))),
-                            dim, size(a, dim) )
+    if VERSION < v"0.7-"
+        quote
+            SliceIteratorLinear(
+                CartesianRange( CartesianIndex($one_tuple),
+                                CartesianIndex(remaining_size(size(a), dim))),
+                                dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+        end
+    else
+        quote
+            SliceIteratorLinear(
+                CartesianIndices( CartesianIndex($one_tuple),
+                                CartesianIndex(remaining_size(size(a), dim))),
+                                dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+        end
     end
 end
 
-@generated function eachslice{T,N}(::Base.IndexLinear, a::AbstractArray{T,N}, dim)
-    one_tuple = onetuple(Val{N-1})
-    quote
-        SliceIteratorLinear(
-            CartesianRange( CartesianIndex($one_tuple),
-                            CartesianIndex(remaining_size(size(a), dim))),
-                            dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+if VERSION < v"0.7-"
+    Base.start(it::SliceIteratorCartesian) = SliceIndexCartesian(start(it.range), it.dim, it.len)
+
+    Base.next(it::SliceIteratorCartesian, sidx::SliceIndex) =
+        (sidx, SliceIndexCartesian(next(it.range, sidx.cartidx)[2], it.dim, it.len))
+
+    Base.done(it::SliceIteratorCartesian, sidx::SliceIndex) = Base.done(it.range, sidx.cartidx)
+else
+    function Base.iterate(it::SliceIteratorCartesian)
+        first_tuple = iterate(it.range)
+        if first_tuple != nothing
+            first_item, first_state = first_tuple
+            SliceIndexCartesian(first_item, it.dim, it.len), SliceIndexCartesian(first_item, it.dim, it.len)
+        end
     end
+
+    function Base.iterate(it::SliceIteratorCartesian, state)
+        next_tuple = iterate(it.range, state.cartidx)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            SliceIndexCartesian(next_item, it.dim, it.len), SliceIndexCartesian(next_item, it.dim, it.len)
+        end
+    end
+
+    Base.eltype(::Type{SliceIteratorCartesian}) = SliceIndexCartesian
 end
 
-Base.start(it::SliceIteratorCartesian) = SliceIndexCartesian(start(it.range), it.dim, it.len)
 
-Base.next(it::SliceIteratorCartesian, sidx::SliceIndex) =
-    (sidx, SliceIndexCartesian(next(it.range, sidx.cartidx)[2], it.dim, it.len))
-
-Base.done(it::SliceIteratorCartesian, sidx::SliceIndex) = done(it.range, sidx.cartidx)
-
-function Base.getindex{T}(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::Int)
+function Base.getindex(a::AbstractArray{T,2}, sidx::SliceIndexCartesian{1}, i::Int) where {T}
     if sidx.dim == 1
         a[i, sidx.cartidx[1]]
     else
         a[sidx.cartidx[1], i]
     end
 end
+
 
 offset(strides::NTuple{1,Int}, idx::CartesianIndex{1}) = 1 + (idx[1]-1) * strides[1]
 
@@ -174,15 +208,39 @@ offset(strides::NTuple{2,Int}, idx::CartesianIndex{2}) =
 offset(strides::NTuple{3,Int}, idx::CartesianIndex{3}) =
     1 + (idx[1]-1) * strides[1] + (idx[2]-1) * strides[2] + (idx[3]-1) * strides[3]
 
+if VERSION < v"0.7-"
+    Base.start(it::SliceIteratorLinear) = SliceIndexLinear(start(it.range), 1, it.stride, it.len)
 
-Base.start(it::SliceIteratorLinear) = SliceIndexLinear(start(it.range), 1, it.stride, it.len)
+    function Base.next(it::SliceIteratorLinear, sidx::SliceIndex)
+        nextidx = next(it.range, sidx.cartidx)[2]
+        (sidx, SliceIndexLinear(nextidx, offset(it.strides, nextidx), it.stride, it.len))
+    end
 
-function Base.next(it::SliceIteratorLinear, sidx::SliceIndex)
-    nextidx = next(it.range, sidx.cartidx)[2]
-    (sidx, SliceIndexLinear(nextidx, offset(it.strides, nextidx), it.stride, it.len))
+    Base.done(it::SliceIteratorLinear, sidx::SliceIndex) = done(it.range, sidx.cartidx)
+else
+    function Base.iterate(it::SliceIteratorLinear)
+        first_tuple = iterate(it.range)
+        if first_tuple != nothing
+            first_item, first_state = first_tuple
+
+            index = SliceIndexLinear(first_item, 1, it.stride, it.len)
+            index, index
+        end
+    end
+
+    function Base.iterate(it::SliceIteratorLinear, state)
+        idx = state.cartidx
+        next_tuple = iterate(it.range, idx)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+
+            index = SliceIndexLinear(next_item, offset(it.strides, next_item), it.stride, it.len)
+            index, index
+        end
+    end
+
+    Base.eltype(::Type{SliceIteratorLinear}) = SliceIndexLinear
 end
-
-Base.done(it::SliceIteratorLinear, sidx::SliceIndex) = done(it.range, sidx.cartidx)
 
 
 Base.getindex(a::AbstractArray, sidx::SliceIndexLinear, i::Int) = a[sidx.offset + (i-1)*sidx.stride]
@@ -207,15 +265,44 @@ end
 
 joint(iter1, iter2) = JointIterator(iter1, iter2)
 
-Base.start(it::JointIterator) = (start(it.iter1), start(it.iter2))
 
-function Base.next(it::JointIterator, state)
-    el1, state1 = next(it.iter1, state[1])
-    el2, state2 = next(it.iter2, state[2])
-    ((el1,el2), (state1, state2))
+
+if VERSION < v"0.7-"
+    Base.start(it::JointIterator) = (start(it.iter1), start(it.iter2))
+
+    function Base.next(it::JointIterator, state)
+        el1, state1 = next(it.iter1, state[1])
+        el2, state2 = next(it.iter2, state[2])
+        ((el1,el2), (state1, state2))
+    end
+
+    Base.done(it::JointIterator, state) = done(it.iter1, state[1]) || done(it.iter2, state[2])
+else
+    function Base.iterate(it::JointIterator)
+        first_tuple1 = iterate(it.iter1)
+        first_tuple2 = iterate(it.iter2)
+        if (first_tuple1 != nothing) && (first_tuple2 != nothing)
+            first_item1, first_state1 = first_tuple1
+            first_item2, first_state2 = first_tuple2
+
+            (first_item1, first_item2), (first_state1, first_state2)
+        end
+    end
+
+    function Base.iterate(it::JointIterator, state)
+        state1, state2 = state
+        next_tuple1 = iterate(it.iter1, state1)
+        next_tuple2 = iterate(it.iter2, state2)
+
+        if (next_tuple1 != nothing) && (next_tuple2 != nothing)
+            next_item1, next_state1 = next_tuple1
+            next_item2, next_state2 = next_tuple2
+            (next_item1, next_item2), (next_state1, next_state2)
+        end
+    end
+
+    Base.eltype(::Type{JointIterator}) = Tuple{SliceIndex,SliceIndex}
 end
-
-Base.done(it::JointIterator, state) = done(it.iter1, state[1]) || done(it.iter2, state[2])
 
 Base.view(a::AbstractArray, sidx::SliceIndexLinear) =
     view(a, sidx.offset:sidx.stride:sidx.offset+(sidx.len-1)*sidx.stride)

@@ -1,6 +1,6 @@
 # rational.jl
 
-immutable RationalBasis{T} <: Dictionary1d{T,T}
+struct RationalBasis{T} <: Dictionary1d{T,T}
     roots   :: AbstractArray{T}
     support :: Domain
 
@@ -16,7 +16,7 @@ function unsafe_eval_element(b::RationalBasis, idx::Int, x)
             degree += 1
         end
     end
-    return 1./(x-b.roots[idx]).^(degree)
+    return 1 ./ (x-b.roots[idx]).^(degree)
 end
 
 length(r::RationalBasis) = length(r.roots)

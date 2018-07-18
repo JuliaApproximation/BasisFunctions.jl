@@ -31,7 +31,7 @@ const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 is_composite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
-element(dict::TensorProductDict, range::Range) = tensorproduct(dict.dicts[range]...)
+element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
 numelements(dict::TensorProductDict{N}) where {N} = N
 
 tolerance(dict::TensorProductDict)=minimum(map(tolerance,elements(dict)))
@@ -248,7 +248,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
-index_set_tensorproduct(s,n) = CartesianRange(CartesianIndex(fill(1,n)...), CartesianIndex(fill(s+1,n)...))
+index_set_tensorproduct(s,n) = CartesianIndices(CartesianIndex(fill(1,n)...), CartesianIndex(fill(s+1,n)...))
 
 "Return a list of all indices of total degree at most s, in n dimensions."
 function index_set_total_degree(s, n)

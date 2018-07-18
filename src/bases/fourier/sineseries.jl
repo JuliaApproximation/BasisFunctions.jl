@@ -37,7 +37,7 @@ is_orthogonal(b::SineSeries) = true
 has_grid(b::SineSeries) = false
 has_derivative(b::SineSeries) = false #for now
 has_antiderivative(b::SineSeries) = false #for now
-has_transform{G <: PeriodicEquispacedGrid}(b::SineSeries, d::GridBasis{G}) = false #for now
+has_transform(b::SineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n

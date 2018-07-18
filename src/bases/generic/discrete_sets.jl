@@ -64,7 +64,7 @@ name(d::DiscreteDictionary) = "a discrete set"
 A `DiscreteVectorDictionary{T}` describes the linear space of vectors of finite length
 `n` with element type `T`.
 """
-immutable DiscreteVectorDictionary{T} <: DiscreteDictionary{Int,T}
+struct DiscreteVectorDictionary{T} <: DiscreteDictionary{Int,T}
     n   ::  Int
 end
 
@@ -82,7 +82,7 @@ support(d::DiscreteVectorDictionary) = ClosedInterval{Int}(1, length(d))
 A `DiscreteArrayDictionary{N,T}` describes the linear space of arrays of finite size
 `size(d)` with element type `T`.
 """
-immutable DiscreteArrayDictionary{N,T} <: DiscreteDictionary{ProductIndex{N},T}
+struct DiscreteArrayDictionary{N,T} <: DiscreteDictionary{ProductIndex{N},T}
     size    ::  NTuple{N,Int}
 end
 
@@ -106,7 +106,7 @@ native_index(d::DiscreteArrayDictionary, idx) = product_native_index(size(d), id
 A `DiscreteMultiArrayDictionary{A,T}` describes the linear space of multi-arrays
 with element type `T`.
 """
-immutable DiscreteMultiArrayDictionary{T} <: DiscreteDictionary{MultilinearIndex,T}
+struct DiscreteMultiArrayDictionary{T} <: DiscreteDictionary{MultilinearIndex,T}
     offsets ::  Vector{Int}
 end
 

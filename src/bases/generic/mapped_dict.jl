@@ -207,7 +207,7 @@ rescale(s::Dictionary,d::Domain) = rescale(s,infimum(d),supremum(d))
 
 
 # "Preserve Tensor Product Structure"
-function rescale{N}(s::TensorProductDict, a::SVector{N}, b::SVector{N})
+function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
     scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
 end

@@ -1,6 +1,10 @@
 
 using BasisFunctions
-using Base.Test
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
 
 n = 121
 # Check some implementation
@@ -10,7 +14,7 @@ n = 121
 
 function test_full_transform_extremagrid()
     for n in (10,101)
-        for T in (Float32, Float64, Complex64, Complex128)
+        for T in (Float32, Float64, ComplexF32, ComplexF64)
             coef = zeros(T,n)
             # tol = 10^(4/5*log10(eps(real(T))))
             tol = sqrt(eps(real(T)))
@@ -33,7 +37,7 @@ end
 
 function test_inverse_transform_extremagrid()
     for n in (10,101)
-        for T in (Float32, Float64, Complex64, Complex128)
+        for T in (Float32, Float64, ComplexF32, ComplexF64)
             coef = zeros(T,n)
             # tol = 10^(4/5*log10(eps(real(T))))
             tol = sqrt(eps(real(T)))

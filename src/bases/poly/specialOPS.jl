@@ -70,7 +70,9 @@ end
 
 function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes::Vector{ELT}) where {ELT}
     @assert indicator_function_nodes[1] == -1 && indicator_function_nodes[end] == 1
-    @assert reduce(&, true, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end])
+    @assert (VERSION < v"0.7-") ?
+        reduce(&, true, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end]) :
+        reduce(&, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end], init=true)
     @assert iseven(length(indicator_function_nodes))
 
     if α < 0
@@ -114,7 +116,7 @@ indicator_function(nodes) = x-> reduce(|, false, nodes[1:2:end] .<= x .<= nodes[
 
 function WaveOPS(n::Int,omega::ELT; options...) where {ELT}
     my_quadrature_rule = n->_wavePolynomialweight(n, omega)
-    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)), (x->abs(x)<=1 ? exp(1im*omega*x):0.);options...)
+    BasisFunctions.OrthonormalOPSfromQuadrature(n, my_quadrature_rule, interval(-one(ELT), one(ELT)), (x->(abs(x)<=1) ? exp(1im*omega*x) : ELT(0)); options...)
 end
 
 function _wavePolynomialweight(n, omega::ELT) where ELT

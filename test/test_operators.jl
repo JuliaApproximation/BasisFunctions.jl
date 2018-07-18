@@ -25,11 +25,11 @@ function test_tensor_operators(T)
     n1 = 4
     m2 = 10
     n2 = 24
-    A1 = MatrixOperator(map(T,rand(m1,n1)))
-    A2 = MatrixOperator(map(T,rand(m2,n2)))
+    A1 = MatrixOperator(my_rand(T,m1,n1))
+    A2 = MatrixOperator(my_rand(T,m2,n2))
 
     A_tp = TensorProductOperator(A1, A2)
-    b = map(T, rand(n1, n2))
+    b = my_rand(T, n1, n2)
     c_tp = zeros(T, m1, m2)
     apply!(A_tp, c_tp, b)
 
@@ -60,10 +60,10 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, map(coeftype(SRC),rand())),
+        operators = (CoefficientScalingOperator(SRC, 3, my_rand(coeftype(SRC))),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
-            ScalingOperator(SRC, map(coeftype(SRC),rand())), ScalingOperator(SRC,3),
-            DiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
+            ScalingOperator(SRC, my_rand(coeftype(SRC))), ScalingOperator(SRC,3),
+            DiagonalOperator(SRC, my_rand(coeftype(SRC), size(SRC))))
            # PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
@@ -107,15 +107,15 @@ end
 
 function test_multidiagonal_operators(T)
     MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, rand()*one(coeftype(MSet))),
+    operators = (CoefficientScalingOperator(MSet, 3, my_rand(coeftype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
-        DiagonalOperator(MSet, map(coeftype(MSet), rand(length(MSet)))))
+        DiagonalOperator(MSet, my_rand(coeftype(MSet),length(MSet))))
     for Op in operators
         # Test in-place
         coef_src = zeros(MSet)
         for i in eachindex(coef_src)
-            coef_src[i] = rand() * one(eltype(coef_src))
+            coef_src[i] = my_rand(eltype(coef_src))
         end
         m = matrix(Op)
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)

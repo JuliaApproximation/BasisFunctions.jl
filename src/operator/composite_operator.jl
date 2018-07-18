@@ -38,9 +38,10 @@ function apply(comp::GenericCompositeOperator, fun)
 end
 
 "Can an operator allocate storage for its expected output?"
+can_allocate_output(op::DictionaryOperator) = true
 # The answer is no in general, but yes if the output is the span of a dictionary
 # - Yes for all dictionary operators
-can_allocate_output(op::DictionaryOperator) = true
+
 # - AbstractOperator: it depends on the output, which we determine using dispatch
 can_allocate_output(op::AbstractOperator) = _can_allocate_output(op, dest_space(op))
 _can_allocate_output(op, span::Span) = true
@@ -89,7 +90,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
         # Flatten away nested CompositeOperators
         operators = flatten(CompositeOperator, operators...)
         # Iterate over the operators and remove the ones that don't do anything
-        c_operators = Array{AbstractOperator}(0)
+        c_operators = (VERSION < v"0.7-") ? Array{AbstractOperator}(0) : Array{AbstractOperator}(undef, 0)
         for op in operators
             add_this_one = true
             # We forget about identity operators
@@ -209,7 +210,11 @@ end
 
 inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
 
-ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
+if VERSION < v"0.7-"
+    ctranspose(op::CompositeOperator) = (*)(map(ctranspose, op.operators)...)
+else
+    adjoint(op::CompositeOperator) = (*)(map(adjoint, op.operators)...)
+end
 
 (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
 (∘)(ops::AbstractOperator...) = (*)(ops...)

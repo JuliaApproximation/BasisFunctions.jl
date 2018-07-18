@@ -281,13 +281,21 @@ end
 
 function roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
-    eig(J)[1]
+    (VERSION < v"0.7-") ? eig(J)[1] : eigen(J).values
 end
 
-function roots(b::OPS{T}) where {T<:Union{BigFloat}}
-    J = symmetric_jacobi_matrix(b)
-    # assuming the user has imported LinearAlgebra.jl
-    sort(real(LinearAlgebra.EigenGeneral.eigvals!(J)))
+if VERSION < v"0.7-"
+    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+        J = symmetric_jacobi_matrix(b)
+        # assuming the user has imported GenericLinearAlgebra.jl
+        sort(real(LinearAlgebra.EigenGeneral.eigvals!(J)))
+    end
+else
+    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+        J = symmetric_jacobi_matrix(b)
+        # assuming the user has imported GenericLinearAlgebra.jl
+        sort(real(eigvals!(J)))
+    end
 end
 
 gauss_points(b::OPS) = roots(b)
@@ -309,7 +317,7 @@ Compute the Gaussian quadrature rule using the roots of the orthogonal polynomia
 """
 function gauss_rule(b::OPS{T}) where {T <: Real}
     J = symmetric_jacobi_matrix(b)
-    x,v = eig(J)
+    x,v = (VERSION < v"0.7-") ? eig(J) : eigen(J)
     b0 = first_moment(b)
     # In the real-valued case it is sufficient to use the first element of the
     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
@@ -353,7 +361,7 @@ end
 Compute the weights of Gaussian quadrature rule from the given roots of the
 orthogonal polynomial and using the formula:
 ```
-w_j = 1 / \sum_{k=0}^{n-1} p_k(x_j)^2
+w_j = 1 / \\sum_{k=0}^{n-1} p_k(x_j)^2
 ```
 This formula only holds for the orthonormal polynomials.
 """
@@ -390,7 +398,7 @@ p_0(t) = 1, p_{-1}(t) = 0
 and orthogonal with respect to the inner product induced by the quadrature
 
 ```
-\sum w_k p_m(t_k)q_n(t_k) = \delta_{m,n}
+\\sum w_k p_m(t_k)q_n(t_k) = \\delta_{m,n}
 ```
 
 See e.g. Gautschi's book, "Orthogonal Polynomials and Computation" and its
@@ -462,10 +470,10 @@ function stieltjes!(a::Array{T},b::Array{T},N,x::Array{RT},w::Array{T},p0::Array
         copy!(p0,p1)
         copy!(p1,p2)
 
-        p2 .= (x.-a[k]).*p1.-b[k].*p0
-        scratch .= p2.^2.*w
+        p2 .= (x .- a[k]) .* p1 .- b[k] .* p0
+        scratch .= (p2 .^ 2) .* w
         s1 = sum(scratch)
-        scratch .= w.*(p2.^2).*x
+        scratch .= w .* (p2 .^ 2) .* x
         s2 = sum(scratch)
         scratch .= abs.(p2)
         if (maximum(abs.(scratch))>huge || abs(s2)>huge)
@@ -486,7 +494,7 @@ Modified Chebyshev Algorithm
 Implements the map of the modified moments
 
 ```
-\mu_k = \int p_k(x) dλ(x), k=0,...,2N-1
+\\mu_k = \\int p_k(x) dλ(x), k=0,...,2N-1
 ```
 where (p_k) are some monic orthogonal polynomials satisfying the recurrence relation
 ```
@@ -503,7 +511,7 @@ are orthogonal with respect to the measure λ.
 
 By default a, and b are zero vectors and therefore the moments are assumed to be
 ```
-\mu_k = \int x^k dλ(x), k=0,...,2N-1
+\\mu_k = \\int x^k dλ(x), k=0,...,2N-1
 ```
 This procedure is however not stable.
 
@@ -610,9 +618,15 @@ q_{k+1}(t) = (a_kt+b_k)q_k(t)-c_kq_{k-1}(t)
 """
 function monic_to_orthonormal_recurrence_coefficients(α::Array{T}, β::Array{T}) where {T}
     n = length(α)
-    a = Array{T}(n-1)
-    b = Array{T}(n-1)
-    c = Array{T}(n-1)
+    if VERSION < v"0.7-"
+        a = Array{T}(n-1)
+        b = Array{T}(n-1)
+        c = Array{T}(n-1)
+    else
+        a = Array{T}(undef, n-1)
+        b = Array{T}(undef, n-1)
+        c = Array{T}(undef, n-1)
+    end
     monic_to_orthonormal_recurrence_coefficients!(a,b,c,α,β)
     a,b,c
 end
@@ -621,7 +635,7 @@ end
 See `monic_to_orthonormal_recurrence_coefficients`
 """
 function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c::Array{T},α::Array{T},β::Array{T}) where {T}
-    a .= 1./sqrt.(view(β,2:length(β)))
+    a .= 1 ./ sqrt.(view(β,2:length(β)))
     b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
     c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
     a,b,c

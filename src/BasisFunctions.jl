@@ -4,20 +4,32 @@ __precompile__(true)
 
 module BasisFunctions
 
-using StaticArrays
-using RecipesBase
-using QuadGK
+using StaticArrays, RecipesBase, QuadGK, SpecialMatrices, Domains, AbstractTrees
 
-using SpecialMatrices
-using FastTransforms
-using Domains
+if VERSION < v"0.7-"
+    using LinearAlgebra, FastTransforms
+    import Base: norm, pinv, normalize, cross, ×, ctranspose, dct, idct
+    import Base.LinAlg: dot
+    CartesianIndices = CartesianRange
+    LinRange=LinSpace
+    AbstractRange = Range
+    mul! = A_mul_B!
+    IteratorSize = Base.iteratorsize
+    axes = indices
+else
+    using GenericLinearAlgebra, FFTW, LinearAlgebra#, FastTransforms
+    warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
+    import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+    using Base:IteratorSize
+    using SpecialFunctions: gamma
+    using DSP: conv
+    linspace(a,b,c) = range(a, stop=b, length=c)
+end
 
-using LinearAlgebra
-using AbstractTrees
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
-import Base: ≈, norm
+import Base: ≈
 import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen
@@ -34,19 +46,15 @@ import Base: getindex, setindex!, unsafe_getindex, eltype
 
 import Base: isreal, iseven, isodd, real, complex
 
-import Base: ctranspose, transpose, inv, pinv, hcat, vcat
+import Base: transpose, inv, hcat, vcat
 
 import Base: show, showcompact, convert, similar, string
 
-import Base: dct, idct
 
-import Base: indices, normalize
+
+import Base: indices
 
 import Base: broadcast
-
-import Base: cross, ×
-
-import Base.LinAlg: dot
 
 ## Imports from Domains
 

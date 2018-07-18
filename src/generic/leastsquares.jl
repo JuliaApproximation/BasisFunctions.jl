@@ -38,6 +38,10 @@ function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
     end
 end
 
-function default_leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
-    SolverOperator(dgs, s, qrfact(evaluation_matrix(s, grid(dgs))))
+if (VERSION < v"0.7-")
+    default_leastsquares_operator(s::Dictionary, dgs::GridBasis; options...) =
+        SolverOperator(dgs, s, qrfact(evaluation_matrix(s, grid(dgs))))
+else
+    default_leastsquares_operator(s::Dictionary, dgs::GridBasis; options...) =
+        SolverOperator(dgs, s, qr(evaluation_matrix(s, grid(dgs))))
 end

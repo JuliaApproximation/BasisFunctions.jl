@@ -189,11 +189,14 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 # We have to override eachindex, because the default eachindex in Base returns
 # a linear index for a vector (because any IndexList is an AbstractVector), and
 # the most efficient iteration over product dictionaries is using cartesian indices.
-eachindex(list::ProductIndexList) = CartesianRange(indices(list))
+eachindex(list::ProductIndexList) = CartesianIndices(axes(list))
 
 # We convert between integers and product indices using ind2sub and sub2ind
-product_native_index(size, idx::LinearIndex) = ProductIndex(ind2sub(size, idx))
-product_linear_index(size, idxn::ProductIndex) = sub2ind(size, indextuple(idxn)...)
+product_native_index(size, idx::LinearIndex) = (VERSION < v"0.7-") ?
+    ProductIndex(ind2sub(size, idx)) : ProductIndex(CartesianIndices(size)[idx])
+product_linear_index(size, idxn::ProductIndex) = (VERSION < v"0.7-") ?
+    sub2ind(size, indextuple(idxn)...) : LinearIndices(size)[indextuple(idxn)...]
+
 
 # We also know how to convert a tuple
 product_native_index(size::NTuple{N,Int}, idx::NTuple{N,Int}) where {N} = ProductIndex(idx)
@@ -285,19 +288,38 @@ struct MultilinearIndexIterator{L}
     lengths ::  L
 end
 
-start(it::MultilinearIndexIterator) = (1,1)
-
-function next(it::MultilinearIndexIterator, state)
-    i = state[1]
-    j = state[2]
-    if j == it.lengths[i]
-        nextstate = (i+1,1)
-    else
-        nextstate = (i,j+1)
-    end
-    (state, nextstate)
-end
-
-done(it::MultilinearIndexIterator, state) = state[1] > length(it.lengths)
-
 length(it::MultilinearIndexIterator) = sum(it.lengths)
+
+if VERSION < v"0.7-"
+    start(it::MultilinearIndexIterator) = (1,1)
+
+    function next(it::MultilinearIndexIterator, state)
+        i = state[1]
+        j = state[2]
+        if j == it.lengths[i]
+            nextstate = (i+1,1)
+        else
+            nextstate = (i,j+1)
+        end
+        (state, nextstate)
+    end
+
+    done(it::MultilinearIndexIterator, state) = state[1] > length(it.lengths)
+
+else
+    Base.iterate(it::MultilinearIndexIterator) = (1,1), (1,1)
+
+    function Base.iterate(it::MultilinearIndexIterator, state)
+        i, j = state
+        if j == it.lengths[i]
+            next_item = (i+1,1)
+        else
+            next_item = (i,j+1)
+        end
+        if next_item[1] <= length(it.lengths)
+            next_item, next_item
+        end
+    end
+
+    Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}
+end

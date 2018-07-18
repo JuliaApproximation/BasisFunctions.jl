@@ -7,7 +7,9 @@
 # Compute the evaluation matrix of the given dict on the given set of points
 # (a grid or any iterable set of points)
 function evaluation_matrix(dict::Dictionary, pts)
-    a = Array{codomaintype(dict)}(length(pts), length(dict))
+    a = (VERSION < v"0.7-") ?
+        Array{codomaintype(dict)}(length(pts), length(dict)) :
+        Array{codomaintype(dict)}(undef, length(pts), length(dict))
     evaluation_matrix!(a, dict, pts)
 end
 
@@ -31,7 +33,7 @@ evaluation_operator(s::Dictionary, grid::AbstractGrid; options...) =
     evaluation_operator(s, gridbasis(s, grid); options...)
 
 # Convert a linear range to an equispaced grid
-evaluation_operator(s::Dictionary, r::LinSpace; options...) =
+evaluation_operator(s::Dictionary, r::LinRange; options...) =
     evaluation_operator(s, EquispacedGrid(r))
 
 # For easier dispatch, if the destination is a GridBasis we add the grid as parameter

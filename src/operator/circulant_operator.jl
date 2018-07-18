@@ -44,7 +44,7 @@ function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, o
     iF = inv(F)
     #realify a circulant operator if src and dest are real (one should imply the other).
     if isreal(op_src) && isreal(op_dest)
-        imag_norm = Base.norm(imag(fft(diagonal(opD))))
+        imag_norm = norm(imag(fft(diagonal(opD))))
         imag_norm > real_circulant_tol && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
         r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
         r_src = promote_coeftype(op_src, r_S)
@@ -72,15 +72,15 @@ similar_operator(op::CirculantOperator, src, dest) =
 
 Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(sqrt.(eigenvalues(c))))
 
-for op in (:inv, :ctranspose)
-    @eval $op{T}(C::CirculantOperator{T}) = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
+for op in (:inv, :ctranspose, :adjoint)
+    @eval $op(C::CirculantOperator{T}) where {T} = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
 end
 
 # What tolerance should be used for the pinv here?
 pinv(C::CirculantOperator{T}, tolerance = eps(numtype(C))) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(pinv(C.eigenvaluematrix), tolerance))
 
 for op in (:+, :-, :*)
-    @eval $op{T}(c1::CirculantOperator{T}, c2::CirculantOperator{T}) = CirculantOperator(src(c2), dest(c1), DiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
+    @eval $op(c1::CirculantOperator{T}, c2::CirculantOperator{T}) where {T} = CirculantOperator(src(c2), dest(c1), DiagonalOperator($(op).(eigenvalues(c1),eigenvalues(c2))))
 end
 
 *(scalar::Real, c::CirculantOperator) = CirculantOperator(src(c), dest(c), DiagonalOperator(scalar*eigenvalues(c)))

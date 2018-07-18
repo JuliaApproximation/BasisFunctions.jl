@@ -90,7 +90,7 @@ DoublingSequence() = DoublingSequence(2)
 
 initial(s::DoublingSequence) = s.initial
 
-getindex(s::DoublingSequence, idx::Int) = initial(s) * 2<<(idx-2)
+getindex(s::DoublingSequence, idx::Int) = initial(s) * (2<<(idx-2))
 
 
 "A multiply sequence with a given initial value."
