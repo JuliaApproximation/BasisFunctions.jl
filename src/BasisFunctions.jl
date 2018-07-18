@@ -268,6 +268,10 @@ export sample
 export Platform
 export primal, dual, sampler, A, Zt, dual_sampler
 
+# from sampling/quadrature.jl
+export clenshaw_curtis, fejer_first_rule, fejer_second_rule
+export trapezoidal_rule, rectangular_rule
+
 # from bases/fourier/fourier.jl
 export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
@@ -386,6 +390,7 @@ include("bases/generic/vector_dict.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/platform.jl")
+include("sampling/quadrature.jl")
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines
