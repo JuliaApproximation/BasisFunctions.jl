@@ -352,6 +352,8 @@ else
             (d[next_item], (iter,next_tuple))
         end
     end
+
+    Base.eltype(::Type{Dict}) where {Dict<:Dictionary}= SingletonSubdict
 end
 
 
@@ -380,7 +382,7 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 
 # And here we call checkbounds_indices with indices(dict)
-checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, indices(dict), I)
+checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, axes(dict), I)
 
 "Return the support of the idx-th basis function. Default is support of the dictionary."
 support(dict::Dictionary, idx) = support(dict)

@@ -8,19 +8,24 @@ using StaticArrays, RecipesBase, QuadGK, SpecialMatrices, Domains, AbstractTrees
 
 if VERSION < v"0.7-"
     using LinearAlgebra, FastTransforms
-    import Base: norm, pinv, normalize, cross, ×, ctranspose
+    import Base: norm, pinv, normalize, cross, ×, ctranspose, dct, idct
     import Base.LinAlg: dot
     CartesianIndices = CartesianRange
     LinRange=LinSpace
     AbstractRange = Range
     mul! = A_mul_B!
+    IteratorSize = Base.iteratorsize
+    axes = indices
 else
     using GenericLinearAlgebra, FFTW, LinearAlgebra#, FastTransforms
     warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+    using Base:IteratorSize
+    using SpecialFunctions: gamma
+    using DSP: conv
+    linspace(a,b,c) = range(a, stop=b, length=c)
 end
 
-import Base: dct, idct
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=

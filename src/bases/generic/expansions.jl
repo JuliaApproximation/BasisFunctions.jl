@@ -150,8 +150,6 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 is_compatible(s1::S, s2::S) where {S<:Dictionary} = true
 is_compatible(s1::Dictionary, s2::Dictionary) = false
 
-Base.broadcast(abs, e::Expansion) = (@info("abs");abs.(coefficients(e)))
-
 for op in (:+, :-)
     @eval function ($op)(s1::Expansion, s2::Expansion)
         # First check if the Dictionarys are arithmetically compatible
@@ -185,4 +183,18 @@ function apply(op::DictionaryOperator, e::Expansion)
     #@assert dictionary(e) == dictionary(src(op))
 
     Expansion(dest(op), op * coefficients(e))
+end
+
+if VERSION < v"0.7-"
+    Base.broadcast(abs, e::Expansion) = abs.(coefficients(e))
+else
+    Base.iterate(e::Expansion) = iterate(coefficients(e))
+
+    Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
+
+    Base.collect(e::Expansion) = coefficients(e)
+
+    Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+
+    Base.abs(e::Expansion) = abs.(coefficients(e))
 end

@@ -171,7 +171,7 @@ struct IndexRestrictionOperator{I,T} <: DictionaryOperator{T}
 
     function IndexRestrictionOperator{I,T}(src, dest, subindices) where {I,T}
         # Verify the lenght of subindices, but only if its length is defined
-        if Base.iteratorsize(subindices) != Base.SizeUnknown()
+        if IteratorSize(subindices) != Base.SizeUnknown()
             @assert length(dest) == length(subindices)
         end
         @assert length(src) >= length(dest)

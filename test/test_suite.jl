@@ -6,8 +6,11 @@ using BasisFunctions, Domains, StaticArrays
 if VERSION < v"0.7-"
     using Base.Test
     my_rand(T, a...) = map(T, rand(a...))
+    ComplexF64 = Complex128
+    ComplexF32 = Complex64
 else
     using Test, Random, FFTW, LinearAlgebra
+    linspace(a,b,c) = range(a, stop=b, length=c)
     my_rand = rand
 end
 
@@ -57,74 +60,79 @@ SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
 # SETS = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
 #         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries]
-T = Float64
-# for T in [Float64,BigFloat,]
-println()
-delimit("T is $T", )
+if VERSION < v"0.7-"
+    types = [Float64,BigFloat,]
+else
+    warn("Postpone BigFloat testing until FastTransforms is fixed. ")
+    types = [Float64,]
+end
+for T in types
+    println()
+    delimit("T is $T", )
 
-delimit("Operators")
-test_operators(T)
-test_generic_operators(T)
+    delimit("Operators")
+    test_operators(T)
+    test_generic_operators(T)
 
-delimit("Generic dictionary interfaces")
-@testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS,
-        n = 9
-        basis = instantiate(SET, n, T)
+    delimit("Generic dictionary interfaces")
+    @testset "$(rpad("$(name(instantiate(SET,n))) with $n dof",80," "))" for SET in SETS,
+            n = 9
+            basis = instantiate(SET, n, T)
 
-        @test length(basis) == n
-        @test domaintype(basis) == T
+            @test length(basis) == n
+            @test domaintype(basis) == T
 
+            test_generic_dict_interface(basis)
+    end
+    # also try a Fourier series with an even length
+    test_generic_dict_interface(FourierBasis{T}(8))
+
+    test_derived_dicts(T)
+
+    delimit("Tensor specific tests")
+    @testset "$(rpad("test iteration",80))" begin
+        test_tensor_sets(T) end
+
+    delimit("Tensor product set interfaces")
+    # TODO: all sets in the test below should use type T!
+    @testset "$(rpad("$(name(basis))",80," "))" for basis in
+                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
+                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
+                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
+                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
+                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
+                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
-end
-# also try a Fourier series with an even length
-test_generic_dict_interface(FourierBasis{T}(8))
+    end
 
-test_derived_dicts(T)
+    delimit("Discrete sets")
+    @testset "$(rpad("discrete sets",80))" begin
+        test_discrete_sets(T)
+    end
 
-delimit("Tensor specific tests")
-@testset "$(rpad("test iteration",80))" begin
-    test_tensor_sets(T) end
-
-delimit("Tensor product set interfaces")
-# TODO: all sets in the test below should use type T!
-@testset "$(rpad("$(name(basis))",80," "))" for basis in
-            ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
-              FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
-              FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-              ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
-              FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
-              ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
-    test_generic_dict_interface(basis)
-end
-
-delimit("Discrete sets")
-@testset "$(rpad("discrete sets",80))" begin
-    test_discrete_sets(T)
-end
-
-delimit("Derived dictionaries")
-test_derived_dicts(T)
+    delimit("Derived dictionaries")
+    test_derived_dicts(T)
 
 
-delimit("Test Grids")
-@testset "$(rpad("Grids",80))" begin
-    test_grids(T) end
+    delimit("Test Grids")
+    @testset "$(rpad("Grids",80))" begin
+        test_grids(T) end
 
-delimit("Gram")
-@testset "$(rpad("Gram functionality",80))" begin
-    discrete_gram_test(T)
-    general_gram_test(T)
-end
+    delimit("Gram")
+    @testset "$(rpad("Gram functionality",80))" begin
+        discrete_gram_test(T)
+        general_gram_test(T)
+    end
 
-delimit("Check evaluations, interpolations, extensions, setexpansions")
+    delimit("Check evaluations, interpolations, extensions, setexpansions")
 
-@testset "$(rpad("Fourier expansions",80))" begin
-    test_fourier_series(T) end
+    @testset "$(rpad("Fourier expansions",80))" begin
+        test_fourier_series(T) end
 
-@testset "$(rpad("Orthogonal polynomials",80))" begin
-    test_ops(T) end
+    @testset "$(rpad("Orthogonal polynomials",80))" begin
+        test_ops(T) end
 
-# end # for T in...
+end # for T in...
 
 delimit("Test DCTI")
 @testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end

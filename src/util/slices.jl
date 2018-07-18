@@ -186,6 +186,8 @@ else
             SliceIndexCartesian(next_item, it.dim, it.len), SliceIndexCartesian(next_item, it.dim, it.len)
         end
     end
+
+    Base.eltype(::Type{SliceIteratorCartesian}) = SliceIndexCartesian
 end
 
 
@@ -236,6 +238,8 @@ else
             index, index
         end
     end
+
+    Base.eltype(::Type{SliceIteratorLinear}) = SliceIndexLinear
 end
 
 
@@ -296,6 +300,8 @@ else
             (next_item1, next_item2), (next_state1, next_state2)
         end
     end
+
+    Base.eltype(::Type{JointIterator}) = Tuple{SliceIndex,SliceIndex}
 end
 
 Base.view(a::AbstractArray, sidx::SliceIndexLinear) =

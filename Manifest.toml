@@ -37,6 +37,12 @@ git-tree-sha1 = "6358e179fb9ad0af5ca9cd4d7c691c413cc121f2"
 uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 version = "0.8.1"
 
+[[DSP]]
+deps = ["AbstractFFTs", "Compat", "FFTW", "LinearAlgebra", "Polynomials", "Reexport", "SpecialFunctions"]
+git-tree-sha1 = "c0f6a5033c7729a3428e0ef6843eb34263c437ca"
+uuid = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+version = "0.5.0"
+
 [[DataStructures]]
 deps = ["InteractiveUtils", "REPL", "Random", "Serialization", "Test"]
 git-tree-sha1 = "ef6f313c82fd80ab75ab3f784353b6c65ebcaacf"
@@ -112,6 +118,12 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[Pkg]]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[Polynomials]]
+deps = ["Compat"]
+git-tree-sha1 = "23d095b4c1ecbacd78bb0eea6b85d6e0872ce3bd"
+uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+version = "0.4.0"
 
 [[Printf]]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"

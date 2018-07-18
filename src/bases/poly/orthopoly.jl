@@ -281,7 +281,7 @@ end
 
 function roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
-    eig(J)[1]
+    (VERSION < v"0.7-") ? eig(J)[1] : eigen(J).values
 end
 
 if VERSION < v"0.7-"
@@ -294,7 +294,7 @@ else
     function roots(b::OPS{T}) where {T<:Union{BigFloat}}
         J = symmetric_jacobi_matrix(b)
         # assuming the user has imported GenericLinearAlgebra.jl
-        sort(real(GenericLinearAlgebra.EigenGeneral.eigvals!(J)))
+        sort(real(eigvals!(J)))
     end
 end
 
@@ -317,7 +317,7 @@ Compute the Gaussian quadrature rule using the roots of the orthogonal polynomia
 """
 function gauss_rule(b::OPS{T}) where {T <: Real}
     J = symmetric_jacobi_matrix(b)
-    x,v = eig(J)
+    x,v = (VERSION < v"0.7-") ? eig(J) : eigen(J)
     b0 = first_moment(b)
     # In the real-valued case it is sufficient to use the first element of the
     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
@@ -618,9 +618,15 @@ q_{k+1}(t) = (a_kt+b_k)q_k(t)-c_kq_{k-1}(t)
 """
 function monic_to_orthonormal_recurrence_coefficients(α::Array{T}, β::Array{T}) where {T}
     n = length(α)
-    a = Array{T}(n-1)
-    b = Array{T}(n-1)
-    c = Array{T}(n-1)
+    if VERSION < v"0.7-"
+        a = Array{T}(n-1)
+        b = Array{T}(n-1)
+        c = Array{T}(n-1)
+    else
+        a = Array{T}(undef, n-1)
+        b = Array{T}(undef, n-1)
+        c = Array{T}(undef, n-1)
+    end
     monic_to_orthonormal_recurrence_coefficients!(a,b,c,α,β)
     a,b,c
 end

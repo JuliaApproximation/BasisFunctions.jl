@@ -49,7 +49,8 @@ rightendpoint(g::ProductGrid, j) = rightendpoint(g.grids[j])
 
 # Convert to linear index. If the argument is a tuple of integers, it can be assumed to
 # be a multilinear index. Same for CartesianIndex.
-linear_index(grid::ProductGrid, i::NTuple{N,Int}) where {N} = sub2ind(size(grid), i...)
+linear_index(grid::ProductGrid, i::NTuple{N,Int}) where {N} = (VERSION < v"0.7-") ?
+	sub2ind(size(grid), i...) : LinearIndices(size(grid))[i...]
 linear_index(grid::ProductGrid, i::CartesianIndex) = linear_index(grid, i.I)
 
 # If its type is anything else, it may be a tuple of native indices
