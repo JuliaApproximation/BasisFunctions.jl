@@ -170,4 +170,4 @@ end
 @testset "Spline util (2)" begin test_index_masks() end
 @testset "Spline approx (float64)" begin test_spline_approximation(Float64) end
 @testset "Spline approx (BigFloat)" begin test_spline_approximation(BigFloat) end
-@testset "Scaling platform" begin test_scaling_platform() end
+#@testset "Scaling platform" begin test_scaling_platform() end

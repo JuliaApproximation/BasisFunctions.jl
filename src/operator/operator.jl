@@ -10,11 +10,24 @@ end
 "Is the operator a combination of other operators"
 is_composite(op::AbstractOperator) = false
 
-(*)(op::AbstractOperator, fun) = apply(op, fun)
+# make times (*) a synonym for applying the operator
+(*)(op::AbstractOperator, object) = apply(op, object)
 
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
 _dest(op::AbstractOperator, span::Span) = dictionary(span)
 _dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
+
+has_span_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
+
+function apply(op::AbstractOperator, f)
+	if has_span_dest(op)
+		result = zeros(dest(op))
+		apply!(result, op, f)
+	else
+		error("Don't know how to apply operator $(string(op)). Please implement.")
+	end
+end
+
 
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of

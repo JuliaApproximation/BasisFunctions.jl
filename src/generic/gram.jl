@@ -87,6 +87,23 @@ default_gram_entry(dict::Dictionary, i::Int, j::Int) =
 default_gram_entry(dict::Dictionary, i, j) =
     default_dict_innerproduct(dict, i, dict, j, measure(dict))
 
+function gram_matrix(dict::Dictionary)
+    A = zeros(codomaintype(dict), length(dict), length(dict))
+    gram_matrix!(A, dict)
+end
+
+function gram_matrix!(A, dict::Dictionary)
+    n = length(dict)
+    for i in 1:n
+        for j in 1:i-1
+            A[i,j] = gram_entry(dict, i, j)
+            A[j,i] = conj(A[i,j])
+        end
+        A[i,i] = gram_entry(dict, i, i)
+    end
+    A
+end
+
 
 """
 Project the function on the function space spanned by the functionset by taking innerproducts with the elements of the set.
