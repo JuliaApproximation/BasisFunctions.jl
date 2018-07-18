@@ -1,15 +1,14 @@
 # test_suite.jl
 module test_suite
 
-
 using BasisFunctions, Domains, StaticArrays
-
-using LinearAlgebra
 
 if VERSION < v"0.7-"
     using Base.Test
+    my_rand(T, a...) = map(T, rand(a...))
 else
     using Test, Random, FFTW, LinearAlgebra
+    my_rand = rand
 end
 
 srand(1234)

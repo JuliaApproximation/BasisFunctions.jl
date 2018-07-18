@@ -6,8 +6,6 @@ module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, SpecialMatrices, Domains, AbstractTrees
 
-using LinearAlgebra
-
 if VERSION < v"0.7-"
     using LinearAlgebra, FastTransforms
     import Base: norm, pinv, normalize, cross, ×, ctranspose
@@ -18,7 +16,7 @@ if VERSION < v"0.7-"
     mul! = A_mul_B!
 else
     using GenericLinearAlgebra, FFTW, LinearAlgebra#, FastTransforms
-    @info("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
+    warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
 end
 

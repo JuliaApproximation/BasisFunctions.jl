@@ -2,6 +2,11 @@
 
 module Slices
 
+if VERSION < v"0.7-"
+    nothing
+else
+    using LinearAlgebra
+end
 # In this module we implement `eachslice`, a way of iterating over all slices along one
 # dimension in a multidimensional array.
 
@@ -9,38 +14,63 @@ export eachslice, joint, view
 
 abstract type SliceIterator{N} end
 
-struct SliceIteratorCartesian{N} <: SliceIterator{N}
-    range   ::  CartesianIndices{N}
-    dim     ::  Int
-    len     ::  Int
-end
-
-
-struct SliceIteratorLinear{N} <: SliceIterator{N}
-    range   ::  CartesianIndices{N}
-    dim     ::  Int
-    strides ::  NTuple{N,Int}
-    stride  ::  Int
-    len     ::  Int
-end
-
-
 abstract type SliceIndex end
 
-struct SliceIndexCartesian{N} <: SliceIndex
-    cartidx ::  CartesianIndex{N}
-    dim     ::  Int
-    len     ::  Int
+if VERSION < v"0.7-"
+    struct SliceIteratorCartesian{N} <: SliceIterator{N}
+        range   ::  CartesianRange{CartesianIndex{N}}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIteratorLinear{N} <: SliceIterator{N}
+        range   ::  CartesianRange{CartesianIndex{N}}
+        dim     ::  Int
+        strides ::  NTuple{N,Int}
+        stride  ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIndexCartesian{N} <: SliceIndex
+        cartidx ::  CartesianIndex{N}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIndexLinear{N} <: SliceIndex
+        cartidx ::  CartesianIndex{N}
+        offset  ::  Int
+        stride  ::  Int
+        len     ::  Int
+    end
+else
+    struct SliceIteratorCartesian{N} <: SliceIterator{N}
+        range   ::  CartesianIndices{N}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIteratorLinear{N} <: SliceIterator{N}
+        range   ::  CartesianIndices{N}
+        dim     ::  Int
+        strides ::  NTuple{N,Int}
+        stride  ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIndexCartesian{N} <: SliceIndex
+        cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        dim     ::  Int
+        len     ::  Int
+    end
+
+    struct SliceIndexLinear{N} <: SliceIndex
+        cartidx ::  Base.LegacyIterationCompat{CartesianIndices{N, Tuple{Vararg{R,N}}},CartesianIndex{N},CartesianIndex{N}} where {R}
+        offset  ::  Int
+        stride  ::  Int
+        len     ::  Int
+    end
 end
-
-struct SliceIndexLinear{N} <: SliceIndex
-    cartidx ::  CartesianIndex{N}
-    offset  ::  Int
-    stride  ::  Int
-    len     ::  Int
-end
-
-
 
 # TODO: more efficient implementation for all N
 function remaining_size(siz::NTuple{N,Int}, dim) where {N}
@@ -131,23 +161,22 @@ eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
 #    SliceIterator(CartesianIndices(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
 
 # So we do a generated function for the time being:
-@generated function eachslice(::Base.IndexCartesian, a::AbstractArray{T,N}, dim) where {T,N}
-    one_tuple = onetuple(Val{N-1})
-    quote
-        SliceIteratorCartesian(
-            CartesianIndices( CartesianIndex($one_tuple),
-                            CartesianIndex(remaining_size(size(a), dim))),
-                            dim, size(a, dim) )
-    end
-end
-
 @generated function eachslice(::Base.IndexLinear, a::AbstractArray{T,N}, dim) where {T,N}
     one_tuple = onetuple(Val{N-1})
-    quote
-        SliceIteratorLinear(
-            CartesianIndices( CartesianIndex($one_tuple),
-                            CartesianIndex(remaining_size(size(a), dim))),
-                            dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+    if VERSION < v"0.7-"
+        quote
+            SliceIteratorLinear(
+                CartesianRange( CartesianIndex($one_tuple),
+                                CartesianIndex(remaining_size(size(a), dim))),
+                                dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+        end
+    else
+        quote
+            SliceIteratorLinear(
+                CartesianIndices( CartesianIndex($one_tuple),
+                                CartesianIndex(remaining_size(size(a), dim))),
+                                dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
+        end
     end
 end
 
