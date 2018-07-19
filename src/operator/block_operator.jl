@@ -184,7 +184,7 @@ vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(o
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array(adjoint(op.operators)))
+adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array{DictionaryOperator}(adjoint(op.operators)))
 
 
 

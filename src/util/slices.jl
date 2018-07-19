@@ -156,8 +156,8 @@ eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
     else
         quote
             SliceIteratorLinear(
-                CartesianIndices( CartesianIndex($one_tuple),
-                                CartesianIndex(remaining_size(size(a), dim))),
+                CartesianIndices( $one_tuple,
+                                remaining_size(size(a), dim)),
                                 dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
         end
     end

@@ -8,7 +8,7 @@
 # Delegate to show_operator
 global DO_PRETTYPRINTING = true
 try
-    @static if Sys.is_apple()
+    @static if isapple()
         global DO_PRETTYPRINTING = !(ENV["LOGNAME"] == "vincentcp")
     end
 finally

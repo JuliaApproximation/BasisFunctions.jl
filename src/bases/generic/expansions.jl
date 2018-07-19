@@ -99,7 +99,7 @@ Base.broadcast(e::Expansion, x::LinRange{T}) where {T} = broadcast(e, Equispaced
 ∫∂y(f::Expansion) = antidifferentiate(f, 2, 1)
 ∫∂z(f::Expansion) = antidifferentiate(f, 3, 1)
 # little helper function
-ei(dim,i, coefficients) = tuple((coefficients*eye(Int,dim)[:,i])...)
+ei(dim,i, coefficients) = (VERSION < v"0.7-") ? tuple((coefficients*eye(Int,dim)[:,i])...) : tuple((coefficients*Matrix{Int}(I, dim, dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
 differentiate(f::Expansion, var, order) = differentiate(f, ei(dimension(f), var, order))
 antidifferentiate(f::Expansion, var, order) = antidifferentiate(f, ei(dimension(f), var, order))

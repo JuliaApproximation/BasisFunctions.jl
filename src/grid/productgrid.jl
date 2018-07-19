@@ -56,13 +56,19 @@ linear_index(grid::ProductGrid, i::CartesianIndex) = linear_index(grid, i.I)
 # If its type is anything else, it may be a tuple of native indices
 linear_index(grid::ProductGrid, idxn::Tuple) = linear_index(grid, map(linear_index, elements(grid), idxn))
 
-multilinear_index(grid::ProductGrid, idx::Int) = ind2sub(size(grid), idx)
+multilinear_index(grid::ProductGrid, idx::Int) = (VERSION < v"0.7-") ? ind2sub(size(grid), idx) : CartesianIndices(size(grid))[idx]
 
 @generated function eachindex(g::ProductGrid{TG}) where {TG}
 	LEN = tuple_length(TG)
-	startargs = fill(1, LEN)
-	stopargs = [:(size(g,$i)) for i=1:LEN]
-	:(CartesianIndices(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
+
+	if VERSION < v"0.7-"
+		startargs = fill(1, LEN)
+		stopargs = [:(size(g,$i)) for i=1:LEN]
+		:(CartesianIndices(CartesianIndex{$LEN}($(startargs...)), CartesianIndex{$LEN}($(stopargs...))))
+	else
+		args = [:(1:size(g,$i)) for i in 1:LEN]
+		:(CartesianIndices($(args...)))
+	end
 end
 
 # unsafe_getindex(grid::ProductGrid, idx::CartesianIndex{2}) =

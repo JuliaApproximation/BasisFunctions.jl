@@ -20,6 +20,10 @@ if VERSION < v"0.7-"
     ctranspose(a...) = adjoint(a...)
     transpose(a...) = adjoint(a...)
     adjoint(a::AbstractArray) = ctranspose(a)
+    isapple = Sys.is_apple
+    macro warn(a...)
+        return :(warn($a...))
+    end
 else
     using FFTW, LinearAlgebra#, FastTransforms, GenericLinearAlgebra
     warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
@@ -28,6 +32,7 @@ else
     using Base:IteratorSize
     using SpecialFunctions: gamma
     using DSP: conv
+    using Base.Sys: isapple
     linspace(a,b,c) = range(a, stop=b, length=c)
 end
 

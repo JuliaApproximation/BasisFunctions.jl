@@ -589,7 +589,7 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
     no_its = 2
     while reduce(&, abs.(β1-β0) .> tol.*abs.(β1))
         if no_its > maxits
-            warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./abs.(β1)))")
+            @warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./abs.(β1)))")
             break
         end
         M = M+2^floor(Int,no_its/5)
