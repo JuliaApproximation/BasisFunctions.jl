@@ -31,7 +31,7 @@ scalar(op::CoefficientScalingOperator) = op.scalar
 is_inplace(::CoefficientScalingOperator) = true
 is_diagonal(::CoefficientScalingOperator) = true
 
-adjoint(op::CoefficientScalingOperator) =
+adjoint(op::CoefficientScalingOperator)::DictionaryOperator =
     CoefficientScalingOperator(dest(op), src(op), index(op), conj(scalar(op)))
 
 inv(op::CoefficientScalingOperator) =
@@ -148,7 +148,7 @@ end
 
 inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
 
-adjoint(op::WrappedOperator) = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
+adjoint(op::WrappedOperator)::DictionaryOperator = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
 
 simplify(op::WrappedOperator) = superoperator(op)
 
@@ -238,9 +238,9 @@ function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
     coef_dest
 end
 
-adjoint(op::IndexRestrictionOperator) =
+adjoint(op::IndexRestrictionOperator)::DictionaryOperator =
     IndexExtensionOperator(dest(op), src(op), subindices(op))
-adjoint(op::IndexExtensionOperator) =
+adjoint(op::IndexExtensionOperator)::DictionaryOperator =
     IndexRestrictionOperator(dest(op), src(op), subindices(op))
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
@@ -318,7 +318,7 @@ matrix(op::MatrixOperator) = op.object
 matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
 
 
-adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
+adjoint(op::MultiplicationOperator)::DictionaryOperator = adjoint_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support adjoint
 adjoint_multiplication(op::MultiplicationOperator, object) =
     MultiplicationOperator(dest(op), src(op), adjoint(object))
@@ -375,7 +375,7 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
     coef_dest
 end
 
-adjoint(op::SolverOperator) = warn("not implemented")
+adjoint(op::SolverOperator)::DictionaryOperator = warn("not implemented")
 
 
 """
@@ -401,7 +401,7 @@ function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
     coef_dest[:] = fun(coef_src)
 end
 
-adjoint(op::FunctionOperator) = adjoint_function(op, op.fun)
+adjoint(op::FunctionOperator)::DictionaryOperator = adjoint_function(op, op.fun)
 # This can be overriden for types of functions that do not support adjoint
 adjoint_function(op::FunctionOperator, fun) =
     FunctionOperator(dest(op), src(op), adjoint(fun))
@@ -445,7 +445,7 @@ similar_operator(op::UnevenSignFlipOperator, src, dest) =
 is_inplace(::UnevenSignFlipOperator) = true
 is_diagonal(::UnevenSignFlipOperator) = true
 
-adjoint(op::UnevenSignFlipOperator) = op
+adjoint(op::UnevenSignFlipOperator)::DictionaryOperator = op
 
 inv(op::UnevenSignFlipOperator) = op
 
@@ -494,7 +494,7 @@ src(op::OperatorSum) = src(op.op1)
 
 dest(op::OperatorSum) = dest(op.op1)
 
-adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
+adjoint(op::OperatorSum)::DictionaryOperator = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
 
 is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)

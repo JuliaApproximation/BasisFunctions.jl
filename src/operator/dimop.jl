@@ -117,5 +117,5 @@ replace(tpset::TensorProductDict, j, s) = tensorproduct([element(tpset, i) for i
 inv(op::DimensionOperator{VIEW}) where {VIEW}= DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)
 
-adjoint(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+adjoint(op::DimensionOperator{VIEW} where {VIEW})::DictionaryOperator = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), adjoint(op.op), op.dim, VIEW)

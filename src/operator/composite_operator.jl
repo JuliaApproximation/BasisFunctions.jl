@@ -210,7 +210,7 @@ end
 
 inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
 
-adjoint(op::CompositeOperator) = (*)(map(adjoint, op.operators)...)
+adjoint(op::CompositeOperator)::DictionaryOperator = (*)(map(adjoint, op.operators)...)
 
 (*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
 (∘)(ops::AbstractOperator...) = (*)(ops...)

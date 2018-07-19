@@ -184,7 +184,7 @@ vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(o
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-adjoint(op::BlockOperator) = BlockOperator(adjoint(op.operators))
+adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array(adjoint(op.operators)))
 
 
 
@@ -276,7 +276,7 @@ function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Mult
     coef_dest
 end
 
-adjoint(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(adjoint, operators(op)))
+adjoint(op::BlockDiagonalOperator)::DictionaryOperator = BlockDiagonalOperator(map(adjoint, operators(op)))
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])

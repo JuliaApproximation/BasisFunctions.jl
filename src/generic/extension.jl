@@ -129,8 +129,8 @@ restrict(s::Dictionary) = resize(s, restriction_size(s))
 restriction_operator(s1::Dictionary; options...) =
     restriction_operator(s1, restrict(s1); options...)
 
-adjoint(op::Extension) = restriction_operator(dest(op), src(op))
-adjoint(op::Restriction) = extension_operator(dest(op), src(op))
+adjoint(op::Extension)::DictionaryOperator = restriction_operator(dest(op), src(op))
+adjoint(op::Restriction)::DictionaryOperator = extension_operator(dest(op), src(op))
 
 # Transforming between dictionaries with the same type is the same as restricting
 has_transform(src::D, dest::D) where {D <: Dictionary} = true
