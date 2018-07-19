@@ -24,11 +24,7 @@ unsafe_wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, de
 
 inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
-if VERSION < v"0.7-"
-    ctranspose(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
-else
-    adjoint(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
-end
+adjoint(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
 
 function matrix!(op::IdentityOperator, a)
     @assert size(a,1) == size(a,2)
@@ -73,11 +69,8 @@ unsafe_wrap_operator(src, dest, op::ScalingOperator) = similar_operator(op, src,
 
 @add_properties(ScalingOperator, is_inplace, is_diagonal)
 
-if VERSION < v"0.7-"
-    ctranspose(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
-else
-    adjoint(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
-end
+adjoint(op::ScalingOperator) = ScalingOperator(dest(op), src(op), conj(scalar(op)))
+
 
 inv(op::ScalingOperator) = ScalingOperator(dest(op), src(op), inv(scalar(op)))
 
@@ -140,11 +133,7 @@ is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
 
 is_diagonal(::ZeroOperator) = true
 
-if VERSION < v"0.7-"
-    ctranspose(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
-else
-    adjoint(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
-end
+adjoint(op::ZeroOperator) = ZeroOperator(dest(op), src(op))
 
 matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
@@ -199,11 +188,7 @@ diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
 inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
 
-if VERSION < v"0.7-"
-    ctranspose(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
-else
-    adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
-end
+adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
 
 function matrix!(op::DiagonalOperator, a)
     a[:] .= 0

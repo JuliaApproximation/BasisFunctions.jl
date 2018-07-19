@@ -21,7 +21,7 @@ for op in (:unsafe_getindex,)
 	@eval $op(operator::DerivedOperator, i, j) = $op(superoperator(operator), i, j)
 end
 
-for op in (:inv, :ctranspose, :adjoint)
+for op in (:inv, :adjoint)
 	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 

@@ -97,25 +97,25 @@ dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::Multipl
         InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
 
-ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
     ifftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
 
-ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+adjoint_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
     fftw_operator(dest(op), src(op), 1:dimension(dest(op)),object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-#        ctranspose_multiplication(op, object)
-ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+#        adjoint_multiplication(op, object)
+adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-#        ctranspose_multiplication(op, object)
-    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+#        adjoint_multiplication(op, object)
+    adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 
-ctranspose_function(op::FunctionOperator, fun::typeof(fft)) =
+adjoint_function(op::FunctionOperator, fun::typeof(fft)) =
     FunctionOperator(dest(op), src(op), ifft) * ScalingOperator(dest(op), dest(op), length(dest(op)))
 
-ctranspose_function(op::FunctionOperator, fun::typeof(ifft)) =
+adjoint_function(op::FunctionOperator, fun::typeof(ifft)) =
     FunctionOperator(dest(op), src(op), fft) * ScalingOperator(dest(op), dest(op), 1/convert(eltype(op), length(dest(op))))
 
 # The two functions below are used when computing the inv of a
@@ -172,26 +172,21 @@ for (plan, transform, invtransform) in (
             dim, object::$plan; options...) =
                 $transform(src, dest, dim:dim; options...)
 
-        ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
+        adjoint_multiplication(op::MultiplicationOperator, object::$plan) =
             $invtransform(dest(op), src(op))
 
         inv_multiplication(op::MultiplicationOperator, object::$plan) =
-            ctranspose_multiplication(op, object)
+            adjoint_multiplication(op, object)
     end
 end
 
-# The four functions below are used when computing the ctranspose or inv of a
+# The four functions below are used when computing the adjoint or inv of a
 # FunctionOperator that uses dct/idct:
 inv(fun::typeof(dct)) = idct
 inv(fun::typeof(idct)) = dct
 
-if VERSION < v"0.7-"
-    ctranspose(fun::typeof(dct)) = idct
-    ctranspose(fun::typeof(idct)) = dct
-else
-    adjoint(fun::typeof(dct)) = idct
-    adjoint(fun::typeof(idct)) = dct
-end
+adjoint(fun::typeof(dct)) = idct
+adjoint(fun::typeof(idct)) = dct
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.

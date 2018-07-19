@@ -57,11 +57,7 @@ size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
 
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
-if VERSION < v"0.7-"
-    ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, elements(op))...)
-else
-    adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)
-end
+adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 

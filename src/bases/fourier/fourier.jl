@@ -318,19 +318,19 @@ end
 is_diagonal(::FourierIndexExtensionOperator) = true
 is_diagonal(::FourierIndexRestrictionOperator) = true
 
-if VERSION < v"0.7-"
-	ctranspose(op::FourierIndexExtensionOperator{T}) where {T} =
-		FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
-
-	ctranspose(op::FourierIndexRestrictionOperator{T}) where {T} =
-		FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)
-else
+# if VERSION < v"0.7-"
+# 	ctranspose(op::FourierIndexExtensionOperator{T}) where {T} =
+# 		FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
+#
+# 	ctranspose(op::FourierIndexRestrictionOperator{T}) where {T} =
+# 		FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)
+# else
 	adjoint(op::FourierIndexExtensionOperator{T}) where {T} =
 		FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
 
 	adjoint(op::FourierIndexRestrictionOperator{T}) where {T} =
 		FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)
-end
+# end
 
 
 

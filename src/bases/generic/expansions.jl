@@ -108,11 +108,8 @@ antidifferentiate(f::Expansion, var, order) = antidifferentiate(f, ei(dimension(
 ## Δ(f::Expansion)
 
 # This is just too cute not to do: f' is the derivative of f. Then f'' is the second derivative, and so on.
-if VERSION < v"0.7-"
-    ctranspose(f::Expansion) = differentiate(f)
-else
-    adjoint(f::Expansion) = differentiate(f)
-end
+adjoint(f::Expansion) = differentiate(f)
+
 ∫(f::Expansion) = antidifferentiate(f)
 
 roots(f::Expansion) = roots(dictionary(f), coefficients(f))

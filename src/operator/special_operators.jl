@@ -31,13 +31,8 @@ scalar(op::CoefficientScalingOperator) = op.scalar
 is_inplace(::CoefficientScalingOperator) = true
 is_diagonal(::CoefficientScalingOperator) = true
 
-if VERSION < v"0.7-"
-    ctranspose(op::CoefficientScalingOperator) =
-        CoefficientScalingOperator(dest(op), src(op), index(op), conj(scalar(op)))
-else
-    adjoint(op::CoefficientScalingOperator) =
-        CoefficientScalingOperator(dest(op), src(op), index(op), conj(scalar(op)))
-end
+adjoint(op::CoefficientScalingOperator) =
+    CoefficientScalingOperator(dest(op), src(op), index(op), conj(scalar(op)))
 
 inv(op::CoefficientScalingOperator) =
     CoefficientScalingOperator(dest(op), src(op), index(op), inv(scalar(op)))
@@ -152,11 +147,8 @@ end
 
 
 inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
-if VERSION < v"0.7-"
-    ctranspose(op::WrappedOperator) = wrap_operator(dest(op), src(op), ctranspose(superoperator(op)))
-else
-    adjoint(op::WrappedOperator) = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
-end
+
+adjoint(op::WrappedOperator) = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
 
 simplify(op::WrappedOperator) = superoperator(op)
 
@@ -245,17 +237,11 @@ function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
     end
     coef_dest
 end
-if VERSION < v"0.7-"
-    ctranspose(op::IndexRestrictionOperator) =
-        IndexExtensionOperator(dest(op), src(op), subindices(op))
-    ctranspose(op::IndexExtensionOperator) =
-        IndexRestrictionOperator(dest(op), src(op), subindices(op))
-else
-    adjoint(op::IndexRestrictionOperator) =
-        IndexExtensionOperator(dest(op), src(op), subindices(op))
-    adjoint(op::IndexExtensionOperator) =
-        IndexRestrictionOperator(dest(op), src(op), subindices(op))
-end
+
+adjoint(op::IndexRestrictionOperator) =
+    IndexExtensionOperator(dest(op), src(op), subindices(op))
+adjoint(op::IndexExtensionOperator) =
+    IndexRestrictionOperator(dest(op), src(op), subindices(op))
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
 
@@ -331,17 +317,11 @@ matrix(op::MatrixOperator) = op.object
 
 matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
 
-if VERSION < v"0.7-"
-    ctranspose(op::MultiplicationOperator) = ctranspose_multiplication(op, object(op))
-    # This can be overriden for types of objects that do not support ctranspose
-    ctranspose_multiplication(op::MultiplicationOperator, object) =
-        MultiplicationOperator(dest(op), src(op), ctranspose(object))
-else
-    adjoint(op::MultiplicationOperator) = ctranspose_multiplication(op, object(op))
-    # This can be overriden for types of objects that do not support ctranspose
-    ctranspose_multiplication(op::MultiplicationOperator, object) =
-        MultiplicationOperator(dest(op), src(op), adjoint(object))
-end
+
+adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
+# This can be overriden for types of objects that do not support adjoint
+adjoint_multiplication(op::MultiplicationOperator, object) =
+    MultiplicationOperator(dest(op), src(op), adjoint(object))
 
 inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 
@@ -395,11 +375,7 @@ function apply!(op::SolverOperator, coef_dest, coef_src)
     coef_dest
 end
 
-if VERSION < v"0.7-"
-    ctranspose(op::SolverOperator) = warn("not implemented")
-else
-    adjoint(op::SolverOperator) = warn("not implemented")
-end
+adjoint(op::SolverOperator) = warn("not implemented")
 
 
 """
@@ -425,17 +401,10 @@ function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
     coef_dest[:] = fun(coef_src)
 end
 
-if VERSION < v"0.7-"
-    ctranspose(op::FunctionOperator) = ctranspose_function(op, op.fun)
-    # This can be overriden for types of functions that do not support ctranspose
-    ctranspose_function(op::FunctionOperator, fun) =
-        FunctionOperator(dest(op), src(op), ctranspose(fun))
-else
-    adjoint(op::FunctionOperator) = adjoint_function(op, op.fun)
-    # This can be overriden for types of functions that do not support ctranspose
-    adjoint_function(op::FunctionOperator, fun) =
-        FunctionOperator(dest(op), src(op), adjoint(fun))
-end
+adjoint(op::FunctionOperator) = adjoint_function(op, op.fun)
+# This can be overriden for types of functions that do not support adjoint
+adjoint_function(op::FunctionOperator, fun) =
+    FunctionOperator(dest(op), src(op), adjoint(fun))
 
 inv(op::FunctionOperator) = inv_function(op, op.fun)
 
@@ -476,11 +445,7 @@ similar_operator(op::UnevenSignFlipOperator, src, dest) =
 is_inplace(::UnevenSignFlipOperator) = true
 is_diagonal(::UnevenSignFlipOperator) = true
 
-if VERSION < v"0.7-"
-    ctranspose(op::UnevenSignFlipOperator) = op
-else
-    adjoint(op::UnevenSignFlipOperator) = op
-end
+adjoint(op::UnevenSignFlipOperator) = op
 
 inv(op::UnevenSignFlipOperator) = op
 
@@ -529,11 +494,7 @@ src(op::OperatorSum) = src(op.op1)
 
 dest(op::OperatorSum) = dest(op.op1)
 
-if VERSION < v"0.7-"
-    ctranspose(op::OperatorSum) = OperatorSum(ctranspose(op.op1), ctranspose(op.op2), conj(op.val1), conj(op.val2))
-else
-    adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
-end
+adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
 
 is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)

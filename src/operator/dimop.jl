@@ -116,10 +116,6 @@ replace(tpset::TensorProductDict, j, s) = tensorproduct([element(tpset, i) for i
 
 inv(op::DimensionOperator{VIEW}) where {VIEW}= DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
     replace(dest(op), op.dim, element(src(op), op.dim)), inv(op.op), op.dim, VIEW)
-if VERSION < v"0.7-"
-    ctranspose(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
-        replace(dest(op), op.dim, element(src(op), op.dim)), ctranspose(op.op), op.dim, VIEW)
-else
-    adjoint(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
-        replace(dest(op), op.dim, element(src(op), op.dim)), adjoint(op.op), op.dim, VIEW)
-end
+
+adjoint(op::DimensionOperator{VIEW}) where {VIEW} = DimensionOperator(replace(src(op), op.dim, element(dest(op), op.dim)),
+    replace(dest(op), op.dim, element(src(op), op.dim)), adjoint(op.op), op.dim, VIEW)

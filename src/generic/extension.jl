@@ -129,13 +129,8 @@ restrict(s::Dictionary) = resize(s, restriction_size(s))
 restriction_operator(s1::Dictionary; options...) =
     restriction_operator(s1, restrict(s1); options...)
 
-if VERSION < v"0.7-"
-    ctranspose(op::Extension) = restriction_operator(dest(op), src(op))
-    ctranspose(op::Restriction) = extension_operator(dest(op), src(op))
-else
-    adjoint(op::Extension) = restriction_operator(dest(op), src(op))
-    adjoint(op::Restriction) = extension_operator(dest(op), src(op))
-end
+adjoint(op::Extension) = restriction_operator(dest(op), src(op))
+adjoint(op::Restriction) = extension_operator(dest(op), src(op))
 
 # Transforming between dictionaries with the same type is the same as restricting
 has_transform(src::D, dest::D) where {D <: Dictionary} = true

@@ -8,7 +8,7 @@ using StaticArrays, RecipesBase, QuadGK, Domains, AbstractTrees
 
 if VERSION < v"0.7-"
     using LinearAlgebra, FastTransforms
-    import Base: norm, pinv, normalize, cross, ×, ctranspose, dct, idct
+    import Base: norm, pinv, normalize, cross, ×, dct, idct, ctranspose, transpose
     import Base.LinAlg: dot
     CartesianIndices = CartesianRange
     LinRange=LinSpace
@@ -17,6 +17,9 @@ if VERSION < v"0.7-"
     IteratorSize = Base.iteratorsize
     axes = indices
     Nothing = Void
+    ctranspose(a...) = adjoint(a...)
+    transpose(a...) = adjoint(a...)
+    adjoint(a::AbstractArray) = ctranspose(a)
 else
     using FFTW, LinearAlgebra#, FastTransforms, GenericLinearAlgebra
     warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")

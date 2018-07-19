@@ -116,7 +116,7 @@ function test_generic_operator_interface(op, T)
 
     # Verify transpose
     try
-        ct_op = (VERSION < v"0.7-") ? ctranspose(op) : adjoint(opt)
+        ct_op = adjoint(opt)
         if ~(typeof(ct_op) <: OperatorTranspose)
             @test src(ct_op) == dest(op)
             @test dest(ct_op) == src(op)

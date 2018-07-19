@@ -72,7 +72,7 @@ similar_operator(op::CirculantOperator, src, dest) =
 
 Base.sqrt(c::CirculantOperator{T}) where {T} = CirculantOperator(src(c), dest(c), DiagonalOperator(sqrt.(eigenvalues(c))))
 
-for op in (:inv, :ctranspose, :adjoint)
+for op in (:inv, :adjoint)
     @eval $op(C::CirculantOperator{T}) where {T} = CirculantOperator{T}(dest(C), src(C), $op(superoperator(C)), $op(C.eigenvaluematrix))
 end
 

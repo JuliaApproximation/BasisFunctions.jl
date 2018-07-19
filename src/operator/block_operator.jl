@@ -11,7 +11,7 @@ A BlockOperator is column-like if it only has one column of blocks. In that case
 the source set of the operator is not necessarily a multidict.
 """
 struct BlockOperator{T} <: DictionaryOperator{T}
-    operators   ::  Array{DictionaryOperator{T}, 2}
+    operators   ::  AbstractArray{DictionaryOperator{T}, 2}
     src         ::  Dictionary
     dest        ::  Dictionary
 
@@ -28,7 +28,7 @@ struct BlockOperator{T} <: DictionaryOperator{T}
     end
 end
 
-function BlockOperator(operators::Array{OP,2},
+function BlockOperator(operators::AbstractArray{OP,2},
     op_src = multidict(map(src, operators[1,:])),
     op_dest = multidict(map(dest, operators[:,1]))) where {OP <: DictionaryOperator}
     # Avoid 1x1 block operators
@@ -47,7 +47,7 @@ function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, se
     BlockOperator(operators, sets...)
 end
 
-function block_row_operator(ops::Array{OP, 1}, sets::Dictionary...) where {OP <: DictionaryOperator}
+function block_row_operator(ops::AbstractArray{OP, 1}, sets::Dictionary...) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
     operators = (VERSION < v"0.7-") ?
         Array{DictionaryOperator{T}}(1, length(ops)) :
@@ -67,7 +67,7 @@ function block_column_operator(op1::DictionaryOperator, op2::DictionaryOperator)
     BlockOperator(operators)
 end
 
-function block_column_operator(ops::Array{OP, 1}) where {OP <: DictionaryOperator}
+function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
     operators = (VERSION < v"0.7-") ?
         Array{DictionaryOperator{T}}(length(ops), 1) :
@@ -184,11 +184,7 @@ vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(o
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-if VERSION < v"0.7-"
-    ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
-else
-    adjoint(op::BlockOperator) = BlockOperator(adjoint(op.operators))
-end
+adjoint(op::BlockOperator) = BlockOperator(adjoint(op.operators))
 
 
 
@@ -201,17 +197,17 @@ A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
 struct BlockDiagonalOperator{T} <: DictionaryOperator{T}
-    operators   ::  Array{DictionaryOperator{T}, 1}
+    operators   ::  AbstractArray{DictionaryOperator{T}, 1}
     src         ::  Dictionary
     dest        ::  Dictionary
 end
 
-function BlockDiagonalOperator(operators::Array{O,1}, src, dest) where {O<:DictionaryOperator}
+function BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest) where {O<:DictionaryOperator}
   T = promote_type(map(eltype, operators)...)
   BlockDiagonalOperator{T}(operators, src, dest)
 end
 
-BlockDiagonalOperator(operators::Array{O,1}) where {O<:DictionaryOperator} =
+BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:DictionaryOperator} =
     BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
@@ -280,11 +276,7 @@ function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Mult
     coef_dest
 end
 
-if VERSION < v"0.7-"
-    ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, operators(op)))
-else
-    adjoint(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(adjoint, operators(op)))
-end
+adjoint(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(adjoint, operators(op)))
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
