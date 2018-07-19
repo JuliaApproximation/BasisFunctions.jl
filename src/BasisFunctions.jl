@@ -4,7 +4,7 @@ __precompile__(true)
 
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, SpecialMatrices, Domains, AbstractTrees
+using StaticArrays, RecipesBase, QuadGK, Domains, AbstractTrees
 
 if VERSION < v"0.7-"
     using LinearAlgebra, FastTransforms

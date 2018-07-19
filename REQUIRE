@@ -1,7 +1,6 @@
 StaticArrays
 FastTransforms
 RecipesBase
-SpecialMatrices
 QuadGK
 FastGaussQuadrature
 AbstractTrees
