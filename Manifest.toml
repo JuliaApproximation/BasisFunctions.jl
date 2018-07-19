@@ -45,9 +45,9 @@ version = "0.5.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "REPL", "Random", "Serialization", "Test"]
-git-tree-sha1 = "ef6f313c82fd80ab75ab3f784353b6c65ebcaacf"
+git-tree-sha1 = "a591110d3ac12c9b4d0cec163fcf234baed7f5ac"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.9.0"
+version = "0.10.0"
 
 [[Dates]]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -60,8 +60,8 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Domains]]
 deps = ["IntervalSets", "LinearAlgebra", "Markdown", "StaticArrays"]
-git-tree-sha1 = "a0e618e977dcada064b4e5680a22eabe50efd7b6"
-repo-rev = "master"
+git-tree-sha1 = "03d812a2c5d7dc47fce4a44fb90312bc394dd032"
+repo-rev = "development"
 repo-url = "https://github.com/daanhb/Domains.jl.git"
 uuid = "a4a0b8aa-7ac0-11e8-2da9-8385f1ed8077"
 version = "0.0.1"
