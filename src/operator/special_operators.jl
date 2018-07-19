@@ -312,7 +312,6 @@ apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::Abstract
 apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {ELT1,ELT2,T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
-
 matrix(op::MatrixOperator) = op.object
 
 matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
@@ -328,13 +327,8 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
-if (VERSION < v"0.7-")
-    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}))
-else
-    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qr(matrix, Val(true)))
-end
+# Use QR for matrices by default
+inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
 
 
 
@@ -351,31 +345,52 @@ dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, ob
 
 
 
+
 """
 A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
 should implement the \\ operator.
 Examples include a QR or SVD factorization, or a dense matrix.
 """
 struct SolverOperator{Q,T} <: DictionaryOperator{T}
-    src     ::  Dictionary
-    dest    ::  Dictionary
+    op      ::  DictionaryOperator
     solver  ::  Q
 end
 
-SolverOperator(src::Dictionary, dest::Dictionary, solver) =
-    SolverOperator{typeof(solver),op_eltype(src, dest)}(src, dest, solver)
+# The solver should be the inverse of the given operator
+SolverOperator(op::DictionaryOperator{T}, solver) where T =
+    SolverOperator{typeof(solver),T}(op, solver)
+
+src(op::SolverOperator) = dest(op.op)
+
+dest(op::SolverOperator) = src(op.op)
 
 similar_operator(op::SolverOperator, src, dest) =
-    SolverOperator(src, dest, op.solver)
+    SolverOperator(similar_operator(dest, src, op.op), op.solver)
 
 
-# TODO: does this allocate memory? Are there (operator-specific) ways to avoid that?
-function apply!(op::SolverOperator, coef_dest, coef_src)
-    coef_dest[:] = op.solver \ coef_src
+apply!(op::SolverOperator, coef_dest, coef_src) = _apply!(op, coef_dest, coef_src, op.solver)
+
+# TODO: optimize for special cases to avoid memory allocation, e.g. using A_ldiv_B!
+# Optimizations can be implemented by intercepting this call to _apply!
+function _apply!(op::SolverOperator, coef_dest, coef_src, solver)
+    coef_dest[:] = solver \ coef_src
     coef_dest
 end
 
 adjoint(op::SolverOperator) = warn("not implemented")
+
+# We define the function name here, otherwise it is only defined
+# in the scope of the if-else clause below
+function QR_solver() end
+
+if (VERSION < v"0.7-")
+    QR_solver(op::DictionaryOperator) = SolverOperator(op, qrfact(matrix(op), Val{true}))
+else
+    QR_solver(op::DictionaryOperator) = SolverOperator(op, qr(matrix(op), Val(true)))
+end
+
+inv(op::SolverOperator) = op.op
+
 
 
 """
