@@ -100,4 +100,6 @@ else
             (g[next_item], (iter,next_tuple))
         end
     end
+
+	Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
 end

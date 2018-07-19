@@ -293,9 +293,9 @@ MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
 
 # Provide aliases for when the object is an actual matrix.
-MatrixOperator(matrix::Matrix) = MultiplicationOperator(matrix)
+MatrixOperator(matrix::AbstractMatrix) = MultiplicationOperator(matrix)
 
-function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::Matrix)
+function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatrix)
     @assert size(matrix, 1) == length(dest)
     @assert size(matrix, 2) == length(src)
     MultiplicationOperator(src, dest, matrix)
