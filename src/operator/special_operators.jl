@@ -350,10 +350,10 @@ inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(
 
 if (VERSION < v"0.7-")
     inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}) )
+        SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}))
 else
     inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qr(matrix, Val(true)) )
+        SolverOperator(dest(op), src(op), qr(matrix, Val(true)))
 end
 
 
