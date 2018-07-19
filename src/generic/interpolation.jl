@@ -24,9 +24,8 @@ function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
     end
 end
 
-default_interpolation_operator(s::Dictionary, dgs::GridBasis; options...) = (VERSION < v"0.7-") ?
-    SolverOperator(dgs, s, qrfact(evaluation_matrix(s, grid(dgs)))) :
-    SolverOperator(dgs, s, qr(evaluation_matrix(s, grid(dgs))))
+default_interpolation_operator(s::Dictionary, dgs::GridBasis; options...) =
+    QR_solver(MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))))
 
 
 function interpolate(s::Dictionary, pts, f)
