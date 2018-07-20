@@ -40,26 +40,29 @@ struct MultiArray{A,T}
     MultiArray{A,T}(arrays) where {A,T} = new(arrays, compute_offsets(arrays))
 
     function MultiArray{A,T}(offsets::Vector{Int}) where {A,T}
-        @assert eltype(eltype(A)) == T
-        new(zeros_oftype(A, offsets), offsets)
+        @assert T == eltype(eltype(A))
+        new(undef_oftype(A, offsets), offsets)
     end
 end
 
+MultiArray{A}(offsets::Vector{Int}) where {A} = MultiArray{A,eltype(eltype(A))}(offsets)
+
 "Generate zeros of type `A`, suitable for a `MultiArray{A,T}`."
-function zeros_oftype(::Type{A}, offsets::Vector{Int}) where {A}
+function undef_oftype(::Type{A}, offsets::Vector{Int}) where {A}
 end
 
 # - the outer array is a Vector
-zeros_oftype(::Type{Vector{A}}, offsets::Vector{Int}) where {A} =
-    [zeros_oftype(A, offsets[i+1]-offsets[i]) for i in 1:length(offsets)-1]
+undef_oftype(::Type{Vector{A}}, offsets::Vector{Int}) where {A <: AbstractArray} =
+    [undef_oftype(A, offsets[i+1]-offsets[i]) for i in 1:length(offsets)-1]
 # - the outer array is an NTuple
-function zeros_oftype(::Type{NTuple{N,A}}, offsets::Vector{Int}) where {N,A}
+function undef_oftype(::Type{NTuple{N,A}}, offsets::Vector{Int}) where {N,A}
     @assert length(offsets) == N+1
-    ntuple(i->zeros_oftype(A, offsets[i+1]-offsets[i]), Val{N})
+    ntuple(i->undef_oftype(A, offsets[i+1]-offsets[i]), Val{N})
 end
 
-zeros_oftype(::Type{Vector{T}}, len::Int) where {T} = zeros(T, len)
-function zeros_oftype(::Type{NTuple{N,T}}, len::Int) where {N,T}
+undef_oftype(::Type{A}, len::Int) where {A <: AbstractVector{T}  where {T}} = (VERSION < v"0.7-") ? Array{eltype(A)}(len) : Array{eltype(A)}(undef, len)
+
+function undef_oftype(::Type{NTuple{N,T}}, len::Int) where {N,T}
     @assert len == N
     ntuple(i->zero(T), Val{N})
 end
@@ -199,13 +202,9 @@ function fill!(a::MultiArray, val)
     for array in elements(a)
         fill!(array, val)
     end
+    a
 end
 
-# for op in (:+, :*, :-, :/, :.*, :.+, :.-, :./, :.\, :.^, :.÷)
-#     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
-#     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])
-#     @eval $op(a::MultiArray, b::Number) = MultiArray([$op(array, b) for array in a.arrays])
-# end
 for op in (:+, :*, :-, :/)
     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])

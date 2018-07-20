@@ -1,73 +1,17 @@
-# test_generic_grids.jl
+using BasisFunctions, BasisFunctions.Test, Domains
 
-#####
-# Grids
-#####
+interval_grids = (EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid)
 
-function grid_iterator1(grid)
-    l = 0
-    s = zero(float_type(eltype(grid)))
-    for i in eachindex(grid)
-        x = grid[i]
-        l += 1
-        s += sum(x)
-    end
-    (l,s)
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test, LinearAlgebra
 end
-
-function grid_iterator2(grid)
-    l = 0
-    s = zero(float_type(eltype(grid)))
-    for x in grid
-        l += 1
-        s += sum(x)
-    end
-    (l,s)
-end
-
-
-function test_generic_grid(grid)
-    L = length(grid)
-
-    T = eltype(grid)
-    FT = float_type(T)
-
-    # Test two types of iterations over a grid.
-    # Make sure there are L elements. Do some computation on each point,
-    # and make sure the results are the same.
-    (l1,sum1) = grid_iterator1(grid)
-    @test l1 == L
-    (l2,sum2) = grid_iterator2(grid)
-    @test l2 == L
-    @test sum1 ≈ sum2
-
-    if typeof(grid) <: AbstractGrid1d
-        # Make sure that 1d grids return points, not vectors with one point.
-        @test eltype(grid) <: Number
-    end
-
-    if has_extension(grid)
-        g_ext = extend(grid, 2)
-        for i in 1:length(grid)
-            @test grid[i] ≈ g_ext[2i-1]
-        end
-    end
-
-    if show_timings
-        t = @timed grid_iterator1(grid)
-        t = @timed grid_iterator1(grid)
-        print_with_color(:blue, "Eachindex: ")
-        println(t[3], " bytes in ", t[2], " seconds")
-        t = @timed grid_iterator2(grid)
-        print_with_color(:blue, "Each x in grid: ")
-        println(t[3], " bytes in ", t[2], " seconds")
-    end
-end
+types = [Float64,BigFloat,]
 
 function test_grids(T)
-
     ## Equispaced grids
-    len = 50
+    len = 21
     a = -T(1.2)
     b = T(3.5)
     g1 = EquispacedGrid(len, a, b)
@@ -118,7 +62,7 @@ function test_grids(T)
     @test s ≈ (len-1)*(a+b)/2 + a
 
     ## Tensor product grids
-    len = 120
+    len = 11
     g1 = PeriodicEquispacedGrid(len, -one(T), one(T))
     g2 = EquispacedGrid(len, -one(T), one(T))
     g = g1 × g2
@@ -174,4 +118,18 @@ function test_grids(T)
     pts = map(T, rand(10))
     sg = ScatteredGrid(pts)
     test_generic_grid(sg)
+end
+
+for T in types
+    delimit(string(T))
+    for GRID in interval_grids
+        @testset "$(rpad(string(GRID),80))" begin
+            g = instantiate(GRID,10,T)
+            test_interval_grid(g)
+        end
+    end
+
+    @testset "$(rpad("Specific grid tests",80))" begin
+        test_grids(T)
+    end
 end

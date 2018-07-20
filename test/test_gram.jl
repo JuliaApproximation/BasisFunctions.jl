@@ -1,9 +1,13 @@
-using BasisFunctions
+using BasisFunctions, BasisFunctions.Test
+
 if VERSION < v"0.7-"
     using Base.Test
+    types = [Float64, BigFloat,]
 else
     using Test
+    types = (Float64,)
 end
+
 
 function discrete_gram_test(T)
     for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries)#,BSplineTranslatesBasis,)
@@ -55,8 +59,9 @@ function general_gram_test(T)
     end
 end
 
-
-#
-# @testset begin discrete_gram_test(Float64) end
-# @testset begin general_gram_test(Float64) end
-# #
+for T in types
+    @testset "$(rpad("Gram functionality $T",80))" begin
+        discrete_gram_test(T)
+        general_gram_test(T)
+    end
+end

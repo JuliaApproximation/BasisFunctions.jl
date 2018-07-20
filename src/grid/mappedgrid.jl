@@ -47,7 +47,7 @@ unsafe_getindex(g::MappedGrid, idx) = applymap(g.map, g.supergrid[idx])
 
 
 function rescale(g::AbstractGrid1d, a, b)
-	m = interval_map(left(g), right(g), a, b)
+	m = interval_map(leftendpoint(g), rightendpoint(g), a, b)
 	mapped_grid(g, m)
 end
 

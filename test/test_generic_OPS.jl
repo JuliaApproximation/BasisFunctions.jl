@@ -1,10 +1,11 @@
 # test_half_range_chebyshev
 
-using BasisFunctions, FastGaussQuadrature
+using BasisFunctions, FastGaussQuadrature, Domains
 if VERSION < v"0.7-"
     using Base.Test
 else
     using Test
+    linspace(a,b,c) = range(a, stop=b, length=c)
 end
 
 function test_half_range_chebyshev()

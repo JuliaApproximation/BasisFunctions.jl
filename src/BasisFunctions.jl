@@ -126,6 +126,9 @@ export FunctionSpace
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
 
+# from operators/banded_operators.jl
+export HorizontalBandedOperator, VerticalBandedOperator
+
 # from bases/generic/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficient_type
@@ -431,6 +434,8 @@ include("bases/poly/rational.jl")
 include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
+
+include("test/Test.jl")
 
 
 end # module

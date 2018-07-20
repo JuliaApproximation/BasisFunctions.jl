@@ -2,6 +2,8 @@
 using BasisFunctions
 if VERSION < v"0.7-"
     using Base.Test
+    ComplexF64 = Complex128
+    ComplexF32 = Complex64
 else
     using Test
 end
@@ -55,3 +57,8 @@ function test_inverse_transform_extremagrid()
         end
     end
 end
+
+
+
+@testset "$(rpad("evaluation",80))"  begin test_full_transform_extremagrid() end
+@testset "$(rpad("inverse",80))" begin test_inverse_transform_extremagrid() end
