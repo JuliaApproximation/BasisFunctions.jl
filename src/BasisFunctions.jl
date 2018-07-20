@@ -11,9 +11,10 @@ if VERSION < v"0.7-"
     import Base: norm, pinv, normalize, cross, ×, dct, idct, ctranspose, transpose
     import Base.LinAlg: dot
     CartesianIndices = CartesianRange
-    LinRange=LinSpace
+    LinRange = LinSpace
     AbstractRange = Range
     mul! = A_mul_B!
+    ldiv! = A_ldiv_B!
     IteratorSize = Base.iteratorsize
     axes = indices
     Nothing = Void
@@ -37,29 +38,22 @@ import Base: <, <=, >, >=
 import Base: ≈
 import Base: ∘
 
-import Base: promote, promote_rule, convert, promote_eltype, widen
+import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
 import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
         range, collect, endof, first, last
-import Base: checkbounds, checkbounds_indices, checkindex
+import Base: transpose, inv, hcat, vcat
+import Base: checkbounds, checkbounds_indices, checkindex, indices
+import Base: getindex, setindex!, unsafe_getindex, eltype
+import Base: broadcast, similar
 
 import Base: cos, sin, exp, log
-
 import Base: zeros, ones, one, zero, fill!, rand
-
-import Base: getindex, setindex!, unsafe_getindex, eltype
 
 import Base: isreal, iseven, isodd, real, complex
 
-import Base: transpose, inv, hcat, vcat
+import Base: show, showcompact, string
 
-import Base: show, showcompact, convert, similar, string
-
-
-
-import Base: indices
-
-import Base: broadcast
 
 ## Imports from Domains
 
@@ -183,6 +177,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+export QR_solver, SVD_solver
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
