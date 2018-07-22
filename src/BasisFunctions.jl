@@ -25,7 +25,7 @@ if VERSION < v"0.7-"
         return :(warn($a...))
     end
 else
-    using FFTW, LinearAlgebra#, FastTransforms, GenericLinearAlgebra
+    using FFTW, LinearAlgebra, SparseArrays#, FastTransforms, GenericLinearAlgebra
     warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
     warn("GenericLinearAlgebra has not known version, problem for FrameFun")
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
@@ -128,6 +128,8 @@ export DimensionOperator, dimension_operator
 
 # from operators/banded_operators.jl
 export HorizontalBandedOperator, VerticalBandedOperator
+
+export SparseOperator
 
 # from bases/generic/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d

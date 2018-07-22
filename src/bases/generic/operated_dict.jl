@@ -71,6 +71,9 @@ for op in (:support,)
     @eval $op(s::OperatedDict, idx) = $op(src_dictionary(s))
 end
 
+dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
+
+
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src_dictionary(s))
 
 ##########################

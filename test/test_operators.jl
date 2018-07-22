@@ -32,6 +32,9 @@ function test_operators(T)
 
     @testset "$(rpad("test banded operators",80))" begin
         test_banded_operator(T) end
+
+    @testset "$(rpad("test sparse operator",80))" begin
+        test_sparse_operator(T) end
 end
 
 function test_generic_operators(T)
@@ -186,6 +189,10 @@ function test_multidiagonal_operators(T)
     end
 end
 
+function test_sparse_operator(ELT)
+    S = SparseOperator(MatrixOperator(map(ELT,rand(4,4))))
+    test_generic_operator_interface(S, ELT)
+end
 function test_banded_operator(ELT)
     a = [ELT(1),ELT(2),ELT(3)]
     H = HorizontalBandedOperator(FourierBasis{ELT}(6,0,1), FourierBasis{ELT}(3,0,1),a,3,2)
