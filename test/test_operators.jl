@@ -2,14 +2,12 @@ using BasisFunctions, BasisFunctions.Test
 
 if VERSION < v"0.7-"
     using Base.Test
-    types = [Float64,BigFloat,]
     my_rand(T, a...) = map(T, rand(a...))
 else
     using Test
-    warn("Postpone BigFloat testing until FastTransforms is fixed. ")
-    types = [Float64,]
     my_rand = rand
 end
+types = [Float64,BigFloat,]
 
 function test_operators(T)
     @testset "$(rpad("test diagonal operators",80))" begin
@@ -201,8 +199,8 @@ function test_banded_operator(ELT)
     e = zeros(ELT,6,1)
     for i in 1:3
         e .= 0
-        I = (2+(i-1)*3)+(1:3)
-        for (j,k) in enumerate(mod.(I-1,6) .+ 1)
+        I = (2+(i-1)*3) .+ (1:3)
+        for (j,k) in enumerate(mod.(I .- 1,6) .+ 1)
             e[k] = a[j]
         end
         @test e ≈ h[i,:]
@@ -214,8 +212,8 @@ function test_banded_operator(ELT)
     e = zeros(ELT,6,1)
     for i in 1:3
         e .= 0
-        I = (2+(i-1)*3)+(1:3)
-        for (j,k) in enumerate(mod.(I-1,6) .+ 1)
+        I = (2+(i-1)*3) .+ (1:3)
+        for (j,k) in enumerate(mod.(I .- 1,6) .+ 1)
             e[k] = a[j]
         end
         @test e ≈ v[:,i]

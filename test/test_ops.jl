@@ -25,14 +25,13 @@ function test_chebyshevT(T)
 
     n1 = 160
     b1 = ChebyshevBasis{T}(n1)
-    if VERSION < v"0.7-"
-        n1 = 160
-        b1 = ChebyshevBasis{T}(n1)
-        f = exp
-        e = approximate(b1, exp)
-        x0 = T(1//2)
-        @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
-    end
+
+    n1 = 160
+    b1 = ChebyshevBasis{T}(n1)
+    f = exp
+    e = approximate(b1, exp)
+    x0 = T(1//2)
+    @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
     @test has_transform(b1)
     @test has_transform(b1, grid(b1))

@@ -3,11 +3,10 @@ using BasisFunctions, BasisFunctions.Test, Domains
 
 if VERSION < v"0.7-"
     using Base.Test
-    types = (Float64, BigFloat)
 else
     using Test
-    types = (Float64,)
 end
+types = (Float64, BigFloat)
 
 #####
 # Fourier series

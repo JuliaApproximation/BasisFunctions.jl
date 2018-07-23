@@ -15,13 +15,6 @@ else
     my_rand = rand
 end
 
-if VERSION < v"0.7-"
-    types = [Float64,BigFloat,]
-else
-    warn("Postpone BigFloat testing until FastTransforms is fixed. ")
-    types = [Float64,]
-end
-
 srand(1234)
 BF = BasisFunctions
 const show_timings = false

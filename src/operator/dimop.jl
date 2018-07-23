@@ -55,9 +55,9 @@ function apply_dim_inplace!(dimop::DimensionOperator, coef_srcdest, op, dim,
     scratch_src = dimop.scratch_src)
 
     for slice in Slices.eachslice(coef_srcdest, dim)
-        copy!(scratch_src, coef_srcdest, slice)
+        copyto!(scratch_src, coef_srcdest, slice)
         apply!(op, scratch_src)
-        copy!(coef_srcdest, slice, scratch_src)
+        copyto!(coef_srcdest, slice, scratch_src)
     end
     coef_srcdest
 end
@@ -67,13 +67,13 @@ function apply!(op::DimensionOperator, coef_dest, coef_src)
 end
 
 
-function copy!(a::AbstractVector, b::AbstractArray, slice::Slices.SliceIndex)
+function copyto!(a::AbstractVector, b::AbstractArray, slice::Slices.SliceIndex)
     for i in eachindex(a)
         a[i] = b[slice,i]
     end
 end
 
-function copy!(a::AbstractArray, slice::Slices.SliceIndex, b::AbstractVector)
+function copyto!(a::AbstractArray, slice::Slices.SliceIndex, b::AbstractVector)
     for i in eachindex(b)
         a[slice,i] = b[i]
     end
@@ -84,9 +84,9 @@ function apply_dim!(dimop::DimensionOperator{1}, coef_dest, coef_src, op::Dictio
     scratch_src = dimop.scratch_src)
 
     for (s_slice,d_slice) in Slices.joint(Slices.eachslice(coef_src, dim), Slices.eachslice(coef_dest, dim))
-        copy!(scratch_src, coef_src, s_slice)
+        copyto!(scratch_src, coef_src, s_slice)
         apply!(op, scratch_dest, scratch_src)
-        copy!(coef_dest, d_slice, scratch_dest)
+        copyto!(coef_dest, d_slice, scratch_dest)
     end
     coef_dest
 end

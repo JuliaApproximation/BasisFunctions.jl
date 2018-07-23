@@ -134,6 +134,26 @@ end
 ## Iteration and indexing
 ##########################
 
+if VERSION >= v"0.7-"
+    function Base.iterate(a::MultiArray)
+        iter = eachindex(a)
+        tuple = iterate(iter)
+        if tuple != nothing
+            item, state = tuple
+            a[item], (iter, state)
+        end
+    end
+
+    function Base.iterate(a::MultiArray, tuple)
+        iter, state = tuple
+        next_tuple = iterate(iter, state)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            a[next_item], (iter, next_state)
+        end
+    end
+end
+
 # Convert a linear index into the MultiArray into the index of a subarray
 # and a linear index into that subarray.
 multilinear_index(a::MultiArray, idx::Int) = offsets_multilinear_index(unsafe_offsets(a), idx)
@@ -219,4 +239,28 @@ end
 
 for op in (:≈,)
     @eval $op(a::MultiArray, b::MultiArray) = reduce(&, map($op, elements(a), elements(b)))
+end
+
+# - If only the destination is a vector, use the native index of src
+function copyto!(dest::AbstractVector, src::MultiArray)
+    for (i,j) in enumerate(eachindex(src))
+        dest[i] = src[j]
+    end
+    dest
+end
+
+# - If only the src is a vector, use the native index of dest
+function copyto!(dest::MultiArray, src::AbstractVector)
+    for (i,j) in enumerate(eachindex(dest))
+        dest[j] = src[i]
+    end
+    dest
+end
+
+# - Generic fallback: rely on eachindex to return a suitable index for both
+function copyto!(dest::MultiArray, src::MultiArray)
+    for i in eachindex(dest, src)
+        dest[i] = src[i]
+    end
+    dest
 end

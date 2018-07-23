@@ -21,14 +21,14 @@ if VERSION < v"0.7-"
     transpose(a...) = adjoint(a...)
     adjoint(a::AbstractArray) = ctranspose(a)
     isapple = Sys.is_apple
+    copyto!(a...) = copy!(a...)
     macro warn(a...)
         return :(warn($a...))
     end
 else
-    using FFTW, LinearAlgebra, SparseArrays#, FastTransforms, GenericLinearAlgebra
-    warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
-    warn("GenericLinearAlgebra has not known version, problem for FrameFun")
+    using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+    import Base: copyto!
     using Base:IteratorSize
     using SpecialFunctions: gamma
     using DSP: conv

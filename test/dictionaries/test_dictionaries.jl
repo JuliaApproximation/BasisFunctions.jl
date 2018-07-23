@@ -5,12 +5,12 @@ BF = BasisFunctions
 
 if VERSION < v"0.7-"
     using Base.Test
-    types = [Float64, BigFloat,]
+    # types = [Float64, BigFloat,]
 else
     using Test
-
-types = [Float64,]
+    # types = [Float64,]
 end
+types = [Float64, BigFloat,]
 
 include("test_dictionaries_util.jl")
 include("test_dictionaries_derived.jl")

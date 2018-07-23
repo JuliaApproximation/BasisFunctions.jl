@@ -93,12 +93,12 @@ function sparse_matrix(op::CirculantOperator; sparse_tol = 1e-14, options...)
     R = spzeros(eltype(op),size(op,1),0)
     coef_src[1] = 1
     apply!(op, coef_dest, coef_src)
-    coef_dest[abs.(coef_dest).<sparse_tol] = 0
+    coef_dest[abs.(coef_dest).<sparse_tol] .= 0
     R = hcat(R,sparse(coef_dest))
     for i in 2:length(dest(op))
         circshift!(coef_dest_1, coef_dest, 1)
         R = hcat(R,sparse(coef_dest_1))
-        copy!(coef_dest, coef_dest_1)
+        copyto!(coef_dest, coef_dest_1)
     end
     R
 end
