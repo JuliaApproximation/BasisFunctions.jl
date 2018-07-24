@@ -175,6 +175,13 @@ ones(s::Dictionary) = ones(coefficient_type(s), s)
 zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
 ones(::Type{T}, s::Dictionary) where {T} = ones(T, size(s))
 
+"""
+Return the type of the coefficient vector of the dictionary.
+
+The implementation is efficient in many cases, but may allocate memory to hold
+one set of coefficients in some cases.
+"""
+containertype(d::Dictionary) = typeof(zeros(d))
 
 function rand(dict::Dictionary)
     c = zeros(dict)
