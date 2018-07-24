@@ -4,7 +4,6 @@ authors = ["vincentcp"]
 version = "0.1.0"
 
 [deps]
-AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
 Domains = "a4a0b8aa-7ac0-11e8-2da9-8385f1ed8077"
