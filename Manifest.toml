@@ -98,7 +98,7 @@ version = "0.3.1"
 
 [[FastTransforms]]
 deps = ["AbstractFFTs", "Compat", "DSP", "FFTW", "HierarchicalMatrices", "LinearAlgebra", "LowRankApprox", "ProgressMeter", "SpecialFunctions", "ToeplitzMatrices"]
-git-tree-sha1 = "272ae18900fb0f557293bf194e727c21fcb49dd5"
+git-tree-sha1 = "afc2bad8c9e5d5243e0f0e9678f168f8179c0c1f"
 repo-rev = "master"
 repo-url = "https://github.com/MikaelSlevinsky/FastTransforms.jl"
 uuid = "057dd010-8810-581a-b7be-e3fc3b93f78c"
