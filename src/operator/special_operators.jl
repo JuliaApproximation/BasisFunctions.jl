@@ -292,27 +292,38 @@ similar_operator(op::MultiplicationOperator, src, dest) =
 
 is_inplace(op::MultiplicationOperator{ARRAY,INPLACE}) where {ARRAY,INPLACE} = INPLACE
 
+# We pass the object as an additional variable so we can dispatch on it.
+# We only intercept non-inplace operators, as the in-place operators are
+# intercept higher up where apply_inplace! ends up being called instead
+apply!(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src) where ARRAY =
+    _apply!(op, coef_dest, coef_src, op.object)
+
 # General definition
-function apply!(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src) where {ARRAY}
+function _apply!(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src, object) where {ARRAY}
     # Note: this is very likely to allocate memory in the right hand side
-    coef_dest[:] = op.object * coef_src
+    coef_dest[:] = object * coef_src
     coef_dest
 end
 
-# In-place definition
-apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) where {ARRAY} =
-    op.object * coef_srcdest
 
-
-# Definition in terms of A_mul_B
-apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,1}, coef_src::AbstractArray{T,1}) where {ELT1,ELT2,T} =
-    mul!(coef_dest, object(op), coef_src)
+# Definition in terms of mul! for vectors
+_apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractVector{T}, coef_src::AbstractVector{T}, object) where {ELT1,ELT2,T} =
+    mul!(coef_dest, object, coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {ELT1,ELT2,T,N1,N2} =
+_apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}, object) where {ELT1,ELT2,T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
+# In-place definition
+# We pass the object as an additional variable so we can dispatch on it
+apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) where {ARRAY} =
+    _apply_inplace!(op, coef_srcdest, op.object)
 
+_apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest, object) where {ARRAY} =
+    object * coef_srcdest
+
+
+# TODO: introduce unsafe_matrix here, and make a copy otherwise
 matrix(op::MatrixOperator) = op.object
 
 matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
@@ -328,13 +339,8 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
-if (VERSION < v"0.7-")
-    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qrfact(matrix, Val{true}))
-else
-    inv_multiplication(op::MultiplicationOperator{Array{ELT,2},false,ELT}, matrix) where {ELT} =
-        SolverOperator(dest(op), src(op), qr(matrix, Val(true)))
-end
+# Use QR for matrices by default
+inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
 
 
 
@@ -350,32 +356,88 @@ dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, ob
     DimensionOperator(src, dest, op, dim, viewtype)
 
 
+"""
+Supertype of all solver operators. A solver operator typically implements an
+efficient algorithm to apply the inverse of an operator. Examples include
+a solver based on QR or SVD factorizations.
 
+A solver operator stores the operator it has inverted.
 """
-A SolverOperator wraps around a solver that is used when the SolverOperator is applied. The solver
-should implement the \\ operator.
-Examples include a QR or SVD factorization, or a dense matrix.
-"""
-struct SolverOperator{Q,T} <: DictionaryOperator{T}
-    src     ::  Dictionary
-    dest    ::  Dictionary
+abstract type AbstractSolverOperator{T} <: DictionaryOperator{T}
+end
+
+operator(op::AbstractSolverOperator) = op.op
+
+src(op::AbstractSolverOperator) = dest(operator(op))
+
+dest(op::AbstractSolverOperator) = src(operator(op))
+
+
+"A GenericSolverOperator wraps around a generic solver type."
+struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
+    op      ::  DictionaryOperator
     solver  ::  Q
 end
 
-SolverOperator(src::Dictionary, dest::Dictionary, solver) =
-    SolverOperator{typeof(solver),op_eltype(src, dest)}(src, dest, solver)
+# The solver should be the inverse of the given operator
+GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
+    GenericSolverOperator{typeof(solver),T}(op, solver)
 
-similar_operator(op::SolverOperator, src, dest) =
-    SolverOperator(src, dest, op.solver)
+similar_operator(op::GenericSolverOperator, src, dest) =
+    GenericSolverOperator(similar_operator(dest, src, op.op), op.solver)
 
 
-# TODO: does this allocate memory? Are there (operator-specific) ways to avoid that?
-function apply!(op::SolverOperator, coef_dest, coef_src)
-    coef_dest[:] = op.solver \ coef_src
+apply!(op::GenericSolverOperator, coef_dest, coef_src) =
+    _apply!(op, coef_dest, coef_src, op.solver)
+
+# This is the generic case
+function _apply!(op::GenericSolverOperator, coef_dest, coef_src, solver)
+    coef_dest[:] = solver \ coef_src
     coef_dest
 end
 
-adjoint(op::SolverOperator)::DictionaryOperator = warn("not implemented")
+# # More efficient version for vectors and factorization solvers
+# # TODO: these don't work for rectangular matrices
+# if (VERSION < v"0.7-")
+#     # function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
+#     #     ldiv!(coef_dest, solver, coef_src)
+#     # end
+#     # ldiv does not seem to work properly for SVD types, it returns the coefficients
+#     # but not in-place
+#     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
+#         coef_dest[:] = ldiv!(coef_dest, solver, coef_src)
+#     end
+# else
+#     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
+#         copy!(coef_dest, coef_src)
+#         ldiv!(solver, coef_dest)
+#     end
+#     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::LinearAlgebra.SVD)
+#         copy!(coef_dest, coef_src)
+#         coef_dest[:] = ldiv!(solver, coef_dest)
+#     end
+# end
+
+adjoint(op::GenericSolverOperator) = warn("not implemented")
+
+# We define these function names here, otherwise they are only defined
+# in the scope of the if-else clause below
+function qr_factorization() end
+function svd_factorization() end
+
+if (VERSION < v"0.7-")
+    qr_factorization(matrix) = qrfact(matrix, Val{true})
+    svd_factorization(matrix) = svdfact(matrix, thin=true)
+else
+    qr_factorization(matrix) = qr(matrix, Val(true))
+    svd_factorization(matrix) = svd(matrix, full=false)
+end
+
+QR_solver(op::DictionaryOperator) = GenericSolverOperator(op, qr_factorization(matrix(op)))
+SVD_solver(op::DictionaryOperator) = GenericSolverOperator(op, svd_factorization(matrix(op)))
+
+inv(op::GenericSolverOperator) = op.op
+
 
 
 """
