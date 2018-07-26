@@ -6,27 +6,29 @@
 
 
 """
-Cosine series on the interval [0,1].
+Cosine series on the interval `[0,1]`.
 """
-struct CosineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct CosineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
-
-const CosineSpan{A, F <: CosineSeries} = Span{A,F}
 
 name(b::CosineSeries) = "Cosine series"
 
+CosineSeries(n::Int) = CosineSeries{Float64}(n)
 
-CosineSeries(n, ::Type{T} = Float64) where {T} = CosineSeries{T}(n)
+CosineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(CosineSeries{T}(n), a, b)
 
-CosineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} =
-    rescale( CosineSeries(n,float(T)), a, b)
+function CosineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    CosineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
-set_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
+dict_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
 
-resize(b::CosineSeries, n) = CosineSeries(n, domaintype(b))
+resize(b::CosineSeries{T}, n) where {T} = CosineSeries{T}(n)
 
 is_basis(b::CosineSeries) = true
 is_orthogonal(b::CosineSeries) = true
@@ -35,64 +37,76 @@ is_orthogonal(b::CosineSeries) = true
 has_grid(b::CosineSeries) = true
 has_derivative(b::CosineSeries) = false #for now
 has_antiderivative(b::CosineSeries) = false #for now
-has_transform{G <: PeriodicEquispacedGrid}(b::CosineSeries, d::DiscreteGridSpace{G}) = false #for now
+has_transform(b::CosineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::CosineSeries) = true
 
 length(b::CosineSeries) = b.n
 
-left(b::CosineSeries{T}) where {T} = T(0)
-left(b::CosineSeries, idx) = left(b)
 
-right(b::CosineSeries{T}) where {T} = T(1)
-right(b::CosineSeries, idx) = right(b)
+support(b::CosineSeries{T}) where {T} = UnitInterval{T}()
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries) = MidpointEquispacedGrid(b.n, zero(domaintype(b)), one(domaintype(b)))
+grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
 
 
-native_index(b::CosineSeries, idx::Int) = idx-1
-linear_index(b::CosineSeries, idxn::Int) = idxn+1
+##################
+# Native indices
+##################
 
-eval_element(b::CosineSeries{T}, idx::Int, x) where {T} = cos(x * T(pi) * (idx-1))
+const CosineFrequency = NativeIndex{:cosine}
 
-function eval_element_derivative(b::CosineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * (idx-1)
+frequency(idxn::CosineFrequency) = value(idxn)
+
+"""
+`CosineIndices` defines the map from native indices to linear indices
+for a finite number of cosines.
+"""
+struct CosineIndices <: IndexList{CosineFrequency}
+	n	::	Int
+end
+
+size(list::CosineIndices) = (list.n,)
+
+getindex(list::CosineIndices, idx::Int) = CosineFrequency(idx-1)
+getindex(list::CosineIndices, idxn::CosineFrequency) = value(idxn)+1
+
+ordering(b::CosineSeries) = CosineIndices(length(b))
+
+
+##################
+# Evaluation
+##################
+
+
+unsafe_eval_element(b::CosineSeries{T}, idx::CosineFrequency, x) where {T} =
+    cospi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     -arg * sin(arg * x)
 end
 
-function apply!(op::Extension, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)
-    @assert length(dest) > length(src)
-
-    for i = 1:length(src)
-        coef_dest[i] = coef_src[i]
-    end
-    for i = length(src)+1:length(dest)
-        coef_dest[i] = 0
-    end
-    coef_dest
+function extension_operator(s1::CosineSeries, s2::CosineSeries; options...)
+    @assert length(s2) >= length(s1)
+    IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-
-function apply!(op::Restriction, dest::CosineSeries, src::CosineSeries, coef_dest, coef_src)
-    @assert length(dest) < length(src)
-
-    for i = 1:length(dest)
-        coef_dest[i] = coef_src[i]
-    end
-    coef_dest
+function restriction_operator(s1::CosineSeries, s2::CosineSeries; options...)
+    @assert length(s2) <= length(s1)
+    IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
 
-function Gram(s::CosineSpan; options...)
-    T = coeftype(s)
+function Gram(s::CosineSeries; options...)
+    T = codomaintype(s)
     diag = ones(T,length(s))/2
     diag[1] = 1
     DiagonalOperator(s, s, diag)
 end
 
-function UnNormalizedGram(s::CosineSpan, oversampling)
-    T = coeftype(s)
-    d = T(length_oversampled_grid(set(s), oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(set(s), oversampling)
+function UnNormalizedGram(s::CosineSeries, oversampling)
+    T = codomaintype(s)
+    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
+    d[1] = length_oversampled_grid(s, oversampling)
     DiagonalOperator(s, s, d)
 end

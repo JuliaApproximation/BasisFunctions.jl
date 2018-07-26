@@ -4,9 +4,13 @@
 abstract type AbstractIntervalGrid{T} <: AbstractGrid1d{T}
 end
 
+instantiate(::Type{T}, n::Int, ::Type{ELT})  where {T<:AbstractIntervalGrid,ELT} = T(n,ELT(0),ELT(1),ELT)
+
 # Some default implementations for interval grids follow
 leftendpoint(g::AbstractIntervalGrid) = g.a
 rightendpoint(g::AbstractIntervalGrid) = g.b
+support(g::AbstractIntervalGrid) = interval(leftendpoint(g), rightendpoint(g))
+# support(g::AbstractIntervalGrid) = interval(g.a, g.b)
 length(g::AbstractIntervalGrid) = g.n
 
 # Perhaps we should add a stepsize field, for better efficiency?
@@ -42,9 +46,11 @@ struct EquispacedGrid{T} <: AbstractEquispacedGrid{T}
     EquispacedGrid{T}(n::Int, a = -one(T), b = one(T)) where {T} = (@assert a < b; new(n, a, b))
 end
 
-EquispacedGrid(n, ::Type{T} = Float64) where {T} = EquispacedGrid{T}(n)
+EquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = EquispacedGrid{T}(n)
 
-EquispacedGrid(n, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = EquispacedGrid{T}(n, a, b)
+EquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = EquispacedGrid{T}(n, a, b)
+
+EquispacedGrid(n::Int, d::AbstractInterval, ::Type{T}=eltype(d)) where {T} = EquispacedGrid{T}(n, infimum(d), supremum(d))
 
 similar_grid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
 
@@ -58,7 +64,7 @@ stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
 # (What about more general ranges?)
-EquispacedGrid(x::LinSpace) = EquispacedGrid(length(x), first(x), last(x))
+EquispacedGrid(x::LinRange) = EquispacedGrid(length(x), first(x), last(x))
 
 
 """
@@ -77,6 +83,8 @@ PeriodicEquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = PeriodicEquispac
 
 PeriodicEquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = PeriodicEquispacedGrid{T}(n, a, b)
 
+PeriodicEquispacedGrid(n::Int, d::AbstractInterval, ::Type{T}=eltype(d)) where {T} = PeriodicEquispacedGrid{T}(n, infimum(d), supremum(d))
+
 similar_grid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
 
 has_extension(::PeriodicEquispacedGrid) = true
@@ -91,47 +99,6 @@ stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 ==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
     (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
 
-
-"""
-A dyadic periodic equispaced grid is an equispaced grid that omits the right
-endpoint and has length `n = 2^l`.
-It has stepsize `(b-a)/n`.
-"""
-struct DyadicPeriodicEquispacedGrid{T} <: AbstractEquispacedGrid{T}
-    l   ::  Int
-    a   ::  T
-    b   ::  T
-
-    DyadicPeriodicEquispacedGrid{T}(l, a = zero(T), b = one(T)) where {T} = (@assert a < b; new(l, a, b))
-end
-
-dyadic_length(g::DyadicPeriodicEquispacedGrid) = g.l
-
-length(g::DyadicPeriodicEquispacedGrid) = 1<<dyadic_length(g)
-
-DyadicPeriodicEquispacedGrid(l, ::Type{T} = Float64) where {T} = DyadicPeriodicEquispacedGrid{T}(l)
-
-DyadicPeriodicEquispacedGrid(l, a, b, ::Type{T} = typeof((b-a)/l)) where {T} = DyadicPeriodicEquispacedGrid{T}(l, a, b)
-
-PeriodicEquispacedGrid(g::DyadicPeriodicEquispacedGrid{T}) where {T} = PeriodicEquispacedGrid{T}(length(g), g.a, g.b)
-
-similar_grid(g::DyadicPeriodicEquispacedGrid, a, b, T) = DyadicPeriodicEquispacedGrid{T}(g.l, a, b)
-
-has_extension(::DyadicPeriodicEquispacedGrid) = true
-
-resize(g::DyadicPeriodicEquispacedGrid, n::Int) = DyadicPeriodicEquispacedGrid(n, g.a, g.b)
-
-# TODO: does this make sense for a dyadic grid? It is l that is being multiplied.
-extend(g::DyadicPeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.n)
-
-stepsize(g::DyadicPeriodicEquispacedGrid) = (g.b-g.a)/length(g)
-
-# We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
-==(g1::DyadicPeriodicEquispacedGrid, g2::DyadicPeriodicEquispacedGrid) =
-    (g1.l == g2.l) && (g1.a == g2.a) && (g1.b==g2.b)
-==(g1::DyadicPeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
-    (length(g1) == length(g2)) && (g1.a == g2.a) && (g1.b==g2.b)
-
 """
 A MidpointEquispaced grid is an equispaced grid with grid points in the centers of the equispaced
 subintervals. In other words, this is a DCT-II grid.
@@ -145,15 +112,18 @@ struct MidpointEquispacedGrid{T} <: AbstractEquispacedGrid{T}
     MidpointEquispacedGrid{T}(n, a = -one(T), b = one(T)) where {T} = (@assert a < b; new(n, a, b))
 end
 
-MidpointEquispacedGrid(n, ::Type{T} = Float64) where {T} = MidpointEquispacedGrid{T}(n)
+MidpointEquispacedGrid(n::Int, ::Type{T} = Float64) where {T} = MidpointEquispacedGrid{T}(n)
 
-MidpointEquispacedGrid(n, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = MidpointEquispacedGrid{T}(n, a, b)
+MidpointEquispacedGrid(n::Int, a, b, ::Type{T} = typeof((b-a)/n)) where {T} = MidpointEquispacedGrid{T}(n, a, b)
+
+MidpointEquispacedGrid(n::Int, d::AbstractInterval, ::Type{T} = eltype(d)) where {T} = MidpointEquispacedGrid{T}(n, infimum(d), supremum(d))
+
 
 similar_grid(g::MidpointEquispacedGrid, a, b, T) = MidpointEquispacedGrid{T}(length(g), a, b)
 
 resize(g::MidpointEquispacedGrid, n::Int) = MidpointEquispacedGrid(n, g.a, g.b)
 
-unsafe_getindex{T}(g::MidpointEquispacedGrid{T}, i) = g.a + (i-one(T)/2)*stepsize(g)
+unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*stepsize(g)
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
@@ -162,9 +132,11 @@ struct ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevGrid = ChebyshevNodeGrid
+const ChebyshevPoints = ChebyshevNodeGrid
 
 ChebyshevNodeGrid(n::Int, ::Type{T} = Float64) where {T} = ChebyshevNodeGrid{T}(n)
+ChebyshevNodeGrid(n::Int, a, b, ::Type{T}) where {T} = rescale(ChebyshevNodeGrid(n, T), a, b)
 
 
 leftendpoint(g::ChebyshevNodeGrid{T}) where {T} = -one(T)
@@ -173,7 +145,6 @@ rightendpoint(g::ChebyshevNodeGrid{T}) where {T} = one(T)
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevNodeGrid{T}, i) where {T} = T(-1)*cos((i-1/2) * T(pi) / (g.n) )
 
-
 struct ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
@@ -181,9 +152,12 @@ end
 ChebyshevPointsOfTheSecondKind = ChebyshevExtremaGrid
 
 ChebyshevExtremaGrid(n::Int, ::Type{T} = Float64) where {T} = ChebyshevExtremaGrid{T}(n)
+ChebyshevExtremaGrid(n::Int, a, b, ::Type{T}) where {T} = rescale(ChebyshevExtremaGrid(n, T), a, b)
 
 leftendpoint(g::ChebyshevExtremaGrid{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevExtremaGrid{T}) where {T} = one(T)
 
 # Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevExtremaGrid{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
+
+strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)

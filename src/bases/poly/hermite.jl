@@ -5,11 +5,11 @@ A basis of the classicale Hermite polynomials. These polynomials are orthogonal
 on the real line `(-∞,∞)` with respect to the weight function
 `w(x)=exp(-x^2)`.
 """
-struct HermitePolynomials{T} <: OPS{T}
+struct HermitePolynomials{T} <: OPS{T,T}
     n           ::  Int
 end
 
-const HermiteSpan{A, F <: HermitePolynomials} = Span{A,F}
+
 
 name(b::HermitePolynomials) = "Hermite OPS"
 
@@ -18,16 +18,11 @@ HermitePolynomials(n::Int, ::Type{T} = Float64) where {T} = HermitePolynomials{T
 
 instantiate(::Type{HermitePolynomials}, n, ::Type{T}) where {T} = HermitePolynomials{T}(n)
 
-set_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
+dict_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
 
 resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
 
-
-left(b::HermitePolynomials{T}) where {T} = -convert(T, Inf)
-left(b::HermitePolynomials, idx) = left(b)
-
-right(b::HermitePolynomials{T}) where {T} = convert(T, Inf)
-right(b::HermitePolynomials, idx) = right(b)
+support(b::HermitePolynomials{T}) where {T} = FullSpace(T)
 
 first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 
@@ -42,9 +37,10 @@ rec_Bn(b::HermitePolynomials, n::Int) = 0
 
 rec_Cn(b::HermitePolynomials, n::Int) = 2*n
 
-function gramdiagonal!(result, ::HermiteSpan; options...)
+function gramdiagonal!(result, ::HermitePolynomials; options...)
     T = eltype(result)
     for i in 1:length(result)
         result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
     end
 end
+

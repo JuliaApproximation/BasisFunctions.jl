@@ -1,7 +1,12 @@
 # test_half_range_chebyshev
-using BasisFunctions
-using Base.Test
-using FastGaussQuadrature
+
+using BasisFunctions, FastGaussQuadrature, Domains
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+    linspace(a,b,c) = range(a, stop=b, length=c)
+end
 
 function test_half_range_chebyshev()
     n = 60
@@ -11,7 +16,7 @@ function test_half_range_chebyshev()
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
-    modified_weights = weights.*(nodes-BasisFunctions.m_forward(T,T)).^α
+    modified_weights = weights.*(nodes .- BasisFunctions.m_forward(T,T)).^α
 
     αstieltjes,βstieltjes = BasisFunctions.stieltjes(n,nodes,modified_weights)
     setprecision(350)
@@ -31,46 +36,46 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 function test_generic_ops_from_quadrature()
     N = 10
     # LegendrePolynomials
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),interval(-1,1))
     c2 = LegendrePolynomials(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),interval(-1,1))
     c2 = JacobiPolynomials(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     # chebyshevI
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),interval(-1,1))
     c2 = ChebyshevBasis(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),interval(-1,1))
     c2 = JacobiPolynomials(N, -.5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # chebyshevII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),interval(-1,1))
     c2 = ChebyshevU(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),interval(-1,1))
     c2 = JacobiPolynomials(N, .5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     # ChebyshevIII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),interval(-1,1))
     c2 = JacobiPolynomials(N, -.5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # ChebyshevIIII
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),-1,1)
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),interval(-1,1))
     c2 = JacobiPolynomials(N, .5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
@@ -86,12 +91,11 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
         y = y1./y2
         s[k] = y[1]
         y /= y[1]
-        y -= 1
+        y .-= 1
         @test maximum(y) < 1e-10
     end
 
-    @test left(c1,1) == left_point
-    @test right(c1,1) == right_point
+    @test support(c1,1) == interval(left_point,right_point)
     @test length(c1) == N
     @test name(c1) == "Generic OPS"
 
@@ -104,20 +108,20 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
     E = BasisFunctions.rec_Bn.(c1,0:N-1)
     F = BasisFunctions.rec_Cn.(c1,0:N-1)
 
-    @test 1+A[1:N-1] ≈ 1+D[1:N-1].*s[1:N-1]./s[2:N]
-    @test 1+B[1:N-1] ≈ 1+E[1:N-1].*s[1:N-1]./s[2:N]
-    @test 1+C[2:N-1] ≈ 1+F[2:N-1].*s[1:N-2]./s[3:N]
+    @test 1 .+ A[1:N-1] ≈ 1 .+ D[1:N-1].*s[1:N-1]./s[2:N]
+    @test 1 .+ B[1:N-1] ≈ 1 .+ E[1:N-1].*s[1:N-1]./s[2:N]
+    @test 1 .+ C[2:N-1] ≈ 1 .+ F[2:N-1].*s[1:N-2]./s[3:N]
 
     a, b = monic_recurrence_coefficients(c1)
     c, d = monic_recurrence_coefficients(c2)
 
-    @test 1+a ≈ 1+c
-    @test 1+b ≈ 1+d
+    @test 1 .+ a ≈ 1 .+ c
+    @test 1 .+ b ≈ 1 .+ d
 
     for k in 1:N
         f = [monic_recurrence_eval(a, b, k ,x) for x in t]
         g = [monic_recurrence_eval(c, d, k ,x) for x in t]
-        @test 1+f ≈ 1+g
+        @test 1 .+ f ≈ 1 .+ g
     end
 end
 
@@ -148,8 +152,8 @@ function test_roots_of_legendre_halfrangechebyshev()
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = LegendrePolynomials(N,BigFloat)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = HalfRangeChebyshevIkind(N,BigFloat(2))
-    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    # B = HalfRangeChebyshevIkind(N,BigFloat(2))
+    # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
 end
 
 @testset "$(rpad("Generic OPS",80))" begin test_generic_ops_from_quadrature() end

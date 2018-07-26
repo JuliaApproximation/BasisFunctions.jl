@@ -5,15 +5,15 @@ A BlockOperator has a block matrix structure, where each block is an operator,
 and it acts on multiple sets.
 
 A BlockOperator is row-like if it only has one row of blocks. In that case, the
-destination of the operator is not necessarily a multiset.
+destination of the operator is not necessarily a multidict.
 
 A BlockOperator is column-like if it only has one column of blocks. In that case,
-the source set of the operator is not necessarily a multiset.
+the source set of the operator is not necessarily a multidict.
 """
-struct BlockOperator{T} <: AbstractOperator{T}
-    operators   ::  Array{AbstractOperator{T}, 2}
-    src         ::  Span
-    dest        ::  Span
+struct BlockOperator{T} <: DictionaryOperator{T}
+    operators   ::  AbstractArray{DictionaryOperator{T}, 2}
+    src         ::  Dictionary
+    dest        ::  Dictionary
 
     # scratch_src and scratch_dest hold scratch memory for each subset of the
     # source and destination sets, for allocation-free implementation of the
@@ -28,9 +28,9 @@ struct BlockOperator{T} <: AbstractOperator{T}
     end
 end
 
-function BlockOperator(operators::Array{OP,2},
-    op_src = multispan(map(src, operators[1,:])),
-    op_dest = multispan(map(dest, operators[:,1]))) where {OP <: AbstractOperator}
+function BlockOperator(operators::AbstractArray{OP,2},
+    op_src = multidict(map(src, operators[1,:])),
+    op_dest = multidict(map(dest, operators[:,1]))) where {OP <: DictionaryOperator}
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
 
@@ -39,32 +39,39 @@ function BlockOperator(operators::Array{OP,2},
 end
 
 # sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
-function block_row_operator(op1::AbstractOperator, op2::AbstractOperator, sets::Span...)
+function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, sets::Dictionary...)
     T = promote_type(eltype(op1), eltype(op2))
-    operators = Array{AbstractOperator{T}}(1, 2)
+    operators = Array{DictionaryOperator{T}}(1, 2)
     operators[1] = op1
     operators[2] = op2
     BlockOperator(operators, sets...)
 end
 
-function block_row_operator(ops::Array{OP, 1}, sets::Span...) where {OP <: AbstractOperator}
+function block_row_operator(ops::AbstractArray{OP, 1}, sets::Dictionary...) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
-    operators = Array{AbstractOperator{T}}(1, length(ops))
+    operators = (VERSION < v"0.7-") ?
+        Array{DictionaryOperator{T}}(1, length(ops)) :
+        Array{DictionaryOperator{T}}(undef, 1, length(ops))
+
     operators[:] = ops
     BlockOperator(operators, sets...)
 end
 
-function block_column_operator(op1::AbstractOperator, op2::AbstractOperator)
+function block_column_operator(op1::DictionaryOperator, op2::DictionaryOperator)
     T = promote_type(eltype(op1), eltype(op2))
-    operators = Array{AbstractOperator{T}}(2, 1)
+    operators = (VERSION < v"0.7-") ?
+        Array{DictionaryOperator{T}}(2, 1) :
+        Array{DictionaryOperator{T}}(undef, 2, 1)
     operators[1] = op1
     operators[2] = op2
     BlockOperator(operators)
 end
 
-function block_column_operator(ops::Array{OP, 1}) where {OP <: AbstractOperator}
+function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
-    operators = Array{AbstractOperator{T}}(length(ops), 1)
+    operators = (VERSION < v"0.7-") ?
+        Array{DictionaryOperator{T}}(length(ops), 1) :
+        Array{DictionaryOperator{T}}(undef, length(ops), 1)
     operators[:] = ops
     BlockOperator(operators)
 end
@@ -72,7 +79,7 @@ end
 # Return a block operator the size of the given operator, but filled with zero
 # operators.
 function zeros(op::BlockOperator)
-    operators = zeros(AbstractOperator{eltype(op)}, composite_size(op))
+    operators = zeros(DictionaryOperator{eltype(op)}, composite_size(op))
     for i in 1:composite_size(op, 1)
         for j in 1:composite_size(op, 2)
             operators[i,j] = ZeroOperator(src(op, j), dest(op, i))
@@ -88,10 +95,13 @@ src(op::BlockOperator, j) = j==1 && is_columnlike(op) ? src(op) : element(src(op
 dest(op::BlockOperator, i) = i==1 && is_rowlike(op) ? dest(op) : element(dest(op), i)
 
 element(op::BlockOperator, i::Int, j::Int) = op.operators[i,j]
+elements(op::BlockOperator) = op.operators
 
 composite_size(op::BlockOperator) = size(op.operators)
 
 composite_size(op::BlockOperator, dim) = size(op.operators, dim)
+
+is_composite(op::BlockOperator) = true
 
 is_rowlike(op::BlockOperator) = size(op.operators,1) == 1
 
@@ -168,13 +178,13 @@ function apply_columnoperator!(op::BlockOperator, coef_dest::AbstractVector, coe
     linearize_coefficients!(coef_dest, scratch_dest)
 end
 
-hcat(op1::AbstractOperator, op2::AbstractOperator) = block_row_operator(op1, op2)
-vcat(op1::AbstractOperator, op2::AbstractOperator) = block_column_operator(op1, op2)
+hcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_row_operator(op1, op2)
+vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(op1, op2)
 
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
+adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array{DictionaryOperator}(adjoint(op.operators)))
 
 
 
@@ -186,24 +196,26 @@ ctranspose(op::BlockOperator) = BlockOperator(ctranspose(op.operators))
 A BlockDiagonalOperator has a block matrix structure like a BlockOperator, but
 with only blocks on the diagonal.
 """
-struct BlockDiagonalOperator{T} <: AbstractOperator{T}
-    operators   ::  Array{AbstractOperator{T}, 1}
-    src         ::  Span
-    dest        ::  Span
+struct BlockDiagonalOperator{T} <: DictionaryOperator{T}
+    operators   ::  AbstractArray{DictionaryOperator{T}, 1}
+    src         ::  Dictionary
+    dest        ::  Dictionary
 end
 
-function BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}, src, dest)
+function BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest) where {O<:DictionaryOperator}
   T = promote_type(map(eltype, operators)...)
   BlockDiagonalOperator{T}(operators, src, dest)
 end
 
-BlockDiagonalOperator{O<:AbstractOperator}(operators::Array{O,1}) =
-    BlockDiagonalOperator(operators, multispan(map(src, operators)), multispan(map(dest, operators)))
+BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:DictionaryOperator} =
+    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
 
 operators(op::BlockDiagonalOperator) = op.operators
+elements(op::BlockDiagonalOperator) = op.operators
+is_composite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
-    ops = Array(AbstractOperator{eltype(op)}, numelements(op), numelements(op))
+    ops = Array(DictionaryOperator{eltype(op)}, numelements(op), numelements(op))
     n = length(op.operators)
     for i in 1:n,j in 1:n
         ops[i,j] = element(op, i, j)
@@ -213,17 +225,17 @@ end
 
 composite_size(op::BlockDiagonalOperator) = (l = length(op.operators); (l,l))
 
-block_diagonal_operator(op1::AbstractOperator, op2::AbstractOperator) =
+block_diagonal_operator(op1::DictionaryOperator, op2::DictionaryOperator) =
     BlockDiagonalOperator([op1,op2])
 block_diagonal_operator(op1::BlockDiagonalOperator, op2::BlockDiagonalOperator) =
     BlockDiagonalOperator(vcat(elements(op1),elements(op2)))
-block_diagonal_operator(op1::BlockDiagonalOperator, op2::AbstractOperator) =
+block_diagonal_operator(op1::BlockDiagonalOperator, op2::DictionaryOperator) =
     BlockDiagonalOperator(vcat(elements(op1), op2))
-block_diagonal_operator(op1::AbstractOperator, op2::BlockDiagonalOperator) =
+block_diagonal_operator(op1::DictionaryOperator, op2::BlockDiagonalOperator) =
     BlockDiagonalOperator(vcat(op1,elements(op2)))
 
-function block_diagonal_operator(op1::AbstractOperator, op2::BlockOperator)
-    ops = Array(AbstractOperator{eltype(op1)}, 1+composite_size(op2,1), 1+composite_size(op2,2))
+function block_diagonal_operator(op1::DictionaryOperator, op2::BlockOperator)
+    ops = Array(DictionaryOperator{eltype(op1)}, 1+composite_size(op2,1), 1+composite_size(op2,2))
     ops[1,1] = op1
     for i in 1:composite_size(op2,1)
         ops[1+i,1] = ZeroOperator(src(op1), dest(op2,i))
@@ -235,7 +247,7 @@ function block_diagonal_operator(op1::AbstractOperator, op2::BlockOperator)
     BlockOperator(ops)
 end
 
-function block_diagonal_operator(ops::AbstractArray{AbstractOperator{T}}) where {T}
+function block_diagonal_operator(ops::AbstractArray{DictionaryOperator{T}}) where {T}
     @assert length(ops) > 1
     if length(ops) > 2
         block_diagonal_operator(ops[1], ops[2], ops[2:end])
@@ -244,7 +256,7 @@ function block_diagonal_operator(ops::AbstractArray{AbstractOperator{T}}) where 
     end
 end
 
-⊕(op1::AbstractOperator, op2::AbstractOperator) = block_diagonal_operator(op1, op2)
+⊕(op1::DictionaryOperator, op2::DictionaryOperator) = block_diagonal_operator(op1, op2)
 
 function element(op::BlockDiagonalOperator{T}, i::Int, j::Int) where {T}
     if i == j
@@ -264,7 +276,38 @@ function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Mult
     coef_dest
 end
 
-ctranspose(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(ctranspose, operators(op)))
+adjoint(op::BlockDiagonalOperator)::DictionaryOperator = BlockDiagonalOperator(map(adjoint, operators(op)))
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
-# inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(AbstractOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
+# inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
+
+function stencil(op::BlockOperator)
+    A = Any[]
+    push!(A,"[")
+    for i=1:size(elements(op),1)
+        i!=1 && push!(A,";\t")
+        push!(A,element(op,i,1))
+        for j=2:size(elements(op),2)
+            push!(A,", \t")
+            push!(A,element(op,i,j))
+        end
+    end
+    push!(A,"]")
+    A
+end
+
+function stencil(op::BlockDiagonalOperator)
+    A = Any[]
+    push!(A,"[")
+    for i=1:composite_size(op)[1]
+        i!=1 && push!(A,";\t 0")
+        i==1 && push!(A,element(op,1,1))
+        for j=2:composite_size(op)[2]
+            push!(A,", \t")
+            i==j && push!(A,element(op,i,j))
+            i!=j && push!(A,"0")
+        end
+    end
+    push!(A,"]")
+    A
+end

@@ -8,21 +8,22 @@ const AbstractGrid1d{T <: Number} = AbstractGrid{T}
 # Todo: remove this one again, it is not sufficiently generic
 const AbstractGrid2d{T <: Number} = AbstractGrid{SVector{2,T}}
 
-Point{N,T} = SVector{N,T}
+GridPoint{N,T} = SVector{N,T}
 
 # The element type of a grid is the type returned by getindex.
 eltype(::Type{AbstractGrid{T}}) where {T} = T
 eltype(::Type{G}) where {G <: AbstractGrid} = eltype(supertype(G))
 
+# The subeltype of a grid is the T in SVector{N,T}
+subeltype(::Type{AbstractGrid{T}}) where {T} = subeltype(T)
+subeltype(::Type{G}) where {G <: AbstractGrid} = subeltype(supertype(G))
+subeltype(g::AbstractGrid) = subeltype(typeof(g))
+
+subeltype(::Type{T}) where {T <: Number} = T
+subeltype(::Type{GridPoint{N,T}}) where {N,T} = T
+
 # The dimension of a grid is the dimension of its elements
 dimension(grid::AbstractGrid) = dimension(eltype(grid))
-
-# TODO: remove the numtype or disambiguate its meaning
-function numtype(::AbstractGrid{T}) where {T}
-	warning("Calling numtype on a grid is deprecated.")
-	float_type(T)
-end
-
 
 size(g::AbstractGrid1d) = (length(g),)
 endof(g::AbstractGrid) = length(g)
@@ -32,7 +33,7 @@ last(g::AbstractGrid) = g[last(eachindex(g))]
 
 has_extension(::AbstractGrid) = false
 
-support(g::AbstractGrid) = (left(g),right(g))
+#support(g::AbstractGrid) = interval(left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 
@@ -62,41 +63,43 @@ native_index(g::AbstractGrid, idx) = idx
 
 linear_index(g::AbstractGrid, idxn) = idxn
 
-# Grid iteration:
-#	for x in grid
-#		do stuff...
-#	end
-# Implemented by start, next and done.
-function start(g::AbstractGrid)
-	iter = eachindex(g)
-	(iter, start(iter))
-end
 
-function next(g::AbstractGrid, state)
-	iter = state[1]
-	iter_state = state[2]
-	idx,iter_newstate = next(iter,iter_state)
-	(g[idx], (iter,iter_newstate))
-end
 
-done(g::AbstractGrid, state) = done(state[1], state[2])
-
-"Sample the function f on the given grid."
-sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
-
-# We don't want to assume that f can be called with a vector argument.
-# In order to avoid the overhead of splatting, we capture a number of special cases
-call_function_with_vector(f, x::Number) = f(x)
-call_function_with_vector(f, x::SVector{1}) = f(x[1])
-call_function_with_vector(f, x::SVector{2}) = f(x[1], x[2])
-call_function_with_vector(f, x::SVector{3}) = f(x[1], x[2], x[3])
-call_function_with_vector(f, x::SVector{4}) = f(x[1], x[2], x[3], x[4])
-call_function_with_vector(f, x::SVector{N}) where {N} = f(x...)
-call_function_with_vector(f, x::AbstractVector) = f(x...)
-
-function sample!(result, g::AbstractGrid, f)
-	for i in eachindex(g)
-		result[i] = call_function_with_vector(f, g[i])
+if VERSION < v"0.7-"
+	# Grid iteration:
+	#	for x in grid
+	#		do stuff...
+	#	end
+	# Implemented by start, next and done.
+	function start(g::AbstractGrid)
+		iter = eachindex(g)
+		(iter, start(iter))
 	end
-	result
+
+	function next(g::AbstractGrid, state)
+		iter = state[1]
+		iter_state = state[2]
+		idx,iter_newstate = next(iter,iter_state)
+		(g[idx], (iter,iter_newstate))
+	end
+
+	done(g::AbstractGrid, state) = done(state[1], state[2])
+else
+    function Base.iterate(g::AbstractGrid)
+        iter = eachindex(g)
+        first_item, first_state = iterate(iter)
+        (g[first_item], (iter, (first_item, first_state)))
+    end
+
+    function Base.iterate(g::AbstractGrid, state)
+        iter, iter_tuple = state
+        iter_item, iter_state = iter_tuple
+        next_tuple = iterate(iter, iter_state)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            (g[next_item], (iter,next_tuple))
+        end
+    end
+
+	Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
 end

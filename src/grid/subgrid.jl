@@ -42,18 +42,32 @@ left(g::IndexSubGrid) = first(g)
 
 right(g::IndexSubGrid) = last(g)
 
+function mask(g::IndexSubGrid)
+    mask = zeros(Bool,size(supergrid(g)))
+    [mask[i]=true for i in g.subindices]
+    mask
+end
+
+
+support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = interval(first(g), last(g))
+
+
 
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
 is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
 
-function grid_extension_operator(src::DiscreteGridSpace, dest::DiscreteGridSpace, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
+function grid_extension_operator(src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
     @assert supergrid(src_grid) == dest_grid
     IndexExtensionOperator(src, dest, subindices(src_grid))
 end
 
-function grid_restriction_operator(src::DiscreteGridSpace, dest::DiscreteGridSpace, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
+function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
     @assert supergrid(dest_grid) == src_grid
     IndexRestrictionOperator(src, dest, subindices(dest_grid))
 end
 
-getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+# getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
+
+getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
+
+strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))

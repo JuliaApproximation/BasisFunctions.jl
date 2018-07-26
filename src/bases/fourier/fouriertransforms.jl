@@ -15,22 +15,22 @@
 # The Fast Fourier transform
 #############################
 
-function fftw_scaling_operator(span::Span)
-    scalefactor = 1/sqrt(convert(coeftype(span), length(span)))
-    ScalingOperator(span, span, scalefactor)
+function fftw_scaling_operator(dict::Dictionary)
+    scalefactor = 1/(convert(coeftype(dict), length(dict)))
+    ScalingOperator(dict, dict, scalefactor)
 end
 
 for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
-                            (:ifftw_operator, :plan_bfft!, :ifft))
+                            (:ifftw_operator, :plan_bfft!, :bfft))
     # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
-    @eval $op(src::Span, dest::Span, dims, fftwflags) = $op(src, dest, coeftype(dest), dims, fftwflags)
+    @eval $op(src::Dictionary, dest::Dictionary, dims, fftwflags) = $op(src, dest, coeftype(dest), dims, fftwflags)
     # In the default case apply fft or ifft
-    @eval $op(src::Span, dest::Span, ::Type{Complex{T}}, dims, fftwflags) where {T} =
+    @eval $op(src::Dictionary, dest::Dictionary, ::Type{Complex{T}}, dims, fftwflags) where {T} =
         FunctionOperator(src, dest, $f)
     # When possible apply the fast FFTW operator
     for T in (:(Complex{Float32}), :(Complex{Float64}))
-    	@eval function $op(src::Span, dest::Span, ::Type{$(T)}, dims, fftwflags)
-            plan = $plan_(zeros(dest), dims; flags = fftwflags)
+    	@eval function $op(src::Dictionary, dest::Dictionary, ::Type{$(T)}, dims, fftwflags)
+            plan = $plan_(zeros(promote_eltype(coeftype(src),coeftype(dest)),dest), dims; flags = fftwflags)
             MultiplicationOperator(src, dest, plan; inplace = true)
         end
     end
@@ -43,8 +43,12 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
         $FastTransform(src, dest)
     # But for some types we can use FFTW
     for T in (:(Complex{Float32}), :(Complex{Float64}))
-        @eval $transform(src, dest, ::Type{$(T)}; options...) =
-  		    $FFTWTransform(src, dest; options...)
+        @eval function $transform(src, dest, ::Type{$(T)}; options...)
+            # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
+            s_op = ScalingOperator(dest, dest, $scalefactor(src,$(T)))
+            t_op = $FFTWTransform(src, dest; options...)
+            s_op * t_op
+  	end
     end
 
     # Now the generic implementation, based on using fft and ifft
@@ -53,59 +57,65 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
         s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
         t_op = FunctionOperator(src, dest, $fun)
 
-        s_op * t_op
+        s_op*t_op
     end
 
     # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
     # in order to have a unitary transform. Additional scaling is done in the _pre and
     # _post routines.
     # Note that we choose to use bfft, an unscaled inverse fft.
-    @eval function $FFTWTransform(src::Span, dest::Span,
+    @eval function $FFTWTransform(src::Dictionary, dest::Dictionary,
         dims = 1:dimension(src); fftwflags = FFTW.MEASURE, options...)
 
         t_op = $op(src, dest, dims, fftwflags)
-        # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
-        s_op = fftw_scaling_operator(dest)
-        s_op * t_op
+        t_op
     end
 end
 
-fft_scalefactor{ELT}(src, ::Type{ELT}) = 1/sqrt(ELT(length(src)))
+fft_scalefactor(src, ::Type{ELT}) where {ELT} = 1/ELT(length(src))
 
-ifft_scalefactor{ELT}(src, ::Type{ELT}) = sqrt(ELT(length(src)))
+ifft_scalefactor(src, ::Type{ELT}) where {ELT} = ELT(length(src))
+
+ifft_scalefactor(src, ::Type{Complex{Float64}}) = 1
+
+ifft_scalefactor(src, ::Type{Complex{Float32}}) = 1
+
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific FFT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-FFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,-1,true,N}
-IFFTPLAN{T,N} = Base.DFT.FFTW.cFFTWPlan{T,1,true,N}
+FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N}
+IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N}
+#IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,FFTW.cFFTWPlan{T,1,true,N},S}
 
-dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
+dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
     dim, object::FFTPLAN; options...) =
         FastFourierTransformFFTW(src, dest, dim:dim; options...)
 
-dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
+dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
     dim, object::IFFTPLAN; options...) =
         InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
 
 
-ctranspose_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
+adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
     ifftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
 
-ctranspose_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    fftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
+adjoint_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
+    fftw_operator(dest(op), src(op), 1:dimension(dest(op)),object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+#        adjoint_multiplication(op, object)
+adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    ctranspose_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+#        adjoint_multiplication(op, object)
+    adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 
-ctranspose_function(op::FunctionOperator, fun::typeof(fft)) =
+adjoint_function(op::FunctionOperator, fun::typeof(fft)) =
     FunctionOperator(dest(op), src(op), ifft) * ScalingOperator(dest(op), dest(op), length(dest(op)))
 
-ctranspose_function(op::FunctionOperator, fun::typeof(ifft)) =
+adjoint_function(op::FunctionOperator, fun::typeof(ifft)) =
     FunctionOperator(dest(op), src(op), fft) * ScalingOperator(dest(op), dest(op), 1/convert(eltype(op), length(dest(op))))
 
 # The two functions below are used when computing the inv of a
@@ -135,7 +145,7 @@ for (transform, plan) in
     (:InverseFastChebyshevTransformFFTW, :plan_idct!))
     @eval begin
         function $transform(src, dest, dims = 1:dimension(dest); fftwflags = FFTW.MEASURE, options...)
-            plan = FFTW.$plan(zeros(dest), dims; flags = fftwflags)
+            plan = FFTW.$plan(zeros(src), dims; flags = fftwflags)
             MultiplicationOperator(src, dest, plan; inplace=true)
         end
     end
@@ -149,33 +159,34 @@ end
 # We have to know the precise type of the DCT plan in order to intercept calls to
 # dimension_operator. These are important to catch, since there are specific DCT-plans
 # that work along one dimension and they are more efficient than our own generic implementation.
-DCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,5,true}
-IDCTPLAN{T} = Base.DFT.FFTW.DCTPlan{T,4,true}
-DCTIPLAN{T} = Base.DFT.FFTW.r2rFFTWPlan{T,(3,),false,1}
+DCTPLAN{T} = FFTW.DCTPlan{T,5,true}
+IDCTPLAN{T} = FFTW.DCTPlan{T,4,true}
+DCTIPLAN{T} = FFTW.r2rFFTWPlan{T,(3,),false,1}
 
 for (plan, transform, invtransform) in (
       (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
       (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
       (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
     @eval begin
-        dimension_operator_multiplication(src::Span, dest::Span, op::MultiplicationOperator,
+        dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
             dim, object::$plan; options...) =
                 $transform(src, dest, dim:dim; options...)
 
-        ctranspose_multiplication(op::MultiplicationOperator, object::$plan) =
+        adjoint_multiplication(op::MultiplicationOperator, object::$plan) =
             $invtransform(dest(op), src(op))
 
         inv_multiplication(op::MultiplicationOperator, object::$plan) =
-            ctranspose_multiplication(op, object)
+            adjoint_multiplication(op, object)
     end
 end
 
-# The four functions below are used when computing the ctranspose or inv of a
+# The four functions below are used when computing the adjoint or inv of a
 # FunctionOperator that uses dct/idct:
 inv(fun::typeof(dct)) = idct
 inv(fun::typeof(idct)) = dct
-ctranspose(fun::typeof(dct)) = idct
-ctranspose(fun::typeof(idct)) = dct
+
+adjoint(fun::typeof(dct)) = idct
+adjoint(fun::typeof(idct)) = dct
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.

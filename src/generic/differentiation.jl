@@ -5,19 +5,19 @@
 ##################################################
 
 """
-The differentiation operator of a set maps an expansion in a set to an
-expansion of its derivative. The result may be an expansion in a different set.
-A function set can support different differentiation operators, with different
-result sets. For example, an expansion of Chebyshev polynomials up to degree n
+The differentiation operator of a dictionary maps an expansion in a dictionary to an
+expansion of its derivative. The result may be an expansion in a different dictionary.
+A dictionary can support different differentiation operators, with different
+result dicts. For example, an expansion of Chebyshev polynomials up to degree n
 may map to polynomials up to degree n, or to polynomials up to degree n-1.
 """
-struct Differentiation{SRC <: Span,DEST <: Span,T} <: AbstractOperator{T}
+struct Differentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: DictionaryOperator{T}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-Differentiation(src::Span, dest::Span, order) =
+Differentiation(src::Dictionary, dest::Dictionary, order) =
     Differentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 
@@ -26,41 +26,41 @@ order(op::Differentiation) = op.order
 
 """
 The differentation_operator function returns an operator that can be used to differentiate
-a function in the function set, with the result as an expansion in a second set.
+a function in the dictionary, with the result as an expansion in a second dictionary.
 """
-function differentiation_operator(s1::Span, s2::Span, order; options...)
+function differentiation_operator(s1::Dictionary, s2::Dictionary, order; options...)
     @assert has_derivative(s1)
     Differentiation(s1, s2, order)
 end
 
 # Default if no order is specified
-function differentiation_operator(s1::Span1d, order=1; options...)
-    s2 = derivative_space(s1, order; options...)
+function differentiation_operator(s1::Dictionary1d, order=1; options...)
+    s2 = derivative_dict(s1, order; options...)
     differentiation_operator(s1, s2, order; options...)
 end
 
-differentiation_operator(s1::Span; dim=1, options...) =
-    differentiation_operator(s1, dimension_tuple(dimension(set(s1)), dim))
+differentiation_operator(s1::Dictionary; dim=1, options...) =
+    differentiation_operator(s1, dimension_tuple(dimension(s1), dim))
 
-function differentiation_operator(s1::Span, order; options...)
-    s2 = derivative_space(s1, order)
+function differentiation_operator(s1::Dictionary, order; options...)
+    s2 = derivative_dict(s1, order)
     differentiation_operator(s1, s2, order; options...)
 end
 
 
 """
-The antidifferentiation operator of a set maps an expansion in the set to an
+The antidifferentiation operator of a dictionary maps an expansion in the dictionary to an
 expansion of its antiderivative. The result may be an expansion in a different
-set. A function set can have different antidifferentiation operators,
-with different result sets.
+dictionary. A dictionary can have different antidifferentiation operators,
+with different result dictionaries.
 """
-struct AntiDifferentiation{SRC <: Span,DEST <: Span,T} <: AbstractOperator{T}
+struct AntiDifferentiation{SRC <: Dictionary,DEST <: Dictionary,T} <: DictionaryOperator{T}
     src     ::  SRC
     dest    ::  DEST
     order   ::  Int
 end
 
-AntiDifferentiation(src::Span, dest::Span, order) =
+AntiDifferentiation(src::Dictionary, dest::Dictionary, order) =
     AntiDifferentiation{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, order)
 
 order(op::AntiDifferentiation) = op.order
@@ -70,22 +70,42 @@ order(op::AntiDifferentiation) = op.order
 
 """
 The antidifferentiation_operator function returns an operator that can be used to find the antiderivative
-of a function in the function set, with the result an expansion in a second set.
+of a function in the dictionary, with the result an expansion in a second dictionary.
 """
-function antidifferentiation_operator(s1::Span, s2::Span, order; options...)
+function antidifferentiation_operator(s1::Dictionary, s2::Dictionary, order; options...)
     @assert has_antiderivative(s1)
     AntiDifferentiation(s1, s2, order)
 end
 
 # Default if no order is specified
-function antidifferentiation_operator(s1::Span1d, order=1; options...)
-    s2 = antiderivative_space(s1, order)
+function antidifferentiation_operator(s1::Dictionary1d, order=1; options...)
+    s2 = antiderivative_dict(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
 end
 
-antidifferentiation_operator(s1::Span; dim=1, options...) = antidifferentiation_operator(s1, dimension_tuple(dimension(set(s1)), dim))
+antidifferentiation_operator(s1::Dictionary; dim=1, options...) = antidifferentiation_operator(s1, dimension_tuple(dimension(s1), dim))
 
-function antidifferentiation_operator(s1::Span, order; options...)
-    s2 = antiderivative_space(s1, order)
+function antidifferentiation_operator(s1::Dictionary, order; options...)
+    s2 = antiderivative_dict(s1, order)
     antidifferentiation_operator(s1, s2, order; options...)
+end
+
+"""
+The pseudodifferential_operator function returns an operator representing a function of the
+derivative operator.
+"""
+struct PseudodifferentialOperator{SRC <: Dictionary,DEST <: Dictionary, T} <: DictionaryOperator{T}
+    src     ::  SRC
+    dest    ::  DEST
+    symbol  ::  Function
+end
+
+PseudodifferentialOperator(src::Dictionary, dest::Dictionary, symbol::Function) =
+    PseudodifferentialOperator{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest, symbol)
+
+symbol(op::PseudodifferentialOperator) = op.symbol
+
+function pseudodifferential_operator(s1::Dictionary, s2::Dictionary, symbol::Function; options...)
+    @assert has_derivative(s1)
+    PseudodifferentialOperator(s1, s2, symbol)
 end

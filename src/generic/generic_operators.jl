@@ -18,7 +18,7 @@
 # - differentiation_operator
 # - antidifferentation_operator
 #
-# These operators are also defined for TensorProductSet's.
+# These operators are also defined for TensorProductDict's.
 #
 # See the individual files for details on the interfaces.
 
@@ -39,18 +39,18 @@ include("differentiation.jl")
 
 
 #####################################
-# Operators for tensor product sets
+# Operators for tensor product dictionaries
 #####################################
 
 # We make TensorProductOperator's for each generic operator, when invoked with
-# TensorProductSet's.
+# TensorProductDict's.
 
 # We make a special case for transform operators, so that they can be intercepted
 # in case a multidimensional transform is available for a specific basis.
 # Furthermore, sometimes the transform of a set is equal to the transform of an
 # underlying set. Examples include MappedSet's and other DerivedSet's.
 #
-# For the transform involving a TensorProductSet and a ProductGrid, we proceed
+# For the transform involving a TensorProductDict and a ProductGrid, we proceed
 # as follows:
 # - all combinations (set,grid) are simplified, where set and grid range over the
 #   elements of the tensor products
@@ -68,41 +68,34 @@ include("differentiation.jl")
 
 # Simplification of a (set,grid) pair is done using simplify_transform_pair.
 # By default a simplification does not do anything:
-simplify_transform_pair(set::FunctionSet, grid::AbstractGrid) = (set,grid)
+simplify_transform_pair(dict::Dictionary, grid::AbstractGrid) = (dict,grid)
 
 # A simplification of a tensor product set invokes the simplification on each
 # of its elements.
-function simplify_transform_pair(set::TensorProductSet, grid::ProductGrid)
+function simplify_transform_pair(dict::TensorProductDict, grid::ProductGrid)
     # The line below took a while to write. The problem is simplify_transform_pair
     # returns a tuple. Zip takes a list of tuples and creates two lists out of it.
-    set_elements, grid_elements =
-        zip(map(simplify_transform_pair, elements(set), elements(grid))...)
-    TensorProductSet(set_elements...), ProductGrid(grid_elements...)
+    dict_elements, grid_elements =
+        zip(map(simplify_transform_pair, elements(dict), elements(grid))...)
+    TensorProductDict(dict_elements...), ProductGrid(grid_elements...)
 end
 
-function simplify_transform_pair(set::ProductGridSet, grid::ProductGrid)
-    set, grid
+function simplify_transform_pair(dict::ProductGridBasis, grid::ProductGrid)
+    dict, grid
 end
 
 # For convenience, we implement a function that takes the three transform arguments,
-# and simplifies the correct pair (leaving out the DiscreteGridSpace)
-function simplify_transform_sets(s1::GridSet, s2::FunctionSet, grid)
+# and simplifies the correct pair (leaving out the GridBasist)
+function simplify_transform_sets(s1::GridBasis, s2::Dictionary, grid)
     simple_s2, simple_grid = simplify_transform_pair(s2, grid)
-    simple_s1 = gridset(simple_grid)
+    simple_s1 = gridbasis(simple_grid, promote_type(coeftype(s2),codomaintype(s1)))
     simple_s1, simple_s2, simple_grid
 end
 
-function simplify_transform_sets(s1::FunctionSet, s2::GridSet, grid)
+function simplify_transform_sets(s1::Dictionary, s2::GridBasis, grid)
     simple_s1, simple_grid = simplify_transform_pair(s1, grid)
-    simple_s2 = gridset(simple_grid)
+    simple_s2 = gridbasis(simple_grid, promote_type(coeftype(s2),codomaintype(s1)))
     simple_s1, simple_s2, simple_grid
-end
-
-function simplify_transform_spaces(s1::Span, s2::Span, grid)
-    T1 = coeftype(s1)
-    T2 = coeftype(s2)
-    simple_s1, simple_s2, simple_grid = simplify_transform_sets(set(s1), set(s2), grid)
-    Span(simple_s1, T1), Span(simple_s2, T2), simple_grid
 end
 
 
@@ -111,16 +104,16 @@ end
 # The first loop is only over the *from_grid* family of methods, because the types
 # of the arguments differ from the *to_grid* methods
 for op in ( (:transform_from_grid, :s1, :s2),
-            (:transform_from_grid_pre, :s1, :s1),
+            (:transform_from_grid_pre, :s1, :s2),
             (:transform_from_grid_post, :s1, :s2))
 
     op_tensor = Symbol("$(op[1])_tensor")
 
     # Invoke the *_tensor function with additional basetype arguments
-    @eval function $(op[1])(s1::DiscreteGridSpace, s2::TensorProductSpan, grid::ProductGrid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
-        operator = $(op_tensor)(basetype(simple_s2), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
+    @eval function $(op[1])(s1::GridBasis, s2::TensorProductDict, grid::ProductGrid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        operator = $(op_tensor)(basetype(simple_s2), basetype(simple_grid), s1, s2, grid; options...)
+        #wrap_operator($(op[2]), $(op[3]), operator)
     end
 
     # Default implementation of the X_tensor routine: make a tensor product operator.
@@ -130,14 +123,14 @@ end
 
 # Same as above, but for the *to_grid* family of functions
 for op in ( (:transform_to_grid, :s1, :s2),
-            (:transform_to_grid_pre, :s1, :s1),
+            (:transform_to_grid_pre, :s1, :s2),
             (:transform_to_grid_post, :s1, :s2))
     op_tensor = Symbol("$(op[1])_tensor")
 
-    @eval function $(op[1])(s1::TensorProductSpan, s2::DiscreteGridSpace, grid::ProductGrid; options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_spaces(s1, s2, grid)
-        operator = $(op_tensor)(basetype(simple_s1), basetype(simple_grid), simple_s1, simple_s2, simple_grid; options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
+    @eval function $(op[1])(s1::TensorProductDict, s2::GridBasis, grid::ProductGrid; options...)
+        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
+        operator = $(op_tensor)(basetype(simple_s1), basetype(simple_grid), s1, s2, grid; options...)
+        #wrap_operator($(op[2]), $(op[3]), operator)
     end
 
     # Default implementation of the X_tensor routine: make a tensor product operator.
@@ -148,21 +141,22 @@ end
 
 for op in (:extension_operator, :restriction_operator,
             :interpolation_operator, :leastsquares_operator)
-    @eval $op(s1::TensorProductSpan, s2::TensorProductSpan; options...) =
+    @eval $op(s1::TensorProductDict, s2::TensorProductDict; options...) =
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
 
-grid_evaluation_operator(set::TensorProductSpan, dgs::DiscreteGridSpace, grid::ProductGrid; options...) =
-    tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(set), elements(grid))...)
+default_evaluation_operator(s1::TensorProductDict, s2::TensorProductDict; options...) =
+    tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(s1), elements(s2))...)
 
 for op in (:approximation_operator, )
-    @eval $op(s::TensorProductSpan; options...) =
+    @eval $op(s::TensorProductDict; options...) =
         tensorproduct(map( u -> $op(u; options...), elements(s))...)
 end
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    # TODO: this assumes that the number of elements of the tensor product equals the dimension
-    @eval function $op(s1::TensorProductSpan, s2::TensorProductSpan, order::NTuple; options...)
+    @eval function $op(s1::TensorProductDict, s2::TensorProductDict, order::NTuple; options...)
+        @assert length(order) == dimension(s1)
+        @assert length(order) == dimension(s2)
         tensorproduct(map( (u,v,w) -> $op(u, v, w; options...), elements(s1), elements(s2), order)...)
     end
 end

@@ -1,10 +1,10 @@
 # multiarray.jl
 
 """
-A MultiArray in its simplest form is an array of arrays. It is meant to store
+A `MultiArray` in its simplest form is an array of arrays. It is meant to store
 coefficient sets of different expansions together, i.e. each element of the outer
 array stores the coefficients of an expansion. This is useful as a representation
-for MultiSet's.
+for MultiDict's.
 
 A MultiArray has one outer array, of which each element is an inner array. The
 inner arrays can represent the coefficients of an expansion. In case the
@@ -15,7 +15,7 @@ but there should not be too many.
 
 The MultiArray can be indexed with a linear index, which iterates over all the
 elements of the subarray's linearly. This index would correspond to the linear
-index of a MultiSet. Alternatively, the MultiArray can be index with a native index,
+index of a MultiDict. Alternatively, the MultiArray can be index with a native index,
 which is a tuple consisting of the outer array index and the native index of the
 coefficient set it points to.
 
@@ -35,11 +35,37 @@ struct MultiArray{A,T}
     arrays  ::  A
     # The cumulative sum of the lengths of the subarrays. Used to compute indices.
     # The linear index for the i-th subarray starts at offsets[i]+1.
-    offsets ::  Array{Int,1}
+    offsets ::  Vector{Int}
 
     MultiArray{A,T}(arrays) where {A,T} = new(arrays, compute_offsets(arrays))
+
+    function MultiArray{A,T}(offsets::Vector{Int}) where {A,T}
+        @assert T == eltype(eltype(A))
+        new(undef_oftype(A, offsets), offsets)
+    end
 end
 
+MultiArray{A}(offsets::Vector{Int}) where {A} = MultiArray{A,eltype(eltype(A))}(offsets)
+
+"Generate zeros of type `A`, suitable for a `MultiArray{A,T}`."
+function undef_oftype(::Type{A}, offsets::Vector{Int}) where {A}
+end
+
+# - the outer array is a Vector
+undef_oftype(::Type{Vector{A}}, offsets::Vector{Int}) where {A <: AbstractArray} =
+    [undef_oftype(A, offsets[i+1]-offsets[i]) for i in 1:length(offsets)-1]
+# - the outer array is an NTuple
+function undef_oftype(::Type{NTuple{N,A}}, offsets::Vector{Int}) where {N,A}
+    @assert length(offsets) == N+1
+    ntuple(i->undef_oftype(A, offsets[i+1]-offsets[i]), Val{N})
+end
+
+undef_oftype(::Type{A}, len::Int) where {A <: AbstractVector{T}  where {T}} = (VERSION < v"0.7-") ? Array{eltype(A)}(len) : Array{eltype(A)}(undef, len)
+
+function undef_oftype(::Type{NTuple{N,T}}, len::Int) where {N,T}
+    @assert len == N
+    ntuple(i->zero(T), Val{N})
+end
 
 function MultiArray(arrays, T = eltype(arrays[1]))
     for array in arrays
@@ -57,9 +83,11 @@ similar_multiarray(a::MultiArray) = MultiArray(elements(a))
 
 length(a::MultiArray) = a.offsets[end]
 
+unsafe_offsets(a::MultiArray) = a.offsets
+
 # This definition is up for debate: what is the size of a MultiArray?
 # By defining it as (length(a),), we can assert elsewhere that the size of a
-# multiset equals the size of its multiarray representation.
+# multidict equals the size of its multiarray representation.
 size(a::MultiArray) = (length(a),)
 
 length(a::MultiArray, i::Int) = length(a.arrays[i])
@@ -80,9 +108,9 @@ function linearize_coefficients!(b::Vector, a::MultiArray)
 end
 
 function delinearize_coefficients(a::MultiArray, b::Vector)
-  multiarray = similar_multiarray(a)
-  delinearize_coefficients!(multiarray, b)
-  multiarray
+    multiarray = similar_multiarray(a)
+    delinearize_coefficients!(multiarray, b)
+    multiarray
 end
 
 function delinearize_coefficients!(a::MultiArray, b::Vector)
@@ -106,77 +134,55 @@ end
 ## Iteration and indexing
 ##########################
 
-# We introduce this type in order to support eachindex for MultiArray's below
-struct MultiArrayIndexIterator{A,T}
-    array   ::  MultiArray{A,T}
+if VERSION >= v"0.7-"
+    function Base.iterate(a::MultiArray)
+        iter = eachindex(a)
+        tuple = iterate(iter)
+        if tuple != nothing
+            item, state = tuple
+            a[item], (iter, state)
+        end
+    end
+
+    function Base.iterate(a::MultiArray, tuple)
+        iter, state = tuple
+        next_tuple = iterate(iter, state)
+        if next_tuple != nothing
+            next_item, next_state = next_tuple
+            a[next_item], (iter, next_state)
+        end
+    end
 end
 
-eachindex(s::MultiArray) = MultiArrayIndexIterator(s)
+# Convert a linear index into the MultiArray into the index of a subarray
+# and a linear index into that subarray.
+multilinear_index(a::MultiArray, idx::Int) = offsets_multilinear_index(unsafe_offsets(a), idx)
 
-# Or should we just do:
-# eachindex(s::MultiArray) = CompositeIndexIterator(map(length, elements(s)))
-# and do away with MultiArrayIndexIterator?
+linear_index(a::MultiArray, idx::MultilinearIndex) = offsets_linear_index(unsafe_offets(a), idx)
 
+eachindex(a::MultiArray) = MultilinearIndexIterator(map(length, elements(a)))
 
 function eachindex(s1::MultiArray, s2::MultiArray)
-    @assert numelements(s1) == numelements(s2)
     @assert length(s1) == length(s2)
-    eachindex(s1)
+    if s1.offsets == s2.offsets
+        eachindex(s1)
+    else
+        Base.OneTo(length(s1))
+    end
 end
 
 function eachindex(s1::MultiArray, s2::AbstractArray)
     @assert length(s1) == length(s2)
-    1:length(s1)
+    Base.OneTo(length(s1))
 end
 
 function eachindex(s1::AbstractArray, s2::MultiArray)
     @assert length(s1) == length(s2)
-    1:length(s1)
+    Base.OneTo(length(s1))
 end
 
 
-function start(it::MultiArrayIndexIterator)
-    I = eachindex(element(it.array, 1))
-    (1, I, start(I))
-end
-
-function next(it::MultiArrayIndexIterator, state)
-    i, sub_iterator, sub_iterator_state = state
-    sub_index, sub_nextstate = next(sub_iterator, sub_iterator_state)
-    if done(sub_iterator, sub_nextstate) && (i < numelements(it.array))
-        next_sub_iterator = eachindex(element(it.array, i+1))
-        next_state = (i+1, next_sub_iterator, start(next_sub_iterator))
-    else
-        next_state = (i, sub_iterator, sub_nextstate)
-    end
-    ((i,sub_index), next_state)
-end
-
-done(it::MultiArrayIndexIterator, state) = (state[1]==numelements(it.array)) && done(state[2], state[3])
-
-length(it::MultiArrayIndexIterator) = length(it.array)
-
-const ArrayOfArray{T} = Array{Array{T,1},1}
-
-# Our iterator can be simpler when the element sets are vectors in an array
-# Strictly speaking we can do even better, since we don't need the full array in the
-# field of the iterator, only its dimensions
-start(it::MultiArrayIndexIterator{ArrayOfArray{T}}) where {T} = (1,1)
-
-function next(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) where {T}
-    i = state[1]
-    j = state[2]
-    if j == length(it.array, i)
-        nextstate = (i+1,1)
-    else
-        nextstate = (i,j+1)
-    end
-    (state, nextstate)
-end
-
-done(it::MultiArrayIndexIterator{ArrayOfArray{T}}, state) where {T} = state[1] > numelements(it.array)
-
-# Support linear indexing too
+# Support linear indexing
 getindex(a::MultiArray, idx::Int) = getindex(a, multilinear_index(a, idx))
 
 # Indexing with two arguments: the first is the number of the subset, the
@@ -189,11 +195,9 @@ getindex(a::MultiArray, idx::Tuple{Int,I}) where {I} = getindex(a, idx[1], idx[2
 getindex(a::MultiArray, ::Colon) = linearize_coefficients(a)
 
 
-# Support linear indexing too
+# Similar routines as for getindex above
 setindex!(a::MultiArray, v, idx::Int) = setindex!(a, v, multilinear_index(a, idx))
-
 setindex!(a::MultiArray, v, i::Int, j) = a.arrays[i][j] = v
-
 setindex!(a::MultiArray, v, idx::Tuple{Int,Any}) = setindex!(a, v, idx[1], idx[2])
 
 # Assignment from linear representation
@@ -208,17 +212,7 @@ function setindex!(a::MultiArray, b::MultiArray, ::Colon)
     b
 end
 
-# Convert a linear index into the MultiArray into the index of a subarray
-# and a linear index into that subarray.
-function multilinear_index(a::MultiArray, idx::Int)
-    i = 0
-    while idx > a.offsets[i+1]
-        i += 1
-    end
-    (i,idx-a.offsets[i])
-end
 
-linear_index(a::MultiArray, idxn::NTuple{2,Int}) = a.offsets[idxn[1]] + idxn[2]
 
 ################
 # Arithmetic
@@ -228,13 +222,9 @@ function fill!(a::MultiArray, val)
     for array in elements(a)
         fill!(array, val)
     end
+    a
 end
 
-# for op in (:+, :*, :-, :/, :.*, :.+, :.-, :./, :.\, :.^, :.÷)
-#     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
-#     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])
-#     @eval $op(a::MultiArray, b::Number) = MultiArray([$op(array, b) for array in a.arrays])
-# end
 for op in (:+, :*, :-, :/)
     @eval $op(a::MultiArray, b::MultiArray) = MultiArray([$op(a.arrays[i], b.arrays[i]) for i in 1:length(a.arrays)])
     @eval $op(a::Number, b::MultiArray) = MultiArray([$op(a, array) for array in b.arrays])
@@ -249,4 +239,28 @@ end
 
 for op in (:≈,)
     @eval $op(a::MultiArray, b::MultiArray) = reduce(&, map($op, elements(a), elements(b)))
+end
+
+# - If only the destination is a vector, use the native index of src
+function copyto!(dest::AbstractVector, src::MultiArray)
+    for (i,j) in enumerate(eachindex(src))
+        dest[i] = src[j]
+    end
+    dest
+end
+
+# - If only the src is a vector, use the native index of dest
+function copyto!(dest::MultiArray, src::AbstractVector)
+    for (i,j) in enumerate(eachindex(dest))
+        dest[j] = src[i]
+    end
+    dest
+end
+
+# - Generic fallback: rely on eachindex to return a suitable index for both
+function copyto!(dest::MultiArray, src::MultiArray)
+    for i in eachindex(dest, src)
+        dest[i] = src[i]
+    end
+    dest
 end

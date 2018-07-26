@@ -4,11 +4,11 @@
 """
 A TensorProductOperator represents the tensor product of other operators.
 
-struct TensorProductOperator{T} <: AbstractOperator{T}
+struct TensorProductOperator{T} <: DictionaryOperator{T}
 """
-struct TensorProductOperator{T} <: AbstractOperator{T}
-    src             ::  Span
-    dest            ::  Span
+struct TensorProductOperator{T} <: DictionaryOperator{T}
+    src             ::  Dictionary
+    dest            ::  Dictionary
     operators
     scratch
     src_scratch
@@ -19,11 +19,13 @@ end
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
+is_composite(op::TensorProductOperator) = true
+
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
     L = length(operators)
-    tp_src = Span(tensorproduct(map(set, map(src, operators))...), T)
-    tp_dest = Span(tensorproduct(map(set, map(dest, operators))...), T)
+    tp_src = tensorproduct(map(src, operators)...)
+    tp_dest = tensorproduct(map(dest, operators)...)
 
     # Scratch contains matrices of sufficient size to hold intermediate results
     # in the application of the tensor product operator.
@@ -32,14 +34,14 @@ function TensorProductOperator(operators...)
     # - [M1,M2,N3]
     # where operator J maps a set of length Nj to a set of length Mj.
     scratch_array = [ zeros(T, [length(dest(operators[k])) for k=1:j-1]..., [length(src(operators[k])) for k=j:L]...) for j=2:L]
-    scratch = (scratch_array...)
+    scratch = (scratch_array...,)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
     # storage to hold a vector for source and destination for each operator
     src_scratch_array = [zeros(src(operators[j])) for j=1:L]
-    src_scratch = (src_scratch_array...)
+    src_scratch = (src_scratch_array...,)
     dest_scratch_array = [zeros(dest(operators[j])) for j=1:L]
-    dest_scratch = (dest_scratch_array...)
+    dest_scratch = (dest_scratch_array...,)
     TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
@@ -55,14 +57,15 @@ size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
 
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
-
-ctranspose(op::TensorProductOperator) = TensorProductOperator(map(ctranspose, elements(op))...)
+adjoint(op::TensorProductOperator)::DictionaryOperator = TensorProductOperator(map(adjoint, elements(op))...)
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
 is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
 is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
 
+unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
+    TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 
 apply!(op::TensorProductOperator, coef_dest, coef_src) =
     apply_tensor!(op, coef_dest, coef_src, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
@@ -70,17 +73,17 @@ apply!(op::TensorProductOperator, coef_dest, coef_src) =
 apply_inplace!(op::TensorProductOperator, coef_srcdest) =
     apply_inplace_tensor!(op, coef_srcdest, op.operators, op.src_scratch)
 
-function apply_tensor!{A}(op, coef_dest, coef_src, operators::Tuple{A}, scratch, src_scratch, dest_scratch)
+function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A}, scratch, src_scratch, dest_scratch) where {A}
     println("One-element TensorProductOperators should not exist!")
     apply!(operators[1], coef_dest, coef_src)
 end
 
-function apply_inplace_tensor!{A}(op, coef_srcdest, operators::Tuple{A}, src_scratch)
+function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A}, src_scratch) where {A}
     println("One-element TensorProductOperators should not exist!")
     apply!(operators[1], coef_srcdest)
 end
 
-function apply_tensor!{A,B}(op, coef_dest, coef_src, operators::Tuple{A,B}, scratch, src_scratch, dest_scratch)
+function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A,B}, scratch, src_scratch, dest_scratch) where {A,B}
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     dest1 = dest_scratch[1]
@@ -120,7 +123,7 @@ function apply_tensor!{A,B}(op, coef_dest, coef_src, operators::Tuple{A,B}, scra
     coef_dest
 end
 
-function apply_inplace_tensor!{A,B}(op, coef_srcdest, operators::Tuple{A,B}, src_scratch)
+function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B}, src_scratch) where {A,B}
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     op1 = operators[1]
@@ -147,7 +150,7 @@ function apply_inplace_tensor!{A,B}(op, coef_srcdest, operators::Tuple{A,B}, src
     coef_srcdest
 end
 
-function apply_tensor!{A,B,C}(op, coef_dest, coef_src, operators::Tuple{A,B,C}, scratch, src_scratch, dest_scratch)
+function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A,B,C}, scratch, src_scratch, dest_scratch) where {A,B,C}
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     src3 = src_scratch[3]
@@ -206,7 +209,7 @@ function apply_tensor!{A,B,C}(op, coef_dest, coef_src, operators::Tuple{A,B,C}, 
     coef_dest
 end
 
-function apply_inplace_tensor!{A,B,C}(op, coef_srcdest, operators::Tuple{A,B,C}, src_scratch)
+function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C}, src_scratch) where {A,B,C}
     src1 = src_scratch[1]
     src2 = src_scratch[2]
     src3 = src_scratch[3]
@@ -248,4 +251,17 @@ function apply_inplace_tensor!{A,B,C}(op, coef_srcdest, operators::Tuple{A,B,C},
         end
     end
     coef_srcdest
+end
+
+SparseOperator(op::TensorProductOperator; options...) =
+    TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
+
+function stencil(op::TensorProductOperator)
+    A = Any[]
+    push!(A,element(op,1))
+    for i=2:length(elements(op))
+        push!(A," ⊗ ")
+        push!(A,element(op,i))
+    end
+    A
 end

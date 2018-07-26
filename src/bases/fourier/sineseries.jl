@@ -6,26 +6,29 @@
 
 
 """
-Sine series on the interval [0,1].
+Sine series on the interval `[0,1]`.
 """
-struct SineSeries{T} <: FunctionSet{T}
-    n           ::  Int
+struct SineSeries{T} <: Dictionary{T,T}
+    n   ::  Int
 end
-
-const SineSpan{A, F <: SineSeries} = Span{A,F}
 
 name(b::SineSeries) = "Sine series"
 
+SineSeries(n::Int) = SineSeries{Float64}(n)
 
-SineSeries(n, ::Type{T} = Float64) where {T} = SineSeries{T}(n)
+SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
+    rescale(SineSeries{T}(n), a, b)
 
-SineSeries(n, a, b, ::Type{T} = promote_type(typeof(a),typeof(b))) where {T} = rescale( SineSeries(n,float(T)), a, b)
+function SineSeries(n::Int, a::Number, b::Number)
+    T = float(promote_type(typeof(a),typeof(b)))
+    SineSeries{T}(n, a, b)
+end
 
 instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-set_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
+dict_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
 
-resize(b::SineSeries, n) = SineSeries(n, domaintype(b))
+resize(b::SineSeries{T}, n) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true
@@ -34,49 +37,61 @@ is_orthogonal(b::SineSeries) = true
 has_grid(b::SineSeries) = false
 has_derivative(b::SineSeries) = false #for now
 has_antiderivative(b::SineSeries) = false #for now
-has_transform{G <: PeriodicEquispacedGrid}(b::SineSeries, d::DiscreteGridSpace{G}) = false #for now
+has_transform(b::SineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::SineSeries) = true
 
 length(b::SineSeries) = b.n
-
-left(b::SineSeries{T}) where {T} = T(0)
-left(b::SineSeries, idx) = left(b)
-
-right(b::SineSeries{T}) where {T} = T(1)
-right(b::SineSeries, idx) = right(b)
 
 period(b::SineSeries{T}, idx) where {T} = T(2)
 
 grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
 
+##################
+# Native indices
+##################
 
-eval_element(b::SineSeries{T}, idx::Int, x) where {T} = sin(x * T(pi) * idx)
+const SineFrequency = NativeIndex{:sine}
 
-function eval_element_derivative(b::SineSeries{T}, idx::Int, x) where {T}
-    arg = T(pi) * idx
+frequency(idxn::SineFrequency) = value(idxn)
+
+"""
+`SineIndices` defines the map from native indices to linear indices
+for a finite number of sines. It is merely the identity map.
+"""
+struct SineIndices <: IndexList{SineFrequency}
+	n	::	Int
+end
+
+size(list::SineIndices) = (list.n,)
+
+getindex(list::SineIndices, idx::Int) = SineFrequency(idx)
+getindex(list::SineIndices, idxn::SineFrequency) = value(idxn)
+
+ordering(b::SineSeries) = SineIndices(length(b))
+
+##################
+# Evaluation
+##################
+
+support(b::SineSeries) = UnitInterval{domaintype(b)}()
+
+unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
+    sinpi(T(x) * frequency(idx))
+
+function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x) where {T}
+    arg = T(pi) * frequency(idx)
     arg * cos(arg * x)
 end
 
-function apply!(op::Extension, dest::SineSeries, src::SineSeries, coef_dest, coef_src)
-    @assert length(dest) > length(src)
+function extension_operator(s1::SineSeries, s2::SineSeries; options...)
+    @assert length(s2) >= length(s1)
+    IndexExtensionOperator(s1, s2, 1:length(s1))
+end
 
-    for i = 1:length(src)
-        coef_dest[i] = coef_src[i]
-    end
-    for i = length(src)+1:length(dest)
-        coef_dest[i] = 0
-    end
-    coef_dest
+function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
+    @assert length(s2) <= length(s1)
+    IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
 
 
-function apply!(op::Restriction, dest::SineSeries, src::SineSeries, coef_dest, coef_src)
-    @assert length(dest) < length(src)
-
-    for i = 1:length(dest)
-        coef_dest[i] = coef_src[i]
-    end
-    coef_dest
-end
-
-Gram(s::SineSpan; options...) = ScalingOperator(s, s, one(coeftype(s))/2)
+Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coeftype(s))/2)

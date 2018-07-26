@@ -4,29 +4,29 @@
 `OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
 polynomials.
 """
-abstract type OrthogonalPolynomials{T} <: PolynomialBasis{T}
+abstract type OrthogonalPolynomials{S,T} <: PolynomialBasis{S,T}
 end
 
-const OPS{T} = OrthogonalPolynomials{T}
+const OPS{S,T} = OrthogonalPolynomials{S,T}
 
-const OPSpan{A,F <: OrthogonalPolynomials} = Span{A,F}
+
 
 is_orthogonal(b::OPS) = true
 is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)-order)
-antiderivative_space(s::OPSpan, order::Int; options...) = resize(s, length(s)+order)
+derivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)-order)
+antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
 length(o::OrthogonalPolynomials) = o.n
 
 p0(::OPS{T}) where {T} = one(T)
 
-function dot(s::OPSpan, f1::Function, f2::Function, nodes::Array=native_nodes(set(s)); options...)
+function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
     T = real(coeftype(s))
 	# To avoid difficult points at the ends of the domain.
-	dot(x->weight(set(s),x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
+	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end
 
 clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
@@ -52,17 +52,17 @@ end
 
 has_extension(b::OPS) = true
 
-# CAVE: we have to add F <: OrthogonalPolynomials at the end, otherwise
-# OPSpan{A,F} also seems to match non-polynomial sets F (in Julia 0.6).
-# Using OPSpan as types of the arguments, i.e. without parameters, is fine and
+# CAVE: we have to add D <: OrthogonalPolynomials at the end, otherwise
+
+# Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomials}
+function extension_operator(s1::OPS, s2::OPS; options...)
     @assert length(s2) >= length(s1)
     IndexExtensionOperator(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::OPSpan{A,F}, s2::OPSpan{A,F}; options...) where {A,F <: OrthogonalPolynomials}
+function restriction_operator(s1::OPS, s2::OPS; options...)
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
@@ -70,8 +70,10 @@ end
 
 
 # Default evaluation of an orthogonal polynomial: invoke the recurrence relation
-eval_element(b::OPS, idx::Int, x) = recurrence_eval(b, idx, x)
-eval_element_derivative(b::OPS, idx::Int, x) = recurrence_eval_derivative(b, idx, x)
+unsafe_eval_element(b::OPS, idx::PolynomialDegree, x) =
+    recurrence_eval(b, idx, x)
+unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x) =
+    recurrence_eval_derivative(b, idx, x)
 
 
 """
@@ -85,26 +87,29 @@ with the coefficients implemented by the `rec_An`, `rec_Bn` and `rec_Cn`
 functions and with the initial value implemented with the `p0` function.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
-function recurrence_eval(b::OPS, idx::Int, x)
+function recurrence_eval(b::OPS, idx::PolynomialDegree, x)
 	T = codomaintype(b)
     z0 = T(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
 
-    if idx == 1
+    d = degree(idx)
+    if d == 0
         return z0
     end
-    if idx == 2
+    if d == 1
         return z1
     end
 
     z = z1
-    for i = 1:idx-2
+    for i = 1:d-1
         z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
         z0 = z1
         z1 = z
     end
     z
 end
+
+recurrence_eval(b::OPS, idx::LinearIndex, x) = recurrence_eval(b, native_index(b, idx), x)
 
 """
 Evaluate all the polynomials in the orthogonal polynomial sequence in the given
@@ -151,23 +156,24 @@ end
 Evaluate the derivative of an orthogonal polynomial, based on taking the
 derivative of the three-term recurrence relation (see `recurrence_eval`).
 """
-function recurrence_eval_derivative(b::OPS, idx::Int, x)
+function recurrence_eval_derivative(b::OPS, idx::PolynomialDegree, x)
 	T = codomaintype(b)
     z0 = one(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
     z0_d = zero(T)
     z1_d = convert(T, rec_An(b, 0))
 
-    if idx == 1
+    d = degree(idx)
+    if d == 0
         return z0_d
     end
-    if idx == 2
+    if d == 1
         return z1_d
     end
 
     z = z1
     z_d = z1_d
-    for i = 1:idx-2
+    for i = 1:d-1
         z = (rec_An(b, i)*x + rec_Bn(b, i)) * z1 - rec_Cn(b, i) * z0
         z_d = (rec_An(b, i)*x + rec_Bn(b, i)) * z1_d + rec_An(b, i)*z1 - rec_Cn(b, i) * z0_d
         z0 = z1
@@ -178,6 +184,8 @@ function recurrence_eval_derivative(b::OPS, idx::Int, x)
     z_d
 end
 
+recurrence_eval_derivative(b::OPS, idx::LinearIndex, x) =
+    recurrence_eval_derivative(b, native_index(b, idx), x)
 
 """
 Return the recurrence coefficients `α_n` and `β_n` for the monic orthogonal
@@ -253,6 +261,7 @@ function monic_recurrence_eval(α, β, idx, x)
     end
 end
 
+
 function symmetric_jacobi_matrix(b::OPS)
     T = codomaintype(b)
     n = length(b)
@@ -272,13 +281,21 @@ end
 
 function roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
-    eig(J)[1]
+    (VERSION < v"0.7-") ? eig(J)[1] : eigen(J).values
 end
 
-function roots(b::OPS{T}) where {T<:Union{BigFloat}}
-    J = symmetric_jacobi_matrix(b)
-    # assuming the user has imported LinearAlgebra.jl
-    LinearAlgebra.EigenGeneral.eigvals!(J)
+if VERSION < v"0.7-"
+    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+        J = symmetric_jacobi_matrix(b)
+        # assuming the user has imported GenericLinearAlgebra.jl
+        sort(real(LinearAlgebra.EigenGeneral.eigvals!(J)))
+    end
+else
+    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+        J = symmetric_jacobi_matrix(b)
+        # assuming the user has imported GenericLinearAlgebra.jl
+        sort(real(eigvals!(J)))
+    end
 end
 
 gauss_points(b::OPS) = roots(b)
@@ -300,7 +317,7 @@ Compute the Gaussian quadrature rule using the roots of the orthogonal polynomia
 """
 function gauss_rule(b::OPS{T}) where {T <: Real}
     J = symmetric_jacobi_matrix(b)
-    x,v = eig(J)
+    x,v = (VERSION < v"0.7-") ? eig(J) : eigen(J)
     b0 = first_moment(b)
     # In the real-valued case it is sufficient to use the first element of the
     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
@@ -344,9 +361,9 @@ end
 Compute the weights of Gaussian quadrature rule from the given roots of the
 orthogonal polynomial and using the formula:
 ```
-w_j = 1 / \sum_{k=0}^{n-1} p_k(x_j)^2
+w_j = 1 / \\sum_{k=0}^{n-1} p_k(x_j)^2
 ```
-This formula only holds for the monic orthogonal polynomials.
+This formula only holds for the orthonormal polynomials.
 """
 function gauss_weights_from_points(b::OPS, roots)
     pk = zeros(eltype(roots), length(b))
@@ -381,7 +398,7 @@ p_0(t) = 1, p_{-1}(t) = 0
 and orthogonal with respect to the inner product induced by the quadrature
 
 ```
-\sum w_k p_m(t_k)q_n(t_k) = \delta_{m,n}
+\\sum w_k p_m(t_k)q_n(t_k) = \\delta_{m,n}
 ```
 
 See e.g. Gautschi's book, "Orthogonal Polynomials and Computation" and its
@@ -450,13 +467,13 @@ function stieltjes!(a::Array{T},b::Array{T},N,x::Array{RT},w::Array{T},p0::Array
     a[1] = dot(x,w)/s0
     b[1] = s0
     for k=1:N-1
-        copy!(p0,p1)
-        copy!(p1,p2)
+        copyto!(p0,p1)
+        copyto!(p1,p2)
 
-        p2 .= (x.-a[k]).*p1.-b[k].*p0
-        scratch .= p2.^2.*w
+        p2 .= (x .- a[k]) .* p1 .- b[k] .* p0
+        scratch .= (p2 .^ 2) .* w
         s1 = sum(scratch)
-        scratch .= w.*(p2.^2).*x
+        scratch .= w .* (p2 .^ 2) .* x
         s2 = sum(scratch)
         scratch .= abs.(p2)
         if (maximum(abs.(scratch))>huge || abs(s2)>huge)
@@ -477,7 +494,7 @@ Modified Chebyshev Algorithm
 Implements the map of the modified moments
 
 ```
-\mu_k = \int p_k(x) dλ(x), k=0,...,2N-1
+\\mu_k = \\int p_k(x) dλ(x), k=0,...,2N-1
 ```
 where (p_k) are some monic orthogonal polynomials satisfying the recurrence relation
 ```
@@ -494,7 +511,7 @@ are orthogonal with respect to the measure λ.
 
 By default a, and b are zero vectors and therefore the moments are assumed to be
 ```
-\mu_k = \int x^k dλ(x), k=0,...,2N-1
+\\mu_k = \\int x^k dλ(x), k=0,...,2N-1
 ```
 This procedure is however not stable.
 
@@ -507,11 +524,11 @@ given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 function modified_chebyshev(m::Array{T}, a=zeros(T,length(m)), b=zeros(T,length(m))) where {T}
     L = length(m)
     n = L>>1
-    α = Array{T}(n)
-    β = Array{T}(n)
-    σmone = Array{T}(L)
-    σzero = Array{T}(L)
-    σ = Array{T}(L)
+    α = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
+    β = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
+    σmone = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
+    σzero = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
+    σ = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
 
     modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n,1)
     α, β
@@ -531,7 +548,7 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
     α[1] = a[1]+m[2]/m[1]
     β[1] = m[1]
     fill!(σmone,0)
-    Base.copy!(σzero,os,m,os,2n)
+    copyto!(σzero,os,m,os,2n)
     # continue
     for k=1:n-1
         for l in k+os:2n-k-1+os
@@ -541,8 +558,8 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
         α[k+1] += σ[k+2]/σ[k+1]
         α[k+1] = a[k+1]+σ[k+2]/σ[k+1]-σzero[k+1]/σzero[k]
         β[k+1] = σ[k+1]/σzero[k]
-        Base.copy!(σmone,os,σzero,os,2n)
-        Base.copy!(σzero,os,σ,os,2n)
+        copyto!(σmone,os,σzero,os,2n)
+        copyto!(σzero,os,σ,os,2n)
     end
     nothing
 end
@@ -560,7 +577,6 @@ See equation page 101 from Gautschi's book, "Orthogonal Polynomials and Computat
 """
 function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1, maxits = 20, quadrature_size=false)
     M = 1 + floor(Int, (2n-1)/δ)
-
     nodes, weights = my_quadrature_rule(M)
     ELT = eltype(nodes)
 
@@ -573,13 +589,13 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
     no_its = 2
     while reduce(&, abs.(β1-β0) .> tol.*abs.(β1))
         if no_its > maxits
-            warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./abs.(β1)))")
+            @warn("accuracy of Stieltjes is not obtained, degree of Quadrature is $(M) and error is $(maximum(abs.(β1-β0)./abs.(β1)))")
             break
         end
         M = M+2^floor(Int,no_its/5)
         no_its = no_its + 1
-        copy!(α0,α1)
-        copy!(β0,β1)
+        copyto!(α0,α1)
+        copyto!(β0,β1)
 
         nodes, weights = my_quadrature_rule(M)
         α1,β1 = stieltjes(n,nodes,weights)
@@ -602,9 +618,15 @@ q_{k+1}(t) = (a_kt+b_k)q_k(t)-c_kq_{k-1}(t)
 """
 function monic_to_orthonormal_recurrence_coefficients(α::Array{T}, β::Array{T}) where {T}
     n = length(α)
-    a = Array{T}(n-1)
-    b = Array{T}(n-1)
-    c = Array{T}(n-1)
+    if VERSION < v"0.7-"
+        a = Array{T}(n-1)
+        b = Array{T}(n-1)
+        c = Array{T}(n-1)
+    else
+        a = Array{T}(undef, n-1)
+        b = Array{T}(undef, n-1)
+        c = Array{T}(undef, n-1)
+    end
     monic_to_orthonormal_recurrence_coefficients!(a,b,c,α,β)
     a,b,c
 end
@@ -613,7 +635,7 @@ end
 See `monic_to_orthonormal_recurrence_coefficients`
 """
 function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c::Array{T},α::Array{T},β::Array{T}) where {T}
-    a .= 1./sqrt.(view(β,2:length(β)))
+    a .= 1 ./ sqrt.(view(β,2:length(β)))
     b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
     c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
     a,b,c

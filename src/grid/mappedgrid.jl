@@ -25,14 +25,14 @@ mapped_grid(grid::AbstractGrid, map::AbstractMap) = MappedGrid(grid, map)
 # avoid multiple mappings
 mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(supergrid(g), map∘mapping(g))
 
-# Convenience function, similar to apply_map for FunctionSet's
+# Convenience function, similar to apply_map for Dictionary's
 apply_map(grid::AbstractGrid, map::AbstractMap) = mapped_grid(grid, map)
 
-for op in (:length, :size, :eachindex)
+for op in (:length, :size, :eachindex, :indextype)
 	@eval $op(g::MappedGrid) = $op(supergrid(g))
 end
 
-for op in (:leftendpoint, :rightendpoint)
+for op in (:leftendpoint, :rightendpoint, :support)
 	@eval $op(g::MappedGrid1d) = applymap(g.map, $op(supergrid(g)))
 end
 
@@ -47,7 +47,7 @@ unsafe_getindex(g::MappedGrid, idx) = applymap(g.map, g.supergrid[idx])
 
 
 function rescale(g::AbstractGrid1d, a, b)
-	m = interval_map(left(g), right(g), a, b)
+	m = interval_map(leftendpoint(g), rightendpoint(g), a, b)
 	mapped_grid(g, m)
 end
 
