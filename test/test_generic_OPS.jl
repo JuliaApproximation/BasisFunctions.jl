@@ -1,10 +1,11 @@
 # test_half_range_chebyshev
 
-using BasisFunctions, FastGaussQuadrature
+using BasisFunctions, FastGaussQuadrature, Domains
 if VERSION < v"0.7-"
     using Base.Test
 else
     using Test
+    linspace(a,b,c) = range(a, stop=b, length=c)
 end
 
 function test_half_range_chebyshev()
@@ -15,7 +16,7 @@ function test_half_range_chebyshev()
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
-    modified_weights = weights.*(nodes-BasisFunctions.m_forward(T,T)).^α
+    modified_weights = weights.*(nodes .- BasisFunctions.m_forward(T,T)).^α
 
     αstieltjes,βstieltjes = BasisFunctions.stieltjes(n,nodes,modified_weights)
     setprecision(350)
@@ -156,12 +157,8 @@ function test_roots_of_legendre_halfrangechebyshev()
 end
 
 @testset "$(rpad("Generic OPS",80))" begin test_generic_ops_from_quadrature() end
-if VERSION < v"0.7-"
-    @testset "$(rpad("Half Range Chebyshev",80))" begin test_half_range_chebyshev() end
-    @testset "$(rpad("Gauss jacobi quadrature",80))"    begin
-        test_gaussjacobi()
-        test_roots_of_legendre_halfrangechebyshev()
-    end
-else
-    warn("Postpone Generic OPS until FastGaussQuadrature and GenericLinearAlgebra is fixed.")
+@testset "$(rpad("Half Range Chebyshev",80))" begin test_half_range_chebyshev() end
+@testset "$(rpad("Gauss jacobi quadrature",80))"    begin
+    test_gaussjacobi()
+    test_roots_of_legendre_halfrangechebyshev()
 end

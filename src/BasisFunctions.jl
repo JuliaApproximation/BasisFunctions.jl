@@ -22,14 +22,14 @@ if VERSION < v"0.7-"
     transpose(a...) = adjoint(a...)
     adjoint(a::AbstractArray) = ctranspose(a)
     isapple = Sys.is_apple
+    copyto!(a...) = copy!(a...)
     macro warn(a...)
         return :(warn($a...))
     end
 else
-    using FFTW, LinearAlgebra#, FastTransforms, GenericLinearAlgebra
-    warn("BigFloat not yet supported for julia 0.7. Waiting for FastTransforms")
-    warn("GenericLinearAlgebra has not known version, problem for FrameFun")
+    using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+    import Base: copyto!
     using Base:IteratorSize
     using SpecialFunctions: gamma
     using DSP: conv
@@ -119,6 +119,11 @@ export FunctionSpace
 
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
+
+# from operators/banded_operators.jl
+export HorizontalBandedOperator, VerticalBandedOperator
+
+export SparseOperator
 
 # from bases/generic/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
@@ -426,6 +431,8 @@ include("bases/poly/rational.jl")
 include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
+
+include("test/Test.jl")
 
 
 end # module

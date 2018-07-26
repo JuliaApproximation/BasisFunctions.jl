@@ -4,7 +4,7 @@ struct RationalBasis{T} <: Dictionary1d{T,T}
     roots   :: AbstractArray{T}
     support :: Domain
 
-    RationalBasis{T}(roots) where {T} = new(roots)
+    RationalBasis{T}(roots, support) where {T} = new(roots, support)
 end
 
 RationalBasis(roots::AbstractArray{T}, d::Domain) where {T} = RationalBasis{T}(roots,d)

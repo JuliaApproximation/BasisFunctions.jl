@@ -22,7 +22,7 @@ HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, 
     HorizontalBandedOperator{ELT}(src, dest, array, step, offset)
 
 function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)
-    dest[:]=0
+    dest[:] .= 0
     L = length(src)
     aL = length(op.array)
     dL = length(dest)
@@ -57,7 +57,7 @@ VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, st
     VerticalBandedOperator{ELT}(src, dest, array, step, offset)
 
 function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
-    dest[:]=0
+    dest[:] .= 0
     # assumes step is smaller then L
     L = length(dest)
     aL = length(op.array)

@@ -1,35 +1,3 @@
-# test_generic_operators
-
-#####
-# Tensor operators
-#####
-
-function test_generic_operators(T)
-    b1 = FourierBasis{T}(3)
-    b2 = ChebyshevBasis{T}(4)
-    b3 = ChebyshevBasis{T}(3)
-    b4 = LegendrePolynomials{T}(3)
-
-    operators = [
-        ["Identity operator", IdentityOperator(b1, b1)],
-        ["Scaling operator", ScalingOperator(b1, b1, T(2))],
-        ["Zero operator", ZeroOperator(b1, b2)],
-        ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
-        ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
-        ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b4, b4, T(2))) ],
-        ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
-        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
-#        ["Pseudo diagonal operator", PseudoDiagonalOperator(b2, map(T, rand(length(b2))))],
-        #["Circulant operator", CirculantOperator(b2, map(T, rand(length(b2))))],
-    ]
-
-    for ops in operators
-        @testset "$(rpad("$(ops[1])", 80))" begin
-            test_generic_operator_interface(ops[2], T)
-        end
-    end
-end
-
 function test_generic_operator_interface(op, T)
     ELT = eltype(op)
     @test promote_type(T,ELT) == ELT

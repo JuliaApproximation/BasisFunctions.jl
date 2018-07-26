@@ -144,23 +144,21 @@ eachslice(a::AbstractArray, dim) = eachslice(Base.IndexStyle(a), a, dim)
 #    SliceIterator(CartesianIndices(CartesianIndex(onetuple(Val{N-1})), CartesianIndex(remaining_size(size(a),dim))), dim, size(a, dim))
 
 # So we do a generated function for the time being:
-@generated function eachslice(::Base.IndexLinear, a::AbstractArray{T,N}, dim) where {T,N}
-    one_tuple = onetuple(Val{N-1})
-    if VERSION < v"0.7-"
+if VERSION < v"0.7-"
+    @generated function eachslice(::Base.IndexLinear, a::AbstractArray{T,N}, dim) where {T,N}
+        one_tuple = onetuple(Val{N-1})
         quote
             SliceIteratorLinear(
                 CartesianRange( CartesianIndex($one_tuple),
                                 CartesianIndex(remaining_size(size(a), dim))),
                                 dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
         end
-    else
-        quote
-            SliceIteratorLinear(
-                CartesianIndices( $one_tuple,
-                                remaining_size(size(a), dim)),
-                                dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
-        end
     end
+else
+    eachslice(::Base.IndexLinear, a::AbstractArray, dim) =
+        SliceIteratorLinear(
+            CartesianIndices(remaining_size(size(a), dim)),
+                            dim, substrides(size(a), dim), stride(size(a), dim), size(a, dim) )
 end
 
 if VERSION < v"0.7-"

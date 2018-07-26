@@ -467,8 +467,8 @@ function stieltjes!(a::Array{T},b::Array{T},N,x::Array{RT},w::Array{T},p0::Array
     a[1] = dot(x,w)/s0
     b[1] = s0
     for k=1:N-1
-        copy!(p0,p1)
-        copy!(p1,p2)
+        copyto!(p0,p1)
+        copyto!(p1,p2)
 
         p2 .= (x .- a[k]) .* p1 .- b[k] .* p0
         scratch .= (p2 .^ 2) .* w
@@ -524,11 +524,11 @@ given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 function modified_chebyshev(m::Array{T}, a=zeros(T,length(m)), b=zeros(T,length(m))) where {T}
     L = length(m)
     n = L>>1
-    α = Array{T}(n)
-    β = Array{T}(n)
-    σmone = Array{T}(L)
-    σzero = Array{T}(L)
-    σ = Array{T}(L)
+    α = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
+    β = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
+    σmone = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
+    σzero = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
+    σ = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
 
     modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n,1)
     α, β
@@ -548,7 +548,7 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
     α[1] = a[1]+m[2]/m[1]
     β[1] = m[1]
     fill!(σmone,0)
-    Base.copy!(σzero,os,m,os,2n)
+    copyto!(σzero,os,m,os,2n)
     # continue
     for k=1:n-1
         for l in k+os:2n-k-1+os
@@ -558,8 +558,8 @@ function modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n=length(α),os=1)
         α[k+1] += σ[k+2]/σ[k+1]
         α[k+1] = a[k+1]+σ[k+2]/σ[k+1]-σzero[k+1]/σzero[k]
         β[k+1] = σ[k+1]/σzero[k]
-        Base.copy!(σmone,os,σzero,os,2n)
-        Base.copy!(σzero,os,σ,os,2n)
+        copyto!(σmone,os,σzero,os,2n)
+        copyto!(σzero,os,σ,os,2n)
     end
     nothing
 end
@@ -594,8 +594,8 @@ function adaptive_stieltjes(n,my_quadrature_rule::Function; tol = 1e-12, δ = 1,
         end
         M = M+2^floor(Int,no_its/5)
         no_its = no_its + 1
-        copy!(α0,α1)
-        copy!(β0,β1)
+        copyto!(α0,α1)
+        copyto!(β0,β1)
 
         nodes, weights = my_quadrature_rule(M)
         α1,β1 = stieltjes(n,nodes,weights)

@@ -1,4 +1,13 @@
+using BasisFunctions, BasisFunctions.Test
 
+if VERSION < v"0.7-"
+    using Base.Test
+    my_rand(T, a...) = map(T, rand(a...))
+else
+    using Test
+    my_rand = rand
+end
+types = [Float64,BigFloat,]
 
 function test_operators(T)
     @testset "$(rpad("test diagonal operators",80))" begin
@@ -18,6 +27,36 @@ function test_operators(T)
 
     @testset "$(rpad("test circulant operator",80))" begin
         test_circulant_operator(T) end
+
+    @testset "$(rpad("test banded operators",80))" begin
+        test_banded_operator(T) end
+
+    @testset "$(rpad("test sparse operator",80))" begin
+        test_sparse_operator(T) end
+end
+
+function test_generic_operators(T)
+    b1 = FourierBasis{T}(3)
+    b2 = ChebyshevBasis{T}(4)
+    b3 = ChebyshevBasis{T}(3)
+    b4 = LegendrePolynomials{T}(3)
+
+    operators = [
+        ["Identity operator", IdentityOperator(b1, b1)],
+        ["Scaling operator", ScalingOperator(b1, b1, T(2))],
+        ["Zero operator", ZeroOperator(b1, b2)],
+        ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
+        ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
+        ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b4, b4, T(2))) ],
+        ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
+        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
+    ]
+
+    for ops in operators
+        @testset "$(rpad("$(ops[1])", 80))" begin
+            test_generic_operator_interface(ops[2], T)
+        end
+    end
 end
 
 function test_tensor_operators(T)
@@ -148,34 +187,38 @@ function test_multidiagonal_operators(T)
     end
 end
 
-# function test_complexify_operator(T)
-#   for SRC in (BSplineTranslatesBasis(11, 2, T), BSplineTranslatesBasis(11, 2, complex(T)))
-#     op = ComplexifyOperator(SRC)
-#     DEST = dest(op)
-#     ELT = eltype(op)
-#     @test ELT == eltype(src(op))
-#     @test eltype(dest(op)) == complex(T)
-#     coef_src = zeros(eltype(SRC),SRC)
-#     coef_dest = zeros(eltype(DEST),DEST)
-#     for i in eachindex(coef_src)
-#         coef_src[i]=map(eltype(src(op)),rand())
-#     end
-#     apply!(op, coef_dest, coef_src)
-#     @test norm(coef_dest-coef_src) == 0
-#
-#     op = RealifyOperator(SRC)
-#     ELT = eltype(op)
-#     @test ELT == eltype(dest(op))
-#     @test eltype(dest(op)) == T
-#     coef_src = zeros(eltype(SRC),SRC)
-#     coef_dest = zeros(eltype(DEST),DEST)
-#     for i in eachindex(coef_src)
-#         coef_src[i]=map(eltype(src(op)),rand())
-#     end
-#     apply!(op, coef_dest, coef_src)
-#     @test norm(coef_dest-coef_src) == 0
-#   end
-# end
+function test_sparse_operator(ELT)
+    S = SparseOperator(MatrixOperator(map(ELT,rand(4,4))))
+    test_generic_operator_interface(S, ELT)
+end
+function test_banded_operator(ELT)
+    a = [ELT(1),ELT(2),ELT(3)]
+    H = HorizontalBandedOperator(FourierBasis{ELT}(6,0,1), FourierBasis{ELT}(3,0,1),a,3,2)
+    test_generic_operator_interface(H, ELT)
+    h = matrix(H)
+    e = zeros(ELT,6,1)
+    for i in 1:3
+        e .= 0
+        I = (2+(i-1)*3) .+ (1:3)
+        for (j,k) in enumerate(mod.(I .- 1,6) .+ 1)
+            e[k] = a[j]
+        end
+        @test e ≈ h[i,:]
+    end
+
+    V = VerticalBandedOperator(FourierBasis{ELT}(3,0,1), FourierBasis{ELT}(6,0,1),a,3,2)
+    test_generic_operator_interface(V, ELT)
+    v = matrix(V)
+    e = zeros(ELT,6,1)
+    for i in 1:3
+        e .= 0
+        I = (2+(i-1)*3) .+ (1:3)
+        for (j,k) in enumerate(mod.(I .- 1,6) .+ 1)
+            e[k] = a[j]
+        end
+        @test e ≈ v[:,i]
+    end
+end
 
 function test_circulant_operator(ELT)
     n = 20
@@ -255,4 +298,10 @@ function test_noninvertible_operators(T)
             @test (sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
         end
     end
+end
+
+for T in types
+    delimit(string(T))
+    test_operators(T)
+    test_generic_operators(T)
 end

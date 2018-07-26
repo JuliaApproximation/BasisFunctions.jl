@@ -1,4 +1,12 @@
 # test_fourier.jl
+using BasisFunctions, BasisFunctions.Test, Domains
+
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
+types = (Float64, BigFloat)
 
 #####
 # Fourier series
@@ -203,4 +211,12 @@ function test_fourier_series(T)
     @test G*e ≈ e
     @test DG*e ≈ e
     @test MG*e ≈ e
+end
+
+for T in types
+    @testset "$(rpad("Fourier expansions ($T)",80))" begin
+        println("Fourier expansions ($T):")
+        test_fourier_series(T)
+    end
+    println()
 end

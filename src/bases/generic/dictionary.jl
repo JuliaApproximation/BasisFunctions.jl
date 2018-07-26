@@ -236,8 +236,8 @@ function linearize_coefficients(dict::Dictionary, coef_native)
 end
 
 linearize_coefficients!(dict::Dictionary, coef_linear::Vector, coef_native) =
-    copy!(coef_linear, coef_native)
-# Note that copy! is defined in util/common.jl
+    copyto!(coef_linear, coef_native)
+# Note that copyto! is defined in util/common.jl
 
 """
 Convert a linear set of coefficients back to the native representation of the dictionary.
@@ -248,7 +248,7 @@ function delinearize_coefficients(dict::Dictionary, coef_linear::Vector)
 end
 
 delinearize_coefficients!(dict::Dictionary, coef_native, coef_linear::Vector) =
-    copy!(coef_native, coef_linear)
+    copyto!(coef_native, coef_linear)
 
 "Promote the given coefficients to the native representation of the dictionary."
 native_coefficients(dict::Dictionary, coef) = _native_coefficients(dict, coef)

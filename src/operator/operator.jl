@@ -103,7 +103,7 @@ end
 #   implemented by operators whose action depends on src and/or dest.
 function apply!(op::DictionaryOperator, coef_dest, coef_src)
 	if is_inplace(op)
-		copy!(coef_dest, coef_src)
+		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
 		apply!(op, dest(op), src(op), coef_dest, coef_src)
@@ -184,7 +184,7 @@ function sparse_matrix(op::DictionaryOperator;sparse_tol = 1e-14, options...)
         coef_src[si] = 1
         apply!(op, coef_dest, coef_src)
         coef_src[si] = 0
-        coef_dest[abs.(coef_dest).<sparse_tol] = 0
+        coef_dest[abs.(coef_dest).<sparse_tol] .= 0
         R = hcat(R,sparse(coef_dest))
     end
     R
@@ -192,7 +192,7 @@ end
 
 
 function matrix(op::DictionaryOperator)
-    a = (VERSION < v"0.7-") ? Array{eltype(op)}(size(op)) : Array{eltype(op)}(undef, size(op)) 
+    a = (VERSION < v"0.7-") ? Array{eltype(op)}(size(op)) : Array{eltype(op)}(undef, size(op))
     matrix!(op, a)
 end
 
