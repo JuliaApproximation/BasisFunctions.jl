@@ -1,6 +1,6 @@
 name = "BasisFunctions"
 uuid = "8ac202e8-8a12-11e8-0422-2b902fe89c2d"
-authors = ["vincentcp"]
+authors = ["daanhb, roelmatthysen, vincentcp"]
 version = "0.1.0"
 
 [deps]
