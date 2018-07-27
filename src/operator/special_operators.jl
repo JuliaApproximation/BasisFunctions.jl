@@ -356,6 +356,8 @@ dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, ob
     DimensionOperator(src, dest, op, dim, viewtype)
 
 
+
+
 """
 Supertype of all solver operators. A solver operator typically implements an
 efficient algorithm to apply the inverse of an operator. Examples include
@@ -371,6 +373,8 @@ operator(op::AbstractSolverOperator) = op.op
 src(op::AbstractSolverOperator) = dest(operator(op))
 
 dest(op::AbstractSolverOperator) = src(operator(op))
+
+inv(op::AbstractSolverOperator) = op.op
 
 
 "A GenericSolverOperator wraps around a generic solver type."
@@ -459,7 +463,7 @@ end
 QR_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, qr_factorization(matrix(op)))
 SVD_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, svd_factorization(matrix(op)))
 
-inv(op::GenericSolverOperator) = op.op
+
 
 
 
