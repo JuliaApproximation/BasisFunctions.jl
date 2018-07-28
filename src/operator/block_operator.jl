@@ -76,6 +76,9 @@ function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: Dictionar
     BlockOperator(operators)
 end
 
+similar_operator(op::BlockOperator{T}, src, dest) where T =
+    BlockOperator{T}(op.operators, src, dest)
+
 # Return a block operator the size of the given operator, but filled with zero
 # operators.
 function zeros(op::BlockOperator)
