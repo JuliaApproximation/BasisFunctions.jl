@@ -356,6 +356,8 @@ dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, ob
     DimensionOperator(src, dest, op, dim, viewtype)
 
 
+
+
 """
 Supertype of all solver operators. A solver operator typically implements an
 efficient algorithm to apply the inverse of an operator. Examples include
@@ -372,11 +374,20 @@ src(op::AbstractSolverOperator) = dest(operator(op))
 
 dest(op::AbstractSolverOperator) = src(operator(op))
 
+inv(op::AbstractSolverOperator) = op.op
+
 
 "A GenericSolverOperator wraps around a generic solver type."
 struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
     op      ::  DictionaryOperator
     solver  ::  Q
+    # In case the operator does not map between vectors, we allocate space
+    # for two vectors so that we can convert between representations.
+    src_linear  ::  Vector{T}
+    dest_linear ::  Vector{T}
+
+    GenericSolverOperator{Q,T}(op, solver) where {Q,T} =
+        new{Q,T}(op, solver, zeros(T, length(dest(op))), zeros(T, length(src(op))))
 end
 
 # The solver should be the inverse of the given operator
@@ -384,11 +395,27 @@ GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
     GenericSolverOperator{typeof(solver),T}(op, solver)
 
 similar_operator(op::GenericSolverOperator, src, dest) =
-    GenericSolverOperator(similar_operator(dest, src, op.op), op.solver)
+    GenericSolverOperator(similar_operator(operator(op), dest, src), op.solver)
 
-
-apply!(op::GenericSolverOperator, coef_dest, coef_src) =
+apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector) =
     _apply!(op, coef_dest, coef_src, op.solver)
+
+function apply!(op::GenericSolverOperator, coef_dest, coef_src)
+    copy!(op.src_linear, coef_src)
+    _apply!(op, op.dest_linear, op.src_linear, op.solver)
+    copy!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::GenericSolverOperator, coef_dest, coef_src::Vector)
+    _apply!(op, op.dest_linear, coef_src, op.solver)
+    copy!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src)
+    copy!(op.src_linear, coef_src)
+    _apply!(op, coef_dest, op.src_linear, op.solver)
+end
+
 
 # This is the generic case
 function _apply!(op::GenericSolverOperator, coef_dest, coef_src, solver)
@@ -433,10 +460,10 @@ else
     svd_factorization(matrix) = svd(matrix, full=false)
 end
 
-QR_solver(op::DictionaryOperator) = GenericSolverOperator(op, qr_factorization(matrix(op)))
-SVD_solver(op::DictionaryOperator) = GenericSolverOperator(op, svd_factorization(matrix(op)))
+QR_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, qr_factorization(matrix(op)))
+SVD_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, svd_factorization(matrix(op)))
 
-inv(op::GenericSolverOperator) = op.op
+
 
 
 

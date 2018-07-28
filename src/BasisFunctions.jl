@@ -187,7 +187,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
-export QR_solver, SVD_solver
+export QR_solver, SVD_solver, operator
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl

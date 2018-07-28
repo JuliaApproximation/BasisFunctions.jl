@@ -1,9 +1,5 @@
 # synthesis.jl
 
-"Return the type of the container of coefficients of the dictionary."
-containertype(dict::Dictionary) = Vector{coefficient_type(dict)}
-containertype(dict::TensorProductDict{N}) where {N} = Array{coefficient_type(dict),N}
-
 "Which discrete dictionary matches the coefficients of the given dictionary?"
 discrete_set(dict::Dictionary) = discrete_set(dict, containertype(dict))
 # We dispatch on the container type:
