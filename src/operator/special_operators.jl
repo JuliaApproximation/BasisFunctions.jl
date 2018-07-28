@@ -401,18 +401,18 @@ apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector) =
     _apply!(op, coef_dest, coef_src, op.solver)
 
 function apply!(op::GenericSolverOperator, coef_dest, coef_src)
-    copy!(op.src_linear, coef_src)
+    copyto!(op.src_linear, coef_src)
     _apply!(op, op.dest_linear, op.src_linear, op.solver)
-    copy!(coef_dest, op.dest_linear)
+    copyto!(coef_dest, op.dest_linear)
 end
 
 function apply!(op::GenericSolverOperator, coef_dest, coef_src::Vector)
     _apply!(op, op.dest_linear, coef_src, op.solver)
-    copy!(coef_dest, op.dest_linear)
+    copyto!(coef_dest, op.dest_linear)
 end
 
 function apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src)
-    copy!(op.src_linear, coef_src)
+    copyto!(op.src_linear, coef_src)
     _apply!(op, coef_dest, op.src_linear, op.solver)
 end
 
@@ -436,11 +436,11 @@ end
 #     end
 # else
 #     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
-#         copy!(coef_dest, coef_src)
+#         copyto!(coef_dest, coef_src)
 #         ldiv!(solver, coef_dest)
 #     end
 #     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::LinearAlgebra.SVD)
-#         copy!(coef_dest, coef_src)
+#         copyto!(coef_dest, coef_src)
 #         coef_dest[:] = ldiv!(solver, coef_dest)
 #     end
 # end
