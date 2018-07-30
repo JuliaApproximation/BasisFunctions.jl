@@ -8,7 +8,7 @@ julia:
 matrix:
     allow_failures:
     - julia: nightly
-      osx: linux
+      os: linux
 notifications:
     email: false
 after_success:
