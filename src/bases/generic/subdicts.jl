@@ -70,7 +70,7 @@ derivative_dict(s::Subdictionary, order; options...) = subdict_derivative_dict(s
 antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivative_dict(s, order, superdict(s), superindices(s); options...)
 
 grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
-
+function subdict_grid() end
 
 # By default, we have none of the properties
 subdict_has_derivative(s::Subdictionary, superdict, superindices) = false

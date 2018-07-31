@@ -71,3 +71,5 @@ end
 getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
 
 strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))
+
+BasisFunctions.subdict_grid(s::Subdictionary, gb::GridBasis, indices) = grid(gb)[indices]
