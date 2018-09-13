@@ -136,7 +136,7 @@ function (*)(op::DictionaryOperator, s::Dictionary)
     OperatedDict(op)
 end
 
-function BasisFunctions.grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
+function grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
         options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}
     tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
 end

@@ -101,5 +101,9 @@ else
         end
     end
 
-	Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+	# Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+
+	Base.broadcastable(g::AbstractGrid) = g
+
+	Base.ndims(::Type{GRID}) where {GRID<:AbstractGrid{T}} where T = dimension(T)
 end

@@ -152,6 +152,15 @@ if VERSION >= v"0.7-"
             a[next_item], (iter, next_state)
         end
     end
+
+    # Broadcast not possible to Multiarray since size con not be determined from its type.
+    # Base.broadcastable(a::MultiArray) = a
+    #
+    # Base.ndims(::Type{<:MultiArray}) = 1
+    #
+    # Base.getindex(a::MultiArray, i::CartesianIndex{1}) = getindex(a, convert(Int, i))
+    #
+    # Base.BroadcastStyle(::Type{T}) where T<:MultiArray = Broadcast.Style{T}()
 end
 
 # Convert a linear index into the MultiArray into the index of a subarray
