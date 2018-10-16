@@ -5,7 +5,7 @@ A banded operator of which every row contains equal elements.
 
 The top row starts at index offset, the second row at step+offset.
 """
-struct HorizontalBandedOperator{ELT} <: BasisFunctions.DictionaryOperator{ELT}
+struct HorizontalBandedOperator{ELT} <: DictionaryOperator{ELT}
     src::Dictionary
     dest::Dictionary
     array::Vector{ELT}
@@ -21,7 +21,7 @@ end
 HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     HorizontalBandedOperator{ELT}(src, dest, array, step, offset)
 
-function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)
+function apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)
     dest[:] .= 0
     L = length(src)
     aL = length(op.array)
@@ -40,7 +40,7 @@ function BasisFunctions.apply!(op::HorizontalBandedOperator, dest::Vector, src::
 end
 
 
-struct VerticalBandedOperator{ELT} <: BasisFunctions.DictionaryOperator{ELT}
+struct VerticalBandedOperator{ELT} <: DictionaryOperator{ELT}
     src::Dictionary
     dest::Dictionary
     array::Vector{ELT}
@@ -56,7 +56,7 @@ end
 VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
     VerticalBandedOperator{ELT}(src, dest, array, step, offset)
 
-function BasisFunctions.apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
+function apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
     dest[:] .= 0
     # assumes step is smaller then L
     L = length(dest)

@@ -22,6 +22,13 @@ function Gram(s::Dictionary; options...)
     end
 end
 
+# function Gram(src::Dictionary; options...)
+#     T = codomaintype(src)
+#     A = zeros(T,length(src),length(src))*NaN
+#     gram_matrix!(A, src; options...)
+#     MatrixOperator(src, src, A)
+# end
+
 """
 The dual gram operator A of the given basisfunction, i.e., A_ij = <ϕ_i,ϕ_j>, if ϕ_i is the ith dual basisfunction
 """

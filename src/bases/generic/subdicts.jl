@@ -71,6 +71,7 @@ antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivativ
 
 grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
 
+subdict_grid(s::Subdictionary, gb::GridBasis, indices) = grid(gb)[indices]
 
 # By default, we have none of the properties
 subdict_has_derivative(s::Subdictionary, superdict, superindices) = false

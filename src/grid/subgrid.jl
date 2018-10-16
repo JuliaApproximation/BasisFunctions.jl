@@ -49,7 +49,7 @@ function mask(g::IndexSubGrid)
 end
 
 
-support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = interval(first(g), last(g))
+support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = Interval(first(g), last(g))
 
 
 

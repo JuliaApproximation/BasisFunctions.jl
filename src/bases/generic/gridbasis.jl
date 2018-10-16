@@ -36,7 +36,7 @@ dict_promote_coeftype(gb::GridBasis, ::Type{T}) where {T<:Real} = GridBasis(grid
 
 grid(b::GridBasis) = b.grid
 
-for op in (:length, :size)
+for op in (:length, :size, :eachindex)
     @eval $op(b::GridBasis) = $op(grid(b))
 end
 
@@ -64,3 +64,6 @@ sample(s::GridBasis, f) = sample(grid(s), f, coeftype(s))
 
 grid_multiplication_operator(a::Function,GB::GridBasis) = DiagonalOperator(GB,GB,map(a,grid(GB)))
 grid_multiplication_opearator(a::Function,grid::AbstractGrid) = grid_multiplication_operator(a,GridBasis(grid))
+
+native_index(d::ProductGridBasis, idx) = product_native_index(size(d), idx)
+ordering(d::ProductGridBasis) = ProductIndexList{dimension(grid(d))}(size(d))
