@@ -91,8 +91,12 @@ size(d::Dictionary) = (length(d),)
 
 "Return the size of the j-th dimension of the dictionary (if applicable)."
 size(d::Dictionary, j) = j==1 ? length(d) : throw(BoundsError())
-
-endof(d::Dictionary) = length(d)
+if VERSION < v"0.7-"
+    endof(d::Dictionary) = length(d)
+else
+    firstindex(d::Dictionary) = 1
+    lastindex(d::Dictionary) = length(d)
+end
 
 "Is the dictionary composite, i.e. does it consist of several components?"
 is_composite(d::Dictionary) = false

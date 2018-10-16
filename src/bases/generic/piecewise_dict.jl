@@ -69,7 +69,7 @@ function stencil(set::PiecewiseDict)
     A
 end
 
-            
+
 
 similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 

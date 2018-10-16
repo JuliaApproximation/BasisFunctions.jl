@@ -10,6 +10,7 @@ if VERSION < v"0.7-"
     using LinearAlgebra, FastTransforms
     import Base: norm, pinv, normalize, cross, ×, dct, idct, ctranspose, transpose
     import Base.LinAlg: dot
+    import Base: start, next, done, ind2sub, sub2ind, endof, indices, showcompact
     CartesianIndices = CartesianRange
     LinRange = LinSpace
     AbstractRange = Range
@@ -29,7 +30,7 @@ if VERSION < v"0.7-"
 else
     using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
     import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
-    import Base: copyto!
+    import Base: copyto!, firstindex, lastindex
     using Base:IteratorSize
     using SpecialFunctions: gamma
     using DSP: conv
@@ -45,10 +46,10 @@ import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
-import Base: length, size, start, next, done, ind2sub, sub2ind, eachindex,
-        range, collect, endof, first, last
+import Base: length, size, eachindex,
+        range, collect, first, last
 import Base: transpose, inv, hcat, vcat
-import Base: checkbounds, checkbounds_indices, checkindex, indices
+import Base: checkbounds, checkbounds_indices, checkindex
 import Base: getindex, setindex!, unsafe_getindex, eltype
 import Base: broadcast, similar
 
@@ -57,14 +58,14 @@ import Base: zeros, ones, one, zero, fill!, rand
 
 import Base: isreal, iseven, isodd, real, complex
 
-import Base: show, showcompact, string
+import Base: show, string
 
 
 ## Imports from Domains
 
 import Domains: domaintype, codomaintype, dimension, domain
 # For intervals
-import Domains: interval, leftendpoint, rightendpoint
+import Domains: leftendpoint, rightendpoint
 # For maps
 import Domains: matrix, vector, tensorproduct
 

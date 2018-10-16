@@ -26,14 +26,18 @@ subeltype(::Type{GridPoint{N,T}}) where {N,T} = T
 dimension(grid::AbstractGrid) = dimension(eltype(grid))
 
 size(g::AbstractGrid1d) = (length(g),)
-endof(g::AbstractGrid) = length(g)
+if VERSION < v"0.7-"
+	endof(g::AbstractGrid) = length(g)
+else
+	firsindex(g::AbstractGrid) = 1
+	lastindex(g::AbstractGrid) = length(g)
+end
 
 first(g::AbstractGrid) = g[first(eachindex(g))]
 last(g::AbstractGrid) = g[last(eachindex(g))]
 
 has_extension(::AbstractGrid) = false
 
-#support(g::AbstractGrid) = interval(left(g),right(g))
 
 checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsError()))
 

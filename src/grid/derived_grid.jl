@@ -12,7 +12,7 @@ end
 # Override if it isn't.
 supergrid(g::DerivedGrid) = g.supergrid
 
-for method in (:first, :last, :eachindex, :size, :length, :endof)
+for method in (:first, :last, :eachindex, :size, :length, :endof, :firsindex, :lastindex)
     @eval $method(g::DerivedGrid) = $method(supergrid(g))
 end
 

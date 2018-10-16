@@ -9,17 +9,19 @@ if VERSION < v"0.7-"
     my_rand(T, a...) = map(T, rand(a...))
     ComplexF64 = Complex128
     ComplexF32 = Complex64
+
+    srand(1234)
 else
     using Test, Random, FFTW, LinearAlgebra
     linspace(a,b,c) = range(a, stop=b, length=c)
     my_rand = rand
+    Random.seed!(1234)
 end
 
-srand(1234)
 BF = BasisFunctions
 const show_timings = false
 
-######### #
+##########
 # Testing
 ##########
 Delimit("Utilities")

@@ -154,7 +154,7 @@ if VERSION >= v"0.7-"
     end
 
     # Broadcast not possible to Multiarray since size con not be determined from its type.
-    # Base.broadcastable(a::MultiArray) = a
+    Base.broadcastable(a::MultiArray) = Ref(a)
     #
     # Base.ndims(::Type{<:MultiArray}) = 1
     #

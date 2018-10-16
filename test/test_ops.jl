@@ -110,7 +110,7 @@ function test_ops_generic(ops)
     if codomaintype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
         r = roots(ops)
-        @test maximum(abs.(BasisFunctions.unsafe_eval_element.(ops, length(ops)+1, r))) < 100tol
+        @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
 
         x,w = gauss_rule(ops)
         @test abs(sum(w) - first_moment(ops)) < tol

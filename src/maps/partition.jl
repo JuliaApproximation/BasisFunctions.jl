@@ -60,11 +60,11 @@ PiecewiseInterval(a, b, n::Int) = PiecewiseInterval(collect(linspace(a,b,n+1)))
 
 length(part::PiecewiseInterval) = length(part.points)-1
 
-support(part::PiecewiseInterval) = interval(part.points[1],part.points[end])
+support(part::PiecewiseInterval) = Interval(part.points[1],part.points[end])
 
 # Not sure this is a good idea, but let's respect the convention that the
     # interval does not contain the left endpoint, unless it is the first interval.
-support(part::PiecewiseInterval, i::Int) = i==1 ? interval(part.points[1],part.points[2]) : Interval{:open,:closed}(part.points[i],part.points[i+1])
+support(part::PiecewiseInterval, i::Int) = i==1 ? Interval(part.points[1],part.points[2]) : Interval{:open,:closed}(part.points[i],part.points[i+1])
 left(part::PiecewiseInterval) = part.points[1]
 
 left(part::PiecewiseInterval, i::Int) = part.points[i]
