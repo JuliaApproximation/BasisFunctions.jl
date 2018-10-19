@@ -5,39 +5,17 @@ __precompile__(true)
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, Domains, AbstractTrees
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+using Base.Cartesian
 
-if VERSION < v"0.7-"
-    using LinearAlgebra, FastTransforms
-    import Base: norm, pinv, normalize, cross, ×, dct, idct, ctranspose, transpose
-    import Base.LinAlg: dot
-    import Base: start, next, done, ind2sub, sub2ind, endof, indices, showcompact
-    CartesianIndices = CartesianRange
-    LinRange = LinSpace
-    AbstractRange = Range
-    mul! = A_mul_B!
-    ldiv! = A_ldiv_B!
-    IteratorSize = Base.iteratorsize
-    axes = indices
-    Nothing = Void
-    ctranspose(a...) = adjoint(a...)
-    transpose(a...) = adjoint(a...)
-    adjoint(a::AbstractArray) = ctranspose(a)
-    isapple = Sys.is_apple
-    copyto!(a...) = copy!(a...)
-    macro warn(a...)
-        return :(warn($a...))
-    end
-else
-    using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
-    import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
-    import Base: copyto!, firstindex, lastindex
-    using Base:IteratorSize
-    using SpecialFunctions: gamma
-    using DSP: conv
-    using Base.Sys: isapple
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+## Some specific functions of Base we merely use
 
+using Base: IteratorSize
+using SpecialFunctions: gamma
+using DSP: conv
+using Base.Sys: isapple
+
+## Imports from Base of functions we extend
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
@@ -46,8 +24,8 @@ import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
-import Base: length, size, eachindex,
-        range, collect, first, last
+import Base: length, size, eachindex, firstindex, lastindex,
+        range, collect, first, last, copyto!
 import Base: transpose, inv, hcat, vcat
 import Base: checkbounds, checkbounds_indices, checkindex
 import Base: getindex, setindex!, unsafe_getindex, eltype
@@ -59,6 +37,10 @@ import Base: zeros, ones, one, zero, fill!, rand
 import Base: isreal, iseven, isodd, real, complex
 
 import Base: show, string
+
+
+## Imports from LinearAlgebra
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
 
 
 ## Imports from Domains
@@ -80,12 +62,16 @@ import FastGaussQuadrature: gaussjacobi
 
 import AbstractTrees: children
 
+
 ## Exhaustive list of exports
 
 # from util/indexing.jl
 export LinearIndex, NativeIndex
 export DefaultNativeIndex, DefaultIndexList
 export value
+
+# from util/domain_extensions.jl
+export circle, sphere, disk, ball, cube
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -321,7 +307,6 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 export gaussjacobi
 
 
-using Base.Cartesian
 
 
 include("util/common.jl")

@@ -12,6 +12,8 @@ end
 tolerance(::Type{T}) where {T} = sqrt(eps(T))
 tolerance(::Type{Complex{T}}) where {T} = tolerance(T)
 
+linspace(a,b,c) = range(a, stop=b, length=c)
+
 
 # Convenience definitions for the implementation of traits
 const True = Val{true}

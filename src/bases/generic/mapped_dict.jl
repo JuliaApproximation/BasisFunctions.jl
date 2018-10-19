@@ -24,7 +24,7 @@ MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{T1,S}) where {S,T1,T} =
 # This does not (currently) work for all maps.
 function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
-    MappedDict(promote_domaintype(dict, S), update_eltype(map, S))
+    MappedDict(promote_domaintype(dict, S), Domains.update_eltype(map, S))
 end
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
@@ -46,7 +46,7 @@ _grid(s::MappedDict, set, map) = mapped_grid(grid(set), map)
 
 
 function name(s::MappedDict)
-    if isa(support(s), MappedDomain)
+    if isa(support(s), Domains.MappedDomain)
         return string(mapping(s))
     else
         return "Mapping $(support(superdict(s))) to $(support(s))"
