@@ -1,10 +1,10 @@
 name = "BasisFunctions"
-uuid = "8ac202e8-8a12-11e8-0422-2b902fe89c2d"
+uuid = "4343a256-5453-507d-8aad-01a9d7189916"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
-Domains = "a4a0b8aa-7ac0-11e8-2da9-8385f1ed8077"
+Domains = "92287275-370e-5158-8ba4-382d508e9c6d"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 FastTransforms = "057dd010-8810-581a-b7be-e3fc3b93f78c"
