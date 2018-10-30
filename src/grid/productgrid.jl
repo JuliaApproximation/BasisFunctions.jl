@@ -27,7 +27,7 @@ end
 function ProductGrid(grids...)
 	TG = typeof(grids)
 	T1 = Tuple{map(eltype, grids)...}
-	T2 = Domains.simplify_product_eltype(T1)
+	T2 = DomainSets.simplify_product_eltype(T1)
 	ProductGrid{typeof(grids),T2}(grids)
 end
 

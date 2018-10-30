@@ -4,7 +4,7 @@ __precompile__(true)
 
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, Domains, AbstractTrees
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
 using Base.Cartesian
 
@@ -43,20 +43,20 @@ import Base: show, string
 import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
 
 
-## Imports from Domains
+## Imports from DomainSets
 
-import Domains: domaintype, codomaintype, dimension, domain
+import DomainSets: domaintype, codomaintype, dimension, domain
 # For intervals
-import Domains: leftendpoint, rightendpoint
+import DomainSets: leftendpoint, rightendpoint
 # For maps
-import Domains: matrix, vector, tensorproduct
+import DomainSets: matrix, vector, tensorproduct
 
 # composite type interface
-import Domains: element, elements, numelements
+import DomainSets: element, elements, numelements
 # cartesian product utility functions
-import Domains: cartesianproduct, ×, product_eltype
+import DomainSets: cartesianproduct, ×, product_eltype
 
-import Domains: forward_map, inverse_map
+import DomainSets: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 
@@ -72,6 +72,7 @@ export value
 
 # from util/domain_extensions.jl
 export circle, sphere, disk, ball, cube
+export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition

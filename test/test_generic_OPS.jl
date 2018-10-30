@@ -1,12 +1,9 @@
 # test_half_range_chebyshev
 
-using BasisFunctions, FastGaussQuadrature, Domains
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+using BasisFunctions, FastGaussQuadrature, DomainSets
+using Test
+linspace(a,b,c) = range(a, stop=b, length=c)
+
 
 function test_half_range_chebyshev()
     n = 60

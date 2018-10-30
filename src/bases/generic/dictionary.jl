@@ -10,7 +10,7 @@ A `Dictionary{S,T}` is an ordered family of functions, in which each function
 maps a variable of type `S` to a variable of type `T`.
 
 A `Dictionary{S,T}` has domain type `S` and codomain type `T`. The domain type
-corresponds to the type of a domain in the `Domains.jl` package, and it is the
+corresponds to the type of a domain in the `DomainSets.jl` package, and it is the
 type of the expected argument to the elements of the dictionary. The
 codomain type is the type of the output.
 

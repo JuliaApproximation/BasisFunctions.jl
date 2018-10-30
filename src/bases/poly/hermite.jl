@@ -22,7 +22,7 @@ dict_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePol
 
 resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
 
-support(b::HermitePolynomials{T}) where {T} = Domains.FullSpace(T)
+support(b::HermitePolynomials{T}) where {T} = DomainSets.FullSpace(T)
 
 first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 

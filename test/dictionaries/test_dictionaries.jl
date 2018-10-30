@@ -1,5 +1,5 @@
 
-using BasisFunctions, BasisFunctions.Test, Domains, StaticArrays
+using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
 import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
 BF = BasisFunctions
 

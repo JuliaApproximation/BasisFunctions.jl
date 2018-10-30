@@ -1,4 +1,4 @@
-using BasisFunctions, BasisFunctions.Test, Domains
+using BasisFunctions, BasisFunctions.Test, DomainSets
 
 interval_grids = (EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid)
 

@@ -1,5 +1,12 @@
 # domain_extensions.jl
 
+# Convenient aliases
+const Domain1d{T <: Number} = Domain{T}
+const Domain2d{T} = EuclideanDomain{2,T}
+const Domain3d{T} = EuclideanDomain{3,T}
+const Domain4d{T} = EuclideanDomain{4,T}
+
+
 is_compatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 
 "Assign a floating point type to a domain element type T."

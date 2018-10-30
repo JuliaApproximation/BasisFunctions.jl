@@ -1,6 +1,6 @@
 # test_ops.jl
 
-using BasisFunctions, BasisFunctions.Test, Domains
+using BasisFunctions, BasisFunctions.Test, DomainSets
 
 if VERSION < v"0.7-"
     using Base.Test
