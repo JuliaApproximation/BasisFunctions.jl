@@ -142,7 +142,7 @@ leftendpoint(g::ChebyshevNodeGrid{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevNodeGrid{T}) where {T} = one(T)
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex(g::ChebyshevNodeGrid{T}, i) where {T} = T(-1)*cos((i-1/2) * T(pi) / (g.n) )
+unsafe_getindex(g::ChebyshevNodeGrid{T}, i) where {T} = T(-1)*cos((i-T(1)/2) * T(pi) / (g.n) )
 
 struct ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
     n   ::  Int

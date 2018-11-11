@@ -6,7 +6,6 @@ const Domain2d{T} = EuclideanDomain{2,T}
 const Domain3d{T} = EuclideanDomain{3,T}
 const Domain4d{T} = EuclideanDomain{4,T}
 
-
 is_compatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 
 "Assign a floating point type to a domain element type T."
@@ -28,6 +27,8 @@ dimension(::Type{Tuple{A,B,C,D}}) where {A,B,C,D} = 4
 dimension(::Type{CartesianIndex{N}}) where {N} = N
 
 # Convenience functions to make some simple domains
+interval() = UnitInterval{Float64}()
+
 circle(::Type{T} = Float64) where {T} = UnitCircle{T}()
 circle(radius::Number) = radius * circle(float(typeof(radius)))
 circle(radius::Number, center::AbstractVector) = circle(radius) + center
@@ -43,6 +44,8 @@ disk(radius::Number, center::AbstractVector) = disk(radius) + center
 ball(::Type{T} = Float64) where {T} = UnitBall{T}()
 ball(radius::Number) = radius * ball(typeof(radius))
 ball(radius::Number, center::AbstractVector) = ball(radius) + center
+
+simplex(::Type{Val{N}}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
 
 cube(::Type{Val{N}}, ::Type{T} = Float64) where {N,T} = cartesianproduct(UnitInterval{T}(), Val{N})
 cube() = cube(Val{3})

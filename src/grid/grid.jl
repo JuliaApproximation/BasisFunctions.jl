@@ -29,7 +29,7 @@ size(g::AbstractGrid1d) = (length(g),)
 if VERSION < v"0.7-"
 	endof(g::AbstractGrid) = length(g)
 else
-	firsindex(g::AbstractGrid) = 1
+	firstindex(g::AbstractGrid) = 1
 	lastindex(g::AbstractGrid) = length(g)
 end
 
@@ -43,6 +43,8 @@ checkbounds(g::AbstractGrid, idx::Int) = (1 <= idx <= length(g) || throw(BoundsE
 
 # If the given argument is not an integer, we convert to a linear index
 checkbounds(g::AbstractGrid, idxn) = checkbounds(g, linear_index(g, idxn))
+
+linear_index(g::AbstractGrid, i::CartesianIndex{1}) = i.I[1]
 
 # For convenience, catch indexing of 1d grids with CartesianIndex or 1-element tuple
 getindex(g::AbstractGrid1d, idx::Union{CartesianIndex{1},Tuple{Int}}) = getindex(g, idx[1])

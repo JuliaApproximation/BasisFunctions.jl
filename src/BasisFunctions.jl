@@ -71,7 +71,7 @@ export DefaultNativeIndex, DefaultIndexList
 export value
 
 # from util/domain_extensions.jl
-export circle, sphere, disk, ball, cube
+export interval, circle, sphere, disk, ball, rectangle, cube, simplex
 export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
