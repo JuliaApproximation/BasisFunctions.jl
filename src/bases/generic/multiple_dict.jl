@@ -1,5 +1,3 @@
-# multiple_dict.jl
-
 
 """
 A `MultiDict` is the concatenation of several dictionaries. The elements are contained

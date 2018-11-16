@@ -1,4 +1,3 @@
-# composite_dict.jl
 
 """
 `CompositeDict` is the abstract supertype of a dictionary that consists of

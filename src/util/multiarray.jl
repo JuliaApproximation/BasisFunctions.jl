@@ -60,7 +60,7 @@ function undef_oftype(::Type{NTuple{N,A}}, offsets::Vector{Int}) where {N,A}
     ntuple(i->undef_oftype(A, offsets[i+1]-offsets[i]), Val{N})
 end
 
-undef_oftype(::Type{A}, len::Int) where {A <: AbstractVector{T}  where {T}} = (VERSION < v"0.7-") ? Array{eltype(A)}(len) : Array{eltype(A)}(undef, len)
+undef_oftype(::Type{A}, len::Int) where {A <: AbstractVector{T}  where {T}} = Array{eltype(A)}(undef, len)
 
 function undef_oftype(::Type{NTuple{N,T}}, len::Int) where {N,T}
     @assert len == N
@@ -134,34 +134,32 @@ end
 ## Iteration and indexing
 ##########################
 
-if VERSION >= v"0.7-"
-    function Base.iterate(a::MultiArray)
-        iter = eachindex(a)
-        tuple = iterate(iter)
-        if tuple != nothing
-            item, state = tuple
-            a[item], (iter, state)
-        end
+function Base.iterate(a::MultiArray)
+    iter = eachindex(a)
+    tuple = iterate(iter)
+    if tuple != nothing
+        item, state = tuple
+        a[item], (iter, state)
     end
-
-    function Base.iterate(a::MultiArray, tuple)
-        iter, state = tuple
-        next_tuple = iterate(iter, state)
-        if next_tuple != nothing
-            next_item, next_state = next_tuple
-            a[next_item], (iter, next_state)
-        end
-    end
-
-    # Broadcast not possible to Multiarray since size con not be determined from its type.
-    Base.broadcastable(a::MultiArray) = Ref(a)
-    #
-    # Base.ndims(::Type{<:MultiArray}) = 1
-    #
-    # Base.getindex(a::MultiArray, i::CartesianIndex{1}) = getindex(a, convert(Int, i))
-    #
-    # Base.BroadcastStyle(::Type{T}) where T<:MultiArray = Broadcast.Style{T}()
 end
+
+function Base.iterate(a::MultiArray, tuple)
+    iter, state = tuple
+    next_tuple = iterate(iter, state)
+    if next_tuple != nothing
+        next_item, next_state = next_tuple
+        a[next_item], (iter, next_state)
+    end
+end
+
+# Broadcast not possible to Multiarray since size con not be determined from its type.
+Base.broadcastable(a::MultiArray) = Ref(a)
+#
+# Base.ndims(::Type{<:MultiArray}) = 1
+#
+# Base.getindex(a::MultiArray, i::CartesianIndex{1}) = getindex(a, convert(Int, i))
+#
+# Base.BroadcastStyle(::Type{T}) where T<:MultiArray = Broadcast.Style{T}()
 
 # Convert a linear index into the MultiArray into the index of a subarray
 # and a linear index into that subarray.

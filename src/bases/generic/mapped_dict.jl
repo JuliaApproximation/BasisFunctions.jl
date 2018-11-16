@@ -1,4 +1,3 @@
-# mapped_dict.jl
 
 """
 A `MappedDict` has a dictionary and a map. The domain of the dictionary is

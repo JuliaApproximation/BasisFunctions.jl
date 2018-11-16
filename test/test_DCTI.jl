@@ -1,12 +1,6 @@
 
 using BasisFunctions
-if VERSION < v"0.7-"
-    using Base.Test
-    ComplexF64 = Complex128
-    ComplexF32 = Complex64
-else
-    using Test
-end
+using Test
 
 n = 121
 # Check some implementation

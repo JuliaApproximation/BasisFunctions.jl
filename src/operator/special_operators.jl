@@ -425,16 +425,6 @@ end
 
 # # More efficient version for vectors and factorization solvers
 # # TODO: these don't work for rectangular matrices
-# if (VERSION < v"0.7-")
-#     # function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
-#     #     ldiv!(coef_dest, solver, coef_src)
-#     # end
-#     # ldiv does not seem to work properly for SVD types, it returns the coefficients
-#     # but not in-place
-#     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
-#         coef_dest[:] = ldiv!(coef_dest, solver, coef_src)
-#     end
-# else
 #     function _apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver::Factorization)
 #         copyto!(coef_dest, coef_src)
 #         ldiv!(solver, coef_dest)
@@ -443,7 +433,6 @@ end
 #         copyto!(coef_dest, coef_src)
 #         coef_dest[:] = ldiv!(solver, coef_dest)
 #     end
-# end
 
 adjoint(op::GenericSolverOperator) = warn("not implemented")
 
@@ -452,13 +441,8 @@ adjoint(op::GenericSolverOperator) = warn("not implemented")
 function qr_factorization() end
 function svd_factorization() end
 
-if (VERSION < v"0.7-")
-    qr_factorization(matrix) = qrfact(matrix, Val{true})
-    svd_factorization(matrix) = svdfact(matrix, thin=true)
-else
-    qr_factorization(matrix) = qr(matrix, Val(true))
-    svd_factorization(matrix) = svd(matrix, full=false)
-end
+qr_factorization(matrix) = qr(matrix, Val(true))
+svd_factorization(matrix) = svd(matrix, full=false)
 
 QR_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, qr_factorization(matrix(op)))
 SVD_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, svd_factorization(matrix(op)))

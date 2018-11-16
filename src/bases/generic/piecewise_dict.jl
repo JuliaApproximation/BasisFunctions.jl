@@ -1,4 +1,3 @@
-# piecewise_dict.jl
 
 """
 A `PiecewiseDict` has a dictionary for each piece in a partition. Its representation

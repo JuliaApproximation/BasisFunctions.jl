@@ -1,12 +1,7 @@
 using BasisFunctions, BasisFunctions.Test
 
-if VERSION < v"0.7-"
-    using Base.Test
-    my_rand(T, a...) = map(T, rand(a...))
-else
-    using Test
-    my_rand = rand
-end
+using Test
+
 types = [Float64,BigFloat,]
 
 function test_operators(T)
@@ -64,11 +59,11 @@ function test_tensor_operators(T)
     n1 = 4
     m2 = 10
     n2 = 24
-    A1 = MatrixOperator(my_rand(T,m1,n1))
-    A2 = MatrixOperator(my_rand(T,m2,n2))
+    A1 = MatrixOperator(rand(T,m1,n1))
+    A2 = MatrixOperator(rand(T,m2,n2))
 
     A_tp = TensorProductOperator(A1, A2)
-    b = my_rand(T, n1, n2)
+    b = rand(T, n1, n2)
     c_tp = zeros(T, m1, m2)
     apply!(A_tp, c_tp, b)
 
@@ -99,10 +94,10 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, my_rand(coeftype(SRC))),
+        operators = (CoefficientScalingOperator(SRC, 3, rand(coeftype(SRC))),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
-            ScalingOperator(SRC, my_rand(coeftype(SRC))), ScalingOperator(SRC,3),
-            DiagonalOperator(SRC, my_rand(coeftype(SRC), size(SRC))))
+            ScalingOperator(SRC, rand(coeftype(SRC))), ScalingOperator(SRC,3),
+            DiagonalOperator(SRC, rand(coeftype(SRC), size(SRC))))
            # PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
@@ -146,15 +141,15 @@ end
 
 function test_multidiagonal_operators(T)
     MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, my_rand(coeftype(MSet))),
+    operators = (CoefficientScalingOperator(MSet, 3, rand(coeftype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
-        DiagonalOperator(MSet, my_rand(coeftype(MSet),length(MSet))))
+        DiagonalOperator(MSet, rand(coeftype(MSet),length(MSet))))
     for Op in operators
         # Test in-place
         coef_src = zeros(MSet)
         for i in eachindex(coef_src)
-            coef_src[i] = my_rand(eltype(coef_src))
+            coef_src[i] = rand(eltype(coef_src))
         end
         m = matrix(Op)
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)

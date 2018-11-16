@@ -90,7 +90,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
         # Flatten away nested CompositeOperators
         operators = flatten(CompositeOperator, operators...)
         # Iterate over the operators and remove the ones that don't do anything
-        c_operators = (VERSION < v"0.7-") ? Array{AbstractOperator}(0) : Array{AbstractOperator}(undef, 0)
+        c_operators = Array{AbstractOperator}(undef, 0)
         for op in operators
             add_this_one = true
             # We forget about identity operators

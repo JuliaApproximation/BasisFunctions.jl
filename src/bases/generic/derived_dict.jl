@@ -1,4 +1,3 @@
-# derived_set.jl
 
 """
 A `DerivedDict` is a dictionary that inherits most of its behaviour from

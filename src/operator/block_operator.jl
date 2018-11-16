@@ -49,9 +49,7 @@ end
 
 function block_row_operator(ops::AbstractArray{OP, 1}, sets::Dictionary...) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
-    operators = (VERSION < v"0.7-") ?
-        Array{DictionaryOperator{T}}(1, length(ops)) :
-        Array{DictionaryOperator{T}}(undef, 1, length(ops))
+    operators = Array{DictionaryOperator{T}}(undef, 1, length(ops))
 
     operators[:] = ops
     BlockOperator(operators, sets...)
@@ -59,9 +57,7 @@ end
 
 function block_column_operator(op1::DictionaryOperator, op2::DictionaryOperator)
     T = promote_type(eltype(op1), eltype(op2))
-    operators = (VERSION < v"0.7-") ?
-        Array{DictionaryOperator{T}}(2, 1) :
-        Array{DictionaryOperator{T}}(undef, 2, 1)
+    operators = Array{DictionaryOperator{T}}(undef, 2, 1)
     operators[1] = op1
     operators[2] = op2
     BlockOperator(operators)
@@ -69,9 +65,7 @@ end
 
 function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: DictionaryOperator}
     T = promote_type(map(eltype, ops)...)
-    operators = (VERSION < v"0.7-") ?
-        Array{DictionaryOperator{T}}(length(ops), 1) :
-        Array{DictionaryOperator{T}}(undef, length(ops), 1)
+    operators = Array{DictionaryOperator{T}}(undef, length(ops), 1)
     operators[:] = ops
     BlockOperator(operators)
 end

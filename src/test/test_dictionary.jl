@@ -68,11 +68,7 @@ function test_generic_dict_indexing(basis)
     # is always the set that was indexed is false, e.g., for multidicts.
     #@test dictionary(bf) == basis
 
-    if VERSION < v"0.7-"
-        @test endof(basis) == length(basis)
-    else
-        @test lastindex(basis) == length(basis)
-    end
+    @test lastindex(basis) == length(basis)
     
     # Is a boundserror thrown when the index is too large?
     @test try

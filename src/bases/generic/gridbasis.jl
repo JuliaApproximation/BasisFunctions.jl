@@ -1,4 +1,3 @@
-# gridbasis.jl
 
 """
 A `GridBasis` is a discrete basis that is associated with a grid.

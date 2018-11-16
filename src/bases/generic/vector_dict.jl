@@ -1,4 +1,3 @@
-# vector_dict.jl
 
 struct VectorvaluedDict{DICTS,S,N,T} <: CompositeDict{S,SVector{N,T}}
     dicts   ::  DICTS

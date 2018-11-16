@@ -1,4 +1,3 @@
-# discrete_sets.jl
 
 """
 A `DiscreteDictionary{I,T}` is a dictionary where `I` is a discrete type, e.g.,

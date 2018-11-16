@@ -1,4 +1,3 @@
-# span.jl
 
 """
 The span of a dictionary is the set of all possible expansions in that

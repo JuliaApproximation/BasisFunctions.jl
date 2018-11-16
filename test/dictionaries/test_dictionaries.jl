@@ -3,13 +3,9 @@ using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
 import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
 BF = BasisFunctions
 
-if VERSION < v"0.7-"
-    using Base.Test
-    # types = [Float64, BigFloat,]
-else
-    using Test
-    # types = [Float64,]
-end
+using Test
+# types = [Float64,]
+
 types = [Float64, BigFloat,]
 
 include("test_dictionaries_util.jl")
@@ -33,10 +29,8 @@ for T in types
             test_generic_dict_interface(basis)
         end
     end
-    if VERSION < v"0.7-"
-        # also try a Fourier series with an even length
-        test_generic_dict_interface(FourierBasis{T}(8))
-    end
+    # also try a Fourier series with an even length
+    test_generic_dict_interface(FourierBasis{T}(8))
 
     delimit("derived dictionaries ($(T))")
     test_derived_dicts(T)

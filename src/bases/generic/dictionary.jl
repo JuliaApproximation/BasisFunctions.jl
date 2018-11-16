@@ -1,5 +1,3 @@
-# dictionary.jl
-
 
 ######################
 # Type hierarchy
@@ -91,12 +89,8 @@ size(d::Dictionary) = (length(d),)
 
 "Return the size of the j-th dimension of the dictionary (if applicable)."
 size(d::Dictionary, j) = j==1 ? length(d) : throw(BoundsError())
-if VERSION < v"0.7-"
-    endof(d::Dictionary) = length(d)
-else
-    firstindex(d::Dictionary) = 1
-    lastindex(d::Dictionary) = length(d)
-end
+firstindex(d::Dictionary) = 1
+lastindex(d::Dictionary) = length(d)
 
 "Is the dictionary composite, i.e. does it consist of several components?"
 is_composite(d::Dictionary) = false
@@ -191,7 +185,7 @@ function rand(dict::Dictionary)
     c = zeros(dict)
     T = coeftype(dict)
     for i in eachindex(c)
-        c[i] = random_value(T)
+        c[i] = rand(T)
     end
     c
 end
@@ -334,38 +328,23 @@ restriction_set(d::Dictionary, n) = resize(d, n)
 ###############################
 
 # Default iterator over sets of functions: based on underlying index iterator.
-if VERSION < v"0.7-"
-    function start(d::Dictionary)
-        iter = eachindex(d)
-        (iter, start(iter))
-    end
-
-    function next(d::Dictionary, state)
-        iter, iter_state = state
-        idx, iter_newstate = next(iter,iter_state)
-        (d[idx], (iter,iter_newstate))
-    end
-
-    done(d::Dictionary, state) = done(state[1], state[2])
-else
-    function Base.iterate(d::Dictionary)
-        iter = eachindex(d)
-        first_item, first_state = iterate(iter)
-        (d[first_item], (iter, (first_item, first_state)))
-    end
-
-    function Base.iterate(d::Dictionary, state)
-        iter, iter_tuple = state
-        iter_item, iter_state = iter_tuple
-        next_tuple = iterate(iter, iter_state)
-        if next_tuple != nothing
-            next_item, next_state = next_tuple
-            (d[next_item], (iter,next_tuple))
-        end
-    end
-
-    Base.eltype(::Type{Dict}) where {Dict<:Dictionary}= SingletonSubdict
+function Base.iterate(d::Dictionary)
+    iter = eachindex(d)
+    first_item, first_state = iterate(iter)
+    (d[first_item], (iter, (first_item, first_state)))
 end
+
+function Base.iterate(d::Dictionary, state)
+    iter, iter_tuple = state
+    iter_item, iter_state = iter_tuple
+    next_tuple = iterate(iter, iter_state)
+    if next_tuple != nothing
+        next_item, next_state = next_tuple
+        (d[next_item], (iter,next_tuple))
+    end
+end
+
+Base.eltype(::Type{Dict}) where {Dict<:Dictionary} = SingletonSubdict
 
 
 

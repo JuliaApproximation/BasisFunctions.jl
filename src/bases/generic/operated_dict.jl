@@ -1,4 +1,3 @@
-# operated_dict.jl
 
 """
 An `OperatedDict` represents a set that is acted on by an operator, for example

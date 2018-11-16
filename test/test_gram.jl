@@ -1,10 +1,7 @@
 using BasisFunctions, BasisFunctions.Test
 
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test
-end
+using Test
+
 types = [Float64, BigFloat,]
 
 function discrete_gram_test(T)

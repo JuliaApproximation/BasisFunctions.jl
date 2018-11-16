@@ -2,11 +2,8 @@ using BasisFunctions, BasisFunctions.Test, DomainSets
 
 interval_grids = (EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid, ChebyshevNodeGrid, ChebyshevExtremaGrid)
 
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test, LinearAlgebra
-end
+using Test, LinearAlgebra
+
 types = [Float64,BigFloat,]
 
 function test_grids(T)

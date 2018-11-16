@@ -1,4 +1,3 @@
-# complexified_dict.jl
 
 """
 A 'ComplexifiedDict' is a dictionary for which the coefficient type is the complex version of the original dictionary. It is obtained by calling dict_promote_coeftype() on a dictionary that does not implement this method.

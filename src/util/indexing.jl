@@ -192,10 +192,8 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 eachindex(list::ProductIndexList) = CartesianIndices(axes(list))
 
 # We convert between integers and product indices using ind2sub and sub2ind
-product_native_index(size, idx::LinearIndex) = (VERSION < v"0.7-") ?
-    ProductIndex(ind2sub(size, idx)) : ProductIndex(CartesianIndices(size)[idx])
-product_linear_index(size, idxn::ProductIndex) = (VERSION < v"0.7-") ?
-    sub2ind(size, indextuple(idxn)...) : LinearIndices(size)[indextuple(idxn)...]
+product_native_index(size, idx::LinearIndex) = ProductIndex(CartesianIndices(size)[idx])
+product_linear_index(size, idxn::ProductIndex) = LinearIndices(size)[indextuple(idxn)...]
 
 
 # We also know how to convert a tuple
@@ -290,36 +288,18 @@ end
 
 length(it::MultilinearIndexIterator) = sum(it.lengths)
 
-if VERSION < v"0.7-"
-    start(it::MultilinearIndexIterator) = (1,1)
+Base.iterate(it::MultilinearIndexIterator) = (1,1), (1,1)
 
-    function next(it::MultilinearIndexIterator, state)
-        i = state[1]
-        j = state[2]
-        if j == it.lengths[i]
-            nextstate = (i+1,1)
-        else
-            nextstate = (i,j+1)
-        end
-        (state, nextstate)
+function Base.iterate(it::MultilinearIndexIterator, state)
+    i, j = state
+    if j == it.lengths[i]
+        next_item = (i+1,1)
+    else
+        next_item = (i,j+1)
     end
-
-    done(it::MultilinearIndexIterator, state) = state[1] > length(it.lengths)
-
-else
-    Base.iterate(it::MultilinearIndexIterator) = (1,1), (1,1)
-
-    function Base.iterate(it::MultilinearIndexIterator, state)
-        i, j = state
-        if j == it.lengths[i]
-            next_item = (i+1,1)
-        else
-            next_item = (i,j+1)
-        end
-        if next_item[1] <= length(it.lengths)
-            next_item, next_item
-        end
+    if next_item[1] <= length(it.lengths)
+        next_item, next_item
     end
-
-    Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}
 end
+
+Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}

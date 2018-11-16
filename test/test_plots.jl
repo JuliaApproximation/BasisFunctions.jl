@@ -1,10 +1,6 @@
 using BasisFunctions, BasisFunctions.Test, DomainSets
 
-if VERSION < v"0.7-"
-    using Base.Test, Plots
-else
-    using Test, LinearAlgebra, Plots
-end
+using Test, LinearAlgebra, Plots
 
 delimit("Plots")
 @testset begin

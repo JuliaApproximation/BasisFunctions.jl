@@ -1,9 +1,5 @@
 
-if VERSION < v"0.7-"
-    using Base.Test, BasisFunctions, BasisFunctions.Test
-else
-    using Test, FFTW
-end
+using Test, FFTW
 
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well

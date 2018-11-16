@@ -1,9 +1,5 @@
 
-if VERSION < v"0.7-"
-    using Base.Test, BasisFunctions
-else
-    using Test
-end
+using Test
 
 delimit("MultiArray")
 @testset begin

@@ -26,12 +26,8 @@ subeltype(::Type{GridPoint{N,T}}) where {N,T} = T
 dimension(grid::AbstractGrid) = dimension(eltype(grid))
 
 size(g::AbstractGrid1d) = (length(g),)
-if VERSION < v"0.7-"
-	endof(g::AbstractGrid) = length(g)
-else
-	firstindex(g::AbstractGrid) = 1
-	lastindex(g::AbstractGrid) = length(g)
-end
+firstindex(g::AbstractGrid) = 1
+lastindex(g::AbstractGrid) = length(g)
 
 first(g::AbstractGrid) = g[first(eachindex(g))]
 last(g::AbstractGrid) = g[last(eachindex(g))]
@@ -71,45 +67,24 @@ linear_index(g::AbstractGrid, idxn) = idxn
 
 
 
-if VERSION < v"0.7-"
-	# Grid iteration:
-	#	for x in grid
-	#		do stuff...
-	#	end
-	# Implemented by start, next and done.
-	function start(g::AbstractGrid)
-		iter = eachindex(g)
-		(iter, start(iter))
-	end
-
-	function next(g::AbstractGrid, state)
-		iter = state[1]
-		iter_state = state[2]
-		idx,iter_newstate = next(iter,iter_state)
-		(g[idx], (iter,iter_newstate))
-	end
-
-	done(g::AbstractGrid, state) = done(state[1], state[2])
-else
-    function Base.iterate(g::AbstractGrid)
-        iter = eachindex(g)
-        first_item, first_state = iterate(iter)
-        (g[first_item], (iter, (first_item, first_state)))
-    end
-
-    function Base.iterate(g::AbstractGrid, state)
-        iter, iter_tuple = state
-        iter_item, iter_state = iter_tuple
-        next_tuple = iterate(iter, iter_state)
-        if next_tuple != nothing
-            next_item, next_state = next_tuple
-            (g[next_item], (iter,next_tuple))
-        end
-    end
-
-	# Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-
-	Base.broadcastable(g::AbstractGrid) = g
-
-	Base.ndims(::Type{GRID}) where {GRID<:AbstractGrid{T}} where T = dimension(T)
+function Base.iterate(g::AbstractGrid)
+    iter = eachindex(g)
+    first_item, first_state = iterate(iter)
+    (g[first_item], (iter, (first_item, first_state)))
 end
+
+function Base.iterate(g::AbstractGrid, state)
+    iter, iter_tuple = state
+    iter_item, iter_state = iter_tuple
+    next_tuple = iterate(iter, iter_state)
+    if next_tuple != nothing
+        next_item, next_state = next_tuple
+        (g[next_item], (iter,next_tuple))
+    end
+end
+
+# Base.BroadcastStyle(e::AbstractGrid) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+
+Base.broadcastable(g::AbstractGrid) = g
+
+Base.ndims(::Type{GRID}) where {GRID<:AbstractGrid{T}} where T = dimension(T)

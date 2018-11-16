@@ -4,19 +4,12 @@ module test_suite
 using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
 import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
 
-if VERSION < v"0.7-"
-    using Base.Test
-    my_rand(T, a...) = map(T, rand(a...))
-    ComplexF64 = Complex128
-    ComplexF32 = Complex64
+using Test, Random, FFTW, LinearAlgebra
 
-    srand(1234)
-else
-    using Test, Random, FFTW, LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-    my_rand = rand
-    Random.seed!(1234)
-end
+linspace(a,b,c) = range(a, stop=b, length=c)
+
+my_rand = rand
+Random.seed!(1234)
 
 BF = BasisFunctions
 const show_timings = false

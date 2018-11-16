@@ -1,4 +1,3 @@
-# tensorproduct_dict.jl
 
 
 """
@@ -248,9 +247,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
-index_set_tensorproduct(s,n) = (VERSION < v"0.7-") ?
-    CartesianIndices(CartesianIndex(fill(1,n)...), CartesianIndex(fill(s+1,n)...)) :
-    CartesianIndices(ntuple(k->1,n), tuple(ntuple(k->s+1,n)))
+index_set_tensorproduct(s,n) = CartesianIndices(ntuple(k->1,n), tuple(ntuple(k->s+1,n)))
 
 "Return a list of all indices of total degree at most s, in n dimensions."
 function index_set_total_degree(s, n)

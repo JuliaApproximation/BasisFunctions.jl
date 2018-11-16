@@ -1,4 +1,3 @@
-# subdicts.jl
 
 #############################
 # An abstract subdictionary
