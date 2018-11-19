@@ -47,7 +47,7 @@ support(b::CosineSeries{T}) where {T} = UnitInterval{T}()
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
+grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid{T}(b.n, 0, 1)
 
 
 ##################

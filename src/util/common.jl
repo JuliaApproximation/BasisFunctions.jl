@@ -1,4 +1,3 @@
-# common.jl
 
 macro add_properties(T, props...)
     e = quote end
@@ -68,3 +67,7 @@ default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)
 # unit vector in a tuple?
 # ASK is this indeed a better implementation?
 dimension_tuple(n, dim) = ntuple(k -> ((k==dim) ? 1 : 0), n)
+
+subeltype(x) = subeltype(eltype(x))
+subeltype(::Type{T}) where {T <: Number} = T
+subeltype(::Type{SVector{N,T}}) where {N,T} = T

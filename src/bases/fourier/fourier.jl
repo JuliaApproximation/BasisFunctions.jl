@@ -1,4 +1,3 @@
-# fourier.jl
 
 """
 A Fourier basis on the interval `[0,1]`. The basis functions are given by
@@ -46,6 +45,8 @@ dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Real} = error("
 dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Complex} = FourierBasis{promote_type(T,real(S))}(b.n)
 resize(b::FourierBasis{T}, n) where {T} = FourierBasis{T}(n)
 
+similar(b::FourierBasis, ::Type{T}, n::Int) where {T} = FourierBasis{T}(n)
+
 
 
 # Properties
@@ -75,7 +76,7 @@ compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b), domaintype(b))
+grid(b::FourierBasis{T}) where {T} = PeriodicEquispacedGrid(b.n, support(b))
 
 
 ##################

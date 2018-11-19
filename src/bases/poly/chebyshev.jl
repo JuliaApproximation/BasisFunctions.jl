@@ -1,5 +1,3 @@
-# chebyshev.jl
-
 
 ############################################
 # Chebyshev polynomials of the first kind
@@ -38,7 +36,7 @@ dict_promote_coeftype(b::ChebyshevBasis{T}, ::Type{S}) where {T,S<:Real} = Cheby
 
 resize(b::ChebyshevBasis{T}, n) where {T} = ChebyshevBasis{T}(n)
 
-
+similar(b::ChebyshevBasis, ::Type{T}, n::Int) where {T} = ChebyshevBasis{T}(n)
 
 has_grid(b::ChebyshevTLike) = true
 has_derivative(b::ChebyshevTLike) = true
@@ -51,8 +49,8 @@ has_grid_transform(b::ChebyshevTLike, gb, ::AbstractGrid) = false
 
 first_moment(b::ChebyshevBasis{T}) where {T} = T(pi)
 
-grid(b::ChebyshevTLike) = ChebyshevNodeGrid(length(b), domaintype(b))
-secondgrid(b::ChebyshevTLike) = ChebyshevExtremaGrid(length(b), domaintype(b))
+grid(b::ChebyshevTLike) = ChebyshevNodeGrid{domaintype(b)}(length(b))
+secondgrid(b::ChebyshevTLike) = ChebyshevExtremaGrid{domaintype(b)}(length(b))
 
 # extends the default definition at transform.jl
 transform_dict(s::ChebyshevTLike; nodegrid=true, options...) =
@@ -383,6 +381,8 @@ dict_promote_domaintype(b::ChebyshevU, ::Type{S}) where {S} =
     ChebyshevU{S}(b.n)
 
 resize(b::ChebyshevU{T}, n) where {T} = ChebyshevU{T}(n)
+
+similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
 
 name(b::ChebyshevU) = "Chebyshev series (second kind)"
 

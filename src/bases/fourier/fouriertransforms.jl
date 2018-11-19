@@ -1,4 +1,3 @@
-# fouriertransforms.jl
 
 # We wrap the discrete Fourier and cosine transforms in an operator.
 # For Float64 and Complex{Float64} we can use FFTW. The plans that FFTW computes

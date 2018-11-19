@@ -1,20 +1,19 @@
-# mappedgrid.jl
 
 """
 A MappedGrid consists of a grid and a map. Each grid point of the mapped grid
 is the map of the corresponding point of the underlying grid.
 """
-struct MappedGrid{G,M,T} <: AbstractGrid{T}
+struct MappedGrid{G,M,T,N} <: AbstractGrid{T,N}
 	supergrid	::	G
 	map			::	M
 
-	MappedGrid{G,M,T}(supergrid::AbstractGrid{T}, map) where {G,M,T} = new(supergrid, map)
+	MappedGrid{G,M,T,N}(supergrid::AbstractGrid{T,N}, map) where {G,M,T,N} = new(supergrid, map)
 end
 
-const MappedGrid1d{G,M,T<:Number} = MappedGrid{G,M,T}
+const MappedGrid1d{G,M,T<:Number,N} = MappedGrid{G,M,T,N}
 
-MappedGrid(grid::AbstractGrid{T}, map::AbstractMap) where {T} =
-	MappedGrid{typeof(grid),typeof(map),T}(grid, map)
+MappedGrid(grid::AbstractGrid{T,N}, map::AbstractMap) where {T,N} =
+	MappedGrid{typeof(grid),typeof(map),T,N}(grid, map)
 
 supergrid(g::MappedGrid) = g.supergrid
 
@@ -37,11 +36,6 @@ for op in (:leftendpoint, :rightendpoint, :support)
 end
 
 resize(g::MappedGrid, n::Int) = apply_map(resize(supergrid(g), n), mapping(g))
-
-# This is necessary for mapped tensorproductgrids etc.
-linear_index(g::MappedGrid, idx) = linear_index(g.supergrid, idx)
-
-native_index(g::MappedGrid, idx) = native_index(g.supergrid, idx)
 
 unsafe_getindex(g::MappedGrid, idx) = applymap(g.map, g.supergrid[idx])
 

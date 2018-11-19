@@ -1,4 +1,3 @@
-# tensorproducts.jl
 
 """
 Create a tensor product of the supplied arguments.

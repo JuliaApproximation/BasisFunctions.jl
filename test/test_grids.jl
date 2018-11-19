@@ -4,7 +4,7 @@ interval_grids = (EquispacedGrid, PeriodicEquispacedGrid, MidpointEquispacedGrid
 
 using Test, LinearAlgebra
 
-types = [Float64,BigFloat,]
+types = (Float64,BigFloat)
 
 function test_grids(T)
     ## Equispaced grids

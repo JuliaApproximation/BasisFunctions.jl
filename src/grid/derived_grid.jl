@@ -1,35 +1,28 @@
-# derived_grid.jl
 
 """
-A DerivedGrid is a grid that derives from an underlying grid. Any concrete grid
+A `DerivedGrid` is a grid that derives from an underlying grid. Any concrete grid
 that inherits from DerivedGrid is functionally equivalent to the underlying grid.
-However, since it is its own type, it may change some of the functionality.
+However, since it has its own type, it may change some of the functionality.
 """
-abstract type DerivedGrid{T} <: AbstractGrid{T}
+abstract type DerivedGrid{T,N} <: AbstractGrid{T,N}
 end
 
 # We assume that the underlying grid is stored in the supergrid field.
 # Override if it isn't.
 supergrid(g::DerivedGrid) = g.supergrid
 
-for method in (:first, :last, :eachindex, :size, :length, :endof, :firsindex, :lastindex)
-    @eval $method(g::DerivedGrid) = $method(supergrid(g))
-end
+getindex(g::DerivedGrid{1}, i::Int) = g.supergrid[i]
 
-for method in (:support,)
-    @eval $method(g::DerivedGrid) = $method(supergrid(g))
-end
+getindex(g::DerivedGrid{T,N}, I::Vararg{Int, N}) where {T,N} = g.supergrid[I...]
 
-for method in (:getindex, :checkbounds, :native_index, :linear_index)
-    @eval $method(g::DerivedGrid, idx) = $method(supergrid(g), idx)
-end
+size(g::DerivedGrid) = size(g.supergrid)
 
 
-struct ConcreteDerivedGrid{G,T} <: DerivedGrid{T}
+struct ConcreteDerivedGrid{G,T,N} <: DerivedGrid{T,N}
     supergrid   ::  G
 
-    ConcreteDerivedGrid{G,T}(supergrid::AbstractGrid{T}) where {G,T} = new(supergrid)
+    ConcreteDerivedGrid{G,T,N}(supergrid::AbstractArray{T,N}) where {G,T,N} = new(supergrid)
 end
 
-ConcreteDerivedGrid(supergrid::AbstractGrid{T}) where {T} =
-    ConcreteDerivedGrid{typeof(supergrid),T}(supergrid)
+ConcreteDerivedGrid(supergrid::AbstractArray{T,N}) where {T,N} =
+    ConcreteDerivedGrid{typeof(supergrid),T,N}(supergrid)

@@ -28,7 +28,8 @@ import Base: length, size, eachindex, firstindex, lastindex,
         range, collect, first, last, copyto!
 import Base: transpose, inv, hcat, vcat
 import Base: checkbounds, checkbounds_indices, checkindex
-import Base: getindex, setindex!, unsafe_getindex, eltype
+import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
+    IndexStyle
 import Base: broadcast, similar
 
 import Base: cos, sin, exp, log

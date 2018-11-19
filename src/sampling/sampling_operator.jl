@@ -1,4 +1,3 @@
-# sampling_operator.jl
 
 abstract type AbstractSamplingOperator <: AbstractOperator
 end

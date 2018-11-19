@@ -44,7 +44,7 @@ length(b::SineSeries) = b.n
 
 period(b::SineSeries{T}, idx) where {T} = T(2)
 
-grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
+grid(b::SineSeries{T}) where {T} = EquispacedGrid{T}(b.n, 0, 1)
 
 ##################
 # Native indices

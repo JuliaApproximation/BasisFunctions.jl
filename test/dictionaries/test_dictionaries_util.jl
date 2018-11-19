@@ -55,6 +55,6 @@ end
 
 suitable_interpolation_grid(basis::TensorProductDict) =
     ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
-suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid(length(basis), 0, 1, domaintype(basis))
+suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid{domaintype(basis)}(length(basis), 0, 1)
 suitable_interpolation_grid(basis::WeightedDict) = suitable_interpolation_grid(superdict(basis))
 suitable_interpolation_grid(basis::OperatedDict) = suitable_interpolation_grid(src_dictionary(basis))
