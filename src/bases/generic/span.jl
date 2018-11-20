@@ -32,10 +32,9 @@ coeftype = coefficient_type
 
 dictionary(s::Span) = s.dictionary
 
-function promote_domaintype(span::Span, ::Type{S}) where {S}
-    newdict = promote_domaintype(dictionary(span), S)
-    Span(newdict, promote_type(coefficient_type(span), coefficient_type(newdict)))
-end
+similar(s::Span, ::Type{T}, dims) where {T} = Span(similar(dictionary(s), T, dims))
+
+promote_domaintype(span::Span, ::Type{T}) where {T} = similar(span, T, size(span))
 
 random_expansion(span::Span) = Expansion(dictionary(span), rand(dictionary(span)))
 

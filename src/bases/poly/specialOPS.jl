@@ -1,4 +1,3 @@
-# specialOPS.jl
 
 """
 Creates the (normalized) half range Chebyshev polynomials of the first kind.

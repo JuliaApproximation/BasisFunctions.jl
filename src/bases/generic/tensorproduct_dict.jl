@@ -1,5 +1,4 @@
 
-
 """
 A `TensorProductDict` is itself a dictionary: the tensor product of a number of
 dictionaries.
@@ -53,34 +52,19 @@ function TensorProductDict(dicts::Dictionary...)
 end
 
 size(d::TensorProductDict) = d.size
-size(d::TensorProductDict, j::Int) = d.size[j]
 
-length(d::TensorProductDict) = prod(size(d))
-
-# We need a more generic definition, but one can't iterate over a tuple type nor index it
-dict_promote_domaintype(s::TensorProductDict{N}, ::Type{NTuple{N,T}}) where {N,T} =
-    TensorProductDict(map(x->promote_domaintype(x, T), elements(s))...)
-
-dict_promote_domaintype(s::TensorProductDict2, ::Type{Tuple{A,B}}) where {A,B} =
-    TensorProductDict(promote_domaintype(element(s, 1), A), promote_domaintype(element(s, 2), B))
-
-dict_promote_domaintype(s::TensorProductDict3, ::Type{Tuple{A,B,C}}) where {A,B,C} =
-    TensorProductDict(promote_domaintype(element(s, 1), A),
-                        promote_domaintype(element(s, 2), B),
-                        promote_domaintype(element(s, 3), C))
-
-dict_promote_domaintype(s::TensorProductDict4, ::Type{Tuple{A,B,C,D}}) where {A,B,C,D} =
-    TensorProductDict(promote_domaintype(element(s, 1), A),
-                        promote_domaintype(element(s, 2), B),
-                        promote_domaintype(element(s, 3), C),
-                        promote_domaintype(element(s, 4), D))
+similar(dict::TensorProductDict, ::Type{T}, size::Int...) where {T} =
+    TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
 
 coefficient_type(s::TensorProductDict) = promote_type(map(coefficient_type,elements(s))...)
-# We need a more generic definition, but one can't iterate over a tuple type nor index it
-dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Real} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
-dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Complex} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
 
+dict_promote_coeftype(s::TensorProductDict, ::Type{T}) where {T} =
+    TensorProductDict(dict_promote_coeftype.(elements(s), Ref(T))...)
 
+dict_promote_coeftype(s::TensorProductDict, ::Type{T}) where {T <: Complex} =
+    TensorProductDict(dict_promote_coeftype.(elements(s), Ref(T))...)
+
+IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ^(s::Dictionary, n::Int) = tensorproduct(s, n)
 
@@ -137,7 +121,6 @@ for op in (:derivative_dict, :antiderivative_dict)
         tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end
 
-resize(d::TensorProductDict, n) = TensorProductDict(map( (d_i,n_i)->resize(d_i, n_i), elements(d), n)...)
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 
 

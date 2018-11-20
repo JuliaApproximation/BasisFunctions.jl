@@ -147,7 +147,7 @@ function test_roots_of_legendre_halfrangechebyshev()
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = LegendrePolynomials(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = LegendrePolynomials(N,BigFloat)
+    B = LegendrePolynomials{BigFloat}(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     # B = HalfRangeChebyshevIkind(N,BigFloat(2))
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1

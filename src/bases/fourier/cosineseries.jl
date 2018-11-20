@@ -26,9 +26,7 @@ end
 
 instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
-dict_promote_domaintype(b::CosineSeries, ::Type{S}) where {S} = CosineSeries{S}(b.n)
-
-resize(b::CosineSeries{T}, n) where {T} = CosineSeries{T}(n)
+similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
 is_basis(b::CosineSeries) = true
 is_orthogonal(b::CosineSeries) = true
@@ -40,14 +38,14 @@ has_antiderivative(b::CosineSeries) = false #for now
 has_transform(b::CosineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::CosineSeries) = true
 
-length(b::CosineSeries) = b.n
+size(b::CosineSeries) = (b.n,)
 
 
 support(b::CosineSeries{T}) where {T} = UnitInterval{T}()
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid{T}(b.n, 0, 1)
+grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
 
 
 ##################

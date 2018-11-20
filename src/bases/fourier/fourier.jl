@@ -34,20 +34,17 @@ function FourierBasis(n, a::Number, b::Number)
 	FourierBasis{T}(n, a, b)
 end
 
-length(b::FourierBasis) = b.n
+size(b::FourierBasis) = (b.n,)
+
 oddlength(b::FourierBasis) = isodd(length(b))
 evenlength(b::FourierBasis) = iseven(length(b))
 
 instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis{T}(n)
 
-dict_promote_domaintype(b::FourierBasis{T}, ::Type{S}) where {T,S} = FourierBasis{promote_type(S,T)}(b.n)
 dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Real} = error("FourierBasis with real coefficients not implemented")
 dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Complex} = FourierBasis{promote_type(T,real(S))}(b.n)
-resize(b::FourierBasis{T}, n) where {T} = FourierBasis{T}(n)
 
 similar(b::FourierBasis, ::Type{T}, n::Int) where {T} = FourierBasis{T}(n)
-
-
 
 # Properties
 
@@ -76,7 +73,7 @@ compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-grid(b::FourierBasis{T}) where {T} = PeriodicEquispacedGrid(b.n, support(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
 
 
 ##################

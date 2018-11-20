@@ -1,4 +1,3 @@
-# polynomials.jl
 
 "PolynomialBasis is the abstract supertype of all univariate polynomials."
 abstract type PolynomialBasis{S,T} <: Dictionary{S,T}

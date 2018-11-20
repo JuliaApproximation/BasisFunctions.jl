@@ -17,7 +17,7 @@ end
 
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
-function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(length(partition))*length(set))
+function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(Int,length(partition))*length(set))
     dicts = [rescale(resize(set, n[i]), support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end

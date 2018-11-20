@@ -85,10 +85,13 @@ is_orthonormal(d::Dictionary) = false
 is_biorthogonal(d::Dictionary) = is_orthogonal(d)
 
 "Return the size of the dictionary."
-size(d::Dictionary) = (length(d),)
+function size(d::Dictionary) end
 
 "Return the size of the j-th dimension of the dictionary (if applicable)."
-size(d::Dictionary, j) = j==1 ? length(d) : throw(BoundsError())
+size(d::Dictionary, j) = size(d)[j]
+
+length(d::Dictionary) = prod(size(d))
+
 firstindex(d::Dictionary) = 1
 lastindex(d::Dictionary) = length(d)
 
@@ -110,11 +113,18 @@ instantiate(::Type{S}, n) where {S <: Dictionary}= instantiate(S, n, Float64)
 # Domain and codomain type
 ##############################
 
+similar(s::Dictionary, ::Type{T}) where {T} = similar(s, T, size(s))
+
+similar(s::Dictionary, size::Int...) = similar(s, domaintype(s), size...)
+similar(s::Dictionary, dims::Base.Dims) = similar(s, domaintype(s), dims...)
+
+similar(s::Dictionary, ::Type{T}, dims::Base.Dims) where {T} = similar(s, T, dims...)
+
+resize(s::Dictionary, dims...) = similar(s, domaintype(s), dims...)
+
 "Promote the domain type of the dictionary."
 promote_domaintype(dict::Dictionary{S,T}, ::Type{S}) where {S,T} = dict
-promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_domaintype(dict, U)
-
-promote_domaintype(dict1::Dictionary{S,T1}, dict2::Dictionary{S,T2}) where {S,T1,T2} = (dict1,dict2)
+promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = similar(dict, U, size(dict))
 
 function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
@@ -152,16 +162,7 @@ promote_coefficient_type(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary
 
 promote_coeftype = promote_coefficient_type
 
-widen(d::Dictionary) = promote_domaintype(d, widen(domaintype(d)))
-
-# similar returns a similar basis of a given size and numeric type
-# It can be implemented in terms of resize and promote_domaintype.
-similar(d::Dictionary, ::Type{T}, n) where {T} = resize(promote_domaintype(d, T), n)
-
-# Support resize of a 1D set with a tuple of a single element, so that one can
-# write statements of the form resize(s, size(some_set)) in all dimensions.
-resize(s::Dictionary1d, n::NTuple{1,Int}) = resize(s, n[1])
-
+widen(d::Dictionary) = similar(d, widen(domaintype(d)))
 
 
 "Return a set of zero coefficients in the native format of the set."
@@ -195,6 +196,8 @@ end
 # Indexing
 ###########
 
+IndexStyle(d::Dictionary) = IndexLinear()
+
 """
 Dictionaries are ordered lists. Their ordering is defined by the way their
 index sets are ordered.
@@ -206,10 +209,12 @@ of the dictionary.
 """
 ordering(dict::Dictionary) = Base.OneTo(length(dict))
 
-# By convention, `eachindex` returns the most efficient way to iterate over the
-# indices of a dictionary. This is not necessarily the linear index.
-# We call eachindex on `ordering(d)`.
-eachindex(d::Dictionary) = eachindex(ordering(d))
+eachindex(d::Dictionary) = eachindex(IndexStyle(d), d)
+eachindex(::IndexLinear, d::Dictionary) = axes1(d)
+eachindex(::IndexCartesian, d::Dictionary) = CartesianIndices(axes(d))
+
+axes1(d::Dictionary) = Base.OneTo(length(d))
+axes(d::Dictionary) = map(Base.OneTo, size(d))
 
 "Compute the native index corresponding to the given index."
 native_index(dict::Dictionary, idx) = _native_index(dict, idx)

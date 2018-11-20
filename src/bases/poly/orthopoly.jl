@@ -1,4 +1,3 @@
-# orthopoly.jl
 
 """
 `OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
@@ -19,7 +18,7 @@ approx_length(b::OPS, n::Int) = n
 derivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)-order)
 antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
-length(o::OrthogonalPolynomials) = o.n
+size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
 

@@ -1,4 +1,3 @@
-# test_derived_dict.jl
 
 function test_derived_dicts(T)
     b1 = FourierBasis{T}(11)

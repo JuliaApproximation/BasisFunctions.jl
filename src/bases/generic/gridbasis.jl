@@ -41,8 +41,8 @@ end
 
 dimension(b::GridBasis) = dimension(grid(b))
 
-name(b::GridBasis) = "a discrete basis associated with a grid
-"
+name(b::GridBasis) = "a discrete basis associated with a grid"
+
 tensorproduct(dicts::GridBasis...) = GridBasis(cartesianproduct(map(grid, dicts)...),promote_type(map(coeftype,dicts)...))
 
 support(s::GridBasis) = support(grid(s))

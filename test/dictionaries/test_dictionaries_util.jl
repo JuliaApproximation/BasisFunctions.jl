@@ -1,4 +1,3 @@
-# test_generic_dicts.jl
 
 # Laguerre and Hermite fail due to linear algebra problems in BigFloat
 supports_approximation(s::LaguerrePolynomials{BigFloat}) = false

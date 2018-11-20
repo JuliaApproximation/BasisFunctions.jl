@@ -57,8 +57,10 @@ domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 
 operator(set::OperatedDict) = set.op
 
-dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
-    OperatedDict(similar_operator(operator(s), promote_domaintype(src(s), S), dest(s) ) )
+function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
+    @assert length(d) == prod(dims)
+    OperatedDict(similar_operator(operator(d), similar(src(d), T), dest(d) ))
+end
 
 for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src_dictionary(s))

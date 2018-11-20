@@ -29,17 +29,14 @@ superdict(s::DerivedDict) = s.superdict
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
 
-resize(s::DerivedDict, n) = similar_dictionary(s, resize(superdict(s),n))
+similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
+    similar_dictionary(d, similar(superdict(d), T, dims))
 
-# To avoid ambiguity with a similar definition for abstract type Dictionary:
-resize(s::DerivedDict, n::Tuple{Int}) = resize(s, n[1])
-
-dict_promote_domaintype(s::DerivedDict{T}, ::Type{S}) where {T,S} =
-    similar_dictionary(s, promote_domaintype(superdict(s), S))
 dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Complex} =
     similar_dictionary(s, promote_coeftype(superdict(s), S))
-    dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Real} =
+dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Real} =
     similar_dictionary(s, promote_coeftype(superdict(s), S))
+
 for op in (:coefficient_type,)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end

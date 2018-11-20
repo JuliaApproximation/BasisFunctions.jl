@@ -1,4 +1,3 @@
-# jacobi.jl
 
 """
 A basis of the classical Jacobi polynomials on the interval `[-1,1]`.
@@ -19,19 +18,17 @@ end
 
 name(b::JacobiPolynomials) = "Jacobi OPS"
 
-JacobiPolynomials(n, ::Type{T} = Float64) where {T} = JacobiPolynomials{T}(n)
+JacobiPolynomials(n::Int) = JacobiPolynomials{Float64}(n)
 
-JacobiPolynomials(n, α::T, β::T) where {T <: Number} = JacobiPolynomials{T}(n, α, β)
+JacobiPolynomials(n::Int, α::Number, β::Number) = JacobiPolynomials(n, promote(α, β)...)
 
-JacobiPolynomials(n, α::T, β::T) where {T <: Integer} = JacobiPolynomials(n, float(α), float(β))
+JacobiPolynomials(n::Int, α::T, β::T) where {T <: AbstractFloat} = JacobiPolynomials{T}(n, α, β)
 
+JacobiPolynomials(n::Int, α::Integer, β::Integer) = JacobiPolynomials(n, float(α), float(β))
 
-instantiate(::Type{JacobiPolynomials}, n, ::Type{T}) where {T} = JacobiPolynomials{T}(n)
+similar(b::JacobiPolynomials, ::Type{T}, n::Int) where {T} = JacobiPolynomials{T}(n, b.α, b.β)
 
-dict_promote_domaintype(b::JacobiPolynomials, ::Type{S}) where {S} =
-    JacobiPolynomials{S}(b.n, b.α, b.β)
-
-resize(b::JacobiPolynomials, n) = JacobiPolynomials(n, b.α, b.β)
+instantiate(::Type{JacobiPolynomials}, n::Int, ::Type{T}) where {T} = JacobiPolynomials{T}(n)
 
 support(b::JacobiPolynomials{T}) where {T} = ChebyshevInterval{T}()
 

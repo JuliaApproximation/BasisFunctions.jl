@@ -6,7 +6,7 @@ BF = BasisFunctions
 using Test
 # types = [Float64,]
 
-types = [Float64, BigFloat,]
+types = (Float64, BigFloat)
 
 include("test_dictionaries_util.jl")
 include("test_dictionaries_derived.jl")

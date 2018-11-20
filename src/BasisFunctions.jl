@@ -1,6 +1,3 @@
-# BasisFunctions
-
-__precompile__(true)
 
 module BasisFunctions
 
@@ -29,7 +26,7 @@ import Base: length, size, eachindex, firstindex, lastindex,
 import Base: transpose, inv, hcat, vcat
 import Base: checkbounds, checkbounds_indices, checkindex
 import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
-    IndexStyle
+    IndexStyle, axes, axes1
 import Base: broadcast, similar
 
 import Base: cos, sin, exp, log

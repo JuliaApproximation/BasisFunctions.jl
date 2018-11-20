@@ -118,9 +118,9 @@ end
 
 support(set::MultiDict) = union(map(support,elements(set))...)
 
-resize(s::MultiDict, n::Int) = resize(s, approx_length(s, n))
+resize(d::MultiDict, n::Int) = resize(d, approx_length(d, n))
 
-approx_length(s::MultiDict, n::Int) = ntuple(t->ceil(Int,n/numelements(s)), numelements(s))
+approx_length(d::MultiDict, n::Int) = ceil(Int, n/numelements(d)) * ones(Int,numelements(d))
 
 ## Differentiation
 

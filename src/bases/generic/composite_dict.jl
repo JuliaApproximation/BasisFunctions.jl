@@ -49,19 +49,33 @@ unsafe_offsets(dict::CompositeDict) = dict.offsets
 # Implement equality in terms of equality of the elements.
 ==(s1::CompositeDict, s2::CompositeDict) = (elements(s1) == elements(s2))
 
-length(s::CompositeDict) = s.offsets[end]
+size(s::CompositeDict) = (s.offsets[end],)
 
-length(s::CompositeDict, i::Int) = length(element(s,i))
 
 ## Concrete subtypes should override similar_dictionary and call their own constructor
 
-# Using map in the definitions below ensures that a tuple is created when
-# elements(set) is a tuple, and an array when elements(set) is an array.
-resize(set::CompositeDict, n) =
-    similar_dictionary(set, map( (s,l) -> resize(s, l), elements(set), n))
+similar(d::CompositeDict, ::Type{T}, n::Int) where {T} = similar(d, T, composite_size(d, n))
 
-dict_promote_domaintype(set::CompositeDict, ::Type{S}) where {S} =
-    similar_dictionary(set, map(s->dict_promote_domaintype(s, S), elements(set)))
+function similar(d::CompositeDict, ::Type{T}, size::Vector{Int}) where {T}
+    @assert numelements(d) == length(size)
+    similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
+end
+
+function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
+    @assert numelements(d) == length(size)
+    similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
+end
+
+
+function composite_size(d::CompositeDict, n::Int)
+    if n == length(d)
+        map(length, elements(d))
+    else
+        L = ceil(Int, n/numelements(d))
+        @assert numelements(d) * L == n
+        L * ones(Int, numelements(d))
+    end
+end
 
 zeros(::Type{T}, set::CompositeDict) where {T} = MultiArray(map(s->zeros(T,s),elements(set)))
 

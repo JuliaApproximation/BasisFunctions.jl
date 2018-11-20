@@ -1,4 +1,3 @@
-# test_discrete_sets.jl
 
 function test_discrete_sets(T)
     n = 10
@@ -27,7 +26,7 @@ function test_discrete_sets(T)
     @test eval_element(s1, 1, 2) == zero(T)
     @test eval_element(s1, n, n) == one(T)
 
-    t1 = DiscreteArrayDictionary((10,10), T)
+    t1 = DiscreteArrayDictionary{T}((10,10))
     @test codomaintype(t1) == T
     @test domaintype(t1) == ProductIndex{2}
     @test size(t1) == (10,10)

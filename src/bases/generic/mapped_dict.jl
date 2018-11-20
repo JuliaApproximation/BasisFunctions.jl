@@ -31,7 +31,7 @@ mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 # Convenience function, similar to apply_map for grids etcetera
 apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
 
-apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map*mapping(dict))
+apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map ∘ mapping(dict))
 
 mapping(dict::MappedDict) = dict.map
 
@@ -202,7 +202,7 @@ function rescale(s::Dictionary1d, a, b)
     end
 end
 
-rescale(s::Dictionary,d::Domain) = rescale(s,infimum(d),supremum(d))
+rescale(s::Dictionary, d::Domain) = rescale(s, infimum(d), supremum(d))
 
 
 # "Preserve Tensor Product Structure"

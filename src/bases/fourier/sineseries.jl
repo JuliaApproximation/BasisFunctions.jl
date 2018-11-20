@@ -26,9 +26,7 @@ end
 
 instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-dict_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
-
-resize(b::SineSeries{T}, n) where {T} = SineSeries{T}(n)
+similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true
@@ -40,11 +38,11 @@ has_antiderivative(b::SineSeries) = false #for now
 has_transform(b::SineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::SineSeries) = true
 
-length(b::SineSeries) = b.n
+size(b::SineSeries) = (b.n,)
 
 period(b::SineSeries{T}, idx) where {T} = T(2)
 
-grid(b::SineSeries{T}) where {T} = EquispacedGrid{T}(b.n, 0, 1)
+grid(b::SineSeries{T}) where {T} = EquispacedGrid(b.n, T(0), T(1))
 
 ##################
 # Native indices
