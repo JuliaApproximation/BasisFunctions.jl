@@ -1,4 +1,3 @@
-# platform.jl
 
 """
 A platform represents a sequence of dictionaries.
@@ -49,11 +48,11 @@ end
 
 name(platform::GenericPlatform) = platform.name
 
-A(platform::Platform, i; options...) = apply(sampler(platform, i), primal(platform, i); options...)
+matrix_A(platform::Platform, i; options...) = apply(sampler(platform, i), primal(platform, i); options...)
 
-Zt(platform::Platform, i; options...) = Zt(dual(platform, i),dual_sampler(platform, i); options...)
+matrix_Zt(platform::Platform, i; options...) = matrix_Zt(dual(platform, i), dual_sampler(platform, i); options...)
 
-Zt(dual, dual_sampler; options...) = apply(dual_sampler, dual; options...)'
+matrix_Zt(dual, dual_sampler; options...) = apply(dual_sampler, dual; options...)'
 
 
 """

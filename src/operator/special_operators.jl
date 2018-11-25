@@ -1,4 +1,3 @@
-# special_operators.jl
 
 """
 A CoefficientScalingOperator scales a single coefficient.
@@ -435,11 +434,6 @@ end
 #     end
 
 adjoint(op::GenericSolverOperator) = warn("not implemented")
-
-# We define these function names here, otherwise they are only defined
-# in the scope of the if-else clause below
-function qr_factorization() end
-function svd_factorization() end
 
 qr_factorization(matrix) = qr(matrix, Val(true))
 svd_factorization(matrix) = svd(matrix, full=false)

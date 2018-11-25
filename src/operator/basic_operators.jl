@@ -1,4 +1,3 @@
-# basic_operators.jl
 
 """
 The identity operator between two (possibly different) function sets.

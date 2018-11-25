@@ -262,7 +262,7 @@ export sample
 
 # from sampling/platform.jl
 export Platform
-export primal, dual, sampler, A, Zt, dual_sampler
+export primal, dual, sampler, matrix_A, matrix_Zt, dual_sampler
 
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule

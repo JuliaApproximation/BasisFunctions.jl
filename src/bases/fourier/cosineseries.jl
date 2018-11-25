@@ -1,4 +1,3 @@
-# cosineseries.jl
 
 ##################
 # Cosine series

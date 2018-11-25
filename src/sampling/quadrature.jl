@@ -1,4 +1,3 @@
-# quadrature.jl
 
 function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
     grid = EquispacedGrid(n, a, b)

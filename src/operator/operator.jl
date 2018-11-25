@@ -127,14 +127,12 @@ end
 
 # Catch-all for missing implementations
 function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
-	warn("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
-	throw(InexactError())
+	error("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 end
 
 # Catch-all for missing implementations
 function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
-	warn("In-place operation of ", typeof(op), " not implemented.")
-	throw(InexactError())
+	error("In-place operation of ", typeof(op), " not implemented.")
 end
 
 

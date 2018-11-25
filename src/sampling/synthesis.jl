@@ -1,4 +1,3 @@
-# synthesis.jl
 
 "Which discrete dictionary matches the coefficients of the given dictionary?"
 discrete_set(dict::Dictionary) = discrete_set(dict, containertype(dict))
