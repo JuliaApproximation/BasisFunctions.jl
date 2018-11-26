@@ -173,6 +173,7 @@ export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+# from operator/solvers.jl
 export QR_solver, SVD_solver, operator
 # from operator/circulant_operator.jl
 export CirculantOperator
@@ -260,10 +261,6 @@ export gridbasis, grid_multiplication_operator
 export GridSamplingOperator
 export sample
 
-# from sampling/platform.jl
-export Platform
-export primal, dual, sampler, matrix_A, matrix_Zt, dual_sampler
-
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
@@ -350,6 +347,7 @@ include("operator/dimop.jl")
 
 include("operator/basic_operators.jl")
 include("operator/banded_operators.jl")
+include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
@@ -384,7 +382,6 @@ include("bases/generic/vector_dict.jl")
 
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
-include("sampling/platform.jl")
 include("sampling/quadrature.jl")
 
 ################################################################

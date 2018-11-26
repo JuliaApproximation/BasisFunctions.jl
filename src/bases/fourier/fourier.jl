@@ -567,39 +567,3 @@ function Gram(s::FourierBasis; options...)
 end
 
 UnNormalizedGram(b::FourierBasis, oversampling) = ScalingOperator(b, b, length_oversampled_grid(b, oversampling))
-
-
-##################
-# Platform
-##################
-
-"A doubling sequence that produces odd values, i.e., the value after `n` is `2n+1`."
-struct OddDoublingSequence <: DimensionSequence
-    initial ::  Int
-
-	# Default constructor to guarantee that the initial value is odd
-	OddDoublingSequence(initial::Int) = (@assert isodd(initial); new(initial))
-end
-
-initial(s::OddDoublingSequence) = s.initial
-
-OddDoublingSequence() = OddDoublingSequence(1)
-
-getindex(s::OddDoublingSequence, idx::Int) = initial(s) * (2<<(idx-1)) - 1
-
-
-fourier_platform(;options...) = fourier_platform(Float64; options...)
-
-fourier_platform(n::Int; options...) = fourier_platform(Float64, n; options...)
-
-fourier_platform(::Type{T};options...) where {T} = fourier_platform(T, 1; options...)
-
-function fourier_platform(::Type{T}, n::Int; oversampling=1) where {T}
-	primal = FourierBasis{T}
-	dual = FourierBasis{T}
-        sampler = n -> GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(round(Int,oversampling*n), UnitInterval{T}()), T))
-        dual_sampler = n->(1/length(dest(sampler(n))))*sampler(n)
-	params = isodd(n) ? OddDoublingSequence(n) : DoublingSequence(n)
-	GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
-		params = params, name = "Fourier series")
-end
