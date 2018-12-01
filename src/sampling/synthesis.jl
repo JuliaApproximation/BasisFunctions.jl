@@ -10,7 +10,7 @@ discrete_set(dict::Dictionary, ::Type{Array{T,N}}) where {T,N} =
     DiscreteArrayDictionary{T}(size(dict))
 # - it is something else that we don't know about here: return a vector set
 discrete_set(dict::Dictionary, ::Type{F}) where {F} =
-    DiscreteVectorDictionary{coefficient_type(dict)}(length(dict))
+    DiscreteVectorDictionary{coefficienttype(dict)}(length(dict))
 
 
 """

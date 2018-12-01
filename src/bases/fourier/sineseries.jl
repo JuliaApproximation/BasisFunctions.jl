@@ -91,4 +91,4 @@ function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
 end
 
 
-Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coeftype(s))/2)
+Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coefficienttype(s))/2)

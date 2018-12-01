@@ -32,12 +32,12 @@ superdict(s::DerivedDict) = s.superdict
 similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
     similar_dictionary(d, similar(superdict(d), T, dims))
 
-dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Complex} =
-    similar_dictionary(s, promote_coeftype(superdict(s), S))
-dict_promote_coeftype(s::DerivedDict{T}, ::Type{S}) where {T,S<:Real} =
-    similar_dictionary(s, promote_coeftype(superdict(s), S))
+promote_coefficienttype(dict::DerivedDict, ::Type{T}) where {T} =
+    similar_dictionary(dict, promote_coefficienttype(superdict(dict), T))
 
-for op in (:coefficient_type,)
+promote_coefficienttype(dict::DerivedDict, ::Type{Any}) = dict
+
+for op in (:coefficienttype,)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -124,8 +124,8 @@ end
 
 
 for op in (:extension_operator, :restriction_operator)
-    @eval $op(s1::DerivedDict, s2::DerivedDict; options...) =
-        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); options...))
+    @eval $op(s1::DerivedDict, s2::DerivedDict; T = op_eltype(s1,s2), options...) =
+        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); T = T, options...))
 end
 
 # By default we return the underlying set when simplifying transforms
@@ -136,9 +136,9 @@ for op in ( (:transform_from_grid, :s1, :s2),
             (:transform_from_grid_pre, :s1, :s1),
             (:transform_from_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1, s2::DerivedDict, grid; options...)
+    @eval function $(op[1])(s1, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
+        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
 end
@@ -147,27 +147,29 @@ for op in ( (:transform_to_grid, :s1, :s2),
             (:transform_to_grid_pre, :s1, :s1),
             (:transform_to_grid_post, :s1, :s2))
 
-    @eval function $(op[1])(s1::DerivedDict, s2, grid; options...)
+    @eval function $(op[1])(s1::DerivedDict, s2, grid; T = op_eltype(s1,s2), options...)
         simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; options...)
+        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
         wrap_operator($(op[2]), $(op[3]), operator)
     end
 end
 
 
 for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedDict, s2::DerivedDict, order; options...) =
-        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; options...))
+    @eval $op(s1::DerivedDict, s2::DerivedDict, order; T = op_eltype(s1,s2), options...) =
+        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; T=T, options...))
 end
 
 pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol;options...)
 pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid;
+        T = op_eltype(set, dgs), options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
+grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid;
+        T = op_eltype(set, dgs), options...) =
+    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
 
 dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
     dot(superdict(s), f1, f2, nodes; options...)

@@ -128,7 +128,7 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
 
 function (*)(a::Number, s::Dictionary)
-    T = promote_type(typeof(a), coeftype(s))
+    T = promote_type(typeof(a), coefficienttype(s))
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 

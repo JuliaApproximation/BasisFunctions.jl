@@ -4,7 +4,7 @@ using Test
 
 n = 121
 # Check some implementation
-# full_transform_operator(DiscreteGridbasis(ChebyshevNodeGrid(n)), ChebyshevBasis(n))
+# full_transform_operator(DiscreteGridbasis(ChebyshevNodes(n)), ChebyshevBasis(n))
 # full_transform_operator(ChebyshevBasis(n), nodegrid=true)
 # full_transform_operator(ChebyshevBasis(n), nodegrid=false)
 

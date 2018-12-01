@@ -116,7 +116,7 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
         @assert numelements(s1) == numelements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
     end
 end
 
@@ -214,5 +214,5 @@ function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.nat
 end
 
 function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(DictionaryOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
+    BlockDiagonalOperator(DictionaryOperator{coefficienttype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
 end

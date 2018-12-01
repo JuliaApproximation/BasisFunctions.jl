@@ -1,8 +1,12 @@
-# test_suite.jl
 module test_suite
 
 using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
-import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
+
+import BasisFunctions.Test:
+    supports_approximation,
+    supports_interpolation,
+    suitable_function,
+    suitable_interpolation_grid
 
 using Test, Random, FFTW, LinearAlgebra
 

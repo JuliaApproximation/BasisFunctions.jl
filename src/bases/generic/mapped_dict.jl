@@ -189,7 +189,7 @@ end
 # TODO: check for promotions here
 mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapping(s))
 
-mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficient_type(s))
+mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a, b)

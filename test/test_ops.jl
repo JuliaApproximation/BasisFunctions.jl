@@ -31,11 +31,11 @@ function test_chebyshevT(T)
 
     @test has_transform(b1)
     @test has_transform(b1, grid(b1))
-    @test has_transform(b1, ChebyshevExtremaGrid(n1))
-    @test has_transform(b1, ChebyshevNodeGrid(n1))
+    @test has_transform(b1, ChebyshevExtremae(n1))
+    @test has_transform(b1, ChebyshevNodes(n1))
     @test ~has_transform(b1, PeriodicEquispacedGrid(n1, -1, 1))
-    @test ~has_transform(b1, ChebyshevExtremaGrid(n1+5))
-    @test ~has_transform(b1, ChebyshevNodeGrid(n1+5))
+    @test ~has_transform(b1, ChebyshevExtremae(n1+5))
+    @test ~has_transform(b1, ChebyshevNodes(n1+5))
     @test BasisFunctions.jacobi_α(b1) ≈ -.5 ≈ BasisFunctions.jacobi_β(b1)
 end
 

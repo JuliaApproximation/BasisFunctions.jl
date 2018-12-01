@@ -130,40 +130,40 @@ unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
 
-struct ChebyshevNodeGrid{T} <: AbstractIntervalGrid{T}
+struct ChebyshevNodes{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-const ChebyshevGrid = ChebyshevNodeGrid
-const ChebyshevPoints = ChebyshevNodeGrid
+const ChebyshevGrid = ChebyshevNodes
+const ChebyshevPoints = ChebyshevNodes
 
-ChebyshevNodeGrid(n::Int) = ChebyshevNodeGrid{Float64}(n)
-ChebyshevNodeGrid(n::Int, a, b) = rescale(ChebyshevNodeGrid{typeof((b-a)/n)}(n), a, b)
+ChebyshevNodes(n::Int) = ChebyshevNodes{Float64}(n)
+ChebyshevNodes(n::Int, a, b) = rescale(ChebyshevNodes{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevNodeGrid, ::Type{T}, n::Int) where {T} = ChebyshevNodeGrid{T}(n)
+similar(g::ChebyshevNodes, ::Type{T}, n::Int) where {T} = ChebyshevNodes{T}(n)
 
-leftendpoint(g::ChebyshevNodeGrid{T}) where {T} = -one(T)
-rightendpoint(g::ChebyshevNodeGrid{T}) where {T} = one(T)
+leftendpoint(g::ChebyshevNodes{T}) where {T} = -one(T)
+rightendpoint(g::ChebyshevNodes{T}) where {T} = one(T)
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex(g::ChebyshevNodeGrid{T}, i) where {T} = T(-1)*cos((i-T(1)/2) * T(pi) / (g.n) )
+unsafe_getindex(g::ChebyshevNodes{T}, i) where {T} = T(-1)*cos((i-T(1)/2) * T(pi) / (g.n) )
 
 
-struct ChebyshevExtremaGrid{T} <: AbstractIntervalGrid{T}
+struct ChebyshevExtremae{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end
 
-ChebyshevPointsOfTheSecondKind = ChebyshevExtremaGrid
+ChebyshevPointsOfTheSecondKind = ChebyshevExtremae
 
-ChebyshevExtremaGrid(n::Int) = ChebyshevExtremaGrid{Float64}(n)
-ChebyshevExtremaGrid(n::Int, a, b) = rescale(ChebyshevExtremaGrid{typeof((b-a)/n)}(n), a, b)
+ChebyshevExtremae(n::Int) = ChebyshevExtremae{Float64}(n)
+ChebyshevExtremae(n::Int, a, b) = rescale(ChebyshevExtremae{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevExtremaGrid, ::Type{T}, n::Int) where {T} = ChebyshevExtremaGrid{T}(n)
+similar(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtremae{T}(n)
 
-leftendpoint(g::ChebyshevExtremaGrid{T}) where {T} = -one(T)
-rightendpoint(g::ChebyshevExtremaGrid{T}) where {T} = one(T)
+leftendpoint(g::ChebyshevExtremae{T}) where {T} = -one(T)
+rightendpoint(g::ChebyshevExtremae{T}) where {T} = one(T)
 
 # Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
-unsafe_getindex(g::ChebyshevExtremaGrid{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
+unsafe_getindex(g::ChebyshevExtremae{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
 
 strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)

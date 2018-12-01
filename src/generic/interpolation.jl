@@ -30,6 +30,6 @@ default_interpolation_operator(s::Dictionary, dgs::GridBasis; options...) =
 
 function interpolate(s::Dictionary, pts, f)
     A = interpolation_matrix(s, pts)
-    B = coeftype(s)[f(x...) for x in pts]
+    B = coefficienttype(s)[f(x...) for x in pts]
     Expansion(s, A\B)
 end

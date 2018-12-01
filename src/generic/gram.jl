@@ -16,7 +16,7 @@ function Gram(s::Dictionary; options...)
         gramdiagonal!(d, s; options...)
         DiagonalOperator(s, s, d)
     else
-        A = zeros(coeftype(s), length(s), length(s))
+        A = zeros(coefficienttype(s), length(s), length(s))
         grammatrix!(A, s; options...)
         MatrixOperator(s, s, A)
     end

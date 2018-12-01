@@ -94,11 +94,11 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, rand(coeftype(SRC))),
+        operators = (CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
-            ScalingOperator(SRC, rand(coeftype(SRC))), ScalingOperator(SRC,3),
-            DiagonalOperator(SRC, rand(coeftype(SRC), size(SRC))))
-           # PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
+            ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
+            DiagonalOperator(SRC, rand(coefficienttype(SRC), size(SRC))))
+           # PseudoDiagonalOperator(SRC, map(coefficienttype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place
@@ -141,10 +141,10 @@ end
 
 function test_multidiagonal_operators(T)
     MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, rand(coeftype(MSet))),
+    operators = (CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
-        DiagonalOperator(MSet, rand(coeftype(MSet),length(MSet))))
+        DiagonalOperator(MSet, rand(coefficienttype(MSet),length(MSet))))
     for Op in operators
         # Test in-place
         coef_src = zeros(MSet)
@@ -253,7 +253,7 @@ end
 
 function test_invertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
-        operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
+        operators = (MultiplicationOperator(SRC, SRC, map(coefficienttype(SRC),rand(length(SRC),length(SRC)))),
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
@@ -278,7 +278,7 @@ end
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
+        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coefficienttype(SRC),rand(length(SRC)+2,length(SRC)))),
             ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)

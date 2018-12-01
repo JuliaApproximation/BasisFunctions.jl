@@ -14,9 +14,10 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
-
 oned_dictionaries = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
         LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries,]
+
+test_derived_dicts(Float64)
 
 for T in types
     delimit("1D dictionaries ($(T))")

@@ -31,6 +31,7 @@ struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
         new{Q,T}(op, solver, zeros(T, length(dest(op))), zeros(T, length(src(op))))
 end
 
+
 # The solver should be the inverse of the given operator
 GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
     GenericSolverOperator{typeof(solver),T}(op, solver)

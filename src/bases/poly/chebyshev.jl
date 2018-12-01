@@ -12,8 +12,6 @@ struct ChebyshevBasis{T} <: OPS{T,T}
 end
 
 ChebyshevT = ChebyshevBasis
-## Most of these methods apply to Chebyshev-like dictionaries as well
-ChebyshevTLike = Union{ChebyshevBasis, ComplexifiedDict{D} where D<:ChebyshevBasis}
 
 
 
@@ -31,52 +29,50 @@ end
 
 instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
 
-dict_promote_coeftype(b::ChebyshevBasis{T}, ::Type{S}) where {T,S<:Real} = ChebyshevBasis{promote_type(S,T)}(b.n)
-
 similar(b::ChebyshevBasis, ::Type{T}, n::Int) where {T} = ChebyshevBasis{T}(n)
 
 
-has_grid(b::ChebyshevTLike) = true
-has_derivative(b::ChebyshevTLike) = true
-has_antiderivative(b::ChebyshevTLike) = true
+has_grid(b::ChebyshevBasis) = true
+has_derivative(b::ChebyshevBasis) = true
+has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevTLike, gb, ::ChebyshevNodeGrid) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevTLike, gb, ::ChebyshevExtremaGrid) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevTLike, gb, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
-first_moment(b::ChebyshevBasis{T}) where {T} = T(pi)
+first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)
 
-grid(b::ChebyshevTLike) = ChebyshevNodeGrid{domaintype(b)}(length(b))
-secondgrid(b::ChebyshevTLike) = ChebyshevExtremaGrid{domaintype(b)}(length(b))
+grid(b::ChebyshevBasis{T}) where {T} = ChebyshevNodes{T}(length(b))
+secondgrid(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
 # extends the default definition at transform.jl
-transform_dict(s::ChebyshevTLike; nodegrid=true, options...) =
-    nodegrid ? gridbasis(s) : gridbasis(secondgrid(s), coeftype(s))
+transform_dict(s::ChebyshevBasis; nodegrid=true, options...) =
+    nodegrid ? gridbasis(s) : gridbasis(secondgrid(s), coefficienttype(s))
 
 # The weight function
-weight(b::ChebyshevBasis{T}, x) where {T} = 1/sqrt(1-T(x)^2)
+weight(b::ChebyshevBasis{T}, x) where {T} = one(T)/sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevTLike) = -1//2
-jacobi_β(b::ChebyshevTLike) = -1//2
+jacobi_α(b::ChebyshevBasis{T}) where {T} = -one(T)/2
+jacobi_β(b::ChebyshevBasis{T}) where {T} = -one(T)/2
 
 
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevTLike, n::Int) = n==0 ? 1 : 2
+rec_An(b::ChebyshevBasis{T}, n::Int) where {T} = n==0 ? one(T) : 2one(T)
 
-rec_Bn(b::ChebyshevTLike, n::Int) = 0
+rec_Bn(b::ChebyshevBasis{T}, n::Int) where {T} = zero(T)
 
-rec_Cn(b::ChebyshevTLike, n::Int) = 1
+rec_Cn(b::ChebyshevBasis{T}, n::Int) where {T} = one(T)
 
 support(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype
-function unsafe_eval_element(b::ChebyshevTLike, idx::PolynomialDegree, x::Real)
+function unsafe_eval_element(b::ChebyshevBasis, idx::PolynomialDegree, x::Real)
     abs(x) <= 1 ? cos(degree(idx)*acos(x)) : recurrence_eval(b, idx, x)
 end
 
@@ -85,7 +81,7 @@ end
 # recurence relation.
 # unsafe_eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function unsafe_eval_element_derivative(b::ChebyshevTLike, idx::PolynomialDegree, x)
+function unsafe_eval_element_derivative(b::ChebyshevBasis, idx::PolynomialDegree, x)
     T = codomaintype(b)
     d = degree(idx)
     if d == 0
@@ -209,95 +205,97 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int; options...) =
+differentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; options...) =
     ChebyshevDifferentiation(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevTLike, dest::ChebyshevTLike, order::Int; options...) =
+antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; options...) =
     ChebyshevAntidifferentiation(src, dest, order)
 
-function gramdiagonal!(result, ::ChebyshevTLike; options...)
+function gramdiagonal!(result, ::ChebyshevBasis; options...)
     T = eltype(result)
     for i in 1:length(result)
         (i==1) ? result[i] = T(pi) : result[i] = T(pi)/2
     end
 end
 
-function UnNormalizedGram(s::ChebyshevTLike, oversampling)
-    A = coeftype(s)
+function UnNormalizedGram(s::ChebyshevBasis, oversampling)
+    A = coefficienttype(s)
     d = A(length_oversampled_grid(s, oversampling))/2*ones(A,length(s))
     d[1] = length_oversampled_grid(s, oversampling)
     DiagonalOperator(s, s, d)
 end
 
-function extension_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...)
+function extension_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1))
+    IndexExtensionOperator{T}(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::ChebyshevTLike, s2::ChebyshevTLike; options...)
+function restriction_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2))
+    IndexRestrictionOperator{T}(s1, s2, 1:length(s2))
 end
 
 
 ################################################################
-# Methods to transform from ChebyshevTLike to ChebyshevNodeGrid
+# Methods to transform from ChebyshevBasis to ChebyshevNodes
 ###############################################################
 
-transform_from_grid(src, dest::ChebyshevTLike, grid::ChebyshevNodeGrid; options...) =
-	_forward_chebyshev_operator(src, dest, coeftype(dest); options...)
+transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodes; T = coefficienttype(dest), options...) =
+	_forward_chebyshev_operator(src, dest, T; options...)
 
-transform_to_grid(src::ChebyshevTLike, dest, grid::ChebyshevNodeGrid; options...) =
-	_backward_chebyshev_operator(src, dest, coeftype(src); options...)
+transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevNodes; T = coefficienttype(src), options...) =
+	_backward_chebyshev_operator(src, dest, T; options...)
 
 # These are the generic fallbacks
 _forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-	FastChebyshevTransform(src, dest)
+	FastChebyshevTransform(src, dest; T = T)
 
 _backward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-	InverseFastChebyshevTransform(src, dest)
+	InverseFastChebyshevTransform(src, dest; T=T)
 
 # But for some types we use FFTW
 for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-    @eval _forward_chebyshev_operator(src, dest, ::Type{$(op)}; options...) =
-	   FastChebyshevTransformFFTW(src, dest; options...)
-    @eval _backward_chebyshev_operator(src, dest, ::Type{$(op)}; options...) =
-       	InverseFastChebyshevTransformFFTW(src, dest; options...)
+    @eval _forward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
+	   FastChebyshevTransformFFTW(src, dest; T = T, options...)
+    @eval _backward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
+       	InverseFastChebyshevTransformFFTW(src, dest; T = T, options...)
 end
 
 
 
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: ChebyshevTLike,G <: ChebyshevNodeGrid}
-	_backward_chebyshev_operator(s1, s2, coeftype(s1); options...)
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
+	_backward_chebyshev_operator(s1, s2, T; options...)
 end
 
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: ChebyshevTLike,G <: ChebyshevNodeGrid}
-	_forward_chebyshev_operator(s1, s2, coeftype(s2); options...)
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
+	_forward_chebyshev_operator(s1, s2, T; options...)
 end
 
 
 
-function transform_from_grid_post(src, dest::ChebyshevTLike, grid::ChebyshevNodeGrid; options...)
-    ELT = coeftype(dest)
-    scaling = ScalingOperator(dest, 1/sqrt(ELT(length(dest)/2)))
-    coefscaling = CoefficientScalingOperator(dest, 1, 1/sqrt(ELT(2)))
-    flip = UnevenSignFlipOperator(dest)
+function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevNodes;
+			T = coefficienttype(dest), options...)
+    scaling = ScalingOperator{T}(dest, 1/sqrt(convert(T, length(dest))/2))
+    coefscaling = CoefficientScalingOperator{T}(dest, 1, 1/sqrt(convert(T, 2)))
+    flip = UnevenSignFlipOperator{T}(dest)
 	scaling * coefscaling * flip
 end
 
-transform_to_grid_pre(src::ChebyshevTLike, dest, grid::ChebyshevNodeGrid; options...) =
+transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevNodes; options...) =
     inv(transform_from_grid_post(dest, src, grid; options...))
 
 
 ##################################################################
-# Methods to transform from ChebyshevTLike to ChebyshevExtremaGrid
+# Methods to transform from ChebyshevBasis to ChebyshevExtremae
 ##################################################################
 
-transform_from_grid(src, dest::ChebyshevTLike, grid::ChebyshevExtremaGrid; options...) =
-_chebyshevI_operator(src, dest, coeftype(dest); options...)
+transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevExtremae;
+			T = coefficienttype(dest), options...) =
+		_chebyshevI_operator(src, dest, T; options...)
 
-transform_to_grid(src::ChebyshevTLike, dest, grid::ChebyshevExtremaGrid; options...) =
-_chebyshevI_operator(src, dest, coeftype(src); options...)
+transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
+			T = coefficienttype(src), options...) =
+	_chebyshevI_operator(src, dest, T; options...)
 
 # These are the generic fallbacks
 _chebyshevI_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
@@ -305,56 +303,53 @@ _chebyshevI_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
 
 # But for some types we use FFTW
 for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-  @eval _chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
-   FastChebyshevITransformFFTW(src, dest; options...)
+	@eval _chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
+		FastChebyshevITransformFFTW(src, dest; options...)
 end
 
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: ChebyshevTLike,G <: ChebyshevExtremaGrid}
-    _chebyshevI_operator(s1, s2, eltype(s1, s2); options...)
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
+    _chebyshevI_operator(s1, s2, T; options...)
 end
 
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: ChebyshevTLike,G <: ChebyshevExtremaGrid}
-    _chebyshevI_operator(s1, s2, eltype(s1, s2); options...)
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
+    _chebyshevI_operator(s1, s2, T; options...)
 end
 
-function transform_to_grid_pre(src::ChebyshevTLike, dest, grid::ChebyshevExtremaGrid; options...)
-    T = coeftype(src)
-    coefscaling1 = CoefficientScalingOperator(src, 1, T(2))
-    coefscaling2 = CoefficientScalingOperator(src, length(src), T(2))
+function transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
+			T = coefficienttype(src), options...)
+    coefscaling1 = CoefficientScalingOperator{T}(src, 1, 2)
+    coefscaling2 = CoefficientScalingOperator{T}(src, length(src), 2)
     coefscaling1 * coefscaling2
 end
 
-function transform_to_grid_post(src::ChebyshevTLike, dest, grid::ChebyshevExtremaGrid; options...)
-  ELT = coeftype(src)
-  ScalingOperator(dest, 1/ELT(2))
+function transform_to_grid_post(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
+			T = coefficienttype(src), options...)
+	ScalingOperator{T}(dest, one(T)/2)
 end
 
-function transform_from_grid_post(src, dest::ChebyshevTLike, grid::ChebyshevExtremaGrid; options...)
+function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevExtremae;
+			T = coefficienttype(dest), options...)
     # Inverse DCT is unnormalized, applying DCT and its inverse gives N times the original. N=2(length-1)
-    ELT = coeftype(dest)
-    scaling = ScalingOperator(dest, 1/(2*ELT(length(dest)-1)))
-    scaling * inv(transform_to_grid_pre(dest, src, grid; options...))
+    scaling = ScalingOperator(dest, 1/(2*T(length(dest)-1)))
+    scaling * inv(transform_to_grid_pre(dest, src, grid; T = T, options...))
 end
 
-transform_from_grid_pre(src, dest::ChebyshevTLike, grid::ChebyshevExtremaGrid; options...) =
+transform_from_grid_pre(src, dest::ChebyshevBasis, grid::ChebyshevExtremae; options...) =
     inv(transform_to_grid_post(dest, src, grid; options...))
 
 
 
-
-
-
-Is_compatible(src1::ChebyshevTLike, src2::ChebyshevTLike) = true
+is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
 function (*)(src1::ChebyshevBasis, src2::ChebyshevBasis, coef_src1, coef_src2)
     @assert domaintype(src1) == domaintype(src2)
     T = promote_type(eltype(coef_src1), eltype(coef_src2))
-    dest = ChebyshevBasis(length(src1)+length(src2), domaintype(src1))
-    coef_dest = zeros(T, length(dest))
+    dest = ChebyshevBasis{T}(length(src1)+length(src2))
+    coef_dest = zeros(dest)
     for i = 1:length(src1)
         for j = 1:length(src2)
-            coef_dest[i+j-1] += 1/2*coef_src1[i]*coef_src2[j]
-            coef_dest[abs(i-j)+1] += 1/2*coef_src1[i]*coef_src2[j]
+            coef_dest[i+j-1] += one(T)/2*coef_src1[i]*coef_src2[j]
+            coef_dest[abs(i-j)+1] += one(T)/2*coef_src1[i]*coef_src2[j]
         end
     end
     (dest,coef_dest)
@@ -385,27 +380,27 @@ function unsafe_eval_element(b::ChebyshevU, idx::PolynomialDegree, x::Real)
     abs(x) < 1 ? sin((d+1)*acos(x))/sqrt(1-x^2) : recurrence_eval(b, idx, x)
 end
 
-first_moment(b::ChebyshevU{T}) where {T} = T(pi)/2
+first_moment(b::ChebyshevU{T}) where {T} = convert(T, pi)/2
 
-grid(b::ChebyshevU{T}) where {T} = ChebyshevNodeGrid{T}(b.n)
+grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
 
 
-Gram(s::ChebyshevU; options...) = ScalingOperator(s, s, coeftype(s)(pi)/2)
+Gram(s::ChebyshevU; options...) = ScalingOperator(s, s, coefficienttype(s)(pi)/2)
 
 # The weight function
-weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-T(x)^2)
+weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-convert(T, x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevU) = 1//2
-jacobi_β(b::ChebyshevU) = 1//2
+jacobi_α(b::ChebyshevU{T}) where {T} = one(T)/2
+jacobi_β(b::ChebyshevU{T}) where {T} = one(T)/2
 
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevU, n::Int) = 2
+rec_An(b::ChebyshevU{T}, n::Int) where {T} = convert(T, 2)
 
-rec_Bn(b::ChebyshevU, n::Int) = 0
+rec_Bn(b::ChebyshevU{T}, n::Int) where {T} = zero(T)
 
-rec_Cn(b::ChebyshevU, n::Int) = 1
+rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
 
 support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()

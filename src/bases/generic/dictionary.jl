@@ -53,7 +53,7 @@ codomaintype(::Type{D}) where {D <: Dictionary} = codomaintype(supertype(D))
 codomaintype(dict::Dictionary{S,T}) where {S,T} = T
 
 "The type of the expansion coefficients in a dictionary."
-coefficient_type(dict::Dictionary) = codomaintype(dict)
+coefficienttype(dict::Dictionary) = codomaintype(dict)
 # By default we set it equal to the codomaintype
 
 # The dimension of a function set is the dimension of its domain type
@@ -146,28 +146,49 @@ promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{U}) where {N,S<:Nu
     promote_domaintype(dict, NTuple{N,U})
 
 "Promote the coefficient type of the dictionary."
-promote_coefficient_type(dict::Dictionary{S,T}, ::Type{T}) where {S,T} = dict
-promote_coefficient_type(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_coeftype(dict, U)
+promote_coefficienttype(dict::Dictionary, ::Type{T}) where {T} =
+    _promote_coefficienttype(coefficienttype(dict), dict, T)
 
-promote_coefficient_type(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+promote_coefficienttype(dict::Dictionary, ::Type{Any}) = dict
 
-function promote_coefficient_type(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
+# TODO: we make some assumptions here about the connection between S and T of a dictionary (that S=T
+# and that changing S changes T accordingly)
+# - coefficient types are the same
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T} = dict
+# - coefficient types are real and the same
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T<:Real} = dict
+# - coefficient types are real but different
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Real,U<:Real} =
+    similar(dict, promote_type(T, U))
+# - coefficient types are complex and the same
+_promote_coefficienttype(::Type{Complex{T}}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} = dict
+# - coefficient types are complex but different
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Complex} =
+    similar(dict, promote_type(real(T), real(U)))
+# - coefficient type is complex but promotion type is real
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Real} =
+    similar(dict, promote_type(U, real(T)))
+# - the case where coefficient type is real and promotion type is complex is implemented
+#   in complexified_dict.jl
+
+
+promote_coefficienttype(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+
+function promote_coefficienttype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
     T = promote_type(T1,T2)
-    promote_coefficient_type(dict1, T), promote_coefficient_type(dict2, T)
+    promote_coefficienttype(dict1, T), promote_coefficienttype(dict2, T)
 end
 
-promote_coefficient_type(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
-    promote_coefficient_type(promote_coefficient_type(dict1,dict2), dicts...)
+promote_coefficienttype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+    promote_coefficienttype(promote_coefficienttype(dict1,dict2), dicts...)
 
-
-promote_coeftype = promote_coefficient_type
 
 widen(d::Dictionary) = similar(d, widen(domaintype(d)))
 
 
 "Return a set of zero coefficients in the native format of the set."
-zeros(s::Dictionary) = zeros(coefficient_type(s), s)
-ones(s::Dictionary) = ones(coefficient_type(s), s)
+zeros(s::Dictionary) = zeros(coefficienttype(s), s)
+ones(s::Dictionary) = ones(coefficienttype(s), s)
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multidicts.
@@ -184,7 +205,7 @@ containertype(d::Dictionary) = typeof(zeros(d))
 
 function rand(dict::Dictionary)
     c = zeros(dict)
-    T = coeftype(dict)
+    T = coefficienttype(dict)
     for i in eachindex(c)
         c[i] = rand(T)
     end
@@ -533,7 +554,7 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)
 
-    T = coeftype(dict)
+    T = coefficienttype(dict)
     E = evaluation_operator(dict, gridbasis(grid, T))
     E * coefficients
 end

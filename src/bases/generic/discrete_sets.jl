@@ -8,7 +8,7 @@ The elements of the set are the Euclidean unit vectors, with a finite index set.
 abstract type DiscreteDictionary{I,T} <: Dictionary{I,T}
 end
 
-coefficient_type(::Type{DiscreteDictionary{I,T}}) where {I,T} = T
+coefficienttype(::Type{DiscreteDictionary{I,T}}) where {I,T} = T
 
 
 # The point x is in the support of d exactly when it is within the bounds of
@@ -69,10 +69,6 @@ DiscreteVectorDictionary(n::Int) = DiscreteVectorDictionary{Float64}(n)
 size(d::DiscreteVectorDictionary) = (d.n,)
 
 similar(d::DiscreteVectorDictionary{T}, ::Type{Int}, n::Int) where {T} = DiscreteVectorDictionary{T}(n)
-
-dict_promote_coeftype(d::DiscreteVectorDictionary, ::Type{T}) where {T} = DiscreteVectorDictionary{T}(d.n)
-
-resize(d::DiscreteVectorDictionary{T}, n) where {T} = DiscreteVectorDictionary{T}(n)
 
 support(d::DiscreteVectorDictionary) = ClosedInterval{Int}(1, length(d))
 

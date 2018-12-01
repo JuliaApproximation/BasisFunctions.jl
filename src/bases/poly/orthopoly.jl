@@ -23,7 +23,7 @@ size(o::OrthogonalPolynomials) = (o.n,)
 p0(::OPS{T}) where {T} = one(T)
 
 function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
-    T = real(coeftype(s))
+    T = real(coefficienttype(s))
 	# To avoid difficult points at the ends of the domain.
 	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end

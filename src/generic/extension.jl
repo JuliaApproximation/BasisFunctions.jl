@@ -31,8 +31,8 @@ Extension(src::Dictionary, dest::Dictionary) =
 
 function Extension(::Type{ELT}, src::Dictionary, dest::Dictionary) where {ELT}
     S, D, A = op_eltypes(src, dest, ELT)
-    new_src = promote_coeftype(src,S)
-    new_dest = promote_coeftype(dest,D)
+    new_src = promote_coefficienttype(src,S)
+    new_dest = promote_coefficienttype(dest,D)
     Extension(new_src, new_dest)
 end
 
@@ -77,8 +77,8 @@ Restriction(src::Dictionary, dest::Dictionary) =
 
 function Restriction(::Type{ELT}, src::Dictionary, dest::Dictionary) where {ELT}
     S, D, A = op_eltypes(src, dest, ELT)
-    new_src = promote_coeftype(src,S)
-    new_dest = promote_coeftype(dest,D)
+    new_src = promote_coefficienttype(src,S)
+    new_dest = promote_coefficienttype(dest,D)
     Restriction(new_src, new_dest)
 end
 

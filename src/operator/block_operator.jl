@@ -1,4 +1,3 @@
-# block_operator.jl
 
 """
 A BlockOperator has a block matrix structure, where each block is an operator,

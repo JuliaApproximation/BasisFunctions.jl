@@ -66,14 +66,14 @@ setindex!(e::Expansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the dict of the expansion
-(e::Expansion)(x; options...) = call_expansion(e, dictionary(e), coefficients(e), x; options...)
+(e::Expansion)(x) = call_expansion(e, dictionary(e), coefficients(e), x)
 (e::Expansion)(x, y) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
 (e::Expansion)(x, y, z) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
 (e::Expansion)(x, y, z, t) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
 (e::Expansion)(x, y, z, t, u...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
 
-call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
-    eval_expansion(dict, coefficients, x; options...)
+call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
+    eval_expansion(dict, coefficients, x)
 
 function differentiate(e::Expansion, order=1)
     op = differentiation_operator(dictionary(e), order)
@@ -188,6 +188,3 @@ Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
 Base.collect(e::Expansion) = coefficients(e)
 
 Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-
-# This can't be right
-# Base.abs(e::Expansion) = abs.(coefficients(e))

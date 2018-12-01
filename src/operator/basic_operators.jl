@@ -12,18 +12,21 @@ struct IdentityOperator{T} <: DictionaryOperator{T}
     end
 end
 
-IdentityOperator(src::Dictionary, dest::Dictionary = src) =
-    IdentityOperator{op_eltype(src, dest)}(src, dest)
+IdentityOperator{T}(src::Dictionary) where {T} = IdentityOperator{T}(src, src)
 
-similar_operator(::IdentityOperator, src, dest) = IdentityOperator(src, dest)
+IdentityOperator(src::Dictionary, dest::Dictionary = src) =
+    IdentityOperator{op_eltype(src,dest)}(src, dest)
+
+similar_operator(::IdentityOperator{T}, src, dest) where {T} =
+    IdentityOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
 
 unsafe_wrap_operator(src, dest, op::IdentityOperator) = IdentityOperator(src, dest)
 
 @add_properties(IdentityOperator, is_inplace, is_diagonal)
 
-inv(op::IdentityOperator) = IdentityOperator(dest(op), src(op))
+inv(op::IdentityOperator) = similar_operator(op, dest(op), src(op))
 
-adjoint(op::IdentityOperator)::DictionaryOperator = IdentityOperator(dest(op), src(op))
+adjoint(op::IdentityOperator) = similar_operator(op, dest(op), src(op))
 
 function matrix!(op::IdentityOperator, a)
     @assert size(a,1) == size(a,2)
@@ -35,13 +38,14 @@ function matrix!(op::IdentityOperator, a)
     a
 end
 
-diagonal(op::IdentityOperator) = ones(eltype(op), length(src(op)))
+diagonal(op::IdentityOperator{T}) where {T} = ones(T, size(op,1))
 
 unsafe_diagonal(op::IdentityOperator, i) = one(eltype(op))
 
 apply_inplace!(op::IdentityOperator, coef_srcdest) = coef_srcdest
 
 string(op::IdentityOperator) = "Identity Operator"
+
 
 "A ScalingOperator represents multiplication by a scalar."
 struct ScalingOperator{T} <: DictionaryOperator{T}
@@ -55,23 +59,29 @@ struct ScalingOperator{T} <: DictionaryOperator{T}
     end
 end
 
+ScalingOperator{T}(src::Dictionary, scalar::Number) where {T} =
+    ScalingOperator{T}(src, src, scalar)
+
 ScalingOperator(src::Dictionary, scalar::Number) = ScalingOperator(src, src, scalar)
 
 ScalingOperator(src::Dictionary, dest::Dictionary, scalar) =
-    ScalingOperator{op_eltype(src,dest)}(src, dest, scalar)
+    ScalingOperator{promote_type(op_eltype(src,dest),typeof(scalar))}(src, dest, scalar)
 
 scalar(op::ScalingOperator) = op.scalar
 
-similar_operator(op::ScalingOperator, src, dest) = ScalingOperator(src, dest, scalar(op))
+similar_operator(op::ScalingOperator{T}, src, dest) where {T} =
+    ScalingOperator{promote_type(T,op_eltype(src,dest))}(src, dest, scalar(op))
 
 unsafe_wrap_operator(src, dest, op::ScalingOperator) = similar_operator(op, src, dest)
 
 @add_properties(ScalingOperator, is_inplace, is_diagonal)
 
-adjoint(op::ScalingOperator)::DictionaryOperator = ScalingOperator(dest(op), src(op), conj(scalar(op)))
+adjoint(op::ScalingOperator{T}) where {T} =
+    ScalingOperator{T}(dest(op), src(op), conj(scalar(op)))
 
 
 inv(op::ScalingOperator) = ScalingOperator(dest(op), src(op), inv(scalar(op)))
+
 
 function apply_inplace!(op::ScalingOperator, coef_srcdest)
     for i in eachindex(coef_srcdest)
@@ -115,15 +125,18 @@ string(op::ScalingOperator) = "Scaling by $(scalar(op))"
 
 symbol(S::ScalingOperator) = "α"
 
+
 "The zero operator maps everything to zero."
 struct ZeroOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
 end
 
-ZeroOperator(src::Dictionary, dest::Dictionary = src) = ZeroOperator{op_eltype(src, dest)}(src, dest)
+ZeroOperator(src::Dictionary, dest::Dictionary = src) =
+    ZeroOperator{op_eltype(src, dest)}(src, dest)
 
-similar_operator(op::ZeroOperator, src, dest) = ZeroOperator(src, dest)
+similar_operator(op::ZeroOperator{T}, src, dest) where {T} =
+    ZeroOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
 
 unsafe_wrap_operator(src, dest, op::ZeroOperator) = similar_operator(op, src, dest)
 
@@ -132,7 +145,7 @@ is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
 
 is_diagonal(::ZeroOperator) = true
 
-adjoint(op::ZeroOperator)::DictionaryOperator = ZeroOperator(dest(op), src(op))
+adjoint(op::ZeroOperator) = similar_operator(op, dest(op), src(op))
 
 matrix!(op::ZeroOperator, a) = (fill!(a, 0); a)
 
@@ -166,8 +179,8 @@ struct DiagonalOperator{T} <: DictionaryOperator{T}
     end
 end
 
-DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::Vector) =
-    DiagonalOperator{op_eltype(src,dest)}(src, dest, diagonal)
+DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::Vector{T}) where {T} =
+    DiagonalOperator{promote_type(T,op_eltype(src,dest))}(src, dest, diagonal)
 
 DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector) =
     DiagonalOperator(src, dest, collect(diagonal))
@@ -187,7 +200,7 @@ diagonal(op::DiagonalOperator) = copy(op.diagonal)
 
 inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
 
-adjoint(op::DiagonalOperator)::DictionaryOperator = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
+adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
 
 function matrix!(op::DiagonalOperator, a)
     a[:] .= 0

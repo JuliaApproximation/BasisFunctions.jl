@@ -1,5 +1,3 @@
-# composite_operator.jl
-
 
 """
 A `GenericCompositeOperator` contains a list of operators that are applied
@@ -14,7 +12,7 @@ end
 # default inner constructor directly with a vector or tuple of operators instead.
 function GenericCompositeOperator(operators::AbstractOperator...)
     for i in 1:length(operators)-1
-        @assert coeftype(dest_space(operators[i])) == coeftype(src_space(operators[i+1]))
+        @assert coefficienttype(dest_space(operators[i])) == coefficienttype(src_space(operators[i+1]))
     end
     # Pass the tuple of operators to the inner constructor
     GenericCompositeOperator(operators)
@@ -47,7 +45,7 @@ can_allocate_output(op::AbstractOperator) = _can_allocate_output(op, dest_space(
 _can_allocate_output(op, span::Span) = true
 _can_allocate_output(op, space::AbstractFunctionSpace) = false
 
-allocate_output(op::AbstractOperator) = zeros(dest(op))
+allocate_output(op::DictionaryOperator{T}) where {T} = zeros(T, dest(op))
 
 """
 A `CompositeOperator` consists of a sequence of operators that are applied
@@ -119,10 +117,10 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
     # in-place. We do reserve scratch space for the first operator, even if it
     # is in-place, because we may want to call the composite operator out of place.
     # In that case we need a place to store the result of the first operator.
-    scratch_array = Any[zeros(dest(operators[1]))]
+    scratch_array = Any[zeros(T, dest(operators[1]))]
     for m = 2:L-1
         if ~is_inplace(operators[m])
-            push!(scratch_array, zeros(dest(operators[m])))
+            push!(scratch_array, zeros(T, dest(operators[m])))
         end
     end
     scratch = tuple(scratch_array...)

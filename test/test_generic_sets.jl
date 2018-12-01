@@ -101,7 +101,7 @@ test_tolerance(::Type{Complex{T}}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{T}) where {T} = test_tolerance(float_type(T))
 
 function test_generic_set_interface(basis, span = Span(basis))
-    ELT = coefficient_type(span)
+    ELT = coefficienttype(span)
     T = domaintype(basis)
     FT = float_type(T)
     RT = codomaintype(basis)
@@ -112,7 +112,7 @@ function test_generic_set_interface(basis, span = Span(basis))
 
     # Do the domain types of basis and span agree?
     @test domaintype(basis) == domaintype(span)
-    @test typeof(one(coefficient_type(span)) * one(codomaintype(basis))) == codomaintype(span)
+    @test typeof(one(coefficienttype(span)) * one(codomaintype(basis))) == codomaintype(span)
 
     n = length(basis)
     if is_basis(basis)
@@ -213,7 +213,7 @@ function test_generic_set_interface(basis, span = Span(basis))
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
 
     # Test linearization of coefficients
-    linear_coefs = zeros(coeftype(span), length(basis))
+    linear_coefs = zeros(coefficienttype(span), length(basis))
     BasisFunctions.linearize_coefficients!(basis, linear_coefs, coef)
     coef2 = BasisFunctions.delinearize_coefficients(basis, linear_coefs)
     @test coef ≈ coef2
@@ -439,7 +439,7 @@ function test_generic_set_interface(basis, span = Span(basis))
     if supports_interpolation(basis)
         g = suitable_interpolation_grid(basis)
         I = interpolation_operator(span, g)
-        x = rand(gridspace(g, coeftype(span)))
+        x = rand(gridspace(g, coefficienttype(span)))
         e = SetExpansion(basis, I*x)
         @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
     end

@@ -17,9 +17,13 @@ end
 CoefficientScalingOperator(src::Dictionary, index::Int, scalar::Number) =
     CoefficientScalingOperator(src, src, index, scalar)
 
-CoefficientScalingOperator(src::Dictionary, dest::Dictionary, index::Int, scalar::Number) =
-    CoefficientScalingOperator{op_eltype(src,dest)}(src, dest, index, scalar)
+CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar::Number) where {T} =
+    CoefficientScalingOperator{T}(src, src, index, scalar)
 
+CoefficientScalingOperator(src::Dictionary, dest::Dictionary, index::Int, scalar::Number) =
+    CoefficientScalingOperator{promote_type(typeof(scalar),op_eltype(src,dest))}(src, dest, index, scalar)
+
+# Note that scalar(op) has type T, hence the eltype of op will be preserved (or upgraded) implicitly
 similar_operator(op::CoefficientScalingOperator, src, dest) =
     CoefficientScalingOperator(src, dest, index(op), scalar(op))
 
@@ -30,7 +34,7 @@ scalar(op::CoefficientScalingOperator) = op.scalar
 is_inplace(::CoefficientScalingOperator) = true
 is_diagonal(::CoefficientScalingOperator) = true
 
-adjoint(op::CoefficientScalingOperator)::DictionaryOperator =
+adjoint(op::CoefficientScalingOperator) =
     CoefficientScalingOperator(dest(op), src(op), index(op), conj(scalar(op)))
 
 inv(op::CoefficientScalingOperator) =
@@ -58,6 +62,7 @@ end
 
 string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.index) by $(op.scalar)"
 
+
 """
 A WrappedOperator has a source and destination, as well as an embedded operator with its own
 source and destination. The coefficients of the source of the WrappedOperator are passed on
@@ -77,6 +82,9 @@ struct WrappedOperator{OP,T} <: DerivedOperator{T}
     function WrappedOperator{OP,T}(src, dest, op) where {OP,T}
         @assert size(op,1) == length(dest)
         @assert size(op,2) == length(src)
+        # Make sure that the wrapped operator has a more general element type
+        # than the combination of src and dest
+        @assert promote_type(T,op_eltype(src,dest)) == T
         new(src, dest, op)
     end
 end
@@ -84,12 +92,11 @@ end
 src(op::WrappedOperator) = op.src
 dest(op::WrappedOperator) = op.dest
 
-function WrappedOperator(src::Dictionary, dest::Dictionary, op)
-    T1 = eltype(op)
-    T2 = op_eltype(src,dest)
-    @assert T1==T2
-    WrappedOperator{typeof(op),T1}(src, dest, op)
-end
+WrappedOperator{T}(src::Dictionary, dest::Dictionary, op) where {T} =
+    WrappedOperator{typeof(op),T}(src,dest, op)
+
+WrappedOperator(src::Dictionary, dest::Dictionary, op) =
+    WrappedOperator{eltype(op)}(src, dest, op)
 
 superoperator(op::WrappedOperator) = op.op
 
@@ -128,7 +135,7 @@ function wrap_operator(w_src, w_dest, op)
     # We do some consistency checks
     @assert size(w_src) == size(src(op))
     @assert size(w_dest) == size(dest(op))
-    @assert op_eltype(w_src,w_dest) == eltype(op)
+    @assert promote_type(eltype(op),op_eltype(w_src,w_dest)) == eltype(op)
     unsafe_wrap_operator(w_src, w_dest, op)
 end
 
@@ -147,7 +154,7 @@ end
 
 inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
 
-adjoint(op::WrappedOperator)::DictionaryOperator = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
+adjoint(op::WrappedOperator) = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
 
 simplify(op::WrappedOperator) = superoperator(op)
 
@@ -155,12 +162,12 @@ simplify(op::WrappedOperator) = superoperator(op)
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.
 """
-struct IndexRestrictionOperator{I,T} <: DictionaryOperator{T}
+struct IndexRestrictionOperator{T,I} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
     subindices  ::  I
 
-    function IndexRestrictionOperator{I,T}(src, dest, subindices) where {I,T}
+    function IndexRestrictionOperator{T,I}(src, dest, subindices) where {T,I}
         # Verify the lenght of subindices, but only if its length is defined
         if IteratorSize(subindices) != Base.SizeUnknown()
             @assert length(dest) == length(subindices)
@@ -170,13 +177,16 @@ struct IndexRestrictionOperator{I,T} <: DictionaryOperator{T}
     end
 end
 
+IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
+    IndexRestrictionOperator{T,typeof(subindices)}(src, dest, subindices)
+
 IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices) =
-    IndexRestrictionOperator{typeof(subindices),op_eltype(src, dest)}(src, dest, subindices)
+    IndexRestrictionOperator{op_eltype(src,dest)}(src, dest, subindices)
 
 subindices(op::IndexRestrictionOperator) = op.subindices
 
-similar_operator(op::IndexRestrictionOperator, src, dest) =
-    IndexRestrictionOperator(src, dest, subindices(op))
+similar_operator(op::IndexRestrictionOperator{T}, src, dest) where {T} =
+    IndexRestrictionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, subindices(op))
 
 unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
 
@@ -205,25 +215,28 @@ end
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
 """
-struct IndexExtensionOperator{I,T} <: DictionaryOperator{T}
+struct IndexExtensionOperator{T,I} <: DictionaryOperator{T}
     src         ::  Dictionary
     dest        ::  Dictionary
     subindices  ::  I
 
-    function IndexExtensionOperator{I,T}(src, dest, subindices) where {I,T}
+    function IndexExtensionOperator{T,I}(src, dest, subindices) where {T,I}
         @assert length(src) == length(subindices)
         @assert length(dest) >= length(src)
         new(src, dest, subindices)
     end
 end
 
+IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
+    IndexExtensionOperator{T,typeof(subindices)}(src, dest, subindices)
+
 IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices) =
-    IndexExtensionOperator{typeof(subindices),op_eltype(src, dest)}(src, dest, subindices)
+    IndexExtensionOperator{op_eltype(src,dest)}(src, dest, subindices)
 
 subindices(op::IndexExtensionOperator) = op.subindices
 
-similar_operator(op::IndexExtensionOperator, src, dest) =
-    IndexExtensionOperator(src, dest, subindices(op))
+similar_operator(op::IndexExtensionOperator{T}, src, dest) where {T} =
+    IndexExtensionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, subindices(op))
 
 unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
 
@@ -237,10 +250,10 @@ function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
     coef_dest
 end
 
-adjoint(op::IndexRestrictionOperator)::DictionaryOperator =
-    IndexExtensionOperator(dest(op), src(op), subindices(op))
-adjoint(op::IndexExtensionOperator)::DictionaryOperator =
-    IndexRestrictionOperator(dest(op), src(op), subindices(op))
+adjoint(op::IndexRestrictionOperator{T}) where {T} =
+    IndexExtensionOperator{T}(dest(op), src(op), subindices(op))
+adjoint(op::IndexExtensionOperator{T}) where {T} =
+    IndexRestrictionOperator{T}(dest(op), src(op), subindices(op))
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
 
@@ -253,12 +266,12 @@ otherwise it is not in-place.
 An alias MatrixOperator is provided, for which type parameter ARRAY equals
 Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
-struct MultiplicationOperator{ARRAY,INPLACE,T} <: DictionaryOperator{T}
+struct MultiplicationOperator{T,ARRAY,INPLACE} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     object  ::  ARRAY
 
-    function MultiplicationOperator{ARRAY,INPLACE,T}(src, dest, object) where {ARRAY,INPLACE,T}
+    function MultiplicationOperator{T,ARRAY,INPLACE}(src, dest, object) where {T,ARRAY,INPLACE}
         # @assert size(object,1) == length(dest)
         # @assert size(object,2) == length(src)
         new(src, dest, object)
@@ -269,10 +282,13 @@ object(op::MultiplicationOperator) = op.object
 
 # An MatrixOperator is defined by an actual matrix, i.e. the parameter
 # ARRAY is Array{T,2}.
-const MatrixOperator{T} = MultiplicationOperator{Array{T,2},false,T}
+const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
+
+MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
+    MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
 
 MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = false) =
-    MultiplicationOperator{typeof(object),inplace,op_eltype(src, dest)}(src, dest, object)
+    MultiplicationOperator{promote_type(eltype(object),op_eltype(src,dest))}(src::Dictionary, dest::Dictionary, object; inplace=inplace)
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
@@ -286,19 +302,19 @@ function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatri
     MultiplicationOperator(src, dest, matrix)
 end
 
-similar_operator(op::MultiplicationOperator, src, dest) =
-    MultiplicationOperator(src, dest, object(op))
+similar_operator(op::MultiplicationOperator{T}, src, dest) where {T} =
+    MultiplicationOperator{promote_type(T,op_eltype(src,dest))}(src, dest, object(op))
 
-is_inplace(op::MultiplicationOperator{ARRAY,INPLACE}) where {ARRAY,INPLACE} = INPLACE
+is_inplace(op::MultiplicationOperator{T,ARRAY,INPLACE}) where {T,ARRAY,INPLACE} = INPLACE
 
 # We pass the object as an additional variable so we can dispatch on it.
 # We only intercept non-inplace operators, as the in-place operators are
 # intercept higher up where apply_inplace! ends up being called instead
-apply!(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src) where ARRAY =
+apply!(op::MultiplicationOperator{T,ARRAY,false}, coef_dest, coef_src) where {T,ARRAY} =
     _apply!(op, coef_dest, coef_src, op.object)
 
 # General definition
-function _apply!(op::MultiplicationOperator{ARRAY,false}, coef_dest, coef_src, object) where {ARRAY}
+function _apply!(op::MultiplicationOperator{T,ARRAY,false}, coef_dest, coef_src, object) where {T,ARRAY}
     # Note: this is very likely to allocate memory in the right hand side
     coef_dest[:] = object * coef_src
     coef_dest
@@ -306,19 +322,19 @@ end
 
 
 # Definition in terms of mul! for vectors
-_apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractVector{T}, coef_src::AbstractVector{T}, object) where {ELT1,ELT2,T} =
+_apply!(op::MultiplicationOperator{ELT2,Array{ELT1,2},false}, coef_dest::AbstractVector{T}, coef_src::AbstractVector{T}, object) where {ELT1,ELT2,T} =
     mul!(coef_dest, object, coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-_apply!(op::MultiplicationOperator{Array{ELT1,2},false,ELT2}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}, object) where {ELT1,ELT2,T,N1,N2} =
+_apply!(op::MultiplicationOperator{ELT2,Array{ELT1,2},false}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}, object) where {ELT1,ELT2,T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 # In-place definition
 # We pass the object as an additional variable so we can dispatch on it
-apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest) where {ARRAY} =
+apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest) where {T,ARRAY} =
     _apply_inplace!(op, coef_srcdest, op.object)
 
-_apply_inplace!(op::MultiplicationOperator{ARRAY,true}, coef_srcdest, object) where {ARRAY} =
+_apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) where {T,ARRAY} =
     object * coef_srcdest
 
 
@@ -328,7 +344,7 @@ matrix(op::MatrixOperator) = op.object
 matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
 
 
-adjoint(op::MultiplicationOperator)::DictionaryOperator = adjoint_multiplication(op, object(op))
+adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support adjoint
 adjoint_multiplication(op::MultiplicationOperator, object) =
     MultiplicationOperator(dest(op), src(op), adjoint(object))
@@ -365,11 +381,14 @@ struct FunctionOperator{F,T} <: DictionaryOperator{T}
     fun     ::  F
 end
 
-FunctionOperator(src::Dictionary, dest::Dictionary, fun) =
-    FunctionOperator{typeof(fun),op_eltype(src, dest)}(src, dest, fun)
+FunctionOperator{T}(src, dest, fun) where {T} =
+    FunctionOperator{typeof(fun),T}(src, dest, fun)
 
-similar_operator(op::FunctionOperator, src, dest) =
-    FunctionOperator(src, dest, op.fun)
+FunctionOperator(src::Dictionary, dest::Dictionary, fun) =
+    FunctionOperator{op_eltype(src,dest)}(src, dest, fun)
+
+similar_operator(op::FunctionOperator{F,T}, src, dest) where {F,T} =
+    FunctionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, op.fun)
 
 # Warning: this very likely allocates memory
 apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
@@ -378,7 +397,7 @@ function apply_fun!(op::FunctionOperator, fun, coef_dest, coef_src)
     coef_dest[:] = fun(coef_src)
 end
 
-adjoint(op::FunctionOperator)::DictionaryOperator = adjoint_function(op, op.fun)
+adjoint(op::FunctionOperator) = adjoint_function(op, op.fun)
 # This can be overriden for types of functions that do not support adjoint
 adjoint_function(op::FunctionOperator, fun) =
     FunctionOperator(dest(op), src(op), adjoint(fun))
@@ -407,7 +426,8 @@ string(op::FunctionOperator) = "Function "*string(op.fun)
 ## similar_operator(op::ChebyTDiffOperator, ::Type{S}, src, dest) where {S} = ChebyTDiffOperator(S,src,dest)
 
 
-# An operator to flip the signs of the coefficients at uneven positions. Used in Chebyshev normalization.
+# An operator to flip the signs of the coefficients at uneven positions.
+# Used in Chebyshev normalization.
 struct UnevenSignFlipOperator{T} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
@@ -416,13 +436,16 @@ end
 UnevenSignFlipOperator(src::Dictionary, dest::Dictionary = src) =
     UnevenSignFlipOperator{op_eltype(src,dest)}(src, dest)
 
-similar_operator(op::UnevenSignFlipOperator, src, dest) =
-    UnevenSignFlipOperator(src, dest)
+UnevenSignFlipOperator{T}(src::Dictionary) where {T} =
+    UnevenSignFlipOperator{T}(src, src)
+
+similar_operator(op::UnevenSignFlipOperator{T}, src, dest) where {T} =
+    UnevenSignFlipOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
 
 is_inplace(::UnevenSignFlipOperator) = true
 is_diagonal(::UnevenSignFlipOperator) = true
 
-adjoint(op::UnevenSignFlipOperator)::DictionaryOperator = op
+adjoint(op::UnevenSignFlipOperator) = op
 
 inv(op::UnevenSignFlipOperator) = op
 
@@ -454,16 +477,16 @@ struct OperatorSum{OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S} <: D
         # their sizes and coefficient types must match.
         @assert size(src(op1)) == size(src(op2))
         @assert size(dest(op1)) == size(dest(op2))
-        @assert coeftype(src(op1)) == coeftype(src(op2))
-        @assert coeftype(dest(op1)) == coeftype(dest(op2))
+        @assert coefficienttype(src(op1)) == coefficienttype(src(op2))
+        @assert coefficienttype(dest(op1)) == coefficienttype(dest(op2))
 
         new(op1, op2, val1, val2, scratch)
     end
 end
 
 function OperatorSum(op1::DictionaryOperator, op2::DictionaryOperator, val1::Number, val2::Number)
-    T = promote_type(eltype(op1),eltype(op2))
-    scratch = zeros(dest(op1))
+    T = promote_type(eltype(op1), eltype(op2), typeof(val1), typeof(val2))
+    scratch = zeros(T, dest(op1))
     OperatorSum{typeof(op1),typeof(op2),T,typeof(scratch)}(op1, op2, T(val1), T(val2), scratch)
 end
 
@@ -471,7 +494,7 @@ src(op::OperatorSum) = src(op.op1)
 
 dest(op::OperatorSum) = dest(op.op1)
 
-adjoint(op::OperatorSum)::DictionaryOperator = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
+adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
 
 is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
@@ -535,13 +558,11 @@ struct LinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-function LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coeftype(src)}(length(src)))
-    T = op_eltype(src,dest)
-    LinearizationOperator{T}(src, dest)
-end
+LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src))) =
+    LinearizationOperator{op_eltype(src,dest)}(src, dest)
 
-similar_operator(::LinearizationOperator, src, dest) =
-    LinearizationOperator(src, dest)
+similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
+    LinearizationOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
 
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)
@@ -556,12 +577,10 @@ struct DelinearizationOperator{T} <: DictionaryOperator{T}
 end
 
 DelinearizationOperator(dest::Dictionary) =
-    DelinearizationOperator(DiscreteVectorDictionary{coeftype(dest)}(length(dest)), dest)
+    DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest)
 
-function DelinearizationOperator(src::Dictionary, dest::Dictionary)
-    T = op_eltype(src,dest)
-    DelinearizationOperator{T}(src, dest)
-end
+DelinearizationOperator(src::Dictionary, dest::Dictionary) =
+    DelinearizationOperator{op_eltype(src,dest)}(src, dest)
 
 similar_operator(::DelinearizationOperator, src, dest) =
     DelinearizationOperator(src, dest)

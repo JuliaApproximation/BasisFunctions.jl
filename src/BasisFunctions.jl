@@ -86,7 +86,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
-export ChebyshevNodeGrid, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremaGrid
+export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point
 export leftendpoint, rightendpoint, range
 
@@ -113,8 +113,8 @@ export SparseOperator
 
 # from bases/generic/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
-export domaintype, codomaintype, coefficient_type
-export promote_domaintype, promote_domainsubtype
+export domaintype, codomaintype, coefficienttype
+export promote_domaintype, promote_domainsubtype, promote_coefficienttype
 export grid, left, right, support, domain, codomain
 export measure
 export eval_expansion, eval_element, eval_element_derivative
@@ -133,7 +133,6 @@ export moment, norm
 
 # from bases/generic/span.jl
 export Span
-export coefficient_type, coeftype
 
 # from bases/generic/subdicts.jl
 export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict

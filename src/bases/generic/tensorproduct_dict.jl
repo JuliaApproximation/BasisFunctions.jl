@@ -45,8 +45,8 @@ function TensorProductDict(dicts::Dictionary...)
     N = length(dicts)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
-    c = promote_type(map(coeftype, dicts)...)
-    dicts2 = map(s->promote_coeftype(s,c),dicts)
+    c = promote_type(map(coefficienttype, dicts)...)
+    dicts2 = map(s->promote_coefficienttype(s,c),dicts)
     DT = typeof(dicts2)
     TensorProductDict{N,DT,S,T}(dicts2)
 end
@@ -56,13 +56,7 @@ size(d::TensorProductDict) = d.size
 similar(dict::TensorProductDict, ::Type{T}, size::Int...) where {T} =
     TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
 
-coefficient_type(s::TensorProductDict) = promote_type(map(coefficient_type,elements(s))...)
-
-dict_promote_coeftype(s::TensorProductDict, ::Type{T}) where {T} =
-    TensorProductDict(dict_promote_coeftype.(elements(s), Ref(T))...)
-
-dict_promote_coeftype(s::TensorProductDict, ::Type{T}) where {T <: Complex} =
-    TensorProductDict(dict_promote_coeftype.(elements(s), Ref(T))...)
+coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,elements(s))...)
 
 IndexStyle(d::TensorProductDict) = IndexCartesian()
 
