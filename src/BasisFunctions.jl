@@ -344,6 +344,7 @@ include("bases/generic/mapped_dict.jl")
 
 include("operator/dimop.jl")
 
+include("operator/abstractarrayoperator.jl")
 include("operator/basic_operators.jl")
 include("operator/banded_operators.jl")
 include("operator/solvers.jl")

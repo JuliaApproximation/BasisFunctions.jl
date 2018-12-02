@@ -344,7 +344,7 @@ function antidiff_scaling_function(b::FourierBasis, idx, order::Int)
 	k==0 ? Complex{T}(0) : 1 / (k * 2 * T(pi) * im)^order
 end
 
-differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Int; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
+differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order = 1; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
 
 pseudodifferential_operator(s::FourierBasis, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 

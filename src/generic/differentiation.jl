@@ -1,4 +1,3 @@
-# differentiation.jl
 
 ##################################################
 # Generic differentiation and antidifferentiation

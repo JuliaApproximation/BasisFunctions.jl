@@ -167,65 +167,65 @@ unsafe_getindex(op::ZeroOperator, i, j) = zero(eltype(op))
 
 
 
-"A diagonal operator is represented by a diagonal matrix."
-struct DiagonalOperator{T} <: DictionaryOperator{T}
-    src         ::  Dictionary
-    dest        ::  Dictionary
-    diagonal    ::  Vector{T}    # We store the diagonal in a vector
-
-    function DiagonalOperator{T}(src, dest, diagonal) where T
-        @assert length(src) == length(dest)
-        new(src, dest, diagonal)
-    end
-end
-
-DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::Vector{T}) where {T} =
-    DiagonalOperator{promote_type(T,op_eltype(src,dest))}(src, dest, diagonal)
-
-DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector) =
-    DiagonalOperator(src, dest, collect(diagonal))
-
-DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(src, src, diagonal)
-
-DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
-    DiagonalOperator(DiscreteVectorDictionary{T}(length(diagonal)), diagonal)
-
-similar_operator(op::DiagonalOperator, src, dest) = DiagonalOperator(src, dest, diagonal(op))
-
-unsafe_wrap_operator(src, dest, op::DiagonalOperator) = similar_operator(op, src, dest)
-
-@add_properties(DiagonalOperator, is_inplace, is_diagonal)
-
-diagonal(op::DiagonalOperator) = copy(op.diagonal)
-
-inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
-
-adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
-
-function matrix!(op::DiagonalOperator, a)
-    a[:] .= 0
-    for i in 1:min(size(a,1),size(a,2))
-        a[i,i] = op.diagonal[i]
-    end
-    a
-end
-
-function apply_inplace!(op::DiagonalOperator, coef_srcdest)
-    for i in 1:length(coef_srcdest)
-        coef_srcdest[i] *= op.diagonal[i]
-    end
-    coef_srcdest
-end
-
-# Extra definition for out-of-place version to avoid making an intermediate copy
-function apply!(op::DiagonalOperator, coef_dest, coef_src)
-    for i in 1:length(coef_dest)
-        coef_dest[i] = op.diagonal[i] * coef_src[i]
-    end
-    coef_dest
-end
-
-matrix(op::DiagonalOperator) = Matrix(Diagonal(diagonal(op)))
+# "A diagonal operator is represented by a diagonal matrix."
+# struct DiagonalOperator{T} <: DictionaryOperator{T}
+#     src         ::  Dictionary
+#     dest        ::  Dictionary
+#     diagonal    ::  Vector{T}    # We store the diagonal in a vector
+#
+#     function DiagonalOperator{T}(src, dest, diagonal) where T
+#         @assert length(src) == length(dest)
+#         new(src, dest, diagonal)
+#     end
+# end
+#
+# DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::Vector{T}) where {T} =
+#     DiagonalOperator{promote_type(T,op_eltype(src,dest))}(src, dest, diagonal)
+#
+# DiagonalOperator(src::Dictionary, dest::Dictionary, diagonal::AbstractVector) =
+#     DiagonalOperator(src, dest, collect(diagonal))
+#
+# DiagonalOperator(src::Dictionary, diagonal::AbstractVector) = DiagonalOperator(src, src, diagonal)
+#
+# DiagonalOperator(diagonal::AbstractVector{T}) where {T} =
+#     DiagonalOperator(DiscreteVectorDictionary{T}(length(diagonal)), diagonal)
+#
+# similar_operator(op::DiagonalOperator, src, dest) = DiagonalOperator(src, dest, diagonal(op))
+#
+# unsafe_wrap_operator(src, dest, op::DiagonalOperator) = similar_operator(op, src, dest)
+#
+# @add_properties(DiagonalOperator, is_inplace, is_diagonal)
+#
+# diagonal(op::DiagonalOperator) = copy(op.diagonal)
+#
+# inv(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), inv.(op.diagonal))
+#
+# adjoint(op::DiagonalOperator) = DiagonalOperator(dest(op), src(op), conj.(diagonal(op)))
+#
+# function matrix!(op::DiagonalOperator, a)
+#     a[:] .= 0
+#     for i in 1:min(size(a,1),size(a,2))
+#         a[i,i] = op.diagonal[i]
+#     end
+#     a
+# end
+#
+# function apply_inplace!(op::DiagonalOperator, coef_srcdest)
+#     for i in 1:length(coef_srcdest)
+#         coef_srcdest[i] *= op.diagonal[i]
+#     end
+#     coef_srcdest
+# end
+#
+# # Extra definition for out-of-place version to avoid making an intermediate copy
+# function apply!(op::DiagonalOperator, coef_dest, coef_src)
+#     for i in 1:length(coef_dest)
+#         coef_dest[i] = op.diagonal[i] * coef_src[i]
+#     end
+#     coef_dest
+# end
+#
+# matrix(op::DiagonalOperator) = Matrix(Diagonal(diagonal(op)))
 
 
 ##################################

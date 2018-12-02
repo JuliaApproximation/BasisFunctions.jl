@@ -59,7 +59,8 @@ operator(set::OperatedDict) = set.op
 
 function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
     @assert length(d) == prod(dims)
-    OperatedDict(similar_operator(operator(d), similar(src(d), T), dest(d) ))
+    # not sure what to do with dest(d) here - in the meantime invoke similar
+    OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
 end
 
 for op in (:support, :length)

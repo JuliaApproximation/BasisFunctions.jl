@@ -1,4 +1,4 @@
-# multiarray.jl
+# TODO: should MultiArray be replaced by BlockArray?
 
 """
 A `MultiArray` in its simplest form is an array of arrays. It is meant to store

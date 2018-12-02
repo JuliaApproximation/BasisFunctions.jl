@@ -80,7 +80,7 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 # It is equal to the size of its matrix representation.
 size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))
 
-size(op::DictionaryOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
+size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 
 #+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
