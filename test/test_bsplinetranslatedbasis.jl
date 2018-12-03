@@ -263,7 +263,7 @@ function test_orthonormalsplinebasis(T)
 
   d = BasisFunctions.primalgramcolumn(span(b); atol=1e-3)
   @test d ≈ e
-  @test typeof(Gram(span(b))) <: IdentityOperator
+  @test typeof(Gram(span(b))) <: ScalingOperator
 
   n = 8
   for degree in 0:3

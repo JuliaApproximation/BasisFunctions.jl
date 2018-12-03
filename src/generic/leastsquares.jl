@@ -21,7 +21,7 @@ function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
 end
 
 leastsquares_operator(s::Dictionary, grid::AbstractGrid; options...) =
-    leastsquares_operator(s, gridbasis(grid, coeftype(s)); options...)
+    leastsquares_operator(s, gridbasis(grid, coefficienttype(s)); options...)
 
 function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
     if has_grid(s)

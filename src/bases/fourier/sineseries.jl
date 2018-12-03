@@ -1,4 +1,3 @@
-# sineseries.jl
 
 ############################################
 # Sine series
@@ -26,9 +25,7 @@ end
 
 instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
-dict_promote_domaintype(b::SineSeries, ::Type{S}) where {S} = SineSeries{S}(b.n)
-
-resize(b::SineSeries{T}, n) where {T} = SineSeries{T}(n)
+similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
 is_orthogonal(b::SineSeries) = true
@@ -40,7 +37,7 @@ has_antiderivative(b::SineSeries) = false #for now
 has_transform(b::SineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
 has_extension(b::SineSeries) = true
 
-length(b::SineSeries) = b.n
+size(b::SineSeries) = (b.n,)
 
 period(b::SineSeries{T}, idx) where {T} = T(2)
 
@@ -94,4 +91,4 @@ function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
 end
 
 
-Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coeftype(s))/2)
+Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coefficienttype(s))/2)

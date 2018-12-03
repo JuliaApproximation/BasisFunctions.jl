@@ -1,4 +1,3 @@
-# measure.jl
 
 """
 The abstract supertype of all measures.

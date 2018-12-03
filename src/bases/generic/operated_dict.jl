@@ -1,4 +1,3 @@
-# operated_dict.jl
 
 """
 An `OperatedDict` represents a set that is acted on by an operator, for example
@@ -58,8 +57,11 @@ domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 
 operator(set::OperatedDict) = set.op
 
-dict_promote_domaintype(s::OperatedDict{T}, ::Type{S}) where {S,T} =
-    OperatedDict(similar_operator(operator(s), promote_domaintype(src(s), S), dest(s) ) )
+function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
+    @assert length(d) == prod(dims)
+    # not sure what to do with dest(d) here - in the meantime invoke similar
+    OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
+end
 
 for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src_dictionary(s))
@@ -127,7 +129,7 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
 
 function (*)(a::Number, s::Dictionary)
-    T = promote_type(typeof(a), coeftype(s))
+    T = promote_type(typeof(a), coefficienttype(s))
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 

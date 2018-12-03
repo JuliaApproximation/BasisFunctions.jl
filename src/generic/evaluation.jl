@@ -7,9 +7,7 @@
 # Compute the evaluation matrix of the given dict on the given set of points
 # (a grid or any iterable set of points)
 function evaluation_matrix(dict::Dictionary, pts)
-    a = (VERSION < v"0.7-") ?
-        Array{codomaintype(dict)}(length(pts), length(dict)) :
-        Array{codomaintype(dict)}(undef, length(pts), length(dict))
+    a = Array{codomaintype(dict)}(undef, length(pts), length(dict))
     evaluation_matrix!(a, dict, pts)
 end
 

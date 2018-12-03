@@ -1,4 +1,3 @@
-# quadrature.jl
 
 function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
     grid = EquispacedGrid(n, a, b)
@@ -36,7 +35,7 @@ end
 function fejer_first_rule(n::Int, ::Type{T} = Float64) where T
     v = zeros(Complex{T}, n)
     fejer_vector1!(v)
-    ChebyshevNodeGrid{T}(n), real(ifft(v))
+    ChebyshevNodes{T}(n), real(ifft(v))
 end
 
 function fejer_vector2!(v)
@@ -62,7 +61,7 @@ function fejer_second_rule(n::Int, ::Type{T} = Float64) where T
     fejer_vector2!(v)
     weights[1:n] = real(ifft(v))
     weights[n+1] = weights[1]
-    ChebyshevExtremaGrid{T}(n+1), weights
+    ChebyshevExtremae{T}(n+1), weights
 end
 
 function cc_vector_g!(g)
@@ -86,5 +85,5 @@ function clenshaw_curtis(n, ::Type{T} = Float64) where T
     cc_vector_g!(g)
     weights[1:n] = real(ifft(v+g))
     weights[n+1] = weights[1]
-    ChebyshevExtremaGrid{T}(n+1), weights
+    ChebyshevExtremae{T}(n+1), weights
 end

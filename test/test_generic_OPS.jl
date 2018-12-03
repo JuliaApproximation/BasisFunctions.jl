@@ -1,12 +1,9 @@
 # test_half_range_chebyshev
 
-using BasisFunctions, FastGaussQuadrature, Domains
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+using BasisFunctions, FastGaussQuadrature, DomainSets
+using Test
+linspace(a,b,c) = range(a, stop=b, length=c)
+
 
 function test_half_range_chebyshev()
     n = 60
@@ -150,7 +147,7 @@ function test_roots_of_legendre_halfrangechebyshev()
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = LegendrePolynomials(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = LegendrePolynomials(N,BigFloat)
+    B = LegendrePolynomials{BigFloat}(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     # B = HalfRangeChebyshevIkind(N,BigFloat(2))
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1

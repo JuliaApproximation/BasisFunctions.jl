@@ -1,5 +1,3 @@
-# dictionary.jl
-
 
 ######################
 # Type hierarchy
@@ -10,7 +8,7 @@ A `Dictionary{S,T}` is an ordered family of functions, in which each function
 maps a variable of type `S` to a variable of type `T`.
 
 A `Dictionary{S,T}` has domain type `S` and codomain type `T`. The domain type
-corresponds to the type of a domain in the `Domains.jl` package, and it is the
+corresponds to the type of a domain in the `DomainSets.jl` package, and it is the
 type of the expected argument to the elements of the dictionary. The
 codomain type is the type of the output.
 
@@ -55,7 +53,7 @@ codomaintype(::Type{D}) where {D <: Dictionary} = codomaintype(supertype(D))
 codomaintype(dict::Dictionary{S,T}) where {S,T} = T
 
 "The type of the expansion coefficients in a dictionary."
-coefficient_type(dict::Dictionary) = codomaintype(dict)
+coefficienttype(dict::Dictionary) = codomaintype(dict)
 # By default we set it equal to the codomaintype
 
 # The dimension of a function set is the dimension of its domain type
@@ -87,16 +85,15 @@ is_orthonormal(d::Dictionary) = false
 is_biorthogonal(d::Dictionary) = is_orthogonal(d)
 
 "Return the size of the dictionary."
-size(d::Dictionary) = (length(d),)
+function size(d::Dictionary) end
 
 "Return the size of the j-th dimension of the dictionary (if applicable)."
-size(d::Dictionary, j) = j==1 ? length(d) : throw(BoundsError())
-if VERSION < v"0.7-"
-    endof(d::Dictionary) = length(d)
-else
-    firstindex(d::Dictionary) = 1
-    lastindex(d::Dictionary) = length(d)
-end
+size(d::Dictionary, j) = size(d)[j]
+
+length(d::Dictionary) = prod(size(d))
+
+firstindex(d::Dictionary) = 1
+lastindex(d::Dictionary) = length(d)
 
 "Is the dictionary composite, i.e. does it consist of several components?"
 is_composite(d::Dictionary) = false
@@ -116,11 +113,18 @@ instantiate(::Type{S}, n) where {S <: Dictionary}= instantiate(S, n, Float64)
 # Domain and codomain type
 ##############################
 
+similar(s::Dictionary, ::Type{T}) where {T} = similar(s, T, size(s))
+
+similar(s::Dictionary, size::Int...) = similar(s, domaintype(s), size...)
+similar(s::Dictionary, dims::Base.Dims) = similar(s, domaintype(s), dims...)
+
+similar(s::Dictionary, ::Type{T}, dims::Base.Dims) where {T} = similar(s, T, dims...)
+
+resize(s::Dictionary, dims...) = similar(s, domaintype(s), dims...)
+
 "Promote the domain type of the dictionary."
 promote_domaintype(dict::Dictionary{S,T}, ::Type{S}) where {S,T} = dict
-promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_domaintype(dict, U)
-
-promote_domaintype(dict1::Dictionary{S,T1}, dict2::Dictionary{S,T2}) where {S,T1,T2} = (dict1,dict2)
+promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = similar(dict, U, size(dict))
 
 function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
@@ -142,37 +146,49 @@ promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{U}) where {N,S<:Nu
     promote_domaintype(dict, NTuple{N,U})
 
 "Promote the coefficient type of the dictionary."
-promote_coefficient_type(dict::Dictionary{S,T}, ::Type{T}) where {S,T} = dict
-promote_coefficient_type(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = dict_promote_coeftype(dict, U)
+promote_coefficienttype(dict::Dictionary, ::Type{T}) where {T} =
+    _promote_coefficienttype(coefficienttype(dict), dict, T)
 
-promote_coefficient_type(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+promote_coefficienttype(dict::Dictionary, ::Type{Any}) = dict
 
-function promote_coefficient_type(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
+# TODO: we make some assumptions here about the connection between S and T of a dictionary (that S=T
+# and that changing S changes T accordingly)
+# - coefficient types are the same
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T} = dict
+# - coefficient types are real and the same
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T<:Real} = dict
+# - coefficient types are real but different
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Real,U<:Real} =
+    similar(dict, promote_type(T, U))
+# - coefficient types are complex and the same
+_promote_coefficienttype(::Type{Complex{T}}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} = dict
+# - coefficient types are complex but different
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Complex} =
+    similar(dict, promote_type(real(T), real(U)))
+# - coefficient type is complex but promotion type is real
+_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Real} =
+    similar(dict, promote_type(U, real(T)))
+# - the case where coefficient type is real and promotion type is complex is implemented
+#   in complexified_dict.jl
+
+
+promote_coefficienttype(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+
+function promote_coefficienttype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
     T = promote_type(T1,T2)
-    promote_coefficient_type(dict1, T), promote_coefficient_type(dict2, T)
+    promote_coefficienttype(dict1, T), promote_coefficienttype(dict2, T)
 end
 
-promote_coefficient_type(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
-    promote_coefficient_type(promote_coefficient_type(dict1,dict2), dicts...)
+promote_coefficienttype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+    promote_coefficienttype(promote_coefficienttype(dict1,dict2), dicts...)
 
 
-promote_coeftype = promote_coefficient_type
-
-widen(d::Dictionary) = promote_domaintype(d, widen(domaintype(d)))
-
-# similar returns a similar basis of a given size and numeric type
-# It can be implemented in terms of resize and promote_domaintype.
-similar(d::Dictionary, ::Type{T}, n) where {T} = resize(promote_domaintype(d, T), n)
-
-# Support resize of a 1D set with a tuple of a single element, so that one can
-# write statements of the form resize(s, size(some_set)) in all dimensions.
-resize(s::Dictionary1d, n::NTuple{1,Int}) = resize(s, n[1])
-
+widen(d::Dictionary) = similar(d, widen(domaintype(d)))
 
 
 "Return a set of zero coefficients in the native format of the set."
-zeros(s::Dictionary) = zeros(coefficient_type(s), s)
-ones(s::Dictionary) = ones(coefficient_type(s), s)
+zeros(s::Dictionary) = zeros(coefficienttype(s), s)
+ones(s::Dictionary) = ones(coefficienttype(s), s)
 
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multidicts.
@@ -189,9 +205,9 @@ containertype(d::Dictionary) = typeof(zeros(d))
 
 function rand(dict::Dictionary)
     c = zeros(dict)
-    T = coeftype(dict)
+    T = coefficienttype(dict)
     for i in eachindex(c)
-        c[i] = random_value(T)
+        c[i] = rand(T)
     end
     c
 end
@@ -200,6 +216,8 @@ end
 ###########
 # Indexing
 ###########
+
+IndexStyle(d::Dictionary) = IndexLinear()
 
 """
 Dictionaries are ordered lists. Their ordering is defined by the way their
@@ -212,10 +230,12 @@ of the dictionary.
 """
 ordering(dict::Dictionary) = Base.OneTo(length(dict))
 
-# By convention, `eachindex` returns the most efficient way to iterate over the
-# indices of a dictionary. This is not necessarily the linear index.
-# We call eachindex on `ordering(d)`.
-eachindex(d::Dictionary) = eachindex(ordering(d))
+eachindex(d::Dictionary) = eachindex(IndexStyle(d), d)
+eachindex(::IndexLinear, d::Dictionary) = axes1(d)
+eachindex(::IndexCartesian, d::Dictionary) = CartesianIndices(axes(d))
+
+axes1(d::Dictionary) = Base.OneTo(length(d))
+axes(d::Dictionary) = map(Base.OneTo, size(d))
 
 "Compute the native index corresponding to the given index."
 native_index(dict::Dictionary, idx) = _native_index(dict, idx)
@@ -334,38 +354,23 @@ restriction_set(d::Dictionary, n) = resize(d, n)
 ###############################
 
 # Default iterator over sets of functions: based on underlying index iterator.
-if VERSION < v"0.7-"
-    function start(d::Dictionary)
-        iter = eachindex(d)
-        (iter, start(iter))
-    end
-
-    function next(d::Dictionary, state)
-        iter, iter_state = state
-        idx, iter_newstate = next(iter,iter_state)
-        (d[idx], (iter,iter_newstate))
-    end
-
-    done(d::Dictionary, state) = done(state[1], state[2])
-else
-    function Base.iterate(d::Dictionary)
-        iter = eachindex(d)
-        first_item, first_state = iterate(iter)
-        (d[first_item], (iter, (first_item, first_state)))
-    end
-
-    function Base.iterate(d::Dictionary, state)
-        iter, iter_tuple = state
-        iter_item, iter_state = iter_tuple
-        next_tuple = iterate(iter, iter_state)
-        if next_tuple != nothing
-            next_item, next_state = next_tuple
-            (d[next_item], (iter,next_tuple))
-        end
-    end
-
-    Base.eltype(::Type{Dict}) where {Dict<:Dictionary}= SingletonSubdict
+function Base.iterate(d::Dictionary)
+    iter = eachindex(d)
+    first_item, first_state = iterate(iter)
+    (d[first_item], (iter, (first_item, first_state)))
 end
+
+function Base.iterate(d::Dictionary, state)
+    iter, iter_tuple = state
+    iter_item, iter_state = iter_tuple
+    next_tuple = iterate(iter, iter_state)
+    if next_tuple != nothing
+        next_item, next_state = next_tuple
+        (d[next_item], (iter,next_tuple))
+    end
+end
+
+Base.eltype(::Type{Dict}) where {Dict<:Dictionary} = SingletonSubdict
 
 
 
@@ -549,7 +554,7 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)
 
-    T = coeftype(dict)
+    T = coefficienttype(dict)
     E = evaluation_operator(dict, gridbasis(grid, T))
     E * coefficients
 end

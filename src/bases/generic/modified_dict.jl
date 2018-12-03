@@ -64,7 +64,7 @@ for op in (:length, :size, :resize, :extension_size, :ordering, :approx_length,
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:coefficient_type, :linearize_coefficients!, :delinearize_coefficients!,
+for op in (:coefficienttype, :linearize_coefficients!, :delinearize_coefficients!,
         :zeros)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(coefficient_modifier(d), superdict(d), args...)

@@ -1,4 +1,3 @@
-# specialOPS.jl
 
 """
 Creates the (normalized) half range Chebyshev polynomials of the first kind.
@@ -70,9 +69,7 @@ end
 
 function _halfrangechebyshevweights(n, α::ELT, T::ELT, indicator_function_nodes::Vector{ELT}) where {ELT}
     @assert indicator_function_nodes[1] == -1 && indicator_function_nodes[end] == 1
-    @assert (VERSION < v"0.7-") ?
-        reduce(&, true, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end]) :
-        reduce(&, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end], init=true)
+    @assert reduce(&, indicator_function_nodes[1:end-1] .< indicator_function_nodes[2:end], init=true)
     @assert iseven(length(indicator_function_nodes))
 
     if α < 0

@@ -1,4 +1,3 @@
-# transform.jl
 
 #####################
 # Generic transforms
@@ -34,6 +33,10 @@ for op in (:transform_operator, :transform_operator_pre, :transform_operator_pos
     # With only one argument, use the default transform space
     @eval $op(src::Dictionary; options...) =
         $op(src, transform_dict(src; options...); options...)
+
+    # Convert complexified spaces to uncomplexified ones
+    @eval $(op)(src::ComplexifiedDict, dest::ComplexifiedDict; T = op_eltype(src, dest), options...) =
+        $(op)(superdict(src), superdict(dest); T = T, options...)
 end
 
 # If the destination is a GridBasis, invoke the "to_grid" routines
@@ -44,7 +47,7 @@ for op in ( (:transform_operator, :transform_to_grid),
         $(op[2])(src, dest, grid(dest); options...)
     # Convenience function: convert a grid to a grid space
     @eval $(op[1])(src::Dictionary, grid::AbstractGrid; options...) =
-        $(op[1])(src, gridbasis(grid, coeftype(src)); options...)
+        $(op[1])(src, gridbasis(grid, coefficienttype(src)); options...)
 end
 
 # If the source is a GridBasis, invoke the "from_grid" routines
@@ -55,16 +58,18 @@ for op in ( (:transform_operator, :transform_from_grid),
         $(op[2])(src, dest, grid(src); options...)
     # Convenience function: convert a grid to a grid space
     @eval $(op[1])(src::AbstractGrid, dest::Dictionary; options...) =
-        $(op[1])(gridbasis(src, coeftype(dest)), dest; options...)
+        $(op[1])(gridbasis(src, codomaintype(dest)), dest; options...)
 end
 
 # Pre and post operations are identity by default.
 for op in (:transform_from_grid_pre, :transform_to_grid_pre)
-    @eval $op(src, dest, grid; options...) = IdentityOperator(src)
+    @eval $op(src, dest, grid; T = op_eltype(src,dest), options...) =
+        IdentityOperator(T, src)
 end
 
 for op in (:transform_from_grid_post, :transform_to_grid_post)
-    @eval $op(src, dest, grid; options...) = IdentityOperator(dest)
+    @eval $op(src, dest, grid; T = op_eltype(src,dest), options...) =
+        IdentityOperator(T, dest)
 end
 
 # Return all three of them in a tuple

@@ -1,5 +1,3 @@
-# generic_op.jl
-
 # Code for a generic orthogonal polynomial, defined in terms of its recurrence coefficients
 
 """
@@ -52,18 +50,15 @@ end
 support(b::GenericOPS) = b.support
 support(b::GenericOPS, idx) = support(b)
 
-length(b::GenericOPS) = length(b.rec_a)
+size(b::GenericOPS) = (length(b.rec_a),)
 
 name(b::GenericOPS) = "Generic OPS"
 
 weight(b::GenericOPS, x) = (b.weight==nothing) ? error("weight not defined for this Generic OPS") : b.weight(x)
 
-dict_promote_domaintype(b::GenericOPS, ::Type{S}) where {S} =
-    GenericOPS{S}(b.rec_a, b.rec_b, b.rec_c)
-
-function resize(b::GenericOPS, n)
+function similar(b::GenericOPS, ::Type{T}, n::Int) where {T}
     @assert n <= length(b)
-    GenericOPS(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.support, b.p0, b.weight)
+    GenericOPS{T}(b.moment, b.rec_a[1:n], b.rec_b[1:n], b.rec_c[1:n], b.support, b.p0, b.weight)
 end
 
 first_moment(b::GenericOPS) = b.moment

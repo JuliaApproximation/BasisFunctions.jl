@@ -1,4 +1,3 @@
-# approximation.jl
 
 ########################
 # Generic approximation

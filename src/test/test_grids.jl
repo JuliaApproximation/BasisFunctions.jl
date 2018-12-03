@@ -1,6 +1,8 @@
-function test_interval_grid(grid::AbstractGrid{T}, show_timings=false) where {T}
+
+function test_interval_grid(grid::AbstractGrid, show_timings=false)
     test_generic_grid(grid, show_timings=show_timings)
-    g1 = rescale(rescale(grid, -T(10),T(3)), leftendpoint(grid), rightendpoint(grid))
+    T = eltype(grid)
+    g1 = rescale(rescale(grid, -T(10), T(3)), leftendpoint(grid), rightendpoint(grid))
     @test 1+leftendpoint(g1) ≈ 1+leftendpoint(grid) && 1+rightendpoint(g1) ≈ 1+rightendpoint(grid)
 end
 
@@ -46,7 +48,7 @@ end
 
 function grid_iterator(grid)
     for (i,j) in zip(1:length(grid), eachindex(grid))
-        @test BasisFunctions.unsafe_getindex(grid, native_index(grid, i)) == grid[i] == grid[j]
+        @test BasisFunctions.unsafe_getindex(grid, i) == grid[i] == grid[j]
     end
 end
 

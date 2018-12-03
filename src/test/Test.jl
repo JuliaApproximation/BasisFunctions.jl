@@ -1,12 +1,8 @@
 module Test
 
-using ..BasisFunctions, Domains, StaticArrays
+using ..BasisFunctions, DomainSets, StaticArrays
 import ..BasisFunctions: instantiate
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test, Random, LinearAlgebra
-end
+using Test, Random, LinearAlgebra
 BF = BasisFunctions
 
 export Delimit, delimit, instantiate

@@ -1,4 +1,3 @@
-# fouriertransforms.jl
 
 # We wrap the discrete Fourier and cosine transforms in an operator.
 # For Float64 and Complex{Float64} we can use FFTW. The plans that FFTW computes
@@ -16,22 +15,24 @@
 #############################
 
 function fftw_scaling_operator(dict::Dictionary)
-    scalefactor = 1/(convert(coeftype(dict), length(dict)))
-    ScalingOperator(dict, dict, scalefactor)
+    T = coefficienttype(dict)
+    scalefactor = 1/(convert(T, length(dict)))
+    ScalingOperator{T}(dict, dict, scalefactor)
 end
 
 for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
                             (:ifftw_operator, :plan_bfft!, :bfft))
     # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
-    @eval $op(src::Dictionary, dest::Dictionary, dims, fftwflags) = $op(src, dest, coeftype(dest), dims, fftwflags)
+    @eval $op(src::Dictionary, dest::Dictionary, dims, fftwflags; T=coefficienttype(dest)) =
+        $op(src, dest, T, dims, fftwflags)
     # In the default case apply fft or ifft
     @eval $op(src::Dictionary, dest::Dictionary, ::Type{Complex{T}}, dims, fftwflags) where {T} =
-        FunctionOperator(src, dest, $f)
+        FunctionOperator{Complex{T}}(src, dest, $f)
     # When possible apply the fast FFTW operator
     for T in (:(Complex{Float32}), :(Complex{Float64}))
     	@eval function $op(src::Dictionary, dest::Dictionary, ::Type{$(T)}, dims, fftwflags)
-            plan = $plan_(zeros(promote_eltype(coeftype(src),coeftype(dest)),dest), dims; flags = fftwflags)
-            MultiplicationOperator(src, dest, plan; inplace = true)
+            plan = $plan_(zeros($(T), dest), dims; flags = fftwflags)
+            MultiplicationOperator{$(T)}(src, dest, plan; inplace = true)
         end
     end
 end
@@ -40,22 +41,21 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
                                    (:backward_fourier_operator, :InverseFastFourierTransform, :InverseFastFourierTransformFFTW, :ifft, :ifftw_operator, :ifft_scalefactor))
     # These are the generic fallbacks
     @eval $transform(src, dest, ::Type{Complex{T}}; options...) where {T} =
-        $FastTransform(src, dest)
+        $FastTransform(src, dest; T=Complex{T})
     # But for some types we can use FFTW
     for T in (:(Complex{Float32}), :(Complex{Float64}))
         @eval function $transform(src, dest, ::Type{$(T)}; options...)
             # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
-            s_op = ScalingOperator(dest, dest, $scalefactor(src,$(T)))
-            t_op = $FFTWTransform(src, dest; options...)
+            s_op = ScalingOperator{$(T)}(dest, dest, $scalefactor(src,$(T)))
+            t_op = $FFTWTransform(src, dest; T=$(T), options...)
             s_op * t_op
   	end
     end
 
     # Now the generic implementation, based on using fft and ifft
-    @eval function $FastTransform(src, dest)
-        ELT = op_eltype(src, dest)
-        s_op = ScalingOperator(dest, dest, $scalefactor(src, ELT))
-        t_op = FunctionOperator(src, dest, $fun)
+    @eval function $FastTransform(src, dest; T = op_eltype(src,dest))
+        s_op = ScalingOperator{T}(dest, dest, $scalefactor(src, T))
+        t_op = FunctionOperator{T}(src, dest, $fun)
 
         s_op*t_op
     end
@@ -72,9 +72,9 @@ for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forwar
     end
 end
 
-fft_scalefactor(src, ::Type{ELT}) where {ELT} = 1/ELT(length(src))
+fft_scalefactor(src, ::Type{T}) where {T} = 1/convert(T, length(src))
 
-ifft_scalefactor(src, ::Type{ELT}) where {ELT} = ELT(length(src))
+ifft_scalefactor(src, ::Type{T}) where {T} = convert(T,  length(src))
 
 ifft_scalefactor(src, ::Type{Complex{Float64}}) = 1
 
@@ -144,15 +144,17 @@ for (transform, plan) in
     ((:FastChebyshevTransformFFTW, :plan_dct!),
     (:InverseFastChebyshevTransformFFTW, :plan_idct!))
     @eval begin
-        function $transform(src, dest, dims = 1:dimension(dest); fftwflags = FFTW.MEASURE, options...)
-            plan = FFTW.$plan(zeros(src), dims; flags = fftwflags)
+        function $transform(src, dest, dims = 1:dimension(dest);
+                    fftwflags = FFTW.MEASURE, T = op_eltype(src,dest), options...)
+            plan = FFTW.$plan(zeros(T, src), dims; flags = fftwflags)
             MultiplicationOperator(src, dest, plan; inplace=true)
         end
     end
 end
 
-function FastChebyshevITransformFFTW(src, dest, dims = 1:dimension(src); fftwflags = FFTW.MEASURE, options...)
-    plan = FFTW.plan_r2r!(zeros(src), FFTW.REDFT00, dims; flags = fftwflags)
+function FastChebyshevITransformFFTW(src, dest, dims = 1:dimension(src);
+        fftwflags = FFTW.MEASURE, T = op_eltype(src, dest), options...)
+    plan = FFTW.plan_r2r!(zeros(T, src), FFTW.REDFT00, dims; flags = fftwflags)
     MultiplicationOperator(src, dest, plan; inplace=true)
 end
 
@@ -190,8 +192,8 @@ adjoint(fun::typeof(idct)) = dct
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.
-FastChebyshevTransform(src, dest) = FunctionOperator(src, dest, dct)
-InverseFastChebyshevTransform(src, dest) = FunctionOperator(src, dest, idct)
+FastChebyshevTransform(src, dest; T = op_eltype(src, dest), options...) = FunctionOperator{T}(src, dest, dct)
+InverseFastChebyshevTransform(src, dest; T = op_eltype(src,dest), options...) = FunctionOperator{T}(src, dest, idct)
 
 # The generic routines for the DCTI. They they are not yet available
 FastChebyshevITransform(src, dest) = error("The FastChebyshevITransform is not available for the type ", eltype(src))

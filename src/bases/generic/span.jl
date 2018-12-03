@@ -1,4 +1,3 @@
-# span.jl
 
 """
 The span of a dictionary is the set of all possible expansions in that
@@ -16,7 +15,7 @@ Span(dict::Dictionary{S}) where S = Span{S,span_codomaintype(dict)}(dict)
 # What is the codomain type of a span? It depends on the type A of the
 # coefficients, and on the codomain type T of the dictionary:
 span_codomaintype(dict::Dictionary) =
-    span_codomaintype(coefficient_type(dict), codomaintype(dict))
+    span_codomaintype(coefficienttype(dict), codomaintype(dict))
 # - When the types are the same, that type is the result
 span_codomaintype(::Type{T}, ::Type{T}) where {T <: Number} = T
 # - the coefficient types are complex and the set itself is real
@@ -26,17 +25,16 @@ span_codomaintype(::Type{T}, ::Type{Complex{T}}) where {T <: Number} = Complex{T
 # Default fallback
 span_codomaintype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
 
-coefficient_type(span::Span) = coefficient_type(dictionary(span))
+coefficienttype(span::Span) = coefficienttype(dictionary(span))
 
 # Convenient shorthand
-coeftype = coefficient_type
+coefficienttype = coefficienttype
 
 dictionary(s::Span) = s.dictionary
 
-function promote_domaintype(span::Span, ::Type{S}) where {S}
-    newdict = promote_domaintype(dictionary(span), S)
-    Span(newdict, promote_type(coefficient_type(span), coefficient_type(newdict)))
-end
+similar(s::Span, ::Type{T}, dims) where {T} = Span(similar(dictionary(s), T, dims))
+
+promote_domaintype(span::Span, ::Type{T}) where {T} = similar(span, T, size(span))
 
 random_expansion(span::Span) = Expansion(dictionary(span), rand(dictionary(span)))
 

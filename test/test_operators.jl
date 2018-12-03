@@ -1,15 +1,13 @@
 using BasisFunctions, BasisFunctions.Test
 
-if VERSION < v"0.7-"
-    using Base.Test
-    my_rand(T, a...) = map(T, rand(a...))
-else
-    using Test
-    my_rand = rand
-end
+using Test
+
 types = [Float64,BigFloat,]
 
 function test_operators(T)
+    @testset "$(rpad("test identity operator",80))" begin
+        test_identity_operator(T) end
+
     @testset "$(rpad("test diagonal operators",80))" begin
         test_diagonal_operators(T) end
 
@@ -42,7 +40,6 @@ function test_generic_operators(T)
     b4 = LegendrePolynomials{T}(3)
 
     operators = [
-        ["Identity operator", IdentityOperator(b1, b1)],
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
@@ -64,11 +61,11 @@ function test_tensor_operators(T)
     n1 = 4
     m2 = 10
     n2 = 24
-    A1 = MatrixOperator(my_rand(T,m1,n1))
-    A2 = MatrixOperator(my_rand(T,m2,n2))
+    A1 = MatrixOperator(rand(T,m1,n1))
+    A2 = MatrixOperator(rand(T,m2,n2))
 
     A_tp = TensorProductOperator(A1, A2)
-    b = my_rand(T, n1, n2)
+    b = rand(T, n1, n2)
     c_tp = zeros(T, m1, m2)
     apply!(A_tp, c_tp, b)
 
@@ -99,11 +96,11 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, my_rand(coeftype(SRC))),
+        operators = (CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
             UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
-            ScalingOperator(SRC, my_rand(coeftype(SRC))), ScalingOperator(SRC,3),
-            DiagonalOperator(SRC, my_rand(coeftype(SRC), size(SRC))))
-           # PseudoDiagonalOperator(SRC, map(coeftype(SRC), rand(size(SRC)))))
+            ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
+            DiagonalOperator(SRC, rand(coefficienttype(SRC), size(SRC))))
+           # PseudoDiagonalOperator(SRC, map(coefficienttype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place
@@ -146,15 +143,15 @@ end
 
 function test_multidiagonal_operators(T)
     MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, my_rand(coeftype(MSet))),
+    operators = (CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
         UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
-        DiagonalOperator(MSet, my_rand(coeftype(MSet),length(MSet))))
+        DiagonalOperator(MSet, rand(coefficienttype(MSet),length(MSet))))
     for Op in operators
         # Test in-place
         coef_src = zeros(MSet)
         for i in eachindex(coef_src)
-            coef_src[i] = my_rand(eltype(coef_src))
+            coef_src[i] = rand(eltype(coef_src))
         end
         m = matrix(Op)
         coef_dest_m = m * linearize_coefficients(MSet,coef_src)
@@ -256,9 +253,20 @@ function test_circulant_operator(ELT)
     end
 end
 
+function test_identity_operator(T)
+    b = FourierBasis{T}(10)
+    I = IdentityOperator(b)
+    @test scalar(I) == one(T)
+    @test eltype(I) == Complex{T}
+    @test src(I) == b
+    I = IdentityOperator(FourierBasis{T}(10), ChebyshevBasis{T}(10))
+    @test src(I) == FourierBasis{T}(10)
+    @test dest(I) == ChebyshevBasis{T}(10)
+end
+
 function test_invertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
-        operators = (MultiplicationOperator(SRC, SRC, map(coeftype(SRC),rand(length(SRC),length(SRC)))),
+        operators = (MultiplicationOperator(SRC, SRC, map(coefficienttype(SRC),rand(length(SRC),length(SRC)))),
             CirculantOperator(map(T,rand(10))),
             CirculantOperator(map(complex(T),rand(10))))
         for Op in operators
@@ -283,7 +291,7 @@ end
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coeftype(SRC),rand(length(SRC)+2,length(SRC)))),
+        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coefficienttype(SRC),rand(length(SRC)+2,length(SRC)))),
             ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)

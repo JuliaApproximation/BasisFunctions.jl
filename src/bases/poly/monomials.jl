@@ -1,5 +1,3 @@
-# monomials.jl
-
 #######################
 # The monomial basis
 #######################
@@ -19,3 +17,5 @@ function unsafe_eval_element_derivative(b::Monomials, idxn::PolynomialDegree, x)
     T = codomaintype(b)
     i == 0 ? zero(T) : i*x^(i-1)
 end
+
+similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)

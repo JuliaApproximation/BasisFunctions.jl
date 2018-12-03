@@ -89,7 +89,7 @@ show_dictionary(io::IO,d::Dictionary) = println(print_strings(strings(d),0,""))
 
 # Default string is the string of the type
 strings(d::Dictionary) = (name(d),("length = $(length(d))","$(domaintype(d)) -> $(codomaintype(d))","support = $(support(d))"))
-strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficient_type(d))",strings(grid(d)))
+strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficienttype(d))",strings(grid(d)))
 strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
 

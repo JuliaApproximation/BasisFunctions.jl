@@ -1,5 +1,3 @@
-# test_tensors.jl
-
 #####
 # Tensor sets
 #####

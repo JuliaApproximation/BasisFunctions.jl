@@ -1,4 +1,3 @@
-# operator.jl
 
 """
 An `AbstractOperator` is the supertype of all objects that map between function
@@ -21,7 +20,7 @@ has_span_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
 
 function apply(op::AbstractOperator, f)
 	if has_span_dest(op)
-		result = zeros(dest(op))
+		result = zeros(eltype(op), dest(op))
 		apply!(result, op, f)
 	else
 		error("Don't know how to apply operator $(string(op)). Please implement.")
@@ -61,7 +60,7 @@ dest_space(op::DictionaryOperator) = Span(dest(op))
 isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
 
 "Return a suitable element type for an operator between the given dictionaries."
-op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coeftype(src), coeftype(dest))
+op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coefficienttype(src), coefficienttype(dest))
 _op_eltype(::Type{T}, ::Type{T}) where {T <: Number} = T
 _op_eltype(::Type{T}, ::Type{S}) where {T <: Number, S <: Number} = promote_type(T,S)
 _op_eltype(::Type{SVector{N,T}}, ::Type{SVector{M,S}}) where {M,N,S,T} = SMatrix{M,N,promote_type(T,S)}
@@ -70,7 +69,7 @@ _op_eltype(::Type{T}, ::Type{S}) where {T,S} = promote_type(T,S)
 """
 Return suitably promoted types such that `D = A*S` are the types of the multiplication.
 """
-op_eltypes(src::Dictionary, dest::Dictionary, T = op_eltype(src, dest)) = _op_eltypes(coeftype(src), coeftype(dest), T)
+op_eltypes(src::Dictionary, dest::Dictionary, T = op_eltype(src, dest)) = _op_eltypes(coefficienttype(src), coefficienttype(dest), T)
 _op_eltypes(::Type{S}, ::Type{D}, ::Type{A}) where {S <: Number, D <: Number, A <: Number} =
 	(promote_type(S, D, A), promote_type(S, D, A), promote_type(S, D, A))
 _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) where {N,M,S <: Number, D <: Number, A <: Number} =
@@ -81,7 +80,7 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 # It is equal to the size of its matrix representation.
 size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))
 
-size(op::DictionaryOperator, j::Int) = j==1 ? length(dest(op)) : length(src(op))
+size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 
 #+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
@@ -92,7 +91,7 @@ is_inplace(op::DictionaryOperator) = false
 is_diagonal(op::DictionaryOperator) = false
 
 function apply(op::DictionaryOperator, coef_src)
-	coef_dest = zeros(dest(op))
+	coef_dest = zeros(eltype(op), dest(op))
 	apply!(op, coef_dest, coef_src)
 	coef_dest
 end
@@ -127,14 +126,12 @@ end
 
 # Catch-all for missing implementations
 function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
-	warn("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
-	throw(InexactError())
+	error("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 end
 
 # Catch-all for missing implementations
 function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
-	warn("In-place operation of ", typeof(op), " not implemented.")
-	throw(InexactError())
+	error("In-place operation of ", typeof(op), " not implemented.")
 end
 
 
@@ -142,10 +139,10 @@ end
 Apply an operator multiple times, to each column of the given argument.
 """
 function apply_multiple(op::DictionaryOperator, matrix_src)
-	ELT = eltype(op)
-	matrix_dest = zeros(ELT, size(op,1), size(matrix_src)[2:end]...)
-	coef_src = zeros(ELT, size(src(op)))
-	coef_dest = zeros(ELT, size(dest(op)))
+	T = eltype(op)
+	matrix_dest = zeros(T, size(op,1), size(matrix_src)[2:end]...)
+	coef_src = zeros(T, size(src(op)))
+	coef_dest = zeros(T, size(dest(op)))
 	apply_multiple!(op, matrix_dest, matrix_src, coef_dest, coef_src)
 end
 
@@ -176,10 +173,11 @@ end
 
 collect(op::DictionaryOperator) = matrix(op)
 
-function sparse_matrix(op::DictionaryOperator;sparse_tol = 1e-14, options...)
-	coef_src  = zeros(src(op))
-    coef_dest = zeros(dest(op))
-    R = spzeros(eltype(op),size(op,1),0)
+function sparse_matrix(op::DictionaryOperator; sparse_tol = 1e-14, options...)
+	T = eltype(op)
+	coef_src  = zeros(T, src(op))
+    coef_dest = zeros(T, dest(op))
+    R = spzeros(T, size(op,1), 0)
     for (i,si) in enumerate(eachindex(coef_src))
         coef_src[si] = 1
         apply!(op, coef_dest, coef_src)
@@ -192,18 +190,19 @@ end
 
 
 function matrix(op::DictionaryOperator)
-    a = (VERSION < v"0.7-") ? Array{eltype(op)}(size(op)) : Array{eltype(op)}(undef, size(op))
+    a = Array{eltype(op)}(undef, size(op))
     matrix!(op, a)
 end
 
 function matrix!(op::DictionaryOperator, a)
+	T = eltype(op)
     n = length(src(op))
     m = length(dest(op))
 
     @assert (m,n) == size(a)
 
-    coef_src  = zeros(src(op))
-    coef_dest = zeros(dest(op))
+    coef_src  = zeros(T, src(op))
+    coef_dest = zeros(T, dest(op))
 
     matrix_fill!(op, a, coef_src, coef_dest)
 end
@@ -232,9 +231,10 @@ function getindex(op::DictionaryOperator, i, j)
 end
 
 function unsafe_getindex(op::DictionaryOperator, i, j)
-	coef_src = zeros(src(op))
-	coef_dest = zeros(dest(op))
-	coef_src[j] = one(eltype(op))
+	T = eltype(op)
+	coef_src = zeros(T, src(op))
+	coef_dest = zeros(T, dest(op))
+	coef_src[j] = one(T)
 	apply!(op, coef_dest, coef_src)
 	coef_dest[i]
 end

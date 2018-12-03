@@ -1,4 +1,3 @@
-# banded_oprators.jl
 
 """
 A banded operator of which every row contains equal elements.
@@ -6,11 +5,11 @@ A banded operator of which every row contains equal elements.
 The top row starts at index offset, the second row at step+offset.
 """
 struct HorizontalBandedOperator{ELT} <: DictionaryOperator{ELT}
-    src::Dictionary
-    dest::Dictionary
-    array::Vector{ELT}
-    step::Int
-    offset::Int
+    src     ::  Dictionary
+    dest    ::  Dictionary
+    array   ::  Vector{ELT}
+    step    ::  Int
+    offset  ::  Int
     function HorizontalBandedOperator{ELT}(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT
         @assert length(array) <= length(src)
         @assert step <= length(src) # apply! only works if step is smaller then L
@@ -41,11 +40,11 @@ end
 
 
 struct VerticalBandedOperator{ELT} <: DictionaryOperator{ELT}
-    src::Dictionary
-    dest::Dictionary
-    array::Vector{ELT}
-    step::Int
-    offset::Int
+    src     ::  Dictionary
+    dest    ::  Dictionary
+    array   ::  Vector{ELT}
+    step    ::  Int
+    offset  ::  Int
     function VerticalBandedOperator{ELT}(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int, offset::Int) where ELT
         @assert length(array) <= length(dest)
         @assert step <= length(dest) # apply! only works if step is smaller then L

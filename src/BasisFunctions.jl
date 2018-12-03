@@ -1,43 +1,18 @@
-# BasisFunctions
-
-__precompile__(true)
 
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, Domains, AbstractTrees
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+using Base.Cartesian
 
-if VERSION < v"0.7-"
-    using LinearAlgebra, FastTransforms
-    import Base: norm, pinv, normalize, cross, ×, dct, idct, ctranspose, transpose
-    import Base.LinAlg: dot
-    import Base: start, next, done, ind2sub, sub2ind, endof, indices, showcompact
-    CartesianIndices = CartesianRange
-    LinRange = LinSpace
-    AbstractRange = Range
-    mul! = A_mul_B!
-    ldiv! = A_ldiv_B!
-    IteratorSize = Base.iteratorsize
-    axes = indices
-    Nothing = Void
-    ctranspose(a...) = adjoint(a...)
-    transpose(a...) = adjoint(a...)
-    adjoint(a::AbstractArray) = ctranspose(a)
-    isapple = Sys.is_apple
-    copyto!(a...) = copy!(a...)
-    macro warn(a...)
-        return :(warn($a...))
-    end
-else
-    using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
-    import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
-    import Base: copyto!, firstindex, lastindex
-    using Base:IteratorSize
-    using SpecialFunctions: gamma
-    using DSP: conv
-    using Base.Sys: isapple
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+## Some specific functions of Base we merely use
 
+using Base: IteratorSize
+using SpecialFunctions: gamma
+using DSP: conv
+using Base.Sys: isapple
+
+## Imports from Base of functions we extend
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
@@ -46,11 +21,12 @@ import Base: ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
-import Base: length, size, eachindex,
-        range, collect, first, last
+import Base: length, size, eachindex, firstindex, lastindex,
+        range, collect, first, last, copyto!
 import Base: transpose, inv, hcat, vcat
 import Base: checkbounds, checkbounds_indices, checkindex
-import Base: getindex, setindex!, unsafe_getindex, eltype
+import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
+    IndexStyle, axes, axes1
 import Base: broadcast, similar
 
 import Base: cos, sin, exp, log
@@ -61,24 +37,29 @@ import Base: isreal, iseven, isodd, real, complex
 import Base: show, string
 
 
-## Imports from Domains
+## Imports from LinearAlgebra
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
 
-import Domains: domaintype, codomaintype, dimension, domain
+
+## Imports from DomainSets
+
+import DomainSets: domaintype, codomaintype, dimension, domain
 # For intervals
-import Domains: leftendpoint, rightendpoint
+import DomainSets: leftendpoint, rightendpoint
 # For maps
-import Domains: matrix, vector, tensorproduct
+import DomainSets: matrix, vector, tensorproduct
 
 # composite type interface
-import Domains: element, elements, numelements
+import DomainSets: element, elements, numelements
 # cartesian product utility functions
-import Domains: cartesianproduct, ×, product_eltype
+import DomainSets: cartesianproduct, ×, product_eltype
 
-import Domains: forward_map, inverse_map
+import DomainSets: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 
 import AbstractTrees: children
+
 
 ## Exhaustive list of exports
 
@@ -86,6 +67,10 @@ import AbstractTrees: children
 export LinearIndex, NativeIndex
 export DefaultNativeIndex, DefaultIndexList
 export value
+
+# from util/domain_extensions.jl
+export interval, circle, sphere, disk, ball, rectangle, cube, simplex
+export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -101,7 +86,7 @@ export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
         DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
-export ChebyshevNodeGrid, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremaGrid
+export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point
 export leftendpoint, rightendpoint, range
 
@@ -128,8 +113,8 @@ export SparseOperator
 
 # from bases/generic/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
-export domaintype, codomaintype, coefficient_type
-export promote_domaintype, promote_domainsubtype
+export domaintype, codomaintype, coefficienttype
+export promote_domaintype, promote_domainsubtype, promote_coefficienttype
 export grid, left, right, support, domain, codomain
 export measure
 export eval_expansion, eval_element, eval_element_derivative
@@ -148,7 +133,6 @@ export moment, norm
 
 # from bases/generic/span.jl
 export Span
-export coefficient_type, coeftype
 
 # from bases/generic/subdicts.jl
 export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
@@ -184,10 +168,11 @@ export ConcreteDerivedOperator
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
+export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+# from operator/solvers.jl
 export QR_solver, SVD_solver, operator
 # from operator/circulant_operator.jl
 export CirculantOperator
@@ -275,10 +260,6 @@ export gridbasis, grid_multiplication_operator
 export GridSamplingOperator
 export sample
 
-# from sampling/platform.jl
-export Platform
-export primal, dual, sampler, A, Zt, dual_sampler
-
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
@@ -321,7 +302,6 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 export gaussjacobi
 
 
-using Base.Cartesian
 
 
 include("util/common.jl")
@@ -364,8 +344,10 @@ include("bases/generic/mapped_dict.jl")
 
 include("operator/dimop.jl")
 
+include("operator/arrayoperator.jl")
 include("operator/basic_operators.jl")
 include("operator/banded_operators.jl")
+include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
@@ -400,7 +382,6 @@ include("bases/generic/vector_dict.jl")
 
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
-include("sampling/platform.jl")
 include("sampling/quadrature.jl")
 
 ################################################################

@@ -1,4 +1,3 @@
-# fourier.jl
 
 """
 A Fourier basis on the interval `[0,1]`. The basis functions are given by
@@ -35,18 +34,14 @@ function FourierBasis(n, a::Number, b::Number)
 	FourierBasis{T}(n, a, b)
 end
 
-length(b::FourierBasis) = b.n
+size(b::FourierBasis) = (b.n,)
+
 oddlength(b::FourierBasis) = isodd(length(b))
 evenlength(b::FourierBasis) = iseven(length(b))
 
 instantiate(::Type{FourierBasis}, n, ::Type{T}) where {T} = FourierBasis{T}(n)
 
-dict_promote_domaintype(b::FourierBasis{T}, ::Type{S}) where {T,S} = FourierBasis{promote_type(S,T)}(b.n)
-dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Real} = error("FourierBasis with real coefficients not implemented")
-dict_promote_coeftype(b::FourierBasis{T}, ::Type{S}) where {T,S<:Complex} = FourierBasis{promote_type(T,real(S))}(b.n)
-resize(b::FourierBasis{T}, n) where {T} = FourierBasis{T}(n)
-
-
+similar(b::FourierBasis, ::Type{T}, n::Int) where {T} = FourierBasis{T}(n)
 
 # Properties
 
@@ -75,7 +70,7 @@ compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b), domaintype(b))
+grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
 
 
 ##################
@@ -349,7 +344,7 @@ function antidiff_scaling_function(b::FourierBasis, idx, order::Int)
 	k==0 ? Complex{T}(0) : 1 / (k * 2 * T(pi) * im)^order
 end
 
-differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order::Int; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
+differentiation_operator(s1::FourierBasis{T}, s2::FourierBasis{T}, order = 1; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
 
 pseudodifferential_operator(s::FourierBasis, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 
@@ -384,29 +379,29 @@ end
 
 
 
-function transform_from_grid(src, dest::FourierBasis, grid; options...)
+function transform_from_grid(src, dest::FourierBasis, grid; T = coefficienttype(dest), options...)
 	@assert compatible_grid(dest, grid)
-	forward_fourier_operator(src, dest, coeftype(dest); options...)
+	forward_fourier_operator(src, dest, T; options...)
 end
 
-function transform_to_grid(src::FourierBasis, dest, grid; options...)
+function transform_to_grid(src::FourierBasis, dest, grid; T = coefficienttype(src), options...)
 	@assert compatible_grid(src, grid)
-	backward_fourier_operator(src, dest, coeftype(src); options...)
+	backward_fourier_operator(src, dest, T; options...)
 end
 
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	#@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	backward_fourier_operator(s1, s2, coeftype(s1); options...)
+	backward_fourier_operator(s1, s2, T; options...)
 end
 
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	#@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
-	forward_fourier_operator(s1, s2, coeftype(s2); options...)
+	forward_fourier_operator(s1, s2, T; options...)
 end
 
 ## function transform_from_grid_post(src, dest::FourierSeries, grid; options...)
 ## 	@assert compatible_grid(dictionary(dest), grid)
-##     L = convert(coeftype(dest), length(src))
+##     L = convert(coefficienttype(dest), length(src))
 ##     ScalingOperator(dest, 1/L)
 ## end
 
@@ -562,46 +557,10 @@ dot(b::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(b); o
 
 function Gram(s::FourierBasis; options...)
 	if iseven(length(s))
-		CoefficientScalingOperator(s, s, (length(s)>>1)+1, one(coeftype(s))/2)
+		CoefficientScalingOperator(s, s, (length(s)>>1)+1, one(coefficienttype(s))/2)
 	else
 		IdentityOperator(s, s)
 	end
 end
 
 UnNormalizedGram(b::FourierBasis, oversampling) = ScalingOperator(b, b, length_oversampled_grid(b, oversampling))
-
-
-##################
-# Platform
-##################
-
-"A doubling sequence that produces odd values, i.e., the value after `n` is `2n+1`."
-struct OddDoublingSequence <: DimensionSequence
-    initial ::  Int
-
-	# Default constructor to guarantee that the initial value is odd
-	OddDoublingSequence(initial::Int) = (@assert isodd(initial); new(initial))
-end
-
-initial(s::OddDoublingSequence) = s.initial
-
-OddDoublingSequence() = OddDoublingSequence(1)
-
-getindex(s::OddDoublingSequence, idx::Int) = initial(s) * (2<<(idx-1)) - 1
-
-
-fourier_platform(;options...) = fourier_platform(Float64; options...)
-
-fourier_platform(n::Int; options...) = fourier_platform(Float64, n; options...)
-
-fourier_platform(::Type{T};options...) where {T} = fourier_platform(T, 1; options...)
-
-function fourier_platform(::Type{T}, n::Int; oversampling=1) where {T}
-	primal = FourierBasis{T}
-	dual = FourierBasis{T}
-        sampler = n -> GridSamplingOperator(gridbasis(PeriodicEquispacedGrid(round(Int,oversampling*n), UnitInterval{T}()), T))
-        dual_sampler = n->(1/length(dest(sampler(n))))*sampler(n)
-	params = isodd(n) ? OddDoublingSequence(n) : DoublingSequence(n)
-	GenericPlatform(primal = primal, dual = dual, sampler = sampler, dual_sampler=dual_sampler,
-		params = params, name = "Fourier series")
-end

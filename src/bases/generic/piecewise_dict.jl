@@ -1,4 +1,3 @@
-# piecewise_dict.jl
 
 """
 A `PiecewiseDict` has a dictionary for each piece in a partition. Its representation
@@ -18,7 +17,7 @@ end
 
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
-function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(length(partition))*length(set))
+function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(Int,length(partition))*length(set))
     dicts = [rescale(resize(set, n[i]), support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end
@@ -117,7 +116,7 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
         @assert numelements(s1) == numelements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{coeftype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
     end
 end
 
@@ -215,5 +214,5 @@ function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.nat
 end
 
 function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(DictionaryOperator{coeftype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
+    BlockDiagonalOperator(DictionaryOperator{coefficienttype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
 end

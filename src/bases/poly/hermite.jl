@@ -1,4 +1,3 @@
-# hermite.jl
 
 """
 A basis of the classicale Hermite polynomials. These polynomials are orthogonal
@@ -13,16 +12,13 @@ end
 
 name(b::HermitePolynomials) = "Hermite OPS"
 
-# Constructor with a default numeric type
-HermitePolynomials(n::Int, ::Type{T} = Float64) where {T} = HermitePolynomials{T}(n)
-
 instantiate(::Type{HermitePolynomials}, n, ::Type{T}) where {T} = HermitePolynomials{T}(n)
 
-dict_promote_domaintype(b::HermitePolynomials, ::Type{S}) where {S} = HermitePolynomials{S}(b.n)
+HermitePolynomials(n::Int) = HermitePolynomials{Float64}(n)
 
-resize(b::HermitePolynomials{T}, n) where {T} = HermitePolynomials{T}(n)
+similar(b::HermitePolynomials, ::Type{T}, n::Int) where {T} = HermitePolynomials{T}(n)
 
-support(b::HermitePolynomials{T}) where {T} = Domains.FullSpace(T)
+support(b::HermitePolynomials{T}) where {T} = DomainSets.FullSpace(T)
 
 first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 

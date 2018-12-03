@@ -1,11 +1,7 @@
 # test_fourier.jl
-using BasisFunctions, BasisFunctions.Test, Domains
+using BasisFunctions, BasisFunctions.Test, DomainSets
 
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test
-end
+using Test
 types = (Float64, BigFloat)
 
 #####

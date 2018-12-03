@@ -1,4 +1,3 @@
-# legendre.jl
 
 """
 A basis of Legendre polynomials on the interval `[-1,1]`. These classical
@@ -12,15 +11,11 @@ end
 
 name(b::LegendrePolynomials) = "Legendre OPS"
 
-# Constructor with a default numeric type
-LegendrePolynomials(n::Int, ::Type{T} = Float64) where {T} = LegendrePolynomials{T}(n)
+LegendrePolynomials(n::Int) = LegendrePolynomials{Float64}(n)
 
 instantiate(::Type{LegendrePolynomials}, n, ::Type{T}) where {T} = LegendrePolynomials{T}(n)
 
-dict_promote_domaintype(b::LegendrePolynomials, ::Type{S}) where {S} = LegendrePolynomials{S}(b.n)
-dict_promote_coeftype(b::LegendrePolynomials, ::Type{S}) where {S<:Real} = LegendrePolynomials{S}(b.n)
-
-resize(b::LegendrePolynomials{T}, n) where {T} = LegendrePolynomials{T}(n)
+similar(b::LegendrePolynomials, ::Type{T}, n::Int) where {T} = LegendrePolynomials{T}(n)
 
 support(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
 

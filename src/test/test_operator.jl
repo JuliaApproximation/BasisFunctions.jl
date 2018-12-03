@@ -1,7 +1,7 @@
 function test_generic_operator_interface(op, T)
     ELT = eltype(op)
     @test promote_type(T,ELT) == ELT
-    #@test coeftype(dest(op)) == ELT
+    #@test coefficienttype(dest(op)) == ELT
     # This may no longer always be true:
     # @test eltype(src(op)) == ELT
 
@@ -63,7 +63,7 @@ function test_generic_operator_interface(op, T)
     ##     # ELT2 may not equal T, but it must be wider.
     ##     # For example, when T2 is BigFloat, ELT2 could be Complex{BigFloat}
     ##     @test promote_type(T2, ELT2) == ELT2
-    ##     @test coeftype(dest(op2)) == ELT2
+    ##     @test coefficienttype(dest(op2)) == ELT2
     ## end
 
     # Verify inverse

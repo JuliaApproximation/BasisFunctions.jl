@@ -1,5 +1,3 @@
-# tensorproduct_dict.jl
-
 
 """
 A `TensorProductDict` is itself a dictionary: the tensor product of a number of
@@ -47,41 +45,20 @@ function TensorProductDict(dicts::Dictionary...)
     N = length(dicts)
     S = product_domaintype(dicts...)
     T = promote_type(map(codomaintype, dicts)...)
-    c = promote_type(map(coeftype, dicts)...)
-    dicts2 = map(s->promote_coeftype(s,c),dicts)
+    c = promote_type(map(coefficienttype, dicts)...)
+    dicts2 = map(s->promote_coefficienttype(s,c),dicts)
     DT = typeof(dicts2)
     TensorProductDict{N,DT,S,T}(dicts2)
 end
 
 size(d::TensorProductDict) = d.size
-size(d::TensorProductDict, j::Int) = d.size[j]
 
-length(d::TensorProductDict) = prod(size(d))
+similar(dict::TensorProductDict, ::Type{T}, size::Int...) where {T} =
+    TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
 
-# We need a more generic definition, but one can't iterate over a tuple type nor index it
-dict_promote_domaintype(s::TensorProductDict{N}, ::Type{NTuple{N,T}}) where {N,T} =
-    TensorProductDict(map(x->promote_domaintype(x, T), elements(s))...)
+coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,elements(s))...)
 
-dict_promote_domaintype(s::TensorProductDict2, ::Type{Tuple{A,B}}) where {A,B} =
-    TensorProductDict(promote_domaintype(element(s, 1), A), promote_domaintype(element(s, 2), B))
-
-dict_promote_domaintype(s::TensorProductDict3, ::Type{Tuple{A,B,C}}) where {A,B,C} =
-    TensorProductDict(promote_domaintype(element(s, 1), A),
-                        promote_domaintype(element(s, 2), B),
-                        promote_domaintype(element(s, 3), C))
-
-dict_promote_domaintype(s::TensorProductDict4, ::Type{Tuple{A,B,C,D}}) where {A,B,C,D} =
-    TensorProductDict(promote_domaintype(element(s, 1), A),
-                        promote_domaintype(element(s, 2), B),
-                        promote_domaintype(element(s, 3), C),
-                        promote_domaintype(element(s, 4), D))
-
-coefficient_type(s::TensorProductDict) = promote_type(map(coefficient_type,elements(s))...)
-# We need a more generic definition, but one can't iterate over a tuple type nor index it
-dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Real} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
-dict_promote_coeftype(s::TensorProductDict{N}, ::Type{U}) where {N,U<:Complex} =TensorProductDict(map(x->promote_coeftype(x,U),elements(s))...)
-
-
+IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ^(s::Dictionary, n::Int) = tensorproduct(s, n)
 
@@ -138,7 +115,6 @@ for op in (:derivative_dict, :antiderivative_dict)
         tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
 end
 
-resize(d::TensorProductDict, n) = TensorProductDict(map( (d_i,n_i)->resize(d_i, n_i), elements(d), n)...)
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 
 
@@ -248,9 +224,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
-index_set_tensorproduct(s,n) = (VERSION < v"0.7-") ?
-    CartesianIndices(CartesianIndex(fill(1,n)...), CartesianIndex(fill(s+1,n)...)) :
-    CartesianIndices(ntuple(k->1,n), tuple(ntuple(k->s+1,n)))
+index_set_tensorproduct(s,n) = CartesianIndices(ntuple(k->1,n), tuple(ntuple(k->s+1,n)))
 
 "Return a list of all indices of total degree at most s, in n dimensions."
 function index_set_total_degree(s, n)

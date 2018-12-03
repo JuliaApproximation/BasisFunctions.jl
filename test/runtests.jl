@@ -1,22 +1,19 @@
-# test_suite.jl
 module test_suite
 
-using BasisFunctions, BasisFunctions.Test, Domains, StaticArrays
-import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
+using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
 
-if VERSION < v"0.7-"
-    using Base.Test
-    my_rand(T, a...) = map(T, rand(a...))
-    ComplexF64 = Complex128
-    ComplexF32 = Complex64
+import BasisFunctions.Test:
+    supports_approximation,
+    supports_interpolation,
+    suitable_function,
+    suitable_interpolation_grid
 
-    srand(1234)
-else
-    using Test, Random, FFTW, LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-    my_rand = rand
-    Random.seed!(1234)
-end
+using Test, Random, FFTW, LinearAlgebra
+
+linspace(a,b,c) = range(a, stop=b, length=c)
+
+my_rand = rand
+Random.seed!(1234)
 
 BF = BasisFunctions
 const show_timings = false
@@ -24,6 +21,7 @@ const show_timings = false
 ##########
 # Testing
 ##########
+
 Delimit("Utilities")
 include("util/test_utilities.jl")
 

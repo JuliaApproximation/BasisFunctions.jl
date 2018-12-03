@@ -1,4 +1,3 @@
-# orthopoly.jl
 
 """
 `OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
@@ -19,12 +18,12 @@ approx_length(b::OPS, n::Int) = n
 derivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)-order)
 antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
-length(o::OrthogonalPolynomials) = o.n
+size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
 
 function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
-    T = real(coeftype(s))
+    T = real(coefficienttype(s))
 	# To avoid difficult points at the ends of the domain.
 	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
 end
@@ -281,21 +280,13 @@ end
 
 function roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
-    (VERSION < v"0.7-") ? eig(J)[1] : eigen(J).values
+    eigen(J).values
 end
 
-if VERSION < v"0.7-"
-    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
-        J = symmetric_jacobi_matrix(b)
-        # assuming the user has imported GenericLinearAlgebra.jl
-        sort(real(LinearAlgebra.EigenGeneral.eigvals!(J)))
-    end
-else
-    function roots(b::OPS{T}) where {T<:Union{BigFloat}}
-        J = symmetric_jacobi_matrix(b)
-        # assuming the user has imported GenericLinearAlgebra.jl
-        sort(real(eigvals!(J)))
-    end
+function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+    J = symmetric_jacobi_matrix(b)
+    # assuming the user has imported GenericLinearAlgebra.jl
+    sort(real(eigvals!(J)))
 end
 
 gauss_points(b::OPS) = roots(b)
@@ -317,7 +308,7 @@ Compute the Gaussian quadrature rule using the roots of the orthogonal polynomia
 """
 function gauss_rule(b::OPS{T}) where {T <: Real}
     J = symmetric_jacobi_matrix(b)
-    x,v = (VERSION < v"0.7-") ? eig(J) : eigen(J)
+    x,v = eigen(J)
     b0 = first_moment(b)
     # In the real-valued case it is sufficient to use the first element of the
     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
@@ -524,11 +515,11 @@ given by `α[n+1]`). The last value is `α_{n-1} = α[n]`.
 function modified_chebyshev(m::Array{T}, a=zeros(T,length(m)), b=zeros(T,length(m))) where {T}
     L = length(m)
     n = L>>1
-    α = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
-    β = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
-    σmone = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
-    σzero = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
-    σ = (VERSION<v"0.7-") ? Array{T}(L) : Array{T}(undef, L)
+    α = Array{T}(undef, n)
+    β = Array{T}(undef, n)
+    σmone = Array{T}(undef, L)
+    σzero = Array{T}(undef, L)
+    σ = Array{T}(undef, L)
 
     modified_chebyshev!(α,β,m,a,b,σ,σzero,σmone,n,1)
     α, β
@@ -618,15 +609,9 @@ q_{k+1}(t) = (a_kt+b_k)q_k(t)-c_kq_{k-1}(t)
 """
 function monic_to_orthonormal_recurrence_coefficients(α::Array{T}, β::Array{T}) where {T}
     n = length(α)
-    if VERSION < v"0.7-"
-        a = Array{T}(n-1)
-        b = Array{T}(n-1)
-        c = Array{T}(n-1)
-    else
-        a = Array{T}(undef, n-1)
-        b = Array{T}(undef, n-1)
-        c = Array{T}(undef, n-1)
-    end
+    a = Array{T}(undef, n-1)
+    b = Array{T}(undef, n-1)
+    c = Array{T}(undef, n-1)
     monic_to_orthonormal_recurrence_coefficients!(a,b,c,α,β)
     a,b,c
 end

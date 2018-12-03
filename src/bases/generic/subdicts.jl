@@ -1,4 +1,3 @@
-# subdicts.jl
 
 #############################
 # An abstract subdictionary
@@ -25,10 +24,10 @@ superindices(dict::Subdictionary) = dict.superindices
 superindices(dict::Subdictionary, idx::Int) = dict.superindices[idx]
 superindices(dict::Subdictionary, idx::DefaultNativeIndex) = superindices(dict, value(idx))
 
-# The concrete subdict should implement `similar_subdict`, a routine that
-# returns a subdict of a similar type as itself, but with a different underlying set.
-dict_promote_domaintype(s::Subdictionary, ::Type{S}) where {S} =
-    similar_subdict(s, promote_domaintype(superdict(s), S), superindices(s))
+function similar(d::Subdictionary, ::Type{T}, n::Int) where {T}
+    @assert n == length(d)
+    similar_subdict(d, similar(superdict(d), T), superindices(d))
+end
 
 apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
@@ -47,8 +46,6 @@ myLeaves(s::Subdictionary) = myLeaves(superdict(s))
 support(s::Subdictionary) = support(superdict(s))
 
 support(s::Subdictionary, i) = support(superdict(s),superindices(s,i))
-
-length(s::Subdictionary) = length(superindices(s))
 
 size(s::Subdictionary) = size(superindices(s))
 

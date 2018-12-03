@@ -1,4 +1,3 @@
-# laguerre.jl
 
 """
 A basis of the classicale Laguerre polynomials. These polynomials are orthogonal
@@ -16,21 +15,18 @@ end
 
 name(b::LaguerrePolynomials) = "Laguerre OPS"
 
-LaguerrePolynomials(n, ::Type{T} = Float64) where {T} = LaguerrePolynomials{T}(n)
+LaguerrePolynomials(n::Int) = LaguerrePolynomials{Float64}(n)
 
-LaguerrePolynomials(n, α::T) where {T <: Integer} = LaguerrePolynomials(n, float(α))
+LaguerrePolynomials(n::Int, α::T) where {T <: AbstractFloat} = LaguerrePolynomials{T}(n, α)
 
-LaguerrePolynomials(n, α::T) where {T <: Number} = LaguerrePolynomials{T}(n, α)
+LaguerrePolynomials(n::Int, α::Integer) = LaguerrePolynomials(n, float(α))
 
 
 instantiate(::Type{LaguerrePolynomials}, n, ::Type{T}) where {T} = LaguerrePolynomials{T}(n)
 
-dict_promote_domaintype(b::LaguerrePolynomials, ::Type{S}) where {S} =
-    LaguerrePolynomials{S}(b.n, b.α)
+similar(b::LaguerrePolynomials, ::Type{T}, n::Int) where {T} = LaguerrePolynomials{T}(n, b.α)
 
-resize(b::LaguerrePolynomials, n) = LaguerrePolynomials(n, b.α)
-
-support(b::LaguerrePolynomials{T}) where {T} = halfline(T)
+support(b::LaguerrePolynomials{T}) where {T} = HalfLine{T}()
 
 first_moment(b::LaguerrePolynomials{T}) where {T} = gamma(b.α+1)
 
@@ -55,4 +51,3 @@ rec_An(b::LaguerrePolynomials{T}, n::Int) where {T} = -T(1) / T(n+1)
 rec_Bn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
 
 rec_Cn(b::LaguerrePolynomials{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
-

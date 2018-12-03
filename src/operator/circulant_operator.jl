@@ -1,4 +1,3 @@
-# circulant_operator.jl
 
 """
 A circulant operator is represented by a circulant matrix.
@@ -47,8 +46,8 @@ function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, o
         imag_norm = norm(imag(fft(diagonal(opD))))
         imag_norm > real_circulant_tol && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
         r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
-        r_src = promote_coeftype(op_src, r_S)
-        r_dest = promote_coeftype(op_dest, r_D)
+        r_src = promote_coefficienttype(op_src, r_S)
+        r_dest = promote_coefficienttype(op_dest, r_D)
 
         return CirculantOperator{r_A}(r_src, r_dest, iF*opD*F, opD)
 

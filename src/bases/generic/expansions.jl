@@ -1,4 +1,3 @@
-# expansions.jl
 
 "Check whether a set of coefficients is compatible with the function set."
 compatible_coefficients(dict::Dictionary, coefficients) =
@@ -67,14 +66,14 @@ setindex!(e::Expansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the dict of the expansion
-(e::Expansion)(x; options...) = call_expansion(e, dictionary(e), coefficients(e), x; options...)
+(e::Expansion)(x) = call_expansion(e, dictionary(e), coefficients(e), x)
 (e::Expansion)(x, y) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
 (e::Expansion)(x, y, z) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
 (e::Expansion)(x, y, z, t) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
 (e::Expansion)(x, y, z, t, u...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
 
-call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
-    eval_expansion(dict, coefficients, x; options...)
+call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
+    eval_expansion(dict, coefficients, x)
 
 function differentiate(e::Expansion, order=1)
     op = differentiation_operator(dictionary(e), order)
@@ -99,7 +98,7 @@ Base.broadcast(e::Expansion, x::LinRange{T}) where {T} = broadcast(e, Equispaced
 ∫∂y(f::Expansion) = antidifferentiate(f, 2, 1)
 ∫∂z(f::Expansion) = antidifferentiate(f, 3, 1)
 # little helper function
-ei(dim,i, coefficients) = (VERSION < v"0.7-") ? tuple((coefficients*eye(Int,dim)[:,i])...) : tuple((coefficients*Matrix{Int}(I, dim, dim)[:,i])...)
+ei(dim,i, coefficients) = tuple((coefficients*Matrix{Int}(I, dim, dim)[:,i])...)
 # we allow the differentiation of one specific variable through the var argument
 differentiate(f::Expansion, var, order) = differentiate(f, ei(dimension(f), var, order))
 antidifferentiate(f::Expansion, var, order) = antidifferentiate(f, ei(dimension(f), var, order))
@@ -182,16 +181,10 @@ function apply(op::DictionaryOperator, e::Expansion)
     Expansion(dest(op), op * coefficients(e))
 end
 
-if VERSION < v"0.7-"
-    Base.broadcast(abs, e::Expansion) = abs.(coefficients(e))
-else
-    Base.iterate(e::Expansion) = iterate(coefficients(e))
+Base.iterate(e::Expansion) = iterate(coefficients(e))
 
-    Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
+Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
 
-    Base.collect(e::Expansion) = coefficients(e)
+Base.collect(e::Expansion) = coefficients(e)
 
-    Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-
-    Base.abs(e::Expansion) = abs.(coefficients(e))
-end
+Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()

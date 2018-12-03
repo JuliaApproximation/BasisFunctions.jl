@@ -1,4 +1,3 @@
-# mapped_dict.jl
 
 """
 A `MappedDict` has a dictionary and a map. The domain of the dictionary is
@@ -24,7 +23,7 @@ MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{T1,S}) where {S,T1,T} =
 # This does not (currently) work for all maps.
 function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
-    MappedDict(promote_domaintype(dict, S), update_eltype(map, S))
+    MappedDict(promote_domaintype(dict, S), DomainSets.update_eltype(map, S))
 end
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
@@ -32,7 +31,7 @@ mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 # Convenience function, similar to apply_map for grids etcetera
 apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
 
-apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map*mapping(dict))
+apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map ∘ mapping(dict))
 
 mapping(dict::MappedDict) = dict.map
 
@@ -46,7 +45,7 @@ _grid(s::MappedDict, set, map) = mapped_grid(grid(set), map)
 
 
 function name(s::MappedDict)
-    if isa(support(s), MappedDomain)
+    if isa(support(s), DomainSets.MappedDomain)
         return string(mapping(s))
     else
         return "Mapping $(support(superdict(s))) to $(support(s))"
@@ -190,7 +189,7 @@ end
 # TODO: check for promotions here
 mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapping(s))
 
-mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficient_type(s))
+mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a, b)
@@ -203,7 +202,7 @@ function rescale(s::Dictionary1d, a, b)
     end
 end
 
-rescale(s::Dictionary,d::Domain) = rescale(s,infimum(d),supremum(d))
+rescale(s::Dictionary, d::Domain) = rescale(s, infimum(d), supremum(d))
 
 
 # "Preserve Tensor Product Structure"

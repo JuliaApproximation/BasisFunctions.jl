@@ -9,6 +9,7 @@
     # title --> "Expansion"
     grid = plotgrid(dictionary(S), n)
     vals = plot_complex ? S(grid) : real(S(grid))
+    z = postprocess(dictionary(S), grid, vals)
     grid, postprocess(dictionary(S), grid, vals)
 end
 
@@ -40,10 +41,16 @@ end
 
 
 # Plot a vector of values on a 1D grid
-@recipe function f(grid::AbstractGrid1d, vals)
-    size --> (800,400)
-    collect(grid), vals
-end
+# @recipe function f(grid::AbstractGrid1d{S <: Real,N}, vals::AbstractArray{S}) where {S,N}
+#     size --> (800,400)
+#     collect(grid), vals
+# end
+#
+# # Implement the same function as above to resolve an ambiguity
+# @recipe function f(grid::AbstractGrid1d{S <: Real,N}, vals::AbstractArray{Complex{S}}) where {S,N}
+#     size --> (800,400)
+#     collect(grid), vals
+# end
 
 # Plot a matrix of values on a 2D equispaced grid
 @recipe function f(grid::AbstractGrid2d, vals)
@@ -59,7 +66,7 @@ end
     seriestype --> :scatter
     size --> (500,400)
     legend --> false
-    broadcast(x->tuple(x...),collect(grid))
+    broadcast(x->tuple(x...),collect(grid)[1:end])
 end
 
 # Plot a 1D grid
@@ -93,7 +100,7 @@ postprocess(S::Subdictionary, grid, vals) = postprocess(superdict(S), grid, vals
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
-plotgrid(S::Dictionary1d, n) = rescale(PeriodicEquispacedGrid(n,domaintype(S)),infimum(support(S)),supremum(support(S)))
+plotgrid(S::Dictionary1d, n) = PeriodicEquispacedGrid(n, support(S))
 # look at first element by default
 plotgrid(S::MultiDict, n) = plotgrid(element(S,1), n)
 plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)

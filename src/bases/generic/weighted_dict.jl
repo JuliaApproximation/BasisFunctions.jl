@@ -1,4 +1,3 @@
-# weighted_dict.jl
 
 """
 A `WeightedDict` represents some function f(x) times an existing dictionary.
@@ -82,10 +81,10 @@ _eval_expansion(set::WeightedDict, w, coefficients, grid::AbstractGrid) =
 (*)(f::AbstractFunction, set::Dictionary) = WeightedDict(set, f)
 
 weightfun_scaling_operator(dgs::GridBasis1d, weightfunction) =
-    DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x) for x in grid(dgs)])
+    DiagonalOperator(dgs, dgs, coefficienttype(dgs)[weightfunction(x) for x in grid(dgs)])
 
 weightfun_scaling_operator(dgs::GridBasis, weightfunction) =
-    DiagonalOperator(dgs, dgs, coeftype(dgs)[weightfunction(x...) for x in grid(dgs)])
+    DiagonalOperator(dgs, dgs, coefficienttype(dgs)[weightfunction(x...) for x in grid(dgs)])
 
 transform_to_grid_post(src::WeightedDict, dest::GridBasis, grid; options...) =
     weightfun_scaling_operator(dest, weightfunction(src))
