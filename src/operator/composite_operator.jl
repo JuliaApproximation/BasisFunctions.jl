@@ -92,9 +92,6 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
         for op in operators
             add_this_one = true
             # We forget about identity operators
-            if isa(op, IdentityOperator)
-                add_this_one = false
-            end
             if isa(op, ScalingOperator) && scalar(op) == 1
                 add_this_one = false
             end

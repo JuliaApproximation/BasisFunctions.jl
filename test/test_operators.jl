@@ -5,6 +5,9 @@ using Test
 types = [Float64,BigFloat,]
 
 function test_operators(T)
+    @testset "$(rpad("test identity operator",80))" begin
+        test_identity_operator(T) end
+
     @testset "$(rpad("test diagonal operators",80))" begin
         test_diagonal_operators(T) end
 
@@ -37,7 +40,6 @@ function test_generic_operators(T)
     b4 = LegendrePolynomials{T}(3)
 
     operators = [
-        ["Identity operator", IdentityOperator(b1, b1)],
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
@@ -249,6 +251,17 @@ function test_circulant_operator(ELT)
         @test (typeof(sumC) <:BasisFunctions.CirculantOperator)
         @test mulC*e1 ≈ 2*C*e1
     end
+end
+
+function test_identity_operator(T)
+    b = FourierBasis{T}(10)
+    I = IdentityOperator(b)
+    @test scalar(I) == one(T)
+    @test eltype(I) == Complex{T}
+    @test src(I) == b
+    I = IdentityOperator(FourierBasis{T}(10), ChebyshevBasis{T}(10))
+    @test src(I) == FourierBasis{T}(10)
+    @test dest(I) == ChebyshevBasis{T}(10)
 end
 
 function test_invertible_operators(T)

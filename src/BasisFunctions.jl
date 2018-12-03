@@ -168,7 +168,7 @@ export ConcreteDerivedOperator
 export CompositeOperator, compose
 
 # from operator/special_operators.jl
-export IdentityOperator, ScalingOperator, DiagonalOperator, inv_diagonal,
+export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         CoefficientScalingOperator, MatrixOperator, FunctionOperator,
         MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
         IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
@@ -344,7 +344,7 @@ include("bases/generic/mapped_dict.jl")
 
 include("operator/dimop.jl")
 
-include("operator/abstractarrayoperator.jl")
+include("operator/arrayoperator.jl")
 include("operator/basic_operators.jl")
 include("operator/banded_operators.jl")
 include("operator/solvers.jl")

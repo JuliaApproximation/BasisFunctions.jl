@@ -64,12 +64,12 @@ end
 # Pre and post operations are identity by default.
 for op in (:transform_from_grid_pre, :transform_to_grid_pre)
     @eval $op(src, dest, grid; T = op_eltype(src,dest), options...) =
-        IdentityOperator{T}(src)
+        IdentityOperator(T, src)
 end
 
 for op in (:transform_from_grid_post, :transform_to_grid_post)
     @eval $op(src, dest, grid; T = op_eltype(src,dest), options...) =
-        IdentityOperator{T}(dest)
+        IdentityOperator(T, dest)
 end
 
 # Return all three of them in a tuple
