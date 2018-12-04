@@ -59,7 +59,7 @@ function CirculantOperator(op::DictionaryOperator{T}) where {T}
     e = zeros(T, size(op,1))
     e[1] = one(T)
     C = CirculantOperator(src(op), dest(op), op*e)
-    e = map(T,rand(size(op,1)))
+    e = rand(T, size(op,1))
     @assert C*e≈op*e
     C
 end

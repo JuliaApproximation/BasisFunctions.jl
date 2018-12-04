@@ -169,9 +169,9 @@ export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
-        CoefficientScalingOperator, MatrixOperator, FunctionOperator,
-        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
-        IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+        MatrixOperator, FunctionOperator,
+        MultiplicationOperator, WrappedOperator,
+        IndexRestrictionOperator, IndexExtensionOperator
 # from operator/solvers.jl
 export QR_solver, SVD_solver, operator
 # from operator/circulant_operator.jl
@@ -307,6 +307,7 @@ export gaussjacobi
 include("util/common.jl")
 include("util/indexing.jl")
 include("util/multiarray.jl")
+include("util/specialarrays.jl")
 include("util/slices.jl")
 include("util/functors.jl")
 include("util/domain_extensions.jl")

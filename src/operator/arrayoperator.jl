@@ -34,13 +34,12 @@ diagonal(op::ArrayOperator) = diag(op.A)
 matrix(op::ArrayOperator) = copy(op.A)
 
 
-
-struct DiagonalOperator{T} <: ArrayOperator{T}
+struct DiagonalOperator{T,D} <: ArrayOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
-    A       ::  Diagonal{T,Array{T,1}}
+    A       ::  Diagonal{T,D}
 
-    function DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::Diagonal{T,Array{T,1}}) where {T}
+    function DiagonalOperator{T,D}(src::Dictionary, dest::Dictionary, A::Diagonal{T,D}) where {T,D}
         @assert verify_size(src, dest, A)
         new(src, dest, A)
     end
@@ -58,13 +57,13 @@ to_diagonal(::Type{T}, A::Diagonal{S}) where {S,T} = to_diagonal(T, convert(Diag
 
 DiagonalOperator(A::AbstractArray; kwargs...) = DiagonalOperator(to_diagonal(A); kwargs...)
 
-DiagonalOperator(A::Diagonal{T,Array{T,1}}; src = A_src(A), dest = src) where {T} =
+DiagonalOperator(A::Diagonal{T,D}; src = A_src(A), dest = src) where {T,D} =
     DiagonalOperator{promote_type(T,op_eltype(src,dest))}(A, src=src, dest=dest)
 
 DiagonalOperator{T}(A::AbstractArray; kwargs...) where {T} = DiagonalOperator{T}(to_diagonal(T,A); kwargs...)
 
-DiagonalOperator{T}(A::Diagonal{T,Array{T,1}}; src = A_src(A), dest = src) where {T} =
-    DiagonalOperator{T}(src, dest, A)
+DiagonalOperator{T}(A::Diagonal{T,D}; src = A_src(A), dest = src) where {T,D} =
+    DiagonalOperator{T,D}(src, dest, A)
 
 # For backward compatibility
 DiagonalOperator(src::Dictionary, dest::Dictionary, A::AbstractArray) =
@@ -184,6 +183,7 @@ IdentityOperator(src::Dictionary, dest::Dictionary = src) =
 IdentityOperator(::Type{T}, src::Dictionary, dest::Dictionary = src) where {T} =
     ScalingOperator{T}(src, one(T), dest=dest)
 
+
 struct DenseMatrixOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
@@ -217,11 +217,15 @@ ArrayOperator(A::UniformScaling, src::Dictionary, dest::Dictionary) =
 ArrayOperator(A::Matrix, src::Dictionary, dest::Dictionary) =
     DenseMatrixOperator(A; src=src, dest=dest)
 
+
 ###############
 # Arithmetics
 ###############
 
 (*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(op1.A*op2.A, src(op2), dest(op1))
+(*)(op1::ArrayOperator, op2::ArrayOperator, op3::ArrayOperator) = ArrayOperator(op1.A*op2.A*op3.A, src(op3), dest(op1))
+
 (+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(op1.A+op2.A, src(op2), dest(op1))
+
 (*)(a::Number, op::ArrayOperator) = ArrayOperator(a*op.A, src(op), dest(op))
 (*)(op::ArrayOperator, a::Number) = ArrayOperator(a*op.A, src(op), dest(op))

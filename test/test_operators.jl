@@ -41,12 +41,12 @@ function test_generic_operators(T)
 
     operators = [
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
-        ["Zero operator", ZeroOperator(b1, b2)],
-        ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
-        ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
+        ["Zero operator", BF.ZeroOperator(b1, b2)],
+        ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
+        ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, b1, 1, T(2))],
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b4, b4, T(2))) ],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
-        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
+        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],
     ]
 
     for ops in operators
@@ -96,8 +96,8 @@ end
 
 function test_diagonal_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
-            UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
+        operators = (BF.CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
+            BF.AlternatingSignOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
             DiagonalOperator(SRC, rand(coefficienttype(SRC), size(SRC))))
            # PseudoDiagonalOperator(SRC, map(coefficienttype(SRC), rand(size(SRC)))))
@@ -143,8 +143,8 @@ end
 
 function test_multidiagonal_operators(T)
     MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
-        UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
+    operators = (BF.CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
+        BF.AlternatingSignOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
         DiagonalOperator(MSet, rand(coefficienttype(MSet),length(MSet))))
     for Op in operators
@@ -185,7 +185,7 @@ function test_multidiagonal_operators(T)
 end
 
 function test_sparse_operator(ELT)
-    S = SparseOperator(MatrixOperator(map(ELT,rand(4,4))))
+    S = SparseOperator(MatrixOperator(rand(ELT,4,4)))
     test_generic_operator_interface(S, ELT)
 end
 function test_banded_operator(ELT)
@@ -221,7 +221,7 @@ function test_circulant_operator(ELT)
     n = 20
     for T in (ELT, complex(ELT))
         e1 = zeros(T,n); e1[1] = 1
-        c = map(T, rand(n))
+        c = rand(T, n)
         C = CirculantOperator(c)
         m = matrix(C)
         for i in 1:n
@@ -266,9 +266,9 @@ end
 
 function test_invertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
-        operators = (MultiplicationOperator(SRC, SRC, map(coefficienttype(SRC),rand(length(SRC),length(SRC)))),
-            CirculantOperator(map(T,rand(10))),
-            CirculantOperator(map(complex(T),rand(10))))
+        operators = (MultiplicationOperator(SRC, SRC, rand(coefficienttype(SRC),length(SRC),length(SRC))),
+            CirculantOperator(rand(T, 10)),
+            CirculantOperator(rand(complex(T), 10)))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
@@ -291,8 +291,8 @@ end
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
     for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coefficienttype(SRC),rand(length(SRC)+2,length(SRC)))),
-            ZeroOperator(SRC))
+        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), rand(coefficienttype(SRC),length(SRC)+2,length(SRC))),
+            BF.ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place

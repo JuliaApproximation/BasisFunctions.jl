@@ -112,7 +112,7 @@ function test_grids(T)
     @test typeof(supergrid(mg3)) <: PeriodicEquispacedGrid
 
     # Scattered grid
-    pts = map(T, rand(10))
+    pts = rand(T, 10)
     sg = ScatteredGrid(pts)
     test_generic_grid(sg)
 end

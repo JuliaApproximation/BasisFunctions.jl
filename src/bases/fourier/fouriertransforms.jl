@@ -86,6 +86,7 @@ ifft_scalefactor(src, ::Type{Complex{Float32}}) = 1
 # that work along one dimension and they are more efficient than our own generic implementation.
 FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N}
 IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N}
+
 #IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,FFTW.cFFTWPlan{T,1,true,N},S}
 
 dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
@@ -166,8 +167,8 @@ IDCTPLAN{T} = FFTW.DCTPlan{T,4,true}
 DCTIPLAN{T} = FFTW.r2rFFTWPlan{T,(3,),false,1}
 
 for (plan, transform, invtransform) in (
-      (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
-      (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
+      (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransformFFTW),
+      (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransformFFTW),
       (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
     @eval begin
         dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,

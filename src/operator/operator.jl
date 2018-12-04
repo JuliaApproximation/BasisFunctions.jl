@@ -90,6 +90,9 @@ is_inplace(op::DictionaryOperator) = false
 "Is the operator diagonal?"
 is_diagonal(op::DictionaryOperator) = false
 
+LinearAlgebra.mul!(y::AbstractVector, A::DictionaryOperator, x::AbstractVector) = apply!(A, y, x)
+LinearAlgebra.mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = y[:] = apply_multiple(A, x)
+
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))
 	apply!(op, coef_dest, coef_src)

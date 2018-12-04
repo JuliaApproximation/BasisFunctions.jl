@@ -271,13 +271,30 @@ function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coef
 	_forward_chebyshev_operator(s1, s2, T; options...)
 end
 
+const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 
+AlternatingSignOperator(src) = AlternatingSignOperator{coefficienttype(src)}(src)
+AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
+
+string(op::AlternatingSignOperator) = "Alternating sign operator of length $(size(op,1))"
+
+
+const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
+
+CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
+	CoefficientScalingOperator{coefficienttype(src)}(src, index, scalar)
+CoefficientScalingOperator(src::Dictionary, dest::Dictionary, index::Int, scalar) =
+	CoefficientScalingOperator{op_eltype(src,dest)}(src, index, scalar)
+CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
+	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
+
+string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.index) by $(op.scalar)"
 
 function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevNodes;
 			T = coefficienttype(dest), options...)
     scaling = ScalingOperator{T}(dest, 1/sqrt(convert(T, length(dest))/2))
     coefscaling = CoefficientScalingOperator{T}(dest, 1, 1/sqrt(convert(T, 2)))
-    flip = UnevenSignFlipOperator{T}(dest)
+    flip = AlternatingSignOperator{T}(dest)
 	scaling * coefscaling * flip
 end
 

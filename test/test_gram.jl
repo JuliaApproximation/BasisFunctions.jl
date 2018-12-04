@@ -19,7 +19,7 @@ function discrete_gram_test(T)
     basis = instantiate(B, n, T)
     ##################################################################################
     for n in (10,11), oversampling in 1:4
-        e = map(T,rand(n))
+        e = rand(T, n)
         for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries)#,BSplineTranslatesBasis,)
             basis = instantiate(B, n, T)
             span = basis
@@ -28,7 +28,7 @@ function discrete_gram_test(T)
         end
     end
     for n in (10,11)
-        e = map(T,rand(n))
+        e = rand(T, n)
         for B in (ChebyshevBasis,FourierBasis)#,BSplineTranslatesBasis)
             basis = instantiate(B, n, T)
             span = basis

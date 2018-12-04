@@ -68,7 +68,7 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 12
-    coef = map(complex(T), rand(n))
+    coef = rand(complex(T), n)
     b1 = rescale(FourierBasis{T}(n), a, b)
     b2 = rescale(FourierBasis{T}(n+1), a, b)
     b3 = rescale(FourierBasis{T}(n+15), a, b)
@@ -83,7 +83,7 @@ function test_fourier_series(T)
 
 
     # Differentiation test
-    coef = map(complex(T), rand(Float64, size(fb)))
+    coef = rand(complex(T), size(fb))
     D = differentiation_operator(fb)
     coef2 = D*coef
     e1 = Expansion(fb, coef)
@@ -130,7 +130,7 @@ function test_fourier_series(T)
 
     # Try an extension
     n = 13
-    coef = map(complex(T), rand(n))
+    coef = rand(complex(T), n)
     b1 = FourierBasis{T}(n)
     b2 = FourierBasis{T}(n+1)
     b3 = FourierBasis{T}(n+15)
@@ -150,7 +150,7 @@ function test_fourier_series(T)
     b3 = FourierBasis{T}(n-5)
     E1 = restriction_operator(b1, b2)    # source has even length
     E2 = restriction_operator(b2, b3)    # source has odd length
-    coef1 = map(complex(T), rand(length(b1)))
+    coef1 = rand(complex(T), length(b1))
     coef2 = E1*coef1
     coef3 = E2*coef2
     @test reduce(&, [ coef2[i+1] == coef1[i+1] for i=0:BasisFunctions.nhalf(b2) ] )
@@ -159,7 +159,7 @@ function test_fourier_series(T)
     @test reduce(&, [ coef3[end-i+1] == coef2[end-i+1] for i=1:BasisFunctions.nhalf(b3) ] )
 
     # Differentiation test
-    coef = map(complex(T), rand(Float64, size(fbo)))
+    coef = rand(complex(T), size(fbo))
     D = differentiation_operator(fbo)
     coef2 = D*coef
     e1 = Expansion(fbo, coef)
