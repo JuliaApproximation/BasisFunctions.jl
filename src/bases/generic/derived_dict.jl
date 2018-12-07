@@ -47,16 +47,16 @@ for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_
 end
 
 # Delegation of feature methods
-for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
+for op in (:has_derivative, :has_antiderivative, :has_interpolationgrid, :has_extension)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 # has_transform has extra arguments
-has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), gs, grid)
+has_interpolationgrid_transform(s::DerivedDict, gs, grid) = has_interpolationgrid_transform(superdict(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false
 # has_antiderivative(s::ConcreteSet) = false
-# has_grid(s::ConcreteSet) = false
+# has_interpolationgrid(s::ConcreteSet) = false
 # has_transform(s::ConcreteSet) = false
 # has_transform(s::ConcreteSet, dgs::GridBasis) = false
 # has_extension(s::ConcreteSet) = false
@@ -66,7 +66,7 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :size, :grid, :is_composite, :numelements,
+for op in (:length, :extension_size, :size, :interpolation_grid, :is_composite, :numelements,
     :elements, :tail, :ordering, :support)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end

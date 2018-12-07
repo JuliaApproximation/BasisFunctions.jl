@@ -1,4 +1,3 @@
-# test_ops.jl
 
 using BasisFunctions, BasisFunctions.Test, DomainSets
 
@@ -30,7 +29,7 @@ function test_chebyshevT(T)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
     @test has_transform(b1)
-    @test has_transform(b1, grid(b1))
+    @test has_transform(b1, interpolation_grid(b1))
     @test has_transform(b1, ChebyshevExtremae(n1))
     @test has_transform(b1, ChebyshevNodes(n1))
     @test ~has_transform(b1, PeriodicEquispacedGrid(n1, -1, 1))

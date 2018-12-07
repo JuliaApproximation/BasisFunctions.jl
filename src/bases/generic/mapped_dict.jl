@@ -40,8 +40,8 @@ similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 has_derivative(s::MappedDict) = has_derivative(superdict(s)) && islinear(mapping(s))
 has_antiderivative(s::MappedDict) = has_antiderivative(superdict(s)) && islinear(mapping(s))
 
-grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
-_grid(s::MappedDict, set, map) = mapped_grid(grid(set), map)
+interpolation_grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
+_grid(s::MappedDict, set, map) = mapped_grid(interpolation_grid(set), map)
 
 
 function name(s::MappedDict)
@@ -100,13 +100,13 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 
 transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
-has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
+has_interpolationgrid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
-        has_transform(superdict(s), gridbasis(supergrid(g), codomaintype(gb)))
+        has_transform(superdict(s), GridBasis{codomaintype(gb)}(supergrid(g)))
 
-function has_grid_transform(s::MappedDict, gb, g::AbstractGrid)
+function has_interpolationgrid_transform(s::MappedDict, gb, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superdict(s), gridbasis(g2, codomaintype(gb)), g2)
+    has_interpolationgrid_transform(superdict(s), GridBasis{codomaintype(gb)}(g2), g2)
 end
 
 function simplify_transform_pair(s::MappedDict, g::MappedGrid)
@@ -142,7 +142,7 @@ end
 # like we do for transforms above
 function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractGrid; options...)
     g2 = apply_map(g, inv(mapping(s)))
-    E = evaluation_operator(superdict(s), gridbasis(superdict(s), g2); options...)
+    E = evaluation_operator(superdict(s), GridBasis(superdict(s), g2); options...)
     wrap_operator(s, dgs, E)
 end
 
@@ -153,7 +153,7 @@ end
 function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractSubGrid; options...)
     mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
     g2 = similar_subgrid(g, mapped_supergrid)
-    g2_dgs = gridbasis(superdict(s), g2)
+    g2_dgs = GridBasis(superdict(s), g2)
     E = evaluation_operator(superdict(s), g2_dgs; options...)
     wrap_operator(s, dgs, E)
 end

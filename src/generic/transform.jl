@@ -27,7 +27,7 @@
 
 
 # The default transform space is the space associated with the grid of the set
-transform_dict(s::Dictionary; options...) = gridbasis(s)
+transform_dict(s::Dictionary; options...) = GridBasis(s)
 
 for op in (:transform_operator, :transform_operator_pre, :transform_operator_post)
     # With only one argument, use the default transform space
@@ -47,7 +47,7 @@ for op in ( (:transform_operator, :transform_to_grid),
         $(op[2])(src, dest, grid(dest); options...)
     # Convenience function: convert a grid to a grid space
     @eval $(op[1])(src::Dictionary, grid::AbstractGrid; options...) =
-        $(op[1])(src, gridbasis(grid, coefficienttype(src)); options...)
+        $(op[1])(src, GridBasis{coefficienttype(src)}(grid); options...)
 end
 
 # If the source is a GridBasis, invoke the "from_grid" routines
@@ -58,7 +58,7 @@ for op in ( (:transform_operator, :transform_from_grid),
         $(op[2])(src, dest, grid(src); options...)
     # Convenience function: convert a grid to a grid space
     @eval $(op[1])(src::AbstractGrid, dest::Dictionary; options...) =
-        $(op[1])(gridbasis(src, codomaintype(dest)), dest; options...)
+        $(op[1])(GridBasis{codomaintype(dest)}(src), dest; options...)
 end
 
 # Pre and post operations are identity by default.

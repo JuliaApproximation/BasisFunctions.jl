@@ -291,16 +291,16 @@ end
 
 gauss_points(b::OPS) = roots(b)
 
-# We say that has_grid is true only for Float64 because it relies on an
+# We say that has_interpolationgrid is true only for Float64 because it relies on an
 # eigenvalue decomposition and that is currently not (natively) supported in
 # BigFloat
-has_grid(b::OPS{Float64}) = true
+has_interpolationgrid(b::OPS{Float64}) = true
 
-grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
+interpolation_grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
 
 "Return the first moment, i.e., the integral of the weight function."
 function first_moment(b::OPS)
-    # To be implemented by the concrete subtypes
+    @warn "implement first_moment for $b"
 end
 
 """

@@ -239,8 +239,11 @@ function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatri
     MultiplicationOperator(src, dest, matrix)
 end
 
-similar_operator(op::MultiplicationOperator{T}, src, dest) where {T} =
-    MultiplicationOperator{promote_type(T,op_eltype(src,dest))}(src, dest, object(op))
+similar_operator(op::MultiplicationOperator{T,ARRAY,INPLACE}, src, dest) where {T,ARRAY,INPLACE} =
+    MultiplicationOperator{promote_type(T,op_eltype(src,dest))}(src, dest, object(op); inplace=INPLACE)
+
+unsafe_wrap_operator(src, dest, op::MultiplicationOperator) =
+    similar_operator(op, src, dest)
 
 is_inplace(op::MultiplicationOperator{T,ARRAY,INPLACE}) where {T,ARRAY,INPLACE} = INPLACE
 
@@ -327,6 +330,9 @@ FunctionOperator(src::Dictionary, dest::Dictionary, fun) =
 similar_operator(op::FunctionOperator{F,T}, src, dest) where {F,T} =
     FunctionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, op.fun)
 
+unsafe_wrap_operator(src, dest, op::FunctionOperator) =
+    similar_operator(op, src, dest)
+
 # Warning: this very likely allocates memory
 apply!(op::FunctionOperator, coef_dest, coef_src) = apply_fun!(op, op.fun, coef_dest, coef_src)
 
@@ -384,7 +390,7 @@ is_composite(op::OperatorSum) = true
 is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
 
 
-apply_inplace!(op::OperatorSum, dest, src, coef_srcdest) =
+apply_inplace!(op::OperatorSum, coef_srcdest) =
     apply_sum_inplace!(op, op.op1, op.op2, coef_srcdest)
 
 function apply_sum_inplace!(op::OperatorSum, op1::DictionaryOperator, op2::DictionaryOperator, coef_srcdest)
@@ -399,7 +405,7 @@ function apply_sum_inplace!(op::OperatorSum, op1::DictionaryOperator, op2::Dicti
     coef_srcdest
 end
 
-apply!(op::OperatorSum, dest, src, coef_dest, coef_src) = apply_sum!(op, op.op1, op.op2, coef_dest, coef_src)
+apply!(op::OperatorSum, coef_dest, coef_src) = apply_sum!(op, op.op1, op.op2, coef_dest, coef_src)
 
 function apply_sum!(op::OperatorSum, op1::DictionaryOperator, op2::DictionaryOperator, coef_dest, coef_src)
     scratch = op.scratch

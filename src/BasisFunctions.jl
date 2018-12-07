@@ -10,7 +10,6 @@ using Base.Cartesian
 using Base: IteratorSize
 using SpecialFunctions: gamma
 using DSP: conv
-using Base.Sys: isapple
 
 ## Imports from Base of functions we extend
 
@@ -101,7 +100,7 @@ export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
 export MappedGrid, mapped_grid, apply_map
 
 # from spaces/spaces.jl
-export FunctionSpace
+export GenericFunctionSpace
 
 # from operator/dimop.jl
 export DimensionOperator, dimension_operator
@@ -115,7 +114,7 @@ export SparseOperator
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficienttype
 export promote_domaintype, promote_domainsubtype, promote_coefficienttype
-export grid, left, right, support, domain, codomain
+export interpolation_grid, left, right, support, domain, codomain
 export measure
 export eval_expansion, eval_element, eval_element_derivative
 export name
@@ -126,7 +125,7 @@ export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
 export approx_length, extension_size
-export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
+export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment, norm
@@ -254,10 +253,10 @@ export is_discrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
-export gridbasis, grid_multiplication_operator
+export grid, gridbasis, grid_multiplication_operator
 
 # from sampling/sampling_operator.jl
-export GridSamplingOperator
+export GridSampling
 export sample
 
 # from sampling/quadrature.jl
@@ -354,6 +353,7 @@ include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 #include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
+include("operator/arithmetics.jl")
 
 include("operator/generic_operators.jl")
 

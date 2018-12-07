@@ -1,4 +1,3 @@
-# partition.jl
 
 """
 A partition divides a region into several subregions. The main algorithm of

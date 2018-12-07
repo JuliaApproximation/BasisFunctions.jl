@@ -1,5 +1,3 @@
-# generic_operators.jl
-
 
 # In this file we define the interface for the following generic functions:
 #
@@ -88,13 +86,13 @@ end
 # and simplifies the correct pair (leaving out the GridBasist)
 function simplify_transform_sets(s1::GridBasis, s2::Dictionary, grid)
     simple_s2, simple_grid = simplify_transform_pair(s2, grid)
-    simple_s1 = gridbasis(simple_grid, promote_type(coefficienttype(s2),codomaintype(s1)))
+    simple_s1 = GridBasis{promote_type(coefficienttype(s2),codomaintype(s1))}(simple_grid)
     simple_s1, simple_s2, simple_grid
 end
 
 function simplify_transform_sets(s1::Dictionary, s2::GridBasis, grid)
     simple_s1, simple_grid = simplify_transform_pair(s1, grid)
-    simple_s2 = gridbasis(simple_grid, promote_type(coefficienttype(s2),codomaintype(s1)))
+    simple_s2 = GridBasis{promote_type(coefficienttype(s2),codomaintype(s1))}(simple_grid)
     simple_s1, simple_s2, simple_grid
 end
 

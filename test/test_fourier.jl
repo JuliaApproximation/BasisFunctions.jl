@@ -30,7 +30,7 @@ function test_fourier_series(T)
     @test infimum(support(fb)) ≈ a
     @test supremum(support(fb)) ≈ b
 
-    g = grid(fb)
+    g = interpolation_grid(fb)
     @test typeof(g) <: PeriodicEquispacedGrid
     @test leftendpoint(g) ≈ a
     @test rightendpoint(g) ≈ b
@@ -122,7 +122,7 @@ function test_fourier_series(T)
     y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
-    g = grid(dictionary(e))
+    g = interpolation_grid(dictionary(e))
     result = e(g)
     # Don't compare to zero with isapprox because the default absolute tolerance is zero.
     # So: add 1 and compare to 1

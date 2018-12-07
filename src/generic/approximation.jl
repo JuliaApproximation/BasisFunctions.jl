@@ -15,8 +15,8 @@ approximation_operator(s; discrete = true, options...) =
     continuous_approximation_operator(s; options...)
 
 function discrete_approximation_operator(s::Dictionary; options...)
-    if is_basis(s) && has_grid(s)
-        interpolation_operator(s, grid(s); options...)
+    if is_basis(s) && has_interpolationgrid(s)
+        interpolation_operator(s, interpolation_grid(s); options...)
     else
         default_approximation_operator(s; options...)
     end

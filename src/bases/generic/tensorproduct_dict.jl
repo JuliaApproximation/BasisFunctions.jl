@@ -101,14 +101,14 @@ checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
 
 ## Feature methods
 
-for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
+for op in (:has_interpolationgrid, :has_extension, :has_derivative, :has_antiderivative)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
-has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
+has_interpolationgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
     reduce(&, map(has_transform, elements(s), elements(grid)))
 
-has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
+has_interpolationgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =
@@ -173,7 +173,8 @@ getindex(s::TensorProductDict, i::Int, ::Colon, ::Colon) =
 getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements(s)==3; s)
 
 
-grid(s::TensorProductDict) = ProductGrid(map(grid, elements(s))...)
+interpolation_grid(s::TensorProductDict) =
+    ProductGrid(map(interpolation_grid, elements(s))...)
 #grid(b::TensorProductDict, j::Int) = grid(element(b,j))
 
 # In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.

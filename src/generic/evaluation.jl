@@ -1,4 +1,3 @@
-# evaluation.jl
 
 #####################
 # Generic evaluation
@@ -28,7 +27,7 @@ evaluation_operator(s::Dictionary; oversampling = default_oversampling(s), optio
 
 # Convert a grid to a GridBasis
 evaluation_operator(s::Dictionary, grid::AbstractGrid; options...) =
-    evaluation_operator(s, gridbasis(s, grid); options...)
+    evaluation_operator(s, GridBasis(s, grid); options...)
 
 # Convert a linear range to an equispaced grid
 evaluation_operator(s::Dictionary, r::LinRange; options...) =
@@ -78,11 +77,11 @@ grid_evaluation_operator(s::Dictionary, dgs::GridBasis, subgrid::AbstractSubGrid
 # Try to do efficient evaluation also for subgrids
 function _grid_evaluation_operator(s::Dictionary, dgs::GridBasis, subgrid::AbstractSubGrid; options...)
     # We make no attempt if the set has no associated grid
-    if has_grid(s)
+    if has_interpolationgrid(s)
         # Is the associated grid of the same type as the supergrid at hand?
-        if typeof(grid(s)) == typeof(supergrid(subgrid))
+        if typeof(interpolation_grid(s)) == typeof(supergrid(subgrid))
             # It is: we can use the evaluation operator of the supergrid
-            super_dgs = gridbasis(s, supergrid(subgrid))
+            super_dgs = GridBasis(s, supergrid(subgrid))
             E = evaluation_operator(s, super_dgs; options...)
             R = restriction_operator(super_dgs, dgs; options...)
             R*E
@@ -96,4 +95,4 @@ end
 
 # By default we evaluate on the associated grid (if any, otherwise this gives an error)
 discrete_dual_evaluation_operator(s::Dictionary; oversampling = default_oversampling(s), options...) =
-    grid_evaluation_operator(s, gridbasis(s, oversampled_grid(s, oversampling)), oversampled_grid(s, oversampling); options...)*DiscreteDualGram(s; oversampling=oversampling)
+    grid_evaluation_operator(s, GridBasis(s, oversampled_grid(s, oversampling)), oversampled_grid(s, oversampling); options...)*DiscreteDualGram(s; oversampling=oversampling)

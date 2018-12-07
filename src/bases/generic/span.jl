@@ -6,7 +6,7 @@ dictionary, with coefficient eltype determined uniquely by the Dictionary.
 The span of a dictionary is a function space, mapping `S` to `T`. Here, `S` is
 the domain type of the dictionary. The `T` is the codomain type.
 """
-struct Span{S,T} <: AbstractFunctionSpace{S,T}
+struct Span{S,T} <: FunctionSpace{S,T}
     dictionary  ::  Dictionary{S}
 end
 

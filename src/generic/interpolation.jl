@@ -1,4 +1,3 @@
-# interpolation.jl
 
 ########################
 # Generic interpolation
@@ -10,14 +9,14 @@ function interpolation_matrix(dict::Dictionary, pts)
 end
 
 interpolation_operator(s::Dictionary; options...) =
-    interpolation_operator(s, grid(s); options...)
+    interpolation_operator(s, interpolation_grid(s); options...)
 
 interpolation_operator(s::Dictionary, grid::AbstractGrid; options...) =
-    interpolation_operator(s, gridbasis(s, grid); options...)
+    interpolation_operator(s, GridBasis(s, grid); options...)
 
 # Interpolate dict in the grid of dgs
 function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
-    if has_grid(s) && grid(s) == grid(dgs) && has_transform(s, dgs)
+    if has_interpolationgrid(s) && interpolation_grid(s) == grid(dgs) && has_transform(s, dgs)
         full_transform_operator(dgs, s; options...)
     else
         default_interpolation_operator(s, dgs; options...)

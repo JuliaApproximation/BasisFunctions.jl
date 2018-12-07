@@ -38,8 +38,8 @@ suitable_function(set::HermitePolynomials) = x -> 1/(1000+(2x)^2)
 suitable_function(set::OperatedSet) = suitable_function(src(set))
 
 function suitable_interpolation_grid(basis::FunctionSet)
-    if BF.has_grid(basis)
-        grid(basis)
+    if BF.has_interpolationgrid(basis)
+        interpolation_grid(basis)
     else
         T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
@@ -219,9 +219,9 @@ function test_generic_set_interface(basis, span = Span(basis))
     @test coef ≈ coef2
 
     ## Verify evaluation on the associated grid
-    if BF.has_grid(basis)
+    if BF.has_interpolationgrid(basis)
 
-        grid1 = grid(basis)
+        grid1 = interpolation_grid(basis)
         @test length(grid1) == length(basis)
 
         z1 = e(grid1)
@@ -294,10 +294,10 @@ function test_generic_set_interface(basis, span = Span(basis))
     end
 
     # Verify whether evaluation in a larger grid works
-    if BF.has_extension(basis) && BF.has_grid(basis)
+    if BF.has_extension(basis) && BF.has_interpolationgrid(basis)
         basis_ext = extend(basis)
         span_ext = similar_span(span, basis_ext)
-        grid_ext = grid(basis_ext)
+        grid_ext = interpolation_grid(basis_ext)
         L = evaluation_operator(span, grid_ext)
         e = random_expansion(span)
         z = L*e
@@ -416,12 +416,12 @@ function test_generic_set_interface(basis, span = Span(basis))
         # - try interpolation using transform+pre/post-normalization
         x = rand(tspan)
         e = SetExpansion(basis, (post1*t*pre1)*x)
-        g = grid(basis)
+        g = interpolation_grid(basis)
         @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
         # - try evaluation using transform+pre/post-normalization
         e = random_expansion(span)
         x1 = (post2*it*pre2)*coefficients(e)
-        x2 = e(grid(basis))
+        x2 = e(interpolation_grid(basis))
         @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
 
         # Verify the transposes and inverses

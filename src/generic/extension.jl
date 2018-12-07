@@ -26,8 +26,10 @@ struct Extension{SRC <: Dictionary,DEST <: Dictionary,ELT} <: DictionaryOperator
     dest    ::  DEST
 end
 
-Extension(src::Dictionary, dest::Dictionary) =
+function Extension(src::Dictionary, dest::Dictionary)
+    @warn "The Extension operator will be removed in the future, please implement a specific operator."
     Extension{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
+end
 
 function Extension(::Type{ELT}, src::Dictionary, dest::Dictionary) where {ELT}
     S, D, A = op_eltypes(src, dest, ELT)
@@ -72,8 +74,10 @@ struct Restriction{SRC <: Dictionary,DEST <: Dictionary,ELT} <: DictionaryOperat
     dest    ::  DEST
 end
 
-Restriction(src::Dictionary, dest::Dictionary) =
+function Restriction(src::Dictionary, dest::Dictionary)
+    @warn "The Restriction operator will be removed in the future, please implement a specific operator."
     Restriction{typeof(src),typeof(dest),op_eltype(src,dest)}(src, dest)
+end
 
 function Restriction(::Type{ELT}, src::Dictionary, dest::Dictionary) where {ELT}
     S, D, A = op_eltypes(src, dest, ELT)

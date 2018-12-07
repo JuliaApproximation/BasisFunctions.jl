@@ -1,4 +1,3 @@
-# leastsquares.jl
 
 ########################
 # Generic least squares
@@ -11,9 +10,9 @@ function leastsquares_matrix(dict::Dictionary, pts)
 end
 
 function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
-    if has_grid(s)
+    if has_interpolationgrid(s)
         dict2 = resize(s, samplingfactor*length(s))
-        ls_grid = grid(dict2)
+        ls_grid = interpolation_grid(dict2)
     else
         ls_grid = EquispacedGrid(samplingfactor*length(s), support(s))
     end
@@ -21,12 +20,12 @@ function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
 end
 
 leastsquares_operator(s::Dictionary, grid::AbstractGrid; options...) =
-    leastsquares_operator(s, gridbasis(grid, coefficienttype(s)); options...)
+    leastsquares_operator(s, GridBasis{coefficienttype(s)}(grid); options...)
 
 function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
-    if has_grid(s)
+    if has_interpolationgrid(s)
         larger_dict = resize(s, size(dgs))
-        if grid(larger_dict) == grid(dgs) && has_transform(larger_dict, dgs)
+        if interpolation_grid(larger_dict) == grid(dgs) && has_transform(larger_dict, dgs)
             R = restriction_operator(larger_dict, s; options...)
             T = full_transform_operator(dgs, larger_s; options...)
             R * T

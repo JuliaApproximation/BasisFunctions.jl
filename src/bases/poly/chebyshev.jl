@@ -32,23 +32,23 @@ instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(
 similar(b::ChebyshevBasis, ::Type{T}, n::Int) where {T} = ChebyshevBasis{T}(n)
 
 
-has_grid(b::ChebyshevBasis) = true
+has_interpolationgrid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
+has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
+has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
+has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
 first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)
 
-grid(b::ChebyshevBasis{T}) where {T} = ChebyshevNodes{T}(length(b))
+interpolation_grid(b::ChebyshevBasis{T}) where {T} = ChebyshevNodes{T}(length(b))
 secondgrid(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
 # extends the default definition at transform.jl
 transform_dict(s::ChebyshevBasis; nodegrid=true, options...) =
-    nodegrid ? gridbasis(s) : gridbasis(secondgrid(s), coefficienttype(s))
+    nodegrid ? GridBasis(s) : GridBasis{coefficienttype(s)}(secondgrid(s))
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = one(T)/sqrt(1-T(x)^2)
@@ -399,7 +399,7 @@ end
 
 first_moment(b::ChebyshevU{T}) where {T} = convert(T, pi)/2
 
-grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
+interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
 
 
 Gram(s::ChebyshevU; options...) = ScalingOperator(s, s, coefficienttype(s)(pi)/2)

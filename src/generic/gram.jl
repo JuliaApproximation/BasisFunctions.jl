@@ -1,4 +1,3 @@
-# gram.jl
 
 #################
 ## Gram matrices
@@ -145,7 +144,7 @@ dot(s::Dictionary, f1::Int, f2::Int, nodes::Array=native_nodes(s); options...) =
 ## Discrete Gram operators
 ##########################
 
-oversampled_grid(b::Dictionary, oversampling::Real) = grid(resize(b, length_oversampled_grid(b, oversampling)))
+oversampled_grid(b::Dictionary, oversampling::Real) = interpolation_grid(resize(b, length_oversampled_grid(b, oversampling)))
 
 length_oversampled_grid(b::Dictionary, oversampling::Real) = approx_length(b, basis_oversampling(b, oversampling)*length(b))
 

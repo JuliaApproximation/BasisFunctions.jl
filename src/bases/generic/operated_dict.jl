@@ -23,7 +23,7 @@ end
 # TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
 has_derivative(s::OperatedDict) = false
 has_antiderivative(s::OperatedDict) = false
-# has_grid(s::ConcreteSet) = false
+# has_interpolationgrid(s::ConcreteSet) = false
 has_transform(s::OperatedDict) = false
 has_transform(s::OperatedDict, dgs::GridBasis) = false
 has_extension(s::OperatedDict) = false

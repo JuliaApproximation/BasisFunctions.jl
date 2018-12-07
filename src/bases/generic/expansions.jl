@@ -46,7 +46,7 @@ element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coeffic
 elements(e::Expansion) = map(Expansion, elements(e.dictionary), elements(e.coefficients))
 
 # Delegation of methods
-for op in (:length, :size, :support, :grid)
+for op in (:length, :size, :support, :interpolation_grid)
     @eval $op(e::Expansion) = $op(dictionary(e))
 end
 

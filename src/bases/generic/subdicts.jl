@@ -58,7 +58,7 @@ size(s::Subdictionary) = size(superindices(s))
 
 resize(s::Subdictionary, n) = subdict_resize(s, n, superdict(s), superindices(s))
 
-has_grid(s::Subdictionary) = subdict_has_grid(s, superdict(s), superindices(s))
+has_interpolationgrid(s::Subdictionary) = subdict_has_interpolationgrid(s, superdict(s), superindices(s))
 has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), superindices(s))
 has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
 has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
@@ -66,15 +66,16 @@ has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superin
 derivative_dict(s::Subdictionary, order; options...) = subdict_derivative_dict(s, order, superdict(s), superindices(s); options...)
 antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivative_dict(s, order, superdict(s), superindices(s); options...)
 
-grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
+interpolation_grid(s::Subdictionary) = subdict_interpolation_grid(s, superdict(s), superindices(s))
 
-subdict_grid(s::Subdictionary, gb::GridBasis, indices) = grid(gb)[indices]
+subdict_interpolation_grid(s::Subdictionary, gb::GridBasis, indices) =
+    interpolation_grid(gb)[indices]
 
 # By default, we have none of the properties
 subdict_has_derivative(s::Subdictionary, superdict, superindices) = false
 subdict_has_antiderivative(s::Subdictionary, superdict, superindices) = false
 subdict_has_transform(s::Subdictionary, superdict, superindices) = false
-subdict_has_grid(s::Subdictionary, superdict, superindices) = false
+subdict_has_interpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
@@ -125,7 +126,7 @@ LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
 
 similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superindices)
 
-grid(d::LargeSubdict) = grid(superdict(d))
+interpolation_grid(d::LargeSubdict) = interpolation_grid(superdict(d))
 
 function extension_operator(s1::LargeSubdict, s2::Dictionary; options...)
     @assert s2 == superdict(s1)

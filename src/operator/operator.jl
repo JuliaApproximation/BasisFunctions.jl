@@ -10,6 +10,7 @@ end
 is_composite(op::AbstractOperator) = false
 
 # make times (*) a synonym for applying the operator
+# TODO: reconsider this
 (*)(op::AbstractOperator, object) = apply(op, object)
 
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
@@ -20,7 +21,7 @@ has_span_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
 
 function apply(op::AbstractOperator, f)
 	if has_span_dest(op)
-		result = zeros(eltype(op), dest(op))
+		result = zeros(dest(op))
 		apply!(result, op, f)
 	else
 		error("Don't know how to apply operator $(string(op)). Please implement.")
@@ -57,7 +58,7 @@ dest(op::DictionaryOperator) = op.dest
 src_space(op::DictionaryOperator) = Span(src(op))
 dest_space(op::DictionaryOperator) = Span(dest(op))
 
-isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
+isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
 
 "Return a suitable element type for an operator between the given dictionaries."
 op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coefficienttype(src), coefficienttype(dest))
@@ -108,6 +109,8 @@ function apply!(op::DictionaryOperator, coef_dest, coef_src)
 		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
+		# TODO: depecrate and make this an error
+		@warn "The action of an operator should not depend on its src and destination, this functionality will be removed in the future"
 		apply!(op, dest(op), src(op), coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
@@ -122,8 +125,9 @@ function apply!(op::DictionaryOperator, coef_srcdest)
 end
 
 function apply_inplace!(op::DictionaryOperator, coef_srcdest)
-		apply_inplace!(op, dest(op), src(op), coef_srcdest)
-		coef_srcdest
+	@warn "The in-place action of an operator should not depend on its src and destination, this functionality will be removed in the future"
+	apply_inplace!(op, dest(op), src(op), coef_srcdest)
+	coef_srcdest
 end
 
 

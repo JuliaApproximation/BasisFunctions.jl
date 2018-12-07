@@ -19,8 +19,6 @@ similar(b::LegendrePolynomials, ::Type{T}, n::Int) where {T} = LegendrePolynomia
 
 support(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
 
-#grid(b::LegendrePolynomials) = LegendreGrid(b.n)
-
 first_moment(b::LegendrePolynomials{T}) where {T} = T(2)
 
 jacobi_α(b::LegendrePolynomials{T}) where {T} = T(0)

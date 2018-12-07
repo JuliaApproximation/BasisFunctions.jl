@@ -43,7 +43,7 @@ can_allocate_output(op::DictionaryOperator) = true
 # - AbstractOperator: it depends on the output, which we determine using dispatch
 can_allocate_output(op::AbstractOperator) = _can_allocate_output(op, dest_space(op))
 _can_allocate_output(op, span::Span) = true
-_can_allocate_output(op, space::AbstractFunctionSpace) = false
+_can_allocate_output(op, space::FunctionSpace) = false
 
 allocate_output(op::DictionaryOperator{T}) where {T} = zeros(T, dest(op))
 
@@ -225,7 +225,7 @@ CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 function stencil(op::CompositeOperators)
     A = Any[]
     push!(A,element(op,length(elements(op))))
-    for i=length(elements(op))-1:-1:1
+    for i in length(elements(op))-1:-1:1
         push!(A," * ")
         push!(A,element(op,i))
     end

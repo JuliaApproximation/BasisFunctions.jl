@@ -1,5 +1,6 @@
 
 global TEST_CONTINUOUS = true
+
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::Dictionary) = true
@@ -9,8 +10,8 @@ suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 suitable_function(s::Dictionary) = (x...) -> prod(x)
 
 function suitable_interpolation_grid(basis::Dictionary)
-    if BF.has_grid(basis)
-        grid(basis)
+    if BF.has_interpolationgrid(basis)
+        interpolation_grid(basis)
     else
         T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
@@ -124,13 +125,13 @@ function test_generic_dict_coefficient_linearization(basis)
 end
 
 function test_generic_dict_grid(basis)
-    grid1 = grid(basis)
+    grid1 = interpolation_grid(basis)
     @test length(grid1) == length(basis)
     e = random_expansion(basis)
     z1 = e(grid1)
     z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
     @test z1 ≈ z2
-    E = evaluation_operator(basis, gridbasis(basis))
+    E = evaluation_operator(basis, GridBasis(basis))
     z3 = E * coefficients(e)
     @test z1 ≈ z3
 end
@@ -181,7 +182,7 @@ function test_generic_dict_interpolation(basis)
     ELT = coefficienttype(basis)
     g = suitable_interpolation_grid(basis)
     I = interpolation_operator(basis, g)
-    x = rand(gridbasis(g,coefficienttype(basis)))
+    x = rand(GridBasis{coefficienttype(basis)}(g))
     e = Expansion(basis, I*x)
     @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
 end
@@ -227,7 +228,7 @@ function test_generic_dict_transform(basis)
     T = domaintype(basis)
 
     # We have to look into this test
-    @test BasisFunctions.has_transform(basis) == BasisFunctions.has_transform(basis, gridbasis(basis))
+    @test BasisFunctions.has_transform(basis) == BasisFunctions.has_transform(basis, GridBasis(basis))
     # Check whether it is unitary
     tbasis = transform_dict(basis)
     t = transform_operator(tbasis, basis)
@@ -255,12 +256,12 @@ function test_generic_dict_transform(basis)
     # - try interpolation using transform+pre/post-normalization
     x = rand(tbasis)
     e = Expansion(basis, (post1*t*pre1)*x)
-    g = grid(basis)
+    g = interpolation_grid(basis)
     @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
     # - try evaluation using transform+pre/post-normalization
     e = random_expansion(basis)
     x1 = (post2*it*pre2)*coefficients(e)
-    x2 = e(grid(basis))
+    x2 = e(interpolation_grid(basis))
     @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
 end
 
@@ -399,7 +400,7 @@ function test_generic_dict_interface(basis)
     test_generic_dict_coefficient_linearization(basis)
 
     ## Verify evaluation on the associated grid
-    if BF.has_grid(basis)
+    if BF.has_interpolationgrid(basis)
         test_generic_dict_grid(basis)
     end
 
@@ -429,9 +430,9 @@ function test_generic_dict_interface(basis)
     end
 
     # Verify whether evaluation in a larger grid works
-    if BF.has_extension(basis) && BF.has_grid(basis)
+    if BF.has_extension(basis) && BF.has_interpolationgrid(basis)
         basis_ext = extend(basis)
-        grid_ext = grid(basis_ext)
+        grid_ext = interpolation_grid(basis_ext)
         L = evaluation_operator(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e

@@ -53,7 +53,7 @@ is_orthonormal(b::FourierBasis) = oddlength(b)
 is_biorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
-has_grid(b::FourierBasis) = true
+has_interpolationgrid(b::FourierBasis) = true
 has_derivative(b::FourierBasis) = true
 # Until adapted for DC coefficient
 has_antiderivative(b::FourierBasis) = false
@@ -63,14 +63,14 @@ has_extension(b::FourierBasis) = true
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
-	has_grid_equal_span(b,grid) && (length(b)==length(grid))
+	has_interpolationgrid_equal_span(b,grid) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
 compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
+has_interpolationgrid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
 
 
-grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
+interpolation_grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
 
 
 ##################
@@ -432,7 +432,7 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
-			super_dgs = gridbasis(fs, super_grid)
+			super_dgs = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; options...)
 			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
 			R*E

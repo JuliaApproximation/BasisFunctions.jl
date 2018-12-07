@@ -7,16 +7,10 @@
 ####
 # Delegate to show_operator
 global DO_PRETTYPRINTING = true
-try
-    @static if isapple()
-        global DO_PRETTYPRINTING = !(ENV["LOGNAME"] == "vincentcp")
-    end
-finally
-    if DO_PRETTYPRINTING
-        show(io::IO, op::AbstractOperator) = (has_stencil(op)) ? show_composite(io,op) : show_operator(io, op)
-        show(io::IO,s::Span) = show(io,dictionary(s))
-        show(io::IO, d::Dictionary) = (has_stencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
-    end
+if DO_PRETTYPRINTING
+    show(io::IO, op::AbstractOperator) = (has_stencil(op)) ? show_composite(io,op) : show_operator(io, op)
+    show(io::IO,s::Span) = show(io,dictionary(s))
+    show(io::IO, d::Dictionary) = (has_stencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
 end
 
 
@@ -29,7 +23,8 @@ end
 show_operator(io::IO,op::AbstractOperator) = println(string(op))
 
 # Default string is the string of the type
-string(op::DictionaryOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
+# string(op::DictionaryOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
+string(op::DictionaryOperator) = string(typeof(op))
 string(op::AbstractOperator) = string(typeof(op))
 
 # Complex expressions substitute strings for symbols.
@@ -93,12 +88,27 @@ strings(d::GridBasis) = ("A grid basis for coefficient type $(coefficienttype(d)
 strings(g::AbstractGrid) = (name(g)*" of size $(size(g)),\tELT = $(eltype(g))",)
 strings(d::DerivedDict) = (name(d),)
 
-    symbol(d::Dictionary) = name(d)[1]
+symbol(d::Dictionary) = name(d)[1]
+
 ## Default names
 name(d::Dictionary) = _name(d)
 name(g::AbstractGrid) = _name(g)
 name(o::AbstractOperator) = _name(o)
-_name(anything) = String(match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything))).match)
+
+function _name(anything)
+    m = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(anything)))
+    if m == nothing
+        m2 = match(r"(.*?)(?=\{)",string(typeof(anything)))
+        if m2 == nothing
+            string(typeof(anything))
+        else
+            String(m2.match)
+        end
+    else
+        String(m.match)
+    end
+end
+
 
 ####
 # Dictionary Parentheses

@@ -2,7 +2,7 @@
 
 "The generic identity operator does nothing to the function it is applied to."
 struct GenericIdentityOperator <: AbstractOperator
-    src_space   ::  AbstractFunctionSpace
+    src_space   ::  FunctionSpace
 end
 
 src_space(op::GenericIdentityOperator) = op.src_space

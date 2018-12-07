@@ -320,7 +320,12 @@ has_derivative(d::Dictionary) = false
 has_antiderivative(d::Dictionary) = false
 
 "Does the dictionary have an associated interpolation grid?"
-has_grid(d::Dictionary) = false
+has_interpolationgrid(d::Dictionary) = false
+
+function grid(d::Dictionary)
+    @warn "replace grid(dict) by interpolation_grid(dict)"
+    interpolation_grid(d)
+end
 
 "Does the dictionary have a transform associated with some space?"
 has_transform(d1::Dictionary, d2) = false
@@ -331,12 +336,12 @@ has_unitary_transform(d::Dictionary) = has_transform(d)
 # this function has to be over written.
 
 # Convenience functions: default grid, and conversion from grid to space
-has_transform(d::Dictionary) = has_grid(d) && has_transform(d, grid(d))
+has_transform(d::Dictionary) = has_interpolationgrid(d) && has_transform(d, interpolation_grid(d))
 has_transform(d::Dictionary, grid::AbstractGrid) =
-    has_transform(d, gridbasis(grid, codomaintype(d)))
+    has_transform(d, GridBasis{codomaintype(d)}(grid))
 
 "Does the grid span the same interval as the dictionary"
-has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
+has_interpolationgrid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
     (1+(infimum(support(set)) - leftendpoint(grid))≈1) && (1+(supremum(support(set)) - rightendpoint(grid))≈1)
 
 "Does the dictionary support extension and restriction operators?"
@@ -495,7 +500,7 @@ end
     _default_unsafe_eval_element_in_grid(dict, idx, grid)
 
 function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
-    result = zeros(gridbasis(grid, codomaintype(dict)))
+    result = zeros(GridBasis(dict, grid))
     for k in eachindex(grid)
         @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
@@ -555,7 +560,7 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
     # @assert eltype(grid) == domaintype(dict)
 
     T = coefficienttype(dict)
-    E = evaluation_operator(dict, gridbasis(grid, T))
+    E = evaluation_operator(dict, GridBasis{T}(grid))
     E * coefficients
 end
 
