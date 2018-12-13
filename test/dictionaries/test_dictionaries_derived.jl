@@ -27,7 +27,13 @@ function test_derived_dicts(T)
         test_generic_dict_interface(b1[2:6]) end
 
     @testset "$(rpad("Operated dictionaries",80))" begin
-        test_generic_dict_interface(OperatedDict(differentiation_operator(b1))) end
+        D1 = DiagonalOperator(rand(length(b1)), src=b1)
+        test_generic_dict_interface(D1*b1)
+        D2 = MatrixOperator(b1, b1, rand(length(b1),length(b1)))
+        test_generic_dict_interface(D2*b1)
+        D3 = differentiation_operator(b2)
+        test_generic_dict_interface(D3*b2)
+    end
 
 
     @testset "$(rpad("Multiple dictionaries",80))" begin

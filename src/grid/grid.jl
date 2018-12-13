@@ -18,6 +18,6 @@ IndexStyle(grid::AbstractGrid{N,T}) where {N,T} = IndexCartesian()
     unsafe_getindex(grid, i)
 end
 
-resize(grid::AbstractGrid{T}, dims...) where {T} = similar(grid, T, dims...)
+resize(grid::AbstractGrid{T}, dims...) where {T} = similargrid(grid, T, dims...)
 
 has_extension(grid::AbstractGrid) = false

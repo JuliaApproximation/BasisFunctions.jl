@@ -36,9 +36,9 @@ has_interpolationgrid(b::ChebyshevBasis) = true
 has_derivative(b::ChebyshevBasis) = true
 has_antiderivative(b::ChebyshevBasis) = true
 
-has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
-has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
-has_interpolationgrid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
+has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
 first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)

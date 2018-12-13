@@ -39,8 +39,33 @@ apply!(result, op::GridSampling, f) = sample!(result, grid(op), f)
 "Sample the function f on the given grid."
 sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
 
-broadcast(f::Function, grid::AbstractGrid) = (println("hi there");  sample(grid, f))
+broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
+
+function tensorproduct(op1::GridSampling, op2::GridSampling)
+	T = promote_type(coefficienttype(dest(op1)),coefficienttype(dest(op2)))
+	grid1 = grid(op1)
+	grid2 = grid(op2)
+	GridSampling(grid1 × grid2, T)
+end
+
+function tensorproduct(op1::GridSampling, op2::AbstractOperator)
+	@assert dest(op2) isa GridBasis
+	@assert numelements(op2) == 2
+	tensorproduct(IdentityOperator(dest(op1)), element(op2,2)) * tensorproduct(op1, element(op2,1))
+end
+
+function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
+	@assert dest(op1) isa GridBasis
+	@assert dest(op2) isa GridBasis
+	@assert numelements(op1) == 2
+	@assert numelements(op2) == 2
+	T = promote_type(coefficienttype(dest(op1)),coefficienttype(dest(op2)))
+	grid1 = grid(dest(op1))
+	grid2 = grid(dest(op2))
+	g = grid1 × grid2
+	tensorproduct(element(op1,2),element(op2,2)) * tensorproduct(element(op1,1),element(op2,1))
+end
 
 # We don't want to assume that f can be called with a vector argument.
 # In order to avoid the overhead of splatting, we capture a number of special cases
@@ -69,8 +94,24 @@ function quadraturenormalization(op::GridSampling, args...)
 	quadraturenormalization(coefficienttype(gridspace), grid(gridspace), args...)
 end
 
-function quadraturenormalization(::Type{T}, grid::PeriodicEquispacedGrid, space::FunctionSpace = L2{T}(support(grid))) where {T}
+quadraturenormalization(grid::AbstractGrid, args...) =
+	quadraturenormalization(subeltype(grid), grid, args...)
+
+quadraturenormalization(::Type{T}, grid::PeriodicEquispacedGrid, space::FunctionSpace = L2{T}(support(grid))) where {T} =
 	ScalingOperator(GridBasis{T}(grid), one(T)/length(grid))
+
+quadraturenormalization(::Type{T}, grid::ChebyshevNodes, space::FunctionSpace = ChebyshevSpace{T}()) where {T} =
+	ScalingOperator(GridBasis{T}(grid), convert(T, pi)/length(grid))
+
+quadraturenormalization(::Type{T}, grid::MappedGrid, args...) where {T} =
+	quadraturenormalization(T, supergrid(grid), args...)
+
+quadraturenormalization(::Type{T}, grid::ProductGrid) where {T} =
+	tensorproduct(quadraturenormalization.(T, elements(grid))...)
+
+function quadraturenormalization(::Type{T}, grid::ProductGrid, args...) where {T}
+	operators = quadraturenormalization.(T, elements(grid), map(elements, args)...)
+	tensorproduct(operators...)
 end
 
 function riemannsum_normalization(grid::AbstractGrid, space::L2)

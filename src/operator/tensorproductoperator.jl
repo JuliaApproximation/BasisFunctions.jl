@@ -1,5 +1,3 @@
-# tensorproductoperator.jl
-
 
 """
 A TensorProductOperator represents the tensor product of other operators.

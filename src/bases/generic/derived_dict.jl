@@ -51,7 +51,7 @@ for op in (:has_derivative, :has_antiderivative, :has_interpolationgrid, :has_ex
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 # has_transform has extra arguments
-has_interpolationgrid_transform(s::DerivedDict, gs, grid) = has_interpolationgrid_transform(superdict(s), gs, grid)
+has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
 # has_derivative(s::ConcreteSet) = false

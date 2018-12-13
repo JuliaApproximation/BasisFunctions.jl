@@ -3,8 +3,14 @@
 An `OperatedDict` represents a set that is acted on by an operator, for example
 the differentiation operator. The `OperatedDict` has the dimension of the source
 set of the operator, but each basis function is acted on by the operator.
+
+In practice the operator `D` acts on the coefficients. Thus, an expansion
+in an `OperatedDict` with coefficients `c` corresponds to an expansion in the
+underlying dictionary with coefficients `Dc`. If `D` represents differentiation,
+then the `OperatedDict` effectively represents the dictionary of derivatives of
+the underlying dictionary elements.
 """
-struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
+struct OperatedDict{S,T} <: DerivedDict{S,T}
     "The operator that acts on the set"
     op          ::  DictionaryOperator{T}
 
@@ -19,16 +25,6 @@ struct OperatedDict{S,T} <: DerivedDict{S,T}#<: Dictionary{S,T}#
 end
 
 
-
-# TODO: OperatedDict should really be a DerivedDict, deriving from src(op)
-has_derivative(s::OperatedDict) = false
-has_antiderivative(s::OperatedDict) = false
-# has_interpolationgrid(s::ConcreteSet) = false
-has_transform(s::OperatedDict) = false
-has_transform(s::OperatedDict, dgs::GridBasis) = false
-has_extension(s::OperatedDict) = false
-
-is_basis(::OperatedDict) = false
 
 superdict(dict::OperatedDict) = src(dict)
 
@@ -58,9 +54,20 @@ domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
 operator(set::OperatedDict) = set.op
 
 function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
+    # We enforce an equal length since we may be able to resize dictionaries,
+    # but we can not in general resize the operator (we typically do not store what
+    # the operator means in its type).
     @assert length(d) == prod(dims)
     # not sure what to do with dest(d) here - in the meantime invoke similar
     OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
+end
+
+function similar_dictionary(d::OperatedDict, dict::Dictionary)
+    if dict == src(d)
+        d
+    elseif src(d) == dest(d)
+        OperatedDictionary(wrap_operator(dict, dict, operator(d)))
+    end
 end
 
 for op in (:support, :length)
@@ -77,6 +84,7 @@ dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
 
 
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src_dictionary(s))
+
 
 ##########################
 # Indexing and evaluation
@@ -105,20 +113,52 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
 end
 
 grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(src(dict), dgs, grid; options...)*operator(dict))
+    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...)*operator(dict))
 
 grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(src(dict), dgs, grid; options...)*operator(dict))
+    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...)*operator(dict))
 
 ## Properties
 
+# Perhaps we can extend the underlying dictionary, but in general we can not extend the operator
+has_extension(dict::OperatedDict) = false
+
 isreal(dict::OperatedDict) = isreal(operator(dict))
 
-# Disable for now
-# for op in (:is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
-#     @eval $op(set::OperatedDict) = is_diagonal(operator(set)) && $op(src(set))
-# end
+for op in (:is_basis, :is_frame)
+    @eval $op(set::OperatedDict) = is_diagonal(operator(set)) && $op(src(set))
+end
 
+
+#################
+# Transform
+#################
+
+has_transform(dict::OperatedDict) = is_diagonal(operator(dict)) && has_transform(src(dict))
+has_transform(dict::OperatedDict, dgs::GridBasis) = is_diagonal(operator(dict)) && has_transform(src(dict), dgs)
+
+transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
+
+transform_to_grid_pre(src::OperatedDict, dest::GridBasis, grid; options...) =
+	transform_to_grid_pre(superdict(src), dest, grid; options...) * operator(src)
+
+transform_from_grid_post(src::GridBasis, dest::OperatedDict, grid; options...) =
+	inv(operator(dest)) * transform_from_grid_post(src, superdict(dest), grid; options...)
+
+
+#################
+# Differentiation
+#################
+
+# has_derivative(dict::OperatedDict) = has_derivative(superdict(dict))
+has_derivative(dict::OperatedDict) = has_derivative(superdict(dict))
+has_antiderivative(dict::OperatedDict) = false
+
+derivative_dict(dict::OperatedDict, order::Int; options...) =
+	derivative_dict(superdict(dict), order; options...)
+
+differentiation_operator(dict::OperatedDict, ddict::Dictionary, order::Int; options...) =
+	differentiation_operator(superdict(dict), ddict, order; options...) * operator(dict)
 
 #################
 # Special cases
@@ -126,16 +166,21 @@ isreal(dict::OperatedDict) = isreal(operator(dict))
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-derivative(dict::Dictionary; options...) = OperatedDict(differentiation_operator(s; options...))
+derivative(dict::Dictionary; options...) = differentiation_operator(dict; options...) * dict
 
 function (*)(a::Number, s::Dictionary)
     T = promote_type(typeof(a), coefficienttype(s))
     OperatedDict(ScalingOperator(s, convert(T, a)))
 end
 
-function (*)(op::DictionaryOperator, s::Dictionary)
-    @assert src(op) == s
+function (*)(op::DictionaryOperator, dict::Dictionary)
+    @assert src(op) == dict
     OperatedDict(op)
+end
+
+function (*)(op::DictionaryOperator, dict::OperatedDict)
+    @assert src(op) == dest(dict)
+    OperatedDict(op*operator(dict))
 end
 
 function grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;

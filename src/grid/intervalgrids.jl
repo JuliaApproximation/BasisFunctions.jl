@@ -25,15 +25,15 @@ range(g::AbstractEquispacedGrid) = range(leftendpoint(g), stepsize(g), length(g)
 
 unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
 
-similar_grid(g::AbstractEquispacedGrid, a, b) =
-    similar_grid(g, a, b, promote_type(eltype(g), typeof((b-a)/length(g))))
+similar_equispacedgrid(g::AbstractEquispacedGrid, a, b) =
+    similar_equispacedgrid(g, a, b, promote_type(eltype(g), typeof((b-a)/length(g))))
 
 # Equispaced grids already support rescaling - avoid the construction of a LinearMappedGrid,
 # but make sure to retain the type of the original grid.
-rescale(g::AbstractEquispacedGrid, a, b) = similar_grid(g, a, b)
+rescale(g::AbstractEquispacedGrid, a, b) = similar_equispacedgrid(g, a, b)
 
 mapped_grid(g::AbstractEquispacedGrid, map::AffineMap) =
-    similar_grid(g, applymap(map, leftendpoint(g)), applymap(map, rightendpoint(g)))
+    similar_equispacedgrid(g, applymap(map, leftendpoint(g)), applymap(map, rightendpoint(g)))
 
 """
 An equispaced grid with n points on an interval [a,b], including the endpoints.
@@ -53,9 +53,9 @@ EquispacedGrid(n::Int, a, b) = EquispacedGrid{typeof((b-a)/n)}(n, a, b)
 
 EquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = EquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+similargrid(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
-similar_grid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
+similar_equispacedgrid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
 
 has_extension(::EquispacedGrid) = true
 
@@ -87,9 +87,9 @@ PeriodicEquispacedGrid(n::Int, a, b) = PeriodicEquispacedGrid{typeof((b-a)/n)}(n
 
 PeriodicEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = PeriodicEquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar_grid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
+similar_equispacedgrid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
 
-similar(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+similargrid(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 
@@ -121,9 +121,9 @@ MidpointEquispacedGrid(n::Int, a, b) = MidpointEquispacedGrid{typeof((b-a)/n)}(n
 
 MidpointEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = MidpointEquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar(g::MidpointEquispacedGrid, ::Type{T}, n::Int) where {T} = MidpointEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+similargrid(g::MidpointEquispacedGrid, ::Type{T}, n::Int) where {T} = MidpointEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
-similar_grid(g::MidpointEquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = MidpointEquispacedGrid{T}(length(g), a, b)
+similar_equispacedgrid(g::MidpointEquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = MidpointEquispacedGrid{T}(length(g), a, b)
 
 unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*stepsize(g)
 
@@ -140,7 +140,7 @@ const ChebyshevPoints = ChebyshevNodes
 ChebyshevNodes(n::Int) = ChebyshevNodes{Float64}(n)
 ChebyshevNodes(n::Int, a, b) = rescale(ChebyshevNodes{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevNodes, ::Type{T}, n::Int) where {T} = ChebyshevNodes{T}(n)
+similargrid(g::ChebyshevNodes, ::Type{T}, n::Int) where {T} = ChebyshevNodes{T}(n)
 
 leftendpoint(g::ChebyshevNodes{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevNodes{T}) where {T} = one(T)
@@ -158,7 +158,7 @@ ChebyshevPointsOfTheSecondKind = ChebyshevExtremae
 ChebyshevExtremae(n::Int) = ChebyshevExtremae{Float64}(n)
 ChebyshevExtremae(n::Int, a, b) = rescale(ChebyshevExtremae{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtremae{T}(n)
+similargrid(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtremae{T}(n)
 
 leftendpoint(g::ChebyshevExtremae{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevExtremae{T}) where {T} = one(T)

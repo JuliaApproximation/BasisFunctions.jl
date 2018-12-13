@@ -29,6 +29,20 @@ getindex(A::Zeros{T}, i::Int) where {T} = zero(T)
 adjoint(D::Diagonal{T,Zeros{T}}) where {T} = D
 
 
+"A vector of constant values."
+struct ConstantVector{T} <: AbstractArray{T,1}
+    n   ::  Int
+    val ::  T
+end
+
+size(A::ConstantVector) = (A.n,)
+getindex(A::ConstantVector, i::Int) = A.val
+
+for op in (:inv, :adjoint)
+    @eval $op(D::Diagonal{T,ConstantVector{T}}) where {T} = Diagonal(ConstantVector(size(D,1), $op(D.diag.val)))
+end
+
+
 "A vector of the form `[1,-1,1,-1,...]`."
 struct AlternatingSigns{T} <: AbstractArray{T,1}
     n   ::  Int
@@ -59,3 +73,14 @@ getindex(A::ScaledEntry{T}, i::Int) where {T} = i==A.index ? A.scalar : one(T)
 inv(D::Diagonal{T,ScaledEntry{T}}) where {T} = Diagonal(ScaledEntry{T}(D.diag.n, D.diag.index, inv(D.diag.scalar)))
 
 adjoint(D::Diagonal{T,ScaledEntry{T}}) where {T} = Diagonal(ScaledEntry{T}(D.diag.n, D.diag.index, adjoint(D.diag.scalar)))
+
+
+
+"A rectangular matrix"
+struct ProjectionMatrix{I,T} <: AbstractArray{T,2}
+    m       ::  Int
+    n       ::  Int
+    indices ::  I
+end
+
+size(A::ProjectionMatrix) = (A.m, A.n)

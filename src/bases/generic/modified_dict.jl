@@ -71,7 +71,7 @@ for op in (:coefficienttype, :linearize_coefficients!, :delinearize_coefficients
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:has_interpolationgrid, :has_interpolationgrid_transform, :interpolation_grid, :support, :in_support,
+for op in (:has_interpolationgrid, :has_grid_transform, :interpolation_grid, :support, :in_support,
         :unsafe_eval_element, :unsafe_eval_element1)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(evaluation_modifier(d), superdict(d), args...)

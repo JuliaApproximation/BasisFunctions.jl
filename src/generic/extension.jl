@@ -1,4 +1,3 @@
-# extension.jl
 
 ####################################
 # Generic extension and restriction

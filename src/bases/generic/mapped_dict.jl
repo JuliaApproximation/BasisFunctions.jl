@@ -100,13 +100,13 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 
 transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
-has_interpolationgrid_transform(s::MappedDict, gb, g::MappedGrid) =
+has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
     is_compatible(mapping(s), mapping(g)) &&
         has_transform(superdict(s), GridBasis{codomaintype(gb)}(supergrid(g)))
 
-function has_interpolationgrid_transform(s::MappedDict, gb, g::AbstractGrid)
+function has_grid_transform(s::MappedDict, gb, g::AbstractGrid)
     g2 = apply_map(g, inv(mapping(s)))
-    has_interpolationgrid_transform(superdict(s), GridBasis{codomaintype(gb)}(g2), g2)
+    has_grid_transform(superdict(s), GridBasis{codomaintype(gb)}(g2), g2)
 end
 
 function simplify_transform_pair(s::MappedDict, g::MappedGrid)

@@ -228,7 +228,8 @@ function test_generic_dict_transform(basis)
     T = domaintype(basis)
 
     # We have to look into this test
-    @test BasisFunctions.has_transform(basis) == BasisFunctions.has_transform(basis, GridBasis(basis))
+    @test has_transform(basis) == has_transform(basis, GridBasis(basis))
+
     # Check whether it is unitary
     tbasis = transform_dict(basis)
     t = transform_operator(tbasis, basis)

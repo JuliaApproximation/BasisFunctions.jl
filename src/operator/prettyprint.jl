@@ -160,9 +160,9 @@ function symbollist(op)
     S = Dict{Any,Any}(U[i] => symbol(U[i]) for i=1:length(U))
     # Get a list of the unique symbols
     Sym = unique(values(S))
-    for i=1:length(Sym)
+    for i in 1:length(Sym)
         # For each of the unique symbols, filter the dictionary for those values
-        Sf=filter((u,v)->v==Sym[i],S)
+        Sf = filter(u->u.second==Sym[i],S)
         if length(Sf)>1
             j=1
             for k in keys(Sf)

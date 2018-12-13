@@ -39,11 +39,11 @@ support(b::GridBasis) = support(grid(b))
 
 # Convenience function: add grid as extra parameter to has_transform
 has_transform(s1::Dictionary, s2::GridBasis) =
-	has_interpolationgrid_transform(s1, s2, grid(s2))
+	has_grid_transform(s1, s2, grid(s2))
 has_transform(s1::GridBasis, s2::Dictionary) =
-	has_interpolationgrid_transform(s2, s1, grid(s1))
+	has_grid_transform(s2, s1, grid(s1))
 # and provide a default
-has_interpolationgrid_transform(s1::Dictionary, s2, grid) = false
+has_grid_transform(s1::Dictionary, s2, grid) = false
 
 elements(s::ProductGridBasis) = map(GridBasis{coefficienttype(s)}, elements(grid(s)))
 element(s::ProductGridBasis, i) = GridBasis{coefficienttype(s)}(element(grid(s), i))

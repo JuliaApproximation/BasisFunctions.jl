@@ -323,7 +323,7 @@ has_antiderivative(d::Dictionary) = false
 has_interpolationgrid(d::Dictionary) = false
 
 function grid(d::Dictionary)
-    @warn "replace grid(dict) by interpolation_grid(dict)"
+    error("replace grid(dict) by interpolation_grid(dict)")
     interpolation_grid(d)
 end
 

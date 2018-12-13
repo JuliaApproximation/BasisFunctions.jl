@@ -43,7 +43,8 @@ default_evaluation_operator(s::Dictionary, dgs::GridBasis; options...) =
 # Evaluate s in the grid of dgs
 # We try to see if any fast transform is available
 # We need to intercept grid_evaluation_operator both for DerivedDicts and ComplexifiedDicts, hence the select_ routine.
-grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::AbstractGrid; options...) = select_grid_evaluation_operator(s,dgs,grid;options...)
+grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::AbstractGrid; options...) =
+    select_grid_evaluation_operator(s, dgs, grid; options...)
 
 function select_grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::AbstractGrid; options...)
     if has_transform(s)

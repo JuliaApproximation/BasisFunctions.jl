@@ -47,4 +47,20 @@ abstract type WeightedL2{S,T} <: FunctionSpace{S,T} end
 struct ChebyshevSpace{S,T} <: WeightedL2{S,T}
 end
 
+ChebyshevSpace() = ChebyshevSpace{Float64}()
+ChebyshevSpace{T}() where {T} = ChebyshevSpace{T,T}()
+
 domain(space::ChebyshevSpace{S,T}) where {S,T} = ChebyshevInterval{S}()
+
+
+struct ProductSpace{S,T} <: FunctionSpace{S,T}
+    spaces
+end
+
+function tensorproduct(spaces::FunctionSpace...)
+    S = Tuple{map(domaintype, spaces)...}
+    T = mapreduce(codomaintype, promote_type, spaces)
+    ProductSpace{S,T}(spaces)
+end
+
+elements(space::ProductSpace) = space.spaces
