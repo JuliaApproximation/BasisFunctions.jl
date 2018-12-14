@@ -1,2 +1,2 @@
 using Pkg
-Pkg.clone("(https://github.com/andreasnoack/GenericLinearAlgebra.jl.git")
+Pkg.add(PackageSpec(url="https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl"))
