@@ -256,10 +256,10 @@ SparseOperator(op::TensorProductOperator; options...) =
 
 function stencil(op::TensorProductOperator)
     A = Any[]
-    push!(A,element(op,1))
-    for i=2:length(elements(op))
-        push!(A," ⊗ ")
-        push!(A,element(op,i))
+    push!(A, element(op,1))
+    for i in 2:length(elements(op))
+        push!(A, " ⊗ ")
+        push!(A, element(op,i))
     end
     A
 end

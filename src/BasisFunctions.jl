@@ -245,7 +245,7 @@ export VectorvaluedDict
 
 # from bases/generic/operated_dict.jl
 export OperatedDict
-export derivative, src_dictionary, dest_dictionary
+export derivative
 
 # from bases/generic/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary

@@ -44,12 +44,10 @@ end
 myLeaves(s::OperatedDict) = (operator(s),myLeaves(src(s))...)
 
 src(s::OperatedDict) = src(s.op)
-src_dictionary(s::OperatedDict) = src(s)
 
 dest(s::OperatedDict) = dest(s.op)
-dest_dictionary(s::OperatedDict) = dest(s)
 
-domaintype(s::OperatedDict) = domaintype(src_dictionary(s))
+domaintype(s::OperatedDict) = domaintype(src(s))
 
 operator(set::OperatedDict) = set.op
 
@@ -57,6 +55,9 @@ function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
     # We enforce an equal length since we may be able to resize dictionaries,
     # but we can not in general resize the operator (we typically do not store what
     # the operator means in its type).
+	println(operator(d))
+	println(length(d))
+	println(dims)
     @assert length(d) == prod(dims)
     # not sure what to do with dest(d) here - in the meantime invoke similar
     OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
@@ -71,26 +72,26 @@ function similar_dictionary(d::OperatedDict, dict::Dictionary)
 end
 
 for op in (:support, :length)
-    @eval $op(s::OperatedDict) = $op(src_dictionary(s))
+    @eval $op(s::OperatedDict) = $op(src(s))
 end
 
 # We don't know in general what the support of a specific basis functions is.
 # The safe option is to return the support of the set itself for each element.
 for op in (:support,)
-    @eval $op(s::OperatedDict, idx) = $op(src_dictionary(s))
+    @eval $op(s::OperatedDict, idx) = $op(src(s))
 end
 
 dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
 
 
-zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src_dictionary(s))
+zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src(s))
 
 
 ##########################
 # Indexing and evaluation
 ##########################
 
-ordering(dict::OperatedDict) = ordering(src_dictionary(dict))
+ordering(dict::OperatedDict) = ordering(src(dict))
 
 unsafe_eval_element(dict::OperatedDict, i, x) =
     _unsafe_eval_element(dict, i, x, operator(dict), dict.scratch_src, dict.scratch_dest)
@@ -98,25 +99,25 @@ unsafe_eval_element(dict::OperatedDict, i, x) =
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
     if is_diagonal(op)
-        diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
+        diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
     else
         scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)
         scratch_src[idx] = 0
-        eval_expansion(dest_dictionary(dict), scratch_dest, x)
+        eval_expansion(dest(dict), scratch_dest, x)
     end
 end
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    diagonal(op, idx) * unsafe_eval_element(src_dictionary(dict), idxn, x)
+    diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
 end
 
 grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...)*operator(dict))
+    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...) * operator(dict))
 
 grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...)*operator(dict))
+    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...) * operator(dict))
 
 ## Properties
 
@@ -155,10 +156,27 @@ has_derivative(dict::OperatedDict) = has_derivative(superdict(dict))
 has_antiderivative(dict::OperatedDict) = false
 
 derivative_dict(dict::OperatedDict, order::Int; options...) =
-	derivative_dict(superdict(dict), order; options...)
+	derivative_dict(dest(dict), order; options...)
 
 differentiation_operator(dict::OperatedDict, ddict::Dictionary, order::Int; options...) =
-	differentiation_operator(superdict(dict), ddict, order; options...) * operator(dict)
+	differentiation_operator(dest(dict), ddict, order; options...) * operator(dict)
+
+unsafe_eval_element_derivative(dict::OperatedDict, i, x) =
+    _unsafe_eval_element_derivative(dict, i, x, operator(dict), dict.scratch_src, dict.scratch_dest)
+
+function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
+    idx = linear_index(dict, idxn)
+    if is_diagonal(op)
+        diagonal(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x)
+    else
+        scratch_src[idx] = 1
+        apply!(op, scratch_dest, scratch_src)
+        scratch_src[idx] = 0
+		D = differentiation_operator(superdict(dict))
+        eval_expansion(dest(D), D*scratch_dest, x)
+    end
+end
+
 
 #################
 # Special cases
@@ -167,6 +185,8 @@ differentiation_operator(dict::OperatedDict, ddict::Dictionary, order::Int; opti
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
 derivative(dict::Dictionary; options...) = differentiation_operator(dict; options...) * dict
+
+derivative(dict::OperatedDict; options...) = differentiation_operator(dest(dict); options...) * dict
 
 function (*)(a::Number, s::Dictionary)
     T = promote_type(typeof(a), coefficienttype(s))
@@ -183,7 +203,7 @@ function (*)(op::DictionaryOperator, dict::OperatedDict)
     OperatedDict(op*operator(dict))
 end
 
-function grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
-        options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}
-    tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
-end
+# function grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
+#         options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}
+#     tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
+# end

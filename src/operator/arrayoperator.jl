@@ -177,11 +177,15 @@ function symbol(op::ScalingOperator)
 end
 
 
+const IdentityOperator{T} = DiagonalOperator{T,Ones{T}}
+
 IdentityOperator(src::Dictionary, dest::Dictionary = src) =
     IdentityOperator(op_eltype(src,dest), src, dest)
 
-IdentityOperator(::Type{T}, src::Dictionary, dest::Dictionary = src) where {T} =
-    ScalingOperator{T}(src, one(T), dest=dest)
+function IdentityOperator(::Type{T}, src::Dictionary, dest::Dictionary = src) where {T}
+    diag = Ones{T}(length(src))
+    DiagonalOperator{T,typeof(diag)}(src, dest, Diagonal(diag))
+end
 
 
 struct DenseMatrixOperator{T} <: ArrayOperator{T}

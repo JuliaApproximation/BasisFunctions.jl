@@ -256,7 +256,7 @@ end
 function test_identity_operator(T)
     b = FourierBasis{T}(10)
     I = IdentityOperator(b)
-    @test scalar(I) == one(T)
+    @test I isa IdentityOperator
     @test eltype(I) == Complex{T}
     @test src(I) == b
     I = IdentityOperator(FourierBasis{T}(10), ChebyshevBasis{T}(10))

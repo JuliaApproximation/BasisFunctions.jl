@@ -74,6 +74,7 @@ parentheses(t::TensorProductOperator,a::OperatorSum) = true
 # Mixing and matching products need parentheses
 parentheses(t::CompositeOperators,a::TensorProductOperator) = true
 parentheses(t::TensorProductOperator,a::CompositeOperators) = true
+parentheses(d::OperatedDict,a::CompositeOperators) = true
 
 ####
 # Dictionary symbols and strings
