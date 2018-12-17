@@ -1,5 +1,4 @@
 [[GenericLinearAlgebra]]
-deps = ["LinearAlgebra", "Printf", "Test"]
 git-tree-sha1 = "aecdbe85d0746f1126b53daaf577b261de56d40c"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl"
