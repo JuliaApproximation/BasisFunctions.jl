@@ -111,6 +111,9 @@ evaluation_operator(s::PiecewiseDict, dgs::GridBasis; options...) =
     MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))) *
         LinearizationOperator(s)
 
+new_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) =
+    MultiplicationOperator(dict, gb, evaluation_matrix(dict, grid)) * LinearizationOperator(dict)
+
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
     @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)

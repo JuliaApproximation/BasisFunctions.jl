@@ -43,7 +43,7 @@ function test_generic_operators(T)
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", BF.ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
-        ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, b1, 1, T(2))],
+        ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, 1, T(2))],
         ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b4, b4, T(2))) ],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
         ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],

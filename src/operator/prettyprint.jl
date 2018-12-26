@@ -56,6 +56,9 @@ function string(op::MultiplicationOperator, object::FFTW.DCTPlan)
     String(take!(io))
 end
 
+string(op::GridSampling) = print_strings(("Sampling in a discrete grid", strings(grid(op))))
+
+string(op::DiagonalOperator) = "Diagonal operator with element type $(eltype(op))"
 
 # Different operators with the same symbol get added subscripts
 subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in reverse(digits(i)))

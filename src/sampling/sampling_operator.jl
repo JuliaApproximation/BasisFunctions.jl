@@ -86,7 +86,6 @@ end
 
 apply(op::GridSampling, dict::Dictionary) = evaluation_operator(dict, grid(op))
 
-string(op::GridSampling) = "Discrete sampling with grid: $(grid(op))"
 
 
 function quadraturenormalization(op::GridSampling, args...)

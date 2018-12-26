@@ -204,6 +204,40 @@ function shift(b::FourierBasis, coefficients, delta)
 	coef2
 end
 
+
+transform_to_grid(dict::FourierBasis; T = coefficienttype(dict), options...) =
+	backward_fourier_operator(dict, GridBasis{T}(interpolation_grid(dict)), T; options...)
+
+transform_from_grid(dict::FourierBasis; T = coefficienttype(dict), options...) =
+	forward_fourier_operator(GridBasis{T}(interpolation_grid(dict)), dict, T; options...)
+
+function new_evaluation_operator(dict::FourierBasis, gb::GridBasis,
+			grid::PeriodicEquispacedGrid; warn_slow = false, options...)
+	if (leftendpoint(grid) ≈ 0) && (rightendpoint(grid) ≈ 1)
+		resize_and_transform(dict, gb, grid; warn_slow=warn_slow, options...)
+	else
+		if warn_slow
+			@warn "Periodic grid mismatch with Fourier basis"
+		end
+		dense_evaluation_operator(b, gb; options...)
+	end
+end
+
+function new_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
+			warnslow = false, options...)
+	grid2 = to_periodic_grid(dict, grid)
+	if grid2 != nothing
+		gb2 = GridBasis{coefficienttype(gb)}(grid2)
+		new_evaluation_operator(dict, gb2, grid2; warnslow=warnslow, options...) * gridconversion(gb, gb2; warnslow=warnslow, options...)
+	else
+		if warn_slow
+			@warn "Evaluation: could not convert $grid to periodic grid"
+		end
+		dense_evaluation_operator(b, gb; options...)
+	end
+end
+
+
 ############################
 # Extension and restriction
 ############################
@@ -220,17 +254,18 @@ struct FourierIndexExtensionOperator{T} <: DictionaryOperator{T}
 	n2		::	Int
 end
 
-FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest)) =
-	FourierIndexExtensionOperator{op_eltype(src,dest)}(src, dest, n1, n2)
+FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest);
+			T = op_eltype(src,dest)) =
+	FourierIndexExtensionOperator{T}(src, dest, n1, n2)
 
 string(op::FourierIndexExtensionOperator) = "Fourier series extension from length $(op.n1) to length $(op.n2)"
 
-wrap_operator(src, dest, op::FourierIndexExtensionOperator{T}) where T =
+wrap_operator(src, dest, op::FourierIndexExtensionOperator{T}) where {T} =
 	FourierIndexExtensionOperator{T}(src, dest, op.n1, op.n2)
 
-function extension_operator(b1::FourierBasis, b2::FourierBasis; options...)
+function extension_operator(b1::FourierBasis, b2::FourierBasis; T = op_eltype(b1,b2), options...)
 	@assert length(b1) <= length(b2)
-	FourierIndexExtensionOperator(b1, b2)
+	FourierIndexExtensionOperator(b1, b2; T=T)
 end
 
 function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
@@ -412,7 +447,6 @@ end
 
 
 
-
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
@@ -437,14 +471,14 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
 			R*E
 		else
-			default_evaluation_operator(fs, dgs; options...)
+			dense_evaluation_operator(fs, dgs; options...)
 		end
 	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		default_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, dgs; options...)
 	else
-		default_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, dgs; options...)
 	end
 end
 
@@ -557,7 +591,7 @@ dot(b::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(b); o
 
 function Gram(s::FourierBasis; options...)
 	if iseven(length(s))
-		CoefficientScalingOperator(s, s, (length(s)>>1)+1, one(coefficienttype(s))/2)
+		CoefficientScalingOperator(s, (length(s)>>1)+1, one(coefficienttype(s))/2)
 	else
 		IdentityOperator(s, s)
 	end

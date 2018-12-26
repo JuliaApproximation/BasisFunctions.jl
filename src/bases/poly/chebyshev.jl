@@ -45,6 +45,7 @@ first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)
 
 interpolation_grid(b::ChebyshevBasis{T}) where {T} = ChebyshevNodes{T}(length(b))
 secondgrid(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
+transformgrid_extremae(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
 # extends the default definition at transform.jl
 transform_dict(s::ChebyshevBasis; nodegrid=true, options...) =
@@ -240,6 +241,46 @@ end
 # Methods to transform from ChebyshevBasis to ChebyshevNodes
 ###############################################################
 
+new_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevNodes; options...) =
+	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
+
+new_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevExtremae; options...) =
+	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
+
+function chebyshev_transform_nodes(dict::ChebyshevBasis, T; options...)
+	grid = interpolation_grid(dict)
+	n = length(dict)
+	# We compose the inverse DCT with a diagonal scaling
+	F = _backward_chebyshev_operator(dict, GridBasis{T}(grid), T; options...)
+	d = zeros(T, n)
+	fill!(d, sqrt(T(n)/2))
+	d[1] *= sqrt(T(2))
+	for i in 1:length(d)
+		d[i] *= (-1)^(i-1)
+	end
+	F * DiagonalOperator(dict, d)
+end
+
+function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
+	grid = transformgrid_extremae(dict)
+	F = _chebyshevI_operator(dict, GridBasis{T}(grid), T; options...)
+	d = zeros(T, length(dict))
+	fill!(d, one(T)/2)
+	d[1] *= 2
+	d[end] *= 2
+	F * DiagonalOperator(dict, d)
+end
+
+function transform_to_grid(dict::ChebyshevBasis; T = coefficienttype(dict), chebyshevpoints = :nodes, options...)
+	if chebyshevpoints == :nodes
+		chebyshev_transform_nodes(dict, T; options...)
+	elseif chebyshevpoints == :extremae
+		chebyshev_transform_extremae(dict, T; options...)
+	else
+		error("Transform to grid for Chebyshev: unknown points type $chebyshevpoints")
+	end
+end
+
 transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodes; T = coefficienttype(dest), options...) =
 	_forward_chebyshev_operator(src, dest, T; options...)
 
@@ -261,34 +302,6 @@ for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
        	InverseFastChebyshevTransformFFTW(src, dest; T = T, options...)
 end
 
-
-
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
-	_backward_chebyshev_operator(s1, s2, T; options...)
-end
-
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
-	_forward_chebyshev_operator(s1, s2, T; options...)
-end
-
-const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
-
-AlternatingSignOperator(src) = AlternatingSignOperator{coefficienttype(src)}(src)
-AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
-
-string(op::AlternatingSignOperator) = "Alternating sign operator of length $(size(op,1))"
-
-
-const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
-
-CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
-	CoefficientScalingOperator{coefficienttype(src)}(src, index, scalar)
-CoefficientScalingOperator(src::Dictionary, dest::Dictionary, index::Int, scalar) =
-	CoefficientScalingOperator{op_eltype(src,dest)}(src, index, scalar)
-CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
-	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
-
-string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.index) by $(op.scalar)"
 
 function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevNodes;
 			T = coefficienttype(dest), options...)

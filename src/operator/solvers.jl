@@ -76,7 +76,7 @@ end
 #         coef_dest[:] = ldiv!(solver, coef_dest)
 #     end
 
-adjoint(op::GenericSolverOperator) = warn("not implemented")
+adjoint(op::GenericSolverOperator) = @warn("not implemented")
 
 qr_factorization(matrix) = qr(matrix, Val(true))
 svd_factorization(matrix) = svd(matrix, full=false)

@@ -187,6 +187,7 @@ function IdentityOperator(::Type{T}, src::Dictionary, dest::Dictionary = src) wh
     DiagonalOperator{T,typeof(diag)}(src, dest, Diagonal(diag))
 end
 
+string(op::IdentityOperator) = "Identity Operator"
 
 struct DenseMatrixOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary

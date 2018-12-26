@@ -156,6 +156,9 @@ grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractGrid; opt
 grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
     block_row_operator( DictionaryOperator{coefficienttype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
 
+new_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
+    block_row_operator( DictionaryOperator{T}[new_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
+
 ## Rescaling
 
 apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))

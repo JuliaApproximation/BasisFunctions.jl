@@ -29,6 +29,9 @@ function apply(op::AbstractOperator, f)
 end
 
 
+size(op::AbstractOperator) = _size(op, dest_space(op), src_space(op))
+_size(op::AbstractOperator, dest, src) = (length(dest), length(src))
+
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
@@ -59,6 +62,12 @@ src_space(op::DictionaryOperator) = Span(src(op))
 dest_space(op::DictionaryOperator) = Span(dest(op))
 
 isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
+
+"""
+True if the operator has a better computational complexity than the corresponding
+matrix-vector product.
+"""
+isefficient(op::DictionaryOperator) = false
 
 "Return a suitable element type for an operator between the given dictionaries."
 op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coefficienttype(src), coefficienttype(dest))

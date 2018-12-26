@@ -143,7 +143,7 @@ for op in (:extension_operator, :restriction_operator,
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
 
-default_evaluation_operator(s1::TensorProductDict, s2::TensorProductDict; options...) =
+dense_evaluation_operator(s1::TensorProductDict, s2::TensorProductDict; options...) =
     tensorproduct(map( (u,v) -> evaluation_operator(u, v; options...), elements(s1), elements(s2))...)
 
 for op in (:approximation_operator, )

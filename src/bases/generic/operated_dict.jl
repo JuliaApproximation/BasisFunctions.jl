@@ -55,9 +55,6 @@ function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
     # We enforce an equal length since we may be able to resize dictionaries,
     # but we can not in general resize the operator (we typically do not store what
     # the operator means in its type).
-	println(operator(d))
-	println(length(d))
-	println(dims)
     @assert length(d) == prod(dims)
     # not sure what to do with dest(d) here - in the meantime invoke similar
     OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
@@ -118,6 +115,9 @@ grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractGrid;
 
 grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
     WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...) * operator(dict))
+
+new_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) =
+    wrap_operator(dict, gb, new_evaluation_operator(dest(dict), gb, grid; options...) * operator(dict))
 
 ## Properties
 

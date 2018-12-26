@@ -15,6 +15,8 @@ codomaintype(::Type{FunctionSpace{S,T}}) where {S,T} = T
 codomaintype(::Type{S}) where {S <: FunctionSpace} = codomaintype(supertype(S))
 codomaintype(::FunctionSpace{S,T}) where {S,T} = T
 
+length(s::FunctionSpace) = Inf
+
 """
 `GenericFunctionSpace` is a generic function space for functions about which we
 have no additional information apart from their domain and codomain types.

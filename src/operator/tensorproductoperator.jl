@@ -36,9 +36,9 @@ function TensorProductOperator(operators...)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
     # storage to hold a vector for source and destination for each operator
-    src_scratch_array = [zeros(src(operators[j])) for j=1:L]
+    src_scratch_array = [zeros(T, src(operators[j])) for j=1:L]
     src_scratch = (src_scratch_array...,)
-    dest_scratch_array = [zeros(dest(operators[j])) for j=1:L]
+    dest_scratch_array = [zeros(T, dest(operators[j])) for j=1:L]
     dest_scratch = (dest_scratch_array...,)
     TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end

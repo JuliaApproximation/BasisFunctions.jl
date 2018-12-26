@@ -175,6 +175,13 @@ dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superd
     dot(superdict(s), f1, f2, nodes; options...)
 
 
+function new_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid::AbstractGrid;
+        T = op_eltype(set, dgs), options...)
+    A = new_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
+    wrap_operator(dict, gb, A)
+end
+
+
 #########################
 # Concrete dict
 #########################

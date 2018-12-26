@@ -41,3 +41,6 @@ random_expansion(span::Span) = Expansion(dictionary(span), rand(dictionary(span)
 zero(span::Span) = Expansion(dictionary(span), zeros(dictionary(span)))
 
 tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionary(s2)))
+
+size(span::Span) = size(dictionary(span))
+length(span::Span) = length(dictionary(span))

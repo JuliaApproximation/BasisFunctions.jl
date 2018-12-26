@@ -80,11 +80,11 @@ _eval_expansion(set::WeightedDict, w, coefficients, grid::AbstractGrid) =
 # and our own functors:
 (*)(f::AbstractFunction, set::Dictionary) = WeightedDict(set, f)
 
-weightfun_scaling_operator(dgs::GridBasis1d, weightfunction) =
-    DiagonalOperator(dgs, dgs, coefficienttype(dgs)[weightfunction(x) for x in grid(dgs)])
+weightfun_scaling_operator(gb::GridBasis1d, weightfunction) =
+    DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x) for x in grid(gb)])
 
-weightfun_scaling_operator(dgs::GridBasis, weightfunction) =
-    DiagonalOperator(dgs, dgs, coefficienttype(dgs)[weightfunction(x...) for x in grid(dgs)])
+weightfun_scaling_operator(gb::GridBasis, weightfunction) =
+    DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x...) for x in grid(gb)])
 
 transform_to_grid_post(src::WeightedDict, dest::GridBasis, grid; options...) =
     weightfun_scaling_operator(dest, weightfunction(src)) * transform_to_grid_post(superdict(src), dest, grid; options...)
@@ -124,6 +124,12 @@ function grid_evaluation_operator(set::WeightedDict, dgs::GridBasis, grid::Abstr
     super_e = grid_evaluation_operator(superdict(set), dgs, grid; options...)
     D = weightfun_scaling_operator(dgs, weightfunction(set))
     D * wrap_operator(set, dgs, super_e)
+end
+
+function new_evaluation_operator(dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...)
+    A = new_evaluation_operator(superdict(dict), gb, grid; options...)
+    D = weightfun_scaling_operator(gb, weightfunction(dict))
+    D * wrap_operator(dict, gb, A)
 end
 
 symbol(s::WeightedDict) = "ω"

@@ -37,11 +37,13 @@ mapping(dict::MappedDict) = dict.map
 
 similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
-has_derivative(s::MappedDict) = has_derivative(superdict(s)) && islinear(mapping(s))
-has_antiderivative(s::MappedDict) = has_antiderivative(superdict(s)) && islinear(mapping(s))
+has_derivative(dict::MappedDict) =
+    has_derivative(superdict(dict)) && islinear(mapping(dict))
+has_antiderivative(dict::MappedDict) =
+    has_antiderivative(superdict(dict)) && islinear(mapping(dict))
 
-interpolation_grid(s::MappedDict) = _grid(s, superdict(s), mapping(s))
-_grid(s::MappedDict, set, map) = mapped_grid(interpolation_grid(set), map)
+interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict))
+_grid(dict::MappedDict, sdict, map) = mapped_grid(interpolation_grid(sdict), map)
 
 
 function name(s::MappedDict)
@@ -134,7 +136,7 @@ function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::MappedGrid; 
         E = evaluation_operator(superdict(s), supergrid(g); options...)
         wrap_operator(s, dgs, E)
     else
-        default_evaluation_operator(s, dgs; options...)
+        dense_evaluation_operator(s, dgs; options...)
     end
 end
 
@@ -157,6 +159,24 @@ function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractSubG
     E = evaluation_operator(superdict(s), g2_dgs; options...)
     wrap_operator(s, dgs, E)
 end
+
+function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid::MappedGrid; T = op_eltype(dict, gb), options...)
+    if is_compatible(mapping(dict), mapping(grid))
+        g = supergrid(grid)
+        A = new_evaluation_operator(superdict(dict), GridBasis{T}(g), g; T=T, options...)
+    else
+        g = apply_map(grid, inv(mapping(dict)))
+        A = new_evaluation_operator(dict, GridBasis{T}(g), g; T=T, options...)
+    end
+    wrap_operator(dict, gb, A)
+end
+
+function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...)
+    g = apply_map(grid, inv(mapping(dict)))
+    A = new_evaluation_operator(superdict(dict), GridBasis{T}(g), g; T=T, options...)
+    wrap_operator(dict, gb, A)
+end
+
 
 ###################
 # Differentiation

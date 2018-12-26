@@ -289,6 +289,10 @@ adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
 adjoint_multiplication(op::MultiplicationOperator, object) =
     MultiplicationOperator(dest(op), src(op), adjoint(object))
 
+adjoint_multiplication(op::MultiplicationOperator, object::Array{T,2}) where {T} =
+    # We copy the adjoint in order to avoid storing an Adjoint type
+    MultiplicationOperator(dest(op), src(op), copy(adjoint(object)))
+
 inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 
 # This can be overriden for types of objects that do not support inv
@@ -448,8 +452,9 @@ struct LinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src))) =
-    LinearizationOperator{op_eltype(src,dest)}(src, dest)
+LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src));
+            T = op_eltype(src, dest)) =
+    LinearizationOperator{T}(src, dest)
 
 similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
     LinearizationOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
@@ -484,3 +489,21 @@ function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)
     MultiplicationOperator(src(op), dest(op), A, inplace=false)
 end
+
+
+const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
+
+AlternatingSignOperator(src) = AlternatingSignOperator{coefficienttype(src)}(src)
+AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
+
+string(op::AlternatingSignOperator) = "Alternating sign operator of length $(size(op,1))"
+
+
+const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
+
+CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
+	CoefficientScalingOperator{promote_type(coefficienttype(src),typeof(scalar))}(src, index, scalar)
+CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
+	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
+
+string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.A.diag.index) by $(op.A.diag.scalar)"

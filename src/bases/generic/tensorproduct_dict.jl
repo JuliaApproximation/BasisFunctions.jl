@@ -53,7 +53,9 @@ end
 
 size(d::TensorProductDict) = d.size
 
-similar(dict::TensorProductDict, ::Type{T}, size::Int...) where {T} =
+similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} = similar(dict, T, approx_length(dict, size))
+
+similar(dict::TensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
     TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
 
 coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,elements(s))...)
@@ -286,3 +288,7 @@ function stencil(op::TensorProductDict)
     end
     A
 end
+
+
+new_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; T, options...) =
+    tensorproduct(map( (d,g) -> new_evaluation_operator(d, g; T=T), elements(dict), elements(grid))...)
