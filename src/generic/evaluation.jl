@@ -50,7 +50,7 @@ grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::AbstractGrid; opti
     select_grid_evaluation_operator(s, dgs, grid; options...)
 
 function select_grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::AbstractGrid;
-            warnslow = true, options...)
+            warnslow = false, options...)
     if has_transform(s)
         if has_transform(s, dgs)
             return full_transform_operator(s, dgs; options...)
@@ -158,6 +158,9 @@ discrete_dual_evaluation_operator(s::Dictionary; oversampling = default_oversamp
 
 new_evaluation_operator(dict::Dictionary, grid::AbstractGrid; options...) =
     new_evaluation_operator(dict, GridBasis(dict, grid); options...)
+
+new_evaluation_operator(dict::Dictionary, grid::AbstractSubGrid; T = coefficienttype(dict), options...) =
+     restriction_operator(GridBasis{T}(supergrid(grid)), GridBasis{T}(grid); options...) * new_evaluation_operator(dict, supergrid(grid); options...)
 
 new_evaluation_operator(dict::Dictionary, gb::GridBasis;
             T = op_eltype(dict, gb), options...) =

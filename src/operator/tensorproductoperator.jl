@@ -43,6 +43,11 @@ function TensorProductOperator(operators...)
     TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
+function tensorproduct(ops::IdentityOperator...)
+    tp_src = tensorproduct(map(src, ops)...)
+    tp_dest = tensorproduct(map(dest, ops)...)
+    IdentityOperator(tp_src, tp_dest)
+end
 
 # Element-wise src and dest functions
 src(op::TensorProductOperator, j::Int) = src(element(op, j))

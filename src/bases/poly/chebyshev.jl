@@ -287,6 +287,15 @@ transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodes; T = coeffic
 transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevNodes; T = coefficienttype(src), options...) =
 	_backward_chebyshev_operator(src, dest, T; options...)
 
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
+    _backward_chebyshev_operator(s1, s2, T; options...)
+end
+
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
+    _forward_chebyshev_operator(s1, s2, T; options...)
+end
+
+
 # These are the generic fallbacks
 _forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
 	FastChebyshevTransform(src, dest; T = T)
@@ -337,11 +346,11 @@ for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
 		FastChebyshevITransformFFTW(src, dest; options...)
 end
 
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
+function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
     _chebyshevI_operator(s1, s2, T; options...)
 end
 
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
+function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
     _chebyshevI_operator(s1, s2, T; options...)
 end
 

@@ -426,6 +426,8 @@ end
 
 function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	#@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
+	println(s1)
+	println(s2)
 	backward_fourier_operator(s1, s2, T; options...)
 end
 
