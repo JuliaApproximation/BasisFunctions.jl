@@ -48,8 +48,14 @@ secondgrid(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
 transformgrid_extremae(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
 # extends the default definition at transform.jl
-transform_dict(s::ChebyshevBasis; nodegrid=true, options...) =
-    nodegrid ? GridBasis(s) : GridBasis{coefficienttype(s)}(secondgrid(s))
+function transform_dict(s::ChebyshevBasis{T}; chebyshevpoints=:nodes, options...) where {T}
+	if chebyshevpoints == :nodes
+    	GridBasis(s)
+	else
+		@assert chebyshevpoints == :extremae
+		GridBasis{T}(secondgrid(s))
+	end
+end
 
 # The weight function
 weight(b::ChebyshevBasis{T}, x) where {T} = one(T)/sqrt(1-T(x)^2)
@@ -237,9 +243,9 @@ function restriction_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_elt
 end
 
 
-################################################################
-# Methods to transform from ChebyshevBasis to ChebyshevNodes
-###############################################################
+###################################################################################
+# Methods to transform from ChebyshevBasis to ChebyshevNodes and ChebyshevExtremae
+###################################################################################
 
 new_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevNodes; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
@@ -251,7 +257,7 @@ function chebyshev_transform_nodes(dict::ChebyshevBasis, T; options...)
 	grid = interpolation_grid(dict)
 	n = length(dict)
 	# We compose the inverse DCT with a diagonal scaling
-	F = _backward_chebyshev_operator(dict, GridBasis{T}(grid), T; options...)
+	F = inverse_chebyshev_operator(dict, GridBasis{T}(grid), T; options...)
 	d = zeros(T, n)
 	fill!(d, sqrt(T(n)/2))
 	d[1] *= sqrt(T(2))
@@ -263,7 +269,7 @@ end
 
 function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
 	grid = transformgrid_extremae(dict)
-	F = _chebyshevI_operator(dict, GridBasis{T}(grid), T; options...)
+	F = inverse_chebyshevI_operator(dict, GridBasis{T}(grid), T; options...)
 	d = zeros(T, length(dict))
 	fill!(d, one(T)/2)
 	d[1] *= 2
@@ -271,110 +277,44 @@ function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-function transform_to_grid(dict::ChebyshevBasis; T = coefficienttype(dict), chebyshevpoints = :nodes, options...)
-	if chebyshevpoints == :nodes
-		chebyshev_transform_nodes(dict, T; options...)
-	elseif chebyshevpoints == :extremae
-		chebyshev_transform_extremae(dict, T; options...)
-	else
-		error("Transform to grid for Chebyshev: unknown points type $chebyshevpoints")
-	end
-end
+transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevNodes; T = op_eltype(src, dest), options...) =
+	chebyshev_transform_nodes(src, T; options...)
 
-transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevNodes; T = coefficienttype(dest), options...) =
-	_forward_chebyshev_operator(src, dest, T; options...)
+transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevExtremae; T = op_eltype(src, dest), options...) =
+	chebyshev_transform_extremae(src, T; options...)
 
-transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevNodes; T = coefficienttype(src), options...) =
-	_backward_chebyshev_operator(src, dest, T; options...)
-
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
-    _backward_chebyshev_operator(s1, s2, T; options...)
-end
-
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevNodes}
-    _forward_chebyshev_operator(s1, s2, T; options...)
-end
+transform_from_grid(src::GridBasis, dest::ChebyshevBasis, grid; options...) =
+	inv(transform_to_grid(dest, src, grid; options...))
 
 
-# These are the generic fallbacks
-_forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-	FastChebyshevTransform(src, dest; T = T)
 
-_backward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-	InverseFastChebyshevTransform(src, dest; T=T)
+# # These are the generic fallbacks
+# forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
+# 	FastChebyshevTransform(src, dest; T = T)
+#
+# inverse_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
+# 	InverseFastChebyshevTransform(src, dest; T=T)
+#
+# # But for some types we use FFTW
+# for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
+#     @eval forward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
+# 	   FastChebyshevTransformFFTW(src, dest; T = T, options...)
+#     @eval inverse_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
+#        	InverseFastChebyshevTransformFFTW(src, dest; T = T, options...)
+# end
+#
+#
+# # These are the generic fallbacks
+# chebyshevI_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
+#     FastChebyshevITransform(src, dest)
+#
+# # But for some types we use FFTW
+# for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
+# 	@eval chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
+# 		FastChebyshevITransformFFTW(src, dest; options...)
+# end
 
-# But for some types we use FFTW
-for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-    @eval _forward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
-	   FastChebyshevTransformFFTW(src, dest; T = T, options...)
-    @eval _backward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
-       	InverseFastChebyshevTransformFFTW(src, dest; T = T, options...)
-end
 
-
-function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevNodes;
-			T = coefficienttype(dest), options...)
-    scaling = ScalingOperator{T}(dest, 1/sqrt(convert(T, length(dest))/2))
-    coefscaling = CoefficientScalingOperator{T}(dest, 1, 1/sqrt(convert(T, 2)))
-    flip = AlternatingSignOperator{T}(dest)
-	scaling * coefscaling * flip
-end
-
-transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevNodes; options...) =
-    inv(transform_from_grid_post(dest, src, grid; options...))
-
-
-##################################################################
-# Methods to transform from ChebyshevBasis to ChebyshevExtremae
-##################################################################
-
-transform_from_grid(src, dest::ChebyshevBasis, grid::ChebyshevExtremae;
-			T = coefficienttype(dest), options...) =
-		_chebyshevI_operator(src, dest, T; options...)
-
-transform_to_grid(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
-			T = coefficienttype(src), options...) =
-	_chebyshevI_operator(src, dest, T; options...)
-
-# These are the generic fallbacks
-_chebyshevI_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-    FastChebyshevITransform(src, dest)
-
-# But for some types we use FFTW
-for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-	@eval _chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
-		FastChebyshevITransformFFTW(src, dest; options...)
-end
-
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
-    _chebyshevI_operator(s1, s2, T; options...)
-end
-
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = op_eltype(s1,s2), options...) where {F <: ChebyshevBasis,G <: ChebyshevExtremae}
-    _chebyshevI_operator(s1, s2, T; options...)
-end
-
-function transform_to_grid_pre(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
-			T = coefficienttype(src), options...)
-    coefscaling1 = CoefficientScalingOperator{T}(src, 1, 2)
-    coefscaling2 = CoefficientScalingOperator{T}(src, length(src), 2)
-    coefscaling1 * coefscaling2
-end
-
-function transform_to_grid_post(src::ChebyshevBasis, dest, grid::ChebyshevExtremae;
-			T = coefficienttype(src), options...)
-	ScalingOperator{T}(dest, one(T)/2)
-end
-
-function transform_from_grid_post(src, dest::ChebyshevBasis, grid::ChebyshevExtremae;
-			T = coefficienttype(dest), options...)
-    # Inverse DCT is unnormalized, applying DCT and its inverse gives N times the original. N=2(length-1)
-    scaling = ScalingOperator(dest, 1/(2*T(length(dest)-1)))
-    scaling * inv(transform_to_grid_pre(dest, src, grid; T = T, options...))
-end
-
-transform_from_grid_pre(src, dest::ChebyshevBasis, grid::ChebyshevExtremae; options...) =
-    inv(transform_to_grid_post(dest, src, grid; options...))
 
 
 

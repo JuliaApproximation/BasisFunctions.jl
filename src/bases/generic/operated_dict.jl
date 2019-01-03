@@ -140,11 +140,15 @@ has_transform(dict::OperatedDict, dgs::GridBasis) = is_diagonal(operator(dict)) 
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 
-transform_to_grid_pre(src::OperatedDict, dest::GridBasis, grid; options...) =
-	transform_to_grid_pre(superdict(src), dest, grid; options...) * operator(src)
+function transform_to_grid(src::OperatedDict, dest::GridBasis, grid; options...)
+	op = transform_to_grid(superdict(src), dest, grid; options...) * operator(src)
+	wrap_operator(src, dest, op)
+end
 
-transform_from_grid_post(src::GridBasis, dest::OperatedDict, grid; options...) =
-	inv(operator(dest)) * transform_from_grid_post(src, superdict(dest), grid; options...)
+function transform_from_grid(src::GridBasis, dest::OperatedDict, grid; options...)
+	 op = inv(operator(dest)) * transform_from_grid(src, superdict(dest), grid; options...)
+	 wrap_operator(src, dest, op)
+ end
 
 
 #################

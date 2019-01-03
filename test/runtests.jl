@@ -37,15 +37,13 @@ include("dictionaries/test_dictionaries.jl")
 Delimit("Gram")
 include("test_gram.jl")
 
-Delimit("Check evaluations, interpolations, extensions, setexpansions")
+Delimit("Check evaluations, interpolations, extensions, expansions")
 include("test_fourier.jl")
+include("test_chebyshev.jl")
 include("test_ops.jl")
 
 Delimit("Generic OPS")
 include("test_generic_OPS.jl")
-
-Delimit("DCTI")
-include("test_DCTI.jl")
 
 Delimit("Plots")
 include("test_plots.jl")

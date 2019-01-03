@@ -330,19 +330,10 @@ end
 "Does the dictionary have a transform associated with some space?"
 has_transform(d1::Dictionary, d2) = false
 
-"Does the dictionary have a transform associated with some space that is unitary"
-has_unitary_transform(d::Dictionary) = has_transform(d)
-# If a dict has a transform, we assume it is unitary. If it is not,
-# this function has to be over written.
-
 # Convenience functions: default grid, and conversion from grid to space
 has_transform(d::Dictionary) = has_interpolationgrid(d) && has_transform(d, interpolation_grid(d))
 has_transform(d::Dictionary, grid::AbstractGrid) =
-    has_transform(d, GridBasis{codomaintype(d)}(grid))
-
-"Does the grid span the same interval as the dictionary"
-has_interpolationgrid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
-    (1+(infimum(support(set)) - leftendpoint(grid))≈1) && (1+(supremum(support(set)) - rightendpoint(grid))≈1)
+    has_transform(d, GridBasis{coefficienttype(d)}(grid))
 
 "Does the dictionary support extension and restriction operators?"
 has_extension(d::Dictionary) = false

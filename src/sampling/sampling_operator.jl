@@ -84,7 +84,7 @@ function sample!(result, grid, f)
 	result
 end
 
-apply(op::GridSampling, dict::Dictionary) = evaluation_operator(dict, grid(op))
+apply(op::GridSampling, dict::Dictionary) = new_evaluation_operator(dict, grid(op))
 
 
 

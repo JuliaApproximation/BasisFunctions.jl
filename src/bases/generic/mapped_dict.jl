@@ -54,6 +54,16 @@ function name(s::MappedDict)
     end
 end
 
+function unmap_grid(dict::MappedDict, grid::MappedGrid)
+    if is_compatible(mapping(dict), mapping(grid))
+        supergrid(grid)
+    else
+        apply_map(grid, inv(mapping(dict)))
+    end
+end
+
+unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inv(mapping(dict)))
+
 
 ## _name(s::MappedDict, set, map) = "A mapped set based on " * name(set)
 ## _name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
@@ -102,27 +112,24 @@ is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mappin
 
 transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
-has_grid_transform(s::MappedDict, gb, g::MappedGrid) =
-    is_compatible(mapping(s), mapping(g)) &&
-        has_transform(superdict(s), GridBasis{codomaintype(gb)}(supergrid(g)))
-
-function has_grid_transform(s::MappedDict, gb, g::AbstractGrid)
-    g2 = apply_map(g, inv(mapping(s)))
-    has_grid_transform(superdict(s), GridBasis{codomaintype(gb)}(g2), g2)
+function has_grid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
+    sgrid = unmap_grid(dict, grid)
+    T = codomaintype(gb)
+    has_grid_transform(superdict(dict), GridBasis{T}(sgrid), sgrid)
 end
 
-function simplify_transform_pair(s::MappedDict, g::MappedGrid)
-    if is_compatible(mapping(s), mapping(g))
-        superdict(s), supergrid(g)
-    else
-        s, g
-    end
+function transform_from_grid(s1::GridBasis, s2::MappedDict, grid; T = op_eltype(s1,s2), options...)
+    sgrid = unmap_grid(s2, grid)
+    op = transform_from_grid(GridBasis{T}(sgrid), superdict(s2), sgrid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
 
-function simplify_transform_pair(s::MappedDict, g::AbstractGrid)
-    g2 = apply_map(g, inv(mapping(s)))
-    simplify_transform_pair(superdict(s), g2)
+function transform_to_grid(s1::MappedDict, s2::GridBasis, grid; T = op_eltype(s1,s2), options...)
+    sgrid = unmap_grid(s1, grid)
+    op = transform_to_grid(superdict(s1), GridBasis{T}(sgrid), sgrid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
+
 
 
 ###################
@@ -160,21 +167,11 @@ function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractSubG
     wrap_operator(s, dgs, E)
 end
 
-function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid::MappedGrid; T = op_eltype(dict, gb), options...)
-    if is_compatible(mapping(dict), mapping(grid))
-        g = supergrid(grid)
-        A = new_evaluation_operator(superdict(dict), GridBasis{T}(g), g; T=T, options...)
-    else
-        g = apply_map(grid, inv(mapping(dict)))
-        A = new_evaluation_operator(dict, GridBasis{T}(g), g; T=T, options...)
-    end
-    wrap_operator(dict, gb, A)
-end
 
-function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...)
-    g = apply_map(grid, inv(mapping(dict)))
-    A = new_evaluation_operator(superdict(dict), GridBasis{T}(g), g; T=T, options...)
-    wrap_operator(dict, gb, A)
+function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid; T = op_eltype(dict, gb), options...)
+    sgrid = unmap_grid(dict, grid)
+    op = new_evaluation_operator(superdict(dict), GridBasis{T}(sgrid), sgrid; T=T, options...)
+    wrap_operator(dict, gb, op)
 end
 
 

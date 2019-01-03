@@ -53,13 +53,13 @@ function select_grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::Ab
             warnslow = false, options...)
     if has_transform(s)
         if has_transform(s, dgs)
-            return full_transform_operator(s, dgs; options...)
+            return transform_operator(s, dgs; options...)
         elseif length(s) < length(dgs)
             if has_extension(s)
                 if dimension(s) == 1
                     slarge = resize(s, length(dgs))
                     if has_transform(slarge, dgs)
-                        return full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
+                        return transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
                     else
                         if warnslow
                             println("Has transform, but no match after resize, dim 1")
@@ -73,7 +73,7 @@ function select_grid_evaluation_operator(s::Dictionary, dgs::GridBasis, grid::Ab
                 elseif dimension(s) == length(size(dgs))
                     slarge = resize(s, size(dgs))
                     if has_transform(slarge, dgs)
-                        return full_transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
+                        return transform_operator(slarge, dgs; options...) * extension_operator(s, slarge; options...)
                     else
                         if warnslow
                             println("Has transform, but no match after resize, dim > 1")
@@ -170,10 +170,10 @@ new_evaluation_operator(dict::Dictionary, gb::GridBasis;
 function resize_and_transform(dict::Dictionary, gb::GridBasis, grid;
             warnslow = false, options...)
     if size(dict) == size(grid)
-        transform_to_grid(dict; options...)
+        transform_to_grid(dict, gb, grid; options...)
     elseif length(grid) > length(dict)
         dlarge = resize(dict, size(grid))
-        transform_to_grid(dlarge; options...) * extension_operator(dict, dlarge; options...)
+        transform_to_grid(dlarge, gb, grid; options...) * extension_operator(dict, dlarge; options...)
     else
         if warnslow
             @warn "Resize and transform: dictionary evaluated in small grid"

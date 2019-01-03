@@ -17,7 +17,7 @@ interpolation_operator(s::Dictionary, grid::AbstractGrid; options...) =
 # Interpolate dict in the grid of dgs
 function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
     if has_interpolationgrid(s) && interpolation_grid(s) == grid(dgs) && has_transform(s, dgs)
-        full_transform_operator(dgs, s; options...)
+        transform_operator(dgs, s; options...)
     else
         default_interpolation_operator(s, dgs; options...)
     end

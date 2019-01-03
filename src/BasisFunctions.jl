@@ -125,7 +125,7 @@ export is_composite
 export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
 export in_support
 export approx_length, extension_size
-export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
+export has_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment, norm
@@ -181,11 +181,7 @@ export CirculantOperator
 export GenericIdentityOperator
 
 # from generic/transform.jl
-export transform_operator, transform_dict, full_transform_operator,
-    transform_operator_pre, transform_operator_post,
-    transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
-    transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
-    transform_operators
+export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
 export Gram, DualGram, MixedGram, gram_entry
@@ -203,9 +199,6 @@ export evaluation_operator, grid_evaluation_operator, dense_evaluation_operator,
 
 # from generic/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
-
-# from generic/leastsquares.jl
-export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
 export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project

@@ -128,30 +128,14 @@ for op in (:extension_operator, :restriction_operator)
         wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); T = T, options...))
 end
 
-# By default we return the underlying set when simplifying transforms
-simplify_transform_pair(s::DerivedDict, grid::AbstractGrid) = (superdict(s),grid)
-
-# Simplify invocations of transform_from/to_grid with DerivedDict's
-for op in ( (:transform_from_grid, :s1, :s2),
-            (:transform_from_grid_pre, :s1, :s1),
-            (:transform_from_grid_post, :s1, :s2))
-
-    @eval function $(op[1])(s1, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
-    end
+function transform_from_grid(s1::GridBasis, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
+    op = transform_from_grid(s1, superdict(s2), grid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
 
-for op in ( (:transform_to_grid, :s1, :s2),
-            (:transform_to_grid_pre, :s1, :s1),
-            (:transform_to_grid_post, :s1, :s2))
-
-    @eval function $(op[1])(s1::DerivedDict, s2, grid; T = op_eltype(s1,s2), options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
-    end
+function transform_to_grid(s1::DerivedDict, s2::GridBasis, grid; T = op_eltype(s1,s2), options...)
+    op = transform_to_grid(superdict(s1), s2, grid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
 
 
@@ -175,7 +159,7 @@ dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superd
     dot(superdict(s), f1, f2, nodes; options...)
 
 
-function new_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid::AbstractGrid;
+function new_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
         T = op_eltype(set, dgs), options...)
     A = new_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
     wrap_operator(dict, gb, A)

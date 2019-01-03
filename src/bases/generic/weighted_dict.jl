@@ -86,11 +86,12 @@ weightfun_scaling_operator(gb::GridBasis1d, weightfunction) =
 weightfun_scaling_operator(gb::GridBasis, weightfunction) =
     DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x...) for x in grid(gb)])
 
-transform_to_grid_post(src::WeightedDict, dest::GridBasis, grid; options...) =
-    weightfun_scaling_operator(dest, weightfunction(src)) * transform_to_grid_post(superdict(src), dest, grid; options...)
+transform_to_grid(src::WeightedDict, dest::GridBasis, grid; options...) =
+    weightfun_scaling_operator(dest, weightfunction(src)) * wrap_operator(src, dest, transform_to_grid(superdict(src), dest, grid; options...))
 
-transform_from_grid_pre(src::GridBasis, dest::WeightedDict, grid; options...) =
-	transform_from_grid_pre(src, superdict(dest), grid; options...) * inv(weightfun_scaling_operator(src, weightfunction(dest)))
+transform_from_grid(src::GridBasis, dest::WeightedDict, grid; options...) =
+	wrap_operator(src, dest, transform_from_grid(src, superdict(dest), grid; options...)) * inv(weightfun_scaling_operator(src, weightfunction(dest)))
+
 
 
 function derivative_dict(src::WeightedDict, order; options...)

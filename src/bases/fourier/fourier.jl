@@ -63,7 +63,7 @@ has_extension(b::FourierBasis) = true
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
-	has_interpolationgrid_equal_span(b,grid) && (length(b)==length(grid))
+	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
 compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
@@ -205,11 +205,16 @@ function shift(b::FourierBasis, coefficients, delta)
 end
 
 
-transform_to_grid(dict::FourierBasis; T = coefficienttype(dict), options...) =
-	backward_fourier_operator(dict, GridBasis{T}(interpolation_grid(dict)), T; options...)
+function transform_from_grid(src::GridBasis, dest::FourierBasis, grid; T = op_eltype(src,dest), options...)
+	@assert compatible_grid(dest, grid)
+	forward_fourier_operator(src, dest, T; options...)
+end
 
-transform_from_grid(dict::FourierBasis; T = coefficienttype(dict), options...) =
-	forward_fourier_operator(GridBasis{T}(interpolation_grid(dict)), dict, T; options...)
+function transform_to_grid(src::FourierBasis, dest::GridBasis, grid; T = op_eltype(src,dest), options...)
+	@assert compatible_grid(src, grid)
+	inverse_fourier_operator(src, dest, T; options...)
+end
+
 
 function new_evaluation_operator(dict::FourierBasis, gb::GridBasis,
 			grid::PeriodicEquispacedGrid; warn_slow = false, options...)
@@ -222,6 +227,8 @@ function new_evaluation_operator(dict::FourierBasis, gb::GridBasis,
 		dense_evaluation_operator(b, gb; options...)
 	end
 end
+
+to_periodic_grid(dict::FourierBasis, grid::AbstractGrid) = nothing
 
 function new_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
 			warnslow = false, options...)
@@ -414,39 +421,15 @@ end
 
 
 
-function transform_from_grid(src, dest::FourierBasis, grid; T = coefficienttype(dest), options...)
-	@assert compatible_grid(dest, grid)
-	forward_fourier_operator(src, dest, T; options...)
-end
-
-function transform_to_grid(src::FourierBasis, dest, grid; T = coefficienttype(src), options...)
-	@assert compatible_grid(src, grid)
-	backward_fourier_operator(src, dest, T; options...)
-end
-
 function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	#@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
-	println(s1)
-	println(s2)
-	backward_fourier_operator(s1, s2, T; options...)
+	inverse_fourier_operator(s1, s2, T; options...)
 end
 
 function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
 	#@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
 	forward_fourier_operator(s1, s2, T; options...)
 end
-
-## function transform_from_grid_post(src, dest::FourierSeries, grid; options...)
-## 	@assert compatible_grid(dictionary(dest), grid)
-##     L = convert(coefficienttype(dest), length(src))
-##     ScalingOperator(dest, 1/L)
-## end
-
-## function transform_to_grid_pre(src::FourierSeries, dest, grid; options...)
-## 	@assert compatible_grid(dictionary(src), grid)
-## 	inv(transform_from_grid_post(dest, src, grid; options...))
-## end
-
 
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid

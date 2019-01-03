@@ -1,8 +1,5 @@
-# test_fourier.jl
-using BasisFunctions, BasisFunctions.Test, DomainSets
 
-using Test
-types = (Float64, BigFloat)
+fourier_types = (Float32, Float64, BigFloat)
 
 #####
 # Fourier series
@@ -209,10 +206,8 @@ function test_fourier_series(T)
     @test MG*e ≈ e
 end
 
-for T in types
+for T in fourier_types
     @testset "$(rpad("Fourier expansions ($T)",80))" begin
-        println("Fourier expansions ($T):")
         test_fourier_series(T)
     end
-    println()
 end

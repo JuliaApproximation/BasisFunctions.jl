@@ -223,47 +223,31 @@ function test_generic_dict_evaluation_different_grid(basis)
     @test  z ≈ ELT[ basis[idx](grid2[i]) for i in eachindex(grid2) ]
 end
 
-function test_generic_dict_transform(basis)
-    ELT = coefficienttype(basis)
+function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
     T = domaintype(basis)
+    EPS = test_tolerance(T)
 
-    # We have to look into this test
-    @test has_transform(basis) == has_transform(basis, GridBasis(basis))
+    tbasis = GridBasis{coefficienttype(basis)}(grid)
 
-    # Check whether it is unitary
-    tbasis = transform_dict(basis)
+    @test has_transform(basis, grid)
+    @test has_transform(basis, tbasis)
+
     t = transform_operator(tbasis, basis)
     it = transform_operator(basis, tbasis)
-    A = matrix(t)
-    if has_unitary_transform(basis)
-        if T == Float64
-            @test cond(A) ≈ 1
-        else
-            #@test_skip cond(A) ≈ 1
-        end
-        AI = matrix(it)
-        if T == Float64
-            @test cond(AI) ≈ 1
-        else
-            #@test_skip cond(AI) ≈ 1
-        end
-    end
 
-    # Verify the pre and post operators and their inverses
-    pre1 = transform_operator_pre(tbasis, basis)
-    post1 = transform_operator_post(tbasis, basis)
-    pre2 = transform_operator_pre(basis, tbasis)
-    post2 = transform_operator_post(basis, tbasis)
-    # - try interpolation using transform+pre/post-normalization
-    x = rand(tbasis)
-    e = Expansion(basis, (post1*t*pre1)*x)
-    g = interpolation_grid(basis)
-    @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
-    # - try evaluation using transform+pre/post-normalization
+    # - transform from grid
+    x = random_expansion(tbasis)
+    e = t*x
+    @test abs(e(grid[1]) - x.coefficients[1]) < EPS
+    @test maximum(abs.(e(grid)-x.coefficients)) < EPS
+    # - transform to grid
     e = random_expansion(basis)
-    x1 = (post2*it*pre2)*coefficients(e)
-    x2 = e(interpolation_grid(basis))
-    @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
+    x = it*e
+    @test abs(e(grid[1]) - x.coefficients[1]) < EPS
+    @test abs(e(grid[end]) - x.coefficients[end]) < EPS
+
+    @test maximum(abs.(matrix(t)'-matrix(t'))) < EPS
+    @test maximum(abs.(matrix(it)'-matrix(it'))) < EPS
 end
 
 function test_generic_dict_evaluation_operator(basis)
