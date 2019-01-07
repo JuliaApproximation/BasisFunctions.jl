@@ -80,7 +80,7 @@ subdict_has_interpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
-for op in (:isreal, :is_orthogonal, :is_basis)
+for op in (:isreal, :isorthogonal, :is_basis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
 end
 
@@ -95,6 +95,10 @@ unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), 
 unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x)
 
 
+measure(dict::Subdictionary) = measure(superdict(dict))
+
+innerproduct(d1::Subdictionary, i, d2::Subdictionary, j, measure; options...) =
+    innerproduct(superdict(d1), i, superdict(d2), j, measure; options...)
 
 
 #####################
@@ -227,6 +231,12 @@ index(s::SingletonSubdict) = s.index
 # x, y, z arguments and so on. These are wrapped into an SVector.
 (s::SingletonSubdict)(x) = eval_element(superdict(s), index(s), x)
 (s::SingletonSubdict)(x, y...) = s(SVector(x, y...))
+
+innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
+    innerproduct(superdict(f), index(f), superdict(g), index(g), measure; options...)
+
+innerproduct(d::SingletonSubdict, f; options...) =
+    innerproduct(d, f, measure(superdict(d)); options...)
 
 
 #########################################

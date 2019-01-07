@@ -22,7 +22,7 @@ support(b::HermitePolynomials{T}) where {T} = DomainSets.FullSpace(T)
 
 first_moment(b::HermitePolynomials{T}) where {T} = sqrt(T(pi))
 
-weight(b::HermitePolynomials{T}, x) where {T} = exp(-T(x)^2)
+measure(b::HermitePolynomials{T}) where {T} = HermiteMeasure{T}()
 
 
 # See DLMF, Table 18.9.1
@@ -33,9 +33,11 @@ rec_Bn(b::HermitePolynomials, n::Int) = 0
 
 rec_Cn(b::HermitePolynomials, n::Int) = 2*n
 
-function gramdiagonal!(result, ::HermitePolynomials; options...)
-    T = eltype(result)
-    for i in 1:length(result)
-        result[i] = sqrt(T(pi))*(1<<(i-1))*factorial(i-1)
-    end
+function innerproduct(d1::HermitePolynomials, i::PolynomialDegree, d2::HermitePolynomials, j::PolynomialDegree, measure::HermiteMeasure; options...)
+	T = coefficienttype(d1)
+	if i == j
+		sqrt(convert(T, pi)) * (1<<value(i)) * factorial(value(i))
+	else
+		zero(T)
+	end
 end

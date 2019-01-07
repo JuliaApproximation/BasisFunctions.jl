@@ -28,7 +28,7 @@ instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
 is_basis(b::CosineSeries) = true
-is_orthogonal(b::CosineSeries) = true
+isorthogonal(b::CosineSeries) = true
 
 
 has_interpolationgrid(b::CosineSeries) = true
@@ -95,16 +95,30 @@ function restriction_operator(s1::CosineSeries, s2::CosineSeries; options...)
     IndexRestrictionOperator(s1, s2, 1:length(s2))
 end
 
-function Gram(s::CosineSeries; options...)
-    T = codomaintype(s)
-    diag = ones(T,length(s))/2
+
+## Inner products
+
+hasmeasure(dict::CosineSeries) = true
+measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
+
+function gramoperator(dict::CosineSeries; T = coefficienttype(dict), options...)
+    diag = ones(T,length(dict))/2
     diag[1] = 1
-    DiagonalOperator(s, s, diag)
+    DiagonalOperator(diag, src=dict)
 end
 
-function UnNormalizedGram(s::CosineSeries, oversampling)
-    T = codomaintype(s)
-    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(s, oversampling)
-    DiagonalOperator(s, s, d)
+innerproduct(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;
+			T = coefficienttype(b1), options...) =
+	innerproduct_cosine_full(i, j, T)
+
+function innerproduct_cosine_full(i, j, T)
+	if i == j
+		if i == CosineFrequency(0)
+			one(T)
+		else
+			one(T)/2
+		end
+	else
+		zero(T)
+	end
 end

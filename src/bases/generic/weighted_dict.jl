@@ -18,24 +18,26 @@ const WeightedDict4d{S <: Number,T} = WeightedDict{SVector{4,S},T}
 
 
 
-weightfunction(set::WeightedDict) = set.weightfun
+weightfunction(dict::WeightedDict) = dict.weightfun
 
-similar_dictionary(set1::WeightedDict, set2::Dictionary) = WeightedDict(set2, weightfunction(set1))
+similar_dictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2, weightfunction(dict1))
 
-name(set::WeightedDict) = "Weightfunction " * string(weightfunction(set))
+name(dict::WeightedDict) = "Weightfunction " * string(weightfunction(dict))
 
-## _name(set::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict)
-## _name(set::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
+## _name(dict::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict)
+## _name(dict::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
 
-isreal(set::WeightedDict) = _isreal(set, superdict(set), weightfunction(set))
-_isreal(set::WeightedDict, superdict, fun::AbstractFunction) = isreal(superdict) && isreal(fun)
-_isreal(set::WeightedDict, superdict, fun::Function) = isreal(superdict)
+isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict))
+_isreal(dict::WeightedDict, superdict, fun::AbstractFunction) = isreal(superdict) && isreal(fun)
+_isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
 
-has_derivative(set::WeightedDict) = has_derivative(superdict(set)) && has_derivative(weightfunction(set))
-is_orthonormal(set::WeightedDict) = false
-is_orthogonal(set::WeightedDict) = false
+has_derivative(dict::WeightedDict) = has_derivative(superdict(dict)) && has_derivative(weightfunction(dict))
+isorthonormal(dict::WeightedDict) = false
+isorthogonal(dict::WeightedDict) = false
 # We can not compute antiderivatives in general.
-has_antiderivative(set::WeightedDict) = false
+has_antiderivative(dict::WeightedDict) = false
+
+hasmeasure(dict::WeightedDict) = false
 
 # We have to distinguish between 1d and higher-dimensional grids, since we
 # have to splat the arguments to the weightfunction
@@ -51,34 +53,34 @@ function eval_weight_on_grid(w, grid::AbstractGrid)
     a
 end
 
-# Evaluating basis functions: we multiply by the function of the set
-unsafe_eval_element(set::WeightedDict, idx, x) = _unsafe_eval_element(set, weightfunction(set), idx, x)
-_unsafe_eval_element(set::WeightedDict1d, w, idx, x) = w(x) * unsafe_eval_element(superdict(set), idx, x)
-_unsafe_eval_element(set::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_element(superdict(set), idx, x)
+# Evaluating basis functions: we multiply by the function of the dict
+unsafe_eval_element(dict::WeightedDict, idx, x) = _unsafe_eval_element(dict, weightfunction(dict), idx, x)
+_unsafe_eval_element(dict::WeightedDict1d, w, idx, x) = w(x) * unsafe_eval_element(superdict(dict), idx, x)
+_unsafe_eval_element(dict::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_element(superdict(dict), idx, x)
 
 # Evaluate the derivative of 1d weighted sets
-unsafe_eval_element_derivative(set::WeightedDict1d, idx, x) =
-    eval_derivative(weightfunction(set), x) * unsafe_eval_element(superdict(set), idx, x) +
-    weightfunction(set)(x) * unsafe_eval_element_derivative(superdict(set), idx, x)
+unsafe_eval_element_derivative(dict::WeightedDict1d, idx, x) =
+    eval_derivative(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
+    weightfunction(dict)(x) * unsafe_eval_element_derivative(superdict(dict), idx, x)
 
 # Evaluate an expansion: same story
-eval_expansion(set::WeightedDict, coefficients, x) = _eval_expansion(set, weightfunction(set), coefficients, x)
+eval_expansion(dict::WeightedDict, coefficients, x) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
 # temporary, to remove an ambiguity
-eval_expansion(set::WeightedDict, coefficients, x::AbstractGrid) = _eval_expansion(set, weightfunction(set), coefficients, x)
+eval_expansion(dict::WeightedDict, coefficients, x::AbstractGrid) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
 
-_eval_expansion(set::WeightedDict1d, w, coefficients, x::Number) = w(x) * eval_expansion(superdict(set), coefficients, x)
-_eval_expansion(set::WeightedDict, w, coefficients, x) = w(x...) * eval_expansion(superdict(set), coefficients, x)
+_eval_expansion(dict::WeightedDict1d, w, coefficients, x::Number) = w(x) * eval_expansion(superdict(dict), coefficients, x)
+_eval_expansion(dict::WeightedDict, w, coefficients, x) = w(x...) * eval_expansion(superdict(dict), coefficients, x)
 
-_eval_expansion(set::WeightedDict, w, coefficients, grid::AbstractGrid) =
-    eval_weight_on_grid(w, grid) .* eval_expansion(superdict(set), coefficients, grid)
+_eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
+    eval_weight_on_grid(w, grid) .* eval_expansion(superdict(dict), coefficients, grid)
 
 
 # You can create an WeightedDict by multiplying a function with a set, using
 # left multiplication.
 # We support any Julia function:
-(*)(f::Function, set::Dictionary) = WeightedDict(set, f)
+(*)(f::Function, dict::Dictionary) = WeightedDict(dict, f)
 # and our own functors:
-(*)(f::AbstractFunction, set::Dictionary) = WeightedDict(set, f)
+(*)(f::AbstractFunction, dict::Dictionary) = WeightedDict(dict, f)
 
 weightfun_scaling_operator(gb::GridBasis1d, weightfunction) =
     DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x) for x in grid(gb)])
@@ -115,20 +117,8 @@ function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; option
     block_column_operator([I,DW])
 end
 
-function grid_evaluation_operator(set::WeightedDict, dgs::GridBasis, grid::AbstractGrid; options...)
-    super_e = grid_evaluation_operator(superdict(set), dgs, grid; options...)
-    D = weightfun_scaling_operator(dgs, weightfunction(set))
-    D * wrap_operator(set, dgs, super_e)
-end
-
-function grid_evaluation_operator(set::WeightedDict, dgs::GridBasis, grid::AbstractSubGrid; options...)
-    super_e = grid_evaluation_operator(superdict(set), dgs, grid; options...)
-    D = weightfun_scaling_operator(dgs, weightfunction(set))
-    D * wrap_operator(set, dgs, super_e)
-end
-
-function new_evaluation_operator(dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...)
-    A = new_evaluation_operator(superdict(dict), gb, grid; options...)
+function grid_evaluation_operator(dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...)
+    A = grid_evaluation_operator(superdict(dict), gb, grid; options...)
     D = weightfun_scaling_operator(gb, weightfunction(dict))
     D * wrap_operator(dict, gb, A)
 end

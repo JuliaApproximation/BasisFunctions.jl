@@ -76,13 +76,13 @@ is_frame(d::Dictionary) = is_basis(d)
 
 
 "Property to indicate whether a dictionary is orthogonal."
-is_orthogonal(d::Dictionary) = false
+isorthogonal(d::Dictionary) = false
 
 "Property to indicate whether a dictionary is orthonormal"
-is_orthonormal(d::Dictionary) = false
+isorthonormal(d::Dictionary) = false
 
 "Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
-is_biorthogonal(d::Dictionary) = is_orthogonal(d)
+is_biorthogonal(d::Dictionary) = isorthogonal(d)
 
 "Return the size of the dictionary."
 function size(d::Dictionary) end

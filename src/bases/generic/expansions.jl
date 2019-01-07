@@ -87,8 +87,6 @@ end
 
 Base.broadcast(e::Expansion, grid::AbstractGrid) = eval_expansion(dictionary(e), coefficients(e), grid)
 
-Base.broadcast(e::Expansion, x::LinRange{T}) where {T} = broadcast(e, EquispacedGrid(x))
-
 # Shorthands for partial derivatives
 ∂x(f::Expansion) = differentiate(f, 1, 1)
 ∂y(f::Expansion) = differentiate(f, 2, 1)
@@ -143,13 +141,13 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 ##############################
 
 # Arithmetics are only possible when the basis type is equal.
-is_compatible(s1::S, s2::S) where {S<:Dictionary} = true
-is_compatible(s1::Dictionary, s2::Dictionary) = false
+iscompatible(s1::S, s2::S) where {S<:Dictionary} = true
+iscompatible(s1::Dictionary, s2::Dictionary) = false
 
 for op in (:+, :-)
     @eval function ($op)(s1::Expansion, s2::Expansion)
         # First check if the Dictionarys are arithmetically compatible
-        @assert is_compatible(dictionary(s1),dictionary(s2))
+        @assert iscompatible(dictionary(s1),dictionary(s2))
         # If the sizes are equal, we can just operate on the coefficients.
         # If not, we have to extend the smaller set to the size of the larger set.
         if size(s1) == size(s2)
@@ -165,7 +163,7 @@ for op in (:+, :-)
 end
 
 function (*)(s1::Expansion, s2::Expansion)
-    @assert is_compatible(dictionary(s1),dictionary(s2))
+    @assert iscompatible(dictionary(s1),dictionary(s2))
     (mset,mcoefficients) = (*)(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
     Expansion(mset,mcoefficients)
 end

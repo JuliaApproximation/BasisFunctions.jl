@@ -83,6 +83,8 @@ dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
 
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src(s))
 
+hasmeasure(dict::OperatedDict) = false
+
 
 ##########################
 # Indexing and evaluation
@@ -110,14 +112,8 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
 end
 
-grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...) * operator(dict))
-
-grid_evaluation_operator(dict::OperatedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    WrappedOperator(dict, dgs, grid_evaluation_operator(dest(dict), dgs, grid; options...) * operator(dict))
-
-new_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) =
-    wrap_operator(dict, gb, new_evaluation_operator(dest(dict), gb, grid; options...) * operator(dict))
+grid_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) =
+    wrap_operator(dict, gb, grid_evaluation_operator(dest(dict), gb, grid; options...) * operator(dict))
 
 ## Properties
 
@@ -206,8 +202,3 @@ function (*)(op::DictionaryOperator, dict::OperatedDict)
     @assert src(op) == dest(dict)
     OperatedDict(op*operator(dict))
 end
-
-# function grid_evaluation_operator(s::D, dgs::GridBasis, grid::ProductGrid;
-#         options...) where {D<: TensorProductDict{N,DT,S,T} where {N,DT <: NTuple{N,BasisFunctions.OperatedDict} where N,S,T}}
-#     tensorproduct([BasisFunctions.grid_evaluation_operator(si, dgsi, gi; options...) for (si, dgsi, gi) in zip(elements(s), elements(dgs), elements(grid))]...)
-# end

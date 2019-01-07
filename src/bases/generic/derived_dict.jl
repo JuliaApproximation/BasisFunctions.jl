@@ -42,9 +42,25 @@ for op in (:coefficienttype,)
 end
 
 # Delegation of properties
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
+for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal, :is_discrete)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
+
+for op in (:hasmeasure, :measure)
+    @eval $op(s::DerivedDict) = $op(superdict(s))
+end
+
+gramoperator(dict::DerivedDict; T=coefficienttype(dict), options...) =
+    wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
+
+function innerproduct(d1::DerivedDict, i, d2::DerivedDict, j, measure; options...)
+    if iscompatible(d1,d2)
+        innerproduct(superdict(d1), i, superdict(d2), j, measure; options...)
+    else
+        innerproduct1(d1, i, d2, j, measure; options...)
+    end
+end
+
 
 # Delegation of feature methods
 for op in (:has_derivative, :has_antiderivative, :has_interpolationgrid, :has_extension)
@@ -147,23 +163,13 @@ end
 pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol;options...)
 pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid;
-        T = op_eltype(set, dgs), options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid;
-        T = op_eltype(set, dgs), options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
-
-dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
-    dot(superdict(s), f1, f2, nodes; options...)
-
-
-function new_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
-        T = op_eltype(set, dgs), options...)
-    A = new_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
+function grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
+        T = op_eltype(set, gb), options...)
+    A = grid_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
     wrap_operator(dict, gb, A)
 end
+
 
 
 #########################

@@ -1,6 +1,4 @@
 
-global TEST_CONTINUOUS = true
-
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::Dictionary) = true
@@ -162,21 +160,39 @@ function test_generic_dict_approximation(basis)
     A = approximation_operator(basis)
     f = suitable_function(basis)
     e = Expansion(basis, A*f)
-    x = random_point_in_domain(basis)
 
     # We choose a fairly large error, because the ndof's can be very small.
     # We don't want to test convergence, only that something terrible did
     # not happen, so an error of 1e-3 will do.
-    @test abs.(e(x)-f(x...)) < 1e-3
+    x = random_point_in_domain(basis)
+    @test abs(e(x)-f(x...)) < 1e-3
+end
 
-    # # continuous operator only supported for 1 D
-    # No efficient implementation for BigFloat to construct full gram matrix.
-    # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedDict) || (typeof(basis)<:BasisFunctions.ConcreteDerivedDict) || typeof(basis)<:WeightedDict) && eltype(basis)==BigFloat)
-    if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedDict) && real(codomaintype(basis))==BigFloat)
-        e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
-        @test abs(e(x)-f(x...)) < 1e-3
+function test_gram_projection(basis)
+    if hasmeasure(basis)
+        G = gramoperator(basis)
+        @test src(G) == basis
+        @test dest(G) == basis
+        n = length(basis)
+        @test size(G) == (n,n)
+        z = zero(coefficienttype(basis))
+        for i in 1:n
+            for j in 1:n
+                z += abs(G[i,j] - innerproduct(basis, i, basis, j))
+            end
+        end
+        @test abs(z) < 1000test_tolerance(domaintype(basis))
+
+        # No efficient implementation for BigFloat to construct full gram matrix.
+        if !(domaintype(basis)==BigFloat)
+            f = suitable_function(basis)
+            e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
+            x = random_point_in_domain(basis)
+            @test abs(e(x)-f(x...)) < 1e-3
+        end
     end
 end
+
 
 function test_generic_dict_interpolation(basis)
     ELT = coefficienttype(basis)
@@ -362,7 +378,7 @@ function test_generic_dict_interface(basis)
     if is_basis(basis)
         @test is_frame(basis)
     end
-    if is_orthogonal(basis)
+    if isorthogonal(basis)
         @test is_biorthogonal(basis)
     end
 
@@ -453,5 +469,6 @@ function test_generic_dict_interface(basis)
     ## Test approximation operator
     if supports_approximation(basis)
         test_generic_dict_approximation(basis)
+        test_gram_projection(basis)
     end
 end

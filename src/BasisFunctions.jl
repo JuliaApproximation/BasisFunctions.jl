@@ -1,4 +1,3 @@
-
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
@@ -99,6 +98,9 @@ export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
 # from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
 
+# from spaces/measure.jl
+export innerproduct
+
 # from spaces/spaces.jl
 export GenericFunctionSpace
 
@@ -115,14 +117,14 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficienttype
 export promote_domaintype, promote_domainsubtype, promote_coefficienttype
 export interpolation_grid, left, right, support, domain, codomain
-export measure
+export measure, hasmeasure
 export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, resize
 export ordering
 export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
 export is_composite
-export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
+export is_basis, is_frame, isorthogonal, is_biorthogonal, isorthonormal
 export in_support
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
@@ -152,7 +154,7 @@ export MappedDict, mapped_dict, mapping, superdict, rescale
 export Expansion, TensorProductExpansion
 export expansion, coefficients, dictionary, roots,
         random_expansion, differentiate, antidifferentiate,
-        ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
+        ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, iscompatible
 
 # from operator/operator.jl
 export AbstractOperator, DictionaryOperator
@@ -184,9 +186,7 @@ export GenericIdentityOperator
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export Gram, DualGram, MixedGram, gram_entry
-export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
-export dual
+export gramelement, gramoperator
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -194,8 +194,7 @@ export extension_operator, default_extension_operator, extension_size, extend,
     Extension, Restriction
 
 # from generic/evaluation.jl
-export evaluation_operator, grid_evaluation_operator, dense_evaluation_operator,
-    evaluation_matrix, discrete_dual_evaluation_operator
+export evaluation_operator, evaluation_matrix
 
 # from generic/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
@@ -249,7 +248,7 @@ export GridBasis
 export grid, gridbasis, grid_multiplication_operator
 
 # from sampling/sampling_operator.jl
-export GridSampling
+export GridSampling, ProjectionSampling
 export sample
 
 # from sampling/quadrature.jl

@@ -84,7 +84,7 @@ for op in (:is_composite, :numelements, :elements, :tail)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
+for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal, :is_discrete)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(property_modifier(d), superdict(d), args...)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
@@ -147,14 +147,8 @@ for op in (:differentiation_operator, :antidifferentiation_operator)
         wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; options...))
 end
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
-
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; options...))
-
-dot(d::ModifiedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(d)); options...) =
-    dot(superdict(d), f1, f2, nodes; options...)
+grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid::AbstractGrid; options...) =
+    wrap_operator(dict, gb, grid_evaluation_operator(superdict(dict), gb, grid; options...))
 
 
 

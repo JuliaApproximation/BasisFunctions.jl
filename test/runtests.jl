@@ -34,9 +34,6 @@ include("test_operators.jl")
 Delimit("Dictionaries")
 include("dictionaries/test_dictionaries.jl")
 
-Delimit("Gram")
-include("test_gram.jl")
-
 Delimit("Check evaluations, interpolations, extensions, expansions")
 include("test_fourier.jl")
 include("test_chebyshev.jl")

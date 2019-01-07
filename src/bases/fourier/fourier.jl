@@ -48,8 +48,8 @@ similar(b::FourierBasis, ::Type{T}, n::Int) where {T} = FourierBasis{T}(n)
 isreal(b::FourierBasis) = false
 
 is_basis(b::FourierBasis) = true
-is_orthogonal(b::FourierBasis) = true
-is_orthonormal(b::FourierBasis) = oddlength(b)
+isorthogonal(b::FourierBasis) = true
+isorthonormal(b::FourierBasis) = oddlength(b)
 is_biorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
@@ -62,12 +62,12 @@ has_extension(b::FourierBasis) = true
 # For has_transform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
-compatible_grid(b::FourierBasis, grid::PeriodicEquispacedGrid) =
+iscompatible(b::FourierBasis, grid::PeriodicEquispacedGrid) =
 	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(b)==length(grid))
 # - Any non-periodic grid is not compatible
-compatible_grid(b::FourierBasis, grid::AbstractGrid) = false
+iscompatible(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-has_grid_transform(b::FourierBasis, gb, grid) = compatible_grid(b, grid)
+has_grid_transform(b::FourierBasis, gb, grid) = iscompatible(b, grid)
 
 
 interpolation_grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
@@ -144,6 +144,7 @@ minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 
 support(b::FourierBasis{T}) where T = UnitInterval{T}()
 
+hasmeasure(b::FourierBasis) = true
 measure(b::FourierBasis{T}) where T = FourierMeasure{T}()
 
 period(b::FourierBasis{T}) where {T} = T(1)
@@ -206,44 +207,74 @@ end
 
 
 function transform_from_grid(src::GridBasis, dest::FourierBasis, grid; T = op_eltype(src,dest), options...)
-	@assert compatible_grid(dest, grid)
+	@assert iscompatible(dest, grid)
 	forward_fourier_operator(src, dest, T; options...)
 end
 
 function transform_to_grid(src::FourierBasis, dest::GridBasis, grid; T = op_eltype(src,dest), options...)
-	@assert compatible_grid(src, grid)
+	@assert iscompatible(src, grid)
 	inverse_fourier_operator(src, dest, T; options...)
 end
 
 
-function new_evaluation_operator(dict::FourierBasis, gb::GridBasis,
-			grid::PeriodicEquispacedGrid; warn_slow = false, options...)
+function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis,
+			grid::PeriodicEquispacedGrid; warnslow = BF_WARNSLOW, options...)
 	if (leftendpoint(grid) ≈ 0) && (rightendpoint(grid) ≈ 1)
-		resize_and_transform(dict, gb, grid; warn_slow=warn_slow, options...)
+		resize_and_transform(dict, gb, grid; warnslow=warnslow, options...)
 	else
-		if warn_slow
-			@warn "Periodic grid mismatch with Fourier basis"
-		end
+		warnslow && (@warn "Periodic grid mismatch with Fourier basis")
 		dense_evaluation_operator(b, gb; options...)
 	end
 end
 
 to_periodic_grid(dict::FourierBasis, grid::AbstractGrid) = nothing
+to_periodic_grid(dict::FourierBasis, grid::PeriodicEquispacedGrid) =
+	iscompatible(dict, grid) ? grid : nothing
 
-function new_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
-			warnslow = false, options...)
+function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
+			warnslow = BF_WARNSLOW, options...)
 	grid2 = to_periodic_grid(dict, grid)
 	if grid2 != nothing
 		gb2 = GridBasis{coefficienttype(gb)}(grid2)
-		new_evaluation_operator(dict, gb2, grid2; warnslow=warnslow, options...) * gridconversion(gb, gb2; warnslow=warnslow, options...)
+		evaluation_operator(dict, gb2, grid2; warnslow=warnslow, options...) * gridconversion(gb, gb2; warnslow=warnslow, options...)
 	else
-		if warn_slow
-			@warn "Evaluation: could not convert $grid to periodic grid"
-		end
-		dense_evaluation_operator(b, gb; options...)
+		warnslow && (@warn "Evaluation: could not convert $grid to periodic grid")
+		dense_evaluation_operator(dict, gb; options...)
 	end
 end
 
+# Try to efficiently evaluate a Fourier series on a regular equispaced grid
+function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::EquispacedGrid; options...)
+	a = leftendpoint(grid)
+	b = rightendpoint(grid)
+	# We can use the fft if the equispaced grid is a subset of the periodic grid
+	if (a > 0) || (b < 1)
+		# We are dealing with a subgrid. The main question is: if we extend it
+		# to the full support, is it compatible with a periodic grid?
+		h = stepsize(grid)
+		nleft = a/h
+		nright = (1-b)/h
+		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))
+			nleft_int = round(Int, nleft)
+			nright_int = round(Int, nright)
+			ntot = length(grid) + nleft_int + nright_int - 1
+			T = domaintype(grid)
+			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
+			super_dgs = GridBasis(fs, super_grid)
+			E = evaluation_operator(fs, super_dgs; options...)
+			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
+			R*E
+		else
+			dense_evaluation_operator(fs, dgs; options...)
+		end
+	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
+		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
+		# but with the right endpoint added
+		dense_evaluation_operator(fs, dgs; options...)
+	else
+		dense_evaluation_operator(fs, dgs; options...)
+	end
+end
 
 ############################
 # Extension and restriction
@@ -422,12 +453,12 @@ end
 
 
 function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
-	#@assert reduce(&, map(compatible_grid, elements(s1), elements(grid)))
+	#@assert reduce(&, map(iscompatible, elements(s1), elements(grid)))
 	inverse_fourier_operator(s1, s2, T; options...)
 end
 
 function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
-	#@assert reduce(&, map(compatible_grid, elements(s2), elements(grid)))
+	#@assert reduce(&, map(iscompatible, elements(s2), elements(grid)))
 	forward_fourier_operator(s1, s2, T; options...)
 end
 
@@ -435,7 +466,7 @@ end
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
-function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::EquispacedGrid; options...)
+function evaluation_operatorr(fs::FourierBasis, gb::GridBasis, grid::EquispacedGrid; options...)
 	a = leftendpoint(grid)
 	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
@@ -451,23 +482,21 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
 			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
-			super_dgs = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_dgs; options...)
-			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
+			super_gb = GridBasis(fs, super_grid)
+			E = evaluation_operator(fs, super_gb; options...)
+			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid))
 			R*E
 		else
-			dense_evaluation_operator(fs, dgs; options...)
+			dense_evaluation_operator(fs, gb; options...)
 		end
 	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		dense_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, gb; options...)
 	else
-		dense_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, gb; options...)
 	end
 end
-
-is_compatible(s1::FourierBasis, s2::FourierBasis) = true
 
 # Multiplication of Fourier Series
 function (*)(src1::FourierBasis, src2::FourierBasis, coef_src1, coef_src2)
@@ -496,6 +525,8 @@ end
 
 iscosine(b::FourierBasis, i::FourierFrequency) = iseven(length(b)) && (i==length(b)>>1)
 
+
+## Inner products
 
 # Evaluate the inner product of two Fourier basis functions on the full domain
 function innerproduct_fourier_full(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq)
@@ -554,10 +585,10 @@ end
 
 
 # For the uniform measure on [0,1], invoke innerproduct_fourier_full
-innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::FourierMeasure) =
+innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::FourierMeasure; options...) =
 	innerproduct_fourier_full(b1, i, b2, j)
 
-function innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::LebesgueMeasure)
+function innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::LebesgueMeasure; options...)
 	d = support(m)
 	if typeof(d) <: AbstractInterval
 		if leftendpoint(d) == 0 && rightendpoint(d) == 1
@@ -570,16 +601,10 @@ function innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m:
 	end
 end
 
-
-dot(b::FourierBasis, f1::Function, f2::Function, nodes::Array=native_nodes(b); options...) =
-    dot(x->conj(f1(x))*f2(x), nodes; options...)
-
-function Gram(s::FourierBasis; options...)
-	if iseven(length(s))
-		CoefficientScalingOperator(s, (length(s)>>1)+1, one(coefficienttype(s))/2)
+function gramoperator(dict::FourierBasis; T = coefficienttype(dict), options...)
+	if iseven(length(dict))
+		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
 	else
-		IdentityOperator(s, s)
+		IdentityOperator{T}(dict, dict)
 	end
 end
-
-UnNormalizedGram(b::FourierBasis, oversampling) = ScalingOperator(b, b, length_oversampled_grid(b, oversampling))

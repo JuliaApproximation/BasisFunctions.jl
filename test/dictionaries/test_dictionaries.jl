@@ -6,7 +6,7 @@ BF = BasisFunctions
 using Test
 # types = [Float64,]
 
-types = (Float64, BigFloat)
+domaintypes = (Float64, BigFloat)
 
 include("test_dictionaries_util.jl")
 include("test_dictionaries_derived.jl")
@@ -14,12 +14,12 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
-oned_dictionaries = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
-        LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries,]
+test_dictionaries = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
+        LaguerrePolynomials, HermitePolynomials, JacobiPolynomials, CosineSeries, SineSeries]
 
-for T in types
+for T in domaintypes
     delimit("1D dictionaries ($(T))")
-    for DICT in oned_dictionaries
+    for DICT in test_dictionaries
         @testset "$(rpad(string(DICT),80))" begin
             n = 9
             basis = instantiate(DICT, n, T)

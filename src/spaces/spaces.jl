@@ -31,6 +31,38 @@ zero(space::GenericFunctionSpace{S,T}) where {S,T} = x::S -> zero(T)
 one(space::GenericFunctionSpace{S,T}) where {S,T} = x::S -> one(T)
 
 
+"""
+The Hilbert space of all functions for which the inner product induced by a
+measure is bounded.
+"""
+struct MeasureSpace{M <: Measure,S,T} <: FunctionSpace{S,T}
+    measure     ::  M
+
+    # Ensure that the domain types of the space and the measure are the same
+    MeasureSpace{M,S,T}(measure::Measure{S}) where {M,S,T} = new(measure)
+end
+
+MeasureSpace(measure::Measure{T}) where {T} =
+    MeasureSpace{typeof(measure),T,codomaintype(measure)}(measure)
+
+measure(s::MeasureSpace) = s.measure
+
+domain(s::MeasureSpace) = support(measure(s))
+
+
+const FourierSpace{T} = MeasureSpace{FourierMeasure{T},T,T}
+
+FourierSpace() = FourierSpace{Float64}()
+FourierSpace{T}() where {T} = MeasureSpace(FourierMeasure{T}())
+
+
+const ChebyshevTSpace{T} = MeasureSpace{ChebyshevMeasure{T},T,T}
+
+ChebyshevTSpace() = ChebyshevTSpace{Float64}()
+ChebyshevTSpace{T}() where {T} = MeasureSpace(ChebyshevTMeasure{T}())
+
+
+
 struct L2{S,T} <: FunctionSpace{S,T}
     domain  ::  Domain{S}
 end
@@ -66,3 +98,13 @@ function tensorproduct(spaces::FunctionSpace...)
 end
 
 elements(space::ProductSpace) = space.spaces
+
+
+##################################################
+# Spaces naturally associated with measures
+##################################################
+
+space(m::Measure{T}) where {T} = GenericFunctionSpace{T,codomaintype(m)}()
+
+space(m::FourierMeasure{T}) where {T} = FourierSpace{T}()
+space(m::ChebyshevTMeasure{T}) where {T} = ChebyshevTSpace{T}()

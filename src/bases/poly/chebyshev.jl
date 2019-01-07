@@ -3,7 +3,6 @@
 # Chebyshev polynomials of the first kind
 ############################################
 
-
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
@@ -12,8 +11,6 @@ struct ChebyshevBasis{T} <: OPS{T,T}
 end
 
 ChebyshevT = ChebyshevBasis
-
-
 
 name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
 
@@ -56,9 +53,6 @@ function transform_dict(s::ChebyshevBasis{T}; chebyshevpoints=:nodes, options...
 		GridBasis{T}(secondgrid(s))
 	end
 end
-
-# The weight function
-weight(b::ChebyshevBasis{T}, x) where {T} = one(T)/sqrt(1-T(x)^2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
 jacobi_α(b::ChebyshevBasis{T}) where {T} = -one(T)/2
@@ -218,19 +212,37 @@ differentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; 
 antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; options...) =
     ChebyshevAntidifferentiation(src, dest, order)
 
-function gramdiagonal!(result, ::ChebyshevBasis; options...)
-    T = eltype(result)
-    for i in 1:length(result)
-        (i==1) ? result[i] = T(pi) : result[i] = T(pi)/2
-    end
+
+## Inner products
+
+hasmeasure(dict::ChebyshevBasis) = true
+measure(dict::ChebyshevBasis{T}) where T = ChebyshevMeasure{T}()
+
+innerproduct(b1::ChebyshevBasis, i::PolynomialDegree, b2::ChebyshevBasis, j::PolynomialDegree, m::ChebyshevTMeasure;
+			T = coefficienttype(b1), options...) =
+	innerproduct_chebyshev_full(i, j, T)
+
+function innerproduct_chebyshev_full(i, j, T)
+	if i == j
+		if i == PolynomialDegree(0)
+			convert(T, pi)
+		else
+			convert(T, pi)/2
+		end
+	else
+		zero(T)
+	end
 end
 
-function UnNormalizedGram(s::ChebyshevBasis, oversampling)
-    A = coefficienttype(s)
-    d = A(length_oversampled_grid(s, oversampling))/2*ones(A,length(s))
-    d[1] = length_oversampled_grid(s, oversampling)
-    DiagonalOperator(s, s, d)
+function gramoperator(dict::ChebyshevBasis; T = coefficienttype(dict), options...)
+	diag = zeros(T, length(dict))
+	fill!(diag, convert(T, pi)/2)
+	diag[1] = convert(T,pi)
+	DiagonalOperator(diag, src=dict)
 end
+
+
+## Extensionandrestriction
 
 function extension_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
@@ -247,10 +259,10 @@ end
 # Methods to transform from ChebyshevBasis to ChebyshevNodes and ChebyshevExtremae
 ###################################################################################
 
-new_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevNodes; options...) =
+grid_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevNodes; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
 
-new_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevExtremae; options...) =
+grid_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevExtremae; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
 
 function chebyshev_transform_nodes(dict::ChebyshevBasis, T; options...)
@@ -318,7 +330,7 @@ transform_from_grid(src::GridBasis, dest::ChebyshevBasis, grid; options...) =
 
 
 
-is_compatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
+iscompatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
 
 function (*)(src1::ChebyshevBasis, src2::ChebyshevBasis, coef_src1, coef_src2)
     @assert domaintype(src1) == domaintype(src2)
@@ -363,11 +375,19 @@ first_moment(b::ChebyshevU{T}) where {T} = convert(T, pi)/2
 
 interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
 
+measure(dict::ChebyshevU{T}) where {T} = ChebyshevUMeasure{T}()
 
-Gram(s::ChebyshevU; options...) = ScalingOperator(s, s, coefficienttype(s)(pi)/2)
+function innerproduct(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUMeasure;
+			T = coefficienttype(b1), options...)
+	if i == j
+		convert(T, pi)/2
+	else
+		zero(T)
+	end
+end
 
-# The weight function
-weight(b::ChebyshevU{T}, x) where {T} = sqrt(1-convert(T, x)^2)
+gramoperator(dict::ChebyshevU; T = coefficienttype(dict), options...) =
+	ScalingOperator(dict, convert(T, pi)/2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
 jacobi_α(b::ChebyshevU{T}) where {T} = one(T)/2

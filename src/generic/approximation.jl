@@ -9,32 +9,30 @@ default_approximation_operator = leastsquares_operator
 The approximation_operator function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
 """
-approximation_operator(s; discrete = true, options...) =
+approximation_operator(dict; discrete = true, options...) =
   (discrete) ?
-    discrete_approximation_operator(s; options...) :
-    continuous_approximation_operator(s; options...)
+    discrete_approximation_operator(dict; options...) :
+    continuous_approximation_operator(dict; options...)
 
-function discrete_approximation_operator(s::Dictionary; options...)
-    if is_basis(s) && has_interpolationgrid(s)
-        interpolation_operator(s, interpolation_grid(s); options...)
+function discrete_approximation_operator(dict::Dictionary; options...)
+    if is_basis(dict) && has_interpolationgrid(dict)
+        interpolation_operator(dict, interpolation_grid(dict); options...)
     else
-        default_approximation_operator(s; options...)
+        default_approximation_operator(dict; options...)
     end
 end
 
-continuous_approximation_operator(s::Dictionary; options...) = DualGram(s; options...)
+continuous_approximation_operator(dict::Dictionary; options...) = inv(gramoperator(dict; options...))
 
-# Automatically sample a function if an operator is applied to it with a
-# source that is a grid space.
-function (*)(op::DictionaryOperator, f::Function; discrete=nothing, solver=nothing, cutoff=nothing, options...)
-    op * project(src(op), f; options...)
+# Automatically sample a function if an operator is applied to it
+function (*)(op::DictionaryOperator, f::Function)
+    op * project(src(op), f)
 end
 
-# general project on functionset, using inner products, is in functionset.jl
-project(s::GridBasis, f::Function; options...) = sample(s, f)
+project(dict::GridBasis, f::Function; options...) = sample(dict, f)
 
-approximate(s::Dictionary, f::Function; options...) =
-    Expansion(s, *(approximation_operator(s; options...),f; options...))
+approximate(dict::Dictionary, f::Function; options...) =
+    Expansion(dict, approximation_operator(dict; options...) * f)
 
 """
 The 2-argument approximation_operator exists to allow you to transform any

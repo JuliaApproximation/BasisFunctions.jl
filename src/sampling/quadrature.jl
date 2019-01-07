@@ -1,5 +1,5 @@
 
-function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
+function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = EquispacedGrid(n, a, b)
     weights = stepsize(grid) * ones(T, n)
     weights[1] /= 2
@@ -7,7 +7,7 @@ function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)
     grid, weights
 end
 
-function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
+function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = PeriodicEquispacedGrid(n, a, b)
     weight = stepsize(grid)
     grid, weight
@@ -32,7 +32,7 @@ function fejer_vector1!(v)
     v
 end
 
-function fejer_first_rule(n::Int, ::Type{T} = Float64) where T
+function fejer_first_rule(n::Int, ::Type{T} = Float64) where {T}
     v = zeros(Complex{T}, n)
     fejer_vector1!(v)
     ChebyshevNodes{T}(n), real(ifft(v))
@@ -55,7 +55,7 @@ function fejer_vector2!(v)
     v
 end
 
-function fejer_second_rule(n::Int, ::Type{T} = Float64) where T
+function fejer_second_rule(n::Int, ::Type{T} = Float64) where {T}
     v = zeros(T, n)
     weights = zeros(T, n+1)
     fejer_vector2!(v)
@@ -77,7 +77,7 @@ function cc_vector_g!(g)
     g
 end
 
-function clenshaw_curtis(n, ::Type{T} = Float64) where T
+function clenshaw_curtis(n, ::Type{T} = Float64) where {T}
     v = zeros(T, n)
     g = zeros(T, n)
     weights = zeros(T, n+1)

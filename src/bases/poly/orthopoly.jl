@@ -10,7 +10,7 @@ const OPS{S,T} = OrthogonalPolynomials{S,T}
 
 
 
-is_orthogonal(b::OPS) = true
+isorthogonal(b::OPS) = true
 is_biorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
@@ -22,36 +22,7 @@ size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
 
-function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
-    T = real(coefficienttype(s))
-	# To avoid difficult points at the ends of the domain.
-	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
-end
-
-clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
-
-function clip_and_cut(a::Array{T,1}, low, up) where {T <: Real}
-	clipped = clip.(a,low, up)
-	t = clipped[1]
-	s = 1
-	for i in 2:length(a)
-		t != clipped[i] && break
-		t = clipped[i]
-		s += 1
-	end
-	t = clipped[end]
-	e = length(a)
-	for i in length(a)-1:-1:1
-		t != clipped[i] && break
-		t = clipped[i]
-		e -= 1
-	end
-	clipped[s:e]
-end
-
 has_extension(b::OPS) = true
-
-# CAVE: we have to add D <: OrthogonalPolynomials at the end, otherwise
 
 # Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
@@ -258,6 +229,19 @@ function monic_recurrence_eval(α, β, idx, x)
         end
         z_k
     end
+end
+
+hasmeasure(dict::OPS) = true
+
+weight(b::OPS, x) = weight(measure(b), x)
+
+function gramoperator(dict::OPS; T = coefficienttype(dict), options...)
+	n = length(dict)
+	diag = zeros(T, n)
+	for i in 1:n
+		diag[i] = innerproduct(dict, i, dict, i, measure(dict); options...)
+	end
+	DiagonalOperator(dict, diag)
 end
 
 

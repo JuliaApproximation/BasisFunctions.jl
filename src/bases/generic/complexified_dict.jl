@@ -31,6 +31,3 @@ transform_dict(dict::ComplexifiedDict) = complex(transform_dict(superdict(dict))
 
 grid_evaluation_operator(dict::ComplexifiedDict, dgs::GridBasis, grid::AbstractGrid; T = complex(op_eltype(superdict(dict),dgs)), options...) =
     grid_evaluation_operator(superdict(dict), dgs, grid; T=T)
-# Line below to resolve an ambiguity with AbstractSubGrid
-grid_evaluation_operator(dict::ComplexifiedDict, dgs::GridBasis, grid::AbstractSubGrid; T = complex(op_eltype(superdict(dict),dgs)), options...) =
-    grid_evaluation_operator(superdict(dict), dgs, grid; T=T)

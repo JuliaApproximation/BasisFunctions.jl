@@ -77,7 +77,7 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 
 name(s::MultiDict) = "A dictionary consisting of $(numelements(s)) dictionaries"
 
-for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
+for op in (:isorthogonal, :is_biorthogonal, :is_basis, :is_frame)
     # Redirect the calls to multiple_is_basis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
@@ -149,15 +149,8 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    block_row_operator( DictionaryOperator{coefficienttype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
-
-## Avoid ambiguity
-grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    block_row_operator( DictionaryOperator{coefficienttype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
-
-new_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
-    block_row_operator( DictionaryOperator{T}[new_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
+grid_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
+    block_row_operator( DictionaryOperator{T}[grid_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
 
 ## Rescaling
 

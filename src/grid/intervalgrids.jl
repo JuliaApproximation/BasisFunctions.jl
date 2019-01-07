@@ -66,6 +66,7 @@ stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
 # (What about more general ranges?)
+# TODO: update, LinRange no longer exists
 convert(::Type{EquispacedGrid}, x::LinRange) = EquispacedGrid(length(x), first(x), last(x))
 
 

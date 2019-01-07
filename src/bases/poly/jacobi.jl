@@ -41,7 +41,12 @@ first_moment(b::JacobiPolynomials{T}) where {T} = (b.α+b.β+1≈0) ?
 jacobi_α(b::JacobiPolynomials) = b.α
 jacobi_β(b::JacobiPolynomials) = b.β
 
-weight(b::JacobiPolynomials{T}, x) where {T} = (1-T(x))^b.α * (1+T(x))^b.β
+measure(b::JacobiPolynomials) = JacobiMeasure(b.α, b.β)
+
+iscompatible(d1::JacobiPolynomials, d2::JacobiPolynomials) = d1.α == d2.α && d1.β == d2.β
+
+iscompatible(dict::JacobiPolynomials, measure::JacobiMeasure) =
+	dict.α == measure.α && dict.β == measure.β
 
 
 # See DLMF (18.9.2)
@@ -65,6 +70,21 @@ end
 rec_Cn(b::JacobiPolynomials{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 
+function innerproduct(d1::JacobiPolynomials, i::PolynomialDegree, d2::JacobiPolynomials, j::PolynomialDegree, measure::JacobiMeasure; options...)
+	T = coefficienttype(d1)
+	if iscompatible(d1, d2) && iscompatible(d1, measure)
+		if i == j
+			a = d1.α
+			b = d1.β
+			n = convert(T, value(i))
+			2^(a+b+1)/(2n+a+b+1) * gamma(n+a+1)*gamma(n+b+1)/factorial(n)/gamma(n+a+b+1)
+		else
+			zero(T)
+		end
+	else
+		default_dict_innerproduct(d1, i, d2, j, measure; options...)
+	end
+end
 
 
 # TODO: move to its own file and make more complete

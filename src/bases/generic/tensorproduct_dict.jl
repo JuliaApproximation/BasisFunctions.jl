@@ -66,7 +66,7 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ## Properties
 
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
@@ -274,11 +274,6 @@ function _index_set_hyperbolic_cross(s, n, α = 1)
     end
 end
 
-oversampled_grid(b::TensorProductDict, oversampling::Real) = ProductGrid([oversampled_grid(bi, oversampling) for bi in elements(b)]...)
-
-BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductDict; oversampling = 1) =
-    tensorproduct([DiscreteGram(si, oversampling=oversampling) for si in elements(s)]...)
-
 function stencil(op::TensorProductDict)
     A = Any[]
     push!(A,element(op,1))
@@ -290,5 +285,5 @@ function stencil(op::TensorProductDict)
 end
 
 
-new_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; T, options...) =
-    tensorproduct(map( (d,g) -> new_evaluation_operator(d, g; T=T), elements(dict), elements(grid))...)
+grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; T, options...) =
+    tensorproduct(map( (d,g) -> evaluation_operator(d, g; T=T), elements(dict), elements(grid))...)

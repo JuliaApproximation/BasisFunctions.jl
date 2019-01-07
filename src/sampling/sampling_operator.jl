@@ -84,7 +84,7 @@ function sample!(result, grid, f)
 	result
 end
 
-apply(op::GridSampling, dict::Dictionary) = new_evaluation_operator(dict, grid(op))
+apply(op::GridSampling, dict::Dictionary) = evaluation_operator(dict, grid(op))
 
 
 
@@ -118,12 +118,35 @@ function riemannsum_normalization(grid::AbstractGrid, space::L2)
 end
 
 
+
 """
 A `ProjectionSampling` is an operator that maps a function to its inner products
 with a projection basis.
 """
 struct ProjectionSampling <: SamplingOperator
-    src     ::  FunctionSpace
     dict	::  Dictionary
+	measure	::	Measure
 	space	::	FunctionSpace
 end
+
+space(dict::Dictionary) = space(measure(dict))
+
+ProjectionSampling(dict::Dictionary) = ProjectionSampling(dict, measure(dict))
+
+ProjectionSampling(dict::Dictionary, measure::Measure) = ProjectionSampling(dict, measure, space(measure))
+
+ProjectionSampling(dict::Dictionary, space::FunctionSpace) = ProjectionSampling(dict, measure(space), space)
+
+dictionary(op::ProjectionSampling) = op.dict
+
+dest(op::ProjectionSampling) = dictionary(op)
+
+src_space(op::ProjectionSampling) = op.space
+
+measure(op::ProjectionSampling) = op.measure
+
+apply(op::ProjectionSampling, dict::Dictionary) =
+	apply_projection(op, dict, dictionary(op), measure(dict), measure(op))
+
+apply_projection(op, dict::D, projdict::D, measure::M, projmeasure::M) where {D <: Dictionary,M<:Measure} =
+	gramoperator(dict)

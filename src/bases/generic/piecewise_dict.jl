@@ -73,7 +73,7 @@ end
 similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
-for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
+for op in (:isorthogonal, :is_biorthogonal, :is_basis, :is_frame)
     @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 end
 
@@ -107,11 +107,7 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-evaluation_operator(s::PiecewiseDict, dgs::GridBasis; options...) =
-    MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))) *
-        LinearizationOperator(s)
-
-new_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) =
+grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) =
     MultiplicationOperator(dict, gb, evaluation_matrix(dict, grid)) * LinearizationOperator(dict)
 
 
@@ -204,18 +200,5 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
     PiecewiseDict(dicts), MultiArray(coefs)
 end
 
-dot(s::PiecewiseDict, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...) =
-    dot(s, native_index(s, f1), f2, nodes; options...)
-
-function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...)
-    # idxn = native_index(s, f1)
-    # set.dicts[idxn[1]]
-    # b = element(s, idxn[1])
-    b = element(s, f1[1])
-
-    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, infimum(support(b)), supremum(support(b))); options...)
-end
-
-function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(DictionaryOperator{coefficienttype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
-end
+gramoperator(dict::PiecewiseDict; options...) =
+    BlockDiagonalOperator(DictionaryOperator{coefficienttype(dict)}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict)

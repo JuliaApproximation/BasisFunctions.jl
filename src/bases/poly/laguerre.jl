@@ -33,13 +33,23 @@ first_moment(b::LaguerrePolynomials{T}) where {T} = gamma(b.α+1)
 jacobi_α(b::LaguerrePolynomials) = b.α
 
 
-weight(b::LaguerrePolynomials{T}, x) where {T} = exp(-T(x)) * T(x)^(b.α)
+measure(b::LaguerrePolynomials) = LaguerreMeasure(b.α)
 
-function gramdiagonal!(result, b::LaguerrePolynomials; options...)
-    T = eltype(result)
-    for i in 1:length(result)
-        result[i] = gamma(T(i+jacobi_α(b)))/factorial(i-1)
-    end
+iscompatible(d1::LaguerrePolynomials, d2::LaguerrePolynomials) = d1.α == d2.α
+
+iscompatible(dict::LaguerrePolynomials, measure::LaguerreMeasure) = dict.α == measure.α
+
+function innerproduct(d1::LaguerrePolynomials, i::PolynomialDegree, d2::LaguerrePolynomials, j::PolynomialDegree, measure::LaguerreMeasure; options...)
+	T = coefficienttype(d1)
+	if iscompatible(d1, d2) && iscompatible(d1, measure)
+		if i == j
+			gamma(convert(T, value(i)+1+jacobi_α(d1))) / convert(T, factorial(value(i)))
+		else
+			zero(T)
+		end
+	else
+		default_dict_innerproduct(d1, i, d2, j, measure; options...)
+	end
 end
 
 

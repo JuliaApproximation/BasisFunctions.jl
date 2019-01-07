@@ -1,10 +1,15 @@
-# integral.jl
+# Routines for evaluating integrals
 
+integral(f, domain::AbstractInterval; options...) =
+    numerical_integral(f, leftendpoint(domain), rightendpoint(domain); options...)
 
-function integral(f, domain::AbstractInterval{T}; atol = 0, rtol = sqrt(eps(T)), verbose=false, options...) where T
-    I,e = QuadGK.quadgk(f, leftendpoint(domain), rightendpoint(domain); rtol=rtol, atol=atol)
+integral(f, domain::DomainSets.FullSpace{T}; options...) where {T <: Real} =
+    numerical_integral(f, -convert(T, Inf), convert(T, Inf); options...)
+
+function numerical_integral(f, a::T, b::T; atol = 0, rtol = sqrt(eps(T)), verbose=false, options...) where {T}
+    I,e = QuadGK.quadgk(f, a, b; rtol=rtol, atol=atol)
     if verbose && (e > sqrt(rtol))
-        warn("Numerical evaluation of integral did not converge")
+        @warn "Numerical evaluation of integral did not converge"
     end
     I
 end
@@ -24,6 +29,19 @@ integral(f, measure::LebesgueMeasure; options...) =
 integral(f, measure::DiracMeasure; options...) =
     f(point(measure))
 
-innerproduct(f, g, m::Measure; options...) = integral(x->conj(f(x))*g(x), m; options...)
+# ChebyshevT: apply cosine map to the integral.
+# Weight function times Jacobian becomes identity.
+integral(f, measure::ChebyshevTMeasure{T}; options...) where {T} =
+    pi*integral(x->f(cos(pi*x)), UnitInterval{T}(); options...)
 
-innerproduct(f, g, d::Domain; options...) = integral(x->conj(f(x))*g(x), d; options...)
+# ChebyshevU: apply cosine map to the integral.
+# Weight function and Jacobian are both equal to sin(pi*x).
+integral(f, measure::ChebyshevUMeasure{T}; options...) where {T} =
+    pi*integral(x->f(cos(pi*x))*sin(pi*x)^2, UnitInterval{T}(); options...)
+
+# For mapped measures, we can undo the map and leave out the jacobian in the
+# weight function of the measure by going to the supermeasure
+integral(f, measure::MappedMeasure; options...) =
+    integral(x->f(applymap(mapping(measure),x)), supermeasure(measure); options...)
+
+innerproduct(f, g, measure; options...) = integral(x->conj(f(x))*g(x), measure; options...)

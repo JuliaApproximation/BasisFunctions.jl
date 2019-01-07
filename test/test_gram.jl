@@ -2,14 +2,13 @@ using BasisFunctions, BasisFunctions.Test
 
 using Test
 
-types = [Float64, BigFloat,]
+types = (Float64, BigFloat)
 
-function discrete_gram_test(T)
-    for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries)#,BSplineTranslatesBasis,)
+function gram_projection_test(T)
+    for B in (ChebyshevBasis, FourierBasis, SineSeries, CosineSeries, LegendrePolynomials)
         basis = instantiate(B, 10, T)
-        span = basis
         if !(B <: SineSeries)
-            @test ! (typeof(DiscreteGram(span)) <: CompositeOperator)
+            @test ! (typeof(DiscreteGram(basis)) <: CompositeOperator)
         end
     end
     # Had to add these lines to get the terminal to run without errors. No idea why. VC
@@ -22,22 +21,20 @@ function discrete_gram_test(T)
         e = rand(T, n)
         for B in (ChebyshevBasis,FourierBasis,SineSeries,CosineSeries)#,BSplineTranslatesBasis,)
             basis = instantiate(B, n, T)
-            span = basis
             grid = BasisFunctions.oversampled_grid(basis, oversampling)
-            @test DiscreteGram(span; oversampling=oversampling)*e ≈ evaluation_operator(span; oversampling=oversampling)'evaluation_operator(span, grid)*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
+            @test DiscreteGram(basis; oversampling=oversampling)*e ≈ evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis, grid)*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
         end
     end
     for n in (10,11)
         e = rand(T, n)
         for B in (ChebyshevBasis,FourierBasis)#,BSplineTranslatesBasis)
             basis = instantiate(B, n, T)
-            span = basis
             oversampling = 1
-            @test n*(inv(evaluation_operator(span; oversampling=oversampling, sparse=false))')*e ≈ discrete_dual_evaluation_operator(span, oversampling=oversampling)*e
+            @test n*(inv(evaluation_operator(basis; oversampling=oversampling, sparse=false))')*e ≈ discrete_dual_evaluation_operator(basis, oversampling=oversampling)*e
             for oversampling in 1:4
                 grid = BasisFunctions.oversampled_grid(basis, oversampling)
-                @test DiscreteDualGram(span; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(span; oversampling=oversampling)'discrete_dual_evaluation_operator(span; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis,oversampling))
-                @test DiscreteMixedGram(span; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(span; oversampling=oversampling)'evaluation_operator(span; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
+                @test DiscreteDualGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'discrete_dual_evaluation_operator(basis; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis,oversampling))
+                @test DiscreteMixedGram(basis; oversampling=oversampling)*e ≈ (discrete_dual_evaluation_operator(basis; oversampling=oversampling)'evaluation_operator(basis; oversampling=oversampling))*e/T(BasisFunctions.discrete_gram_scaling(basis, oversampling))
             end
         end
     end
@@ -56,7 +53,6 @@ end
 
 for T in types
     @testset "$(rpad("Gram functionality $T",80))" begin
-        discrete_gram_test(T)
-        general_gram_test(T)
+        gram_projection_test(T)
     end
 end

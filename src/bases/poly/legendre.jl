@@ -7,8 +7,6 @@ struct LegendrePolynomials{T} <: OPS{T,T}
     n   ::  Int
 end
 
-
-
 name(b::LegendrePolynomials) = "Legendre OPS"
 
 LegendrePolynomials(n::Int) = LegendrePolynomials{Float64}(n)
@@ -24,13 +22,15 @@ first_moment(b::LegendrePolynomials{T}) where {T} = T(2)
 jacobi_α(b::LegendrePolynomials{T}) where {T} = T(0)
 jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)
 
-weight(b::LegendrePolynomials{T}, x) where {T} = T(1)
+measure(b::LegendrePolynomials{T}) where {T} = LegendreMeasure{T}()
 
-function gramdiagonal!(result, ::LegendrePolynomials; options...)
-    T = eltype(result)
-    for i in 1:length(result)
-        result[i] = T(2//(2(i-1)+1))
-    end
+function innerproduct(d1::LegendrePolynomials, i::PolynomialDegree, d2::LegendrePolynomials, j::PolynomialDegree, m::LegendreMeasure; options...)
+	T = coefficienttype(d1)
+	if i == j
+		2 / convert(T, 2*value(i)+1)
+	else
+		zero(T)
+	end
 end
 
 # See DLMF, Table 18.9.1

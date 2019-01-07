@@ -55,7 +55,7 @@ function name(s::MappedDict)
 end
 
 function unmap_grid(dict::MappedDict, grid::MappedGrid)
-    if is_compatible(mapping(dict), mapping(grid))
+    if iscompatible(mapping(dict), mapping(grid))
         supergrid(grid)
     else
         apply_map(grid, inv(mapping(dict)))
@@ -97,7 +97,19 @@ function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(
     end
 end
 
-is_compatible(s1::MappedDict, s2::MappedDict) = is_compatible(mapping(s1),mapping(s2)) && is_compatible(superdict(s1),superdict(s2))
+iscompatible(s1::MappedDict, s2::MappedDict) =
+    iscompatible(mapping(s1),mapping(s2)) && iscompatible(superdict(s1),superdict(s2))
+
+function innerproduct(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)
+    if iscompatible(d1,d2) && iscompatible(mapping(d1),mapping(measure))
+        innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
+    else
+        innerproduct1(d1, i, d2, j, measure; options...)
+    end
+end
+
+gramoperator(dict::MappedDict; T = coefficienttype(dict), options...) =
+    wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
 
 
 ###############
@@ -136,41 +148,10 @@ end
 # Evaluation
 ###################
 
-# If the set is mapped and the grid is mapped, and if the maps are identical,
-# we can use the evaluation operator of the underlying set and grid
-function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::MappedGrid; options...)
-    if is_compatible(mapping(s), mapping(g))
-        E = evaluation_operator(superdict(s), supergrid(g); options...)
-        wrap_operator(s, dgs, E)
-    else
-        dense_evaluation_operator(s, dgs; options...)
-    end
-end
 
-# If the grid is not mapped, we proceed by performing the inverse map on the grid,
-# like we do for transforms above
-function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractGrid; options...)
-    g2 = apply_map(g, inv(mapping(s)))
-    E = evaluation_operator(superdict(s), GridBasis(superdict(s), g2); options...)
-    wrap_operator(s, dgs, E)
-end
-
-# We have to intercept the case of a subgrid, because there is a general rule
-# for subgrids and abstract Dictionary's in generic/evaluation that causes an
-# ambiguity. We proceed here by applying the inverse map to the underlying grid
-# of the subgrid.
-function grid_evaluation_operator(s::MappedDict, dgs::GridBasis, g::AbstractSubGrid; options...)
-    mapped_supergrid = apply_map(supergrid(g), inv(mapping(s)))
-    g2 = similar_subgrid(g, mapped_supergrid)
-    g2_dgs = GridBasis(superdict(s), g2)
-    E = evaluation_operator(superdict(s), g2_dgs; options...)
-    wrap_operator(s, dgs, E)
-end
-
-
-function new_evaluation_operator(dict::MappedDict, gb::GridBasis, grid; T = op_eltype(dict, gb), options...)
+function grid_evaluation_operator(dict::MappedDict, gb::GridBasis, grid; T = op_eltype(dict, gb), options...)
     sgrid = unmap_grid(dict, grid)
-    op = new_evaluation_operator(superdict(dict), GridBasis{T}(sgrid), sgrid; T=T, options...)
+    op = grid_evaluation_operator(superdict(dict), GridBasis{T}(sgrid), sgrid; T=T, options...)
     wrap_operator(dict, gb, op)
 end
 
@@ -229,29 +210,20 @@ function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
 end
 
 plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), mapping(S))
+
+
 #################
 # Arithmetic
 #################
 
-
 function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
-    @assert is_compatible(superdict(s1),superdict(s2))
+    @assert iscompatible(superdict(s1),superdict(s2))
     (mset,mcoef) = (*)(superdict(s1),superdict(s2),coef_src1, coef_src2)
     (MappedDict(mset, mapping(s1)), mcoef)
 end
 
-Gram(s::MappedDict; options...) = wrap_operator(s, s, _gram(superdict(s), mapping(s); options...))
+measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
 
-_gram(s::Dictionary, map::AffineMap; options...) = jacobian(map, nothing)*Gram(s; options...)
-
-dot(s::MappedDict, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...) =
-    _dot(superdict(s), mapping(s), f1, f2, nodes; options...)
-
-_dot(s::Dictionary1d, map::AffineMap, f1::Function, f2::Function, nodes::Array; options...) =
-    jacobian(map, nothing)*dot(s, x->f1(applymap(map,x)), x->f2(applymap(map,x)), apply_left_inverse(map,nodes); options...)
-
-native_nodes(s::MappedDict) = _native_nodes(superdict(s), mapping(s))
-_native_nodes(s::Dictionary, map::AffineMap) = applymap(map, native_nodes(s))
 
 symbol(op::MappedDict) = "M"
 

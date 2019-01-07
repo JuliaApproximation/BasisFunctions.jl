@@ -28,7 +28,7 @@ instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 is_basis(b::SineSeries) = true
-is_orthogonal(b::SineSeries) = true
+isorthogonal(b::SineSeries) = true
 
 
 has_interpolationgrid(b::SineSeries) = false
@@ -70,7 +70,7 @@ ordering(b::SineSeries) = SineIndices(length(b))
 # Evaluation
 ##################
 
-support(b::SineSeries) = UnitInterval{domaintype(b)}()
+support(b::SineSeries{T}) where {T} = UnitInterval{T}()
 
 unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
     sinpi(T(x) * frequency(idx))
@@ -91,4 +91,28 @@ function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
 end
 
 
-Gram(s::SineSeries; options...) = ScalingOperator(s, s, one(coefficienttype(s))/2)
+## Inner products
+
+hasmeasure(dict::SineSeries) = true
+
+measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
+
+gramoperator(dict::SineSeries; T = coefficienttype(dict), options...) =
+    ScalingOperator(dict, one(T)/2)
+
+function innerproduct(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;
+			T = coefficienttype(b1), quad = :analytic, options...)
+	if quad == :analytic
+		innerproduct_sine_full(i, j, T)
+	else
+		default_dict_innerproduct(b1, i, b2, j, m)
+	end
+end
+
+function innerproduct_sine_full(i, j, T)
+	if i == j
+		one(T)/2
+	else
+		zero(T)
+	end
+end
