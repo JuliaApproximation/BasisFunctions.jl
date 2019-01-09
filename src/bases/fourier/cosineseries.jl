@@ -98,7 +98,7 @@ end
 
 ## Inner products
 
-has_measure(dict::CosineSeries) = true
+hasmeasure(dict::CosineSeries) = true
 measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
 
 function gramoperator(dict::CosineSeries; T = coefficienttype(dict), options...)

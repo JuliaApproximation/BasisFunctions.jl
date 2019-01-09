@@ -231,7 +231,7 @@ function monic_recurrence_eval(α, β, idx, x)
     end
 end
 
-has_measure(dict::OPS) = true
+hasmeasure(dict::OPS) = true
 
 weight(b::OPS, x) = weight(measure(b), x)
 

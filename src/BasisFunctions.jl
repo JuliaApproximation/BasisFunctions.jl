@@ -117,7 +117,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficienttype
 export promote_domaintype, promote_domainsubtype, promote_coefficienttype
 export interpolation_grid, left, right, support, domain, codomain
-export measure, has_measure
+export measure, hasmeasure
 export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, resize

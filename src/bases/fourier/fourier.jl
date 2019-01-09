@@ -144,7 +144,7 @@ minfrequency(b::FourierBasis) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 
 support(b::FourierBasis{T}) where T = UnitInterval{T}()
 
-has_measure(b::FourierBasis) = true
+hasmeasure(b::FourierBasis) = true
 measure(b::FourierBasis{T}) where T = FourierMeasure{T}()
 
 period(b::FourierBasis{T}) where {T} = T(1)

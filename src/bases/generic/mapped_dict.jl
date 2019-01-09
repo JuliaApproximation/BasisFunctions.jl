@@ -102,7 +102,7 @@ iscompatible(s1::MappedDict, s2::MappedDict) =
 
 measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
 
-has_measure(dict::MappedDict) = has_measure(superdict(dict))
+hasmeasure(dict::MappedDict) = hasmeasure(superdict(dict))
 
 
 function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)

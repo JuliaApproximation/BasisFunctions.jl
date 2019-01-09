@@ -3,7 +3,7 @@
 
 # By convention Gram functionality is only implemented for dictionaries that are
 # associated with a measure.
-has_measure(dict::Dictionary) = false
+hasmeasure(dict::Dictionary) = false
 
 gramelement(dict::Dictionary, i, j; options...) =
     innerproduct(dict, i, dict, j; options...)

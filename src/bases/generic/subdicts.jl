@@ -94,7 +94,7 @@ unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), 
 
 unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x)
 
-has_measure(dict::Subdictionary) = has_measure(superdict(dict))
+hasmeasure(dict::Subdictionary) = hasmeasure(superdict(dict))
 measure(dict::Subdictionary) = measure(superdict(dict))
 
 innerproduct1(d1::Subdictionary, i, d2, j, measure; options...) =

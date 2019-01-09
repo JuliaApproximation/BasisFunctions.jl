@@ -179,7 +179,7 @@ end
 # Projections
 #################
 
-has_measure(dict::OperatedDict) = has_measure(superdict(dict))
+hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
 
 measure(dict::OperatedDict) = measure(superdict(dict))
 
@@ -188,7 +188,7 @@ gramoperator(dict::OperatedDict; options...) =
 
 function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
-	if is_diagonal(op)
+	if isdiagonal(op)
 		idx = linear_index(d1, i)
 		conj(diagonal(op, idx)) * innerproduct(superdict(d1), i, d2, j, measure; options...)
 	else
@@ -198,7 +198,7 @@ end
 
 function innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
 	op = operator(d2)
-	if is_diagonal(op)
+	if isdiagonal(op)
 		idx = linear_index(d2, j)
 		diagonal(op, idx) * innerproduct(d1, i, superdict(d2), j, measure; options...)
 	else

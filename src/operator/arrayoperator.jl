@@ -135,8 +135,8 @@ scalar(op::ScalingOperator) = op.A.λ
 
 size(op::ScalingOperator) = op.size
 
-is_diagonal(op::ScalingOperator) = true
-is_inplace(op::ScalingOperator) = true
+isdiagonal(op::ScalingOperator) = true
+isinplace(op::ScalingOperator) = true
 isefficient(op::ScalingOperator) = true
 
 apply_inplace!(op::ScalingOperator, x) = _apply_inplace!(op, op.A.λ, x)

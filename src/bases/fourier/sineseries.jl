@@ -93,7 +93,7 @@ end
 
 ## Inner products
 
-has_measure(dict::SineSeries) = true
+hasmeasure(dict::SineSeries) = true
 
 measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
 

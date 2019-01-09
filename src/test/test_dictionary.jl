@@ -169,7 +169,7 @@ function test_generic_dict_approximation(basis)
 end
 
 function test_gram_projection(basis)
-    if has_measure(basis)
+    if hasmeasure(basis)
         G = gramoperator(basis)
         @test src(G) == basis
         @test dest(G) == basis

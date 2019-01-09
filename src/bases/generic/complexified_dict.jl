@@ -33,7 +33,7 @@ grid_evaluation_operator(dict::ComplexifiedDict, dgs::GridBasis, grid::AbstractG
     grid_evaluation_operator(superdict(dict), dgs, grid; T=T)
 
 
-has_measure(dict::ComplexifiedDict) = has_measure(superdict(dict))
+hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
 
 measure(dict::ComplexifiedDict) = measure(superdict(dict))
 
