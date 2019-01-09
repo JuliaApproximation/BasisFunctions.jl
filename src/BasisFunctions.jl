@@ -92,7 +92,7 @@ export leftendpoint, rightendpoint, range
 export ProductGrid
 
 # from grid/subgrid.jl
-export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
+export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
     similar_subgrid
 
 # from grid/mappedgrid.jl
@@ -123,8 +123,8 @@ export name
 export instantiate, resize
 export ordering
 export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
-export is_composite
-export is_basis, is_frame, isorthogonal, is_biorthogonal, isorthonormal
+export iscomposite
+export isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal
 export in_support
 export approx_length, extension_size
 export has_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
@@ -160,7 +160,7 @@ export expansion, coefficients, dictionary, roots,
 export AbstractOperator, DictionaryOperator
 export src, dest, src_space, dest_space
 export apply!, apply, apply_multiple, apply_inplace!
-export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
+export matrix, diagonal, isdiagonal, isinplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -207,7 +207,7 @@ export differentiation_operator, antidifferentiation_operator, derivative_dict,
     antiderivative_dict, Differentiation, Antidifferentiation
 
 # from products.jl
-export is_homogeneous, basetype, tensorproduct
+export ishomogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -241,7 +241,7 @@ export derivative
 
 # from bases/generic/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary
-export is_discrete
+export isdiscrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
@@ -260,7 +260,7 @@ export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
-    fourier_basis_even, fourier_basis_odd, pseudodifferential_operator
+    fourier_basiseven, fourier_basisodd, pseudodifferential_operator
 
 # from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries

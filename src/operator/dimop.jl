@@ -39,7 +39,7 @@ end
 DimensionOperator(src::Dictionary, dest::Dictionary, op, dim, viewtype) =
     DimensionOperator{viewtype,eltype(op)}(src, dest, op, dim)
 
-is_inplace(op::DimensionOperator) = is_inplace(op.op)
+isinplace(op::DimensionOperator) = isinplace(op.op)
 
 # Generic function to create a DimensionOperator
 # This function can be intercepted for operators that have a more efficient implementation.

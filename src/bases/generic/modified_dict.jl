@@ -78,13 +78,13 @@ for op in (:has_interpolationgrid, :has_grid_transform, :interpolation_grid, :su
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:is_composite, :numelements, :elements, :tail)
+for op in (:iscomposite, :numelements, :elements, :tail)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(composition_modifier(d), superdict(d), args...)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal, :is_discrete)
+for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal, :isdiscrete)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(property_modifier(d), superdict(d), args...)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)

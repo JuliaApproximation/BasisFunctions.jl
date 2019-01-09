@@ -71,7 +71,7 @@ for (BaseType,TPType) in [ (:AbstractGrid, :ProductGrid)]
     @eval cartesianproduct(arg::$BaseType) = arg
 end
 
-function is_homogeneous(tp)
+function ishomogeneous(tp)
     T = typeof(element(tp, 1))
     reduce(&, map(el->typeof(el)==T, elements(tp)))
 end

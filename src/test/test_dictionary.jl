@@ -2,7 +2,7 @@
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::Dictionary) = true
-supports_interpolation(s::Dictionary) = is_basis(s)
+supports_interpolation(s::Dictionary) = isbasis(s)
 # Pick a simple function to approximate
 suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 suitable_function(s::Dictionary) = (x...) -> prod(x)
@@ -375,11 +375,11 @@ function test_generic_dict_interface(basis)
     RT = codomaintype(basis)
 
     n = length(basis)
-    if is_basis(basis)
-        @test is_frame(basis)
+    if isbasis(basis)
+        @test isframe(basis)
     end
     if isorthogonal(basis)
-        @test is_biorthogonal(basis)
+        @test isbiorthogonal(basis)
     end
 
     test_generic_dict_domaintype(basis)
@@ -432,16 +432,16 @@ function test_generic_dict_interface(basis)
 
     # Verify whether evaluation in a larger grid works
     if BF.has_extension(basis) && BF.has_interpolationgrid(basis)
-        basis_ext = extend(basis)
-        grid_ext = interpolation_grid(basis_ext)
+        basisext = extend(basis)
+        grid_ext = interpolation_grid(basisext)
         L = evaluation_operator(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
+        L2 = evaluation_operator(basisext, grid_ext) * extension_operator(basis, basisext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators
-        # @test is_fast(L2) == is_fast(L)
+        # @test isfast(L2) == isfast(L)
     end
 
     ## Test derivatives

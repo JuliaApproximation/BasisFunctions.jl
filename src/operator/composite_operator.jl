@@ -24,7 +24,7 @@ dest_space(op::GenericCompositeOperator) = dest_space(op.operators[end])
 # Generic functions for composite types:
 elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
-is_composite(op::GenericCompositeOperator) = true
+iscomposite(op::GenericCompositeOperator) = true
 
 function apply(comp::GenericCompositeOperator, fun)
     output = fun
@@ -70,9 +70,9 @@ end
 elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
 
-is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
-is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
-is_composite(op::CompositeOperator) = true
+isinplace(op::CompositeOperator) = reduce(&, map(isinplace, op.operators))
+isdiagonal(op::CompositeOperator) = reduce(&, map(isdiagonal, op.operators))
+iscomposite(op::CompositeOperator) = true
 
 
 function compose_and_simplify(composite_src::Dictionary, composite_dest::Dictionary, operators::DictionaryOperator...; simplify = true)
@@ -90,15 +90,15 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
         # Iterate over the operators and remove the ones that don't do anything
         c_operators = Array{AbstractOperator}(undef, 0)
         for op in operators
-            add_this_one = true
+            add_thisone = true
             # We forget about identity operators
             if isa(op, IdentityOperator)
-                add_this_one = false
+                add_thisone = false
             end
             if isa(op, ScalingOperator) && scalar(op) == 1
-                add_this_one = false
+                add_thisone = false
             end
-            if add_this_one
+            if add_thisone
                 push!(c_operators, op)
             end
         end
@@ -119,7 +119,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
     # In that case we need a place to store the result of the first operator.
     scratch_array = Any[zeros(T, dest(operators[1]))]
     for m = 2:L-1
-        if ~is_inplace(operators[m])
+        if ~isinplace(operators[m])
             push!(scratch_array, zeros(T, dest(operators[m])))
         end
     end
@@ -142,7 +142,7 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
     apply!(operators[1], scratch[1], coef_src)
     l = 1
     for i in 2:L-1
-        if is_inplace(operators[i])
+        if isinplace(operators[i])
             apply_inplace!(operators[i], scratch[l])
         else
             apply!(operators[i], scratch[l+1], scratch[l])
@@ -158,7 +158,7 @@ end
 
 # Below is the ideal scenario for lengths 2 and 3, written explicitly.
 # function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{2}, scratch)
-#     if is_inplace(operators[2])
+#     if isinplace(operators[2])
 #         apply!(operators[1], coef_dest, coef_src)
 #         apply!(operators[2], coef_dest)
 #     else
@@ -169,8 +169,8 @@ end
 # end
 #
 # function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{3}, scratch)
-#     ip2 = is_inplace(operators[2])
-#     ip3 = is_inplace(operators[3])
+#     ip2 = isinplace(operators[2])
+#     ip3 = isinplace(operators[3])
 #     if ip2
 #         if ip3
 #             # 2 and 3 are in-place

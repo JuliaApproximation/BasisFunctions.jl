@@ -80,7 +80,7 @@ subdict_has_interpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
-for op in (:isreal, :isorthogonal, :is_basis)
+for op in (:isreal, :isorthogonal, :isbasis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
 end
 

@@ -85,10 +85,10 @@ function zeros(op::BlockOperator)
 end
 
 # Return the source of the i-th column
-src(op::BlockOperator, j) = j==1 && is_columnlike(op) ? src(op) : element(src(op), j)
+src(op::BlockOperator, j) = j==1 && iscolumnlike(op) ? src(op) : element(src(op), j)
 
 # Return the destination of the i-th row
-dest(op::BlockOperator, i) = i==1 && is_rowlike(op) ? dest(op) : element(dest(op), i)
+dest(op::BlockOperator, i) = i==1 && isrowlike(op) ? dest(op) : element(dest(op), i)
 
 element(op::BlockOperator, i::Int, j::Int) = op.operators[i,j]
 elements(op::BlockOperator) = op.operators
@@ -97,16 +97,16 @@ composite_size(op::BlockOperator) = size(op.operators)
 
 composite_size(op::BlockOperator, dim) = size(op.operators, dim)
 
-is_composite(op::BlockOperator) = true
+iscomposite(op::BlockOperator) = true
 
-is_rowlike(op::BlockOperator) = size(op.operators,1) == 1
+isrowlike(op::BlockOperator) = size(op.operators,1) == 1
 
-is_columnlike(op::BlockOperator) = size(op.operators,2) == 1
+iscolumnlike(op::BlockOperator) = size(op.operators,2) == 1
 
 function apply!(op::BlockOperator, coef_dest, coef_src)
-    if is_rowlike(op)
+    if isrowlike(op)
         apply_rowoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
-    elseif is_columnlike(op)
+    elseif iscolumnlike(op)
         apply_columnoperator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
     else
         apply_block_operator!(op, coef_dest, coef_src, op.scratch_src, op.scratch_dest)
@@ -208,7 +208,7 @@ BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:DictionaryOperato
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators
-is_composite(op::BlockDiagonalOperator) = true
+iscomposite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
     ops = Array(DictionaryOperator{eltype(op)}, numelements(op), numelements(op))

@@ -47,10 +47,10 @@ similar(b::FourierBasis, ::Type{T}, n::Int) where {T} = FourierBasis{T}(n)
 
 isreal(b::FourierBasis) = false
 
-is_basis(b::FourierBasis) = true
+isbasis(b::FourierBasis) = true
 isorthogonal(b::FourierBasis) = true
 isorthonormal(b::FourierBasis) = oddlength(b)
-is_biorthogonal(b::FourierBasis) = true
+isbiorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
 has_interpolationgrid(b::FourierBasis) = true
@@ -383,8 +383,8 @@ function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 	coef_dest
 end
 
-is_diagonal(::FourierIndexExtensionOperator) = true
-is_diagonal(::FourierIndexRestrictionOperator) = true
+isdiagonal(::FourierIndexExtensionOperator) = true
+isdiagonal(::FourierIndexRestrictionOperator) = true
 
 adjoint(op::FourierIndexExtensionOperator{T}) where {T} =
 	FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
@@ -439,7 +439,7 @@ function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict
 	@assert s1 == s2 # There is currently no support for s1 != s2
 	# Build a vector of the first order differential operators in each spatial direction:
 	Diffs = map(differentiation_operator,elements(s1))
-	@assert is_diagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
+	@assert isdiagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
 	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
 	N = prod(size(s1))
 	diag = zeros(N)

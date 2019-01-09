@@ -11,7 +11,7 @@ const OPS{S,T} = OrthogonalPolynomials{S,T}
 
 
 isorthogonal(b::OPS) = true
-is_biorthogonal(b::OPS) = true
+isbiorthogonal(b::OPS) = true
 
 approx_length(b::OPS, n::Int) = n
 

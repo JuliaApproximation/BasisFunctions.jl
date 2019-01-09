@@ -97,7 +97,7 @@ unsafe_eval_element(dict::OperatedDict, i, x) =
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    if is_diagonal(op)
+    if isdiagonal(op)
         diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
     else
         scratch_src[idx] = 1
@@ -122,8 +122,8 @@ has_extension(dict::OperatedDict) = false
 
 isreal(dict::OperatedDict) = isreal(operator(dict))
 
-for op in (:is_basis, :is_frame)
-    @eval $op(set::OperatedDict) = is_diagonal(operator(set)) && $op(src(set))
+for op in (:isbasis, :isframe)
+    @eval $op(set::OperatedDict) = isdiagonal(operator(set)) && $op(src(set))
 end
 
 
@@ -131,8 +131,8 @@ end
 # Transform
 #################
 
-has_transform(dict::OperatedDict) = is_diagonal(operator(dict)) && has_transform(src(dict))
-has_transform(dict::OperatedDict, dgs::GridBasis) = is_diagonal(operator(dict)) && has_transform(src(dict), dgs)
+has_transform(dict::OperatedDict) = isdiagonal(operator(dict)) && has_transform(src(dict))
+has_transform(dict::OperatedDict, dgs::GridBasis) = isdiagonal(operator(dict)) && has_transform(src(dict), dgs)
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 
@@ -166,7 +166,7 @@ unsafe_eval_element_derivative(dict::OperatedDict, i, x) =
 
 function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    if is_diagonal(op)
+    if isdiagonal(op)
         diagonal(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x)
     else
         scratch_src[idx] = 1

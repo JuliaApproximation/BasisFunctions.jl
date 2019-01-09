@@ -7,7 +7,7 @@ abstract type AbstractOperator
 end
 
 "Is the operator a combination of other operators"
-is_composite(op::AbstractOperator) = false
+iscomposite(op::AbstractOperator) = false
 
 # make times (*) a synonym for applying the operator
 # TODO: reconsider this
@@ -95,10 +95,10 @@ size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 #+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
 "Is the action of the operator in-place?"
-is_inplace(op::DictionaryOperator) = false
+isinplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
-is_diagonal(op::DictionaryOperator) = false
+isdiagonal(op::DictionaryOperator) = false
 
 LinearAlgebra.mul!(y::AbstractVector, A::DictionaryOperator, x::AbstractVector) = apply!(A, y, x)
 LinearAlgebra.mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = y[:] = apply_multiple(A, x)
@@ -114,7 +114,7 @@ end
 # - call apply!(op, dest(op), src(op), coef_dest, coef_src), which can be
 #   implemented by operators whose action depends on src and/or dest.
 function apply!(op::DictionaryOperator, coef_dest, coef_src)
-	if is_inplace(op)
+	if isinplace(op)
 		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
@@ -258,7 +258,7 @@ end
 
 "Return the diagonal of the operator."
 function diagonal(op::DictionaryOperator)
-    if is_diagonal(op)
+    if isdiagonal(op)
         # Make data of all ones in the native representation of the operator
         all_ones = ones(src(op))
         # Apply the operator: this extracts the diagonal because the operator is diagonal
@@ -283,7 +283,7 @@ unsafe_diagonal(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
-    @assert is_diagonal(op)
+    @assert isdiagonal(op)
     newdiag = copy(diagonal(op))
     for i = 1:length(newdiag)
         newdiag[i] = abs(newdiag[i])>tolerance ? newdiag[i].^(-1) : 0

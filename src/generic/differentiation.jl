@@ -39,7 +39,7 @@ function differentiation_operator(s1::Dictionary1d, order=1; options...)
 end
 
 differentiation_operator(s1::Dictionary; dim=1, options...) =
-    differentiation_operator(s1, dimension_tuple(dimension(s1), dim))
+    differentiation_operator(s1, dimension_tuple(Val(dimension(s1)), dim))
 
 function differentiation_operator(s1::Dictionary, order; options...)
     s2 = derivative_dict(s1, order)
@@ -82,7 +82,7 @@ function antidifferentiation_operator(s1::Dictionary1d, order=1; options...)
     antidifferentiation_operator(s1, s2, order; options...)
 end
 
-antidifferentiation_operator(s1::Dictionary; dim=1, options...) = antidifferentiation_operator(s1, dimension_tuple(dimension(s1), dim))
+antidifferentiation_operator(s1::Dictionary; dim=1, options...) = antidifferentiation_operator(s1, dimension_tuple(Val(dimension(s1)), dim))
 
 function antidifferentiation_operator(s1::Dictionary, order; options...)
     s2 = antiderivative_dict(s1, order)

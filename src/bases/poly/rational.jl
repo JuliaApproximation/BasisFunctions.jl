@@ -20,6 +20,6 @@ end
 
 size(r::RationalBasis) = (length(r.roots),)
 
-is_basis(r::RationalBasis) = false
+isbasis(r::RationalBasis) = false
 
 support(r::RationalBasis) = r.support

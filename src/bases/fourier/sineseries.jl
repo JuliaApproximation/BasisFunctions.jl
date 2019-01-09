@@ -27,7 +27,7 @@ instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
-is_basis(b::SineSeries) = true
+isbasis(b::SineSeries) = true
 isorthogonal(b::SineSeries) = true
 
 

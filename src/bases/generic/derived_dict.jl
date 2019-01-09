@@ -42,7 +42,7 @@ for op in (:coefficienttype,)
 end
 
 # Delegation of properties
-for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal, :is_discrete)
+for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal, :isdiscrete)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -82,7 +82,7 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 
 
 # Delegation of methods
-for op in (:length, :extension_size, :size, :interpolation_grid, :is_composite, :numelements,
+for op in (:length, :extension_size, :size, :interpolation_grid, :iscomposite, :numelements,
     :elements, :tail, :ordering, :support)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end

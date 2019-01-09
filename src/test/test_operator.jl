@@ -25,7 +25,7 @@ function test_generic_operator_interface(op, T)
     @test maximum(abs.(v1-v2)) < 10*sqrt(eps(T))
 
     # Verify claim to be in-place
-    if is_inplace(op)
+    if isinplace(op)
         v3 = copy(r)
         apply_inplace!(op, v3)
         @test maximum(abs.(v3-v2)) < 10*sqrt(eps(T))
@@ -38,7 +38,7 @@ function test_generic_operator_interface(op, T)
     @test maximum(abs.(r-r2)) < eps(T)
 
     # Test claim to be diagonal
-    if is_diagonal(op)
+    if isdiagonal(op)
         for i in 1:size(op,1)
             for j in 1:size(op,2)
                 if i != j
