@@ -3,7 +3,7 @@
 # Generic evaluation
 #####################
 
-const BF_WARNSLOW = true
+const BF_WARNSLOW = false
 
 # Compute the evaluation matrix of the given dict on the given set of points
 # (a grid or any iterable set of points)

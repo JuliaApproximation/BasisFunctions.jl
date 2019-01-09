@@ -238,7 +238,7 @@ function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
 		gb2 = GridBasis{coefficienttype(gb)}(grid2)
 		evaluation_operator(dict, gb2, grid2; warnslow=warnslow, options...) * gridconversion(gb, gb2; warnslow=warnslow, options...)
 	else
-		warnslow && (@warn "Evaluation: could not convert $grid to periodic grid")
+		warnslow && (@warn "Evaluation: could not convert $(string(grid)) to periodic grid")
 		dense_evaluation_operator(dict, gb; options...)
 	end
 end

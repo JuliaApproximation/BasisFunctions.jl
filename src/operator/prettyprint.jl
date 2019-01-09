@@ -57,13 +57,15 @@ function string(op::MultiplicationOperator, object::FFTW.DCTPlan)
     String(take!(io))
 end
 
-function strings(a::AbstractVector)
+function string(a::AbstractVector)
     if length(a) > 8
-        tuple(repr(a[1:8]) * "...")
+        repr(a[1:8]) * "..."
     else
-        tuple(repr(a))
+        repr(a)
     end
 end
+
+strings(a::AbstractVector) = tuple(string(a))
 
 strings(op::AbstractOperator) = tuple(string(op))
 

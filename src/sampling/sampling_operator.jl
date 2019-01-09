@@ -152,4 +152,13 @@ apply(op::ProjectionSampling, dict::Dictionary) =
 apply_projection(op, dict::D, projdict::D, measure::M, projmeasure::M) where {D <: Dictionary,M<:Measure} =
 	gramoperator(dict)
 
+apply!(result, op::ProjectionSampling, f) = project!(result, f, dictionary(op), measure(op))
+
+function project!(result, f, dict::Dictionary, measure::Measure)
+    for i in eachindex(result)
+		result[i] = innerproduct(dict[i], f, measure)
+	end
+	result
+end
+
 strings(op::ProjectionSampling) = ("Projection operator onto a dictionary", strings(measure(op)), strings(dictionary(op)))
