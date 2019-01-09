@@ -5,11 +5,13 @@ os:
 julia:
   - nightly
   - 1.0
-  - 0.6
 matrix:
     allow_failures:
         - julia: nightly
 notifications:
     email: false
+
+before_script:
+  - julia -e 'using Pkg; Pkg.add("https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl")'
 after_success:
   - julia -e 'cd(Pkg.dir("BasisFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
