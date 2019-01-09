@@ -100,7 +100,12 @@ end
 iscompatible(s1::MappedDict, s2::MappedDict) =
     iscompatible(mapping(s1),mapping(s2)) && iscompatible(superdict(s1),superdict(s2))
 
-function innerproduct(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)
+measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
+
+hasmeasure(dict::MappedDict) = hasmeasure(superdict(dict))
+
+
+function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)
     if iscompatible(d1,d2) && iscompatible(mapping(d1),mapping(measure))
         innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
     else
@@ -110,6 +115,7 @@ end
 
 gramoperator(dict::MappedDict; T = coefficienttype(dict), options...) =
     wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
+
 
 
 ###############
@@ -221,8 +227,6 @@ function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
     (mset,mcoef) = (*)(superdict(s1),superdict(s2),coef_src1, coef_src2)
     (MappedDict(mset, mapping(s1)), mcoef)
 end
-
-measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
 
 
 symbol(op::MappedDict) = "M"

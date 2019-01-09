@@ -33,7 +33,7 @@ rec_Bn(b::HermitePolynomials, n::Int) = 0
 
 rec_Cn(b::HermitePolynomials, n::Int) = 2*n
 
-function innerproduct(d1::HermitePolynomials, i::PolynomialDegree, d2::HermitePolynomials, j::PolynomialDegree, measure::HermiteMeasure; options...)
+function innerproduct_native(d1::HermitePolynomials, i::PolynomialDegree, d2::HermitePolynomials, j::PolynomialDegree, measure::HermiteMeasure; options...)
 	T = coefficienttype(d1)
 	if i == j
 		sqrt(convert(T, pi)) * (1<<value(i)) * factorial(value(i))

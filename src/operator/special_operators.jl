@@ -139,13 +139,18 @@ function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
 end
 
 function string(op::IndexRestrictionOperator)
-    # If there are many indices being selected, then the printed operator
-    # takes up many many lines. The first six indices should be fine for the
-    # purposes of getting the jist of the operator
-    if length(op.subindices) < 6
-        return "Selecting coefficients "*string(op.subindices)
+    sub = op.subindices
+    if sub isa Vector
+        # If there are many indices being selected, then the printed operator
+        # takes up many many lines. The first six indices should be fine for the
+        # purposes of getting the jist of the operator
+        if length(op.subindices) < 6
+            return "Selecting coefficients "*string(op.subindices)
+        else
+            return "Selecting coefficients "*string(op.subindices[1:6])*"..."
+        end
     else
-        return "Selecting coefficients "*string(op.subindices[1:6])*"..."
+        return "Selecting coefficients "*string(op.subindices)
     end
 end
 
@@ -496,7 +501,7 @@ const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 AlternatingSignOperator(src) = AlternatingSignOperator{coefficienttype(src)}(src)
 AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
 
-string(op::AlternatingSignOperator) = "Alternating sign operator of length $(size(op,1))"
+strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of length $(size(op,1))")
 
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
@@ -506,4 +511,4 @@ CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
 CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
 	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
 
-string(op::CoefficientScalingOperator) = "Scaling of coefficient $(op.A.diag.index) by $(op.A.diag.scalar)"
+strings(op::CoefficientScalingOperator) = tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")

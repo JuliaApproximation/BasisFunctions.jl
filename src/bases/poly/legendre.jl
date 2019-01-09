@@ -24,7 +24,7 @@ jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)
 
 measure(b::LegendrePolynomials{T}) where {T} = LegendreMeasure{T}()
 
-function innerproduct(d1::LegendrePolynomials, i::PolynomialDegree, d2::LegendrePolynomials, j::PolynomialDegree, m::LegendreMeasure; options...)
+function innerproduct_native(d1::LegendrePolynomials, i::PolynomialDegree, d2::LegendrePolynomials, j::PolynomialDegree, m::LegendreMeasure; options...)
 	T = coefficienttype(d1)
 	if i == j
 		2 / convert(T, 2*value(i)+1)

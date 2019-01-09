@@ -14,25 +14,24 @@ gramelement(dict::Dictionary, i, j; options...) =
 innerproduct(dict1::Dictionary, i, dict2::Dictionary, j; options...) =
     innerproduct(dict1, i, dict2, j, measure(dict1); options...)
 
-# Convert linear indices to native indices, then call default
+# Convert linear indices to native indices, then call innerproduct_native
+innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j::Int, measure; options...) =
+    innerproduct_native(dict1, native_index(dict1, i), dict2, native_index(dict2, j), measure; options...)
+innerproduct(dict1::Dictionary, i, dict2::Dictionary, j::Int, measure; options...) =
+    innerproduct_native(dict1, i, dict2, native_index(dict2, j), measure; options...)
+innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j, measure; options...) =
+    innerproduct_native(dict1, native_index(dict1, i), dict2, j, measure; options...)
 innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-    innerproduct1(dict1, i, dict2, j, measure; options...)
-#   _innerproduct(dict1, i, dict2, j, measure; options...)
-# _innerproduct(dict1::Dictionary, i::LinearIndex, dict2::Dictionary, j::LinearIndex, measure; options...) =
-#     innerproduct(dict1, native_index(dict1, i), dict2, native_index(dict2, j), measure; options...)
-# _innerproduct(dict1::Dictionary, i, dict2::Dictionary, j::LinearIndex, measure; options...) =
-#     innerproduct(dict1, i, dict2, native_index(dict2, j), measure; options...)
-# _innerproduct(dict1::Dictionary, i::LinearIndex, dict2::Dictionary, j, measure; options...) =
-#     innerproduct(dict1, native_index(dict1, i), dict2, j, measure; options...)
-# _innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-#     default_dict_innerproduct(dict1, i, dict2, j, measure; options...)
+    innerproduct_native(dict1, i, dict2, j, measure; options...)
 
-innerproduct1(dict1::Dictionary, i::LinearIndex, dict2, j, measure; options...) =
-    innerproduct(dict1, native_index(dict1, i), dict2, j, measure; options...)
+# - innerproduct_native: if not specialized, called innerproduct1
+innerproduct_native(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
+    innerproduct1(dict1, i,  dict2, j, measure; options...)
+# - innerproduct1: possibility to dispatch on the first dictionary without amibiguity.
+#                  If not specialized, we call innerproduct2
 innerproduct1(dict1::Dictionary, i, dict2, j, measure; options...) =
     innerproduct2(dict1, i, dict2, j, measure; options...)
-innerproduct2(dict1, i, dict2::Dictionary, j::LinearIndex, measure; options...) =
-    innerproduct(dict1, i, dict2, native_index(dict2, j), measure; options...)
+# - innerproduct2: possibility to dispatch on the second dictionary without amibiguity
 innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
     default_dict_innerproduct(dict1, i, dict2, j, measure; options...)
 

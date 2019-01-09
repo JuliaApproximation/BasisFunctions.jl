@@ -585,10 +585,10 @@ end
 
 
 # For the uniform measure on [0,1], invoke innerproduct_fourier_full
-innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::FourierMeasure; options...) =
+innerproduct_native(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::FourierMeasure; options...) =
 	innerproduct_fourier_full(b1, i, b2, j)
 
-function innerproduct(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::LebesgueMeasure; options...)
+function innerproduct_native(b1::FourierBasis, i::FFreq, b2::FourierBasis, j::FFreq, m::LebesgueMeasure; options...)
 	d = support(m)
 	if typeof(d) <: AbstractInterval
 		if leftendpoint(d) == 0 && rightendpoint(d) == 1

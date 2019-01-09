@@ -100,12 +100,12 @@ measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
 gramoperator(dict::SineSeries; T = coefficienttype(dict), options...) =
     ScalingOperator(dict, one(T)/2)
 
-function innerproduct(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;
+function innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;
 			T = coefficienttype(b1), quad = :analytic, options...)
 	if quad == :analytic
 		innerproduct_sine_full(i, j, T)
 	else
-		default_dict_innerproduct(b1, i, b2, j, m)
+		innerproduct1(b1, i, b2, j, m)
 	end
 end
 

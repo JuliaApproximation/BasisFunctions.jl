@@ -20,7 +20,8 @@ end
 
 
 # Default is the operator string
-show_operator(io::IO,op::AbstractOperator) = println(string(op))
+show_operator(io::IO,op::AbstractOperator) = println(print_strings(strings(op),0,""))
+# show_operator(io::IO,op::AbstractOperator) = println(string(op))
 
 # Default string is the string of the type
 # string(op::DictionaryOperator) = match(r"(?<=\.)(.*?)(?=\{)",string(typeof(op))).match
@@ -56,12 +57,26 @@ function string(op::MultiplicationOperator, object::FFTW.DCTPlan)
     String(take!(io))
 end
 
-string(op::GridSampling) = print_strings(("Sampling in a discrete grid", strings(grid(op))))
+function strings(a::AbstractVector)
+    if length(a) > 8
+        tuple(repr(a[1:8]) * "...")
+    else
+        tuple(repr(a))
+    end
+end
 
-string(op::DiagonalOperator) = "Diagonal operator with element type $(eltype(op))"
+strings(op::AbstractOperator) = tuple(string(op))
+
+strings(op::DiagonalOperator) = ("Diagonal operator with element type $(eltype(op))", strings(diagonal(op)))
+
 
 # Different operators with the same symbol get added subscripts
 subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in reverse(digits(i)))
+
+strings(m::Measure) = tuple(string(m))
+string(m::FourierMeasure{T}) where {T} = "The Lebesgue measure on [0,1] (T = $T)"
+string(m::ChebyshevTMeasure{T}) where {T} = "The Chebyshev measure of the first kind on [-1,1] (T = $T)"
+string(m::ChebyshevUMeasure{T}) where {T} = "The Chebyshev measure of the second kind on [-1,1] (T = $T)"
 
 
 ####
@@ -252,18 +267,9 @@ function show_composite(io::IO,op)
         print(io,value,"\t:\t",print_strings(strings(key),0,"\t\t"))
     end
 end
-# Strings allow a dictionary or operator to return a multiline representation (each tuple is a line, each subtuple indicates a sublevel adding a downright arrow)
-function strings(op::AbstractOperator)
-    tuple(String(string(op)))
-end
 
 
-function strings(any)
-    io = IOBuffer()
-    print(io,any)
-    s = String(take!(io))
-    tuple(s)
-end
+strings(any) = tuple(repr(any))
 
 # Determine number of children of operator (to determine where to split)
 function nchildren(op)
@@ -276,17 +282,17 @@ function nchildren(op)
 end
 
 # These functions convert the strings tuples to multiline strings, by prefixing a variable number of spaces, and possibly a downrright arrow
-function print_strings(strings::Tuple, depth=0,prefix="")
+function print_strings(strings::Tuple, depth=0, prefix="")
     s = strings
-    result=""
-    for i =1:length(strings)
-        result = result*print_strings(s[i],depth+1,prefix*"  ")
+    result = ""
+    for i in 1:length(strings)
+        result = result*print_strings(s[i], depth+1, prefix*"  ")
     end
     result
 end
 
-function print_strings(strings::String, depth=0,prefix="")
-    if depth==1
+function print_strings(strings::AbstractString, depth=0,prefix="")
+    if depth == 1
         result = strings*"\n"
     else
         result = prefix*"↳ "*strings*"\n"
