@@ -3,7 +3,7 @@
 
 # By convention Gram functionality is only implemented for dictionaries that are
 # associated with a measure.
-hasmeasure(dict::Dictionary) = false
+has_measure(dict::Dictionary) = false
 
 gramelement(dict::Dictionary, i::LinearIndex, j::LinearIndex; options...) =
     gramelement(dict, native_index(dict, i), native_index(dict, j); options...)

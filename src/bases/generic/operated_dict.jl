@@ -179,7 +179,7 @@ end
 # Projections
 #################
 
-hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
+has_measure(dict::OperatedDict) = has_measure(superdict(dict))
 
 measure(dict::OperatedDict) = measure(superdict(dict))
 

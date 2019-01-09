@@ -37,7 +37,7 @@ isorthogonal(dict::WeightedDict) = false
 # We can not compute antiderivatives in general.
 has_antiderivative(dict::WeightedDict) = false
 
-hasmeasure(dict::WeightedDict) = false
+has_measure(dict::WeightedDict) = false
 
 # We have to distinguish between 1d and higher-dimensional grids, since we
 # have to splat the arguments to the weightfunction

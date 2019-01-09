@@ -215,7 +215,7 @@ antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::I
 
 ## Inner products
 
-hasmeasure(dict::ChebyshevBasis) = true
+has_measure(dict::ChebyshevBasis) = true
 measure(dict::ChebyshevBasis{T}) where T = ChebyshevMeasure{T}()
 
 innerproduct_native(b1::ChebyshevBasis, i::PolynomialDegree, b2::ChebyshevBasis, j::PolynomialDegree, m::ChebyshevTMeasure;
