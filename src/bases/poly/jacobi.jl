@@ -70,7 +70,7 @@ end
 rec_Cn(b::JacobiPolynomials{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 
-function innerproduct(d1::JacobiPolynomials, i::PolynomialDegree, d2::JacobiPolynomials, j::PolynomialDegree, measure::JacobiMeasure; options...)
+function innerproduct_native(d1::JacobiPolynomials, i::PolynomialDegree, d2::JacobiPolynomials, j::PolynomialDegree, measure::JacobiMeasure; options...)
 	T = coefficienttype(d1)
 	if iscompatible(d1, d2) && iscompatible(d1, measure)
 		if i == j
@@ -82,7 +82,7 @@ function innerproduct(d1::JacobiPolynomials, i::PolynomialDegree, d2::JacobiPoly
 			zero(T)
 		end
 	else
-		default_dict_innerproduct(d1, i, d2, j, measure; options...)
+		innerproduct1(d1, i, d2, j, measure; options...)
 	end
 end
 

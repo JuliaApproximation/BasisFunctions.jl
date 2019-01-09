@@ -31,3 +31,16 @@ transform_dict(dict::ComplexifiedDict) = complex(transform_dict(superdict(dict))
 
 grid_evaluation_operator(dict::ComplexifiedDict, dgs::GridBasis, grid::AbstractGrid; T = complex(op_eltype(superdict(dict),dgs)), options...) =
     grid_evaluation_operator(superdict(dict), dgs, grid; T=T)
+
+
+hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
+
+measure(dict::ComplexifiedDict) = measure(superdict(dict))
+
+gramoperator(dict::ComplexifiedDict; T=coefficienttype(dict), options...) =
+    wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
+
+innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
+    innerproduct(superdict(d1), i, d2, j, measure; options...)
+innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
+    innerproduct(d1, i, superdict(d2), j, measure; options...)

@@ -46,20 +46,6 @@ for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal, :isdiscr
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
-for op in (:hasmeasure, :measure)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
-end
-
-gramoperator(dict::DerivedDict; T=coefficienttype(dict), options...) =
-    wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
-
-function innerproduct(d1::DerivedDict, i, d2::DerivedDict, j, measure; options...)
-    if iscompatible(d1,d2)
-        innerproduct(superdict(d1), i, superdict(d2), j, measure; options...)
-    else
-        innerproduct1(d1, i, d2, j, measure; options...)
-    end
-end
 
 
 # Delegation of feature methods

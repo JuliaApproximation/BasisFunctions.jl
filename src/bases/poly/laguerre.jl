@@ -39,7 +39,7 @@ iscompatible(d1::LaguerrePolynomials, d2::LaguerrePolynomials) = d1.α == d2.α
 
 iscompatible(dict::LaguerrePolynomials, measure::LaguerreMeasure) = dict.α == measure.α
 
-function innerproduct(d1::LaguerrePolynomials, i::PolynomialDegree, d2::LaguerrePolynomials, j::PolynomialDegree, measure::LaguerreMeasure; options...)
+function innerproduct_native(d1::LaguerrePolynomials, i::PolynomialDegree, d2::LaguerrePolynomials, j::PolynomialDegree, measure::LaguerreMeasure; options...)
 	T = coefficienttype(d1)
 	if iscompatible(d1, d2) && iscompatible(d1, measure)
 		if i == j
@@ -48,7 +48,7 @@ function innerproduct(d1::LaguerrePolynomials, i::PolynomialDegree, d2::Laguerre
 			zero(T)
 		end
 	else
-		default_dict_innerproduct(d1, i, d2, j, measure; options...)
+		innerproduct1(d1, i, d2, j, measure; options...)
 	end
 end
 

@@ -107,7 +107,7 @@ function gramoperator(dict::CosineSeries; T = coefficienttype(dict), options...)
     DiagonalOperator(diag, src=dict)
 end
 
-innerproduct(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;
+innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;
 			T = coefficienttype(b1), options...) =
 	innerproduct_cosine_full(i, j, T)
 

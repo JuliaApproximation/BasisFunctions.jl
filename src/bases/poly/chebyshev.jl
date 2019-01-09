@@ -218,7 +218,7 @@ antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::I
 hasmeasure(dict::ChebyshevBasis) = true
 measure(dict::ChebyshevBasis{T}) where T = ChebyshevMeasure{T}()
 
-innerproduct(b1::ChebyshevBasis, i::PolynomialDegree, b2::ChebyshevBasis, j::PolynomialDegree, m::ChebyshevTMeasure;
+innerproduct_native(b1::ChebyshevBasis, i::PolynomialDegree, b2::ChebyshevBasis, j::PolynomialDegree, m::ChebyshevTMeasure;
 			T = coefficienttype(b1), options...) =
 	innerproduct_chebyshev_full(i, j, T)
 
@@ -377,7 +377,7 @@ interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
 
 measure(dict::ChebyshevU{T}) where {T} = ChebyshevUMeasure{T}()
 
-function innerproduct(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUMeasure;
+function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUMeasure;
 			T = coefficienttype(b1), options...)
 	if i == j
 		convert(T, pi)/2

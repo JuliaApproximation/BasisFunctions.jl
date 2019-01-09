@@ -117,6 +117,7 @@ function riemannsum_normalization(grid::AbstractGrid, space::L2)
 	# to implement
 end
 
+strings(op::GridSampling) = ("Sampling in a discrete grid with coefficient type $(coefficienttype(dest(op)))",strings(grid(op)))
 
 
 """
@@ -150,3 +151,5 @@ apply(op::ProjectionSampling, dict::Dictionary) =
 
 apply_projection(op, dict::D, projdict::D, measure::M, projmeasure::M) where {D <: Dictionary,M<:Measure} =
 	gramoperator(dict)
+
+strings(op::ProjectionSampling) = ("Projection operator onto a dictionary", strings(measure(op)), strings(dictionary(op)))
