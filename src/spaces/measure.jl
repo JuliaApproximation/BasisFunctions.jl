@@ -139,7 +139,7 @@ unsafe_weight(m::DiracMeasure{T}, x) where {T} = convert(T, NaN)
 
 point(m::DiracMeasure) = m.x
 
-
+# TODO DiracCombMeasure
 
 ######################################################
 # Generating new measures from existing measures

@@ -77,8 +77,8 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 
 name(s::MultiDict) = "A dictionary consisting of $(numelements(s)) dictionaries"
 
-for op in (:isorthogonal, :is_biorthogonal, :is_basis, :is_frame)
-    # Redirect the calls to multiple_is_basis with the elements as extra arguments,
+for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
+    # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
     @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)

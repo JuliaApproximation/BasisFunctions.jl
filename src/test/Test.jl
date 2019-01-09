@@ -2,7 +2,7 @@ module Test
 
 using ..BasisFunctions, DomainSets, StaticArrays
 import ..BasisFunctions: instantiate
-using Test, Random, LinearAlgebra
+using Test, LinearAlgebra
 BF = BasisFunctions
 
 export Delimit, delimit, instantiate

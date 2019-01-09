@@ -54,7 +54,7 @@ dictionaries(set::PiecewiseDict) = set.dicts
 
 partition(set::PiecewiseDict) = set.partition
 
-is_composite(set::PiecewiseDict) = true
+iscomposite(set::PiecewiseDict) = true
 function stencil(set::PiecewiseDict)
     A=Any[]
     push!(A,"(")
@@ -73,7 +73,7 @@ end
 similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
-for op in (:isorthogonal, :is_biorthogonal, :is_basis, :is_frame)
+for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
     @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 end
 

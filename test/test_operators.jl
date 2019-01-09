@@ -104,7 +104,7 @@ function test_diagonal_operators(T)
         for Op in operators
             m = matrix(Op)
             # Test in-place
-            if is_inplace(Op)
+            if isinplace(Op)
                 coef_src = rand(src(Op))
                 coef_dest_m = m * coef_src
                 coef_dest = apply!(Op, coef_src)
@@ -126,16 +126,16 @@ function test_diagonal_operators(T)
             # Test Equivalence to diagonal operator
             @test abs(sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
-            @test is_diagonal(2*Op)
-            @test is_diagonal(Op')
-            @test is_diagonal(inv(Op))
-            @test is_diagonal(Op*Op)
+            @test isdiagonal(2*Op)
+            @test isdiagonal(Op')
+            @test isdiagonal(inv(Op))
+            @test isdiagonal(Op*Op)
             # Make sure in_place is retained
-            if is_inplace(Op)
-                @test is_inplace(2*Op)
-                @test is_inplace(Op')
-                @test is_inplace(inv(Op))
-                @test is_inplace(Op*Op)
+            if isinplace(Op)
+                @test isinplace(2*Op)
+                @test isinplace(Op')
+                @test isinplace(inv(Op))
+                @test isinplace(Op*Op)
             end
         end
     end
@@ -177,10 +177,10 @@ function test_multidiagonal_operators(T)
         # Test Equivalence to diagonal operator
         @test linearize_coefficients(MSet,Op*coef_src)≈diagonal(Op).*linearize_coefficients(MSet,coef_src)
         # Make sure diagonality is retained
-        @test is_diagonal(2*Op) && is_inplace(2*Op)
-        @test is_diagonal(Op') && is_inplace(Op')
-        @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
-        @test is_diagonal(Op*Op) && is_inplace(Op*Op)
+        @test isdiagonal(2*Op) && isinplace(2*Op)
+        @test isdiagonal(Op') && isinplace(Op')
+        @test isdiagonal(inv(Op)) && isinplace(inv(Op))
+        @test isdiagonal(Op*Op) && isinplace(Op*Op)
     end
 end
 

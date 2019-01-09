@@ -127,7 +127,7 @@ similar_operator(op::IndexRestrictionOperator{T}, src, dest) where {T} =
 
 unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
 
-is_diagonal(::IndexRestrictionOperator) = true
+isdiagonal(::IndexRestrictionOperator) = true
 
 apply!(op::IndexRestrictionOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, subindices(op))
 
@@ -182,7 +182,7 @@ similar_operator(op::IndexExtensionOperator{T}, src, dest) where {T} =
 
 unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
 
-is_diagonal(::IndexExtensionOperator) = true
+isdiagonal(::IndexExtensionOperator) = true
 
 function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
     fill!(coef_dest, zero(eltype(op)))
@@ -250,7 +250,7 @@ similar_operator(op::MultiplicationOperator{T,ARRAY,INPLACE}, src, dest) where {
 unsafe_wrap_operator(src, dest, op::MultiplicationOperator) =
     similar_operator(op, src, dest)
 
-is_inplace(op::MultiplicationOperator{T,ARRAY,INPLACE}) where {T,ARRAY,INPLACE} = INPLACE
+isinplace(op::MultiplicationOperator{T,ARRAY,INPLACE}) where {T,ARRAY,INPLACE} = INPLACE
 
 # We pass the object as an additional variable so we can dispatch on it.
 # We only intercept non-inplace operators, as the in-place operators are
@@ -395,8 +395,8 @@ dest(op::OperatorSum) = dest(op.op1)
 
 adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
 
-is_composite(op::OperatorSum) = true
-is_diagonal(op::OperatorSum) = is_diagonal(op.op1) && is_diagonal(op.op2)
+iscomposite(op::OperatorSum) = true
+isdiagonal(op::OperatorSum) = isdiagonal(op.op1) && isdiagonal(op.op2)
 
 
 apply_inplace!(op::OperatorSum, coef_srcdest) =
@@ -467,7 +467,7 @@ similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)
 
-is_diagonal(op::LinearizationOperator) = true
+isdiagonal(op::LinearizationOperator) = true
 
 
 "The inverse of a LinearizationOperator."
@@ -488,7 +488,7 @@ similar_operator(::DelinearizationOperator, src, dest) =
 apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
-is_diagonal(op::DelinearizationOperator) = true
+isdiagonal(op::DelinearizationOperator) = true
 
 function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)

@@ -141,11 +141,11 @@ parentheses(t::CompositeDict, a::TensorProductDict)=true
 
 
 
-has_stencil(anything) = is_composite(anything)
+has_stencil(anything) = iscomposite(anything)
 #### Actual printing methods.
 
 # extend children method from AbstractTrees
-children(A::Union{Dictionary,AbstractOperator}) = is_composite(A) ? elements(A) : ()
+children(A::Union{Dictionary,AbstractOperator}) = iscomposite(A) ? elements(A) : ()
 function myLeaves(op::BasisFunctions.DerivedOperator)
     A = Any[]
     push!(A,op)
@@ -257,7 +257,7 @@ function show_composite(io::IO,op)
     print(io,"\n\n")
     SortS=sort(collect(S),by=x->string(x[2]),rev=true)
     for (key,value) in SortS
-        if is_composite(key) && !isa(key,DerivedOperator) && !isa(key,DerivedDict)
+        if iscomposite(key) && !isa(key,DerivedOperator) && !isa(key,DerivedDict)
             print(io,value," = ")
             delete!(S,key)
             printstencil(io,key,S)

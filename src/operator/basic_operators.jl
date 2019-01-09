@@ -14,9 +14,9 @@ similar_operator(op::ZeroOperator{T}, src, dest) where {T} =
 unsafe_wrap_operator(src, dest, op::ZeroOperator) = similar_operator(op, src, dest)
 
 # We can only be in-place if the numbers of coefficients of src and dest match
-is_inplace(op::ZeroOperator) = length(src(op))==length(dest(op))
+isinplace(op::ZeroOperator) = length(src(op))==length(dest(op))
 
-is_diagonal(::ZeroOperator) = true
+isdiagonal(::ZeroOperator) = true
 
 adjoint(op::ZeroOperator) = similar_operator(op, dest(op), src(op))
 

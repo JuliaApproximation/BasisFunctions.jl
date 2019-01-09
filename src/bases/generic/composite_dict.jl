@@ -22,7 +22,7 @@ abstract type CompositeDict{S,T} <: Dictionary{S,T}
 end
 
 # We assume that every subset has an indexable field called dicts
-is_composite(set::CompositeDict) = true
+iscomposite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
 element(set::CompositeDict, j) = set.dicts[j]
 numelements(set::CompositeDict) = length(elements(set))

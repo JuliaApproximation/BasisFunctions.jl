@@ -27,7 +27,7 @@ instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
-is_basis(b::CosineSeries) = true
+isbasis(b::CosineSeries) = true
 isorthogonal(b::CosineSeries) = true
 
 
@@ -98,7 +98,7 @@ end
 
 ## Inner products
 
-hasmeasure(dict::CosineSeries) = true
+has_measure(dict::CosineSeries) = true
 measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
 
 function gramoperator(dict::CosineSeries; T = coefficienttype(dict), options...)

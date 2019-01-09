@@ -65,8 +65,7 @@ default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)
 
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?
-# ASK is this indeed a better implementation?
-dimension_tuple(n, dim) = ntuple(k -> ((k==dim) ? 1 : 0), n)
+dimension_tuple(::Val{N}, dim::Int) where N = ntuple(k -> ((k==dim) ? 1 : 0), Val(N))
 
 subeltype(x) = subeltype(eltype(x))
 subeltype(::Type{T}) where {T <: Number} = T

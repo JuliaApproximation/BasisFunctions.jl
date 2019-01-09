@@ -41,8 +41,8 @@ unsafe_eval_element(set::DiscreteDictionary, idx, x) =
     unsafe_eval_element(set, native_index(set, idx), native_index(set, x))
 
 
-is_discrete(dict::Dictionary) = false
-is_discrete(dict::DiscreteDictionary) = true
+isdiscrete(dict::Dictionary) = false
+isdiscrete(dict::DiscreteDictionary) = true
 
 name(d::DiscreteDictionary) = "a discrete set"
 

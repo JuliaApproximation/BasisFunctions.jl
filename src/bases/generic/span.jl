@@ -12,8 +12,6 @@ end
 
 Span(dict::Dictionary{S}) where S = Span{S,span_codomaintype(dict)}(dict)
 
-# What is the codomain type of a span? It depends on the type A of the
-# coefficients, and on the codomain type T of the dictionary:
 span_codomaintype(dict::Dictionary) =
     span_codomaintype(coefficienttype(dict), codomaintype(dict))
 # - When the types are the same, that type is the result

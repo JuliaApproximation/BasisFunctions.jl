@@ -69,10 +69,10 @@ isreal(d::Dictionary) = isreal(codomaintype(d))
 
 # Is a given set a basis? In general, it is not. But it could be.
 # Hence, we need a property for it:
-is_basis(d::Dictionary) = false
+isbasis(d::Dictionary) = false
 
 # Any basis is a frame
-is_frame(d::Dictionary) = is_basis(d)
+isframe(d::Dictionary) = isbasis(d)
 
 
 "Property to indicate whether a dictionary is orthogonal."
@@ -82,7 +82,7 @@ isorthogonal(d::Dictionary) = false
 isorthonormal(d::Dictionary) = false
 
 "Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
-is_biorthogonal(d::Dictionary) = isorthogonal(d)
+isbiorthogonal(d::Dictionary) = isorthogonal(d)
 
 "Return the size of the dictionary."
 function size(d::Dictionary) end
@@ -96,7 +96,7 @@ firstindex(d::Dictionary) = 1
 lastindex(d::Dictionary) = length(d)
 
 "Is the dictionary composite, i.e. does it consist of several components?"
-is_composite(d::Dictionary) = false
+iscomposite(d::Dictionary) = false
 
 """
 The instantiate function takes a dict type, size and numeric type as argument, and

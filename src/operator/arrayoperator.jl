@@ -72,8 +72,8 @@ DiagonalOperator(src::Dictionary, A::AbstractArray) = DiagonalOperator(A; src=sr
 DiagonalOperator{T}(src::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src)
 DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src, dest=dest)
 
-is_diagonal(op::DiagonalOperator) = true
-is_inplace(op::DiagonalOperator) = true
+isdiagonal(op::DiagonalOperator) = true
+isinplace(op::DiagonalOperator) = true
 
 isefficient(op::DiagonalOperator) = true
 
@@ -135,9 +135,14 @@ scalar(op::ScalingOperator) = op.A.λ
 
 size(op::ScalingOperator) = op.size
 
+<<<<<<< HEAD
 is_diagonal(op::ScalingOperator) = true
 is_inplace(op::ScalingOperator) = true
 isefficient(op::ScalingOperator) = true
+=======
+isdiagonal(op::ScalingOperator) = true
+isinplace(op::ScalingOperator) = true
+>>>>>>> 7f9d87105502ec1ee736ab1e6ed586ef130ea2f9
 
 apply_inplace!(op::ScalingOperator, x) = _apply_inplace!(op, op.A.λ, x)
 function _apply_inplace!(op::ScalingOperator, λ, x)

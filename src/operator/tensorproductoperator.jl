@@ -17,7 +17,7 @@ end
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
-is_composite(op::TensorProductOperator) = true
+iscomposite(op::TensorProductOperator) = true
 
 function TensorProductOperator(operators...)
     T = promote_type(map(eltype, operators)...)
@@ -64,8 +64,8 @@ adjoint(op::TensorProductOperator)::DictionaryOperator = TensorProductOperator(m
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
-is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
-is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
+isinplace(op::TensorProductOperator) = reduce(&, map(isinplace, op.operators))
+isdiagonal(op::TensorProductOperator) = reduce(&, map(isdiagonal, op.operators))
 
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)

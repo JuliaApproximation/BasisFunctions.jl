@@ -55,8 +55,8 @@ for op in (:numtype, :dimension, :numelements)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
-has_basis(e::Expansion) = is_basis(dictionary(e))
-has_frame(e::Expansion) = is_frame(dictionary(e))
+has_basis(e::Expansion) = isbasis(dictionary(e))
+has_frame(e::Expansion) = isframe(dictionary(e))
 
 eachindex(e::Expansion) = eachindex(coefficients(e))
 

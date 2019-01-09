@@ -26,7 +26,7 @@ const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 
 # Generic functions for composite types:
-is_composite(dict::TensorProductDict) = true
+iscomposite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
@@ -66,7 +66,7 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ## Properties
 
-for op in (:isreal, :is_basis, :is_frame, :isorthogonal, :is_biorthogonal)
+for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
