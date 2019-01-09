@@ -29,15 +29,17 @@ integral(f, measure::LebesgueMeasure; options...) =
 integral(f, measure::DiracMeasure; options...) =
     f(point(measure))
 
+# TODO DiracCombMeasure
+
 # ChebyshevT: apply cosine map to the integral.
 # Weight function times Jacobian becomes identity.
 integral(f, measure::ChebyshevTMeasure{T}; options...) where {T} =
-    pi*integral(x->f(cos(pi*x)), UnitInterval{T}(); options...)
+    convert(T,pi)*integral(x->f(cos(convert(T,pi)*x)), UnitInterval{T}(); options...)
 
 # ChebyshevU: apply cosine map to the integral.
 # Weight function and Jacobian are both equal to sin(pi*x).
 integral(f, measure::ChebyshevUMeasure{T}; options...) where {T} =
-    pi*integral(x->f(cos(pi*x))*sin(pi*x)^2, UnitInterval{T}(); options...)
+    convert(T,pi)*integral(x->f(cos(convert(T,pi)*x))*sin(convert(T,pi)*x)^2, UnitInterval{T}(); options...)
 
 # For mapped measures, we can undo the map and leave out the jacobian in the
 # weight function of the measure by going to the supermeasure

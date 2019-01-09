@@ -36,3 +36,5 @@ rightendpoint(g::ProductGrid, j) = rightendpoint(g.grids[j])
 
 getindex(g::ProductGrid{TG,T,N}, I::Vararg{Int,N}) where {TG,T,N} =
 	convert(T, map(getindex, g.grids, I))
+
+similargrid(grid::ProductGrid, ::Type{T}, dims...) where T = ProductGrid([similargrid(g, eltype(T), dims[i]) for (i,g) in enumerate(elements(grid))]...)
