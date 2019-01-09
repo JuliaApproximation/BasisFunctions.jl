@@ -223,7 +223,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
 
 
-
+measure(dict::TensorProductDict) = ProductMeasure(map(measure, elements(dict))...)
 
 
 "Return a list of all tensor product indices (1:s+1)^n."

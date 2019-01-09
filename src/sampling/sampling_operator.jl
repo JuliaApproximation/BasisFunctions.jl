@@ -149,8 +149,10 @@ measure(op::ProjectionSampling) = op.measure
 apply(op::ProjectionSampling, dict::Dictionary) =
 	apply_projection(op, dict, dictionary(op), measure(dict), measure(op))
 
-apply_projection(op, dict::D, projdict::D, measure::M, projmeasure::M) where {D <: Dictionary,M<:Measure} =
+apply_projection(op, dict::D, projectiondict::D, measure::M, projectionmeasure::M) where {D <: Dictionary,M<:Measure} =
 	gramoperator(dict)
+
+apply_projection(op, dict, projectiondict, measure, projectionmeasure) = mixedgramoperator(projectiondict, dict, projectionmeasure)
 
 apply!(result, op::ProjectionSampling, f) = project!(result, f, dictionary(op), measure(op))
 

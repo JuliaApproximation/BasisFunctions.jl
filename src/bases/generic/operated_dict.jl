@@ -190,7 +190,7 @@ function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
 	if is_diagonal(op)
 		idx = linear_index(d1, i)
-		diagonal(op, idx) * innerproduct(superdict(d1), i, d2, j, measure; options...)
+		conj(diagonal(op, idx)) * innerproduct(superdict(d1), i, d2, j, measure; options...)
 	else
 		innerproduct2(d1, i, d2, j, measure; options...)
 	end

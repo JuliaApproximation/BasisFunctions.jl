@@ -5,6 +5,8 @@ The abstract supertype of all measures.
 abstract type Measure{T}
 end
 
+domaintype(m::Measure{T}) where {T} = T
+
 weight(m::Measure{T}, x::T) where {T} = weight1(m, x)
 
 weight(m::Measure{T}, x) where {T} = weight1(m, convert(T, x))
@@ -173,3 +175,19 @@ apply_map(measure::MappedMeasure, map) = MappedMeasure(map*mapping(measure), sup
 support(m::MappedMeasure) = mapping(m) * support(supermeasure(m))
 
 unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(m))*x) / (jacobian(mapping(m))*x)
+
+
+
+struct ProductMeasure{M,T} <: Measure{T}
+    measures ::  M
+end
+
+ProductMeasure(measures...) = ProductMeasure{typeof(measures),domaintype(measures[1])}(measures)
+
+is_composite(m::ProductMeasure) = true
+elements(m::ProductMeasure) = m.measures
+element(m::ProductMeasure, i) = m.measures[i]
+
+support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
+
+unsafe_weight(m::ProductMeasure, x) = prod(map(unsafe_weight, elements(m), x))

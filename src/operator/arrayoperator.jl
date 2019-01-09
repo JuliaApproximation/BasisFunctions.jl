@@ -17,8 +17,8 @@ size(op::ArrayOperator) = size(op.A)
 unsafe_wrap_operator(src, dest, op::ArrayOperator) = similar_operator(op, src, dest)
 
 inv(op::ArrayOperator) = ArrayOperator(inv(op.A), dest(op), src(op))
-
 adjoint(op::ArrayOperator) = ArrayOperator(adjoint(op.A), dest(op), src(op))
+conj(op::ArrayOperator) = ArrayOperator(conj(matrix(op)), src(op), dest(op))
 
 similar_operator(op::ArrayOperator, src::Dictionary, dest::Dictionary) =
     ArrayOperator(op.A, src, dest)
@@ -75,6 +75,7 @@ DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {
 is_diagonal(op::DiagonalOperator) = true
 is_inplace(op::DiagonalOperator) = true
 
+isefficient(op::DiagonalOperator) = true
 
 _apply_inplace!(op::ArrayOperator, A::Diagonal, x::AbstractVector) = mul!(x, A, x)
 function _apply_inplace!(op::ArrayOperator, A::Diagonal, x)
@@ -136,6 +137,7 @@ size(op::ScalingOperator) = op.size
 
 is_diagonal(op::ScalingOperator) = true
 is_inplace(op::ScalingOperator) = true
+isefficient(op::ScalingOperator) = true
 
 apply_inplace!(op::ScalingOperator, x) = _apply_inplace!(op, op.A.λ, x)
 function _apply_inplace!(op::ScalingOperator, λ, x)

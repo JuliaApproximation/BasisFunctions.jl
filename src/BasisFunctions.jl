@@ -30,7 +30,7 @@ import Base: broadcast, similar
 import Base: cos, sin, exp, log
 import Base: zeros, ones, one, zero, fill!, rand
 
-import Base: isreal, iseven, isodd, real, complex
+import Base: isreal, iseven, isodd, real, complex, conj
 
 import Base: show, string
 
