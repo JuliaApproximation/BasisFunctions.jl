@@ -308,17 +308,6 @@ inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
 
 
 
-# Intercept calls to dimension_operator with a MultiplicationOperator and transfer
-# to dimension_operator_multiplication. The latter can be overridden for specific
-# object types.
-# This is used e.g. for multivariate FFT's and friends
-dimension_operator(src, dest, op::MultiplicationOperator, dim; options...) =
-    dimension_operator_multiplication(src, dest, op, dim, object(op); options...)
-
-# Default if no more specialized definition is available: make DimensionOperator
-dimension_operator_multiplication(src, dest, op::MultiplicationOperator, dim, object; viewtype = VIEW_DEFAULT, options...) =
-    DimensionOperator(src, dest, op, dim, viewtype)
-
 
 """
 A FunctionOperator applies a given function to the set of coefficients and

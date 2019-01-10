@@ -79,30 +79,3 @@ end
 function basetype(tp)
     promote_type(map(typeof, elements(tp))...)
 end
-
-
-# The routines below seem to fail in Julia 0.4.5. The compiler goes in an
-# infinite loop in apply_composite! Should be fixed in 0.5. See #10340:
-# https://github.com/JuliaLang/julia/issues/10340
-
-
-# function tensorproduct(op1::DictionaryOperator, op2::DictionaryOperator)
-#     if dimension(src(op1)) == 1 && dimension(src(op2)) == 1
-#         d1 = dimension_operator(src(op1) ⊗ src(op2), dest(op1) ⊗ src(op2), op1, 1)
-#         d2 = dimension_operator(dest(op1) ⊗ src(op2), dest(op1) ⊗ dest(op2), op2, 2)
-#         compose(d1,d2)
-#     else
-#         TensorProductOperator(op1, op2)
-#     end
-# end
-#
-# function tensorproduct(op1::DictionaryOperator, op2::DictionaryOperator, op3::DictionaryOperator; options...)
-#     if dimension(src(op1)) == 1 && dimension(src(op2)) == 1 && dimension(src(op3)) == 1
-#         d1 = dimension_operator(src(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ src(op2) ⊗ src(op3), op1, 1; options...)
-#         d2 = dimension_operator(dest(op1) ⊗ src(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ src(op3), op2, 2; options...)
-#         d3 = dimension_operator(dest(op1) ⊗ dest(op2) ⊗ src(op3), dest(op1) ⊗ dest(op2) ⊗ dest(op3), op3, 3; options...)
-#         compose(d1,d2,d3)
-#     else
-#         TensorProductOperator(op1, op2, op3)
-#     end
-# end

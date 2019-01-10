@@ -285,5 +285,6 @@ function stencil(op::TensorProductDict)
 end
 
 
-grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; T, options...) =
+grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;
+            T = op_eltype(dict,gb), options...) =
     tensorproduct(map( (d,g) -> evaluation_operator(d, g; T=T), elements(dict), elements(grid))...)

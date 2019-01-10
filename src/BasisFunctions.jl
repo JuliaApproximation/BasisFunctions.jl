@@ -104,9 +104,6 @@ export innerproduct
 # from spaces/spaces.jl
 export GenericFunctionSpace
 
-# from operator/dimop.jl
-export DimensionOperator, dimension_operator
-
 # from operators/banded_operators.jl
 export HorizontalBandedOperator, VerticalBandedOperator
 
@@ -299,7 +296,6 @@ include("util/common.jl")
 include("util/indexing.jl")
 include("util/multiarray.jl")
 include("util/specialarrays.jl")
-include("util/slices.jl")
 include("util/functors.jl")
 include("util/domain_extensions.jl")
 
@@ -334,8 +330,6 @@ include("bases/generic/complexified_dict.jl")
 include("bases/generic/tensorproduct_dict.jl")
 include("bases/generic/mapped_dict.jl")
 
-include("operator/dimop.jl")
-
 include("operator/arrayoperator.jl")
 include("operator/basic_operators.jl")
 include("operator/banded_operators.jl")
@@ -343,7 +337,6 @@ include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-#include("operator/pseudo_diagonal.jl")
 include("operator/circulant_operator.jl")
 include("operator/arithmetics.jl")
 

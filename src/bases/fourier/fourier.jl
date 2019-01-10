@@ -62,14 +62,14 @@ hasextension(b::FourierBasis) = true
 # For hastransform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
-iscompatible(b::FourierBasis, grid::PeriodicEquispacedGrid) =
-	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(b)==length(grid))
+iscompatible(dict::FourierBasis, grid::PeriodicEquispacedGrid) =
+	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(dict)==length(grid))
 # - Fourier grids are of course okay
-iscompatible(b::FourierBasis, grid::FourierGrid) = length(b)==length(grid)
+iscompatible(dict::FourierBasis, grid::FourierGrid) = length(dict)==length(grid)
 # - Any non-periodic grid is not compatible
-iscompatible(b::FourierBasis, grid::AbstractGrid) = false
+iscompatible(dict::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-hasgrid_transform(b::FourierBasis, gb, grid) = iscompatible(b, grid)
+hasgrid_transform(dict::FourierBasis, gb, grid) = iscompatible(dict, grid)
 
 
 interpolation_grid(b::FourierBasis{T}) where {T} = FourierGrid{T}(length(b))
@@ -228,7 +228,7 @@ function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis,
 		resize_and_transform(dict, gb, grid; warnslow=warnslow, options...)
 	else
 		warnslow && (@warn "Periodic grid mismatch with Fourier basis")
-		dense_evaluation_operator(b, gb; options...)
+		dense_evaluation_operator(dict, gb; options...)
 	end
 end
 
