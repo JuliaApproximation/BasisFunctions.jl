@@ -60,19 +60,3 @@ apply(op::DesynthesisOperator, expansion::Expansion) = coefficients(expansion)
 
 inv(op::SynthesisOperator) = DesynthesisOperator(dictionary(op))
 inv(op::DesynthesisOperator) = SynthesisOperator(dictionary(op))
-
-
-"""
-The analysis operator associated with a dictionary maps a function to the vector
-of inner products with the elements of the dictionary.
-"""
-struct AnalysisOperator{S,T} <: AbstractOperator
-    dictionary  ::  Dictionary{S,T}
-end
-
-dictionary(op::AnalysisOperator) = op.dictionary
-
-src(op::AnalysisOperator{S,T}) where {S,T} = GenericFunctionSpace{S,T}()
-dest(op::AnalysisOperator) = discrete_set(dictionary(op))
-
-apply(op::AnalysisOperator, span::Span; options...) = gramoperator(D; options...)
