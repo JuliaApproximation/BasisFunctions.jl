@@ -31,11 +31,11 @@ isbasis(b::CosineSeries) = true
 isorthogonal(b::CosineSeries) = true
 
 
-has_interpolationgrid(b::CosineSeries) = true
-has_derivative(b::CosineSeries) = false #for now
-has_antiderivative(b::CosineSeries) = false #for now
-has_transform(b::CosineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
-has_extension(b::CosineSeries) = true
+hasinterpolationgrid(b::CosineSeries) = true
+hasderivative(b::CosineSeries) = false #for now
+hasantiderivative(b::CosineSeries) = false #for now
+hastransform(b::CosineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
+hasextension(b::CosineSeries) = true
 
 size(b::CosineSeries) = (b.n,)
 

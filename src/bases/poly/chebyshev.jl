@@ -29,13 +29,13 @@ instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(
 similar(b::ChebyshevBasis, ::Type{T}, n::Int) where {T} = ChebyshevBasis{T}(n)
 
 
-has_interpolationgrid(b::ChebyshevBasis) = true
-has_derivative(b::ChebyshevBasis) = true
-has_antiderivative(b::ChebyshevBasis) = true
+hasinterpolationgrid(b::ChebyshevBasis) = true
+hasderivative(b::ChebyshevBasis) = true
+hasantiderivative(b::ChebyshevBasis) = true
 
-has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
-has_grid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
+hasgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
+hasgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
+hasgrid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
 
 
 first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)

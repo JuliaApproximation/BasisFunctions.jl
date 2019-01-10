@@ -33,7 +33,7 @@ function OperatedDict(op::DictionaryOperator{T}) where {T}
     OperatedDict{S,T}(op)
 end
 
-has_stencil(s::OperatedDict) = true
+hasstencil(s::OperatedDict) = true
 function stencil(s::OperatedDict,S)
     A = Any[]
     push!(A,operator(s))
@@ -116,7 +116,7 @@ grid_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; 
 ## Properties
 
 # Perhaps we can extend the underlying dictionary, but in general we can not extend the operator
-has_extension(dict::OperatedDict) = false
+hasextension(dict::OperatedDict) = false
 
 isreal(dict::OperatedDict) = isreal(operator(dict))
 
@@ -129,8 +129,8 @@ end
 # Transform
 #################
 
-has_transform(dict::OperatedDict) = isdiagonal(operator(dict)) && has_transform(src(dict))
-has_transform(dict::OperatedDict, dgs::GridBasis) = isdiagonal(operator(dict)) && has_transform(src(dict), dgs)
+hastransform(dict::OperatedDict) = isdiagonal(operator(dict)) && hastransform(src(dict))
+hastransform(dict::OperatedDict, dgs::GridBasis) = isdiagonal(operator(dict)) && hastransform(src(dict), dgs)
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 
@@ -149,9 +149,9 @@ function transform_from_grid(src::GridBasis, dest::OperatedDict, grid; options..
 # Differentiation
 #################
 
-# has_derivative(dict::OperatedDict) = has_derivative(superdict(dict))
-has_derivative(dict::OperatedDict) = has_derivative(superdict(dict))
-has_antiderivative(dict::OperatedDict) = false
+# hasderivative(dict::OperatedDict) = hasderivative(superdict(dict))
+hasderivative(dict::OperatedDict) = hasderivative(superdict(dict))
+hasantiderivative(dict::OperatedDict) = false
 
 derivative_dict(dict::OperatedDict, order::Int; options...) =
 	derivative_dict(dest(dict), order; options...)

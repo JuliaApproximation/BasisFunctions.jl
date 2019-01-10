@@ -22,7 +22,7 @@ size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
 
-has_extension(b::OPS) = true
+hasextension(b::OPS) = true
 
 # Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
@@ -275,10 +275,10 @@ end
 
 gauss_points(b::OPS) = roots(b)
 
-# We say that has_interpolationgrid is true only for Float64 because it relies on an
+# We say that hasinterpolationgrid is true only for Float64 because it relies on an
 # eigenvalue decomposition and that is currently not (natively) supported in
 # BigFloat
-has_interpolationgrid(b::OPS{Float64}) = true
+hasinterpolationgrid(b::OPS{Float64}) = true
 
 interpolation_grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
 

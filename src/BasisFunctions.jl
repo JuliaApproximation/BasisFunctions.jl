@@ -127,7 +127,7 @@ export iscomposite
 export isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal
 export in_support
 export approx_length, extension_size
-export has_transform, has_extension, has_derivative, has_antiderivative, has_interpolationgrid
+export hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment, norm

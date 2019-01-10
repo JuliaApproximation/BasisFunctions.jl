@@ -184,7 +184,7 @@ end
 
 ProductMeasure(measures...) = ProductMeasure{typeof(measures),domaintype(measures[1])}(measures)
 
-is_composite(m::ProductMeasure) = true
+iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 

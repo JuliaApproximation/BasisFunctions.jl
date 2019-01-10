@@ -10,7 +10,7 @@ function leastsquares_matrix(dict::Dictionary, pts)
 end
 
 function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
-    if has_interpolationgrid(s)
+    if hasinterpolationgrid(s)
         dict2 = resize(s, samplingfactor*length(s))
         ls_grid = interpolation_grid(dict2)
     else
@@ -23,9 +23,9 @@ leastsquares_operator(s::Dictionary, grid::AbstractGrid; options...) =
     leastsquares_operator(s, GridBasis{coefficienttype(s)}(grid); options...)
 
 function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
-    if has_interpolationgrid(s)
+    if hasinterpolationgrid(s)
         larger_dict = resize(s, size(dgs))
-        if interpolation_grid(larger_dict) == grid(dgs) && has_transform(larger_dict, dgs)
+        if interpolation_grid(larger_dict) == grid(dgs) && hastransform(larger_dict, dgs)
             R = restriction_operator(larger_dict, s; options...)
             T = transform_operator(dgs, larger_s; options...)
             R * T

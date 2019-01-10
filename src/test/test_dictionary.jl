@@ -8,7 +8,7 @@ suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 suitable_function(s::Dictionary) = (x...) -> prod(x)
 
 function suitable_interpolation_grid(basis::Dictionary)
-    if BF.has_interpolationgrid(basis)
+    if BF.hasinterpolationgrid(basis)
         interpolation_grid(basis)
     else
         T = domaintype(basis)
@@ -245,8 +245,8 @@ function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
 
     tbasis = GridBasis{coefficienttype(basis)}(grid)
 
-    @test has_transform(basis, grid)
-    @test has_transform(basis, tbasis)
+    @test hastransform(basis, grid)
+    @test hastransform(basis, tbasis)
 
     t = transform_operator(tbasis, basis)
     it = transform_operator(basis, tbasis)
@@ -401,7 +401,7 @@ function test_generic_dict_interface(basis)
     test_generic_dict_coefficient_linearization(basis)
 
     ## Verify evaluation on the associated grid
-    if BF.has_interpolationgrid(basis)
+    if BF.hasinterpolationgrid(basis)
         test_generic_dict_grid(basis)
     end
 
@@ -413,7 +413,7 @@ function test_generic_dict_interface(basis)
     end
 
     ## Test extensions
-    if has_extension(basis)
+    if hasextension(basis)
         n2 = extension_size(basis)
         basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
@@ -431,7 +431,7 @@ function test_generic_dict_interface(basis)
     end
 
     # Verify whether evaluation in a larger grid works
-    if BF.has_extension(basis) && BF.has_interpolationgrid(basis)
+    if BF.hasextension(basis) && BF.hasinterpolationgrid(basis)
         basisext = extend(basis)
         grid_ext = interpolation_grid(basisext)
         L = evaluation_operator(basis, grid_ext)
@@ -445,17 +445,17 @@ function test_generic_dict_interface(basis)
     end
 
     ## Test derivatives
-    if BF.has_derivative(basis)
+    if BF.hasderivative(basis)
         test_generic_dict_derivative(basis)
     end
 
     ## Test antiderivatives
-    if BF.has_antiderivative(basis)
+    if BF.hasantiderivative(basis)
         test_generic_dict_antiderivative(basis)
     end
 
     ## Test associated transform
-    if BF.has_transform(basis)
+    if BF.hastransform(basis)
         test_generic_dict_transform(basis)
     end
 

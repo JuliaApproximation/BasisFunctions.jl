@@ -86,7 +86,7 @@ for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
     @eval ($fname)(s, elements...) = false
 end
 
-for op in (:has_interpolationgrid, :has_transform)
+for op in (:hasinterpolationgrid, :hastransform)
     fname = Symbol("multiple_$(op)")
     @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
     @eval ($fname)(s, elements...) = false

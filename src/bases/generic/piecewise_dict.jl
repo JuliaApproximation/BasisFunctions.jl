@@ -85,7 +85,7 @@ end
 
 # The set has a grid and a transform if all its subsets have it
 # Disable for now, until grids can be collected into a MultiGrid or something
-#for op in (:has_interpolationgrid, :has_transform)
+#for op in (:hasinterpolationgrid, :hastransform)
 #    @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 #end
 

@@ -20,4 +20,4 @@ end
 
 resize(grid::AbstractGrid{T}, dims...) where {T} = similargrid(grid, T, dims...)
 
-has_extension(grid::AbstractGrid) = false
+hasextension(grid::AbstractGrid) = false

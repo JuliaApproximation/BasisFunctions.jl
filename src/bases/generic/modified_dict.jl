@@ -50,7 +50,7 @@ evaluation_modifier(d::ModifiedDict)  = evaluation_modifier(modifier(d))
 coefficient_modifier(d::ModifiedDict) = coefficient_modifier(modifier(d))
 composition_modifier(d::ModifiedDict) = composition_modifier(modifier(d))
 
-for op in (:has_derivative, :has_antiderative, :unsafe_eval_element_derivative)
+for op in (:hasderivative, :hasantiderative, :unsafe_eval_element_derivative)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(derivative_modifier(d), superdict(d), args...)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
@@ -58,7 +58,7 @@ end
 
 for op in (:length, :size, :resize, :extension_size, :ordering, :approx_length,
         :linear_index, :native_index, :eachindex, :approximate_native_size, :linear_size,
-        :has_extension)
+        :hasextension)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(size_modifier(d), superdict(d), args...)
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
@@ -71,7 +71,7 @@ for op in (:coefficienttype, :linearize_coefficients!, :delinearize_coefficients
     @eval $mod_op(mod::NoModification, superdict, args...) = $op(superdict, args...)
 end
 
-for op in (:has_interpolationgrid, :has_grid_transform, :interpolation_grid, :support, :in_support,
+for op in (:hasinterpolationgrid, :hasgrid_transform, :interpolation_grid, :support, :in_support,
         :unsafe_eval_element, :unsafe_eval_element1)
     mod_op = mod_symbol(op)
     @eval $op(d::ModifiedDict, args...) = $mod_op(evaluation_modifier(d), superdict(d), args...)
@@ -160,4 +160,4 @@ function stencil(d::ModifiedDict,S)
     push!(A,")")
     return recurse_stencil(d,A,S)
 end
-has_stencil(d::ModifiedDict) = true
+hasstencil(d::ModifiedDict) = true

@@ -10,8 +10,8 @@ abstract type AbstractFunction end
 isreal(f::AbstractFunction) = true
 
 # We can do automatic differentiation for functors, but not for general functions.
-has_derivative(f::AbstractFunction) = true
-has_derivative(f::Function) = false
+hasderivative(f::AbstractFunction) = true
+hasderivative(f::Function) = false
 
 eval_derivative(f::AbstractFunction, x) = derivative(f)(x)
 

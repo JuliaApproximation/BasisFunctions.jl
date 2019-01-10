@@ -31,11 +31,11 @@ isbasis(b::SineSeries) = true
 isorthogonal(b::SineSeries) = true
 
 
-has_interpolationgrid(b::SineSeries) = false
-has_derivative(b::SineSeries) = false #for now
-has_antiderivative(b::SineSeries) = false #for now
-has_transform(b::SineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
-has_extension(b::SineSeries) = true
+hasinterpolationgrid(b::SineSeries) = false
+hasderivative(b::SineSeries) = false #for now
+hasantiderivative(b::SineSeries) = false #for now
+hastransform(b::SineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
+hasextension(b::SineSeries) = true
 
 size(b::SineSeries) = (b.n,)
 
