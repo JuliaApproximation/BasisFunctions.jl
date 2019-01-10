@@ -82,7 +82,7 @@ export element, elements, numelements
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
+        FourierGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
 export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point

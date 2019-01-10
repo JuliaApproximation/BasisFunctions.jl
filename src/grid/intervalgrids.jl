@@ -131,6 +131,36 @@ unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
 
+"A Fourier grid is a periodic equispaced grid on the interval [0,1]."
+struct FourierGrid{T} <: AbstractEquispacedGrid{T}
+    n   ::  Int
+end
+
+FourierGrid(n::Int) = FourierGrid{Float64}(n)
+
+leftendpoint(g::FourierGrid{T}) where {T} = zero(T)
+rightendpoint(g::FourierGrid{T}) where {T} = one(T)
+support(g::FourierGrid{T}) where {T} = UnitInterval{T}()
+
+similargrid(g::FourierGrid, ::Type{T}, n::Int) where {T} =
+    FourierGrid{T}(n)
+
+stepsize(g::FourierGrid{T}) where {T} = one(T)/length(g)
+
+unsafe_getindex(g::FourierGrid, i) = (i-1)*stepsize(g)
+
+has_extension(::FourierGrid) = true
+
+extend(g::FourierGrid, factor::Int) = resize(g, factor*g.n)
+
+mapped_grid(g::FourierGrid, map::AffineMap) = MappedGrid(g, map)
+
+function rescale(g::FourierGrid, a, b)
+	m = interval_map(leftendpoint(g), rightendpoint(g), a, b)
+	mapped_grid(g, m)
+end
+
+
 struct ChebyshevNodes{T} <: AbstractIntervalGrid{T}
     n   ::  Int
 end

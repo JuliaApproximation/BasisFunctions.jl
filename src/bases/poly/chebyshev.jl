@@ -206,11 +206,13 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; options...) =
-    ChebyshevDifferentiation(src, dest, order)
+differentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int;
+			T = op_eltype(src, dest), options...) =
+    ChebyshevDifferentiation{T}(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int; options...) =
-    ChebyshevAntidifferentiation(src, dest, order)
+antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int;
+			T = op_eltype(src, dest), options...) =
+    ChebyshevAntidifferentiation{T}(src, dest, order)
 
 
 ## Inner products
@@ -289,42 +291,20 @@ function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevNodes; T = op_eltype(src, dest), options...) =
+function transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevNodes;
+			T = op_eltype(src, dest), options...)
+	@assert length(src) == length(grid)
 	chebyshev_transform_nodes(src, T; options...)
+end
 
-transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevExtremae; T = op_eltype(src, dest), options...) =
+function transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevExtremae;
+			T = op_eltype(src, dest), options...)
+	@assert length(src) == length(grid)
 	chebyshev_transform_extremae(src, T; options...)
+end
 
 transform_from_grid(src::GridBasis, dest::ChebyshevBasis, grid; options...) =
 	inv(transform_to_grid(dest, src, grid; options...))
-
-
-
-# # These are the generic fallbacks
-# forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-# 	FastChebyshevTransform(src, dest; T = T)
-#
-# inverse_chebyshev_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-# 	InverseFastChebyshevTransform(src, dest; T=T)
-#
-# # But for some types we use FFTW
-# for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-#     @eval forward_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
-# 	   FastChebyshevTransformFFTW(src, dest; T = T, options...)
-#     @eval inverse_chebyshev_operator(src, dest, T::Type{$(op)}; options...) =
-#        	InverseFastChebyshevTransformFFTW(src, dest; T = T, options...)
-# end
-#
-#
-# # These are the generic fallbacks
-# chebyshevI_operator(src, dest, ::Type{T}; options...) where {T <: Number} =
-#     FastChebyshevITransform(src, dest)
-#
-# # But for some types we use FFTW
-# for op in (:Float32, :Float64, :(Complex{Float32}), :(Complex{Float64}))
-# 	@eval chebyshevI_operator(src, dest, ::Type{$(op)}; options...) =
-# 		FastChebyshevITransformFFTW(src, dest; options...)
-# end
 
 
 

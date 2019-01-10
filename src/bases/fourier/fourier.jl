@@ -64,13 +64,15 @@ has_extension(b::FourierBasis) = true
 # 1+ because 0!≅eps()
 iscompatible(b::FourierBasis, grid::PeriodicEquispacedGrid) =
 	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(b)==length(grid))
+# - Fourier grids are of course okay
+iscompatible(b::FourierBasis, grid::FourierGrid) = length(b)==length(grid)
 # - Any non-periodic grid is not compatible
 iscompatible(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
 has_grid_transform(b::FourierBasis, gb, grid) = iscompatible(b, grid)
 
 
-interpolation_grid(b::FourierBasis) = PeriodicEquispacedGrid(b.n, support(b))
+interpolation_grid(b::FourierBasis{T}) where {T} = FourierGrid{T}(length(b))
 
 
 ##################
@@ -216,6 +218,9 @@ function transform_to_grid(src::FourierBasis, dest::GridBasis, grid; T = op_elty
 	inverse_fourier_operator(src, dest, T; options...)
 end
 
+grid_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid::FourierGrid; options...) =
+	resize_and_transform(dict, gb, grid; options...)
+
 
 function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis,
 			grid::PeriodicEquispacedGrid; warnslow = BF_WARNSLOW, options...)
@@ -228,8 +233,8 @@ function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis,
 end
 
 to_periodic_grid(dict::FourierBasis, grid::AbstractGrid) = nothing
-to_periodic_grid(dict::FourierBasis, grid::PeriodicEquispacedGrid) =
-	iscompatible(dict, grid) ? grid : nothing
+to_periodic_grid(dict::FourierBasis, grid::PeriodicEquispacedGrid{T}) where {T} =
+	iscompatible(dict, grid) ? FourierGrid{T}(length(grid)) : nothing
 
 function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
 			warnslow = BF_WARNSLOW, options...)
@@ -259,7 +264,7 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
-			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
+			super_grid = FourierGrid(ntot)
 			super_dgs = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; options...)
 			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
@@ -452,16 +457,6 @@ end
 
 
 
-function transform_to_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s1), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
-	#@assert reduce(&, map(iscompatible, elements(s1), elements(grid)))
-	inverse_fourier_operator(s1, s2, T; options...)
-end
-
-function transform_from_grid_tensor(::Type{F}, ::Type{G}, s1, s2, grid; T = coefficienttype(s2), options...) where {F <: FourierBasis,G <: PeriodicEquispacedGrid}
-	#@assert reduce(&, map(iscompatible, elements(s2), elements(grid)))
-	forward_fourier_operator(s1, s2, T; options...)
-end
-
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because
@@ -481,7 +476,7 @@ function evaluation_operatorr(fs::FourierBasis, gb::GridBasis, grid::EquispacedG
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
 			T = domaintype(grid)
-			super_grid = PeriodicEquispacedGrid(ntot, T(0), T(1))
+			super_grid = FourierGrid(ntot)
 			super_gb = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_gb; options...)
 			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid))

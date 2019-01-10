@@ -99,6 +99,9 @@ quadraturenormalization(grid::AbstractGrid, args...) =
 quadraturenormalization(::Type{T}, grid::PeriodicEquispacedGrid, space::FunctionSpace = L2{T}(support(grid))) where {T} =
 	ScalingOperator(GridBasis{T}(grid), one(T)/length(grid))
 
+quadraturenormalization(::Type{T}, grid::FourierGrid, space::FunctionSpace = FourierSpace{T}()) where {T} =
+	ScalingOperator(GridBasis{T}(grid), one(T)/length(grid))
+
 quadraturenormalization(::Type{T}, grid::ChebyshevNodes, space::FunctionSpace = ChebyshevSpace{T}()) where {T} =
 	ScalingOperator(GridBasis{T}(grid), convert(T, pi)/length(grid))
 
