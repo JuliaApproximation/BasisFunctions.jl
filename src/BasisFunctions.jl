@@ -1,6 +1,7 @@
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
+import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
 using Base.Cartesian
 
@@ -212,9 +213,6 @@ export TensorProductOperator
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
 
-# from util/functors.jl
-export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
-
 # from bases/generic/weighted_dict.jl
 export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
     weightfunction, weightfun_scaling_operator
@@ -296,7 +294,6 @@ include("util/common.jl")
 include("util/indexing.jl")
 include("util/multiarray.jl")
 include("util/specialarrays.jl")
-include("util/functors.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")

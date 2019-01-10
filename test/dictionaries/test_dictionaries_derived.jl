@@ -43,8 +43,6 @@ function test_derived_dicts(T)
         end
 
     @testset "$(rpad("Weighted dictionaries",80))" begin
-        # Try a functor
-        test_generic_dict_interface(BF.Cos() * b1)
         # as well as a regular function
         test_generic_dict_interface(cos * b1)
         # and a 2D example
@@ -54,7 +52,7 @@ function test_derived_dicts(T)
 
     @testset "$(rpad("A multiple and weighted dict combination",80))" begin
         s = rescale(b1, 1/2, 1)
-        test_generic_dict_interface(multidict(s,Log()*s)) end
+        test_generic_dict_interface(multidict(s,log*s)) end
 
     @testset "$(rpad("A complicated subdict",80))" begin
         s = rescale(b1, 1/2, 1)

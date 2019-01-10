@@ -24,14 +24,11 @@ similar_dictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2,
 
 name(dict::WeightedDict) = "Weightfunction " * string(weightfunction(dict))
 
-## _name(dict::WeightedDict, superdict, fun::Function) = "A weighted dict based on " * name(superdict)
-## _name(dict::WeightedDict, superdict, fun::AbstractFunction) = name(fun) * " * " * name(superdict)
 
 isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict))
-_isreal(dict::WeightedDict, superdict, fun::AbstractFunction) = isreal(superdict) && isreal(fun)
 _isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
 
-hasderivative(dict::WeightedDict) = hasderivative(superdict(dict)) && hasderivative(weightfunction(dict))
+hasderivative(dict::WeightedDict) = hasderivative(superdict(dict))
 isorthonormal(dict::WeightedDict) = false
 isorthogonal(dict::WeightedDict) = false
 # We can not compute antiderivatives in general.
@@ -60,8 +57,12 @@ _unsafe_eval_element(dict::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_elem
 
 # Evaluate the derivative of 1d weighted sets
 unsafe_eval_element_derivative(dict::WeightedDict1d, idx, x) =
-    eval_derivative(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
+    derivative(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
     weightfunction(dict)(x) * unsafe_eval_element_derivative(superdict(dict), idx, x)
+
+# Special case for log, since it is not precise at 0.
+derivative(::typeof(log)) = x->1/x
+derivative(::typeof(log), x::T) where T<:Number= convert(T,1)/x
 
 # Evaluate an expansion: same story
 eval_expansion(dict::WeightedDict, coefficients, x) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
@@ -79,8 +80,6 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
 # left multiplication.
 # We support any Julia function:
 (*)(f::Function, dict::Dictionary) = WeightedDict(dict, f)
-# and our own functors:
-(*)(f::AbstractFunction, dict::Dictionary) = WeightedDict(dict, f)
 
 weightfun_scaling_operator(gb::GridBasis1d, weightfunction) =
     DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x) for x in grid(gb)])
