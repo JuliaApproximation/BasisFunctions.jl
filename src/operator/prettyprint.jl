@@ -8,9 +8,9 @@
 # Delegate to show_operator
 global DO_PRETTYPRINTING = true
 if DO_PRETTYPRINTING
-    show(io::IO, op::AbstractOperator) = (has_stencil(op)) ? show_composite(io,op) : show_operator(io, op)
+    show(io::IO, op::AbstractOperator) = (hasstencil(op)) ? show_composite(io,op) : show_operator(io, op)
     show(io::IO,s::Span) = show(io,dictionary(s))
-    show(io::IO, d::Dictionary) = (has_stencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
+    show(io::IO, d::Dictionary) = (hasstencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
 end
 
 
@@ -141,7 +141,7 @@ parentheses(t::CompositeDict, a::TensorProductDict)=true
 
 
 
-has_stencil(anything) = iscomposite(anything)
+hasstencil(anything) = iscomposite(anything)
 #### Actual printing methods.
 
 # extend children method from AbstractTrees
@@ -161,7 +161,7 @@ end
 
 function myLeaves(op)
     A = Any[]
-    if !has_stencil(op)
+    if !hasstencil(op)
         push!(A,op)
     else
         for child in BasisFunctions.children(op)
@@ -196,11 +196,11 @@ function symbollist(op)
     j=1
     Pops = Any[]
     for Pop in It
-        if has_stencil(Pop) && (in(Pop,Pops) || (nchildren(Pop)>5 && nchildren(Pop)<nchildren(op)/2))
+        if hasstencil(Pop) && (in(Pop,Pops) || (nchildren(Pop)>5 && nchildren(Pop)<nchildren(op)/2))
             S[Pop] = "Ψ"*subscript(j)
             j+=1
         end
-        has_stencil(Pop) && nchildren(Pop)>5 && push!(Pops,Pop)
+        hasstencil(Pop) && nchildren(Pop)>5 && push!(Pops,Pop)
     end
     S
 end
@@ -209,7 +209,7 @@ end
 stencil(op)=op
 
 function stencil(op,S)
-    if !has_stencil(op) && haskey(S,op)
+    if !hasstencil(op) && haskey(S,op)
         return op
     else
         A=stencil(op)
@@ -222,7 +222,7 @@ function recurse_stencil(op,A,S)
     i=1
     k=length(A)
     while i<=k
-        if !(typeof(A[i])<:String || typeof(A[i])<:Char) && has_stencil(A[i])
+        if !(typeof(A[i])<:String || typeof(A[i])<:Char) && hasstencil(A[i])
             if parentheses(op,A[i])
                 splice!(A,i+1:i,")")
                 splice!(A,i:i,stencil(A[i],S))

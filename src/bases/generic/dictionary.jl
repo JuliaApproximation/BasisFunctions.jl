@@ -314,13 +314,13 @@ approx_length(d::Dictionary, n::Real) = approx_length(d, round(Int,n))
 # not intended to be used in a time-critical path of the code.
 
 "Does the dictionary implement a derivative?"
-has_derivative(d::Dictionary) = false
+hasderivative(d::Dictionary) = false
 
 "Does the dictionary implement an antiderivative?"
-has_antiderivative(d::Dictionary) = false
+hasantiderivative(d::Dictionary) = false
 
 "Does the dictionary have an associated interpolation grid?"
-has_interpolationgrid(d::Dictionary) = false
+hasinterpolationgrid(d::Dictionary) = false
 
 function grid(d::Dictionary)
     error("replace grid(dict) by interpolation_grid(dict)")
@@ -328,15 +328,15 @@ function grid(d::Dictionary)
 end
 
 "Does the dictionary have a transform associated with some space?"
-has_transform(d1::Dictionary, d2) = false
+hastransform(d1::Dictionary, d2) = false
 
 # Convenience functions: default grid, and conversion from grid to space
-has_transform(d::Dictionary) = has_interpolationgrid(d) && has_transform(d, interpolation_grid(d))
-has_transform(d::Dictionary, grid::AbstractGrid) =
-    has_transform(d, GridBasis{coefficienttype(d)}(grid))
+hastransform(d::Dictionary) = hasinterpolationgrid(d) && hastransform(d, interpolation_grid(d))
+hastransform(d::Dictionary, grid::AbstractGrid) =
+    hastransform(d, GridBasis{coefficienttype(d)}(grid))
 
 "Does the dictionary support extension and restriction operators?"
-has_extension(d::Dictionary) = false
+hasextension(d::Dictionary) = false
 
 
 # A concrete Dictionary may also override extension_set and restriction_set

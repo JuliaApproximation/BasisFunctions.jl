@@ -37,13 +37,13 @@ tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,
 
 support(b::GridBasis) = support(grid(b))
 
-# Convenience function: add grid as extra parameter to has_transform
-has_transform(s1::Dictionary, s2::GridBasis) =
-	has_grid_transform(s1, s2, grid(s2))
-has_transform(s1::GridBasis, s2::Dictionary) =
-	has_grid_transform(s2, s1, grid(s1))
+# Convenience function: add grid as extra parameter to hastransform
+hastransform(s1::Dictionary, s2::GridBasis) =
+	hasgrid_transform(s1, s2, grid(s2))
+hastransform(s1::GridBasis, s2::Dictionary) =
+	hasgrid_transform(s2, s1, grid(s1))
 # and provide a default
-has_grid_transform(s1::Dictionary, s2, grid) = false
+hasgrid_transform(s1::Dictionary, s2, grid) = false
 
 elements(s::ProductGridBasis) = map(GridBasis{coefficienttype(s)}, elements(grid(s)))
 element(s::ProductGridBasis, i) = GridBasis{coefficienttype(s)}(element(grid(s), i))

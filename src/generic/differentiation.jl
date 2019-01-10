@@ -28,7 +28,7 @@ The differentation_operator function returns an operator that can be used to dif
 a function in the dictionary, with the result as an expansion in a second dictionary.
 """
 function differentiation_operator(s1::Dictionary, s2::Dictionary, order; options...)
-    @assert has_derivative(s1)
+    @assert hasderivative(s1)
     Differentiation(s1, s2, order)
 end
 
@@ -72,7 +72,7 @@ The antidifferentiation_operator function returns an operator that can be used t
 of a function in the dictionary, with the result an expansion in a second dictionary.
 """
 function antidifferentiation_operator(s1::Dictionary, s2::Dictionary, order; options...)
-    @assert has_antiderivative(s1)
+    @assert hasantiderivative(s1)
     AntiDifferentiation(s1, s2, order)
 end
 
@@ -105,6 +105,6 @@ PseudodifferentialOperator(src::Dictionary, dest::Dictionary, symbol::Function) 
 symbol(op::PseudodifferentialOperator) = op.symbol
 
 function pseudodifferential_operator(s1::Dictionary, s2::Dictionary, symbol::Function; options...)
-    @assert has_derivative(s1)
+    @assert hasderivative(s1)
     PseudodifferentialOperator(s1, s2, symbol)
 end

@@ -46,7 +46,7 @@ representation in a larger set s2. The default extension operator is of type Ext
 s2 as source and destination.
 """
 function extension_operator(s1::Dictionary, s2::Dictionary; options...)
-    @assert has_extension(s1)
+    @assert hasextension(s1)
     default_extension_operator(s1, s2; options...)
 end
 
@@ -96,7 +96,7 @@ from the restriction. The default restriction_operator is of type Restriction wi
 s2 as source and destination.
 """
 function restriction_operator(s1::Dictionary, s2::Dictionary; options...)
-    @assert has_extension(s2)
+    @assert hasextension(s2)
     default_restriction_operator(s1, s2; options...)
 end
 
@@ -136,7 +136,7 @@ adjoint(op::Extension)::DictionaryOperator = restriction_operator(dest(op), src(
 adjoint(op::Restriction)::DictionaryOperator = extension_operator(dest(op), src(op))
 
 # Transforming between dictionaries with the same type is the same as restricting
-has_transform(src::D, dest::D) where {D <: Dictionary} = true
+hastransform(src::D, dest::D) where {D <: Dictionary} = true
 
 function transform_operator(src::D, dest::D) where {D <: Dictionary}
     if length(src) > length(dest)

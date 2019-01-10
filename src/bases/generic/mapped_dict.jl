@@ -37,10 +37,10 @@ mapping(dict::MappedDict) = dict.map
 
 similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
-has_derivative(dict::MappedDict) =
-    has_derivative(superdict(dict)) && islinear(mapping(dict))
-has_antiderivative(dict::MappedDict) =
-    has_antiderivative(superdict(dict)) && islinear(mapping(dict))
+hasderivative(dict::MappedDict) =
+    hasderivative(superdict(dict)) && islinear(mapping(dict))
+hasantiderivative(dict::MappedDict) =
+    hasantiderivative(superdict(dict)) && islinear(mapping(dict))
 
 interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict))
 _grid(dict::MappedDict, sdict, map) = mapped_grid(interpolation_grid(sdict), map)
@@ -130,10 +130,10 @@ gramoperator(dict::MappedDict; T = coefficienttype(dict), options...) =
 
 transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
 
-function has_grid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
+function hasgrid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
     sgrid = unmap_grid(dict, grid)
     T = codomaintype(gb)
-    has_grid_transform(superdict(dict), GridBasis{T}(sgrid), sgrid)
+    hasgrid_transform(superdict(dict), GridBasis{T}(sgrid), sgrid)
 end
 
 function transform_from_grid(s1::GridBasis, s2::MappedDict, grid; T = op_eltype(s1,s2), options...)

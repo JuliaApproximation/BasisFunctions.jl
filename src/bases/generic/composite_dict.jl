@@ -83,7 +83,7 @@ for op in (:isreal, )
     @eval $op(set::CompositeDict) = reduce($op, elements(set))
 end
 
-for op in (:has_derivative, :has_antiderivative, :has_extension)
+for op in (:hasderivative, :hasantiderivative, :hasextension)
     @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
 end
 

@@ -31,11 +31,11 @@ isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict)
 _isreal(dict::WeightedDict, superdict, fun::AbstractFunction) = isreal(superdict) && isreal(fun)
 _isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
 
-has_derivative(dict::WeightedDict) = has_derivative(superdict(dict)) && has_derivative(weightfunction(dict))
+hasderivative(dict::WeightedDict) = hasderivative(superdict(dict)) && hasderivative(weightfunction(dict))
 isorthonormal(dict::WeightedDict) = false
 isorthogonal(dict::WeightedDict) = false
 # We can not compute antiderivatives in general.
-has_antiderivative(dict::WeightedDict) = false
+hasantiderivative(dict::WeightedDict) = false
 
 hasmeasure(dict::WeightedDict) = false
 

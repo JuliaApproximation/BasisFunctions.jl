@@ -103,14 +103,14 @@ checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
 
 ## Feature methods
 
-for op in (:has_interpolationgrid, :has_extension, :has_derivative, :has_antiderivative)
+for op in (:hasinterpolationgrid, :hasextension, :hasderivative, :hasantiderivative)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
-has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
-    reduce(&, map(has_transform, elements(s), elements(grid)))
+hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
+    reduce(&, map(hastransform, elements(s), elements(grid)))
 
-has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
+hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =

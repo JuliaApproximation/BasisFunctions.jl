@@ -15,7 +15,7 @@ approximation_operator(dict; discrete = true, options...) =
     continuous_approximation_operator(dict; options...)
 
 function discrete_approximation_operator(dict::Dictionary; options...)
-    if isbasis(dict) && has_interpolationgrid(dict)
+    if isbasis(dict) && hasinterpolationgrid(dict)
         interpolation_operator(dict, interpolation_grid(dict); options...)
     else
         default_approximation_operator(dict; options...)
@@ -41,7 +41,7 @@ Discrete Grid Spaces.
 If a transform exists, the transform is used.
 """
 function approximation_operator(A::Dictionary, B::Dictionary, options...)
-    if has_transform(A, B)
+    if hastransform(A, B)
         return transform_operator(A, B; options...)
     else
         error("Don't know a transformation from ", A, " to ", B)

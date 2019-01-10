@@ -32,12 +32,12 @@ end
 apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
 
-has_stencil(s::Subdictionary) = true
+hasstencil(s::Subdictionary) = true
 function stencil(s::Subdictionary,S)
     A = Any[]
-    has_stencil(superdict(s)) && push!(A,"(")
+    hasstencil(superdict(s)) && push!(A,"(")
     push!(A,superdict(s))
-    has_stencil(superdict(s)) && push!(A,")")
+    hasstencil(superdict(s)) && push!(A,")")
     push!(A,"["*string(superindices(s))*"]")
     return recurse_stencil(s,A,S)
 end
@@ -58,10 +58,10 @@ size(s::Subdictionary) = size(superindices(s))
 
 resize(s::Subdictionary, n) = subdict_resize(s, n, superdict(s), superindices(s))
 
-has_interpolationgrid(s::Subdictionary) = subdict_has_interpolationgrid(s, superdict(s), superindices(s))
-has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), superindices(s))
-has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
-has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
+hasinterpolationgrid(s::Subdictionary) = subdict_hasinterpolationgrid(s, superdict(s), superindices(s))
+hasderivative(s::Subdictionary) = subdict_hasderivative(s, superdict(s), superindices(s))
+hasantiderivative(s::Subdictionary) = subdict_hasantiderivative(s, superdict(s), superindices(s))
+hastransform(s::Subdictionary) = subdict_hastransform(s, superdict(s), superindices(s))
 
 derivative_dict(s::Subdictionary, order; options...) = subdict_derivative_dict(s, order, superdict(s), superindices(s); options...)
 antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivative_dict(s, order, superdict(s), superindices(s); options...)
@@ -72,10 +72,10 @@ subdict_interpolation_grid(s::Subdictionary, gb::GridBasis, indices) =
     interpolation_grid(gb)[indices]
 
 # By default, we have none of the properties
-subdict_has_derivative(s::Subdictionary, superdict, superindices) = false
-subdict_has_antiderivative(s::Subdictionary, superdict, superindices) = false
-subdict_has_transform(s::Subdictionary, superdict, superindices) = false
-subdict_has_interpolationgrid(s::Subdictionary, superdict, superindices) = false
+subdict_hasderivative(s::Subdictionary, superdict, superindices) = false
+subdict_hasantiderivative(s::Subdictionary, superdict, superindices) = false
+subdict_hastransform(s::Subdictionary, superdict, superindices) = false
+subdict_hasinterpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
@@ -150,8 +150,8 @@ end
 # Yet, we can generically define a differentiation_operator by extending the subdict
 # to the whole set and then invoking the differentiation operator of the latter,
 # and we choose that to be the default.
-subdict_has_derivative(s::LargeSubdict, superdict, superindices) = has_derivative(superdict)
-subdict_has_antiderivative(s::LargeSubdict, superdict, superindices) = has_antiderivative(superdict)
+subdict_hasderivative(s::LargeSubdict, superdict, superindices) = hasderivative(superdict)
+subdict_hasantiderivative(s::LargeSubdict, superdict, superindices) = hasantiderivative(superdict)
 
 subdict_derivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
     derivative_dict(superdict, order; options...)

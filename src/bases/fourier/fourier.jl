@@ -53,13 +53,13 @@ isorthonormal(b::FourierBasis) = oddlength(b)
 isbiorthogonal(b::FourierBasis) = true
 
 # Methods for purposes of testing functionality.
-has_interpolationgrid(b::FourierBasis) = true
-has_derivative(b::FourierBasis) = true
+hasinterpolationgrid(b::FourierBasis) = true
+hasderivative(b::FourierBasis) = true
 # Until adapted for DC coefficient
-has_antiderivative(b::FourierBasis) = false
-has_extension(b::FourierBasis) = true
+hasantiderivative(b::FourierBasis) = false
+hasextension(b::FourierBasis) = true
 
-# For has_transform we introduce some more functionality:
+# For hastransform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
 iscompatible(b::FourierBasis, grid::PeriodicEquispacedGrid) =
@@ -69,7 +69,7 @@ iscompatible(b::FourierBasis, grid::FourierGrid) = length(b)==length(grid)
 # - Any non-periodic grid is not compatible
 iscompatible(b::FourierBasis, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
-has_grid_transform(b::FourierBasis, gb, grid) = iscompatible(b, grid)
+hasgrid_transform(b::FourierBasis, gb, grid) = iscompatible(b, grid)
 
 
 interpolation_grid(b::FourierBasis{T}) where {T} = FourierGrid{T}(length(b))

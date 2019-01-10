@@ -49,19 +49,19 @@ end
 
 
 # Delegation of feature methods
-for op in (:has_derivative, :has_antiderivative, :has_interpolationgrid, :has_extension)
+for op in (:hasderivative, :hasantiderivative, :hasinterpolationgrid, :hasextension)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
-# has_transform has extra arguments
-has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), gs, grid)
+# hastransform has extra arguments
+hasgrid_transform(s::DerivedDict, gs, grid) = hasgrid_transform(superdict(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
-# has_derivative(s::ConcreteSet) = false
-# has_antiderivative(s::ConcreteSet) = false
-# has_interpolationgrid(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet, dgs::GridBasis) = false
-# has_extension(s::ConcreteSet) = false
+# hasderivative(s::ConcreteSet) = false
+# hasantiderivative(s::ConcreteSet) = false
+# hasinterpolationgrid(s::ConcreteSet) = false
+# hastransform(s::ConcreteSet) = false
+# hastransform(s::ConcreteSet, dgs::GridBasis) = false
+# hasextension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
 zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
@@ -182,4 +182,4 @@ function stencil(d::DerivedDict,S)
     push!(A,")")
     return recurse_stencil(d,A,S)
 end
-has_stencil(d::DerivedDict) = true
+hasstencil(d::DerivedDict) = true

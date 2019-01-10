@@ -57,7 +57,7 @@ similargrid(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(
 
 similar_equispacedgrid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
 
-has_extension(::EquispacedGrid) = true
+hasextension(::EquispacedGrid) = true
 
 extend(g::EquispacedGrid, factor::Int) = resize(g, factor*g.n-1)
 
@@ -98,7 +98,7 @@ stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 ==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
     (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
 
-has_extension(::PeriodicEquispacedGrid) = true
+hasextension(::PeriodicEquispacedGrid) = true
 
 extend(g::PeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.n)
 
