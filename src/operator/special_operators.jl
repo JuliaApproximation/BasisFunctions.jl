@@ -117,13 +117,13 @@ end
 IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
     IndexRestrictionOperator{T,typeof(subindices)}(src, dest, subindices)
 
-IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices) =
-    IndexRestrictionOperator{op_eltype(src,dest)}(src, dest, subindices)
+IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
+    IndexRestrictionOperator{T}(src, dest, subindices)
 
 subindices(op::IndexRestrictionOperator) = op.subindices
 
-similar_operator(op::IndexRestrictionOperator{T}, src, dest) where {T} =
-    IndexRestrictionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, subindices(op))
+similar_operator(op::IndexRestrictionOperator{S}, src, dest) where {S} =
+    IndexRestrictionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
 
 unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
 
@@ -172,13 +172,13 @@ end
 IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
     IndexExtensionOperator{T,typeof(subindices)}(src, dest, subindices)
 
-IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices) =
-    IndexExtensionOperator{op_eltype(src,dest)}(src, dest, subindices)
+IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
+    IndexExtensionOperator{T}(src, dest, subindices)
 
 subindices(op::IndexExtensionOperator) = op.subindices
 
-similar_operator(op::IndexExtensionOperator{T}, src, dest) where {T} =
-    IndexExtensionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, subindices(op))
+similar_operator(op::IndexExtensionOperator{S}, src, dest) where {S} =
+    IndexExtensionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
 
 unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
 
@@ -229,8 +229,8 @@ const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
 MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
     MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
 
-MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = false) =
-    MultiplicationOperator{promote_type(eltype(object),op_eltype(src,dest))}(src::Dictionary, dest::Dictionary, object; inplace=inplace)
+MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = false, T=op_eltype(src,dest)) =
+    MultiplicationOperator{promote_eltype(T,op_eltype(src,dest))}(src::Dictionary, dest::Dictionary, object; inplace=inplace)
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
@@ -244,8 +244,8 @@ function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatri
     MultiplicationOperator(src, dest, matrix)
 end
 
-similar_operator(op::MultiplicationOperator{T,ARRAY,INPLACE}, src, dest) where {T,ARRAY,INPLACE} =
-    MultiplicationOperator{promote_type(T,op_eltype(src,dest))}(src, dest, object(op); inplace=INPLACE)
+similar_operator(op::MultiplicationOperator{S,ARRAY,INPLACE}, src, dest) where {S,ARRAY,INPLACE} =
+    MultiplicationOperator(src, dest, object(op); inplace=INPLACE)
 
 unsafe_wrap_operator(src, dest, op::MultiplicationOperator) =
     similar_operator(op, src, dest)
@@ -322,11 +322,11 @@ end
 FunctionOperator{T}(src, dest, fun) where {T} =
     FunctionOperator{typeof(fun),T}(src, dest, fun)
 
-FunctionOperator(src::Dictionary, dest::Dictionary, fun) =
-    FunctionOperator{op_eltype(src,dest)}(src, dest, fun)
+FunctionOperator(src::Dictionary, dest::Dictionary, fun; T=op_eltype(src,dest)) =
+    FunctionOperator{T}(src, dest, fun)
 
-similar_operator(op::FunctionOperator{F,T}, src, dest) where {F,T} =
-    FunctionOperator{promote_type(T,op_eltype(src,dest))}(src, dest, op.fun)
+similar_operator(op::FunctionOperator{F,S}, src, dest) where {F,S} =
+    FunctionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, op.fun)
 
 unsafe_wrap_operator(src, dest, op::FunctionOperator) =
     similar_operator(op, src, dest)
@@ -353,14 +353,14 @@ string(op::FunctionOperator) = "Function "*string(op.fun)
 
 
 "A linear combination of operators: val1 * op1 + val2 * op2."
-struct OperatorSum{OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S} <: DictionaryOperator{T}
+struct OperatorSum{T,OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,S} <: DictionaryOperator{T}
     op1         ::  OP1
     op2         ::  OP2
     val1        ::  T
     val2        ::  T
     scratch     ::  S
 
-    function OperatorSum{OP1,OP2,T,S}(op1::OP1, op2::OP2, val1::T, val2::T, scratch::S) where {OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S}
+    function OperatorSum{T,OP1,OP2,S}(op1::OP1, op2::OP2, val1::T, val2::T, scratch::S) where {OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S}
         # We don't enforce that source and destination of op1 and op2 are the same, but at least
         # their sizes and coefficient types must match.
         @assert size(src(op1)) == size(src(op2))
@@ -372,11 +372,14 @@ struct OperatorSum{OP1 <: DictionaryOperator,OP2 <: DictionaryOperator,T,S} <: D
     end
 end
 
-function OperatorSum(op1::DictionaryOperator, op2::DictionaryOperator, val1::Number, val2::Number)
-    T = promote_type(eltype(op1), eltype(op2), typeof(val1), typeof(val2))
+function OperatorSum{T}(op1::DictionaryOperator, op2::DictionaryOperator, val1::Number, val2::Number) where {T}
     scratch = zeros(T, dest(op1))
-    OperatorSum{typeof(op1),typeof(op2),T,typeof(scratch)}(op1, op2, T(val1), T(val2), scratch)
+    OperatorSum{T,typeof(op1),typeof(op2),typeof(scratch)}(op1, op2, T(val1), T(val2), scratch)
 end
+
+OperatorSum(op1::DictionaryOperator, op2::DictionaryOperator, val1::Number, val2::Number;
+            T=promote_type(eltype(op1), eltype(op2), typeof(val1), typeof(val2))) =
+    OperatorSum{T}(op1, op2, val1, val2)
 
 src(op::OperatorSum) = src(op.op1)
 
@@ -447,7 +450,7 @@ struct LinearizationOperator{T} <: DictionaryOperator{T}
 end
 
 LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src));
-            T = op_eltype(src, dest)) =
+            T=op_eltype(src, dest)) =
     LinearizationOperator{T}(src, dest)
 
 similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
@@ -468,8 +471,8 @@ end
 DelinearizationOperator(dest::Dictionary) =
     DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest)
 
-DelinearizationOperator(src::Dictionary, dest::Dictionary) =
-    DelinearizationOperator{op_eltype(src,dest)}(src, dest)
+DelinearizationOperator(src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
+    DelinearizationOperator{T}(src, dest)
 
 similar_operator(::DelinearizationOperator, src, dest) =
     DelinearizationOperator(src, dest)
@@ -487,7 +490,7 @@ end
 
 const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 
-AlternatingSignOperator(src) = AlternatingSignOperator{coefficienttype(src)}(src)
+AlternatingSignOperator(src; T=coefficienttype(src)) = AlternatingSignOperator{T}(src)
 AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
 
 strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of length $(size(op,1))")
@@ -495,8 +498,8 @@ strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of lengt
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
 
-CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
-	CoefficientScalingOperator{promote_type(coefficienttype(src),typeof(scalar))}(src, index, scalar)
+CoefficientScalingOperator(src::Dictionary, index::Int, scalar; T=promote_type(coefficienttype(src),typeof(scalar))) =
+	CoefficientScalingOperator{T}(src, index, scalar)
 CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
 	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
 

@@ -28,12 +28,11 @@ struct BlockOperator{T} <: DictionaryOperator{T}
 end
 
 function BlockOperator(operators::AbstractArray{OP,2},
-    op_src = multidict(map(src, operators[1,:])),
-    op_dest = multidict(map(dest, operators[:,1]))) where {OP <: DictionaryOperator}
+            op_src = multidict(map(src, operators[1,:])),
+            op_dest = multidict(map(dest, operators[:,1]));
+            T=op_eltype(op_src, op_dest)) where {OP <: DictionaryOperator}
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
-
-    T = op_eltype(op_src, op_dest)
     BlockOperator{T}(operators, op_src, op_dest)
 end
 
@@ -198,13 +197,12 @@ struct BlockDiagonalOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-function BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest) where {O<:DictionaryOperator}
-  T = promote_type(map(eltype, operators)...)
-  BlockDiagonalOperator{T}(operators, src, dest)
-end
+BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest;
+            T=op_eltype(src,dest)) where {O<:DictionaryOperator} =
+    BlockDiagonalOperator{promote_type(T,map(eltype, operators)...)}(operators, src, dest)
 
-BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:DictionaryOperator} =
-    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
+BlockDiagonalOperator(operators::AbstractArray{O,1}; T=promote_type(map(eltype, operators)...)) where {O<:DictionaryOperator} =
+    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)); T=T)
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators

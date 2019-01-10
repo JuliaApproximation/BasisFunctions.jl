@@ -35,24 +35,28 @@ end
 
 CirculantOperator(src::Dictionary, dest::Dictionary, D::DiagonalOperator; options...) = CirculantOperator(eltype(D), src, dest, D; options...)
 
-function CirculantOperator(::Type{T}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator; real_circulant_tol=sqrt(eps(real(T))), verbose=false, options...) where {T}
-    cpx_src = DiscreteVectorDictionary{eltype(opD)}(length(src(opD)))
-    A = promote_type(eltype(opD),T)
+CirculantOperator(::Type{S}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator;
+            T=promote_type(eltype(opD),op_eltype(op_src,op_dest)), options...) where {S} =
+    CirculantOperator{promote_type(S,T)}(S, op_src, op_dest, opD; options...)
 
-    F = forward_fourier_operator(cpx_src, cpx_src, A; verbose=verbose, options...)
+function CirculantOperator{T}(::Type{S}, op_src::Dictionary, op_dest::Dictionary, opD::DiagonalOperator;
+            real_circulant_tol=sqrt(eps(real(S))), verbose=false, options...) where {S,T}
+    cpx_src = DiscreteVectorDictionary{eltype(opD)}(length(src(opD)))
+
+    F = forward_fourier_operator(cpx_src, cpx_src, T; verbose=verbose, options...)
     iF = inv(F)
     #realify a circulant operator if src and dest are real (one should imply the other).
     if isreal(op_src) && isreal(op_dest)
         imag_norm = norm(imag(fft(diagonal(opD))))
         imag_norm > real_circulant_tol && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
-        r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(T))
+        r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(S))
         r_src = promote_coefficienttype(op_src, r_S)
         r_dest = promote_coefficienttype(op_dest, r_D)
 
         return CirculantOperator{r_A}(r_src, r_dest, iF*opD*F, opD)
 
     end
-    CirculantOperator{A}(op_src, op_dest, iF*opD*F, opD)
+    CirculantOperator{T}(op_src, op_dest, iF*opD*F, opD)
 end
 
 function CirculantOperator(op::DictionaryOperator{T}) where {T}

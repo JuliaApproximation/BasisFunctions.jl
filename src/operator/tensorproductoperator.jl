@@ -19,8 +19,10 @@ element(op::TensorProductOperator, j::Int) = op.operators[j]
 
 iscomposite(op::TensorProductOperator) = true
 
-function TensorProductOperator(operators...)
-    T = promote_type(map(eltype, operators)...)
+TensorProductOperator(operators...; T=promote_type(map(eltype, operators)...)) =
+    TensorProductOperator{T}(operators...)
+
+function TensorProductOperator{T}(operators...) where {T}
     L = length(operators)
     tp_src = tensorproduct(map(src, operators)...)
     tp_dest = tensorproduct(map(dest, operators)...)

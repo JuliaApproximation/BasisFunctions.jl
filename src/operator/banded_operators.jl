@@ -17,8 +17,8 @@ struct HorizontalBandedOperator{ELT} <: DictionaryOperator{ELT}
     end
 end
 
-HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
-    HorizontalBandedOperator{ELT}(src, dest, array, step, offset)
+HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0; T=ELT) where ELT =
+    HorizontalBandedOperator{T}(src, dest, array, step, offset)
 
 function apply!(op::HorizontalBandedOperator, dest::Vector, src::Vector)
     dest[:] .= 0
@@ -52,8 +52,8 @@ struct VerticalBandedOperator{ELT} <: DictionaryOperator{ELT}
     end
 end
 
-VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0) where ELT =
-    VerticalBandedOperator{ELT}(src, dest, array, step, offset)
+VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{ELT}, step::Int=1, offset::Int=0; T=ELT) where ELT =
+    VerticalBandedOperator{T}(src, dest, array, step, offset)
 
 function apply!(op::VerticalBandedOperator, dest::Vector, src::Vector)
     dest[:] .= 0

@@ -5,11 +5,11 @@ struct ZeroOperator{T} <: DictionaryOperator{T}
     dest    ::  Dictionary
 end
 
-ZeroOperator(src::Dictionary, dest::Dictionary = src) =
-    ZeroOperator{op_eltype(src, dest)}(src, dest)
+ZeroOperator(src::Dictionary, dest::Dictionary = src; T=op_eltype(src, dest)) =
+    ZeroOperator{T}(src, dest)
 
-similar_operator(op::ZeroOperator{T}, src, dest) where {T} =
-    ZeroOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
+similar_operator(op::ZeroOperator{S}, src, dest; T=promote_type(S,op_eltype(src,dest))) where {S} =
+    ZeroOperator{T}(src, dest)
 
 unsafe_wrap_operator(src, dest, op::ZeroOperator) = similar_operator(op, src, dest)
 

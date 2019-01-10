@@ -81,11 +81,11 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
 # We support any Julia function:
 (*)(f::Function, dict::Dictionary) = WeightedDict(dict, f)
 
-weightfun_scaling_operator(gb::GridBasis1d, weightfunction) =
-    DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x) for x in grid(gb)])
+weightfun_scaling_operator(gb::GridBasis1d, weightfunction; T=coefficienttype(gb)) =
+    DiagonalOperator(gb, gb, T[weightfunction(x) for x in grid(gb)])
 
-weightfun_scaling_operator(gb::GridBasis, weightfunction) =
-    DiagonalOperator(gb, gb, coefficienttype(gb)[weightfunction(x...) for x in grid(gb)])
+weightfun_scaling_operator(gb::GridBasis, weightfunction; T=coefficienttype(gb)) =
+    DiagonalOperator(gb, gb, T[weightfunction(x...) for x in grid(gb)])
 
 transform_to_grid(src::WeightedDict, dest::GridBasis, grid; options...) =
     weightfun_scaling_operator(dest, weightfunction(src)) * wrap_operator(src, dest, transform_to_grid(superdict(src), dest, grid; options...))
@@ -106,12 +106,12 @@ function derivative_dict(src::WeightedDict, order; options...)
 end
 
 # Assume order = 1...
-function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; options...)
+function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; T=op_eltype(s1,s2), options...)
     @assert order == 1
     @assert s2 == derivative_dict(s1, order)
 
-    I = IdentityOperator(s1, element(s2, 1))
-    D = differentiation_operator(superdict(s1))
+    I = IdentityOperator(s1, element(s2, 1); T=T)
+    D = differentiation_operator(superdict(s1); T=T)
     DW = wrap_operator(s1, element(s2, 2), D)
     block_column_operator([I,DW])
 end

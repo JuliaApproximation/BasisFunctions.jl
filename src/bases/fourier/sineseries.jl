@@ -80,14 +80,14 @@ function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x)
     arg * cos(arg * x)
 end
 
-function extension_operator(s1::SineSeries, s2::SineSeries; options...)
+function extension_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1))
+    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
 end
 
-function restriction_operator(s1::SineSeries, s2::SineSeries; options...)
+function restriction_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2))
+    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
 end
 
 

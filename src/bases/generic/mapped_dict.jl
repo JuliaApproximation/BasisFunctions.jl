@@ -171,17 +171,17 @@ for op in (:derivative_dict, :antiderivative_dict)
         (@assert islinear(mapping(s)); apply_map( $op(superdict(s), order; options...), mapping(s) ))
 end
 
-function differentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; options...)
+function differentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; T=op_eltype(s1,s2), options...)
     @assert islinear(mapping(s1))
-    D = differentiation_operator(superdict(s1), superdict(s2), order; options...)
-    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order))
+    D = differentiation_operator(superdict(s1), superdict(s2), order; T=T, options...)
+    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order); T=T)
     wrap_operator(s1, s2, S*D)
 end
 
-function antidifferentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; options...)
+function antidifferentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; T=op_eltype(s1,s2), options...)
     @assert islinear(mapping(s1))
-    D = antidifferentiation_operator(superdict(s1), superdict(s2), order; options...)
-    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order))
+    D = antidifferentiation_operator(superdict(s1), superdict(s2), order; T=T, options...)
+    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order); T=T)
     wrap_operator(s1, s2, S*D)
 end
 

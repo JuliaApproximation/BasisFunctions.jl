@@ -136,12 +136,12 @@ interpolation_grid(d::LargeSubdict) = interpolation_grid(superdict(d))
 
 function extension_operator(s1::LargeSubdict, s2::Dictionary; options...)
     @assert s2 == superdict(s1)
-    IndexExtensionOperator(s1, s2, superindices(s1))
+    IndexExtensionOperator(s1, s2, superindices(s1); options...)
 end
 
 function restriction_operator(s1::Dictionary, s2::LargeSubdict; options...)
     @assert s1 == superdict(s2)
-    IndexRestrictionOperator(s1, s2, superindices(s2))
+    IndexRestrictionOperator(s1, s2, superindices(s2); options...)
 end
 
 # In general, the derivative set of a subdict can be the whole derivative set

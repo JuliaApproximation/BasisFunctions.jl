@@ -131,9 +131,9 @@ antiderivative_dict(s::MultiDict, order; options...) =
     MultiDict(map(b-> antiderivative_dict(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::MultiDict, s2::MultiDict, order; options...)
+    @eval function $op(s1::MultiDict, s2::MultiDict, order; T=op_eltype(s1,s2), options...)
         if numelements(s1) == numelements(s2)
-            BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+            BlockDiagonalOperator(DictionaryOperator{T}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
         else
             # We have a situation because the sizes of the multidicts don't match.
             # The derivative set may have been a nested multidict that was flattened. This
@@ -143,7 +143,7 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
             # Resolve the situation by looking at the standard derivative sets of each element of s1.
             # This may not be correct if one of the elements has multiple derivative sets, and
             # the user had chosen a non-standard one.
-            ops = DictionaryOperator{coefficienttype(s1)}[$op(el; options...) for el in elements(s1)]
+            ops = DictionaryOperator{T}[$op(el; options...) for el in elements(s1)]
             BlockDiagonalOperator(ops, s1, s2)
         end
     end

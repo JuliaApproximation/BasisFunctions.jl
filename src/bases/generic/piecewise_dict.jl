@@ -108,14 +108,14 @@ end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
 grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) =
-    MultiplicationOperator(dict, gb, evaluation_matrix(dict, grid)) * LinearizationOperator(dict)
+    MultiplicationOperator(dict, gb, evaluation_matrix(dict, grid); options...) * LinearizationOperator(dict)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
+    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; T=op_eltype(s1,s2), options...)
         @assert numelements(s1) == numelements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{T}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2; T=T)
     end
 end
 
@@ -200,5 +200,5 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
     PiecewiseDict(dicts), MultiArray(coefs)
 end
 
-gramoperator(dict::PiecewiseDict; options...) =
-    BlockDiagonalOperator(DictionaryOperator{coefficienttype(dict)}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict)
+gramoperator(dict::PiecewiseDict; T=coefficienttype(dict), options...) =
+    BlockDiagonalOperator(DictionaryOperator{T}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict; T=T)

@@ -249,7 +249,7 @@ function grid_evaluation_operator(dict::FourierBasis, gb::GridBasis, grid;
 end
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
-function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::EquispacedGrid; options...)
+function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::EquispacedGrid; T=op_eltype(fs, dgs), options...)
 	a = leftendpoint(grid)
 	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
@@ -266,18 +266,18 @@ function grid_evaluation_operator(fs::FourierBasis, dgs::GridBasis, grid::Equisp
 			T = domaintype(grid)
 			super_grid = FourierGrid(ntot)
 			super_dgs = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_dgs; options...)
-			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid))
+			E = evaluation_operator(fs, super_dgs; T=T, options...)
+			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid); T=T)
 			R*E
 		else
-			dense_evaluation_operator(fs, dgs; options...)
+			dense_evaluation_operator(fs, dgs; T=T, options...)
 		end
 	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		dense_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, dgs; T=T, options...)
 	else
-		dense_evaluation_operator(fs, dgs; options...)
+		dense_evaluation_operator(fs, dgs; T=T, options...)
 	end
 end
 
@@ -298,7 +298,7 @@ struct FourierIndexExtensionOperator{T} <: DictionaryOperator{T}
 end
 
 FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest);
-			T = op_eltype(src,dest)) =
+			T=op_eltype(src,dest)) =
 	FourierIndexExtensionOperator{T}(src, dest, n1, n2)
 
 string(op::FourierIndexExtensionOperator) = "Fourier series extension from length $(op.n1) to length $(op.n2)"
@@ -351,17 +351,17 @@ struct FourierIndexRestrictionOperator{T} <: DictionaryOperator{T}
 	n2		::	Int
 end
 
-FourierIndexRestrictionOperator(src, dest, n1 = length(src), n2 = length(dest)) =
-	FourierIndexRestrictionOperator{op_eltype(src,dest)}(src, dest, n1, n2)
+FourierIndexRestrictionOperator(src, dest, n1 = length(src), n2 = length(dest); T = op_eltype(src,dest), options...) =
+	FourierIndexRestrictionOperator{T}(src, dest, n1, n2)
 
 string(op::FourierIndexRestrictionOperator) = "Fourier series restriction from length $(op.n1) to length $(op.n2)"
 
 wrap_operator(src, dest, op::FourierIndexRestrictionOperator{T}) where T =
 	FourierIndexRestrictionOperator{T}(src, dest, op.n1, op.n2)
 
-function restriction_operator(b1::FourierBasis, b2::FourierBasis; options...)
+function restriction_operator(b1::FourierBasis, b2::FourierBasis; T=op_eltype(b1,b2), options...)
 	@assert length(b1) >= length(b2)
-	FourierIndexRestrictionOperator(b1, b2)
+	FourierIndexRestrictionOperator(b1, b2; T=T)
 end
 
 
@@ -435,15 +435,16 @@ function pseudodifferential_operator(s1::FourierBasis{T},s2::FourierBasis{T}, sy
 	end
 end
 
-_pseudodifferential_operator(s::FourierBasis{T}, symbol::Function; options...) where {T} = DiagonalOperator(s, [diff_scaling_function(s, idx, symbol) for idx in eachindex(s)])
+_pseudodifferential_operator(s::FourierBasis, symbol::Function; T=coefficienttype(s), options...) =
+	DiagonalOperator(s, [diff_scaling_function(s, idx, symbol) for idx in eachindex(s)]; T=T)
 
 pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 
-function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; options...)
+function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; T=op_eltype(s1,s2), options...)
 	#@assert length(first(methods(symbol)).sig.parameters) = dimension(s1) + 1
 	@assert s1 == s2 # There is currently no support for s1 != s2
 	# Build a vector of the first order differential operators in each spatial direction:
-	Diffs = map(differentiation_operator,elements(s1))
+	Diffs = map(x->differentiation_operator(x; T=T, options...),elements(s1))
 	@assert isdiagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
 	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
 	N = prod(size(s1))
@@ -452,7 +453,7 @@ function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict
 		vec = [diagonal(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
 		diag[k] = symbol(vec)
 	end
-	DiagonalOperator(s1,diag)
+	DiagonalOperator(s1,diag; T=T)
 end
 
 
@@ -461,7 +462,7 @@ end
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
-function evaluation_operatorr(fs::FourierBasis, gb::GridBasis, grid::EquispacedGrid; options...)
+function evaluation_operator(fs::FourierBasis, gb::GridBasis, grid::EquispacedGrid; T=op_eltype(fs,gb), options...)
 	a = leftendpoint(grid)
 	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
@@ -478,18 +479,18 @@ function evaluation_operatorr(fs::FourierBasis, gb::GridBasis, grid::EquispacedG
 			T = domaintype(grid)
 			super_grid = FourierGrid(ntot)
 			super_gb = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_gb; options...)
-			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid))
+			E = evaluation_operator(fs, super_gb; T=T, options...)
+			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid); T=T)
 			R*E
 		else
-			dense_evaluation_operator(fs, gb; options...)
+			dense_evaluation_operator(fs, gb; T=T, options...)
 		end
 	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		dense_evaluation_operator(fs, gb; options...)
+		dense_evaluation_operator(fs, gb; T=T, options...)
 	else
-		dense_evaluation_operator(fs, gb; options...)
+		dense_evaluation_operator(fs, gb; T=T, options...)
 	end
 end
 

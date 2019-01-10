@@ -27,14 +27,14 @@ hasextension(b::OPS) = true
 # Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPS, s2::OPS; options...)
+function extension_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1))
+    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
 end
 
-function restriction_operator(s1::OPS, s2::OPS; options...)
+function restriction_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2))
+    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
 end
 
 

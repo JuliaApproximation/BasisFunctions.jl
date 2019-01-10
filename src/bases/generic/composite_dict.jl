@@ -130,8 +130,8 @@ eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(se
 extension_size(set::CompositeDict) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
-    @eval $op(s1::CompositeDict, s2::CompositeDict; options...) =
-        BlockDiagonalOperator( DictionaryOperator{coefficienttype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
+    @eval $op(s1::CompositeDict, s2::CompositeDict; T=op_eltype(s1,s2), options...) =
+        BlockDiagonalOperator( DictionaryOperator{T}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
 end
 
 # Calling and evaluation
