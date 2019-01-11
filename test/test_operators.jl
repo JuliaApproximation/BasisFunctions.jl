@@ -34,10 +34,10 @@ function test_operators(T)
 end
 
 function test_generic_operators(T)
-    b1 = FourierBasis{T}(3)
-    b2 = ChebyshevBasis{T}(4)
-    b3 = ChebyshevBasis{T}(3)
-    b4 = LegendrePolynomials{T}(3)
+    b1 = Fourier{T}(3)
+    b2 = ChebyshevT{T}(4)
+    b3 = ChebyshevT{T}(3)
+    b4 = Legendre{T}(3)
 
     operators = [
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
@@ -87,7 +87,7 @@ function test_tensor_operators(T)
 end
 
 function test_diagonal_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(11))
         operators = (BF.CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
             BF.AlternatingSignOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
@@ -134,7 +134,7 @@ function test_diagonal_operators(T)
 end
 
 function test_multidiagonal_operators(T)
-    MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
+    MSet = Fourier{T}(10)⊕ChebyshevT{T}(11)
     operators = (BF.CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
         BF.AlternatingSignOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
@@ -182,7 +182,7 @@ function test_sparse_operator(ELT)
 end
 function test_banded_operator(ELT)
     a = [ELT(1),ELT(2),ELT(3)]
-    H = HorizontalBandedOperator(FourierBasis{ELT}(6,0,1), FourierBasis{ELT}(3,0,1),a,3,2)
+    H = HorizontalBandedOperator(Fourier{ELT}(6,0,1), Fourier{ELT}(3,0,1),a,3,2)
     test_generic_operator_interface(H, ELT)
     h = matrix(H)
     e = zeros(ELT,6,1)
@@ -195,7 +195,7 @@ function test_banded_operator(ELT)
         @test e ≈ h[i,:]
     end
 
-    V = VerticalBandedOperator(FourierBasis{ELT}(3,0,1), FourierBasis{ELT}(6,0,1),a,3,2)
+    V = VerticalBandedOperator(Fourier{ELT}(3,0,1), Fourier{ELT}(6,0,1),a,3,2)
     test_generic_operator_interface(V, ELT)
     v = matrix(V)
     e = zeros(ELT,6,1)
@@ -246,18 +246,18 @@ function test_circulant_operator(ELT)
 end
 
 function test_identity_operator(T)
-    b = FourierBasis{T}(10)
+    b = Fourier{T}(10)
     I = IdentityOperator(b)
     @test I isa IdentityOperator
     @test eltype(I) == Complex{T}
     @test src(I) == b
-    I = IdentityOperator(FourierBasis{T}(10), ChebyshevBasis{T}(10))
-    @test src(I) == FourierBasis{T}(10)
-    @test dest(I) == ChebyshevBasis{T}(10)
+    I = IdentityOperator(Fourier{T}(10), ChebyshevT{T}(10))
+    @test src(I) == Fourier{T}(10)
+    @test dest(I) == ChebyshevT{T}(10)
 end
 
 function test_invertible_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(10))
         operators = (MultiplicationOperator(SRC, SRC, rand(coefficienttype(SRC),length(SRC),length(SRC))),
             CirculantOperator(rand(T, 10)),
             CirculantOperator(rand(complex(T), 10)))
@@ -282,7 +282,7 @@ end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(11))
         operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), rand(coefficienttype(SRC),length(SRC)+2,length(SRC))),
             BF.ZeroOperator(SRC))
         for Op in operators

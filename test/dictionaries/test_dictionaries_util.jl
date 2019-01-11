@@ -1,7 +1,7 @@
 
 # Laguerre and Hermite fail due to linear algebra problems in BigFloat
-supports_approximation(s::LaguerrePolynomials{BigFloat}) = false
-supports_approximation(s::HermitePolynomials{BigFloat}) = false
+supports_approximation(s::Laguerre{BigFloat}) = false
+supports_approximation(s::Hermite{BigFloat}) = false
 # It is difficult to do approximation in subsets and operated sets generically
 supports_approximation(s::Subdictionary) = false
 supports_approximation(s::OperatedDict) = false
@@ -12,14 +12,14 @@ supports_approximation(s::TensorProductDict) =
 supports_interpolation(s::SingletonSubdict) = false
 
 # Make a simple periodic function for Fourier and other periodic sets
-suitable_function(set::FourierBasis) =  x -> 1/(10+cos(2*pi*x))
+suitable_function(set::Fourier) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and even symmetric
 suitable_function(set::CosineSeries) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and odd symmetric
 suitable_function(set::SineSeries) =  x -> x^3*(1-x)^3
 # We use a function that is smooth and decays towards infinity
-suitable_function(set::LaguerrePolynomials) = x -> 1/(1000+(2x)^2)
-suitable_function(set::HermitePolynomials) = x -> 1/(1000+(2x)^2)
+suitable_function(set::Laguerre) = x -> 1/(1000+(2x)^2)
+suitable_function(set::Hermite) = x -> 1/(1000+(2x)^2)
 suitable_function(set::OperatedDict) = suitable_function(src(set))
 # Make a tensor product of suitable functions
 function suitable_function(s::TensorProductDict)

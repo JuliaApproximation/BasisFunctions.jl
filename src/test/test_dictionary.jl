@@ -93,7 +93,7 @@ function test_generic_dict_evaluation(basis)
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ eval_element(basis, idx, x)
 
-    if ! (typeof(basis) <: HermitePolynomials)
+    if ! (typeof(basis) <: Hermite)
         x_outside = point_outside_domain(basis)
         @test bf(x_outside) == 0
     end

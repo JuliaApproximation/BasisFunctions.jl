@@ -78,16 +78,6 @@ ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
 native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
 
-"""
-A recursive native index of a `TensorProductDict` is a tuple consisting of
-native indices of each of the elements of the dictionary.
-"""
-recursive_native_index(d::TensorProductDict, idxn::ProductIndex) =
-    map(native_index, elements(d), indextuple(idxn))
-
-recursive_native_index(d::TensorProductDict, idx::LinearIndex) =
-    recursive_native_index(d, native_index(d, idx))
-
 # We have to amend the boundscheck ecosystem to catch some cases:
 # - This line will catch indexing with tuples of integers, and we assume
 #   the user wanted to use a CartesianIndex
@@ -245,28 +235,6 @@ function _index_set_total_degree(s, n)
         I_rec = _index_set_total_degree(s, n-1)
         for idx in I_rec
             for m in 0:s-sum(abs.(idx))
-                push!(I, [idx...; m])
-            end
-        end
-        I
-    end
-end
-
-"Return a list of all indices in an n-dimensional hyperbolic cross."
-function index_set_hyperbolic_cross(s, n, α = 1)
-    I = _index_set_hyperbolic_cross(s, n, α)
-    [tuple((1+i)...) for i in I]
-end
-
-function _index_set_hyperbolic_cross(s, n, α = 1)
-    if n == 1
-        smax = floor(Int, s^(1/α))-1
-        I = [[i] for i in 0:smax]
-    else
-        I = Array{Array{Int,1}}(0)
-        I_rec = _index_set_total_degree(s, n-1)
-        for idx in I_rec
-            for m in 0:floor(Int,s^(1/α)/prod(1+abs.(idx)))-1
                 push!(I, [idx...; m])
             end
         end

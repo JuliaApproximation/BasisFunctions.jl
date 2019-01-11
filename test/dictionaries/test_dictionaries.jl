@@ -14,8 +14,8 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
-test_dictionaries = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
-        LaguerrePolynomials, HermitePolynomials, JacobiPolynomials, CosineSeries, SineSeries]
+test_dictionaries = [Fourier, ChebyshevT, ChebyshevU, Legendre,
+        Laguerre, Hermite, Jacobi, CosineSeries, SineSeries]
 
 for T in domaintypes
     delimit("1D dictionaries ($(T))")
@@ -29,7 +29,7 @@ for T in domaintypes
         end
     end
     # also try a Fourier series with an even length
-    test_generic_dict_interface(FourierBasis{T}(8))
+    test_generic_dict_interface(Fourier{T}(8))
 
     delimit("derived dictionaries ($(T))")
     test_derived_dicts(T)
@@ -42,12 +42,12 @@ for T in domaintypes
     delimit("Tensor product set interfaces ($(T))")
     # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in
-                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
-                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
-                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
-                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
-                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
+                ( Fourier(11) ⊗ Fourier(21), # Two odd-length Fourier series
+                  Fourier(10) ⊗ ChebyshevT(12), # combination of Fourier and Chebyshev
+                  Fourier(11) ⊗ Fourier(10), # Odd and even-length Fourier series
+                  ChebyshevT(11) ⊗ ChebyshevT(20), # Two Chebyshev sets
+                  Fourier(11, 2, 3) ⊗ Fourier(11, 4, 5), # Two mapped Fourier series
+                  ChebyshevT(9, 2, 3) ⊗ ChebyshevT(7, 4, 5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
     end
 

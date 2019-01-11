@@ -6,46 +6,44 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevBasis{T} <: OPS{T,T}
+struct ChebyshevT{T} <: OPS{T,T}
     n			::	Int
 end
 
-ChebyshevT = ChebyshevBasis
+name(b::ChebyshevT) = "Chebyshev series (first kind)"
 
-name(b::ChebyshevBasis) = "Chebyshev series (first kind)"
-
-ChebyshevBasis(n::Int) = ChebyshevBasis{Float64}(n)
+ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
 # Convenience constructor: map the Chebyshev basis to the interval [a,b]
-ChebyshevBasis{T}(n, a, b) where {T} = rescale(ChebyshevBasis{T}(n), a, b)
+ChebyshevT{T}(n, a, b) where {T} = rescale(ChebyshevT{T}(n), a, b)
 
-function ChebyshevBasis(n::Int, a::Number, b::Number)
+function ChebyshevT(n::Int, a::Number, b::Number)
     T = float(promote_type(typeof(a),typeof(b)))
-    ChebyshevBasis{T}(n, a, b)
+    ChebyshevT{T}(n, a, b)
 end
 
-instantiate(::Type{ChebyshevBasis}, n, ::Type{T}) where {T} = ChebyshevBasis{T}(n)
+instantiate(::Type{ChebyshevT}, n, ::Type{T}) where {T} = ChebyshevT{T}(n)
 
-similar(b::ChebyshevBasis, ::Type{T}, n::Int) where {T} = ChebyshevBasis{T}(n)
-
-
-hasinterpolationgrid(b::ChebyshevBasis) = true
-hasderivative(b::ChebyshevBasis) = true
-hasantiderivative(b::ChebyshevBasis) = true
-
-hasgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevNodes) = length(b) == length(gb)
-hasgrid_transform(b::ChebyshevBasis, gb, ::ChebyshevExtremae) = length(b) == length(gb)
-hasgrid_transform(b::ChebyshevBasis, gb, ::AbstractGrid) = false
+similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
 
-first_moment(b::ChebyshevBasis{T}) where {T} = convert(T, pi)
+hasinterpolationgrid(b::ChebyshevT) = true
+hasderivative(b::ChebyshevT) = true
+hasantiderivative(b::ChebyshevT) = true
 
-interpolation_grid(b::ChebyshevBasis{T}) where {T} = ChebyshevNodes{T}(length(b))
-secondgrid(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
-transformgrid_extremae(b::ChebyshevBasis{T}) where {T} = ChebyshevExtremae{T}(length(b))
+hasgrid_transform(b::ChebyshevT, gb, ::ChebyshevNodes) = length(b) == length(gb)
+hasgrid_transform(b::ChebyshevT, gb, ::ChebyshevExtremae) = length(b) == length(gb)
+hasgrid_transform(b::ChebyshevT, gb, ::AbstractGrid) = false
+
+
+first_moment(b::ChebyshevT{T}) where {T} = convert(T, pi)
+
+interpolation_grid(b::ChebyshevT{T}) where {T} = ChebyshevNodes{T}(length(b))
+secondgrid(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
+transformgrid_extremae(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
 # extends the default definition at transform.jl
-function transform_dict(s::ChebyshevBasis{T}; chebyshevpoints=:nodes, options...) where {T}
+function transform_dict(s::ChebyshevT{T}; chebyshevpoints=:nodes, options...) where {T}
 	if chebyshevpoints == :nodes
     	GridBasis(s)
 	else
@@ -55,34 +53,34 @@ function transform_dict(s::ChebyshevBasis{T}; chebyshevpoints=:nodes, options...
 end
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevBasis{T}) where {T} = -one(T)/2
-jacobi_β(b::ChebyshevBasis{T}) where {T} = -one(T)/2
+jacobi_α(b::ChebyshevT{T}) where {T} = -one(T)/2
+jacobi_β(b::ChebyshevT{T}) where {T} = -one(T)/2
 
 
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevBasis{T}, n::Int) where {T} = n==0 ? one(T) : 2one(T)
+rec_An(b::ChebyshevT{T}, n::Int) where {T} = n==0 ? one(T) : 2one(T)
 
-rec_Bn(b::ChebyshevBasis{T}, n::Int) where {T} = zero(T)
+rec_Bn(b::ChebyshevT{T}, n::Int) where {T} = zero(T)
 
-rec_Cn(b::ChebyshevBasis{T}, n::Int) where {T} = one(T)
+rec_Cn(b::ChebyshevT{T}, n::Int) where {T} = one(T)
 
-support(b::ChebyshevBasis{T}) where {T} = ChebyshevInterval{T}()
+support(b::ChebyshevT{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype
-function unsafe_eval_element(b::ChebyshevBasis, idx::PolynomialDegree, x::Real)
+function unsafe_eval_element(b::ChebyshevT, idx::PolynomialDegree, x::Real)
     abs(x) <= 1 ? cos(degree(idx)*acos(x)) : recurrence_eval(b, idx, x)
 end
 
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term
 # recurence relation.
-# unsafe_eval_element{T <: Real}(b::ChebyshevBasis, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
+# unsafe_eval_element{T <: Real}(b::ChebyshevT, idx::Int, x::T) = real(cos((idx-1)*acos(x+0im)))
 
-function unsafe_eval_element_derivative(b::ChebyshevBasis, idx::PolynomialDegree, x)
+function unsafe_eval_element_derivative(b::ChebyshevT, idx::PolynomialDegree, x)
     T = codomaintype(b)
     d = degree(idx)
     if d == 0
@@ -92,7 +90,7 @@ function unsafe_eval_element_derivative(b::ChebyshevBasis, idx::PolynomialDegree
     end
 end
 
-function unsafe_moment(b::ChebyshevBasis{T}, idx::PolynomialDegree) where {T}
+function unsafe_moment(b::ChebyshevT{T}, idx::PolynomialDegree) where {T}
     d = degree(idx)
     if d == 0
         T(2)
@@ -206,21 +204,21 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int;
+differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
 			T = op_eltype(src, dest), options...) =
     ChebyshevDifferentiation{T}(src, dest, order)
 
-antidifferentiation_operator(src::ChebyshevBasis, dest::ChebyshevBasis, order::Int;
+antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
 			T = op_eltype(src, dest), options...) =
     ChebyshevAntidifferentiation{T}(src, dest, order)
 
 
 ## Inner products
 
-hasmeasure(dict::ChebyshevBasis) = true
-measure(dict::ChebyshevBasis{T}) where T = ChebyshevMeasure{T}()
+hasmeasure(dict::ChebyshevT) = true
+measure(dict::ChebyshevT{T}) where T = ChebyshevMeasure{T}()
 
-innerproduct_native(b1::ChebyshevBasis, i::PolynomialDegree, b2::ChebyshevBasis, j::PolynomialDegree, m::ChebyshevTMeasure;
+innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTMeasure;
 			T = coefficienttype(b1), options...) =
 	innerproduct_chebyshev_full(i, j, T)
 
@@ -236,7 +234,7 @@ function innerproduct_chebyshev_full(i, j, T)
 	end
 end
 
-function gramoperator(dict::ChebyshevBasis; T = coefficienttype(dict), options...)
+function gramoperator(dict::ChebyshevT; T = coefficienttype(dict), options...)
 	diag = zeros(T, length(dict))
 	fill!(diag, convert(T, pi)/2)
 	diag[1] = convert(T,pi)
@@ -246,28 +244,28 @@ end
 
 ## Extensionandrestriction
 
-function extension_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_eltype(s1,s2), options...)
+function extension_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
     IndexExtensionOperator{T}(s1, s2, 1:length(s1))
 end
 
-function restriction_operator(s1::ChebyshevBasis, s2::ChebyshevBasis; T = op_eltype(s1,s2), options...)
+function restriction_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
     IndexRestrictionOperator{T}(s1, s2, 1:length(s2))
 end
 
 
 ###################################################################################
-# Methods to transform from ChebyshevBasis to ChebyshevNodes and ChebyshevExtremae
+# Methods to transform from ChebyshevT to ChebyshevNodes and ChebyshevExtremae
 ###################################################################################
 
-grid_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevNodes; options...) =
+grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
 
-grid_evaluation_operator(dict::ChebyshevBasis, gb::GridBasis, grid::ChebyshevExtremae; options...) =
+grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
 
-function chebyshev_transform_nodes(dict::ChebyshevBasis, T; options...)
+function chebyshev_transform_nodes(dict::ChebyshevT, T; options...)
 	grid = interpolation_grid(dict)
 	n = length(dict)
 	# We compose the inverse DCT with a diagonal scaling
@@ -281,7 +279,7 @@ function chebyshev_transform_nodes(dict::ChebyshevBasis, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
+function chebyshev_transform_extremae(dict::ChebyshevT, T; options...)
 	grid = transformgrid_extremae(dict)
 	F = inverse_chebyshevI_operator(dict, GridBasis{T}(grid), T; options...)
 	d = zeros(T, length(dict))
@@ -291,31 +289,31 @@ function chebyshev_transform_extremae(dict::ChebyshevBasis, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-function transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevNodes;
+function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevNodes;
 			T = op_eltype(src, dest), options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_nodes(src, T; options...)
 end
 
-function transform_to_grid(src::ChebyshevBasis, dest::GridBasis, grid::ChebyshevExtremae;
+function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevExtremae;
 			T = op_eltype(src, dest), options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_extremae(src, T; options...)
 end
 
-transform_from_grid(src::GridBasis, dest::ChebyshevBasis, grid; options...) =
+transform_from_grid(src::GridBasis, dest::ChebyshevT, grid; options...) =
 	inv(transform_to_grid(dest, src, grid; options...))
 
 
 
 
 
-iscompatible(src1::ChebyshevBasis, src2::ChebyshevBasis) = true
+iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 
-function (*)(src1::ChebyshevBasis, src2::ChebyshevBasis, coef_src1, coef_src2)
+function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     @assert domaintype(src1) == domaintype(src2)
     T = promote_type(eltype(coef_src1), eltype(coef_src2))
-    dest = ChebyshevBasis{T}(length(src1)+length(src2))
+    dest = ChebyshevT{T}(length(src1)+length(src2))
     coef_dest = zeros(dest)
     for i = 1:length(src1)
         for j = 1:length(src2)

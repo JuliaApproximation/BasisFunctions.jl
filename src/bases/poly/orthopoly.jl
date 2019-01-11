@@ -326,7 +326,7 @@ function sorted_gauss_rule(b::OPS)
 end
 
 function gaussjacobi(n::Int,α::T,β::T) where {T<:BigFloat}
-    x, w = sorted_gauss_rule(JacobiPolynomials(n,α,β))
+    x, w = sorted_gauss_rule(Jacobi(n,α,β))
     @assert norm(imag(x)) < eps(T)
     @assert norm(imag(w)) < eps(T)
     real(x), real(w)

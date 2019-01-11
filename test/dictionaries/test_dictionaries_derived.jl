@@ -1,7 +1,7 @@
 
 function test_derived_dicts(T)
-    b1 = FourierBasis{T}(11)
-    b2 = ChebyshevBasis{T}(12)
+    b1 = Fourier{T}(11)
+    b2 = ChebyshevT{T}(12)
 
     @testset "$(rpad("Generic derived dictionary",80))" begin
         test_generic_dict_interface(BasisFunctions.ConcreteDerivedDict(b2))
@@ -9,13 +9,13 @@ function test_derived_dicts(T)
 
     @testset "$(rpad("Complexified dictionary",80))" begin
         # Something is wrong with BigFloat, the idct isn't right. Consult with Daan.
-        b3 = ChebyshevBasis{Float64}(12)
+        b3 = ChebyshevT{Float64}(12)
         # First, check that a complexified dict is made
         b3c = complex(b3)
         @test b3c isa BasisFunctions.ComplexifiedDict
         @test coefficienttype(b3c) == Complex{Float64}
         # and check that it doesn't create a nested ComplexifiedDict
-        @test complex(b3c) isa BasisFunctions.ComplexifiedDict{<:ChebyshevBasis}
+        @test complex(b3c) isa BasisFunctions.ComplexifiedDict{<:ChebyshevT}
         test_generic_dict_interface(b3c)
     end
     @testset "$(rpad("Linear mapped dictionaries",80))" begin

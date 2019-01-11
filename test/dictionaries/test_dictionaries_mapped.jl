@@ -1,6 +1,6 @@
 
 function test_mapped_dicts()
-    b = FourierBasis(20)
+    b = Fourier(20)
     x1 = 1.0+im
     x2 = 2.0+3im
     m1 = interval_map(0.0, 1.0, x1, x2)
@@ -18,7 +18,7 @@ function test_mapped_dicts()
 
     d = circle()
     m = parameterization(d)
-    b = FourierBasis(20)
+    b = Fourier(20)
     c = mapped_dict(b, m)
     f1(x,y) = exp(x+im*y)
     u = approximate(c, f1)

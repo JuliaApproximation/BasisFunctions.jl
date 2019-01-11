@@ -3,9 +3,9 @@
 #####
 
 function test_tensor_sets(T)
-    a = FourierBasis(12)
-    b = FourierBasis(13)
-    c = FourierBasis(11)
+    a = Fourier(12)
+    b = Fourier(13)
+    c = Fourier(11)
     d = TensorProductDict(a,b,c)
 
     bf = d[3,4,5]

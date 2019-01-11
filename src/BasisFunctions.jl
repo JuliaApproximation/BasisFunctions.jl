@@ -69,7 +69,7 @@ export value
 
 # from util/domain_extensions.jl
 export interval, circle, sphere, disk, ball, rectangle, cube, simplex
-export Domain1d, Domain2d, Domain3d, Domain4d
+# export Domain1d, Domain2d, Domain3d, Domain4d does exist in DomainSets...
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -251,7 +251,7 @@ export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
 
 # from bases/fourier/fourier.jl
-export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
+export Fourier,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
@@ -262,7 +262,7 @@ export CosineSeries, SineSeries
 
 
 # from bases/poly/chebyshev.jl
-export ChebyshevBasis, ChebyshevT, ChebyshevU,
+export ChebyshevT, ChebyshevU,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
@@ -276,7 +276,7 @@ export MultiArray
 export float_type, dimension
 
 # from bases/poly/orthopoly.jl and friends
-export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
+export Legendre, Jacobi, Laguerre, Hermite
 export Monomials, RationalBasis, GenericOPS
 export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
 export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment

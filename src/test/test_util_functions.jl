@@ -60,8 +60,8 @@ end
 # a point outside the domain.
 point_outside_domain(basis::Dictionary) = point_in_domain(basis, convert(float_type(domaintype(basis)), 1.1))
 
-point_outside_domain(basis::LaguerrePolynomials) = -one(domaintype(basis))
-point_outside_domain(basis::HermitePolynomials) = one(domaintype(basis))+im
+point_outside_domain(basis::Laguerre) = -one(domaintype(basis))
+point_outside_domain(basis::Hermite) = one(domaintype(basis))+im
 
 function random_point_in_domain(basis::Dictionary)
     T = float_type(domaintype(basis))
