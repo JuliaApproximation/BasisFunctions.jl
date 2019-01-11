@@ -1,68 +1,4 @@
 
-
-"""
-A WrappedOperator has a source and destination, as well as an embedded operator with its own
-source and destination. The coefficients of the source of the WrappedOperator are passed on
-unaltered as coefficients of the source of the embedded operator. The resulting coefficients
-of the embedded destination are returned as coefficients of the wrapping destination.
-
-The purpose of this operator is to make sure that source and destinations sets of an
-operator are correct, for example if a derived set returns an operator of the embedded set.
-This operator can be wrapped to make sure it has the right source and destination sets, i.e.
-its source and destination would correspond to the derived set, and not to the embedded set.
-"""
-struct WrappedOperator{OP,T} <: DerivedOperator{T}
-    src     ::  Dictionary
-    dest    ::  Dictionary
-    op      ::  OP
-
-    function WrappedOperator{OP,T}(src, dest, op) where {OP,T}
-        @assert size(op,1) == length(dest)
-        @assert size(op,2) == length(src)
-        # Make sure that the wrapped operator has a more general element type
-        # than the combination of src and dest
-        @assert promote_type(T,op_eltype(src,dest)) == T
-        new(src, dest, op)
-    end
-end
-
-src(op::WrappedOperator) = op.src
-dest(op::WrappedOperator) = op.dest
-
-WrappedOperator{T}(src::Dictionary, dest::Dictionary, op) where {T} =
-    WrappedOperator{typeof(op),T}(src,dest, op)
-
-WrappedOperator(src::Dictionary, dest::Dictionary, op) =
-    WrappedOperator{eltype(op)}(src, dest, op)
-
-superoperator(op::WrappedOperator) = op.op
-
-function similar_operator(op::WrappedOperator, op_src, op_dest)
-    subop = superoperator(op)
-    WrappedOperator(op_src, op_dest, subop)
-end
-
-
-## function stencil(op::WrappedOperator, S)
-##     if haskey(S,op)
-##         return op
-##     end
-##     A = Any[]
-##     push!(A,"W(")
-##     s = stencil(op.op)
-##     if isa(s,AbstractOperator)
-##         push!(A,s)
-##     else
-##         for i=1:length(s)
-##             push!(A,s[i])
-##         end
-##         A = recurse_stencil(op.op,A,S)
-##     end
-##     push!(A,")")
-##     A
-## end
-
-
 """
 The function wrap_operator returns an operator with the given source and destination,
 and with the action of the given operator. Depending on the operator, the result is
@@ -75,26 +11,6 @@ function wrap_operator(w_src, w_dest, op)
     @assert promote_type(eltype(op),op_eltype(w_src,w_dest)) == eltype(op)
     unsafe_wrap_operator(w_src, w_dest, op)
 end
-
-# No need to wrap a wrapped operator
-unsafe_wrap_operator(src, dest, op::WrappedOperator) = wrap_operator(src, dest, superoperator(op))
-
-# default fallback routine
-function unsafe_wrap_operator(w_src, w_dest, op::DictionaryOperator)
-    if (w_src == src(op)) && (w_dest == dest(op))
-        op
-    else
-        WrappedOperator(w_src, w_dest, op)
-    end
-end
-
-
-inv(op::WrappedOperator) = wrap_operator(dest(op), src(op), inv(superoperator(op)))
-
-adjoint(op::WrappedOperator) = wrap_operator(dest(op), src(op), adjoint(superoperator(op)))
-
-simplify(op::WrappedOperator) = superoperator(op)
-
 
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.

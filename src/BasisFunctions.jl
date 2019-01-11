@@ -69,7 +69,7 @@ export value
 
 # from util/domain_extensions.jl
 export interval, circle, sphere, disk, ball, rectangle, cube, simplex
-# export Domain1d, Domain2d, Domain3d, Domain4d does exist in DomainSets...
+export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition
@@ -169,7 +169,7 @@ export CompositeOperator, compose
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         MatrixOperator, FunctionOperator,
-        MultiplicationOperator, WrappedOperator,
+        MultiplicationOperator,
         IndexRestrictionOperator, IndexExtensionOperator
 # from operator/solvers.jl
 export QR_solver, SVD_solver, operator
