@@ -37,7 +37,7 @@ import Base: show, string
 
 
 ## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!
 
 
 ## Imports from DomainSets
@@ -105,8 +105,6 @@ export innerproduct
 # from spaces/spaces.jl
 export GenericFunctionSpace
 
-# from operators/banded_operators.jl
-export HorizontalBandedOperator, VerticalBandedOperator
 
 export SparseOperator
 
@@ -170,7 +168,8 @@ export CompositeOperator, compose
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         MatrixOperator, FunctionOperator,
         MultiplicationOperator,
-        IndexRestrictionOperator, IndexExtensionOperator
+        IndexRestrictionOperator, IndexExtensionOperator,
+        HorizontalBandedOperator, VerticalBandedOperator
 # from operator/solvers.jl
 export QR_solver, SVD_solver, operator
 # from operator/circulant_operator.jl
@@ -329,7 +328,6 @@ include("bases/generic/mapped_dict.jl")
 
 include("operator/arrayoperator.jl")
 include("operator/basic_operators.jl")
-include("operator/banded_operators.jl")
 include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")

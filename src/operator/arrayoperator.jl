@@ -33,6 +33,41 @@ diagonal(op::ArrayOperator) = diag(op.A)
 
 matrix(op::ArrayOperator) = copy(op.A)
 
+"""
+A banded operator of which every row contains equal elements.
+
+The top row starts at index offset, the second row at step+offset.
+"""
+struct HorizontalBandedOperator{T} <: ArrayOperator{T}
+    A       ::  HorizontalBandedMatrix{T}
+    src     ::  Dictionary
+    dest    ::  Dictionary
+
+end
+
+HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{S}, step::Int=1, offset::Int=0; T=promote_type(S,op_eltype(src,dest))) where S =
+    HorizontalBandedOperator{T}(HorizontalBandedMatrix(length(dest), length(src), T.(array), step, offset), src, dest)
+
+ArrayOperator(A::HorizontalBandedMatrix{T}, src::Dictionary, dest::Dictionary) where T =
+    HorizontalBandedMatrix{T}(A, src, dest)
+
+
+"""
+A banded operator of which every column contains equal elements.
+
+The top column starts at index offset, the second column at step+offset.
+"""
+struct VerticalBandedOperator{T} <: ArrayOperator{T}
+    A       ::  VerticalBandedMatrix{T}
+    src     ::  Dictionary
+    dest    ::  Dictionary
+end
+
+VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{S}, step::Int=1, offset::Int=0; T=promote_type(S,op_eltype(src,dest))) where S =
+    VerticalBandedOperator{T}(VerticalBandedMatrix(length(dest), length(src), T.(array), step, offset), src, dest)
+
+ArrayOperator(A::VerticalBandedOperator{T}, src::Dictionary, dest::Dictionary) where T =
+    VerticalBandedOperator{T}(A, src, dest)
 
 struct DiagonalOperator{T,D} <: ArrayOperator{T}
     src     ::  Dictionary
