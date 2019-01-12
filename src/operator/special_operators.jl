@@ -11,109 +11,109 @@ function wrap_operator(w_src, w_dest, op)
     @assert promote_type(eltype(op),op_eltype(w_src,w_dest)) == eltype(op)
     unsafe_wrap_operator(w_src, w_dest, op)
 end
-
-"""
-An IndexRestrictionOperator selects a subset of coefficients based on their indices.
-"""
-struct IndexRestrictionOperator{T,I} <: DictionaryOperator{T}
-    src         ::  Dictionary
-    dest        ::  Dictionary
-    subindices  ::  I
-
-    function IndexRestrictionOperator{T,I}(src, dest, subindices) where {T,I}
-        # Verify the lenght of subindices, but only if its length is defined
-        if IteratorSize(subindices) != Base.SizeUnknown()
-            @assert length(dest) == length(subindices)
-        end
-        @assert length(src) >= length(dest)
-        new(src, dest, subindices)
-    end
-end
-
-IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
-    IndexRestrictionOperator{T,typeof(subindices)}(src, dest, subindices)
-
-IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
-    IndexRestrictionOperator{T}(src, dest, subindices)
-
-subindices(op::IndexRestrictionOperator) = op.subindices
-
-similar_operator(op::IndexRestrictionOperator{S}, src, dest) where {S} =
-    IndexRestrictionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
-
-unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
-
-isdiagonal(::IndexRestrictionOperator) = true
-
-apply!(op::IndexRestrictionOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, subindices(op))
-
-function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
-    for (i,j) in enumerate(subindices)
-        coef_dest[i] = coef_src[j]
-    end
-    coef_dest
-end
-
-function string(op::IndexRestrictionOperator)
-    sub = op.subindices
-    if sub isa Vector
-        # If there are many indices being selected, then the printed operator
-        # takes up many many lines. The first six indices should be fine for the
-        # purposes of getting the jist of the operator
-        if length(op.subindices) < 6
-            return "Selecting coefficients "*string(op.subindices)
-        else
-            return "Selecting coefficients "*string(op.subindices[1:6])*"..."
-        end
-    else
-        return "Selecting coefficients "*string(op.subindices)
-    end
-end
-
-"""
-An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
-"""
-struct IndexExtensionOperator{T,I} <: DictionaryOperator{T}
-    src         ::  Dictionary
-    dest        ::  Dictionary
-    subindices  ::  I
-
-    function IndexExtensionOperator{T,I}(src, dest, subindices) where {T,I}
-        @assert length(src) == length(subindices)
-        @assert length(dest) >= length(src)
-        new(src, dest, subindices)
-    end
-end
-
-IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
-    IndexExtensionOperator{T,typeof(subindices)}(src, dest, subindices)
-
-IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
-    IndexExtensionOperator{T}(src, dest, subindices)
-
-subindices(op::IndexExtensionOperator) = op.subindices
-
-similar_operator(op::IndexExtensionOperator{S}, src, dest) where {S} =
-    IndexExtensionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
-
-unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
-
-isdiagonal(::IndexExtensionOperator) = true
-
-function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
-    fill!(coef_dest, zero(eltype(op)))
-    for (i,j) in enumerate(subindices(op))
-        coef_dest[j] = coef_src[i]
-    end
-    coef_dest
-end
-
-adjoint(op::IndexRestrictionOperator{T}) where {T} =
-    IndexExtensionOperator{T}(dest(op), src(op), subindices(op))
-adjoint(op::IndexExtensionOperator{T}) where {T} =
-    IndexRestrictionOperator{T}(dest(op), src(op), subindices(op))
-
-string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
+#
+# """
+# An IndexRestrictionOperator selects a subset of coefficients based on their indices.
+# """
+# struct IndexRestrictionOperator{T,I} <: DictionaryOperator{T}
+#     src         ::  Dictionary
+#     dest        ::  Dictionary
+#     subindices  ::  I
+#
+#     function IndexRestrictionOperator{T,I}(src, dest, subindices) where {T,I}
+#         # Verify the lenght of subindices, but only if its length is defined
+#         if IteratorSize(subindices) != Base.SizeUnknown()
+#             @assert length(dest) == length(subindices)
+#         end
+#         @assert length(src) >= length(dest)
+#         new(src, dest, subindices)
+#     end
+# end
+#
+# IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
+#     IndexRestrictionOperator{T,typeof(subindices)}(src, dest, subindices)
+#
+# IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
+#     IndexRestrictionOperator{T}(src, dest, subindices)
+#
+# subindices(op::IndexRestrictionOperator) = op.subindices
+#
+# similar_operator(op::IndexRestrictionOperator{S}, src, dest) where {S} =
+#     IndexRestrictionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
+#
+# unsafe_wrap_operator(src, dest, op::IndexRestrictionOperator) = similar_operator(op, src, dest)
+#
+# isdiagonal(::IndexRestrictionOperator) = true
+#
+# apply!(op::IndexRestrictionOperator, coef_dest, coef_src) = apply!(op, coef_dest, coef_src, subindices(op))
+#
+# function apply!(op::IndexRestrictionOperator, coef_dest, coef_src, subindices)
+#     for (i,j) in enumerate(subindices)
+#         coef_dest[i] = coef_src[j]
+#     end
+#     coef_dest
+# end
+#
+# function string(op::IndexRestrictionOperator)
+#     sub = op.subindices
+#     if sub isa Vector
+#         # If there are many indices being selected, then the printed operator
+#         # takes up many many lines. The first six indices should be fine for the
+#         # purposes of getting the jist of the operator
+#         if length(op.subindices) < 6
+#             return "Selecting coefficients "*string(op.subindices)
+#         else
+#             return "Selecting coefficients "*string(op.subindices[1:6])*"..."
+#         end
+#     else
+#         return "Selecting coefficients "*string(op.subindices)
+#     end
+# end
+#
+# """
+# An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
+# """
+# struct IndexExtensionOperator{T,I} <: DictionaryOperator{T}
+#     src         ::  Dictionary
+#     dest        ::  Dictionary
+#     subindices  ::  I
+#
+#     function IndexExtensionOperator{T,I}(src, dest, subindices) where {T,I}
+#         @assert length(src) == length(subindices)
+#         @assert length(dest) >= length(src)
+#         new(src, dest, subindices)
+#     end
+# end
+#
+# IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices) where {T} =
+#     IndexExtensionOperator{T,typeof(subindices)}(src, dest, subindices)
+#
+# IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices; T=op_eltype(src,dest)) =
+#     IndexExtensionOperator{T}(src, dest, subindices)
+#
+# subindices(op::IndexExtensionOperator) = op.subindices
+#
+# similar_operator(op::IndexExtensionOperator{S}, src, dest) where {S} =
+#     IndexExtensionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, subindices(op))
+#
+# unsafe_wrap_operator(src, dest, op::IndexExtensionOperator) = similar_operator(op, src, dest)
+#
+# isdiagonal(::IndexExtensionOperator) = true
+#
+# function apply!(op::IndexExtensionOperator, coef_dest, coef_src)
+#     fill!(coef_dest, zero(eltype(op)))
+#     for (i,j) in enumerate(subindices(op))
+#         coef_dest[j] = coef_src[i]
+#     end
+#     coef_dest
+# end
+#
+# adjoint(op::IndexRestrictionOperator{T}) where {T} =
+#     IndexExtensionOperator{T}(dest(op), src(op), subindices(op))
+# adjoint(op::IndexExtensionOperator{T}) where {T} =
+#     IndexRestrictionOperator{T}(dest(op), src(op), subindices(op))
+#
+# string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(op.subindices)
 
 
 """

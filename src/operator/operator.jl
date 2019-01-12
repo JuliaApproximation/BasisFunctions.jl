@@ -118,9 +118,7 @@ function apply!(op::DictionaryOperator, coef_dest, coef_src)
 		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
-		# TODO: depecrate and make this an error
-		@warn "The action of an operator should not depend on its src and destination, this functionality will be removed in the future"
-		apply!(op, dest(op), src(op), coef_dest, coef_src)
+		error("The action of an operator should not depend on its src and destination.")
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.
@@ -133,20 +131,13 @@ function apply!(op::DictionaryOperator, coef_srcdest)
 		coef_srcdest
 end
 
-function apply_inplace!(op::DictionaryOperator, coef_srcdest)
-	@warn "The in-place action of an operator should not depend on its src and destination, this functionality will be removed in the future"
-	apply_inplace!(op, dest(op), src(op), coef_srcdest)
-	coef_srcdest
-end
-
-
 # Catch-all for missing implementations
 function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
 	error("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
 end
 
 # Catch-all for missing implementations
-function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
+function apply_inplace!(op::DictionaryOperator, coef_srcdest)
 	error("In-place operation of ", typeof(op), " not implemented.")
 end
 

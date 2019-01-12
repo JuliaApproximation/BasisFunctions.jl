@@ -39,12 +39,14 @@ function test_generic_operators(T)
     b3 = ChebyshevT{T}(3)
     b4 = Legendre{T}(3)
 
+    cartlist = [CartesianIndex(1,1),CartesianIndex(2,3)]
     operators = [
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", BF.ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
         ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, 1, T(2))],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
+        ["Index extension operator (2)", IndexExtensionOperator(b1⊗b2, cartlist) ],
         ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],
     ]
 

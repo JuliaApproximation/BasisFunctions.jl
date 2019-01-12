@@ -110,6 +110,9 @@ end
 HorizontalBandedMatrix(m::Int,n::Int,array::Vector, step::Int=1, offset::Int=0) =
     HorizontalBandedMatrix{eltype(array)}(m, n, array, step, offset)
 
+Base.copy(A::HorizontalBandedMatrix{T}) where T =
+    HorizontalBandedMatrix{T}(size(A,1), size(A,2), Base.copy(A.array), A.step, A.offset)
+
 isefficient(::HorizontalBandedMatrix) = true
 
 Base.size(A::HorizontalBandedMatrix) = (A.m,A.n)
@@ -117,6 +120,8 @@ Base.size(A::HorizontalBandedMatrix, i::Int) = (i==1) ? A.m : A.n
 
 Base.getindex(op::HorizontalBandedMatrix, i::Int, j::Int) =
     _get_horizontal_banded_index(op.array, op.step, op.offset, size(op,1), size(op,2), i, j)
+
+Base.inv(::HorizontalBandedMatrix) = error("Inverse not implemented.")
 
 function _get_horizontal_banded_index(array::Vector{ELT}, step::Int, offset::Int, M::Int, N::Int, i::Int, j::Int) where {ELT}
     # first transform to an index of the first column
@@ -148,6 +153,10 @@ function mul!(dest::AbstractVector, op::HorizontalBandedMatrix, src::AbstractVec
     dest
 end
 
+Base.Matrix(A::HorizontalBandedMatrix) = matrix_by_mul(A)
+
+Base.print_array(io::IO,A::HorizontalBandedMatrix) = Base.print_array(io, Matrix(A))
+
 "A 2D array every column contains equal elements.
 
 The top column starts at index offset, the second column at step+offset."
@@ -168,13 +177,18 @@ end
 VerticalBandedMatrix(m::Int,n::Int,array::Vector, step::Int=1, offset::Int=0) =
     VerticalBandedMatrix{eltype(array)}(m, n, array, step, offset)
 
+Base.copy(A::VerticalBandedMatrix{T}) where T =
+    VerticalBandedMatrix{T}(size(A,1), size(A,2), Base.copy(A.array), A.step, A.offset)
+
 isefficient(::VerticalBandedMatrix) = true
 
 Base.size(A::VerticalBandedMatrix) = (A.m,A.n)
 Base.size(A::VerticalBandedMatrix, i::Int) = (i==1) ? A.m : A.n
 
-Base.getindex(op::VerticalBandedMatrix, i::Int, j::Int) =
-    _get_vertical_banded_index(op.array, op.step, op.offset, size(op,1), size(op,2), i, j)
+Base.getindex(A::VerticalBandedMatrix, i::Int, j::Int) =
+    _get_vertical_banded_index(A.array, A.step, A.offset, size(A,1), size(A,2), i, j)
+
+Base.inv(::VerticalBandedMatrix) = error("Inverse not implemented.")
 
 function _get_vertical_banded_index(array::Vector{ELT}, step::Int, offset::Int, M::Int, N::Int, i::Int, j::Int) where {ELT}
     # first transform to an index of the first column
@@ -207,3 +221,180 @@ function mul!(dest::AbstractVector, op::VerticalBandedMatrix, src::AbstractVecto
 
     dest
 end
+
+Base.Matrix(A::VerticalBandedMatrix) = matrix_by_mul(A)
+
+Base.print_array(io::IO,A::VerticalBandedMatrix) = Base.print_array(io, Matrix(A))
+
+"""
+An IndexMatrix selects/restricts a subset of coefficients based on their indices.
+"""
+struct IndexMatrix{T,I <: AbstractArray,SKINNY,L<:LinearIndices} <: AbstractArray{T,2}
+    m       ::  NTuple{N,Int} where N
+    n       ::  NTuple{N,Int} where N
+    subindices  ::  I
+    linear  :: L
+
+    function IndexMatrix{T,I}(ms, ns, subindices) where {T,I}
+        m = prod(ms)
+        n = prod(ns)
+        skinny = n<m
+        linear = LinearIndices(CartesianIndices(CartesianIndex(skinny ? ms : ns)))
+        if Base.IteratorSize(subindices) != Base.SizeUnknown()
+            @assert (length(subindices) == m) || (length(subindices) == n)
+        end
+        @assert m != n
+        new{T,I,skinny,typeof(linear)}(tuple(ms...), tuple(ns...), subindices, linear)
+    end
+end
+
+IndexMatrix{T}(m, n, subindices) where {T} =
+    IndexMatrix{T,typeof(subindices)}(m, n, subindices)
+
+IndexMatrix(m, n, subindices; T=Int) =
+    IndexMatrix{T}(m, n, subindices)
+
+Base.copy(A::IndexMatrix{T}) where T =
+    IndexMatrix{T}(A.m, A.n, Base.copy(subindices(A)))
+
+Base.adjoint(A::IndexMatrix{T}) where T = IndexMatrix{T}(A.n, A.m, subindices(A))
+
+subindices(A::IndexMatrix) = A.subindices
+
+Base.size(A::IndexMatrix) = (prod(A.m),prod(A.n))
+
+isefficient(::IndexMatrix) = true
+
+function Base.getindex(A::IndexMatrix{T,I,false}, i::Int, j::Int) where {T,I}
+    @boundscheck checkbounds(A,i,j)
+    A.linear[subindices(A)[i]]==j ? convert(T,1) : convert(T,0)
+end
+
+function Base.getindex(A::IndexMatrix{T,I,true}, i::Int, j::Int) where {T,I}
+    @boundscheck checkbounds(A,i,j)
+    A.linear[subindices(A)[j]]==i ? convert(T,1) : convert(T,0)
+end
+
+# Overwrite (*) function of LinearAlgebra to handle both tensor matrices and multiple tensor vectors.
+function (*)(A::IndexMatrix, B::AbstractMatrix)
+    TS = LinearAlgebra.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
+    @show TS
+    if size(A,2) == size(B,1) # B is a a list of (tensor)vectors
+        mul!(similar(B, TS, (size(A,1), size(B,2))), A, B)
+    elseif size(A,2) == length(B) # B ia a tensormatrix
+        mul!(similar(B, TS, (A.m,)), A, B)
+    else
+        error("Sizes not compatible")
+    end
+end
+
+function (*)(A::IndexMatrix{T,I,true}, B::AbstractVector) where {T,I}
+    TS = LinearAlgebra.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
+    mul!(similar(B, TS, A.m), A, B)
+end
+
+mul!(dest, A::IndexMatrix, src) =
+    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
+mul!(dest::AbstractVector, A::IndexMatrix, src::AbstractVector) =
+    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
+mul!(dest::AbstractMatrix, A::IndexMatrix, src::AbstractVector) =
+    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
+mul!(dest::AbstractVector, A::IndexMatrix, src::AbstractMatrix) =
+    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
+function mul!(dest::AbstractMatrix, A::IndexMatrix{T,I,false}, src::AbstractMatrix)  where {T,I}
+    @assert size(dest, 2) == size(src, 2)
+    for i in size(src,2)
+        mul!(view(dest,:,i), A, view(src,:,i))
+    end
+end
+
+function mul!(dest, A::IndexMatrix{T,I,false}, src, subindices, ::Type{INT}) where {T,I,INT<:Integer}
+    for (i,j) in enumerate(subindices)
+        dest[i] = src[j]
+    end
+    dest
+end
+
+function mul!(dest, A::IndexMatrix{T,I,true}, src, subindices, ::Type{INT}) where {T,I,INT<:Integer}
+    fill!(dest, convert(T, 0))
+    for (i,j) in enumerate(subindices)
+        dest[j] = src[i]
+    end
+    dest
+end
+
+function mul!(dest, A::IndexMatrix{T,I,false}, src::AbstractArray{T,N}, subindices, ::Type{CART}) where {T,N,I,CART<:CartesianIndex}
+    if N > 1
+        @assert length(src) == size(A,2)
+        for (i,j) in enumerate(subindices)
+            dest[i] = src[j]
+        end
+    else
+        for (i,j) in enumerate(subindices)
+            dest[i] = src[A.linear[j]]
+        end
+    end
+    dest
+end
+
+function mul!(dest::AbstractArray{T,N}, A::IndexMatrix{T,I,true}, src, subindices, ::Type{CART}) where {T,N,I,CART<:CartesianIndex}
+    fill!(dest, convert(T, 0))
+    if N > 1
+        @assert length(dest) == size(A,1)
+        for (i,j) in enumerate(subindices)
+            dest[j] = src[i]
+        end
+    else
+        for (i,j) in enumerate(subindices)
+            dest[A.linear[j]] = src[i]
+        end
+    end
+    dest
+end
+
+# function mul!(dest::AbstractVector, A::IndexMatrix{T,I,true}, src) where {T,I}
+#     if length(src) == size(A,2)
+#         _mul!(dest, A, src, subindices(A))
+#     else
+#         error("Look how LinearAlgebra implements applymultiple ")
+#     end
+# end
+#
+# mul!(dest, A::IndexMatrix{T,I,false}, src::AbstractVector) where {T,I} =
+#         _mul!(dest, A, src, subindices(A))
+#
+# function _mul!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
+#     for (i,j) in enumerate(subindices)
+#         dest[i] = src[j]
+#     end
+#     dest
+# end
+#
+# function _mul_linearized!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
+#     for (i,j) in enumerate(subindices)
+#         dest[A.linear[i]] = src[j]
+#     end
+#     dest
+# end
+#
+# function _mul!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
+#     fill!(dest, convert(T, 0))
+#     for (i,j) in enumerate(subindices)
+#         dest[j] = src[i]
+#     end
+#     dest
+# end
+#
+# function _mul_linearized!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
+#     fill!(dest, convert(T, 0))
+#     for (i,j) in enumerate(subindices)
+#         dest[j] = src[A.linear[i]]
+#     end
+#     dest
+# end
+
+Base.Matrix(A::IndexMatrix) = matrix_by_mul(A)
+
+Base.print_array(io::IO,A::IndexMatrix) = Base.print_array(io, Matrix(A))
+
+Base.show(io::IO,A::IndexMatrix) = Base.show(io, Matrix(A))

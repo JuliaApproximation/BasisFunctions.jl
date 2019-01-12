@@ -33,6 +33,8 @@ diagonal(op::ArrayOperator) = diag(op.A)
 
 matrix(op::ArrayOperator) = copy(op.A)
 
+isefficient(op::ArrayOperator) = isefficient(op.A)
+
 """
 A banded operator of which every row contains equal elements.
 
@@ -68,6 +70,72 @@ VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{S}, step
 
 ArrayOperator(A::VerticalBandedOperator{T}, src::Dictionary, dest::Dictionary) where T =
     VerticalBandedOperator{T}(A, src, dest)
+
+"""
+An IndexRestrictionOperator selects a subset of coefficients based on their indices.
+"""
+struct IndexRestrictionOperator{T,I} <: ArrayOperator{T}
+    A           ::  IndexMatrix{T,I,false}
+    src         ::  Dictionary
+    dest        ::  Dictionary
+
+    IndexRestrictionOperator{T}(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
+        (@assert length(dest)<length(src); new{T,I}(A,src,dest))
+end
+
+IndexRestrictionOperator(src, subindices; opts...) =
+    IndexRestrictionOperator(src, src[subindices], subindices; opts...)
+
+IndexRestrictionOperator(src, dest, subindices; T = op_eltype(src, dest)) =
+    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+
+IndexRestrictionOperator{T}(src, dest, subindices) where T =
+    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+
+ArrayOperator(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
+    IndexRestrictionOperator{T}(A, src, dest)
+
+function string(op::IndexRestrictionOperator)
+    sub = subindices(op.A)
+    if sub isa Vector
+        # If there are many indices being selected, then the printed operator
+        # takes up many many lines. The first six indices should be fine for the
+        # purposes of getting the jist of the operator
+        if length(sub) < 6
+            return "Selecting coefficients "*string(sub)
+        else
+            return "Selecting coefficients "*string(sub[1:6])*"..."
+        end
+    else
+        return "Selecting coefficients "*string(sub)
+    end
+end
+
+"""
+An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
+"""
+struct IndexExtensionOperator{T,I} <: ArrayOperator{T}
+    A           ::  IndexMatrix{T,I,true}
+    src         ::  Dictionary
+    dest        ::  Dictionary
+
+    IndexExtensionOperator{T}(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
+        (@assert length(dest)>length(src); new{T,I}(A,src,dest))
+end
+
+IndexExtensionOperator(dest, subindices; opts...) =
+    IndexExtensionOperator(dest[subindices], dest, subindices; opts...)
+
+IndexExtensionOperator(src, dest, subindices; T = op_eltype(src, dest)) =
+    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+
+IndexExtensionOperator{T}(src, dest, subindices) where T =
+    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+
+ArrayOperator(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
+    IndexExtensionOperator{T}(A, src, dest)
+
+string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(subindices(op.A))
 
 struct DiagonalOperator{T,D} <: ArrayOperator{T}
     src     ::  Dictionary

@@ -70,3 +70,18 @@ dimension_tuple(::Val{N}, dim::Int) where N = ntuple(k -> ((k==dim) ? 1 : 0), Va
 subeltype(x) = subeltype(eltype(x))
 subeltype(::Type{T}) where {T <: Number} = T
 subeltype(::Type{SVector{N,T}}) where {N,T} = T
+
+function matrix_by_mul(A::AbstractMatrix{T}) where T
+    Z = zeros(T, size(A))
+    matrix_by_mul!(Z,A)
+    Z
+end
+
+function matrix_by_mul!(Z::Matrix{T}, A::AbstractMatrix{T}) where T
+    e = zeros(T,size(Z,2))
+    for i in 1:size(Z,2)
+        e[i] = 1
+        mul!(view(Z, :, i), A, e)
+        e[i] = 0
+    end
+end
