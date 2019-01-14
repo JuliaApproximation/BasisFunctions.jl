@@ -352,47 +352,6 @@ function mul!(dest::AbstractArray{T,N}, A::IndexMatrix{T,I,true}, src, subindice
     dest
 end
 
-# function mul!(dest::AbstractVector, A::IndexMatrix{T,I,true}, src) where {T,I}
-#     if length(src) == size(A,2)
-#         _mul!(dest, A, src, subindices(A))
-#     else
-#         error("Look how LinearAlgebra implements applymultiple ")
-#     end
-# end
-#
-# mul!(dest, A::IndexMatrix{T,I,false}, src::AbstractVector) where {T,I} =
-#         _mul!(dest, A, src, subindices(A))
-#
-# function _mul!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
-#     for (i,j) in enumerate(subindices)
-#         dest[i] = src[j]
-#     end
-#     dest
-# end
-#
-# function _mul_linearized!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
-#     for (i,j) in enumerate(subindices)
-#         dest[A.linear[i]] = src[j]
-#     end
-#     dest
-# end
-#
-# function _mul!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
-#     fill!(dest, convert(T, 0))
-#     for (i,j) in enumerate(subindices)
-#         dest[j] = src[i]
-#     end
-#     dest
-# end
-#
-# function _mul_linearized!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
-#     fill!(dest, convert(T, 0))
-#     for (i,j) in enumerate(subindices)
-#         dest[j] = src[A.linear[i]]
-#     end
-#     dest
-# end
-
 Base.Matrix(A::IndexMatrix) = matrix_by_mul(A)
 
 Base.print_array(io::IO,A::IndexMatrix) = Base.print_array(io, Matrix(A))
