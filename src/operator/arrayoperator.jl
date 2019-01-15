@@ -27,23 +27,19 @@ conj(op::ArrayOperator) = ArrayOperator(conj(matrix(op)), src(op), dest(op))
 similar_operator(op::ArrayOperator, src::Dictionary, dest::Dictionary) =
     ArrayOperator(op.A, src, dest)
 
-apply_inplace!(op::ArrayOperator, coef_srcdest) = _apply_inplace!(op, op.A, coef_srcdest)
+apply_inplace!(op::ArrayOperator, coef_srcdest::AbstractVector) = _apply_inplace!(op, op.A, coef_srcdest)
 _apply_inplace!(op::ArrayOperator, A::AbstractArray, x) = mul!(x, A, x)
 
 apply!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) = _apply!(op, op.A, coef_dest, coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-# macro warn_reshaping()
-#     @warn "Implicit reshaping of tensor coefficients to vector will disappear"
-#     return :(nothing)
-# end
-
-function apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {T,N1,N2}
-    # @warn_reshaping()
+apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
-end
 
-_apply!(op::ArrayOperator, A::AbstractArray, coef_dest::AbstractVector, coef_src::AbstractVector) = mul!(coef_dest, A, coef_src)
+apply_inplace!(op::ArrayOperator{T}, coef_srcdest::AbstractArray{T,N}) where {T,N} =
+    apply_inplace!(op, reshape(coef_srcdest, length(coef_srcdest)))
+
+_apply!(op::ArrayOperator, A::AbstractArray, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
 
 
@@ -204,25 +200,9 @@ isinplace(op::DiagonalOperator) = true
 
 isefficient(op::DiagonalOperator) = true
 
-_apply_inplace!(op::ArrayOperator, A::Diagonal, x::AbstractVector) = mul!(x, A, x)
-function _apply_inplace!(op::ArrayOperator, A::Diagonal, x)
-    @assert length(x) == size(A,1)
-    for i in 1:length(x)
-        x[i] *= A[i,i]
-    end
-    x
-end
+_apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 
-
-_apply!(op::ArrayOperator, A::Diagonal, coef_dest::AbstractVector, coef_src::AbstractVector) = mul!(coef_dest, A, coef_src)
-function _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src)
-    @assert length(coef_dest) == length(coef_src) == size(A,1)
-    for i in 1:length(coef_dest)
-        coef_dest[i] = A[i,i] * coef_src[i]
-    end
-    coef_dest
-end
-
+_apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
 struct ScalingOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary
@@ -266,16 +246,16 @@ isdiagonal(op::ScalingOperator) = true
 isinplace(op::ScalingOperator) = true
 isefficient(op::ScalingOperator) = true
 
-apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op, op.A.λ, x)
-function _apply_inplace!(op::ScalingOperator, λ, x)
+apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op,scalar(op), x)
+function _apply_inplace!(op::ScalingOperator, λ::Number, x)
     for i in 1:length(x)
         x[i] *= λ
     end
     x
 end
 
-apply!(op::ScalingOperator, y::AbstractVector, x::AbstractVector) = _apply!(op, op.A.λ, y, x)
-function _apply!(op::ScalingOperator, λ, y, x)
+apply!(op::ScalingOperator, y::AbstractVector, x::AbstractVector) = _apply!(op, scalar(op), y, x)
+function _apply!(op::ScalingOperator, λ::Number, y, x)
     @assert length(y) == length(x)
     for i in 1:length(y)
         y[i] = λ * x[i]
