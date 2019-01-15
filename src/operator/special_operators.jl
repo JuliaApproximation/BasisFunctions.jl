@@ -341,6 +341,12 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
+(+)(I1::UniformScaling, op2::DictionaryOperator) = (+)(ScalingOperator(dest(op2),I1.λ), op2)
+(-)(I1::UniformScaling, op2::DictionaryOperator) = (-)(ScalingOperator(dest(op2),I1.λ), op2)
+(+)(op1::DictionaryOperator, I2::UniformScaling) = (+)(op1, ScalingOperator(dest(op1),I2.λ))
+(-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(dest(op1),I2.λ))
+
+
 function stencil(op::OperatorSum,S)
     s1=""
     if op.val1==-1
