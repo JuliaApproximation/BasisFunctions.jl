@@ -21,8 +21,8 @@ function test_generic_operator_interface(op, T)
     end
     v1 = zeros(dest(op))
     apply!(op, v1, r)
-    v2 = m*r
-    @test maximum(abs.(v1-v2)) < 10*sqrt(eps(T))
+    v2 = m*reshape(r,length(r))
+    @test maximum(abs.(v1[:]-v2[:])) < 10*sqrt(eps(T))
 
     # Verify claim to be in-place
     if isinplace(op)

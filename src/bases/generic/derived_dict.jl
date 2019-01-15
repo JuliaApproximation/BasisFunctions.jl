@@ -151,7 +151,7 @@ pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; o
 
 
 function grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
-        T = op_eltype(set, gb), options...)
+        T = op_eltype(dict, gb), options...)
     A = grid_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
     wrap_operator(dict, gb, A)
 end

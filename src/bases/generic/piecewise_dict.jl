@@ -1,7 +1,7 @@
 
 """
 A `PiecewiseDict` has a dictionary for each piece in a partition. Its representation
-is a `MultiArray` containing the expansions of all dictionaries combined.
+is a `BlockVector` containing the expansions of all dictionaries combined.
 """
 struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
     dicts       ::  DICTS
@@ -107,8 +107,8 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) =
-    MultiplicationOperator(dict, gb, evaluation_matrix(dict, grid); options...) * LinearizationOperator(dict)
+grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; T=op_eltype(dict,gb), options...) =
+    ArrayOperator(evaluation_matrix(dict, grid; T=T), dict, gb) * LinearizationOperator(dict; T=T)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
@@ -165,17 +165,17 @@ function split_interval_expansion(set::Dictionary1d, coefficients, x)
     pset, z
 end
 
-function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, x)
+function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector, x)
     part = partition(set)
     i = partition_index(part, x)
     set_i = element(set, i)
-    coef_i = element(coefficients, i)
+    coef_i = getblock(coefficients, i)
     split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
     # We compute the types of the individual sets and their coefficients
     # in a hacky way to help inference further on. TODO: fix, because this
     # violates encapsulation and it assumes homogeneous elements
     S = eltype(set.dicts)
-    C = eltype(coefficients.arrays)
+    C = eltype(coefficients)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
     # Technicalities arise when i is 1 or i equals the numelements of the set
@@ -197,7 +197,7 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
         dicts = S[element(split_set, 1), element(split_set, 2), old_dicts[i+1:end]...]
         coefs = C[element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
     end
-    PiecewiseDict(dicts), MultiArray(coefs)
+    PiecewiseDict(dicts), BlockVector(coefs)
 end
 
 gramoperator(dict::PiecewiseDict; T=coefficienttype(dict), options...) =

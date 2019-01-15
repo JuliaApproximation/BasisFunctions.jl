@@ -4,8 +4,8 @@
 several subdictionaries. The `CompositeDict` type defines common routines for
 indexing and iteration.
 
-The representation of a `CompositeDict` is a `MultiArray`. The outer array of this
-`MultiArray` adopts the structure of the elements of the `CompositeDict`: if the elements
+The representation of a `CompositeDict` is a `BlockVector`. The outer array of this
+`BlockVector` adopts the structure of the elements of the `CompositeDict`: if the elements
 are stored in a tuple, the outer array will be a tuple. If the elements are
 stored in an array, the outer array will be an array as well.
 
@@ -24,7 +24,9 @@ end
 # We assume that every subset has an indexable field called dicts
 iscomposite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
+elements(set::Dictionary) = (set,)
 element(set::CompositeDict, j) = set.dicts[j]
+element(set::Dictionary, j) = (@assert j==1; (set,))
 numelements(set::CompositeDict) = length(elements(set))
 
 # For a generic implementation of range indexing, we need a 'similar_dictionary' function
@@ -66,6 +68,7 @@ function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
     similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
+composite_length(d::Dictionary) = tuple(map(length, elements(d))...)
 
 function composite_size(d::CompositeDict, n::Int)
     if n == length(d)
@@ -77,7 +80,11 @@ function composite_size(d::CompositeDict, n::Int)
     end
 end
 
-zeros(::Type{T}, set::CompositeDict) where {T} = MultiArray(map(s->zeros(T,s),elements(set)))
+function zeros(::Type{T}, set::CompositeDict) where {T}
+    Z = BlockArray{T}(undef,[length(e) for e in elements(set)])
+    fill!(Z, 0)
+    Z
+end
 
 for op in (:isreal, )
     @eval $op(set::CompositeDict) = reduce($op, elements(set))
@@ -153,3 +160,8 @@ derivative_dict(s::CompositeDict, order; options...) =
 
 antiderivative_dict(s::CompositeDict, order; options...) =
     similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))
+
+function evaluation_matrix(dict::CompositeDict, pts; T = codomaintype(dict))
+    a = BlockArray{T}(undef, [length(pts),], collect(composite_length(dict)))
+    evaluation_matrix!(a, dict, pts)
+end

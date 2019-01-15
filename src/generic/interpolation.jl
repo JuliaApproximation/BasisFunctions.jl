@@ -3,9 +3,9 @@
 # Generic interpolation
 ########################
 
-function interpolation_matrix(dict::Dictionary, pts)
+function interpolation_matrix(dict::Dictionary, pts; T=coefficienttype(dict))
     @assert length(dict) == length(pts)
-    evaluation_matrix(dict, pts)
+    evaluation_matrix(dict, pts; T=T)
 end
 
 interpolation_operator(s::Dictionary; options...) =
@@ -23,12 +23,12 @@ function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
     end
 end
 
-default_interpolation_operator(s::Dictionary, dgs::GridBasis; options...) =
-    QR_solver(MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))))
+default_interpolation_operator(s::Dictionary, dgs::GridBasis; T=op_eltype(s,dgs), options...) =
+    QR_solver(ArrayOperator(evaluation_matrix(s, grid(dgs); T=T), s, dgs))
 
 
-function interpolate(s::Dictionary, pts, f)
-    A = interpolation_matrix(s, pts)
+function interpolate(s::Dictionary, pts, f; T=coefficienttype(s))
+    A = interpolation_matrix(s, pts; T=T)
     B = coefficienttype(s)[f(x...) for x in pts]
     Expansion(s, A\B)
 end

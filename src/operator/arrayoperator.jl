@@ -2,13 +2,17 @@
 """
 An `ArrayOperator` combines an `AbstractArray` with a source and destination
 dictionary.
+
+From the 'AbstractArray' we expect that `mul!`, `size`, `copy`, `diag`, `isdiag`, `inv`, `getindex`,
+`adjoint`, `conj` are implemented where possible.
 """
 abstract type ArrayOperator{T} <: DictionaryOperator{T} end
 
-verify_size(src, dest, A) = (size(A,2) == length(src)) && (size(A,1)== length(dest))
+verify_size(src, dest, A) =
+    (length(src)==size(A,2)) && (length(dest)==size(A,1))
 
-A_src(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,1))
-A_dest(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,2))
+A_src(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,2))
+A_dest(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,1))
 
 getindex(op::ArrayOperator, i::Int, j::Int) = op.A[i,j]
 
@@ -24,16 +28,34 @@ similar_operator(op::ArrayOperator, src::Dictionary, dest::Dictionary) =
     ArrayOperator(op.A, src, dest)
 
 apply_inplace!(op::ArrayOperator, coef_srcdest) = _apply_inplace!(op, op.A, coef_srcdest)
-_apply_inplace!(op::ArrayOperator, A, x) = mul!(x, A, x)
+_apply_inplace!(op::ArrayOperator, A::AbstractArray, x) = mul!(x, A, x)
 
-apply!(op::ArrayOperator, coef_dest, coef_src) = _apply!(op, op.A, coef_dest, coef_src)
-_apply!(op::ArrayOperator, A, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
+apply!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) = _apply!(op, op.A, coef_dest, coef_src)
 
+# Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
+# macro warn_reshaping()
+#     @warn "Implicit reshaping of tensor coefficients to vector will disappear"
+#     return :(nothing)
+# end
+
+function apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {T,N1,N2}
+    # @warn_reshaping()
+    apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
+end
+
+_apply!(op::ArrayOperator, A::AbstractArray, coef_dest::AbstractVector, coef_src::AbstractVector) = mul!(coef_dest, A, coef_src)
+
+
+
+isdiagonal(op::ArrayOperator) = isdiag(op.A)
 diagonal(op::ArrayOperator) = diag(op.A)
 
 matrix(op::ArrayOperator) = copy(op.A)
 
 isefficient(op::ArrayOperator) = isefficient(op.A)
+
+string(op::ArrayOperator) = string(op, op.A)
+string(op::ArrayOperator,array) = "Multiplication by "*string(typeof(op.A))
 
 """
 A banded operator of which every row contains equal elements.
@@ -83,14 +105,15 @@ struct IndexRestrictionOperator{T,I} <: ArrayOperator{T}
         (@assert length(dest)<length(src); new{T,I}(A,src,dest))
 end
 
-IndexRestrictionOperator(src, subindices; opts...) =
+IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
     IndexRestrictionOperator(src, src[subindices], subindices; opts...)
 
-IndexRestrictionOperator(src, dest, subindices; T = op_eltype(src, dest)) =
+IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
 
-IndexRestrictionOperator{T}(src, dest, subindices) where T =
-    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
+    (@assert length(subindices) == length(dest) && length(dest)<length(src);
+    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
 
 ArrayOperator(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
     IndexRestrictionOperator{T}(A, src, dest)
@@ -123,14 +146,15 @@ struct IndexExtensionOperator{T,I} <: ArrayOperator{T}
         (@assert length(dest)>length(src); new{T,I}(A,src,dest))
 end
 
-IndexExtensionOperator(dest, subindices; opts...) =
+IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
     IndexExtensionOperator(dest[subindices], dest, subindices; opts...)
 
-IndexExtensionOperator(src, dest, subindices; T = op_eltype(src, dest)) =
+IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
 
-IndexExtensionOperator{T}(src, dest, subindices) where T =
-    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
+    (@assert length(src)==length(subindices) && length(dest)>length(src);
+    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
 
 ArrayOperator(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
     IndexExtensionOperator{T}(A, src, dest)
@@ -242,7 +266,7 @@ isdiagonal(op::ScalingOperator) = true
 isinplace(op::ScalingOperator) = true
 isefficient(op::ScalingOperator) = true
 
-apply_inplace!(op::ScalingOperator, x) = _apply_inplace!(op, op.A.λ, x)
+apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op, op.A.λ, x)
 function _apply_inplace!(op::ScalingOperator, λ, x)
     for i in 1:length(x)
         x[i] *= λ
@@ -250,7 +274,7 @@ function _apply_inplace!(op::ScalingOperator, λ, x)
     x
 end
 
-apply!(op::ScalingOperator, y, x) = _apply!(op, op.A.λ, y, x)
+apply!(op::ScalingOperator, y::AbstractVector, x::AbstractVector) = _apply!(op, op.A.λ, y, x)
 function _apply!(op::ScalingOperator, λ, y, x)
     @assert length(y) == length(x)
     for i in 1:length(y)
@@ -259,7 +283,7 @@ function _apply!(op::ScalingOperator, λ, y, x)
     y
 end
 
-diagonal(op::ScalingOperator{T}) where {T} = fill!(zeros(T, size(op,1)), scalar(op))
+diagonal(op::ScalingOperator{T}) where {T} = ConstantVector(size(op,1), convert(T,scalar(op)))
 
 matrix(op::ScalingOperator{T}) where {T} = Matrix{T}(op.A, size(op))
 
@@ -298,18 +322,18 @@ strings(op::IdentityOperator) = ("Identity Operator of size $(size(op)) with ele
 struct DenseMatrixOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
-    A       ::  Matrix{T}
+    A       ::  AbstractMatrix
 
-    function DenseMatrixOperator{T}(src::Dictionary, dest::Dictionary, A::Matrix) where {T}
+    function DenseMatrixOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractMatrix) where {T}
         @assert verify_size(src, dest, A)
-        new(src, dest, A)
+        new{T}(src, dest, A)
     end
 end
 
-DenseMatrixOperator(A::Matrix; src = A_src(A), dest = A_dest(A), T=op_eltype(src,dest)) =
+DenseMatrixOperator(A::AbstractMatrix; src = A_src(A), dest = A_dest(A), T=op_eltype(src,dest)) =
     DenseMatrixOperator{promote_eltype(eltype(A),T)}(src, dest, A)
 
-DenseMatrixOperator{T}(A::Matrix; src = A_src(A)) where {T} =
+DenseMatrixOperator{T}(A::AbstractMatrix; src = A_src(A)) where {T} =
     DenseMatrixOperator{T}(A, src, A_dest(A))
 
 
@@ -325,5 +349,25 @@ ArrayOperator(A::Diagonal, src::Dictionary, dest::Dictionary; T=op_eltype(src,de
     DiagonalOperator(A; src=src, dest=dest, T=T)
 ArrayOperator(A::UniformScaling, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
     ScalingOperator(src, A; dest=dest, T=T)
-ArrayOperator(A::Matrix, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
+ArrayOperator(A::AbstractMatrix, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
     DenseMatrixOperator(A; src=src, dest=dest, T=T)
+
+"The zero operator maps everything to zero."
+struct ZeroOperator{T} <: ArrayOperator{T}
+    A    ::     Zeros{T,2}
+    src  ::     Dictionary
+    dest ::     Dictionary
+
+    ZeroOperator{T}(src::Dictionary, dest::Dictionary) where T =
+        new(Zeros{T}(length(dest),length(src)), src, dest)
+    function ZeroOperator{T}(Z::Zeros{T,2}, src::Dictionary, dest::Dictionary) where T
+        @assert verify_size(src, dest, Z)
+        new(Z, src, dest)
+    end
+end
+
+ZeroOperator(src, dest=src; T = op_eltype(src, dest)) =
+    ZeroOperator{T}(src, dest)
+
+ArrayOperator(Z::Zeros{T,2}, src::Dictionary, dest::Dictionary) where T =
+    ZeroOperator{T}(Z, src, dest)

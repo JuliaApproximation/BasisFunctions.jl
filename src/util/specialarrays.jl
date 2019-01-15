@@ -1,6 +1,33 @@
 # These are a set of vectors with special values, for use in conjunction
 # with `Diagonal` in order to create special diagonal operators.
 
+"""
+Shell for something that implements size, eltype and *
+"""
+struct ArrayShell{T,D} <: AbstractArray{T,D}
+    A
+    ArrayShell(A) = new{eltype(A),length(size(A))}(A)
+end
+
+Base.getindex(::ArrayShell) = error("AbstractArrayShell does not support getindex")
+
+Base.size(A::ArrayShell) = size(A.A)
+
+Base.eltype(A::ArrayShell) = eltype(A.A)
+
+Base.print_array(io::IO,A::ArrayShell) = Base.print(io, A.A)
+
+Base.show(io::IO,A::ArrayShell) = Base.show(io, A.A)
+
+abstract type MyAbstractMatrix{T} <: AbstractArray{T,2} end
+
+Base.Matrix(A::MyAbstractMatrix) = matrix_by_mul(A)
+
+Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
+
+Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
+
+
 "A vector of 1's."
 struct Ones{T} <: AbstractArray{T,1}
     n   ::  Int
@@ -17,17 +44,31 @@ adjoint(D::Diagonal{T,Ones{T}}) where {T} = D
 
 
 "A vector of zeros."
-struct Zeros{T} <: AbstractArray{T,1}
-    n   ::  Int
+struct Zeros{T,N} <: AbstractArray{T,N}
+    n   ::  NTuple{N,Int}
+
+    Zeros{T}(n::Int...) where T =
+        new{T,length(n)}(n)
 end
 
-Zeros(n::Int) = Zeros{Float64}(n)
+Zeros(n::Int...) = Zeros{Float64}(n...)
 
-size(A::Zeros) = (A.n,)
-getindex(A::Zeros{T}, i::Int) where {T} = zero(T)
+size(A::Zeros) = A.n
+getindex(A::Zeros{T}, i::Int...) where {T} = zero(T)
 
-adjoint(D::Diagonal{T,Zeros{T}}) where {T} = D
+adjoint(D::Diagonal{T,Zeros{T,1}}) where {T} = D
+adjoint(Z::Zeros{T,2}) where T = Zeros{T}(size(Z,2), size(Z,1))
 
+isefficient(::Zeros) = true
+
+mul!(dest::AbstractVector, op::Zeros, src::AbstractVector) =
+    fill!(dest, zero(eltype(op)))
+
+isdiag(::Zeros) = true
+
+diag(op::Zeros) = Zeros{eltype(op)}(min(op.n...))
+
+Base.copy(op::Zeros) = op
 
 "A vector of constant values."
 struct ConstantVector{T} <: AbstractArray{T,1}
@@ -93,7 +134,7 @@ size(A::ProjectionMatrix) = (A.m, A.n)
 "A 2D array every row contains equal elements.
 
 The top row starts at index offset, the second row at step+offset."
-struct HorizontalBandedMatrix{T} <: AbstractArray{T,2}
+struct HorizontalBandedMatrix{T} <: MyAbstractMatrix{T}
     m       ::  Int
     n       ::  Int
     array   ::  Vector{T}
@@ -153,14 +194,10 @@ function mul!(dest::AbstractVector, op::HorizontalBandedMatrix, src::AbstractVec
     dest
 end
 
-Base.Matrix(A::HorizontalBandedMatrix) = matrix_by_mul(A)
-
-Base.print_array(io::IO,A::HorizontalBandedMatrix) = Base.print_array(io, Matrix(A))
-
 "A 2D array every column contains equal elements.
 
 The top column starts at index offset, the second column at step+offset."
-struct VerticalBandedMatrix{T} <: AbstractArray{T,2}
+struct VerticalBandedMatrix{T} <: MyAbstractMatrix{T}
     m       ::  Int
     n       ::  Int
     array   ::  Vector{T}
@@ -222,33 +259,34 @@ function mul!(dest::AbstractVector, op::VerticalBandedMatrix, src::AbstractVecto
     dest
 end
 
-Base.Matrix(A::VerticalBandedMatrix) = matrix_by_mul(A)
-
-Base.print_array(io::IO,A::VerticalBandedMatrix) = Base.print_array(io, Matrix(A))
-
 """
 An IndexMatrix selects/restricts a subset of coefficients based on their indices.
 """
-struct IndexMatrix{T,I <: AbstractArray,SKINNY,L<:LinearIndices} <: AbstractArray{T,2}
-    m       ::  NTuple{N,Int} where N
-    n       ::  NTuple{N,Int} where N
+struct IndexMatrix{T,I,SKINNY} <: MyAbstractMatrix{T}
+    m::Int
+    n::Int
     subindices  ::  I
-    linear  :: L
 
-    function IndexMatrix{T,I}(ms, ns, subindices) where {T,I}
-        m = prod(ms)
-        n = prod(ns)
+    function IndexMatrix{T,I}(m::Int, n::Int, subindices::AbstractArray{Int}) where {T,I}
         skinny = n<m
-        linear = LinearIndices(CartesianIndices(CartesianIndex(skinny ? ms : ns)))
         if Base.IteratorSize(subindices) != Base.SizeUnknown()
             @assert (length(subindices) == m) || (length(subindices) == n)
         end
         @assert m != n
-        new{T,I,skinny,typeof(linear)}(tuple(ms...), tuple(ns...), subindices, linear)
+        new{T,I,skinny}(m, n, subindices)
     end
 end
 
-IndexMatrix{T}(m, n, subindices) where {T} =
+IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{N,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
+    IndexMatrix{T}(m[1], prod(n), LinearIndices(CartesianIndices(CartesianIndex(n)))[subindices])
+
+IndexMatrix{T}(m::NTuple{N,Int}, n::NTuple{1,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
+    IndexMatrix{T}(prod(m), n[1], LinearIndices(CartesianIndices(CartesianIndex(m)))[subindices])
+
+IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{1,Int}, subindices::AbstractArray{Int}) where {T,N} =
+    IndexMatrix{T}(m[1], n[1], subindices)
+
+IndexMatrix{T}(m::Int, n::Int, subindices) where {T} =
     IndexMatrix{T,typeof(subindices)}(m, n, subindices)
 
 IndexMatrix(m, n, subindices; T=Int) =
@@ -261,99 +299,36 @@ Base.adjoint(A::IndexMatrix{T}) where T = IndexMatrix{T}(A.n, A.m, subindices(A)
 
 subindices(A::IndexMatrix) = A.subindices
 
-Base.size(A::IndexMatrix) = (prod(A.m),prod(A.n))
+Base.size(A::IndexMatrix) = (A.m,A.n)
 
 isefficient(::IndexMatrix) = true
 
 function Base.getindex(A::IndexMatrix{T,I,false}, i::Int, j::Int) where {T,I}
     @boundscheck checkbounds(A,i,j)
-    A.linear[subindices(A)[i]]==j ? convert(T,1) : convert(T,0)
+    subindices(A)[i]==j ? convert(T,1) : convert(T,0)
 end
 
 function Base.getindex(A::IndexMatrix{T,I,true}, i::Int, j::Int) where {T,I}
     @boundscheck checkbounds(A,i,j)
-    A.linear[subindices(A)[j]]==i ? convert(T,1) : convert(T,0)
-end
-
-# Overwrite (*) function of LinearAlgebra to handle both tensor matrices and multiple tensor vectors.
-function (*)(A::IndexMatrix, B::AbstractMatrix)
-    TS = LinearAlgebra.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
-    @show TS
-    if size(A,2) == size(B,1) # B is a a list of (tensor)vectors
-        mul!(similar(B, TS, (size(A,1), size(B,2))), A, B)
-    elseif size(A,2) == length(B) # B ia a tensormatrix
-        mul!(similar(B, TS, (A.m,)), A, B)
-    else
-        error("Sizes not compatible")
-    end
-end
-
-function (*)(A::IndexMatrix{T,I,true}, B::AbstractVector) where {T,I}
-    TS = LinearAlgebra.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
-    mul!(similar(B, TS, A.m), A, B)
+    subindices(A)[j]==i ? convert(T,1) : convert(T,0)
 end
 
 mul!(dest, A::IndexMatrix, src) =
-    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
+    mul!(dest, A, src, subindices(A))
 mul!(dest::AbstractVector, A::IndexMatrix, src::AbstractVector) =
-    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
-mul!(dest::AbstractMatrix, A::IndexMatrix, src::AbstractVector) =
-    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
-mul!(dest::AbstractVector, A::IndexMatrix, src::AbstractMatrix) =
-    mul!(dest, A, src, subindices(A), eltype(subindices(A)))
-function mul!(dest::AbstractMatrix, A::IndexMatrix{T,I,false}, src::AbstractMatrix)  where {T,I}
-    @assert size(dest, 2) == size(src, 2)
-    for i in size(src,2)
-        mul!(view(dest,:,i), A, view(src,:,i))
-    end
-end
+    mul!(dest, A, src, subindices(A))
 
-function mul!(dest, A::IndexMatrix{T,I,false}, src, subindices, ::Type{INT}) where {T,I,INT<:Integer}
+function mul!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
     for (i,j) in enumerate(subindices)
         dest[i] = src[j]
     end
     dest
 end
 
-function mul!(dest, A::IndexMatrix{T,I,true}, src, subindices, ::Type{INT}) where {T,I,INT<:Integer}
-    fill!(dest, convert(T, 0))
+function mul!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
+    fill!(dest, zero(T))
     for (i,j) in enumerate(subindices)
         dest[j] = src[i]
     end
     dest
 end
-
-function mul!(dest, A::IndexMatrix{T,I,false}, src::AbstractArray{T,N}, subindices, ::Type{CART}) where {T,N,I,CART<:CartesianIndex}
-    if N > 1
-        @assert length(src) == size(A,2)
-        for (i,j) in enumerate(subindices)
-            dest[i] = src[j]
-        end
-    else
-        for (i,j) in enumerate(subindices)
-            dest[i] = src[A.linear[j]]
-        end
-    end
-    dest
-end
-
-function mul!(dest::AbstractArray{T,N}, A::IndexMatrix{T,I,true}, src, subindices, ::Type{CART}) where {T,N,I,CART<:CartesianIndex}
-    fill!(dest, convert(T, 0))
-    if N > 1
-        @assert length(dest) == size(A,1)
-        for (i,j) in enumerate(subindices)
-            dest[j] = src[i]
-        end
-    else
-        for (i,j) in enumerate(subindices)
-            dest[A.linear[j]] = src[i]
-        end
-    end
-    dest
-end
-
-Base.Matrix(A::IndexMatrix) = matrix_by_mul(A)
-
-Base.print_array(io::IO,A::IndexMatrix) = Base.print_array(io, Matrix(A))
-
-Base.show(io::IO,A::IndexMatrix) = Base.show(io, Matrix(A))

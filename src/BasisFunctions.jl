@@ -1,6 +1,6 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
 using Base.Cartesian
@@ -37,8 +37,10 @@ import Base: show, string
 
 
 ## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!, diag, isdiag
 
+import BlockArrays.BlockVector
+export BlockVector
 
 ## Imports from DomainSets
 
@@ -166,7 +168,7 @@ export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
-        MatrixOperator, FunctionOperator,
+        ArrayOperator, FunctionOperator,
         MultiplicationOperator,
         IndexRestrictionOperator, IndexExtensionOperator,
         HorizontalBandedOperator, VerticalBandedOperator
@@ -268,9 +270,6 @@ export ChebyshevT, ChebyshevU,
 # from util/recipes.jl
 export plotgrid, postprocess
 
-# from util/MultiArray.jl
-export MultiArray
-
 # from util/domain_extensions.jl
 export float_type, dimension
 
@@ -291,7 +290,6 @@ export gaussjacobi
 
 include("util/common.jl")
 include("util/indexing.jl")
-include("util/multiarray.jl")
 include("util/specialarrays.jl")
 include("util/domain_extensions.jl")
 
@@ -327,7 +325,6 @@ include("bases/generic/tensorproduct_dict.jl")
 include("bases/generic/mapped_dict.jl")
 
 include("operator/arrayoperator.jl")
-include("operator/basic_operators.jl")
 include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")

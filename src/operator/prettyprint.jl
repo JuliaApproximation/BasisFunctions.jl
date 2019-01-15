@@ -6,7 +6,7 @@
 # set DO_PRETTYPRINTING to false to disable pretty printing
 ####
 # Delegate to show_operator
-global DO_PRETTYPRINTING = true
+global DO_PRETTYPRINTING = false
 if DO_PRETTYPRINTING
     show(io::IO, op::AbstractOperator) = (hasstencil(op)) ? show_composite(io,op) : show_operator(io, op)
     show(io::IO,s::Span) = show(io,dictionary(s))

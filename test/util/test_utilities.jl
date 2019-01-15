@@ -16,5 +16,3 @@ d5 = FFTW.plan_dct!(zeros(10), 1:1)
 @test typeof(d5) == FFTW.DCTPlan{Float64,5,true}
 d6 = FFTW.plan_idct!(zeros(10), 1:1)
 @test typeof(d6) == FFTW.DCTPlan{Float64,4,true}
-
-include("test_multiarray.jl")

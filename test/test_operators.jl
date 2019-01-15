@@ -44,8 +44,11 @@ function test_generic_operators(T)
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
         ["Zero operator", BF.ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
+        ["Block operator", differentiation_operator(b1⊕b2)],
         ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, 1, T(2))],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
+        ["Index restriction operator (2)", IndexRestrictionOperator(b1⊗b2, cartlist) ],
+        ["Index extension operator", IndexExtensionOperator(b1, b2, 1:3) ],
         ["Index extension operator (2)", IndexExtensionOperator(b1⊗b2, cartlist) ],
         ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],
     ]
@@ -62,8 +65,8 @@ function test_tensor_operators(T)
     n1 = 4
     m2 = 10
     n2 = 24
-    A1 = MatrixOperator(rand(T,m1,n1))
-    A2 = MatrixOperator(rand(T,m2,n2))
+    A1 = ArrayOperator(rand(T,m1,n1))
+    A2 = ArrayOperator(rand(T,m2,n2))
 
     A_tp = TensorProductOperator(A1, A2)
     b = rand(T, n1, n2)
@@ -178,7 +181,7 @@ function test_multidiagonal_operators(T)
 end
 
 function test_sparse_operator(ELT)
-    S = SparseOperator(MatrixOperator(rand(ELT,4,4)))
+    S = SparseOperator(ArrayOperator(rand(ELT,4,4)))
     test_generic_operator_interface(S, ELT)
 end
 function test_banded_operator(ELT)

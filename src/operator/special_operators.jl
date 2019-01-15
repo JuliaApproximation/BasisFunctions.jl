@@ -36,7 +36,7 @@ object(op::MultiplicationOperator) = op.object
 
 # An MatrixOperator is defined by an actual matrix, i.e. the parameter
 # ARRAY is Array{T,2}.
-const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
+# const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
 
 MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
     MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
@@ -48,13 +48,13 @@ MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
 
 # Provide aliases for when the object is an actual matrix.
-MatrixOperator(matrix::AbstractMatrix) = MultiplicationOperator(matrix)
-
-function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatrix)
-    @assert size(matrix, 1) == length(dest)
-    @assert size(matrix, 2) == length(src)
-    MultiplicationOperator(src, dest, matrix)
-end
+# MatrixOperator(matrix::AbstractMatrix) = MultiplicationOperator(matrix)
+#
+# function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatrix)
+#     @assert size(matrix, 1) == length(dest)
+#     @assert size(matrix, 2) == length(src)
+#     MultiplicationOperator(src, dest, matrix)
+# end
 
 similar_operator(op::MultiplicationOperator{S,ARRAY,INPLACE}, src, dest) where {S,ARRAY,INPLACE} =
     MultiplicationOperator(src, dest, object(op); inplace=INPLACE)
@@ -96,9 +96,9 @@ _apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) 
 
 
 # TODO: introduce unsafe_matrix here, and make a copy otherwise
-matrix(op::MatrixOperator) = op.object
-
-matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
+# matrix(op::MatrixOperator) = op.object
+#
+# matrix!(op::MatrixOperator, a::Array) = (a[:] = op.object)
 
 
 adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
@@ -116,7 +116,7 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
 
 # Use QR for matrices by default
-inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
+# inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
 
 
 

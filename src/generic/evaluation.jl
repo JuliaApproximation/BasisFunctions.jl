@@ -7,7 +7,7 @@ const BF_WARNSLOW = true
 
 # Compute the evaluation matrix of the given dict on the given set of points
 # (a grid or any iterable set of points)
-function evaluation_matrix(dict::Dictionary, pts, T = codomaintype(dict))
+function evaluation_matrix(dict::Dictionary, pts; T = codomaintype(dict))
     a = Array{T}(undef, length(pts), length(dict))
     evaluation_matrix!(a, dict, pts)
 end
@@ -24,8 +24,8 @@ end
 
 function dense_evaluation_operator(s::Dictionary, dgs::GridBasis;
             T = op_eltype(s,dgs), options...)
-    A = evaluation_matrix(s, grid(dgs), T)
-    MultiplicationOperator(s, dgs, A)
+    A = evaluation_matrix(s, grid(dgs); T=T)
+    ArrayOperator(A, s, dgs)
 end
 
 evaluation_operator(dict::Dictionary, grid::AbstractGrid; options...) =

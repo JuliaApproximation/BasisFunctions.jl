@@ -36,6 +36,9 @@ function BlockOperator(operators::AbstractArray{OP,2},
     BlockOperator{T}(operators, op_src, op_dest)
 end
 
+ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where T =
+    BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements(dest)), (j,srcj) in enumerate(elements(src))], src, dest)
+
 # sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
 function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, sets::Dictionary...)
     T = promote_type(eltype(op1), eltype(op2))
@@ -119,17 +122,17 @@ function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coe
     linearize_coefficients!(coef_dest, scratch_dest)
 end
 
-function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::MultiArray, scratch_src, scratch_dest)
+function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::BlockVector, scratch_src, scratch_dest)
     apply_block_operator!(op, scratch_dest, coef_src, scratch_src, scratch_dest)
     linearize_coefficients!(coef_dest, scratch_dest)
 end
 
-function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::AbstractVector, scratch_src, scratch_dest)
+function apply_block_operator!(op::BlockOperator, coef_dest::BlockVector, coef_src::AbstractVector, scratch_src, scratch_dest)
     delinearize_coefficients!(scratch_src, coef_src)
     apply_block_operator!(op, coef_dest, scratch_src, scratch_src, scratch_dest)
 end
 
-function apply_block_operator!(op::BlockOperator, coef_dest::MultiArray, coef_src::MultiArray, scratch_src, scratch_dest)
+function apply_block_operator!(op::BlockOperator, coef_dest::BlockVector, coef_src::BlockVector, scratch_src, scratch_dest)
     for m in 1:numelements(coef_dest)
         fill!(element(coef_dest, m), 0)
         for n in 1:numelements(coef_src)
@@ -147,7 +150,7 @@ function apply_block_element!(op, coef_dest, coef_src, scratch)
     end
 end
 
-function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::MultiArray, scratch_src, scratch_dest)
+function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::BlockVector, scratch_src, scratch_dest)
     fill!(coef_dest, 0)
     for n in 1:numelements(coef_src)
         apply!(op.operators[1,n], scratch_dest, element(coef_src,n))
@@ -162,7 +165,7 @@ function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::AbstractVect
     apply_rowoperator!(op, coef_dest, scratch_src, scratch_src, scratch_dest)
 end
 
-function apply_columnoperator!(op::BlockOperator, coef_dest::MultiArray, coef_src, scratch_src, scratch_dest)
+function apply_columnoperator!(op::BlockOperator, coef_dest::BlockVector, coef_src, scratch_src, scratch_dest)
     for m in 1:numelements(coef_dest)
         apply!(op.operators[m,1], element(coef_dest, m), coef_src)
     end
@@ -260,10 +263,10 @@ function element(op::BlockDiagonalOperator{T}, i::Int, j::Int) where {T}
     end
 end
 
-apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::Array{T,1}) where {T} =
+apply!(op::BlockDiagonalOperator, coef_dest::BlockVector, coef_src::Array{T,1}) where {T} =
     apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
 
-function apply!(op::BlockDiagonalOperator, coef_dest::MultiArray, coef_src::MultiArray)
+function apply!(op::BlockDiagonalOperator, coef_dest::BlockVector, coef_src::BlockVector)
     for i in 1:numelements(coef_src)
         apply!(op.operators[i], element(coef_dest, i), element(coef_src, i))
     end
@@ -304,4 +307,19 @@ function stencil(op::BlockDiagonalOperator)
     end
     push!(A,"]")
     A
+end
+
+
+function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
+    a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(composite_length(dest(op))), collect(composite_length(src(op))))
+    matrix!(op, a)
+    a
+end
+
+function matrix!(op::Union{BlockOperator,BlockDiagonalOperator}, a)
+    for i in 1:composite_size(op)[1]
+        for j in 1:composite_size(op)[2]
+            a[Block(i,j)] = matrix(element(op, i, j))
+        end
+    end
 end

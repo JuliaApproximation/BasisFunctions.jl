@@ -18,18 +18,31 @@ linspace(a,b,c) = range(a, stop=b, length=c)
 const True = Val{true}
 const False = Val{false}
 
-##################################################
-# Copy data between generalized coefficient sets
-##################################################
-# We try to use the native index for each coefficient vector.
-# - If they are both vectors, we can use a linear index
-function copyto!(dest::AbstractVector, src::AbstractVector)
-    @assert length(dest) == length(src)
-    for i in eachindex(dest)
-        dest[i] = src[i]
+delinearize_coefficients!(dest::BlockVector, src::AbstractVector) =
+    dest[:] .= src[:]
+
+linearize_coefficients!(dest::AbstractVector, src::BlockVector) =
+    dest[:] .= src[:]
+
+elements(bv::BlockVector) = [getblock(bv, i) for i in 1:nblocks(bv,1)]
+
+function BlockArrays.BlockVector(arrays::AbstractVector{T}...) where {T}
+    A = BlockArray{T}(undef_blocks, [length(array) for array in arrays])
+    for (i,a) in enumerate(arrays)
+        setblock!(A, a, i)
     end
-    dest
+    A
 end
+
+function BlockArrays.BlockMatrix(arrays::AbstractMatrix{T}...) where {T}
+    A = BlockArray{T}(undef_blocks, [length(array) for array in arrays])
+    for (i,a) in enumerate(arrays)
+        setblock!(A, a, i)
+    end
+    A
+end
+
+mul!
 
 "Return true if the set is indexable and has elements whose type is a subtype of T."
 indexable_list(set, ::Type{T}) where {T} = typeof(set[1]) <: T

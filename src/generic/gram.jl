@@ -65,7 +65,7 @@ end
 function gramoperator(dict::Dictionary; warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of Gram matrix entrywise."
     A = grammatrix(dict; options...)
-    MatrixOperator(dict, dict, A)
+    ArrayOperator(A, dict, dict)
 end
 
 
@@ -110,7 +110,7 @@ function default_mixedgram(d1::Dictionary, d2::Dictionary, measure; warnslow = B
     warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; options...)
     T = eltype(A)
-    MatrixOperator(promote_coefficienttype(d1,T), promote_coefficienttype(d2,T), A)
+    ArrayOperator(A, promote_coefficienttype(d1,T), promote_coefficienttype(d2,T))
 end
 
 function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)

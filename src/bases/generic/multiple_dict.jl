@@ -4,7 +4,7 @@ A `MultiDict` is the concatenation of several dictionaries. The elements are con
 in an indexable set, such as a tuple or an array. In case of an array, the number
 of dictionaries may be large.
 
-The native representation of a `MultiDict` is a `MultiArray`, of which each element
+The native representation of a `MultiDict` is a `BlockVector`, of which each element
 is the native representation of the corresponding element of the multidict.
 
 Evaluation of an expansion at a point is defined by summing the evaluation of all
@@ -157,7 +157,13 @@ grid_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T =
 apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))
 
 ## Projecting
-project(s::MultiDict, f::Function; options...) = MultiArray([project(el, f; options...) for el in elements(s)])
+function project(s::MultiDict, f::Function; options...)
+    Z = BlockArray{T}(undef,[length(e) for e in elements(s)])
+    for (i,el) in enumerate(elements(s))
+        setblock!(Z, project(el, f; options...), i)
+    end
+    Z
+end
 
 function stencil(d::MultiDict)
     A = Any[]

@@ -4,9 +4,9 @@
 ########################
 
 
-function leastsquares_matrix(dict::Dictionary, pts)
+function leastsquares_matrix(dict::Dictionary, pts; T=coefficienttype(dict))
     @assert length(dict) <= length(pts)
-    evaluation_matrix(dict, pts)
+    evaluation_matrix(dict, pts; T=T)
 end
 
 function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)
@@ -37,5 +37,5 @@ function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
     end
 end
 
-default_leastsquares_operator(s::Dictionary, dgs::GridBasis; options...) =
-    QR_solver(MultiplicationOperator(s, dgs, leastsquares_matrix(s, grid(dgs))))
+default_leastsquares_operator(s::Dictionary, dgs::GridBasis; T=op_eltype(s,dgs), options...) =
+    QR_solver(ArrayOperator(leastsquares_matrix(s, grid(dgs); T=T), s, dgs))
