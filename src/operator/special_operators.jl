@@ -199,6 +199,8 @@ dest(op::OperatorSum) = dest(op.op1)
 
 adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op.val1), conj(op.val2))
 
+pinv(op::OperatorSum) = OperatorSum(pinv(op.op1), pinv(op.op2), op.val1, op.val2)
+
 iscomposite(op::OperatorSum) = true
 isdiagonal(op::OperatorSum) = isdiagonal(op.op1) && isdiagonal(op.op2)
 

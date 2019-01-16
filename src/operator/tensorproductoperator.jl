@@ -64,6 +64,8 @@ size(op::TensorProductOperator) = (size(op,1), size(op,2))
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
 adjoint(op::TensorProductOperator)::DictionaryOperator = TensorProductOperator(map(adjoint, elements(op))...)
 
+pinv(op::TensorProductOperator)::DictionaryOperator = TensorProductOperator(map(pinv, elements(op))...)
+
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
 isinplace(op::TensorProductOperator) = reduce(&, map(isinplace, op.operators))
