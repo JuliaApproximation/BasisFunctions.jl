@@ -98,7 +98,7 @@ struct IndexRestrictionOperator{T,I} <: ArrayOperator{T}
     dest        ::  Dictionary
 
     IndexRestrictionOperator{T}(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
-        (@assert length(dest)<length(src); new{T,I}(A,src,dest))
+        (@assert length(dest)<=length(src); new{T,I}(A,src,dest))
 end
 
 IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
@@ -149,7 +149,7 @@ IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVe
     IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
 
 IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
-    (@assert length(src)==length(subindices) && length(dest)>length(src);
+    (@assert length(src)==length(subindices) && length(dest)>=length(src);
     IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
 
 ArrayOperator(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =

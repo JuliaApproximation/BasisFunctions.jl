@@ -18,10 +18,16 @@ linspace(a,b,c) = range(a, stop=b, length=c)
 const True = Val{true}
 const False = Val{false}
 
-delinearize_coefficients!(dest::BlockVector, src::AbstractVector) =
+# delinearize_coefficients!(dest::BlockVector, src::AbstractVector) =
+#     dest[:] .= src[:]
+#
+# linearize_coefficients!(dest::AbstractVector, src::BlockVector) =
+#     dest[:] .= src[:]
+
+delinearize_coefficients!(dest::AbstractArray{T,N}, src::AbstractVector{T}) where {T,N} =
     dest[:] .= src[:]
 
-linearize_coefficients!(dest::AbstractVector, src::BlockVector) =
+linearize_coefficients!(dest::AbstractVector{T}, src::AbstractArray{T,N}) where {T,N} =
     dest[:] .= src[:]
 
 elements(bv::BlockVector) = [getblock(bv, i) for i in 1:nblocks(bv,1)]

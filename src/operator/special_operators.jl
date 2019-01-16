@@ -279,6 +279,8 @@ apply!(op::LinearizationOperator, coef_dest, coef_src) =
 
 isdiagonal(op::LinearizationOperator) = true
 
+Base.adjoint(op::LinearizationOperator) = DelinearizationOperator(dest(op), src(op))
+
 
 "The inverse of a LinearizationOperator."
 struct DelinearizationOperator{T} <: DictionaryOperator{T}
@@ -286,8 +288,8 @@ struct DelinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-DelinearizationOperator(dest::Dictionary) =
-    DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest)
+DelinearizationOperator(dest::Dictionary; options...) =
+    DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest; options...)
 
 DelinearizationOperator(src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
     DelinearizationOperator{T}(src, dest)
@@ -299,6 +301,8 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
 isdiagonal(op::DelinearizationOperator) = true
+
+Base.adjoint(op::DelinearizationOperator) = LinearizationOperator(dest(op), src(op))
 
 function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)
