@@ -281,6 +281,28 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 	end
 end
 
+function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid;
+			T=op_eltype(dict, gb), options...)
+	if isodd(length(grid)) && (leftendpoint(grid) +1 ≈ 1) && (rightendpoint(grid) ≈ 1)
+		if length(grid) == length(dict)
+			A = evaluation_operator(dict, FourierGrid{domaintype(dict)}(length(dict)); T=T, options...)
+			diag = zeros(T, length(dict))
+			delta = stepsize(grid)/2
+			for i in 1:length(dict)
+				diag[i] = exp(2 * T(pi) * im * idx2frequency(dict, i) * delta)
+			end
+			D = DiagonalOperator(dict, diag)
+			wrap_operator(dict, gb, A*D)
+		else
+			dict2 = resize(dict, length(grid))
+			evaluation_operator(dict2, grid) * extension_operator(dict, dict2)
+		end
+	else
+		dense_evaluation_operator(dict, gb; T=T, options...)
+	end
+end
+
+
 ############################
 # Extension and restriction
 ############################

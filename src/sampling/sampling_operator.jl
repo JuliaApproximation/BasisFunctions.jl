@@ -89,18 +89,21 @@ apply(op::GridSampling, dict::Dictionary) = evaluation_operator(dict, grid(op))
 
 
 function quadraturenormalization(op::GridSampling, args...)
-	gridspace = dest(op)
-	quadraturenormalization(coefficienttype(gridspace), grid(gridspace), args...)
+	gridbasis = dest(op)
+	quadraturenormalization(coefficienttype(gridbasis), grid(gridbasis), args...)
 end
 
 quadraturenormalization(grid::AbstractGrid, args...) =
 	quadraturenormalization(subeltype(grid), grid, args...)
 
 quadraturenormalization(::Type{T}, grid::PeriodicEquispacedGrid, space::FunctionSpace = L2{T}(support(grid))) where {T} =
-	ScalingOperator(GridBasis{T}(grid), one(T)/length(grid))
+	ScalingOperator(GridBasis{T}(grid), stepsize(grid))
+
+quadraturenormalization(::Type{T}, grid::MidpointEquispacedGrid, space::FunctionSpace = L2{T}(support(grid))) where {T} =
+	ScalingOperator(GridBasis{T}(grid), stepsize(grid))
 
 quadraturenormalization(::Type{T}, grid::FourierGrid, space::FunctionSpace = FourierSpace{T}()) where {T} =
-	ScalingOperator(GridBasis{T}(grid), one(T)/length(grid))
+	ScalingOperator(GridBasis{T}(grid), stepsize(grid))
 
 quadraturenormalization(::Type{T}, grid::ChebyshevNodes, space::FunctionSpace = ChebyshevSpace{T}()) where {T} =
 	ScalingOperator(GridBasis{T}(grid), convert(T, pi)/length(grid))
