@@ -272,7 +272,7 @@ struct IndexMatrix{T,I,SKINNY} <: MyAbstractMatrix{T}
         if Base.IteratorSize(subindices) != Base.SizeUnknown()
             @assert (length(subindices) == m) || (length(subindices) == n)
         end
-        m != n && (@warn "IndexMatrix contains all elements, consider identity or (De)LinearizationOperator instead.")
+        m == n && (@warn "IndexMatrix contains all elements, consider identity or (De)LinearizationOperator instead.")
         new{T,I,skinny}(m, n, subindices)
     end
 end
