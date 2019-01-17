@@ -1,6 +1,0 @@
-[[GenericLinearAlgebra]]
-git-tree-sha1 = "aecdbe85d0746f1126b53daaf577b261de56d40c"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl"
-uuid = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
-version = "0.0.0"
