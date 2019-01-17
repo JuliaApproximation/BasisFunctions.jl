@@ -103,9 +103,11 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
+export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure
+export MappedMeasure, ProductMeasure, SubMeasure
 
 # from spaces/spaces.jl
-export GenericFunctionSpace
+export GenericFunctionSpace, space
 
 
 export SparseOperator
@@ -361,6 +363,8 @@ include("bases/generic/vector_dict.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
+include("sampling/normalization.jl")
+
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines

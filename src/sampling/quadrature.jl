@@ -55,6 +55,7 @@ function fejer_vector2!(v)
     v
 end
 
+# TODO: verify, is this correct?
 function fejer_second_rule(n::Int, ::Type{T} = Float64) where {T}
     v = zeros(T, n)
     weights = zeros(T, n+1)

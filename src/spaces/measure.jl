@@ -156,6 +156,22 @@ function restrict(m::LebesgueMeasure{T}, d::UnitInterval{T}) where {T}
 end
 
 
+struct SubMeasure{M,D,T} <: Measure{T}
+    measure     ::  M
+    domain      ::  D
+end
+
+SubMeasure(measure::Measure{T}, domain::Domain) where {T} =
+    SubMeasure{typeof(measure),typeof(domain),T}(measure,domain)
+
+supermeasure(measure::SubMeasure) = measure.measure
+support(measure::SubMeasure) = measure.domain
+
+unsafe_weight(m::SubMeasure, x) = unsafe_weight(supermeasure(m), x)
+
+restrict(measure::Measure, domain::Domain) = SubMeasure(measure, domain)
+
+
 
 struct MappedMeasure{MAP,M,T} <: Measure{T}
     map     ::  MAP
@@ -182,7 +198,12 @@ struct ProductMeasure{M,T} <: Measure{T}
     measures ::  M
 end
 
-ProductMeasure(measures...) = ProductMeasure{typeof(measures),domaintype(measures[1])}(measures)
+product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
+
+function ProductMeasure(measures...)
+    T = product_domaintype(measures...)
+    ProductMeasure{typeof(measures),T}(measures)
+end
 
 iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures

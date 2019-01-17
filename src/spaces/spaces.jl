@@ -49,6 +49,8 @@ measure(s::MeasureSpace) = s.measure
 
 domain(s::MeasureSpace) = support(measure(s))
 
+space(m::Measure) = MeasureSpace(m)
+
 
 const FourierSpace{T} = MeasureSpace{FourierMeasure{T},T,T}
 
@@ -98,13 +100,3 @@ function tensorproduct(spaces::FunctionSpace...)
 end
 
 elements(space::ProductSpace) = space.spaces
-
-
-##################################################
-# Spaces naturally associated with measures
-##################################################
-
-space(m::Measure{T}) where {T} = GenericFunctionSpace{T,codomaintype(m)}()
-
-space(m::FourierMeasure{T}) where {T} = FourierSpace{T}()
-space(m::ChebyshevTMeasure{T}) where {T} = ChebyshevTSpace{T}()
