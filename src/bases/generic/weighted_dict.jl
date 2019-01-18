@@ -76,16 +76,25 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
     eval_weight_on_grid(w, grid) .* eval_expansion(superdict(dict), coefficients, grid)
 
 
-# You can create an WeightedDict by multiplying a function with a set, using
-# left multiplication.
-# We support any Julia function:
+# You can create a WeightedDict by multiplying a function with a dict, using
+# left multiplication:
 (*)(f::Function, dict::Dictionary) = WeightedDict(dict, f)
 
-weightfun_scaling_operator(gb::GridBasis1d, weightfunction; T=coefficienttype(gb)) =
-    DiagonalOperator(gb, gb, T[weightfunction(x) for x in grid(gb)])
+weightfun_scaling_operator(gb::GridBasis, weightfunction) = weightfun_scaling_operator(gb, weightfunction, grid(gb))
 
-weightfun_scaling_operator(gb::GridBasis, weightfunction; T=coefficienttype(gb)) =
-    DiagonalOperator(gb, gb, T[weightfunction(x...) for x in grid(gb)])
+weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid1d; T=coefficienttype(gb)) =
+    DiagonalOperator(gb, gb, T[weightfunction(x) for x in grid])
+
+function weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid; T=coefficienttype(gb))
+	A = T[weightfunction(x...) for x in grid]
+    DiagonalOperator(gb, gb, A[:])
+end
+
+function weightfun_scaling_operator(gb, weightfunction, grid::ProductGrid; T=coefficienttype(gb))
+	A = T[weightfunction(x...) for x in grid]
+    DiagonalOperator(gb, gb, A[:])
+end
+
 
 transform_to_grid(src::WeightedDict, dest::GridBasis, grid; options...) =
     weightfun_scaling_operator(dest, weightfunction(src)) * wrap_operator(src, dest, transform_to_grid(superdict(src), dest, grid; options...))

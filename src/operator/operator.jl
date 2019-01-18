@@ -19,10 +19,10 @@ _dest(op::AbstractOperator, space) = error("Generic operator does not map to the
 
 hasspan_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
 
-function apply(op::AbstractOperator, f)
+function apply(op::AbstractOperator, f; options...)
 	if hasspan_dest(op)
 		result = zeros(dest(op))
-		apply!(result, op, f)
+		apply!(result, op, f; options...)
 	else
 		error("Don't know how to apply operator $(string(op)). Please implement.")
 	end

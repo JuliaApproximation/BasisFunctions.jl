@@ -88,29 +88,32 @@ end
 # Mixed gram operators
 ########################
 
-mixedgramoperator(d1::Dictionary, d2::Dictionary) = _mixedgramoperator(d1, d2, measure(d1), measure(d2))
+mixedgramoperator(d1::Dictionary, d2::Dictionary; options...) =
+    _mixedgramoperator(d1, d2, measure(d1), measure(d2); options...)
 
 iscompatible(m1::M, m2::M) where {M <: Measure} = m1==m2
 iscompatible(m1::Measure, m2::Measure) = false
 
-function _mixedgramoperator(d1, d2, m1::Measure, m2::Measure)
+function _mixedgramoperator(d1, d2, m1::Measure, m2::Measure; options...)
     if iscompatible(m1, m2)
-        mixedgramoperator(d1, d2, m1)
+        mixedgramoperator(d1, d2, m1; options...)
     else
         error("Incompatible measures: mixed gram operator is ambiguous.")
     end
 end
 
-mixedgramoperator(d1, d2, measure) = mixedgramoperator1(d1, d2, measure)
+mixedgramoperator(d1, d2, measure; options...) = mixedgramoperator1(d1, d2, measure; options...)
 
-mixedgramoperator1(d1::Dictionary, d2, measure) = mixedgramoperator2(d1, d2, measure)
-mixedgramoperator2(d1, d2::Dictionary, measure) = default_mixedgram(d1, d2, measure)
+mixedgramoperator1(d1::Dictionary, d2, measure; options...) =
+    mixedgramoperator2(d1, d2, measure; options...)
+mixedgramoperator2(d1, d2::Dictionary, measure; options...) =
+    default_mixedgram(d1, d2, measure; options...)
 
 function default_mixedgram(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; options...)
     T = eltype(A)
-    ArrayOperator(A, promote_coefficienttype(d1,T), promote_coefficienttype(d2,T))
+    ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
 end
 
 function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)

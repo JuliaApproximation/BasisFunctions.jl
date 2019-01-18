@@ -26,11 +26,17 @@ elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
 iscomposite(op::GenericCompositeOperator) = true
 
-function apply(comp::GenericCompositeOperator, fun)
+function apply(comp::GenericCompositeOperator, fun; options...)
     output = fun
     for op in elements(comp)
         input = output
-        output = apply(op, input)
+        # TODO: clean this op. The apply of a generic operator can accept options,
+        # but the apply of a DictionaryOperator can not.
+        if op isa DictionaryOperator
+            output = apply(op, input)
+        else
+            output = apply(op, input; options...)
+        end
     end
     output
 end

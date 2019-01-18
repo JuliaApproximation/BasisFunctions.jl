@@ -68,7 +68,8 @@ function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
     similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
-composite_length(d::Dictionary) = tuple(map(length, elements(d))...)
+composite_length(d::CompositeDict) = tuple(map(length, elements(d))...)
+block_length(dict::CompositeDict) = composite_length(dict)
 
 function composite_size(d::CompositeDict, n::Int)
     if n == length(d)
@@ -93,6 +94,8 @@ end
 for op in (:hasderivative, :hasantiderivative, :hasextension)
     @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
 end
+
+coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 
 ##################
 # Indexing

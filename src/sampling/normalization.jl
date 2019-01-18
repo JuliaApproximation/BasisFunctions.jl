@@ -107,5 +107,5 @@ function riemannsum_normalization(grid::AbstractGrid, a = leftendpoint(grid), b 
 	for m in 1:M
 		weights[m] = sqrt( (t[m+2]-t[m]) / 2)
 	end
-	DiagonalOperator(gb, weights)
+	DiagonalOperator(GridBasis{T}(grid), weights)
 end

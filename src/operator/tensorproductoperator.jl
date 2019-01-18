@@ -74,6 +74,26 @@ isdiagonal(op::TensorProductOperator) = reduce(&, map(isdiagonal, op.operators))
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 
+# We reshape any incoming or outgoing coefficients into an array of the right size
+function apply!(op::TensorProductOperator, coef_dest, coef_src::AbstractVector)
+    @warn "Reshaping input of tensor product operator from vector to tensor"
+    apply!(op, coef_dest, reshape(coef_src, size(src(op))))
+end
+
+function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src)
+    @warn "Reshaping output of tensor product operator from vector to tensor"
+    apply!(op, reshape(coef_dest, size(dest(op))), coef_src)
+end
+
+function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src::AbstractVector)
+    @warn "Reshaping input and output of tensor product operator from vector to tensor"
+    apply!(op, reshape(coef_dest, size(dest(op))), reshape(coef_src, size(src(op))))
+end
+
+apply_inplace!(op::TensorProductOperator, coef_srcdest::AbstractVector) =
+    apply_inplace!(op, reshape(coef_srcdest, size(src(op))))
+
+
 apply!(op::TensorProductOperator, coef_dest, coef_src) =
     apply_tensor!(op, coef_dest, coef_src, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 

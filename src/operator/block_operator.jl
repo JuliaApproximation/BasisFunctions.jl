@@ -309,9 +309,10 @@ function stencil(op::BlockDiagonalOperator)
     A
 end
 
+block_length(dict::Dictionary) = (length(dict),)
 
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
-    a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(composite_length(dest(op))), collect(composite_length(src(op))))
+    a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(block_length(dest(op))), collect(block_length(src(op))))
     matrix!(op, a)
     a
 end
