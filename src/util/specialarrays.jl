@@ -267,8 +267,7 @@ struct IndexMatrix{T,I,SKINNY} <: MyAbstractMatrix{T}
     n::Int
     subindices  ::  I
 
-    function IndexMatrix{T,I}(m::Int, n::Int, subindices::AbstractArray{Int}) where {T,I}
-        skinny = n<m
+    function IndexMatrix{T,I,skinny}(m::Int, n::Int, subindices::AbstractArray) where {T,I,skinny}
         if Base.IteratorSize(subindices) != Base.SizeUnknown()
             @assert (length(subindices) == m) || (length(subindices) == n)
         end
@@ -277,20 +276,26 @@ struct IndexMatrix{T,I,SKINNY} <: MyAbstractMatrix{T}
     end
 end
 
-IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{N,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
-    IndexMatrix{T}(m[1], prod(n), LinearIndices(CartesianIndices(CartesianIndex(n)))[subindices])
+IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{N,Int}, subindices::AbstractArray{CartesianIndex{N}}; skinny=false, options...) where {T,N} =
+    IndexMatrix{T}(m[1], prod(n), subindices; skinny=skinny, options...)
 
-IndexMatrix{T}(m::NTuple{N,Int}, n::NTuple{1,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
-    IndexMatrix{T}(prod(m), n[1], LinearIndices(CartesianIndices(CartesianIndex(m)))[subindices])
+IndexMatrix{T}(m::NTuple{N,Int}, n::NTuple{1,Int}, subindices::AbstractArray{CartesianIndex{N}}; skinny=true, options...) where {T,N} =
+    IndexMatrix{T}(prod(m), n[1], subindices; skinny=skinny, options...)
 
-IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{1,Int}, subindices::AbstractArray{Int}) where {T,N} =
-    IndexMatrix{T}(m[1], n[1], subindices)
+IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{1,Int}, subindices::AbstractArray{CartesianIndex{N}}; skinny=true, options...) where {T,N} =
+    error("Cartesian indices require a tensor product dictionary structure")
 
-IndexMatrix{T}(m::Int, n::Int, subindices) where {T} =
-    IndexMatrix{T,typeof(subindices)}(m, n, subindices)
+IndexMatrix{T}(m::NTuple{N1,Int}, n::NTuple{N2,Int}, subindices::AbstractArray{Int}; skinny=true, options...) where {T,N1,N2} =
+    error("Integer indices require a linear dictionary structure")
 
-IndexMatrix(m, n, subindices; T=Int) =
-    IndexMatrix{T}(m, n, subindices)
+IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{1,Int}, subindices::AbstractArray{Int}; options...) where {T,N} =
+    IndexMatrix{T}(m[1], n[1], subindices; options...)
+
+IndexMatrix{T}(m::Int, n::Int, subindices; skinny=(m>n)) where {T} =
+    IndexMatrix{T,typeof(subindices),skinny}(m, n, subindices)
+
+IndexMatrix(m, n, subindices; T=Int, options...) =
+    IndexMatrix{T}(m, n, subindices; options...)
 
 Base.copy(A::IndexMatrix{T}) where T =
     IndexMatrix{T}(A.m, A.n, Base.copy(subindices(A)))

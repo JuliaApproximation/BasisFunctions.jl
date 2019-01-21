@@ -263,7 +263,6 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			T = domaintype(grid)
 			super_grid = FourierGrid(ntot)
 			super_dgs = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; T=T, options...)

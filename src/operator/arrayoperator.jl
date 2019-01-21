@@ -105,11 +105,13 @@ IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
     IndexRestrictionOperator(src, src[subindices], subindices; opts...)
 
 IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
-    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
+    (@assert length(subindices) == length(dest) && length(dest)<=length(src);
+    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T, skinny=false), src, dest))
+subindices(op::IndexRestrictionOperator) = subindices(op.A)
 
-IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
-    (@assert length(subindices) == length(dest) && length(dest)<length(src);
-    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
+# IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
+#     (@assert length(subindices) == length(dest) && length(dest)<length(src);
+#     IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
 
 ArrayOperator(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
     IndexRestrictionOperator{T}(A, src, dest)
@@ -139,18 +141,20 @@ struct IndexExtensionOperator{T,I} <: ArrayOperator{T}
     dest        ::  Dictionary
 
     IndexExtensionOperator{T}(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
-        (@assert length(dest)>length(src); new{T,I}(A,src,dest))
+        (@assert length(dest)>=length(src); new{T,I}(A,src,dest))
 end
 
 IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
     IndexExtensionOperator(dest[subindices], dest, subindices; opts...)
 
 IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
-    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest)
-
-IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
     (@assert length(src)==length(subindices) && length(dest)>=length(src);
-    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
+    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T, skinny=true), src, dest))
+subindices(op::IndexExtensionOperator) = subindices(op.A)
+
+# IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
+#     (@assert length(src)==length(subindices) && length(dest)>=length(src);
+#     IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
 
 ArrayOperator(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
     IndexExtensionOperator{T}(A, src, dest)
