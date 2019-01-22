@@ -60,6 +60,10 @@ end
 
 support(m::FourierMeasure{T}) where {T} = UnitInterval{T}()
 
+lebesguemeasure(domain::UnitInterval{T}) where {T} = FourierMeasure{T}()
+lebesguemeasure(domain::ChebyshevInterval{T}) where {T} = LegendreMeasure{T}()
+lebesguemeasure(domain::Domain{T}) where {T} = GenericLebesgueMeasure{T}(domain)
+
 
 """
 The `Chebyshev` or `ChebyshevT` measure is the measure on `[-1,1]` with the

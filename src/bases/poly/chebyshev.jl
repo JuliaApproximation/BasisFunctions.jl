@@ -90,14 +90,21 @@ function unsafe_eval_element_derivative(b::ChebyshevT, idx::PolynomialDegree, x)
     end
 end
 
-function unsafe_moment(b::ChebyshevT{T}, idx::PolynomialDegree) where {T}
-    d = degree(idx)
-    if d == 0
+unsafe_moment(dict::ChebyshevT, idx; measure = lebesguemeasure(support(dict)), options...) =
+	unsafe_moment(dict, idx, measure; options...)
+
+
+unsafe_moment(dict::ChebyshevT, idx, measure; options...) =
+	innerproduct(dict, idx, dict, PolynomialDegree(0), measure; options...)
+function unsafe_moment(dict::ChebyshevT{T}, idx, ::LegendreMeasure; options...) where {T}
+    n = degree(idx)
+    if n == 0
         T(2)
     else
-        isodd(d) ? zero(T) : -T(2)/((d+1)*(d-1))
+        isodd(n) ? zero(T) : -T(2)/((n+1)*(n-1))
     end
 end
+
 
 ##################
 # Differentiation
@@ -241,8 +248,13 @@ function gramoperator(dict::ChebyshevT; T = coefficienttype(dict), options...)
 	DiagonalOperator(diag, src=dict)
 end
 
+function innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, measure::LegendreMeasure; options...)
+	n1 = degree(i)
+	n2 = degree(j)
+	(unsafe_moment(b1, PolynomialDegree(n1+n2), measure) + unsafe_moment(b1, PolynomialDegree(abs(n1-n2)), measure))/2
+end
 
-## Extensionandrestriction
+## Extension and restriction
 
 function extension_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)

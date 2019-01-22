@@ -36,8 +36,8 @@ innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
 function default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, m = measure(dict1);
-            warnslow = true, options...)
-    warnslow && @warn "Evaluating inner product numerically: $dict1"
+            warnslow = BF_WARNSLOW, options...)
+    warnslow && @warn "Evaluating inner product numerically"
     integral(x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x), m; options...)
 end
 
@@ -111,7 +111,7 @@ mixedgramoperator2(d1, d2::Dictionary, measure; options...) =
 
 function default_mixedgram(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
-    A = mixedgrammatrix(d1, d2, measure; options...)
+    A = mixedgrammatrix(d1, d2, measure; warnslow = warnslow, options...)
     T = eltype(A)
     ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
 end

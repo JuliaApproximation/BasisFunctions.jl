@@ -26,6 +26,15 @@ elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
 iscomposite(op::GenericCompositeOperator) = true
 
+# If the GenericCompositeOperator happens to be a composite operator of
+# product operators, then the result is a product operator too. You can select
+# its elements with the productelement routine.
+function productelement(op::GenericCompositeOperator, j::Int)
+    GenericCompositeOperator(map(t -> element(t, j), elements(op))...)
+end
+productelements(op::GenericCompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
+numproductelements(op::GenericCompositeOperator) = numproductelements(element(op,1))
+
 function apply(comp::GenericCompositeOperator, fun; options...)
     output = fun
     for op in elements(comp)
@@ -75,6 +84,12 @@ end
 # Generic functions for composite types:
 elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
+
+function productelement(op::CompositeOperator, j::Int)
+    compose(map(t -> element(t, j), elements(op))...)
+end
+productelements(op::CompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
+numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
 
 isinplace(op::CompositeOperator) = reduce(&, map(isinplace, op.operators))
 isdiagonal(op::CompositeOperator) = reduce(&, map(isdiagonal, op.operators))

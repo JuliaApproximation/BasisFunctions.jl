@@ -22,6 +22,12 @@ first_moment(b::Hermite{T}) where {T} = sqrt(T(pi))
 
 measure(b::Hermite{T}) where {T} = HermiteMeasure{T}()
 
+function quadraturenormalization(gb, grid::OPSNodes{<:Hermite,T}, ::HermiteMeasure) where {T}
+	x, w = gauss_rule(Hermite{T}(length(grid)))
+	DiagonalOperator(gb, w)
+end
+
+
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
