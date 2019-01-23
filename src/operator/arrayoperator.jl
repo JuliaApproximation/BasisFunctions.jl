@@ -22,7 +22,7 @@ unsafe_wrap_operator(src, dest, op::ArrayOperator) = similar_operator(op, src, d
 
 inv(op::ArrayOperator) = ArrayOperator(inv(op.A), dest(op), src(op))
 adjoint(op::ArrayOperator) = ArrayOperator(adjoint(op.A), dest(op), src(op))
-conj(op::ArrayOperator) = ArrayOperator(conj(matrix(op)), src(op), dest(op))
+conj(op::ArrayOperator) = ArrayOperator(conj(op.A), src(op), dest(op))
 
 similar_operator(op::ArrayOperator, src::Dictionary, dest::Dictionary) =
     ArrayOperator(op.A, src, dest)
@@ -47,6 +47,7 @@ isdiagonal(op::ArrayOperator) = isdiag(op.A)
 diagonal(op::ArrayOperator) = diag(op.A)
 
 matrix(op::ArrayOperator) = copy(op.A)
+unsafe_matrix(op::ArrayOperator) = op.A
 
 isefficient(op::ArrayOperator) = isefficient(op.A)
 
@@ -92,13 +93,13 @@ ArrayOperator(A::VerticalBandedOperator{T}, src::Dictionary, dest::Dictionary) w
 """
 An IndexRestrictionOperator selects a subset of coefficients based on their indices.
 """
-struct IndexRestrictionOperator{T,I} <: ArrayOperator{T}
-    A           ::  IndexMatrix{T,I,false}
+struct IndexRestrictionOperator{T,N,I} <: ArrayOperator{T}
+    A           ::  RestrictionIndexMatrix{T,N,I}
     src         ::  Dictionary
     dest        ::  Dictionary
 
-    IndexRestrictionOperator{T}(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
-        (@assert length(dest)<=length(src); new{T,I}(A,src,dest))
+    IndexRestrictionOperator{T}(A::RestrictionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
+        (@assert length(dest)<=length(src); new{T,N,I}(A,src,dest))
 end
 
 IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
@@ -106,14 +107,10 @@ IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
 
 IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     (@assert length(subindices) == length(dest) && length(dest)<=length(src);
-    IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T, skinny=false), src, dest))
+    IndexRestrictionOperator{T}(RestrictionIndexMatrix{T}(size(src), subindices), src, dest))
 subindices(op::IndexRestrictionOperator) = subindices(op.A)
 
-# IndexRestrictionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
-#     (@assert length(subindices) == length(dest) && length(dest)<length(src);
-#     IndexRestrictionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
-
-ArrayOperator(A::IndexMatrix{T,I,false}, src::Dictionary, dest::Dictionary) where {T,I} =
+ArrayOperator(A::RestrictionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
     IndexRestrictionOperator{T}(A, src, dest)
 
 function string(op::IndexRestrictionOperator)
@@ -135,13 +132,13 @@ end
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
 """
-struct IndexExtensionOperator{T,I} <: ArrayOperator{T}
-    A           ::  IndexMatrix{T,I,true}
+struct IndexExtensionOperator{T,N,I} <: ArrayOperator{T}
+    A           ::  ExtensionIndexMatrix{T,N,I}
     src         ::  Dictionary
     dest        ::  Dictionary
 
-    IndexExtensionOperator{T}(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
-        (@assert length(dest)>=length(src); new{T,I}(A,src,dest))
+    IndexExtensionOperator{T}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
+        (@assert length(dest)>=length(src); new{T,N,I}(A,src,dest))
 end
 
 IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
@@ -149,14 +146,10 @@ IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
 
 IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     (@assert length(src)==length(subindices) && length(dest)>=length(src);
-    IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T, skinny=true), src, dest))
+    IndexExtensionOperator{T}(ExtensionIndexMatrix{T}(size(dest), subindices), src, dest))
 subindices(op::IndexExtensionOperator) = subindices(op.A)
 
-# IndexExtensionOperator{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where T =
-#     (@assert length(src)==length(subindices) && length(dest)>=length(src);
-#     IndexExtensionOperator{T}(IndexMatrix(size(dest), size(src), subindices; T=T), src, dest))
-
-ArrayOperator(A::IndexMatrix{T,I,true}, src::Dictionary, dest::Dictionary) where {T,I} =
+ArrayOperator(A::ExtensionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
     IndexExtensionOperator{T}(A, src, dest)
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(subindices(op.A))
@@ -223,6 +216,9 @@ to_scaling(A::UniformScaling{T}) where {T} = to_scaling(T, A)
 to_scaling(::Type{T}, scalar) where {T} = UniformScaling{T}(scalar)
 to_scaling(::Type{T}, A::UniformScaling{T}) where {T} = A
 to_scaling(::Type{T}, A::UniformScaling{S}) where {S,T} = UniformScaling{T}(A.λ)
+@inline unsafe_matrix(A::ScalingOperator) = size(A,1) == size(A,2) ?
+    Diagonal(Fill(scalar(A), size(A,1))) :
+    FillArrays.RectDiagonal(Fill(scalar(A), min(size(A)...)), size(A)...)
 
 const AnyScaling = Union{Number,UniformScaling}
 
@@ -267,9 +263,7 @@ function _apply!(op::ScalingOperator, λ::Number, y, x)
     y
 end
 
-diagonal(op::ScalingOperator{T}) where {T} = ConstantVector(size(op,1), convert(T,scalar(op)))
-
-matrix(op::ScalingOperator{T}) where {T} = Matrix{T}(op.A, size(op))
+diagonal(op::ScalingOperator{T}) where {T} = Fill{T}(scalar(op), size(op,1))
 
 *(scalar::Number, op::DictionaryOperator) = ScalingOperator(dest(op), scalar) * op
 
@@ -290,7 +284,7 @@ function symbol(op::ScalingOperator)
 end
 
 
-const IdentityOperator{T} = DiagonalOperator{T,Ones{T}}
+const IdentityOperator{T} = DiagonalOperator{T,Ones{T,1,Tuple{Base.OneTo{Int64}}}} where T
 
 IdentityOperator(src::Dictionary, dest::Dictionary = src; T=op_eltype(src,dest)) =
     IdentityOperator{T}(src, dest)
@@ -355,3 +349,17 @@ ZeroOperator(src, dest=src; T = op_eltype(src, dest)) =
 
 ArrayOperator(Z::Zeros{T,2}, src::Dictionary, dest::Dictionary) where T =
     ZeroOperator{T}(Z, src, dest)
+
+
+struct LazyArrayOperator{T} <: ArrayOperator{T}
+    A       ::  Mul
+    src     ::  Dictionary
+    dest    ::  Dictionary
+
+    function LazyArrayOperator{T}(A::Mul, src::Dictionary, dest::Dictionary) where {T}
+        new{T}(A, src, dest)
+    end
+end
+
+ArrayOperator(M::Mul, src::Dictionary, dest::Dictionary)  =
+    LazyArrayOperator{eltype(M)}(M, src, dest)

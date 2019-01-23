@@ -1,6 +1,7 @@
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays
+using LazyArrays, FillArrays
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
 using Base.Cartesian
@@ -16,7 +17,7 @@ using DSP: conv
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
 import Base: ≈
-import Base: ∘
+import Base: ∘, ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 

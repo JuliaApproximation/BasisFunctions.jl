@@ -3,13 +3,23 @@
 # Arithmetics
 ###############
 
-(*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(op1.A*op2.A, src(op2), dest(op1))
-(*)(op1::ArrayOperator, op2::ArrayOperator, op3::ArrayOperator) = ArrayOperator(op1.A*op2.A*op3.A, src(op3), dest(op1))
+(∘)(ops::ArrayOperator...) = ArrayOperator(Mul(map(unsafe_matrix, ops)...), src(ops[end]), dest(ops[1]))
+(*)(ops::ArrayOperator...) = ArrayOperator(*(map(unsafe_matrix, ops)...), src(ops[end]), dest(ops[1]))
+(+)(ops::ArrayOperator...) = ArrayOperator(+(map(unsafe_matrix, ops)...), src(ops[end]), dest(ops[1]))
 
-(+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(op1.A+op2.A, src(op2), dest(op1))
-
-(*)(a::Number, op::ArrayOperator) = ArrayOperator(a*op.A, src(op), dest(op))
-(*)(op::ArrayOperator, a::Number) = ArrayOperator(a*op.A, src(op), dest(op))
+(*)(a::Number, op::ArrayOperator) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
+(*)(op::ArrayOperator, a::Number) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
 
 (*)(a::Number, op::AbstractOperator) = ScalingOperator(dest(op), a) * op
 (*)(op::AbstractOperator, a::Number) = op * ScalingOperator(src(op), a)
+
+LazyArrays.checkdimensions(A::UniformScaling, B, C...) =
+    LazyArrays.checkdimensions(B, C...)
+
+LazyArrays.checkdimensions(A, B::UniformScaling, C...) =
+    LazyArrays.checkdimensions(A, C...)
+
+LazyArrays.checkdimensions(A::UniformScaling, B::UniformScaling, C...) =
+    LazyArrays.checkdimensions(C...)
+
+# LazyArrays.MemoryLayout(::LinearAlgebra.UniformScaling) = LazyArrays.ScalarLayout()
