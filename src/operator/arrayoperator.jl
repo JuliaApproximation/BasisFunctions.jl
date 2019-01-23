@@ -208,6 +208,10 @@ _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 
 _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
+
+sqrt(op::DiagonalOperator) = DiagonalOperator(sqrt.(diagonal(op)); src = src(op), dest=dest(op))
+
+
 struct ScalingOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
@@ -272,6 +276,8 @@ diagonal(op::ScalingOperator{T}) where {T} = ConstantVector(size(op,1), convert(
 matrix(op::ScalingOperator{T}) where {T} = Matrix{T}(op.A, size(op))
 
 *(scalar::Number, op::DictionaryOperator) = ScalingOperator(dest(op), scalar) * op
+
+sqrt(op::ScalingOperator) = ScalingOperator(src(op), sqrt(scalar(op)); dest=dest(op))
 
 function string(op::ScalingOperator)
     if scalar(op) == 1

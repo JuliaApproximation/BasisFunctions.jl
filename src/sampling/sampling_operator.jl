@@ -41,6 +41,13 @@ sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)
 
 broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
+element(op::GridSampling, i) = GridSampling(element(dest(op),i))
+elements(op::GridSampling) = map( s -> GridSampling(s), elements(dest(op)))
+numproductelements(op::GridSampling) = numelements(dest(op))
+
+productelement(op::GridSampling, i) = element(op, i)
+productelements(op::GridSampling) = elements(op)
+
 
 function tensorproduct(op1::GridSampling, op2::GridSampling)
 	T = promote_type(coefficienttype(dest(op1)),coefficienttype(dest(op2)))
@@ -55,6 +62,14 @@ function tensorproduct(op1::GridSampling, op2::AbstractOperator)
 	tensorproduct(IdentityOperator(dest(op1)), element(op2,2)) * tensorproduct(op1, element(op2,1))
 end
 
+function tensorproduct(ops::GridSampling...)
+	T = promote_type(map(t->coefficienttype(dest(t)), ops)...)
+	g = ProductGrid(map(grid, ops)...)
+	GridSampling(g, T)
+end
+
+
+
 function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
 	@assert dest(op1) isa GridBasis
 	@assert dest(op2) isa GridBasis
@@ -66,6 +81,18 @@ function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
 	g = grid1 × grid2
 	tensorproduct(element(op1,2),element(op2,2)) * tensorproduct(element(op1,1),element(op2,1))
 end
+
+function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator)
+	@assert dest(op1) isa GridBasis
+	@assert dest(op2) isa GridBasis
+	@assert dest(op3) isa GridBasis
+	# TODO: generalize to longer operators
+	@assert numelements(op1) == 2
+	@assert numelements(op2) == 2
+	@assert numelements(op3) == 2
+	tensorproduct(element(op1,2),element(op2,2),element(op3,2)) * tensorproduct(element(op1,1),element(op2,1),element(op3,1))
+end
+
 
 # We don't want to assume that f can be called with a vector argument.
 # In order to avoid the overhead of splatting, we capture a number of special cases
@@ -132,7 +159,7 @@ apply!(result, op::ProjectionSampling, f; options...) = project!(result, f, dict
 
 function project!(result, f, dict::Dictionary, measure::Measure; options...)
     for i in eachindex(result)
-		result[i] = innerproduct(dict[i], f, measure)
+		result[i] = innerproduct(dict[i], f, measure; options...)
 	end
 	result
 end

@@ -194,7 +194,7 @@ similargrid(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtrem
 leftendpoint(g::ChebyshevExtremae{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevExtremae{T}) where {T} = one(T)
 
-# Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
+# TODO: flip the values so that they are sorted
 unsafe_getindex(g::ChebyshevExtremae{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
 
 strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)

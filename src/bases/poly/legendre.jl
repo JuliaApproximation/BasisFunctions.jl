@@ -31,6 +31,12 @@ function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j:
 	end
 end
 
+function quadraturenormalization(gb, grid::OPSNodes{<:Legendre}, ::LegendreMeasure; options...)
+	T = eltype(grid)
+	x, w = gauss_rule(Legendre{T}(length(grid)))
+	DiagonalOperator(gb, w)
+end
+
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
 rec_An(b::Legendre{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
