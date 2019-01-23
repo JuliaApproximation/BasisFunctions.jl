@@ -203,6 +203,11 @@ one set of coefficients in some cases.
 """
 containertype(d::Dictionary) = typeof(zeros(d))
 
+"""
+Transforms the container of coefficients `a` to the native containertype of the dictionary `d`.
+"""
+tocoefficientformat(a, d::Dictionary) = reshape(a, size(d))
+
 function rand(dict::Dictionary)
     c = zeros(dict)
     T = coefficienttype(dict)

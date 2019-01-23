@@ -231,8 +231,6 @@ inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
 
 adjoint(op::CompositeOperator)::DictionaryOperator = (*)(map(adjoint, op.operators)...)
 
-(*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
-(∘)(ops::AbstractOperator...) = (*)(ops...)
 apply(op1::AbstractOperator, op2::AbstractOperator) = compose(op2,op1)
 apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)
 

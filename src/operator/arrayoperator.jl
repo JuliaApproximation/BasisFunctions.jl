@@ -31,6 +31,7 @@ apply_inplace!(op::ArrayOperator, coef_srcdest::AbstractVector) = _apply_inplace
 _apply_inplace!(op::ArrayOperator, A::AbstractArray, x) = mul!(x, A, x)
 
 apply!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) = _apply!(op, op.A, coef_dest, coef_src)
+mul!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) = mul!(coef_dest, op.A, coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
 apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {T,N1,N2} =
@@ -49,7 +50,8 @@ diagonal(op::ArrayOperator) = diag(op.A)
 matrix(op::ArrayOperator) = copy(op.A)
 unsafe_matrix(op::ArrayOperator) = op.A
 
-isefficient(op::ArrayOperator) = isefficient(op.A)
+isefficient(op::ArrayOperator) = isefficient(unsafe_matrix(op.A))
+isefficient(::AbstractArray) = false
 
 string(op::ArrayOperator) = string(op, op.A)
 string(op::ArrayOperator,array) = "Multiplication by "*string(typeof(op.A))
@@ -195,7 +197,7 @@ DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {
 isdiagonal(op::DiagonalOperator) = true
 isinplace(op::DiagonalOperator) = true
 
-isefficient(op::DiagonalOperator) = true
+isefficient(op::Diagonal) = true
 
 _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 
@@ -248,7 +250,6 @@ size(op::ScalingOperator) = op.size
 
 isdiagonal(op::ScalingOperator) = true
 isinplace(op::ScalingOperator) = true
-isefficient(op::ScalingOperator) = true
 
 apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op,scalar(op), x)
 function _apply_inplace!(op::ScalingOperator, λ::Number, x)
@@ -356,6 +357,10 @@ ZeroOperator(src, dest=src; T = op_eltype(src, dest)) =
 ArrayOperator(Z::Zeros{T,2}, src::Dictionary, dest::Dictionary) where T =
     ZeroOperator{T}(Z, src, dest)
 
+isefficient(::Zeros) = true
+
+mul!(dest::AbstractVector, op::Zeros, src::AbstractVector) =
+    fill!(dest, zero(eltype(op)))
 
 struct LazyArrayOperator{T} <: ArrayOperator{T}
     A       ::  Mul
@@ -369,3 +374,5 @@ end
 
 ArrayOperator(M::Mul, src::Dictionary, dest::Dictionary)  =
     LazyArrayOperator{eltype(M)}(M, src, dest)
+
+isefficient(::Mul) = true

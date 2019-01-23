@@ -82,6 +82,7 @@ dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
 
 
 zeros(::Type{T}, s::OperatedDict) where {T} = zeros(T, src(s))
+tocoefficientformat(a, d::OperatedDict) = tocoefficientformat(a, src(d))
 
 
 ##########################

@@ -9,10 +9,6 @@ end
 "Is the operator a combination of other operators"
 iscomposite(op::AbstractOperator) = false
 
-# make times (*) a synonym for applying the operator
-# TODO: reconsider this
-(*)(op::AbstractOperator, object) = apply(op, object)
-
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
 _dest(op::AbstractOperator, span::Span) = dictionary(span)
 _dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
@@ -99,9 +95,6 @@ isinplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
 isdiagonal(op::DictionaryOperator) = false
-
-LinearAlgebra.mul!(y::AbstractVector, A::DictionaryOperator, x::AbstractVector) = apply!(A, y, x)
-LinearAlgebra.mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = y[:] = apply_multiple(A, x)
 
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))

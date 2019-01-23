@@ -87,6 +87,8 @@ function zeros(::Type{T}, set::CompositeDict) where {T}
     Z
 end
 
+tocoefficientformat(a, d::CompositeDict) = BlockVector(a, [length(e) for e in elements(set)])
+
 for op in (:isreal, )
     @eval $op(set::CompositeDict) = reduce($op, elements(set))
 end
