@@ -162,7 +162,7 @@ export expansion, coefficients, dictionary, roots,
 export AbstractOperator, DictionaryOperator
 export src, dest, src_space, dest_space
 export apply!, apply, apply_multiple, apply_inplace!
-export matrix, diagonal, isdiagonal, isinplace, sparse_matrix
+export matrix, diag, isdiag, isinplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -292,8 +292,9 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 export gaussjacobi
 
-
-
+diagonal(a...) = error("diagonal is replaced by the LinearAlgebra-type function diag")
+isdiagonal(a...) = error("isdiagonal is replaced by the LinearAlgebra-type function isdiag")
+export diagonal, isdiagonal
 
 include("util/common.jl")
 include("util/indexing.jl")

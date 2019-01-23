@@ -92,7 +92,7 @@ productelements(op::CompositeOperator) = tuple([productelement(op, j) for j in 1
 numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
 
 isinplace(op::CompositeOperator) = reduce(&, map(isinplace, op.operators))
-isdiagonal(op::CompositeOperator) = reduce(&, map(isdiagonal, op.operators))
+isdiag(op::CompositeOperator) = reduce(&, map(isdiag, op.operators))
 iscomposite(op::CompositeOperator) = true
 
 

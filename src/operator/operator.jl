@@ -94,7 +94,7 @@ size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 isinplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
-isdiagonal(op::DictionaryOperator) = false
+isdiag(op::DictionaryOperator) = false
 
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))
@@ -239,8 +239,8 @@ end
 
 
 "Return the diagonal of the operator."
-function diagonal(op::DictionaryOperator)
-    if isdiagonal(op)
+function diag(op::DictionaryOperator)
+    if isdiag(op)
         # Make data of all ones in the native representation of the operator
         all_ones = ones(src(op))
         # Apply the operator: this extracts the diagonal because the operator is diagonal
@@ -248,24 +248,24 @@ function diagonal(op::DictionaryOperator)
         # Convert to vector
         linearize_coefficients(dest(op), diagonal_native)
     else
-		# Compute the diagonal by calling unsafe_diagonal for each index
-        [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
+		# Compute the diagonal by calling unsafe_diag for each index
+        [unsafe_diag(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
 
 "Return the diagonal element op[i,i] of the operator."
-function diagonal(op::DictionaryOperator, i)
-	# Perform bounds checking and call unsafe_diagonal
+function diag(op::DictionaryOperator, i)
+	# Perform bounds checking and call unsafe_diag
 	checkbounds(op, i, i)
-	unsafe_diagonal(op, i)
+	unsafe_diag(op, i)
 end
 
 # Default behaviour: call unsafe_getindex
-unsafe_diagonal(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
+unsafe_diag(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
-    @assert isdiagonal(op)
+    @assert isdiag(op)
     newdiag = copy(diagonal(op))
     for i = 1:length(newdiag)
         newdiag[i] = abs(newdiag[i])>tolerance ? newdiag[i].^(-1) : 0

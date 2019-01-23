@@ -96,8 +96,8 @@ unsafe_eval_element(dict::OperatedDict, i, x) =
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    if isdiagonal(op)
-        diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
+    if isdiag(op)
+        diag(op, idx) * unsafe_eval_element(src(dict), idxn, x)
     else
         scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)
@@ -108,7 +108,7 @@ end
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    diagonal(op, idx) * unsafe_eval_element(src(dict), idxn, x)
+    diag(op, idx) * unsafe_eval_element(src(dict), idxn, x)
 end
 
 grid_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) =
@@ -122,7 +122,7 @@ hasextension(dict::OperatedDict) = false
 isreal(dict::OperatedDict) = isreal(operator(dict))
 
 for op in (:isbasis, :isframe)
-    @eval $op(set::OperatedDict) = isdiagonal(operator(set)) && $op(src(set))
+    @eval $op(set::OperatedDict) = isdiag(operator(set)) && $op(src(set))
 end
 
 
@@ -130,8 +130,8 @@ end
 # Transform
 #################
 
-hastransform(dict::OperatedDict) = isdiagonal(operator(dict)) && hastransform(src(dict))
-hastransform(dict::OperatedDict, dgs::GridBasis) = isdiagonal(operator(dict)) && hastransform(src(dict), dgs)
+hastransform(dict::OperatedDict) = isdiag(operator(dict)) && hastransform(src(dict))
+hastransform(dict::OperatedDict, dgs::GridBasis) = isdiag(operator(dict)) && hastransform(src(dict), dgs)
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 
@@ -165,8 +165,8 @@ unsafe_eval_element_derivative(dict::OperatedDict, i, x) =
 
 function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    if isdiagonal(op)
-        diagonal(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x)
+    if isdiag(op)
+        diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x)
     else
         scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)
@@ -189,9 +189,9 @@ gramoperator(dict::OperatedDict; options...) =
 
 function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
-	if isdiagonal(op)
+	if isdiag(op)
 		idx = linear_index(d1, i)
-		conj(diagonal(op, idx)) * innerproduct(superdict(d1), i, d2, j, measure; options...)
+		conj(diag(op, idx)) * innerproduct(superdict(d1), i, d2, j, measure; options...)
 	else
 		innerproduct2(d1, i, d2, j, measure; options...)
 	end
@@ -199,9 +199,9 @@ end
 
 function innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
 	op = operator(d2)
-	if isdiagonal(op)
+	if isdiag(op)
 		idx = linear_index(d2, j)
-		diagonal(op, idx) * innerproduct(d1, i, superdict(d2), j, measure; options...)
+		diag(op, idx) * innerproduct(d1, i, superdict(d2), j, measure; options...)
 	else
 		default_dict_innerproduct(d1, i, d2, j, measure; options...)
 	end

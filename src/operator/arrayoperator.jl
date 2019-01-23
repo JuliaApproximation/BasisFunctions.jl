@@ -44,8 +44,8 @@ _apply!(op::ArrayOperator, A::AbstractArray, coef_dest, coef_src) = mul!(coef_de
 
 
 
-isdiagonal(op::ArrayOperator) = isdiag(op.A)
-diagonal(op::ArrayOperator) = diag(op.A)
+isdiag(op::ArrayOperator) = isdiag(op.A)
+diag(op::ArrayOperator) = diag(op.A)
 
 matrix(op::ArrayOperator) = copy(op.A)
 unsafe_matrix(op::ArrayOperator) = op.A
@@ -167,22 +167,22 @@ struct DiagonalOperator{T,D} <: ArrayOperator{T}
     end
 end
 
-# Convert various arguments to a diagonal matrix with a concrete diagonal vector
+# Convert various arguments to a diag matrix with a concrete diag vector
 # with elements of type T.
-to_diagonal(A::AbstractArray{T}) where {T} = to_diagonal(T, A)
-to_diagonal(::Type{T}, A::AbstractVector) where {T} = to_diagonal(T, collect(A))
-to_diagonal(::Type{T}, A::Vector{T}) where {T} = Diagonal(A)
-to_diagonal(::Type{T}, A::Vector{S}) where {S,T} = to_diagonal(T, convert(Vector{T}, A))
-to_diagonal(::Type{T}, A::Diagonal{T,Array{T,1}})  where {T} = A
-to_diagonal(::Type{T}, A::Diagonal{T}) where {T} = to_diagonal(T, diag(A))
-to_diagonal(::Type{T}, A::Diagonal{S}) where {S,T} = to_diagonal(T, convert(Diagonal{T}, A))
+to_diag(A::AbstractArray{T}) where {T} = to_diag(T, A)
+to_diag(::Type{T}, A::AbstractVector) where {T} = to_diag(T, collect(A))
+to_diag(::Type{T}, A::Vector{T}) where {T} = Diagonal(A)
+to_diag(::Type{T}, A::Vector{S}) where {S,T} = to_diag(T, convert(Vector{T}, A))
+to_diag(::Type{T}, A::Diagonal{T,Array{T,1}})  where {T} = A
+to_diag(::Type{T}, A::Diagonal{T}) where {T} = to_diag(T, diag(A))
+to_diag(::Type{T}, A::Diagonal{S}) where {S,T} = to_diag(T, convert(Diagonal{T}, A))
 
-DiagonalOperator(A::AbstractArray; kwargs...) = DiagonalOperator(to_diagonal(A); kwargs...)
+DiagonalOperator(A::AbstractArray; kwargs...) = DiagonalOperator(to_diag(A); kwargs...)
 
 DiagonalOperator(A::Diagonal{S,D}; src = A_src(A), dest = src, T=op_eltype(src,dest)) where {S,D} =
     DiagonalOperator{promote_type(S,T)}(A, src=src, dest=dest)
 
-DiagonalOperator{T}(A::AbstractArray; kwargs...) where {T} = DiagonalOperator{T}(to_diagonal(T,A); kwargs...)
+DiagonalOperator{T}(A::AbstractArray; kwargs...) where {T} = DiagonalOperator{T}(to_diag(T,A); kwargs...)
 
 DiagonalOperator{T}(A::Diagonal{T,D}; src = A_src(A), dest = src) where {T,D} =
     DiagonalOperator{T,D}(src, dest, A)
@@ -194,7 +194,7 @@ DiagonalOperator(src::Dictionary, A::AbstractArray; options...) = DiagonalOperat
 DiagonalOperator{T}(src::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src)
 DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src, dest=dest)
 
-isdiagonal(op::DiagonalOperator) = true
+isdiag(op::DiagonalOperator) = true
 isinplace(op::DiagonalOperator) = true
 
 isefficient(op::Diagonal) = true
@@ -204,7 +204,7 @@ _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
 
-sqrt(op::DiagonalOperator) = DiagonalOperator(sqrt.(diagonal(op)); src = src(op), dest=dest(op))
+sqrt(op::DiagonalOperator) = DiagonalOperator(sqrt.(diag(op)); src = src(op), dest=dest(op))
 
 
 struct ScalingOperator{T} <: ArrayOperator{T}
@@ -248,7 +248,7 @@ scalar(op::ScalingOperator) = op.A.λ
 
 size(op::ScalingOperator) = op.size
 
-isdiagonal(op::ScalingOperator) = true
+isdiag(op::ScalingOperator) = true
 isinplace(op::ScalingOperator) = true
 
 apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op,scalar(op), x)
@@ -268,7 +268,7 @@ function _apply!(op::ScalingOperator, λ::Number, y, x)
     y
 end
 
-diagonal(op::ScalingOperator{T}) where {T} = Fill{T}(scalar(op), size(op,1))
+diag(op::ScalingOperator{T}) where {T} = Fill{T}(scalar(op), size(op,1))
 
 *(scalar::Number, op::DictionaryOperator) = ScalingOperator(dest(op), scalar) * op
 
