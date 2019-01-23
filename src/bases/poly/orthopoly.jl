@@ -275,12 +275,20 @@ end
 
 gauss_points(b::OPS) = roots(b)
 
-# We say that hasinterpolationgrid is true only for Float64 because it relies on an
-# eigenvalue decomposition and that is currently not (natively) supported in
-# BigFloat
-hasinterpolationgrid(b::OPS{Float64}) = true
 
-interpolation_grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
+struct OPSNodes{OPS,T} <: AbstractGrid{T,1}
+	nodes	::	Vector{T}
+end
+
+OPSNodes(dict::OPS{T}) where {T} = OPSNodes{typeof(dict),T}(roots(dict))
+
+size(grid::OPSNodes) = (length(grid.nodes),)
+getindex(grid::OPSNodes, i::Int) = grid.nodes[i]
+
+hasinterpolationgrid(dict::OPS) = true
+interpolation_grid(dict::OPS) = OPSNodes(dict)
+
+
 
 "Return the first moment, i.e., the integral of the weight function."
 function first_moment(b::OPS)

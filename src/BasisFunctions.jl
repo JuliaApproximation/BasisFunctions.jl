@@ -29,7 +29,7 @@ import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1
 import Base: broadcast, similar
 
-import Base: cos, sin, exp, log
+import Base: cos, sin, exp, log, sqrt
 import Base: zeros, ones, one, zero, fill!, rand
 
 import Base: isreal, iseven, isodd, real, complex, conj
@@ -106,6 +106,7 @@ export MappedGrid, mapped_grid, apply_map
 export innerproduct
 export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure
 export MappedMeasure, ProductMeasure, SubMeasure
+export supermeasure
 
 # from spaces/spaces.jl
 export GenericFunctionSpace, space
@@ -176,7 +177,7 @@ export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         IndexRestrictionOperator, IndexExtensionOperator,
         HorizontalBandedOperator, VerticalBandedOperator
 # from operator/solvers.jl
-export QR_solver, SVD_solver, operator
+export QR_solver, SVD_solver, regularized_SVD_solver, operator
 # from operator/circulant_operator.jl
 export CirculantOperator
 # from operator/pseudo_diagonal.jl
@@ -253,6 +254,9 @@ export sample
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
+
+# from sampling/normalization.jl
+export quadraturenormalization, sampling_normalization
 
 # from bases/fourier/fourier.jl
 export Fourier,

@@ -98,9 +98,9 @@ hasmeasure(dict::Subdictionary) = hasmeasure(superdict(dict))
 measure(dict::Subdictionary) = measure(superdict(dict))
 
 innerproduct1(d1::Subdictionary, i, d2, j, measure; options...) =
-    innerproduct(superdict(d1), i, d2, j, measure; options...)
+    innerproduct(superdict(d1), superindices(d1,i), d2, j, measure; options...)
 innerproduct2(d1, i, d2::Subdictionary, j, measure; options...) =
-    innerproduct(d1, i, superdict(d2), j, measure; options...)
+    innerproduct(d1, i, superdict(d2), superindices(d2, j), measure; options...)
 
 
 #####################

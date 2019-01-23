@@ -32,6 +32,10 @@ element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
 numelements(dict::TensorProductDict{N}) where {N} = N
 
+productelements(dict::TensorProductDict) = elements(dict)
+productelement(dict::TensorProductDict, j::Int) = element(dict, j)
+numproductelements(dict::TensorProductDict) = numelements(dict)
+
 tolerance(dict::TensorProductDict)=minimum(map(tolerance,elements(dict)))
 
 function TensorProductDict(dict::Dictionary)

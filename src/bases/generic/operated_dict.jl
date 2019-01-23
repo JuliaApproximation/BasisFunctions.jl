@@ -64,7 +64,7 @@ function similar_dictionary(d::OperatedDict, dict::Dictionary)
     if dict == src(d)
         d
     elseif src(d) == dest(d)
-        OperatedDictionary(wrap_operator(dict, dict, operator(d)))
+        OperatedDict(wrap_operator(dict, dict, operator(d)))
     end
 end
 

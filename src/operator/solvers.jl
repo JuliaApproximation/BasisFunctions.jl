@@ -78,8 +78,44 @@ end
 
 adjoint(op::GenericSolverOperator) = @warn("not implemented")
 
-qr_factorization(matrix) = qr(matrix, Val(true))
-svd_factorization(matrix) = svd(matrix, full=false)
+qr_factorization(op::DictionaryOperator) = qr(matrix(op), Val(true))
 
-QR_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, qr_factorization(matrix(op)))
-SVD_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, svd_factorization(matrix(op)))
+function svd_factorization(op::DictionaryOperator)
+    local F
+    A = matrix(op)
+    try
+        F = svd(A, full=false)
+    catch
+        # Sometimes svd does not work because A is a structured matrix.
+        # In that case, we convert to a dense matrix.
+        F = svd(collect(A), full=false)
+    end
+    return F
+end
+
+function regularized_svd_factorization(op::DictionaryOperator;
+            verbose = false, threshold = 1000*eps(real(eltype(op))), options...)
+    F = svd_factorization(op)
+    U = F.U
+    S = F.S
+    Vt = F.Vt
+    I = findfirst(F.S .< threshold)
+    if I == nothing
+        verbose && println("SVD: no regularization needed (threshold: $threshold)")
+        return F
+    else
+        verbose && println("SVD truncated at rank $I of $(minimum(size(op))) (threshold: $threshold)")
+        U_reg = U[:,1:I]
+        Vt_reg = Vt[1:I,:]
+        S_reg = S[1:I]
+        return SVD(U_reg, S_reg, Vt_reg)
+    end
+end
+
+QR_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, qr_factorization(op))
+SVD_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, svd_factorization(op))
+
+regularized_SVD_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, regularized_svd_factorization(op; options...))

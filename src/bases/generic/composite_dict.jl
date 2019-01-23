@@ -168,3 +168,9 @@ function evaluation_matrix(dict::CompositeDict, pts; T = codomaintype(dict))
     a = BlockArray{T}(undef, [length(pts),], collect(composite_length(dict)))
     evaluation_matrix!(a, dict, pts)
 end
+
+
+innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
+    innerproduct(element(d1, i[1]), i[2], d2, j, measure; options...)
+innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
+    innerproduct(d1, i, element(d2, j[1]), j[2], measure; options...)

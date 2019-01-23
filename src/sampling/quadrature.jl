@@ -88,3 +88,34 @@ function clenshaw_curtis(n, ::Type{T} = Float64) where {T}
     weights[n+1] = weights[1]
     ChebyshevExtremae{T}(n+1), weights
 end
+
+
+function rescale_cc_quad(x, w, a, b)
+    y = (reverse(x).+1)/2 * (b-a) .+ a
+    v = w .* (b-a)/2
+    y,v
+end
+
+function rescale_fejer_quad(x, w, a, b)
+    y = (x.+1)/2 * (b-a) .+ a
+    v = w .* (b-a)/2
+    y,v
+end
+
+function graded_rule(sigma, a, b, M, n, T = Float64)
+    x, w = BasisFunctions.fejer_first_rule(n, T)
+    xg = zeros(T, M*length(x))
+    wg = zeros(T, M*length(w))
+    q1 = one(T)
+    for m = M-1:-1:1
+        q0 = sigma*q1
+        y,v = rescale_fejer_quad(x, w, q0, q1)
+        xg[m*n+1:(m+1)*n] .= y
+        wg[m*n+1:(m+1)*n] .= v
+        q1 = q0
+    end
+    y,v = rescale_fejer_quad(x, w, 0, q1)
+    xg[1:n] .= y
+    wg[1:n] .= v
+    a .+ xg*(b-a), wg * (b-a)
+end
