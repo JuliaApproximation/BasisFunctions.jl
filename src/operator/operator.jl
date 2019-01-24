@@ -266,7 +266,7 @@ unsafe_diag(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
     @assert isdiag(op)
-    newdiag = copy(diagonal(op))
+    newdiag = copy(diag(op))
     for i = 1:length(newdiag)
         newdiag[i] = abs(newdiag[i])>tolerance ? newdiag[i].^(-1) : 0
     end
