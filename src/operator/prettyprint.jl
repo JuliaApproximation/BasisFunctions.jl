@@ -101,7 +101,7 @@ end
 
 strings(a::AbstractVector) = tuple(string(a))
 
-strings(op::DiagonalOperator) = ("Diagonal operator with element type $(eltype(op))", strings(diagonal(op)))
+strings(op::DiagonalOperator) = ("Diagonal operator with element type $(eltype(op))", strings(diag(op)))
 
 
 # Different operators with the same symbol get added subscripts

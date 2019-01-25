@@ -263,7 +263,6 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			T = domaintype(grid)
 			super_grid = FourierGrid(ntot)
 			super_dgs = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; T=T, options...)
@@ -410,8 +409,8 @@ function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 	coef_dest
 end
 
-isdiagonal(::FourierIndexExtensionOperator) = true
-isdiagonal(::FourierIndexRestrictionOperator) = true
+isdiag(::FourierIndexExtensionOperator) = true
+isdiag(::FourierIndexRestrictionOperator) = true
 
 adjoint(op::FourierIndexExtensionOperator{T}) where {T} =
 	FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
@@ -467,12 +466,12 @@ function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict
 	@assert s1 == s2 # There is currently no support for s1 != s2
 	# Build a vector of the first order differential operators in each spatial direction:
 	Diffs = map(x->differentiation_operator(x; T=T, options...),elements(s1))
-	@assert isdiagonal(Diffs[1]) #should probably also check others too. This is a temp hack.
+	@assert isdiag(Diffs[1]) #should probably also check others too. This is a temp hack.
 	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
 	N = prod(size(s1))
 	diag = zeros(N)
 	for k = 1:N
-		vec = [diagonal(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
+		vec = [diag(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
 		diag[k] = symbol(vec)
 	end
 	DiagonalOperator(s1,diag; T=T)

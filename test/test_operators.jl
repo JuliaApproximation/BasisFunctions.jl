@@ -122,12 +122,12 @@ function test_diagonal_operators(T)
             # Test Sum
             @test abs(sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
             # Test Equivalence to diagonal operator
-            @test abs(sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(Op*coef_src-diag(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
-            @test isdiagonal(2*Op)
-            @test isdiagonal(Op')
-            @test isdiagonal(inv(Op))
-            @test isdiagonal(Op*Op)
+            @test isdiag(2*Op)
+            @test isdiag(Op')
+            @test isdiag(inv(Op))
+            @test isdiag(Op*Op)
             # Make sure in_place is retained
             if isinplace(Op)
                 @test isinplace(2*Op)
@@ -173,12 +173,12 @@ function test_multidiagonal_operators(T)
         # Test Sum
         @test (Op+Op)*coef_src≈2*(Op*coef_src)
         # Test Equivalence to diagonal operator
-        @test linearize_coefficients(MSet,Op*coef_src)≈diagonal(Op).*linearize_coefficients(MSet,coef_src)
+        @test linearize_coefficients(MSet,Op*coef_src)≈ diag(Op).*linearize_coefficients(MSet,coef_src)
         # Make sure diagonality is retained
-        @test isdiagonal(2*Op) && isinplace(2*Op)
-        @test isdiagonal(Op') && isinplace(Op')
-        @test isdiagonal(inv(Op)) && isinplace(inv(Op))
-        @test isdiagonal(Op*Op) && isinplace(Op*Op)
+        @test isdiag(2*Op) && isinplace(2*Op)
+        @test isdiag(Op') && isinplace(Op')
+        @test isdiag(inv(Op)) && isinplace(inv(Op))
+        @test isdiag(Op*Op) && isinplace(Op*Op)
     end
 end
 

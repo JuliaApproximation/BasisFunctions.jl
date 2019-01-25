@@ -38,7 +38,7 @@ function test_generic_operator_interface(op, T)
     @test maximum(abs.(r-r2)) < eps(T)
 
     # Test claim to be diagonal
-    if isdiagonal(op)
+    if isdiag(op)
         for i in 1:size(op,1)
             for j in 1:size(op,2)
                 if i != j
@@ -49,10 +49,10 @@ function test_generic_operator_interface(op, T)
     end
 
     # Verify diagonal entries
-    d = diagonal(op)
+    d = diag(op)
     for i in 1:min(size(op,1),size(op,2))
         d[i] ≈ m[i,i]
-        diagonal(op, i) ≈ m[i,i]
+        diag(op, i) ≈ m[i,i]
     end
 
     ## # Verify eltype promotion

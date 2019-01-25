@@ -65,7 +65,7 @@ hasgrid_transform(s::DerivedDict, gs, grid) = hasgrid_transform(superdict(s), gs
 # ... and then implement those operations one by one and remove the definitions.
 
 zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
-
+tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :interpolation_grid, :iscomposite, :numelements,

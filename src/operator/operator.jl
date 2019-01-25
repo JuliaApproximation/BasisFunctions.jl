@@ -9,10 +9,6 @@ end
 "Is the operator a combination of other operators"
 iscomposite(op::AbstractOperator) = false
 
-# make times (*) a synonym for applying the operator
-# TODO: reconsider this
-(*)(op::AbstractOperator, object) = apply(op, object)
-
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
 _dest(op::AbstractOperator, span::Span) = dictionary(span)
 _dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
@@ -98,10 +94,7 @@ size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 isinplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
-isdiagonal(op::DictionaryOperator) = false
-
-LinearAlgebra.mul!(y::AbstractVector, A::DictionaryOperator, x::AbstractVector) = apply!(A, y, x)
-LinearAlgebra.mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = y[:] = apply_multiple(A, x)
+isdiag(op::DictionaryOperator) = false
 
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))
@@ -118,7 +111,7 @@ function apply!(op::DictionaryOperator, coef_dest, coef_src)
 		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
-		error("The action of an operator should not depend on its src and destination.")
+		apply_not_inplace!(op, coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.
@@ -132,14 +125,12 @@ function apply!(op::DictionaryOperator, coef_srcdest)
 end
 
 # Catch-all for missing implementations
-function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
-	error("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
-end
+apply_not_inplace!(op::DictionaryOperator, coef_dest, coef_src) =
+	error("Operation of ", typeof(op), " on ", typeof(dest(op)), " and ", typeof(src(op)), " not implemented.")
 
 # Catch-all for missing implementations
-function apply_inplace!(op::DictionaryOperator, coef_srcdest)
-	error("In-place operation of ", typeof(op), " not implemented.")
-end
+apply_inplace!(op::DictionaryOperator, coef_srcdest) =
+	error("In-place operation of ", typeof(op), " on ", typeof(dest(op)), " and ", typeof(src(op)), " not implemented.")
 
 
 """
@@ -248,8 +239,8 @@ end
 
 
 "Return the diagonal of the operator."
-function diagonal(op::DictionaryOperator)
-    if isdiagonal(op)
+function diag(op::DictionaryOperator)
+    if isdiag(op)
         # Make data of all ones in the native representation of the operator
         all_ones = ones(src(op))
         # Apply the operator: this extracts the diagonal because the operator is diagonal
@@ -257,25 +248,25 @@ function diagonal(op::DictionaryOperator)
         # Convert to vector
         linearize_coefficients(dest(op), diagonal_native)
     else
-		# Compute the diagonal by calling unsafe_diagonal for each index
-        [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
+		# Compute the diagonal by calling unsafe_diag for each index
+        [unsafe_diag(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
 
 "Return the diagonal element op[i,i] of the operator."
-function diagonal(op::DictionaryOperator, i)
-	# Perform bounds checking and call unsafe_diagonal
+function diag(op::DictionaryOperator, i)
+	# Perform bounds checking and call unsafe_diag
 	checkbounds(op, i, i)
-	unsafe_diagonal(op, i)
+	unsafe_diag(op, i)
 end
 
 # Default behaviour: call unsafe_getindex
-unsafe_diagonal(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
+unsafe_diag(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
-    @assert isdiagonal(op)
-    newdiag = copy(diagonal(op))
+    @assert isdiag(op)
+    newdiag = copy(diag(op))
     for i = 1:length(newdiag)
         newdiag[i] = abs(newdiag[i])>tolerance ? newdiag[i].^(-1) : 0
     end

@@ -248,7 +248,7 @@ support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
 
 unsafe_weight(m::ProductMeasure, x) = prod(map(unsafe_weight, elements(m), x))
 
-function stencil(m::ProductMeasure)
+function stencilarray(m::ProductMeasure)
     A = Any[]
     push!(A, element(m,1))
     for i = 2:length(elements(m))

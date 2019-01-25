@@ -202,7 +202,7 @@ adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op
 pinv(op::OperatorSum) = OperatorSum(pinv(op.op1), pinv(op.op2), op.val1, op.val2)
 
 iscomposite(op::OperatorSum) = true
-isdiagonal(op::OperatorSum) = isdiagonal(op.op1) && isdiagonal(op.op2)
+isdiag(op::OperatorSum) = isdiag(op.op1) && isdiag(op.op2)
 
 
 apply_inplace!(op::OperatorSum, coef_srcdest) =
@@ -289,7 +289,7 @@ similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)
 
-isdiagonal(op::LinearizationOperator) = true
+isdiag(op::LinearizationOperator) = true
 
 Base.adjoint(op::LinearizationOperator) = DelinearizationOperator(dest(op), src(op))
 
@@ -312,7 +312,7 @@ similar_operator(::DelinearizationOperator, src, dest) =
 apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
-isdiagonal(op::DelinearizationOperator) = true
+isdiag(op::DelinearizationOperator) = true
 
 Base.adjoint(op::DelinearizationOperator) = LinearizationOperator(dest(op), src(op))
 

@@ -27,63 +27,6 @@ Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
 
 Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
 
-
-"A vector of 1's."
-struct Ones{T} <: AbstractArray{T,1}
-    n   ::  Int
-end
-
-Ones(n::Int) = Ones{Float64}(n)
-
-size(A::Ones) = (A.n,)
-getindex(A::Ones{T}, i::Int) where {T} = one(T)
-
-inv(D::Diagonal{T,Ones{T}}) where {T} = D
-
-adjoint(D::Diagonal{T,Ones{T}}) where {T} = D
-
-
-"A vector of zeros."
-struct Zeros{T,N} <: AbstractArray{T,N}
-    n   ::  NTuple{N,Int}
-
-    Zeros{T}(n::Int...) where T =
-        new{T,length(n)}(n)
-end
-
-Zeros(n::Int...) = Zeros{Float64}(n...)
-
-size(A::Zeros) = A.n
-getindex(A::Zeros{T}, i::Int...) where {T} = zero(T)
-
-adjoint(D::Diagonal{T,Zeros{T,1}}) where {T} = D
-adjoint(Z::Zeros{T,2}) where T = Zeros{T}(size(Z,2), size(Z,1))
-
-isefficient(::Zeros) = true
-
-mul!(dest::AbstractVector, op::Zeros, src::AbstractVector) =
-    fill!(dest, zero(eltype(op)))
-
-isdiag(::Zeros) = true
-
-diag(op::Zeros) = Zeros{eltype(op)}(min(op.n...))
-
-Base.copy(op::Zeros) = op
-
-"A vector of constant values."
-struct ConstantVector{T} <: AbstractArray{T,1}
-    n   ::  Int
-    val ::  T
-end
-
-size(A::ConstantVector) = (A.n,)
-getindex(A::ConstantVector, i::Int) = A.val
-
-for op in (:inv, :adjoint)
-    @eval $op(D::Diagonal{T,ConstantVector{T}}) where {T} = Diagonal(ConstantVector(size(D,1), $op(D.diag.val)))
-end
-
-
 "A vector of the form `[1,-1,1,-1,...]`."
 struct AlternatingSigns{T} <: AbstractArray{T,1}
     n   ::  Int
@@ -262,71 +205,110 @@ end
 """
 An IndexMatrix selects/restricts a subset of coefficients based on their indices.
 """
-struct IndexMatrix{T,I,SKINNY} <: MyAbstractMatrix{T}
-    m::Int
-    n::Int
-    subindices  ::  I
+struct IndexMatrix{T,EXTENSION,N,I} <: MyAbstractMatrix{T}
+    linear_size     ::Int
+    original_size   ::NTuple{N,Int}
+    subindices      ::I
 
-    function IndexMatrix{T,I}(m::Int, n::Int, subindices::AbstractArray{Int}) where {T,I}
-        skinny = n<m
-        if Base.IteratorSize(subindices) != Base.SizeUnknown()
-            @assert (length(subindices) == m) || (length(subindices) == n)
-        end
+
+    function IndexMatrix{T,EXTENSION,N,I}(original_size::NTuple{N,Int}, subindices::AbstractArray) where {N,T,I,EXTENSION}
+        @assert (N==1) ? eltype(subindices) == Int : eltype(subindices) == CartesianIndex{N}
+        n = length(subindices)
+        m = prod(original_size)
         m == n && (@warn "IndexMatrix contains all elements, consider identity or (De)LinearizationOperator instead.")
-        new{T,I,skinny}(m, n, subindices)
+        new{T,EXTENSION,N,I}(n, original_size, subindices)
     end
 end
 
-IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{N,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
-    IndexMatrix{T}(m[1], prod(n), LinearIndices(CartesianIndices(CartesianIndex(n)))[subindices])
+const ExtensionIndexMatrix{T,N,I} = IndexMatrix{T,true,N,I} where {T,N,I}
+const RestrictionIndexMatrix{T,N,I} = IndexMatrix{T,false,N,I} where {T,N,I}
 
-IndexMatrix{T}(m::NTuple{N,Int}, n::NTuple{1,Int}, subindices::AbstractArray{CartesianIndex{N}}) where {T,N} =
-    IndexMatrix{T}(prod(m), n[1], LinearIndices(CartesianIndices(CartesianIndex(m)))[subindices])
+IndexMatrix{T,EXTENSION}(extended_size::NTuple{N,Int}, subindices::AbstractArray) where {T,EXTENSION,N} =
+        IndexMatrix{T,EXTENSION,N,typeof(subindices)}(extended_size, subindices)
 
-IndexMatrix{T}(m::NTuple{1,Int}, n::NTuple{1,Int}, subindices::AbstractArray{Int}) where {T,N} =
-    IndexMatrix{T}(m[1], n[1], subindices)
+IndexMatrix(extended_size, subindices; T=Int, EXTENSION, options...) =
+    IndexMatrix{T,EXTENSION}(extended_size, subindices)
 
-IndexMatrix{T}(m::Int, n::Int, subindices) where {T} =
-    IndexMatrix{T,typeof(subindices)}(m, n, subindices)
-
-IndexMatrix(m, n, subindices; T=Int) =
-    IndexMatrix{T}(m, n, subindices)
-
-Base.copy(A::IndexMatrix{T}) where T =
-    IndexMatrix{T}(A.m, A.n, Base.copy(subindices(A)))
-
-Base.adjoint(A::IndexMatrix{T}) where T = IndexMatrix{T}(A.n, A.m, subindices(A))
-
+_original_size(A::IndexMatrix) = A.original_size
+_linear_size(A::IndexMatrix) = A.linear_size
 subindices(A::IndexMatrix) = A.subindices
+isextensionmatrix(A::IndexMatrix{T,EXTENSION,N,I}) where {T,EXTENSION,N,I} =
+    EXTENSION
 
-Base.size(A::IndexMatrix) = (A.m,A.n)
+Base.copy(A::IndexMatrix{T,EXTENSION,N,I}) where {T,EXTENSION,N,I} =
+    IndexMatrix{T,EXTENSION}(_original_size(A), Base.copy(subindices(A)))
+
+Base.adjoint(A::IndexMatrix{T,EXTENSION,N,I}) where {T,EXTENSION,N,I} =
+    IndexMatrix{T,!(EXTENSION),N,I}(_original_size(A), Base.copy(subindices(A)))
+
+Base.size(A::IndexMatrix) = isextensionmatrix(A) ?
+    (prod(_original_size(A)),_linear_size(A)) :
+    (_linear_size(A),prod(_original_size(A)))
 
 isefficient(::IndexMatrix) = true
 
-function Base.getindex(A::IndexMatrix{T,I,false}, i::Int, j::Int) where {T,I}
-    @boundscheck checkbounds(A,i,j)
-    subindices(A)[i]==j ? convert(T,1) : convert(T,0)
+Base.getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+    (@boundscheck checkbounds(A,i,j);
+    Base.unsafe_getindex(A, i, j))
+
+Base.getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    Base.getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
+
+function Base.getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N}
+    @boundscheck checkbounds(subindices(A), j)
+    @boundscheck i∈CartesianIndices(CartesianIndex(_original_size(A))) || throw(BoundsError())
+    Base.unsafe_getindex(A, i, j)
 end
 
-function Base.getindex(A::IndexMatrix{T,I,true}, i::Int, j::Int) where {T,I}
-    @boundscheck checkbounds(A,i,j)
-    subindices(A)[j]==i ? convert(T,1) : convert(T,0)
+Base.unsafe_getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+    Base.unsafe_getindex(subindices(A),j) == i ? one(T) :  zero(T)
+
+Base.unsafe_getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    Base.unsafe_getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
+
+Base.unsafe_getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N} =
+    Base.unsafe_getindex(subindices(A),j)==i ? one(T) :  zero(T)
+
+Base.getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+    (@boundscheck checkbounds(A,i,j);
+    Base.unsafe_getindex(A, i, j))
+
+Base.getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    Base.getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
+
+function Base.getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,N}
+    @boundscheck checkbounds(subindices(A), i)
+    @boundscheck j∈CartesianIndices(CartesianIndex(_original_size(A))) || throw(BoundsError())
+    Base.unsafe_getindex(A, i, j)
 end
+
+Base.unsafe_getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+    Base.unsafe_getindex(subindices(A),i)==j ? one(T) :  zero(T)
+
+Base.unsafe_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    Base.unsafe_getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
+
+Base.unsafe_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,I,N} =
+    Base.unsafe_getindex(subindices(A),i)==j  ? one(T) :  zero(T)
+
+Base.eltype(::IndexMatrix{T}) where T = T
 
 mul!(dest, A::IndexMatrix, src) =
     mul!(dest, A, src, subindices(A))
-mul!(dest::AbstractVector, A::IndexMatrix, src::AbstractVector) =
-    mul!(dest, A, src, subindices(A))
+mul!(dest::AbstractVector, A::ExtensionIndexMatrix, src::AbstractVector) =
+    _tensor_mul!(reshape(dest, _original_size(A)), A, src, subindices(A))
+mul!(dest::AbstractVector, A::RestrictionIndexMatrix, src::AbstractVector) =
+    _tensor_mul!(dest, A, reshape(src,_original_size(A)), subindices(A))
 
-function mul!(dest, A::IndexMatrix{T,I,false}, src, subindices) where {T,I}
+function _tensor_mul!(dest, A::RestrictionIndexMatrix, src, subindices)
     for (i,j) in enumerate(subindices)
         dest[i] = src[j]
     end
     dest
 end
 
-function mul!(dest, A::IndexMatrix{T,I,true}, src, subindices) where {T,I}
-    fill!(dest, zero(T))
+function _tensor_mul!(dest, A::ExtensionIndexMatrix, src, subindices)
+    fill!(dest, zero(eltype(A)))
     for (i,j) in enumerate(subindices)
         dest[j] = src[i]
     end

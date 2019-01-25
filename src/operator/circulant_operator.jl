@@ -47,7 +47,7 @@ function CirculantOperator{T}(::Type{S}, op_src::Dictionary, op_dest::Dictionary
     iF = inv(F)
     #realify a circulant operator if src and dest are real (one should imply the other).
     if isreal(op_src) && isreal(op_dest)
-        imag_norm = norm(imag(fft(diagonal(opD))))
+        imag_norm = norm(imag(fft(diag(opD))))
         imag_norm > real_circulant_tol && warn("realified circulant operator, lost an accuracy of $(imag_norm)")
         r_S, r_D, r_A = op_eltypes(op_src, op_dest, real(S))
         r_src = promote_coefficienttype(op_src, r_S)
@@ -68,7 +68,7 @@ function CirculantOperator(op::DictionaryOperator{T}) where {T}
     C
 end
 
-eigenvalues(C::CirculantOperator) = diagonal(C.eigenvaluematrix)
+eigenvalues(C::CirculantOperator) = diag(C.eigenvaluematrix)
 
 similar_operator(op::CirculantOperator, src, dest) =
     CirculantOperator(src, dest, op.eigenvaluematrix)

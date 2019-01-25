@@ -5,7 +5,7 @@ end
 
 superoperator(op::DerivedOperator) = op.superoperator
 
-for op in (:src, :dest, :isinplace, :isdiagonal, :diagonal, :unsafe_diagonal)
+for op in (:src, :dest, :isinplace, :isdiag, :diag, :unsafe_diag)
 	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 
