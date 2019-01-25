@@ -146,11 +146,7 @@ end
 
 extension_size(s::TensorProductDict) = map(extension_size, elements(s))
 
-# It would be odd if the first method below was ever called, because LEN=1 makes
-# little sense for a tensor product. But perhaps in generic code somewhere...
-name(s::TensorProductDict) = "tensor product (" * name(element(s,1)) * names(s.dicts[2:end]...) * ")"
-names(s1::Dictionary) = " x " * name(s1)
-names(s1::Dictionary, s::Dictionary...) = " x " * name(s1) * names(s...)
+name(dict::TensorProductDict) = "Tensor product dictionary"
 
 
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
@@ -246,15 +242,18 @@ function _index_set_total_degree(s, n)
     end
 end
 
-function stencil(op::TensorProductDict)
+function stencilarray(dict::TensorProductDict)
     A = Any[]
-    push!(A,element(op,1))
-    for i=2:length(elements(op))
-        push!(A," ⊗ ")
-        push!(A,element(op,i))
+    push!(A, element(dict,1))
+    for i=2:numelements(dict)
+        push!(A, " ⊗ ")
+        push!(A, element(dict,i))
     end
     A
 end
+
+stencil_parentheses(dict::TensorProductDict) = true
+object_parentheses(dict::TensorProductDict) = true
 
 
 grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;

@@ -22,8 +22,7 @@ weightfunction(dict::WeightedDict) = dict.weightfun
 
 similar_dictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2, weightfunction(dict1))
 
-name(dict::WeightedDict) = "Weightfunction " * string(weightfunction(dict))
-
+name(dict::WeightedDict) = "Weighted " * name(superdict(dict))
 
 isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict))
 _isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
@@ -131,4 +130,9 @@ function grid_evaluation_operator(dict::WeightedDict, gb::GridBasis, grid::Abstr
     D * wrap_operator(dict, gb, A)
 end
 
-symbol(s::WeightedDict) = "ω"
+## Printing
+
+string(dict::WeightedDict) = name(dict) * ", weighted by " * string(weightfunction(dict))
+
+modifiersymbol(dict::WeightedDict) = PrettyPrintSymbol{:ω}(weightfunction(dict))
+name(s::PrettyPrintSymbol{:ω}) = "Weight function: " * string(s.object)

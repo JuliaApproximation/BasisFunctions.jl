@@ -75,7 +75,7 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 ∪(d1::Dictionary, d2::Dictionary) =
     error("Union of dictionaries is not supported: use ⊕ instead")
 
-name(s::MultiDict) = "A dictionary consisting of $(numelements(s)) dictionaries"
+name(dict::MultiDict) = "Union of dictionaries"
 
 for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
@@ -165,14 +165,20 @@ function project(s::MultiDict, f::Function; options...)
     Z
 end
 
-function stencil(d::MultiDict)
+
+## Printing
+
+string(dict::MultiDict) = "Union of $(numelements(dict)) dictionaries"
+
+function stencilarray(dict::MultiDict)
     A = Any[]
-    push!(A,element(d,1))
-    for i=2:length(elements(d))
-        push!(A," ⊕ ")
-        push!(A,element(d,i))
+    push!(A, element(dict, 1))
+    for i = 2:numelements(dict)
+        push!(A, " ⊕ ")
+        push!(A, element(dict, i))
     end
     A
 end
 
-## Differentiation
+stencil_parentheses(dict::MultiDict) = true
+object_parentheses(dict::MultiDict) = true

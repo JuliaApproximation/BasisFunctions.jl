@@ -42,3 +42,5 @@ tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionar
 
 size(span::Span) = size(dictionary(span))
 length(span::Span) = length(dictionary(span))
+
+name(span::Span) = "Span of a dictionary"

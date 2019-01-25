@@ -14,8 +14,6 @@ struct Jacobi{T} <: OPS{T,T}
     Jacobi{T}(n, α = zero(T), β = zero(T)) where {T} = new{T}(n, α, β)
 end
 
-name(b::Jacobi) = "Jacobi OPS"
-
 Jacobi(n::Int) = Jacobi{Float64}(n)
 
 Jacobi(n::Int, α::Number, β::Number) = Jacobi(n, promote(α, β)...)
@@ -96,3 +94,7 @@ jacobi_α(b::UltrasphericalBasis) = b.α
 jacobi_β(b::UltrasphericalBasis) = b.α
 
 weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
+
+name(dict::Jacobi) = "Jacobi polynomials  (α = $(dict.α), β = $(dict.β))"
+
+name(g::OPSNodes{<:Jacobi}) = "Jacobi points (α = $(g.dict.α), β = $(g.dict.β))"

@@ -44,3 +44,7 @@ rec_An(b::Legendre{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
 rec_Bn(b::Legendre{T}, n::Int) where {T} = zero(T)
 
 rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
+
+name(dict::Legendre) = "Legendre polynomials"
+
+name(g::OPSNodes{<:Legendre}) = "Legendre points"

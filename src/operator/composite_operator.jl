@@ -246,12 +246,15 @@ sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options
 
 CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 
-function stencil(op::CompositeOperators)
+function stencilarray(op::CompositeOperators)
     A = Any[]
-    push!(A,element(op,length(elements(op))))
-    for i in length(elements(op))-1:-1:1
-        push!(A," * ")
-        push!(A,element(op,i))
+    push!(A,element(op,numelements(op)))
+    for i in numelements(op)-1:-1:1
+        push!(A, " * ")
+        push!(A, element(op,i))
     end
     A
 end
+
+stencil_parentheses(op::CompositeOperators) = true
+object_parentheses(op::CompositeOperators) = true

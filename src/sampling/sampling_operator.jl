@@ -26,6 +26,8 @@ GridSampling(grid::AbstractGrid{S}, ::Type{T} = subeltype(S)) where {S,T} =
 GridSampling(gridbasis::GridBasis{S,T}) where {S,T} =
 	GridSampling(GenericFunctionSpace{eltype(grid(gridbasis)),T}(), gridbasis)
 
+name(op::GridSampling) = "Discrete sampling operator in a grid"
+
 grid(op::GridSampling) = grid(dest(op))
 
 (op::GridSampling)(f) = apply(op, f)
@@ -114,8 +116,11 @@ end
 apply(op::GridSampling, dict::Dictionary; T = op_eltype(dict, dest(op)), options...) =
 	evaluation_operator(dict, grid(op); T=T, options...)
 
+hasstencil(op::GridSampling) = true
+stencilarray(op::GridSampling) = [modifiersymbol(op), "[", grid(dest(op)), "]"]
 
-strings(op::GridSampling) = ("Sampling in a discrete grid with coefficient type $(coefficienttype(dest(op)))",strings(grid(op)))
+modifiersymbol(op::GridSampling) = PrettyPrintSymbol{:𝕊}()
+name(::PrettyPrintSymbol{:𝕊}) = "Discrete sampling operator"
 
 
 """
@@ -135,6 +140,8 @@ ProjectionSampling(dict::Dictionary) = ProjectionSampling(dict, measure(dict))
 ProjectionSampling(dict::Dictionary, measure::Measure) = ProjectionSampling(dict, measure, space(measure))
 
 ProjectionSampling(dict::Dictionary, space::FunctionSpace) = ProjectionSampling(dict, measure(space), space)
+
+name(op::ProjectionSampling) = "Projection operator"
 
 dictionary(op::ProjectionSampling) = op.dict
 
@@ -164,4 +171,8 @@ function project!(result, f, dict::Dictionary, measure::Measure; options...)
 	result
 end
 
-strings(op::ProjectionSampling) = ("Projection operator onto a dictionary", strings(measure(op)), strings(dictionary(op)))
+hasstencil(op::ProjectionSampling) = true
+stencilarray(op::ProjectionSampling) = [modifiersymbol(op), "[", dictionary(op), ", ", measure(op), "]"]
+
+modifiersymbol(op::ProjectionSampling) = PrettyPrintSymbol{:ℙ}()
+name(::PrettyPrintSymbol{:ℙ}) = "Continuous projection operator onto a dictionary"

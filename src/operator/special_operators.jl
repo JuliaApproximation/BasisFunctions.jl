@@ -245,18 +245,28 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(dest(op1),I2.λ))
 
 
-function stencil(op::OperatorSum,S)
-    s1=""
-    if op.val1==-1
-        s1="-"
+function stencilarray(op::OperatorSum)
+    local s1, s2
+    if op.val1 == -1
+        s1 = "-"
+    elseif op.val1 == 1
+        s1 = ""
+    else
+        s1 = op1.val1
     end
-    s2=" + "
-    if op.val2==-1
-        s2=" - "
+    if op.val2 == -1
+        s2 = " - "
+    elseif op.val2 == 1
+        s2 = " + "
+    else
+        s2 = " + " * string(op.val2) * " "
     end
-    A = [s1,op.op1,s2,op.op2]
-    recurse_stencil(op,A,S)
+    [s1, op.op1, s2, op.op2]
 end
+
+stencil_parentheses(op::OperatorSum) = true
+object_parentheses(op::OperatorSum) = true
+
 
 """
 An operator that calls linearize on a native representation of a set, returning
