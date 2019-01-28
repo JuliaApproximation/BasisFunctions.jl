@@ -278,7 +278,7 @@ adjoint(op::BlockDiagonalOperator)::DictionaryOperator = BlockDiagonalOperator(m
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
 
-function stencil(op::BlockOperator)
+function stencilarray(op::BlockOperator)
     A = Any[]
     push!(A,"[")
     for i=1:size(elements(op),1)
@@ -293,7 +293,7 @@ function stencil(op::BlockOperator)
     A
 end
 
-function stencil(op::BlockDiagonalOperator)
+function stencilarray(op::BlockDiagonalOperator)
     A = Any[]
     push!(A,"[")
     for i=1:composite_size(op)[1]

@@ -24,7 +24,7 @@ struct OperatedDict{S,T} <: DerivedDict{S,T}
     end
 end
 
-
+name(dict::OperatedDict) = "Dictionary modified by a linear operator"
 
 superdict(dict::OperatedDict) = src(dict)
 
@@ -33,15 +33,13 @@ function OperatedDict(op::DictionaryOperator{T}) where {T}
     OperatedDict{S,T}(op)
 end
 
-hasstencil(s::OperatedDict) = true
-function stencil(s::OperatedDict,S)
-    A = Any[]
-    push!(A,operator(s))
-    push!(A," * ")
-    push!(A,src(s))
-    return recurse_stencil(s,A,S)
-end
-myLeaves(s::OperatedDict) = (operator(s),myLeaves(src(s))...)
+## Printing
+
+modifiersymbol(dict::OperatedDict) = operator(dict)
+
+stencilarray(dict::OperatedDict) = [operator(dict), " * ", superdict(dict)]
+stencil_parentheses(dict::OperatedDict) = true
+object_parentheses(dict::OperatedDict) = true
 
 src(s::OperatedDict) = src(s.op)
 

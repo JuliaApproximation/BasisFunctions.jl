@@ -31,7 +31,11 @@ end
 
 dimension(b::GridBasis) = dimension(grid(b))
 
-name(b::GridBasis) = "a discrete basis associated with a grid"
+name(dict::GridBasis) = "Discrete grid basis"
+
+string(dict::GridBasis) = name(dict) * " for coefficient type $(coefficienttype(dict))"
+strings(dict::GridBasis) = (string(dict), strings(grid(dict)))
+
 
 tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,dicts)...)}(cartesianproduct(map(grid, dicts)...))
 

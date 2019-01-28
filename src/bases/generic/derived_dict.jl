@@ -156,6 +156,10 @@ function grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
     wrap_operator(dict, gb, A)
 end
 
+## Printing
+
+hasstencil(dict::DerivedDict) = true
+stencilarray(dict::DerivedDict) = [modifiersymbol(dict), "(", superdict(dict), ")"]
 
 
 #########################
@@ -173,13 +177,3 @@ end
 # Implementing similar_dictionary is all it takes.
 
 similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
-
-function stencil(d::DerivedDict,S)
-    A = Any[]
-    push!(A,S[d])
-    push!(A,"(")
-    push!(A,superdict(d))
-    push!(A,")")
-    return recurse_stencil(d,A,S)
-end
-hasstencil(d::DerivedDict) = true

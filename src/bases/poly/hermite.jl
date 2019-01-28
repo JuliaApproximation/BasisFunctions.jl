@@ -8,8 +8,6 @@ struct Hermite{T} <: OPS{T,T}
     n           ::  Int
 end
 
-name(b::Hermite) = "Hermite OPS"
-
 instantiate(::Type{Hermite}, n, ::Type{T}) where {T} = Hermite{T}(n)
 
 Hermite(n::Int) = Hermite{Float64}(n)
@@ -45,3 +43,7 @@ function innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::P
 		zero(T)
 	end
 end
+
+name(dict::Hermite) = "Hermite polynomials"
+
+name(g::OPSNodes{<:Hermite}) = "Hermite points"

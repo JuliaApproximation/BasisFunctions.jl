@@ -13,8 +13,6 @@ end
 
 const Jacobi = Jacobi
 
-name(b::Laguerre) = "Laguerre OPS"
-
 Laguerre(n::Int) = Laguerre{Float64}(n)
 
 Laguerre(n::Int, α::T) where {T <: AbstractFloat} = Laguerre{T}(n, α)
@@ -61,3 +59,16 @@ rec_An(b::Laguerre{T}, n::Int) where {T} = -T(1) / T(n+1)
 rec_Bn(b::Laguerre{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
 
 rec_Cn(b::Laguerre{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
+
+
+## Printing
+
+function name(dict::Laguerre)
+	if dict.α == 0
+		"Laguerre polynomials"
+	else
+		"Generalized Laguerre polynomials (α = $(dict.α))"
+	end
+end
+
+name(g::OPSNodes{<:Laguerre}) = "Laguerre points (α = $(g.dict.α))"

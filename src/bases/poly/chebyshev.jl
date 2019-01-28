@@ -10,7 +10,7 @@ struct ChebyshevT{T} <: OPS{T,T}
     n			::	Int
 end
 
-name(b::ChebyshevT) = "Chebyshev series (first kind)"
+name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
@@ -353,7 +353,7 @@ instantiate(::Type{ChebyshevU}, n, ::Type{T}) where {T} = ChebyshevU{T}(n)
 
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
 
-name(b::ChebyshevU) = "Chebyshev series (second kind)"
+name(b::ChebyshevU) = "Chebyshev polynomials (second kind)"
 
 function unsafe_eval_element(b::ChebyshevU, idx::PolynomialDegree, x::Real)
     # Don't use the formula when |x|=1, because it will generate NaN's

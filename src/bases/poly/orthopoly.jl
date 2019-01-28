@@ -277,10 +277,11 @@ gauss_points(b::OPS) = roots(b)
 
 
 struct OPSNodes{OPS,T} <: AbstractGrid{T,1}
+	dict	::	OPS
 	nodes	::	Vector{T}
 end
 
-OPSNodes(dict::OPS{T}) where {T} = OPSNodes{typeof(dict),T}(roots(dict))
+OPSNodes(dict::OPS) = OPSNodes(dict, roots(dict))
 
 size(grid::OPSNodes) = (length(grid.nodes),)
 getindex(grid::OPSNodes, i::Int) = grid.nodes[i]

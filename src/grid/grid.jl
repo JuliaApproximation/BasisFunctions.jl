@@ -21,3 +21,5 @@ end
 resize(grid::AbstractGrid{T}, dims...) where {T} = similargrid(grid, T, dims...)
 
 hasextension(grid::AbstractGrid) = false
+
+iscomposite(grid::AbstractGrid) = false

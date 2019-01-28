@@ -3,6 +3,19 @@ abstract type AbstractSubGrid{T,N} <: AbstractGrid{T,N} end
 
 supergrid(g::AbstractSubGrid) = g.supergrid
 
+## Printing
+
+hasstencil(grid::AbstractSubGrid) = true
+
+stencilarray(grid::AbstractSubGrid) = [ supergrid(grid), "[", setsymbol(subindices(grid)), "]" ]
+
+setsymbol(indices) = PrettyPrintSymbol{:𝕀}(indices)
+setsymbol(indices::UnitRange) = repr(indices)
+setsymbol(indices::Base.OneTo) = setsymbol(UnitRange(indices))
+
+string(s::PrettyPrintSymbol{:𝕀}) = string(s.object)
+
+
 """
 An IndexSubGrid is a subgrid corresponding to a certain range of indices of the
 underlying grid.
@@ -20,6 +33,8 @@ end
 
 IndexSubGrid(grid::AbstractGrid{T,N}, i) where {T,N} =
     IndexSubGrid{typeof(grid),typeof(i),T,N}(grid, i)
+
+name(g::IndexSubGrid) = "Index-based subgrid"
 
 supergrid(g::IndexSubGrid) = g.supergrid
 
@@ -68,5 +83,3 @@ end
 # getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
 
 getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
-
-strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))

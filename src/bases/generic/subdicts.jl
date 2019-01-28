@@ -32,16 +32,10 @@ end
 apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
 
-hasstencil(s::Subdictionary) = true
-function stencil(s::Subdictionary,S)
-    A = Any[]
-    hasstencil(superdict(s)) && push!(A,"(")
-    push!(A,superdict(s))
-    hasstencil(superdict(s)) && push!(A,")")
-    push!(A,"["*string(superindices(s))*"]")
-    return recurse_stencil(s,A,S)
-end
-myLeaves(s::Subdictionary) = myLeaves(superdict(s))
+hasstencil(dict::Subdictionary) = true
+stencilarray(dict::Subdictionary) = [ superdict(dict), "(", string(superindices(dict)), ")" ]
+
+stencil_parentheses(dict::Subdictionary) = true
 
 support(s::Subdictionary) = support(superdict(s))
 
@@ -125,10 +119,10 @@ struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-
-
 LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
+
+name(dict::LargeSubdict) = "Large subdictionary"
 
 similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superindices)
 
@@ -196,6 +190,8 @@ end
 SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
+name(dict::SmallSubdict) = "Small subdictionary"
+
 
 similar_subdict(d::SmallSubdict, dict, superindices) = SmallSubdict(dict, superindices)
 
@@ -213,10 +209,11 @@ struct SingletonSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-
-
 SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
     SingletonSubdict{typeof(dict),typeof(index),S,T}(dict, index)
+
+name(dict::SingletonSubdict) = _name(dict, superdict(dict))
+_name(dict::SingletonSubdict, superdict::Dictionary) = "Dictionary element (singleton subdictionary)"
 
 similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
 

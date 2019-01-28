@@ -44,3 +44,11 @@ innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
     innerproduct(superdict(d1), i, d2, j, measure; options...)
 innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
     innerproduct(d1, i, superdict(d2), j, measure; options...)
+
+
+## Printing
+
+name(dict::ComplexifiedDict) = "Complex " * name(superdict(dict))
+
+modifiersymbol(dict::ComplexifiedDict) = PrettyPrintSymbol{:ℂ}()
+name(::PrettyPrintSymbol{:ℂ}) = "Complexification"

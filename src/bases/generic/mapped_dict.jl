@@ -46,14 +46,6 @@ interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict
 _grid(dict::MappedDict, sdict, map) = mapped_grid(interpolation_grid(sdict), map)
 
 
-function name(s::MappedDict)
-    if isa(support(s), DomainSets.MappedDomain)
-        return string(mapping(s))
-    else
-        return "Mapping $(support(superdict(s))) to $(support(s))"
-    end
-end
-
 function unmap_grid(dict::MappedDict, grid::MappedGrid)
     if iscompatible(mapping(dict), mapping(grid))
         supergrid(grid)
@@ -64,9 +56,6 @@ end
 
 unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inv(mapping(dict)))
 
-
-## _name(s::MappedDict, set, map) = "A mapped set based on " * name(set)
-## _name(s::MappedDict1d, set, map) = name(set) * ", mapped to [ $(left(s))  ,  $(right(s)) ]"
 
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
@@ -86,6 +75,10 @@ function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
         zero(codomaintype(s))
     end
 end
+
+support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
+
+support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
 
 function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
     x = apply_left_inverse(mapping(set), y)
@@ -229,7 +222,13 @@ function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
 end
 
 
-symbol(op::MappedDict) = "M"
+## Printing
 
-support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
-support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
+name(dict::MappedDict) = "Mapped " * name(superdict(dict))
+
+modifiersymbol(dict::MappedDict) = PrettyPrintSymbol{:M}(dict)
+
+name(::PrettyPrintSymbol{:M}) = "Mapping"
+string(s::PrettyPrintSymbol{:M}) = _string(s, s.object)
+_string(s::PrettyPrintSymbol{:M}, dict::MappedDict) =
+    "Mapping from $(support(superdict(dict))) to $(support(dict))"

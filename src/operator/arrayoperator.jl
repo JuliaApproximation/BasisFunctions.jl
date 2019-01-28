@@ -116,21 +116,12 @@ subindices(op::IndexRestrictionOperator) = subindices(op.A)
 ArrayOperator(A::RestrictionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
     IndexRestrictionOperator{T}(A, src, dest)
 
-function string(op::IndexRestrictionOperator)
-    sub = subindices(op.A)
-    if sub isa Vector
-        # If there are many indices being selected, then the printed operator
-        # takes up many many lines. The first six indices should be fine for the
-        # purposes of getting the jist of the operator
-        if length(sub) < 6
-            return "Selecting coefficients "*string(sub)
-        else
-            return "Selecting coefficients "*string(sub[1:6])*"..."
-        end
-    else
-        return "Selecting coefficients "*string(sub)
-    end
-end
+hasstencil(op::IndexRestrictionOperator) = true
+stencilarray(op::IndexRestrictionOperator) = [restrictionsymbol(op), "[", setsymbol(subindices(op.A)), " → 𝕀]"]
+
+restrictionsymbol(op::IndexRestrictionOperator) = PrettyPrintSymbol{:R}()
+name(::PrettyPrintSymbol{:R}) = "Restriction of coefficients to subset"
+
 
 """
 An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
@@ -156,6 +147,13 @@ ArrayOperator(A::ExtensionIndexMatrix{T}, src::Dictionary, dest::Dictionary) whe
     IndexExtensionOperator{T}(A, src, dest)
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(subindices(op.A))
+
+hasstencil(op::IndexExtensionOperator) = true
+stencilarray(op::IndexExtensionOperator) = [extensionsymbol(op), "[ 𝕀 → ", setsymbol(subindices(op.A)), "]"]
+
+extensionsymbol(op::IndexExtensionOperator) = PrettyPrintSymbol{:E}()
+name(::PrettyPrintSymbol{:E}) = "Extending coefficients by zero padding"
+
 
 struct DiagonalOperator{T,D} <: ArrayOperator{T}
     src     ::  Dictionary
@@ -206,6 +204,10 @@ _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A
 
 
 sqrt(op::DiagonalOperator) = DiagonalOperator(sqrt.(diag(op)); src = src(op), dest=dest(op))
+
+symbol(op::DiagonalOperator) = "D"
+
+symbol(op::DiagonalOperator{T,<:Ones}) where {T} = "I"
 
 
 struct ScalingOperator{T} <: ArrayOperator{T}

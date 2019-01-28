@@ -287,12 +287,15 @@ end
 SparseOperator(op::TensorProductOperator; options...) =
     TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
 
-function stencil(op::TensorProductOperator)
+function stencilarray(op::TensorProductOperator)
     A = Any[]
     push!(A, element(op,1))
-    for i in 2:length(elements(op))
+    for i in 2:numelements(op)
         push!(A, " ⊗ ")
         push!(A, element(op,i))
     end
     A
 end
+
+stencil_parentheses(op::TensorProductOperator) = true
+object_parentheses(op::TensorProductOperator) = true

@@ -104,3 +104,15 @@ function matrix_by_mul!(Z::Matrix{T}, A::AbstractMatrix{T}) where T
         e[i] = 0
     end
 end
+
+
+"Wrap an object into a type that has a symbol."
+struct PrettyPrintSymbol{S}
+    object
+end
+PrettyPrintSymbol{S}() where {S} = PrettyPrintSymbol{S}(nothing)
+symbol(::PrettyPrintSymbol{S}) where {S} = string(S)
+string(s::PrettyPrintSymbol) = name(s)
+hasstencil(::PrettyPrintSymbol) = false
+iscomposite(::PrettyPrintSymbol) = false
+show(io::IO, x::PrettyPrintSymbol) = print(io, string(x))

@@ -16,6 +16,7 @@ size(g::AbstractIntervalGrid) = (g.n,)
 
 # Perhaps we should add a stepsize field, for better efficiency?
 # Now the stepsize is recomputed with every call to getindex.
+# Alternatively, we should just wrap around a native Julia range
 
 "An equispaced grid has equispaced points, and therefore it has a stepsize."
 abstract type AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
@@ -53,6 +54,8 @@ EquispacedGrid(n::Int, a, b) = EquispacedGrid{typeof((b-a)/n)}(n, a, b)
 
 EquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = EquispacedGrid{T}(n, infimum(d), supremum(d))
 
+name(g::EquispacedGrid) = "Equispaced grid"
+
 similargrid(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
 similar_equispacedgrid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
@@ -88,6 +91,8 @@ PeriodicEquispacedGrid(n::Int, a, b) = PeriodicEquispacedGrid{typeof((b-a)/n)}(n
 
 PeriodicEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = PeriodicEquispacedGrid{T}(n, infimum(d), supremum(d))
 
+name(g::PeriodicEquispacedGrid) = "Periodic equispaced grid"
+
 similar_equispacedgrid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
 
 similargrid(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
@@ -122,6 +127,8 @@ MidpointEquispacedGrid(n::Int, a, b) = MidpointEquispacedGrid{typeof((b-a)/n)}(n
 
 MidpointEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = MidpointEquispacedGrid{T}(n, infimum(d), supremum(d))
 
+name(g::MidpointEquispacedGrid) = "Equispaced midpoints grid"
+
 similargrid(g::MidpointEquispacedGrid, ::Type{T}, n::Int) where {T} = MidpointEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
 similar_equispacedgrid(g::MidpointEquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = MidpointEquispacedGrid{T}(length(g), a, b)
@@ -137,6 +144,8 @@ struct FourierGrid{T} <: AbstractEquispacedGrid{T}
 end
 
 FourierGrid(n::Int) = FourierGrid{Float64}(n)
+
+name(g::FourierGrid) = "Periodic Fourier grid"
 
 leftendpoint(g::FourierGrid{T}) where {T} = zero(T)
 rightendpoint(g::FourierGrid{T}) where {T} = one(T)
@@ -179,6 +188,8 @@ rightendpoint(g::ChebyshevNodes{T}) where {T} = one(T)
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevNodes{T}, i) where {T} = T(-1)*cos((i-T(1)/2) * T(pi) / (g.n) )
 
+name(g::ChebyshevNodes) = "Chebyshev nodes"
+
 
 struct ChebyshevExtremae{T} <: AbstractIntervalGrid{T}
     n   ::  Int
@@ -197,4 +208,6 @@ rightendpoint(g::ChebyshevExtremae{T}) where {T} = one(T)
 # TODO: flip the values so that they are sorted
 unsafe_getindex(g::ChebyshevExtremae{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
 
-strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)
+name(g::ChebyshevExtremae) = "Chebyshev extremae"
+
+string(g::AbstractIntervalGrid) = name(g) * " of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))"

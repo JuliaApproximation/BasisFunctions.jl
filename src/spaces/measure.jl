@@ -20,6 +20,7 @@ unsafe_weightfunction(m::Measure) = x->unsafe_weight(m, x)
 
 codomaintype(m::Measure{T}) where {T} = subeltype(T)
 
+iscomposite(m::Measure) = false
 
 "A measure on a general domain with a general weight function `dσ = w(x) dx`."
 struct GenericWeightMeasure{T} <: Measure{T}
@@ -27,9 +28,13 @@ struct GenericWeightMeasure{T} <: Measure{T}
     weightfunction
 end
 
+name(m::GenericWeightMeasure) = "Measure with generic weight function"
+
 unsafe_weight(m::GenericWeightMeasure{T}, x) where {T} = weight.weightfunction(x)
 
 support(m::GenericWeightMeasure, x) = m.support
+
+strings(m::GenericWeightMeasure) = (name(m), (string(m.support),), (string(m.weightfunction),))
 
 
 "Supertype of all Lebesgue measures."
@@ -46,6 +51,9 @@ end
 
 support(m::GenericLebesgueMeasure) = m.support
 
+name(m::GenericLebesgueMeasure) = "Lebesgue measure"
+
+
 
 "The Legendre measure is the Lebesgue measure on `[-1,1]`."
 struct LegendreMeasure{T} <: LebesgueMeasure{T}
@@ -53,12 +61,16 @@ end
 
 support(m::LegendreMeasure{T}) where {T} = ChebyshevInterval{T}()
 
+name(m::LegendreMeasure) = "Legendre measure"
+
 
 "The Fourier measure is the Lebesgue measure on `[0,1]`."
 struct FourierMeasure{T} <: LebesgueMeasure{T}
 end
 
 support(m::FourierMeasure{T}) where {T} = UnitInterval{T}()
+
+name(m::FourierMeasure) = "Fourier (Lebesgue) measure"
 
 lebesguemeasure(domain::UnitInterval{T}) where {T} = FourierMeasure{T}()
 lebesguemeasure(domain::ChebyshevInterval{T}) where {T} = LegendreMeasure{T}()
@@ -76,6 +88,8 @@ const ChebyshevMeasure = ChebyshevTMeasure
 
 support(m::ChebyshevTMeasure{T}) where {T} = ChebyshevInterval{T}()
 
+name(m::ChebyshevTMeasure) = "Chebyshev measure of the first kind"
+
 unsafe_weight(m::ChebyshevTMeasure, x) = 1/sqrt(1-x^2)
 
 
@@ -87,6 +101,8 @@ struct ChebyshevUMeasure{T} <: Measure{T}
 end
 
 support(m::ChebyshevUMeasure{T}) where {T} = ChebyshevInterval{T}()
+
+name(m::ChebyshevUMeasure) = "Chebyshev measure of the second kind"
 
 unsafe_weight(m::ChebyshevUMeasure, x) = sqrt(1-x^2)
 
@@ -102,6 +118,8 @@ end
 
 support(m::JacobiMeasure{T}) where {T} = ChebyshevInterval{T}()
 
+name(m::JacobiMeasure) = "Jacobi measure (α = $(m.α), β = $(m.β))"
+
 unsafe_weight(m::JacobiMeasure, x) = (1-x)^m.α * (1+x)^m.β
 
 
@@ -115,6 +133,8 @@ end
 
 support(m::LaguerreMeasure{T}) where {T} = HalfLine{T}()
 
+name(m::LaguerreMeasure) = m.α == 0 ? "Laguerre measure" : "Generalized Laguerre measure (α = $(m.α))"
+
 unsafe_weight(m::LaguerreMeasure, x) = x^m.α * exp(-x)
 
 
@@ -127,6 +147,8 @@ struct HermiteMeasure{T} <: Measure{T}
 end
 
 support(m::HermiteMeasure{T}) where {T} = DomainSets.FullSpace{T}()
+
+name(m::HermiteMeasure) = "Hermite measure"
 
 unsafe_weight(m::HermiteMeasure, x) = exp(-x^2)
 
@@ -148,6 +170,8 @@ struct DiracMeasure{T} <: DiscreteMeasure{T}
 end
 
 support(m::DiracMeasure) = Point(m.x)
+
+name(m::DiracMeasure) = "Dirac measure at x = $(m.x)"
 
 point(m::DiracMeasure) = m.x
 
@@ -204,6 +228,8 @@ end
 SubMeasure(measure::Measure{T}, domain::Domain) where {T} =
     SubMeasure{typeof(measure),typeof(domain),T}(measure,domain)
 
+name(m::SubMeasure) = "Restriction of a measure"
+
 supermeasure(measure::SubMeasure) = measure.measure
 support(measure::SubMeasure) = measure.domain
 
@@ -211,6 +237,7 @@ unsafe_weight(m::SubMeasure, x) = unsafe_weight(supermeasure(m), x)
 
 restrict(measure::Measure, domain::Domain) = SubMeasure(measure, domain)
 
+strings(m::SubMeasure) = (name(m), (string(support(m)),), strings(supermeasure(m)))
 
 
 struct MappedMeasure{MAP,M,T} <: Measure{T}
@@ -220,6 +247,8 @@ end
 
 MappedMeasure(map, measure::Measure{T}) where {T} =
     MappedMeasure{typeof(map),typeof(measure),T}(map, measure)
+
+name(m::MappedMeasure) = "Mapped measure"
 
 mapping(m::MappedMeasure) = m.map
 
@@ -231,6 +260,8 @@ apply_map(measure::MappedMeasure, map) = MappedMeasure(map*mapping(measure), sup
 support(m::MappedMeasure) = mapping(m) * support(supermeasure(m))
 
 unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(m))*x) / (jacobian(mapping(m))*x)
+
+strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
 
 
@@ -252,3 +283,13 @@ element(m::ProductMeasure, i) = m.measures[i]
 support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
 
 unsafe_weight(m::ProductMeasure, x) = prod(map(unsafe_weight, elements(m), x))
+
+function stencilarray(m::ProductMeasure)
+    A = Any[]
+    push!(A, element(m,1))
+    for i = 2:length(elements(m))
+        push!(A," ⊗ ")
+        push!(A, element(m,i))
+    end
+    A
+end
