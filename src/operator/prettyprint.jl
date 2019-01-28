@@ -7,10 +7,34 @@
 ####
 # Delegate to show_operator
 global DO_PRETTYPRINTING = true
+
+do_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = true))
+no_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = false))
+
 if DO_PRETTYPRINTING
-    show(io::IO, op::AbstractOperator) = (hasstencil(op)) ? show_composite(io,op) : show_operator(io, op)
-    show(io::IO,s::Span) = show(io,dictionary(s))
-    show(io::IO, d::Dictionary) = (hasstencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
+    function show(io::IO, op::AbstractOperator)
+        if DO_PRETTYPRINTING
+            (hasstencil(op)) ? show_composite(io,op) : show_operator(io, op)
+        else
+            Base.show_default(io, op)
+        end
+    end
+
+    function show(io::IO,s::Span)
+        if DO_PRETTYPRINTING
+            show(io,dictionary(s))
+        else
+            Base.show_default(io, s)
+        end
+    end
+
+    function show(io::IO, d::Dictionary)
+        if DO_PRETTYPRINTING
+            (hasstencil(d)) ? show_composite(io,d) : show_dictionary(io, d)
+        else
+            Base.show_default(io, d)
+        end
+    end
 end
 
 

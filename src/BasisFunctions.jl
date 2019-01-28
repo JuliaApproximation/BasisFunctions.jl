@@ -306,6 +306,7 @@ include("maps/partition.jl")
 include("grid/grid.jl")
 include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
+include("grid/intervalgrids.jl")
 
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
@@ -323,7 +324,6 @@ include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
 include("grid/mappedgrid.jl")
-include("grid/intervalgrids.jl")
 include("grid/scattered_grid.jl")
 include("grid/subgrid.jl")
 

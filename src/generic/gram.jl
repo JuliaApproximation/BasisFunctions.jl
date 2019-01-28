@@ -5,15 +5,12 @@
 # associated with a measure.
 hasmeasure(dict::Dictionary) = false
 
-gramelement(dict::Dictionary, i, j; options...) =
-    innerproduct(dict, i, dict, j; options...)
-
-innerproduct(dict1::Dictionary, i, dict2::Dictionary, j; options...) =
-    innerproduct(dict1, i, dict2, j, measure(dict1); options...)
+gramelement(dict::Dictionary, i, j, m=measure(dict); options...) =
+    innerproduct(dict, i, dict, j, m; options...)
 
 # Convert linear indices to native indices, then call innerproduct_native
-innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j::Int, measure; options...) =
-    innerproduct_native(dict1, native_index(dict1, i), dict2, native_index(dict2, j), measure; options...)
+innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j::Int, m=measure(dict1); options...) =
+    innerproduct_native(dict1, native_index(dict1, i), dict2, native_index(dict2, j), m; options...)
 innerproduct(dict1::Dictionary, i, dict2::Dictionary, j::Int, measure; options...) =
     innerproduct_native(dict1, i, dict2, native_index(dict2, j), measure; options...)
 innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j, measure; options...) =
@@ -42,29 +39,32 @@ function default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, m
 end
 
 # Call this routine in order to evaluate the Gram matrix entry numerically
-default_gramelement(dict::Dictionary, i, j; options...) =
-    default_dict_innerproduct(dict, i, dict, j; options...)
+default_gramelement(dict::Dictionary, i, j, m=measure(dict); options...) =
+    default_dict_innerproduct(dict, i, dict, j, m; options...)
 
-function grammatrix(dict::Dictionary; options...)
+function grammatrix(dict::Dictionary, m=measure(dict); options...)
     G = zeros(codomaintype(dict), length(dict), length(dict))
-    grammatrix!(G, dict; options...)
+    grammatrix!(G, dict, m; options...)
 end
 
-function grammatrix!(G, dict::Dictionary; options...)
+function grammatrix!(G, dict::Dictionary, m=measure(dict); options...)
     n = length(dict)
     for i in 1:n
         for j in 1:i-1
-            G[i,j] = gramelement(dict, i, j; options...)
+            G[i,j] = gramelement(dict, i, j, m; options...)
             G[j,i] = conj(G[i,j])
         end
-        G[i,i] = gramelement(dict, i, i; options...)
+        G[i,i] = gramelement(dict, i, i, m; options...)
     end
     G
 end
 
-function gramoperator(dict::Dictionary; warnslow = BF_WARNSLOW, options...)
+gramoperator(dict::Dictionary, m=measure(dict); options...) =
+    default_gramoperator(dict, m; options...)
+
+function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of Gram matrix entrywise."
-    A = grammatrix(dict; options...)
+    A = grammatrix(dict, m; options...)
     ArrayOperator(A, dict, dict)
 end
 
@@ -88,8 +88,8 @@ end
 # Mixed gram operators
 ########################
 
-mixedgramoperator(d1::Dictionary, d2::Dictionary; options...) =
-    _mixedgramoperator(d1, d2, measure(d1), measure(d2); options...)
+mixedgramoperator(d1::Dictionary, d2::Dictionary, m1=measure(d1), m2=measure(d2); options...) =
+    _mixedgramoperator(d1, d2, m1, m2; options...)
 
 iscompatible(m1::M, m2::M) where {M <: Measure} = m1==m2
 iscompatible(m1::Measure, m2::Measure) = false
@@ -107,9 +107,9 @@ mixedgramoperator(d1, d2, measure; options...) = mixedgramoperator1(d1, d2, meas
 mixedgramoperator1(d1::Dictionary, d2, measure; options...) =
     mixedgramoperator2(d1, d2, measure; options...)
 mixedgramoperator2(d1, d2::Dictionary, measure; options...) =
-    default_mixedgram(d1, d2, measure; options...)
+    default_mixedgramoperator(d1, d2, measure; options...)
 
-function default_mixedgram(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
+function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; warnslow = warnslow, options...)
     T = eltype(A)

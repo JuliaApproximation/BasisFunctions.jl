@@ -148,8 +148,8 @@ struct VerticalBandedMatrix{T} <: MyAbstractMatrix{T}
     offset  ::  Int
 
     function VerticalBandedMatrix{T}(m::Int,n::Int,array::Vector{T}, step::Int=1, offset::Int=0) where T
-        @assert length(array) <= n
-        @assert step <= n # apply! only works if step is smaller then L
+        @assert length(array) <= m
+        @assert step <= m # apply! only works if step is smaller then L
         new{T}(m, n, array, step, offset)
     end
 end
@@ -245,6 +245,12 @@ Base.size(A::IndexMatrix) = isextensionmatrix(A) ?
     (prod(_original_size(A)),_linear_size(A)) :
     (_linear_size(A),prod(_original_size(A)))
 
+similar(A::IndexMatrix{S,EXTENSION}, ::Type{T}) where {S,T,EXTENSION} = IndexMatrix{T,EXTENSION}(_original_size(A), subindices(A))
+# The method below is moved to SparseArrays for now
+similar(A::IndexMatrix, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
+
+copyto!(D1::IndexMatrix, D2::AbstractArray) = error("Not possible")
+
 isefficient(::IndexMatrix) = true
 
 Base.getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
@@ -293,12 +299,41 @@ Base.unsafe_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N
 
 Base.eltype(::IndexMatrix{T}) where T = T
 
+function (*)(A::IndexMatrix, B::AbstractMatrix)
+    TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
+    C = similar(B, TS, (size(A,1),size(B,2)))
+
+
+end
+
+(*)(A::IndexMatrix, B::Diagonal) = _sparse_res_mu(A, B)
+
+function _sparse_res_mu(A::IndexMatrix, B::AbstractArray)
+    TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
+    C = similar(B, TS, (size(A,1),size(B,2)))
+    @assert C isa AbstractSparseArray
+    mul!(C,A,B)
+end
+
 mul!(dest, A::IndexMatrix, src) =
     mul!(dest, A, src, subindices(A))
 mul!(dest::AbstractVector, A::ExtensionIndexMatrix, src::AbstractVector) =
     _tensor_mul!(reshape(dest, _original_size(A)), A, src, subindices(A))
 mul!(dest::AbstractVector, A::RestrictionIndexMatrix, src::AbstractVector) =
     _tensor_mul!(dest, A, reshape(src,_original_size(A)), subindices(A))
+function mul!(dest::AbstractVector, A::RestrictionIndexMatrix{T,N}, src::AbstractArray{S,N}) where {T,S,N}
+    @boundscheck ( (size(src) == _original_size(A)) && (length(dest)==size(A,1)))|| throw(BoundsError("Sizes do not match"))
+    @inbounds _tensor_mul!(dest, A, src, subindices(A))
+end
+function mul!(dest::AbstractMatrix, A::RestrictionIndexMatrix, src::AbstractMatrix) where {T,S}
+    @boundscheck ( (size(src,1) == size(A,2)) && (size(src,2)==size(dest,2)) && (size(dest,1)==size(A,1)) ) || throw(BoundsError("Sizes do not match"))
+    @inbounds for i in 1:size(src,2)
+        mul!( view(dest, :, i), A, view(src, :, i)  )
+    end
+    dest
+end
+
+
 
 function _tensor_mul!(dest, A::RestrictionIndexMatrix, src, subindices)
     for (i,j) in enumerate(subindices)

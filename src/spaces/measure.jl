@@ -131,19 +131,55 @@ support(m::HermiteMeasure{T}) where {T} = DomainSets.FullSpace{T}()
 unsafe_weight(m::HermiteMeasure, x) = exp(-x^2)
 
 
+"""
+The abstract supertype of discrete measures.
+"""
+abstract type DiscreteMeasure{T} <: Measure{T}
+end
+
+function unsafe_weight(m::DiscreteMeasure{T}, x) where {T}
+    @warn "You might want to use `unsafe_discrete_weight`"
+    convert(T, NaN)
+end
 
 "A Dirac function at a point `x`."
-struct DiracMeasure{T} <: Measure{T}
+struct DiracMeasure{T} <: DiscreteMeasure{T}
     x   ::  T
 end
 
 support(m::DiracMeasure) = Point(m.x)
 
-unsafe_weight(m::DiracMeasure{T}, x) where {T} = convert(T, NaN)
-
 point(m::DiracMeasure) = m.x
 
-# TODO DiracCombMeasure
+unsafe_discrete_weight(m::DiracMeasure, i::Int) where {T} = one(T)
+
+abstract type AbstractDiracCombMeasure{T} <: DiscreteMeasure{T}
+end
+
+support(m::AbstractDiracCombMeasure) = WrappedDomain(grid(m))
+
+grid(m::AbstractDiracCombMeasure) = m.equispaced
+
+struct DiractCombMeasure{T,EG<:AbstractEquispacedGrid} <: AbstractDiracCombMeasure{T}
+    equispaced      :: EG
+
+    DiracCombMeasure(eg::AbstractEquispacedGrid) = new{eltype(eg),typeof(eg)}(eg)
+end
+
+unsafe_discrete_weight(m::DiractCombMeasure, i::Int) where {T} = one(T)
+
+struct WeightedDiractCombMeasure{T,EG<:AbstractEquispacedGrid,W<:AbstractArray} <: AbstractDiracCombMeasure{T}
+    equispaced      :: EG
+    weights         :: W
+
+    function WeightedDiractCombMeasure(eg::AbstractEquispacedGrid{T}, w::AbstractArray=Ones{T}(length(eq))) where T
+        @assert length(eq) == length(w)
+        new{eltype(eg),typeof(eg),typeof(w)}(eg, w)
+    end
+end
+
+unsafe_discrete_weight(m::WeightedDiractCombMeasure, i::Int) = m.weights[i]
+
 
 ######################################################
 # Generating new measures from existing measures

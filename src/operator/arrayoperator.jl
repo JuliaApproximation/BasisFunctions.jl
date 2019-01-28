@@ -52,6 +52,7 @@ unsafe_matrix(op::ArrayOperator) = op.A
 
 isefficient(op::ArrayOperator) = isefficient(unsafe_matrix(op.A))
 isefficient(::AbstractArray) = false
+isefficient(::AbstractSparseArray) = true
 
 string(op::ArrayOperator) = string(op, op.A)
 string(op::ArrayOperator,array) = "Multiplication by "*string(typeof(op.A))
