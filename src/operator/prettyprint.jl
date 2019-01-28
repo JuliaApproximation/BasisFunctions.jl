@@ -15,8 +15,8 @@ pretty_object_types = (
 )
 
 
-do_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = true))
-no_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = false))
+do_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = true; nothing))
+no_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = false; nothing))
 
 if DO_PRETTYPRINTING
     for OT in pretty_object_types
@@ -25,7 +25,7 @@ if DO_PRETTYPRINTING
                 if DO_PRETTYPRINTING
                     pretty_show(io, object)
                 else
-                    show_default(io, object)
+                    Base.show_default(io, object)
                 end
             end
         end
