@@ -6,6 +6,8 @@ const Domain4d{T} = EuclideanDomain{4,T}
 
 iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 
+iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
+
 "Assign a floating point type to a domain element type T."
 float_type(::Type{T}) where {T <: Real} = T
 float_type(::Type{Complex{T}}) where {T <: Real} = Complex{T}

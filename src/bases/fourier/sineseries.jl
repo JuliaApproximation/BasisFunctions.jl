@@ -97,7 +97,7 @@ hasmeasure(dict::SineSeries) = true
 
 measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
 
-gramoperator(dict::SineSeries; T = coefficienttype(dict), options...) =
+gramoperator(dict::SineSeries, ::FourierMeasure; T = coefficienttype(dict), options...) =
     ScalingOperator(dict, one(T)/2)
 
 function innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;

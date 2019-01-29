@@ -627,7 +627,7 @@ function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::Le
 	end
 end
 
-function gramoperator(dict::Fourier; T = coefficienttype(dict), options...)
+function gramoperator(dict::Fourier, ::FourierMeasure; T = coefficienttype(dict), options...)
 	if iseven(length(dict))
 		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
 	else

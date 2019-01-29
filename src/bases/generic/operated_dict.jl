@@ -182,8 +182,8 @@ hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
 
 measure(dict::OperatedDict) = measure(superdict(dict))
 
-gramoperator(dict::OperatedDict; options...) =
-	adjoint(operator(dict)) * gramoperator(superdict(dict); options...) * operator(dict)
+gramoperator(dict::OperatedDict, measure; options...) =
+	adjoint(operator(dict)) * gramoperator(superdict(dict), measure; options...) * operator(dict)
 
 function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
@@ -204,6 +204,12 @@ function innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
 		default_dict_innerproduct(d1, i, d2, j, measure; options...)
 	end
 end
+
+function mixedgramoperator1(dict1::OperatedDict, dict2, measure; options...)
+	G = mixedgramoperator(superdict(dict1), dict2, measure; options...)
+	wrap_operator(dict2, dict1, adjoint(operator(dict1)) * G)
+end
+
 
 #################
 # Special cases

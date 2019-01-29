@@ -293,3 +293,11 @@ function stencilarray(m::ProductMeasure)
     end
     A
 end
+
+#############################
+# Compatibility of measures
+#############################
+
+# By default, measures are compatible only when they are equal.
+iscompatible(m1::M, m2::M) where {M <: Measure} = m1==m2
+iscompatible(m1::Measure, m2::Measure) = false

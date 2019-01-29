@@ -235,11 +235,20 @@ hasmeasure(dict::OPS) = true
 
 weight(b::OPS, x) = weight(measure(b), x)
 
-function gramoperator(dict::OPS; T = coefficienttype(dict), options...)
+
+function gramoperator(dict::OPS, m; options...)
+	if iscompatible(m, measure(dict))
+		ops_gramoperator(dict, m; options...)
+	else
+		default_gramoperator(dict, m; options...)
+	end
+end
+
+function ops_gramoperator(dict::OPS, measure; T = coefficienttype(dict), options...)
 	n = length(dict)
 	diag = zeros(T, n)
 	for i in 1:n
-		diag[i] = innerproduct(dict, i, dict, i, measure(dict); options...)
+		diag[i] = innerproduct(dict, i, dict, i, measure; options...)
 	end
 	DiagonalOperator(dict, diag)
 end
