@@ -101,7 +101,7 @@ end
 hasmeasure(dict::CosineSeries) = true
 measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
 
-function gramoperator(dict::CosineSeries; T = coefficienttype(dict), options...)
+function gramoperator(dict::CosineSeries, ::FourierMeasure; T = coefficienttype(dict), options...)
     diag = ones(T,length(dict))/2
     diag[1] = 1
     DiagonalOperator(diag, src=dict)

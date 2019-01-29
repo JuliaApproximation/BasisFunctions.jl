@@ -203,5 +203,6 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector,
     PiecewiseDict(dicts), BlockVector(coefs)
 end
 
+# TODO: add the measure argument here
 gramoperator(dict::PiecewiseDict; T=coefficienttype(dict), options...) =
     BlockDiagonalOperator(DictionaryOperator{T}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict; T=T)

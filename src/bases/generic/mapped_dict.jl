@@ -106,8 +106,13 @@ function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Mapp
     end
 end
 
-gramoperator(dict::MappedDict; T = coefficienttype(dict), options...) =
-    wrap_operator(dict, dict,  gramoperator(superdict(dict); T=T, options...))
+function gramoperator(dict::MappedDict, m::MappedMeasure; T = coefficienttype(dict), options...)
+    if iscompatible(mapping(dict), mapping(m))
+        wrap_operator(dict, dict, gramoperator(superdict(dict), supermeasure(m); T=T, options...))
+    else
+        default_gramoperator(dict, m; T=T, options...)
+    end
+end
 
 
 
