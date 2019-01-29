@@ -64,7 +64,7 @@ gramoperator(dict::Dictionary, m=measure(dict); options...) =
 
 function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of Gram matrix entrywise."
-    A = grammatrix(dict, m; options...)
+    A = grammatrix(dict, m; warnslow = warnslow, options...)
     ArrayOperator(A, dict, dict)
 end
 
