@@ -12,9 +12,9 @@
 mul!(y::AbstractVector, A::DictionaryOperator, x::AbstractVector) = apply!(A, tocoefficientformat(y,dest(A)), tocoefficientformat(x,src(A)))
 mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = apply_multiple!(A, y, x)
 
-
-
-(∘)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(Mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+# LazyArrays does not work as well as composite operator.
+# include("../util/lazyarrays.jl")
+# (∘)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(Mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
 (*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
 (+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
 

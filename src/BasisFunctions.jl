@@ -1,7 +1,7 @@
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays
-using LazyArrays, FillArrays
+using FillArrays
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
 using Base.Cartesian

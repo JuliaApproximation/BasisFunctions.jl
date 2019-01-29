@@ -364,18 +364,3 @@ isefficient(::Zeros) = true
 
 mul!(dest::AbstractVector, op::Zeros, src::AbstractVector) =
     fill!(dest, zero(eltype(op)))
-
-struct LazyArrayOperator{T} <: ArrayOperator{T}
-    A       ::  Mul
-    src     ::  Dictionary
-    dest    ::  Dictionary
-
-    function LazyArrayOperator{T}(A::Mul, src::Dictionary, dest::Dictionary) where {T}
-        new{T}(A, src, dest)
-    end
-end
-
-ArrayOperator(M::Mul, src::Dictionary, dest::Dictionary)  =
-    LazyArrayOperator{eltype(M)}(M, src, dest)
-
-isefficient(::Mul) = true
