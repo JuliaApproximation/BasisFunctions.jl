@@ -17,6 +17,7 @@ mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = apply_multip
 # (∘)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(Mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
 (*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
 (+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+(-)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), -unsafe_matrix(op2)), src(op2), dest(op1))
 
 (*)(a::Number, op::ArrayOperator) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
 (*)(op::ArrayOperator, a::Number) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))

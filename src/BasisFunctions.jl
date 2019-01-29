@@ -1,6 +1,6 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
 using FillArrays
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
@@ -38,7 +38,8 @@ import Base: show, string
 
 
 ## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!, diag, isdiag
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!
+import LinearAlgebra: diag, isdiag, eigvals
 
 import BlockArrays.BlockVector
 export BlockVector
@@ -175,13 +176,10 @@ export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         ArrayOperator, FunctionOperator,
         MultiplicationOperator,
         IndexRestrictionOperator, IndexExtensionOperator,
-        HorizontalBandedOperator, VerticalBandedOperator
+        HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator
 # from operator/solvers.jl
 export QR_solver, SVD_solver, regularized_SVD_solver, operator
-# from operator/circulant_operator.jl
-export CirculantOperator
-# from operator/pseudo_diagonal.jl
-#export PseudoDiagonalOperator
+
 # from operator/generic_operators.jl
 export GenericIdentityOperator
 
@@ -298,7 +296,8 @@ export diagonal, isdiagonal
 
 include("util/common.jl")
 include("util/indexing.jl")
-include("util/specialarrays.jl")
+include("util/arrays/specialarrays.jl")
+include("util/arrays/circulant.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
@@ -337,7 +336,6 @@ include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-include("operator/circulant_operator.jl")
 include("operator/arithmetics.jl")
 
 include("operator/generic_operators.jl")

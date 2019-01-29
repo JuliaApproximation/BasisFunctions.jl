@@ -16,13 +16,20 @@ A_dest(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,1))
 
 getindex(op::ArrayOperator, i::Int, j::Int) = op.A[i,j]
 
-size(op::ArrayOperator) = size(op.A)
+# Delegate to object
+for f in (:size, :isefficient)
+    @eval $f(op::ArrayOperator) = $f(op.A)
+end#object related features
+
+for f in (:isdiag, :diag, :eigvals, :Matrix)
+    @eval $f(op::ArrayOperator) = $f(unsafe_matrix(op))
+end#matrix related features
+
+for f in (:inv, :conj, :adjoint, :sqrt)
+    @eval $f(op::ArrayOperator) = ArrayOperator($f(op.A), dest(op), src(op))
+end#operator related features
 
 unsafe_wrap_operator(src, dest, op::ArrayOperator) = similar_operator(op, src, dest)
-
-inv(op::ArrayOperator) = ArrayOperator(inv(op.A), dest(op), src(op))
-adjoint(op::ArrayOperator) = ArrayOperator(adjoint(op.A), dest(op), src(op))
-conj(op::ArrayOperator) = ArrayOperator(conj(op.A), src(op), dest(op))
 
 similar_operator(op::ArrayOperator, src::Dictionary, dest::Dictionary) =
     ArrayOperator(op.A, src, dest)
@@ -43,16 +50,14 @@ apply_inplace!(op::ArrayOperator{T}, coef_srcdest::AbstractArray{T,N}) where {T,
 _apply!(op::ArrayOperator, A::AbstractArray, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
 
-
-isdiag(op::ArrayOperator) = isdiag(op.A)
-diag(op::ArrayOperator) = diag(op.A)
+pinv(op::ArrayOperator, tolerance::Real = eps(real(eltype(op)))) = ArrayOperator(pinv(op.A, tolerance), src(op), dest(op))
 
 matrix(op::ArrayOperator) = copy(op.A)
 unsafe_matrix(op::ArrayOperator) = op.A
 
-isefficient(op::ArrayOperator) = isefficient(unsafe_matrix(op.A))
 isefficient(::AbstractArray) = false
 isefficient(::AbstractSparseArray) = true
+isefficient(::UniformScaling) = true
 
 string(op::ArrayOperator) = string(op, op.A)
 string(op::ArrayOperator,array) = "Multiplication by "*string(typeof(op.A))
@@ -102,7 +107,7 @@ struct IndexRestrictionOperator{T,N,I} <: ArrayOperator{T}
     dest        ::  Dictionary
 
     IndexRestrictionOperator{T}(A::RestrictionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
-        (@assert length(dest)<=length(src); new{T,N,I}(A,src,dest))
+        (@assert length(dest)<=length(src) && length(src)==size(A,2) && length(dest)==size(A,1); new{T,N,I}(A,src,dest))
 end
 
 IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
@@ -113,7 +118,7 @@ IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices::Abstract
     IndexRestrictionOperator{T}(RestrictionIndexMatrix{T}(size(src), subindices), src, dest))
 subindices(op::IndexRestrictionOperator) = subindices(op.A)
 
-ArrayOperator(A::RestrictionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
+ArrayOperator(A::RestrictionIndexMatrix{T}, src::Dictionary, dest::Dictionary=src[subindices(A)]) where {T} =
     IndexRestrictionOperator{T}(A, src, dest)
 
 hasstencil(op::IndexRestrictionOperator) = true
@@ -132,7 +137,7 @@ struct IndexExtensionOperator{T,N,I} <: ArrayOperator{T}
     dest        ::  Dictionary
 
     IndexExtensionOperator{T}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
-        (@assert length(dest)>=length(src); new{T,N,I}(A,src,dest))
+        (@assert length(dest)>=length(src) && length(src)==size(A,2) && length(dest)==size(A,1); new{T,N,I}(A,src,dest))
 end
 
 IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
@@ -145,6 +150,9 @@ subindices(op::IndexExtensionOperator) = subindices(op.A)
 
 ArrayOperator(A::ExtensionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
     IndexExtensionOperator{T}(A, src, dest)
+
+ArrayOperator(A::ExtensionIndexMatrix{T}, dest::Dictionary) where {T} =
+    IndexRestrictionOperator{T}(A, dest[subindices(A)], dest)
 
 string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(subindices(op.A))
 
@@ -202,13 +210,37 @@ _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 
 _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
-
-sqrt(op::DiagonalOperator) = DiagonalOperator(sqrt.(diag(op)); src = src(op), dest=dest(op))
-
 symbol(op::DiagonalOperator) = "D"
 
 symbol(op::DiagonalOperator{T,<:Ones}) where {T} = "I"
 
+
+struct CirculantOperator{T} <: ArrayOperator{T}
+    A       :: Circulant{T}
+    src     :: Dictionary
+    dest    :: Dictionary
+
+    function CirculantOperator{T}(A::Circulant{T}, src::Dictionary, dest::Dictionary) where {T}
+        verify_size(src, dest, A)
+        new{T}(A, src, dest)
+    end
+end
+
+CirculantOperator(vc::AbstractVector, src::Dictionary=DiscreteVectorDictionary{eltype(vc)}(length(vc)), dest::Dictionary=src;
+            T=promote_type(eltype(vc),op_eltype(src,dest))) =
+    CirculantOperator{T}(Circulant{T}(vc), src, dest)
+
+ArrayOperator(A::Circulant{T}, src::Dictionary, dest::Dictionary) where {T} =
+    CirculantOperator{T}(A, src, dest)
+
+function CirculantOperator(op::DictionaryOperator)
+    e = zeros(src(op))
+    e[1] = 1
+    C = CirculantOperator(op*e, src(op), dest(op), )
+    e = rand(src(op))
+    @assert C*e≈op*e
+    C
+end
 
 struct ScalingOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary
@@ -250,10 +282,7 @@ ScalingOperator{T}(src::Dictionary, dest::Dictionary, scalar::Number) where {T} 
 scalar(op::ScalingOperator) = op.A.λ
 
 size(op::ScalingOperator) = op.size
-
-isdiag(op::ScalingOperator) = true
-isinplace(op::ScalingOperator) = true
-
+isinplace(::ScalingOperator) = true
 apply_inplace!(op::ScalingOperator, x::AbstractVector) = _apply_inplace!(op,scalar(op), x)
 function _apply_inplace!(op::ScalingOperator, λ::Number, x)
     for i in 1:length(x)

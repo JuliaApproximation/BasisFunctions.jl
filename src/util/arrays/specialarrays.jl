@@ -306,9 +306,20 @@ function (*)(A::IndexMatrix, B::AbstractMatrix)
 
 end
 
-(*)(A::IndexMatrix, B::Diagonal) = _sparse_res_mu(A, B)
+(*)(A::IndexMatrix, B::Diagonal) = _sparse_res_mul(A, B)
 
-function _sparse_res_mu(A::IndexMatrix, B::AbstractArray)
+function _sparse_res_mul(A::IndexMatrix, B::Diagonal)
+    @boundscheck (size(A,2)==size(B,1)) || throw(BoundsError("Sizes do not match"))
+    TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
+    I = LinearIndices(CartesianIndices(CartesianIndex(_original_size(A))))[subindices(A)]
+    if isextensionmatrix(A)
+        sparse(I,1:length(I),TS.(parent(B)[I]),size(A,1),size(B,2))
+    else
+        sparse(1:length(I),I,TS.(parent(B)[I]),size(A,1),size(B,2))
+    end
+end
+
+function _sparse_res_mul(A::IndexMatrix, B::AbstractArray)
     TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
     C = similar(B, TS, (size(A,1),size(B,2)))
     @assert C isa AbstractSparseArray
@@ -321,11 +332,11 @@ mul!(dest::AbstractVector, A::ExtensionIndexMatrix, src::AbstractVector) =
     _tensor_mul!(reshape(dest, _original_size(A)), A, src, subindices(A))
 mul!(dest::AbstractVector, A::RestrictionIndexMatrix, src::AbstractVector) =
     _tensor_mul!(dest, A, reshape(src,_original_size(A)), subindices(A))
-function mul!(dest::AbstractVector, A::RestrictionIndexMatrix{T,N}, src::AbstractArray{S,N}) where {T,S,N}
+function mul!(dest::AbstractVector, A::RestrictionIndexMatrix{S,N}, src::AbstractArray{T,N}) where {S,T,N}
     @boundscheck ( (size(src) == _original_size(A)) && (length(dest)==size(A,1)))|| throw(BoundsError("Sizes do not match"))
     @inbounds _tensor_mul!(dest, A, src, subindices(A))
 end
-function mul!(dest::AbstractMatrix, A::RestrictionIndexMatrix, src::AbstractMatrix) where {T,S}
+function mul!(dest::AbstractMatrix, A::RestrictionIndexMatrix, src::AbstractMatrix)
     @boundscheck ( (size(src,1) == size(A,2)) && (size(src,2)==size(dest,2)) && (size(dest,1)==size(A,1)) ) || throw(BoundsError("Sizes do not match"))
     @inbounds for i in 1:size(src,2)
         mul!( view(dest, :, i), A, view(src, :, i)  )
