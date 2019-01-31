@@ -297,7 +297,6 @@ export diagonal, isdiagonal
 include("util/common.jl")
 include("util/indexing.jl")
 include("util/arrays/specialarrays.jl")
-include("util/arrays/circulant.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
