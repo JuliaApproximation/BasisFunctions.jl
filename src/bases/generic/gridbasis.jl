@@ -63,3 +63,14 @@ grid_multiplication_opearator(a::Function, grid::AbstractGrid; options...) =
 
 native_index(d::ProductGridBasis, idx) = product_native_index(size(d), idx)
 ordering(d::ProductGridBasis) = ProductIndexList{dimension(grid(d))}(size(d))
+
+
+function grid_extension_operator(src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
+    @assert supergrid(src_grid) == dest_grid
+    IndexExtensionOperator(src, dest, subindices(src_grid))
+end
+
+function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
+    @assert supergrid(dest_grid) == src_grid
+    IndexRestrictionOperator(src, dest, subindices(dest_grid))
+end

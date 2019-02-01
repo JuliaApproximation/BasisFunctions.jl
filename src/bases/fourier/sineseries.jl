@@ -28,7 +28,7 @@ instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 isbasis(b::SineSeries) = true
-isorthogonal(b::SineSeries) = true
+isorthogonal(b::SineSeries, ::FourierMeasure) = true
 
 
 hasinterpolationgrid(b::SineSeries) = false

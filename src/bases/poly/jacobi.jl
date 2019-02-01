@@ -44,6 +44,7 @@ iscompatible(d1::Jacobi, d2::Jacobi) = d1.α == d2.α && d1.β == d2.β
 iscompatible(dict::Jacobi, measure::JacobiMeasure) =
 	dict.α == measure.α && dict.β == measure.β
 
+issymmetric(dict::Jacobi) = abs(dict.α)==abs(dict.β)
 
 # See DLMF (18.9.2)
 # http://dlmf.nist.gov/18.9#i
@@ -98,3 +99,5 @@ weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
 name(dict::Jacobi) = "Jacobi polynomials  (α = $(dict.α), β = $(dict.β))"
 
 name(g::OPSNodes{<:Jacobi}) = "Jacobi points (α = $(g.dict.α), β = $(g.dict.β))"
+
+gauss_rule(dict::Jacobi{Float64}) = FastGaussQuadrature.gaussjacobi(length(dict), jacobi_α(dict), jacobi_β(dict))

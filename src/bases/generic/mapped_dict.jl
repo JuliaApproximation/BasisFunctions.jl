@@ -97,6 +97,12 @@ measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
 
 hasmeasure(dict::MappedDict) = hasmeasure(superdict(dict))
 
+for f in (:isorthonormal, :isorthogonal, :isbiorthogonal)
+    @eval $f(dict::MappedDict, measure::MappedMeasure) =
+        iscompatible(mapping(dict),mapping(measure)) && $f(superdict(dict), supermeasure(measure))
+end
+
+
 
 function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)
     if iscompatible(d1,d2) && iscompatible(mapping(d1),mapping(measure))

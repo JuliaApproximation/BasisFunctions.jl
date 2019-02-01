@@ -3,7 +3,7 @@ module BasisFunctions
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
 using FillArrays
 import Calculus: derivative
-using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra, FastGaussQuadrature
 using Base.Cartesian
 
 ## Some specific functions of Base we merely use
@@ -39,7 +39,7 @@ import Base: show, string
 
 ## Imports from LinearAlgebra
 import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!
-import LinearAlgebra: diag, isdiag, eigvals
+import LinearAlgebra: diag, isdiag, eigvals, issymmetric
 
 import BlockArrays.BlockVector
 export BlockVector
@@ -57,7 +57,7 @@ import DomainSets: element, elements, numelements
 # cartesian product utility functions
 import DomainSets: cartesianproduct, ×, product_eltype
 
-import DomainSets: forward_map, inverse_map
+import DomainSets: forward_map, inverse_map, WrappedDomain
 
 import FastGaussQuadrature: gaussjacobi
 
@@ -105,8 +105,8 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
-export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure
-export MappedMeasure, ProductMeasure, SubMeasure
+export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure
+export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbablityMeasure
 export supermeasure
 
 # from spaces/spaces.jl
@@ -187,7 +187,7 @@ export GenericIdentityOperator
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export gramelement, gramoperator
+export gramelement, gramoperator, dualdictionary
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -297,6 +297,7 @@ export diagonal, isdiagonal
 include("util/common.jl")
 include("util/indexing.jl")
 include("util/arrays/specialarrays.jl")
+include("util/arrays/outerproductarrays.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
@@ -305,6 +306,9 @@ include("grid/grid.jl")
 include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
 include("grid/intervalgrids.jl")
+include("grid/mappedgrid.jl")
+include("grid/scattered_grid.jl")
+include("grid/subgrid.jl")
 
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
@@ -321,10 +325,6 @@ include("operator/operator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
-include("grid/mappedgrid.jl")
-include("grid/scattered_grid.jl")
-include("grid/subgrid.jl")
-
 include("bases/generic/derived_dict.jl")
 include("bases/generic/complexified_dict.jl")
 include("bases/generic/tensorproduct_dict.jl")
@@ -336,6 +336,7 @@ include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/arithmetics.jl")
+include("operator/orthogonality.jl")
 
 include("operator/generic_operators.jl")
 

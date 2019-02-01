@@ -21,6 +21,8 @@ jacobi_α(b::Legendre{T}) where {T} = T(0)
 jacobi_β(b::Legendre{T}) where {T} = T(0)
 
 measure(b::Legendre{T}) where {T} = LegendreMeasure{T}()
+iscompatible(::Legendre, ::LegendreMeasure) = true
+issymmetric(::Legendre) = true
 
 function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreMeasure; options...)
 	T = coefficienttype(d1)
@@ -48,3 +50,5 @@ rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
 name(dict::Legendre) = "Legendre polynomials"
 
 name(g::OPSNodes{<:Legendre}) = "Legendre points"
+
+gauss_rule(dict::Legendre{Float64}) = FastGaussQuadrature.gausslegendre(length(dict))

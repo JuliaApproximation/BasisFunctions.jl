@@ -34,6 +34,9 @@ jacobi_α(b::Laguerre) = b.α
 measure(b::Laguerre) = LaguerreMeasure(b.α)
 
 iscompatible(d1::Laguerre, d2::Laguerre) = d1.α == d2.α
+isorthonormal(dict::Laguerre, measure::LaguerreMeasure) = iscompatible(dict, measure) && dict.α == 0
+isorthonormal(dict::Laguerre, measure::OPSNodesMeasure{T,<:Laguerre}) where T = iscompatible(dict, measure) && dict.α == 0
+issymmetric(::Laguerre) = false
 
 iscompatible(dict::Laguerre, measure::LaguerreMeasure) = dict.α == measure.α
 
@@ -72,3 +75,5 @@ function name(dict::Laguerre)
 end
 
 name(g::OPSNodes{<:Laguerre}) = "Laguerre points (α = $(g.dict.α))"
+
+gauss_rule(dict::Laguerre{Float64}) = FastGaussQuadrature.gausslaguerre(length(dict), jacobi_α(dict))

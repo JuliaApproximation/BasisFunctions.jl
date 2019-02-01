@@ -1,9 +1,8 @@
 
-using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
+using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays, Test
 import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
 BF = BasisFunctions
 
-using Test
 # types = [Float64,]
 
 domaintypes = (Float64, BigFloat)

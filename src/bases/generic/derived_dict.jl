@@ -42,8 +42,12 @@ for op in (:coefficienttype,)
 end
 
 # Delegation of properties
-for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal, :isdiscrete)
+for op in (:isreal, :isbasis, :isframe, :isdiscrete)
     @eval $op(s::DerivedDict) = $op(superdict(s))
+end
+
+for op in (:isorthogonal, :isbiorthogonal, :isorthonormal)
+    @eval $op(s::DerivedDict, m::Measure) = $op(superdict(s), m)
 end
 
 
@@ -160,7 +164,8 @@ end
 
 hasstencil(dict::DerivedDict) = true
 stencilarray(dict::DerivedDict) = [modifiersymbol(dict), "(", superdict(dict), ")"]
-
+modifiersymbol(dict::DerivedDict) = PrettyPrintSymbol{:DefDerive}(dict)
+name(::PrettyPrintSymbol{:DefDerive}) = "Derived"
 
 #########################
 # Concrete dict

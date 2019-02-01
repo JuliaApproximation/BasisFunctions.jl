@@ -52,12 +52,8 @@ innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
 
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
-function default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure;
-            warnslow = BF_WARNSLOW, options...)
-    warnslow && @warn "Evaluating inner product numerically"
-    integral(x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x), measure; options...)
-end
-
+default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
+    applymeasure(measure, x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x); options...)
 
 gramelement(dict::Dictionary, i, j, m = measure(dict); options...) =
     innerproduct(dict, i, dict, j, m; options...)
@@ -91,7 +87,7 @@ gramoperator(dict::Dictionary, measure; options...) =
 function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of Gram matrix entrywise."
     A = grammatrix(dict, m; warnslow = warnslow, options...)
-    ArrayOperator(A, dict, dict)
+    R = ArrayOperator(A, dict, dict)
 end
 
 
@@ -165,4 +161,24 @@ function mixedgrammatrix!(G, d1::Dictionary, d2::Dictionary, measure; options...
         end
     end
     G
+end
+
+########################
+# Duality
+########################
+
+@inline dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype) =
+    _dualdictionary(dict, measure, space; dualtype=dualtype)
+
+@inline _dualdictionary(dict::Dictionary, measure::Measure, space::Span; dualargs...) =
+    _dualdictionary(dict, measure, space, dictionary(space); dualargs...)
+
+function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype) where DICT <: Dictionary
+    (dualtype==:spantype) || @warn "At this point, the unique dual dictionary is of `:spantype`"
+    spantype_dualdictionary(dict, measure, space, spandict)
+end
+
+function spantype_dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT) where DICT <: Dictionary
+    @assert size(dict) == size(spandict)
+    OperatedDict(inv(gramoperator(dict, measure)))
 end

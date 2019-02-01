@@ -70,16 +70,6 @@ support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = Interval(first(g), l
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
 issubindex(i, g::IndexSubGrid) = in(i, subindices(g))
 
-function grid_extension_operator(src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
-    @assert supergrid(src_grid) == dest_grid
-    IndexExtensionOperator(src, dest, subindices(src_grid))
-end
-
-function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
-    @assert supergrid(dest_grid) == src_grid
-    IndexRestrictionOperator(src, dest, subindices(dest_grid))
-end
-
 # getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
 
 getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)

@@ -48,8 +48,14 @@ similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 isreal(b::Fourier) = false
 
 isbasis(b::Fourier) = true
-isorthogonal(b::Fourier) = true
-isorthonormal(b::Fourier) = oddlength(b)
+isorthogonal(b::Fourier, ::FourierMeasure) = true
+isorthogonal(b::Fourier, measure::AbstractDiracCombMeasure) = islooselycompatible(b, grid(measure))
+isorthogonal(b::Fourier, ::AbstractWeightedDiracCombMeasure) = false
+isorthogonal(b::Fourier, measure::DiracCombProbablityMeasure) = islooselycompatible(b, grid(measure))
+
+
+isorthonormal(b::Fourier, ::FourierMeasure) = oddlength(b)
+isorthonormal(b::Fourier, measure::DiracCombProbablityMeasure) = iscompatible(b, grid(measure)) || islooselycompatible(b, grid(measure)) && oddlength(b)
 isbiorthogonal(b::Fourier) = true
 
 # Methods for purposes of testing functionality.
@@ -62,14 +68,17 @@ hasextension(b::Fourier) = true
 # For hastransform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
 # 1+ because 0!≅eps()
-iscompatible(dict::Fourier, grid::PeriodicEquispacedGrid) =
-	(leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1) && (length(dict)==length(grid))
+iscompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
+	islooselycompatible(dict, grid) && (length(dict)==length(grid))
 # - Fourier grids are of course okay
 iscompatible(dict::Fourier, grid::FourierGrid) = length(dict)==length(grid)
 # - Any non-periodic grid is not compatible
 iscompatible(dict::Fourier, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
 hasgrid_transform(dict::Fourier, gb, grid) = iscompatible(dict, grid)
+
+islooselycompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
+	isperiodic(grid) && (leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1)
 
 
 interpolation_grid(b::Fourier{T}) where {T} = FourierGrid{T}(length(b))
@@ -627,10 +636,49 @@ function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::Le
 	end
 end
 
-function gramoperator(dict::Fourier, ::FourierMeasure; T = coefficienttype(dict), options...)
+function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttype(dict), options...)
+	@assert isorthogonal(dict, measure) # some robustness.
 	if iseven(length(dict))
 		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
 	else
+		@assert isorthonormal(dict, measure)
 		IdentityOperator{T}(dict, dict)
+	end
+end
+
+gramoperator(dict::Fourier, measure::AbstractDiracCombMeasure; options...) =
+	_fourierdiracgramoperator(dict, measure, grid(measure); options...)
+
+_fourierdiracgramoperator(dict, measure, grid; options...) = default_gramoperator(dict, measure; options...)
+
+function _fourierdiracgramoperator(dict::Fourier, measure::AbstractDiracCombMeasure, grid::AbstractEquispacedGrid;
+			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+	if isorthonormal(dict, measure)
+		return IdentityOperator{T}(dict)
+	end
+	if isorthogonal(dict, measure)
+		return _diagonalfourierdiracgramoperator(dict, measure, grid; T=T, options...)
+	end
+	default_gramoperator(dict, measure; options...)
+end
+
+function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombMeasure, grid::AbstractEquispacedGrid;
+			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+	@assert isorthogonal(dict, measure) && !isorthonormal(dict, measure)
+	if isodd(length(dict)) || (length(dict)==length(grid))
+		ScalingOperator(dict, length(grid); T=T)
+	else
+		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, length(grid); T=T)
+	end
+end
+
+function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombProbablityMeasure, grid::AbstractEquispacedGrid;
+			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+	@assert isorthogonal(dict, measure)
+	if isodd(length(dict)) || (length(dict)==length(grid))
+		@assert isorthonormal(dict, measure)
+		IdentityOperator{T}(dict)
+	else
+		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
 	end
 end

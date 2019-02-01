@@ -33,6 +33,8 @@ function OperatedDict(op::DictionaryOperator{T}) where {T}
     OperatedDict{S,T}(op)
 end
 
+OperatedDict(op::IdentityOperator) = src(op)
+
 ## Printing
 
 modifiersymbol(dict::OperatedDict) = operator(dict)
@@ -182,8 +184,13 @@ hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
 
 measure(dict::OperatedDict) = measure(superdict(dict))
 
+for f in (:isorthogonal, :isorthonormal, :isbiorthogonal)
+    @eval $f(dict::OperatedDict, measure::Measure) =
+        $f(superdict(dict), measure) && $f(operator(dict))
+end
+
 gramoperator(dict::OperatedDict, measure; options...) =
-	adjoint(operator(dict)) * gramoperator(superdict(dict), measure; options...) * operator(dict)
+	adjoint(operator(dict)) * gramoperator(dest(operator(dict)), measure; options...) * operator(dict)
 
 function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)

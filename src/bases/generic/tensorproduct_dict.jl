@@ -24,7 +24,6 @@ const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
 const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 
-
 # Generic functions for composite types:
 iscomposite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
@@ -70,10 +69,13 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ## Properties
 
-for op in (:isreal, :isbasis, :isframe, :isorthogonal, :isbiorthogonal)
+for op in (:isreal, :isbasis, :isframe)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
+for op in (:isorthogonal, :isorthonormal)
+    @eval $op(s::TensorProductDict, m::ProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
+end
 
 ## Native indices are of type ProductIndex
 

@@ -77,13 +77,22 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 
 name(dict::MultiDict) = "Union of dictionaries"
 
-for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
+for op in (:isbasis, :isframe)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
     @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
     # By default, multidicts do not have these properties:
     @eval ($fname)(s, elements...) = false
+end
+
+for op in (:isorthogonal, :isbiorthogonal)
+    # Redirect the calls to multiple_isbasis with the elements as extra arguments,
+    # and that method can decide whether the property holds for the multidict.
+    fname = Symbol("multiple_$(op)")
+    @eval $op(s::MultiDict, m::Measure) = ($fname)(s, m, elements(s)...)
+    # By default, multidicts do not have these properties:
+    @eval ($fname)(s, m::Measure, elements...) = false
 end
 
 for op in (:hasinterpolationgrid, :hastransform)

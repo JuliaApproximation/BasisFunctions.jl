@@ -74,8 +74,12 @@ subdict_hasinterpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
-for op in (:isreal, :isorthogonal, :isbasis)
+for op in (:isreal, :isbasis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
+end
+
+for op in (:isreal, :isbiorthogonal, :isorthonormal, :isorthogonal)
+    @eval $op(dict::Subdictionary, measure::Measure) = $op(superdict(dict), measure::Measure)
 end
 
 for op in (:moment, :norm)
@@ -280,3 +284,14 @@ subdict(s::Dictionary, ::Colon) = s
 
 # Avoid creating nested subdicts
 subdict(s::Subdictionary, idx) = subdict(superdict(s), superindices(s)[idx])
+
+# A gramoperator of a subdict orthonormal/orthogonal dictionary is also Identity/Diagonal
+function gramoperator(s::Subdictionary, m::Measure;
+            T = promote_type(coefficienttype(s), domaintype(m)), options...)
+    if isorthonormal(s, m)
+        return IdentityOperator{T}(s)
+    elseif isorthogonal(s, m)
+        return DiagonalOperator(s, diag(gramoperator(superdict(s), m; T=T, options...))[superindices(s)]; T=T, options...)
+    end
+    default_gramoperator(s, m; T=T, options...)
+end

@@ -378,6 +378,16 @@ function test_generic_dict_interface(basis)
     if isbasis(basis)
         @test isframe(basis)
     end
+    if hasmeasure(basis)
+        @test isorthogonal(basis) == isorthogonal(basis, measure(basis))
+        @test isorthonormal(basis) == isorthonormal(basis, measure(basis))
+        @test isbiorthogonal(basis) == isbiorthogonal(basis, measure(basis))
+    end
+
+    if isorthonormal(basis)
+        @test isorthogonal(basis)
+    end
+
     if isorthogonal(basis)
         @test isbiorthogonal(basis)
     end
@@ -470,5 +480,9 @@ function test_generic_dict_interface(basis)
     if supports_approximation(basis)
         test_generic_dict_approximation(basis)
         test_gram_projection(basis)
+    end
+
+    if hasmeasure(basis)
+        test_orthogonality_orthonormality(basis)
     end
 end

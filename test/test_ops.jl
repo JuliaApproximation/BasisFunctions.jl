@@ -124,3 +124,13 @@ for T in types
     end
     println()
 end
+
+@testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
+    OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
+    for ops in OPSs, n in (5,6), T in (Float64,BigFloat)
+        B = instantiate(ops, n, T)
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(B))
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(resize(B,2n)))
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(resize(B,n-1)))
+    end
+end

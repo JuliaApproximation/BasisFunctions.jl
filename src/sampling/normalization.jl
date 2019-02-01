@@ -11,8 +11,8 @@ with integral `∫f dμ`. If `S` is the sampling operator on the grid, and if
 `N` is the associated quadraturenormalization (with respect to `dμ`), then:
 `∫f dμ ≈ sum(N * S(f))`.
 """
-quadraturenormalization(op::GridSampling, measure; options...) =
-	quadraturenormalization(dest(op), measure; options...)
+quadraturenormalization(S::GridSampling, dμ; options...) =
+	quadraturenormalization(dest(S), dμ; options...)
 
 """
 Return a normalization for a sampling operator on a grid. The normalization ensures

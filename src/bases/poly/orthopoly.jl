@@ -8,10 +8,8 @@ end
 
 const OPS{S,T} = OrthogonalPolynomials{S,T}
 
-
-
-isorthogonal(b::OPS) = true
-isbiorthogonal(b::OPS) = true
+isorthogonal(dict::OPS, measure::Measure) =
+    iscompatible(dict, measure)
 
 approx_length(b::OPS, n::Int) = n
 
@@ -236,15 +234,16 @@ hasmeasure(dict::OPS) = true
 weight(b::OPS, x) = weight(measure(b), x)
 
 
-function gramoperator(dict::OPS, m; options...)
-	if iscompatible(m, measure(dict))
-		ops_gramoperator(dict, m; options...)
+function gramoperator(dict::OPS, m; T = promote_type(coefficienttype(dict), domaintype(m)), options...)
+    isorthonormal(dict, m) && return IdentityOperator{T}(dict)
+	if isorthogonal(dict, m)
+		ops_diagonal_gramoperator(dict, m; T=T, options...)
 	else
-		default_gramoperator(dict, m; options...)
+		default_gramoperator(dict, m; T=T, options...)
 	end
 end
 
-function ops_gramoperator(dict::OPS, measure; T = coefficienttype(dict), options...)
+function ops_diagonal_gramoperator(dict::OPS, measure; T = coefficienttype(dict), options...)
 	n = length(dict)
 	diag = zeros(T, n)
 	for i in 1:n
@@ -285,18 +284,34 @@ end
 gauss_points(b::OPS) = roots(b)
 
 
-struct OPSNodes{OPS,T} <: AbstractGrid{T,1}
+struct OPSNodes{T,OPS} <: AbstractGrid{T,1}
 	dict	::	OPS
-	nodes	::	Vector{T}
+	nodes	::	AbstractVector{T}
 end
+
 
 OPSNodes(dict::OPS) = OPSNodes(dict, roots(dict))
 
 size(grid::OPSNodes) = (length(grid.nodes),)
 getindex(grid::OPSNodes, i::Int) = grid.nodes[i]
 
+struct OPSNodesMeasure{T,OPS} <: DiscreteMeasure{T}
+    dict    ::  OPS
+    grid    ::  OPSNodes{T,OPS}
+    weights ::  AbstractVector{T}
+end
+
+function OPSNodesMeasure(dict::OPS)
+    x,w = gauss_rule(dict)
+    OPSNodesMeasure(dict, OPSNodes(dict, x), w)
+end
+name(m::OPSNodesMeasure) = "Discrete OPS of "*name(m.dict)
+support(measure::OPSNodesMeasure) = support(measure.dict)
+
 hasinterpolationgrid(dict::OPS) = true
 interpolation_grid(dict::OPS) = OPSNodes(dict)
+iscompatible(dict::OPS, grid::OPSNodes) = iscompatible(dict, grid.dict)
+iscompatible(dict::OPS, measure::OPSNodesMeasure) = iscompatible(dict, measure.dict) && length(dict) -issymmetric(dict) <= length(grid(measure))
 
 
 
@@ -626,4 +641,13 @@ function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c
     b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
     c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
     a,b,c
+end
+
+abstract type NodesAndWeights{T} <: AbstractVector{T} end
+size(vector::NodesAndWeights) = (length(vector),)
+unsafe_getindex(vector::NodesAndWeights, i) = unsafe_getindex(vector, convert(Int, i))
+getindex(vector::NodesAndWeights, i) = getindex(vector, convert(Int,i))
+function getindex(vector::NodesAndWeights, i::Int)
+    @boundscheck (1 <= convert(Int,i) <= length(vector)) || throw(BoundsError())
+    @inbounds unsafe_getindex(vector, i)
 end

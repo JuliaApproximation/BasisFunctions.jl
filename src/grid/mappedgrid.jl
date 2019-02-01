@@ -29,7 +29,7 @@ mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(supergrid(g), map∘ma
 # Convenience function, similar to apply_map for Dictionary's
 apply_map(grid::AbstractGrid, map::AbstractMap) = mapped_grid(grid, map)
 
-for op in (:length, :size, :eachindex, :indextype)
+for op in (:length, :size, :eachindex, :indextype, :isperiodic)
 	@eval $op(g::MappedGrid) = $op(supergrid(g))
 end
 

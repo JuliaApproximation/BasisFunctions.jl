@@ -11,7 +11,7 @@ rightendpoint(g::AbstractIntervalGrid) = g.b
 support(g::AbstractIntervalGrid) = Interval(leftendpoint(g), rightendpoint(g))
 
 size(g::AbstractIntervalGrid) = (g.n,)
-
+isperiodic(::AbstractIntervalGrid) = false
 
 
 # Perhaps we should add a stepsize field, for better efficiency?
@@ -99,6 +99,8 @@ similargrid(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEq
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
 
+isperiodic(::PeriodicEquispacedGrid) = true
+
 # We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
 ==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
     (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
@@ -137,6 +139,8 @@ unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
 
+isperiodic(::MidpointEquispacedGrid) = true
+
 
 "A Fourier grid is a periodic equispaced grid on the interval [0,1]."
 struct FourierGrid{T} <: AbstractEquispacedGrid{T}
@@ -163,6 +167,8 @@ has_extension(::FourierGrid) = true
 extend(g::FourierGrid, factor::Int) = resize(g, factor*g.n)
 
 mapped_grid(g::FourierGrid, map::AffineMap) = MappedGrid(g, map)
+
+isperiodic(::FourierGrid) = true
 
 function rescale(g::FourierGrid, a, b)
 	m = interval_map(leftendpoint(g), rightendpoint(g), a, b)

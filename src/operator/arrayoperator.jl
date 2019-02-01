@@ -78,7 +78,7 @@ HorizontalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{S}, st
     HorizontalBandedOperator{T}(HorizontalBandedMatrix(length(dest), length(src), T.(array), step, offset), src, dest)
 
 ArrayOperator(A::HorizontalBandedMatrix{T}, src::Dictionary, dest::Dictionary) where T =
-    HorizontalBandedMatrix{T}(A, src, dest)
+    HorizontalBandedOperator{T}(A, src, dest)
 
 
 """

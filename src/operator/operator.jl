@@ -186,7 +186,7 @@ function sparse_matrix(op::DictionaryOperator; sparse_tol = 1e-14, options...)
     R
 end
 
-
+Base.Matrix(op::DictionaryOperator) = matrix(op)
 function matrix(op::DictionaryOperator)
     a = Array{eltype(op)}(undef, size(op))
     matrix!(op, a)

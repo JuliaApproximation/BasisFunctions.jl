@@ -39,6 +39,7 @@ hasgrid_transform(b::ChebyshevT, gb, ::AbstractGrid) = false
 first_moment(b::ChebyshevT{T}) where {T} = convert(T, pi)
 
 interpolation_grid(b::ChebyshevT{T}) where {T} = ChebyshevNodes{T}(length(b))
+iscompatible(dict::ChebyshevT, grid::ChebyshevNodes) = length(dict) == length(grid)
 secondgrid(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
 transformgrid_extremae(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
 
@@ -131,6 +132,13 @@ similar_operator(op::ChebyshevDifferentiation, src, dest) =
     ChebyshevDifferentiation(src, dest, order(op))
 
 wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+function adjoint(op::ChebyshevDifferentiation)
+    @warn "Inefficient adjoint of `ChebyshevDifferentiation`"
+    ArrayOperator(adjoint(Matrix(op)), dest(op), src(op))
+end
+
+conj(op::ChebyshevDifferentiation) = op
+
 
 # TODO: this allocates lots of memory...
 function apply!(op::ChebyshevDifferentiation, coef_dest, coef_src)
@@ -224,6 +232,8 @@ antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
 
 hasmeasure(dict::ChebyshevT) = true
 measure(dict::ChebyshevT{T}) where T = ChebyshevMeasure{T}()
+iscompatible(::ChebyshevT, ::ChebyshevMeasure) = true
+issymmetric(::ChebyshevT) = true
 
 innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTMeasure;
 			T = coefficienttype(b1), options...) =
@@ -276,6 +286,19 @@ grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; 
 
 grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
+
+# gauss_rule(dict::ChebyshevT{T}) where T= ChebyshevTNodes{T}(length(dict)), ChebyshevTWeights{T}(length(dict))
+struct ChebyshevTNodes{T} <: NodesAndWeights{T}
+    n   :: Int
+end
+length(nodes::ChebyshevTNodes) = nodes.n
+unsafe_getindex(nodes::ChebyshevTNodes{T}, i::Int) where T = cos((2 * convert(T,nodes.n+1-i) - 1) * convert(T,pi) / (2 * nodes.n))
+
+struct ChebyshevTWeights{T} <: NodesAndWeights{T}
+    n   :: Int
+end
+length(weights::ChebyshevTWeights) = weights.n
+unsafe_getindex(weights::ChebyshevTWeights{T}, i::Int) where T = convert(T,π) / weights.n
 
 function chebyshev_transform_nodes(dict::ChebyshevT, T; options...)
 	grid = interpolation_grid(dict)
@@ -365,7 +388,10 @@ first_moment(b::ChebyshevU{T}) where {T} = convert(T, pi)/2
 
 interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevNodes{T}(b.n)
 
+iscompatible(dict::ChebyshevU, grid::ChebyshevNodes) = length(dict) == length(grid)
+issymmetric(::ChebyshevU) = true
 measure(dict::ChebyshevU{T}) where {T} = ChebyshevUMeasure{T}()
+iscompatible(::ChebyshevU, ::ChebyshevUMeasure) = true
 
 function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUMeasure;
 			T = coefficienttype(b1), options...)
@@ -393,3 +419,17 @@ rec_Bn(b::ChebyshevU{T}, n::Int) where {T} = zero(T)
 rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
 
 support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
+
+# gauss_rule(dict::ChebyshevU{T}) where T= ChebyshevUNodes{T}(length(dict)), ChebyshevUWeights{T}(length(dict))
+struct ChebyshevUNodes{T} <: NodesAndWeights{T}
+    n   :: Int
+end
+length(nodes::ChebyshevUNodes) = nodes.n
+unsafe_getindex(nodes::ChebyshevUNodes{T}, i::Int) where T = cos((nodes.n + 1 - i) * convert(T,π) / (nodes.n + 1))
+
+struct ChebyshevUWeights{T} <: NodesAndWeights{T}
+    n   :: Int
+end
+
+length(weights::ChebyshevUWeights) = weights.n
+unsafe_getindex(weights::ChebyshevUWeights{T}, i::Int) where {T} = convert(T,π)/(nodes.n + 1) * sin(convert(T,nodes.n + 1 -i) / (nodes.n + 1) * convert(T,π))^2

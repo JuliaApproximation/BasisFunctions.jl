@@ -34,7 +34,13 @@ integral(f, measure::LebesgueMeasure; options...) =
 integral(f, measure::DiracMeasure; options...) =
     f(point(measure))
 
-# TODO DiracCombMeasure
+function integral(f, measure::DiscreteMeasure; T = domaintype(measure), options...)
+    r = zero(T)
+    for (xi,x) in enumerate(grid(measure))
+        r += unsafe_discrete_weight(measure,xi)*f(x)
+    end
+    r
+end
 
 # ChebyshevT: apply cosine map to the integral.
 # Weight function times Jacobian becomes identity.

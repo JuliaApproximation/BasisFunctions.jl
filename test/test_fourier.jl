@@ -185,8 +185,33 @@ function test_fourier_series(T)
     @test abs((3*e-e2)(T(x0))-(3*f(x0)-f2(x0))) < sqrt(eps(T))
 end
 
+function test_fourier_orthogonality()
+    test_orthogonality_orthonormality(Fourier(10), true, false, FourierMeasure())
+    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(10))))
+    test_orthogonality_orthonormality(Fourier(10), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(10))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(20))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(20))))
+
+    test_orthogonality_orthonormality(Fourier(11), true, true, FourierMeasure())
+    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(11))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(11))))
+    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(22))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(22))))
+
+    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(23))))
+
+    test_orthogonality_orthonormality(Fourier(11), false, false, BasisFunctions.DiracCombMeasure(EquispacedGrid(20,0,1)))
+end
+
 for T in fourier_types
     @testset "$(rpad("Fourier expansions ($T)",80))" begin
         test_fourier_series(T)
     end
+end
+
+@testset "$(rpad("Fourier orthogonality",80))" begin
+    test_fourier_orthogonality()
 end
