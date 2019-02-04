@@ -324,6 +324,7 @@ end
 
 
 const IdentityOperator{T} = DiagonalOperator{T,Ones{T,1,Tuple{Base.OneTo{Int64}}}} where T
+Base.conj(vc::Ones) = vc
 
 IdentityOperator(src::Dictionary, dest::Dictionary = src; T=op_eltype(src,dest)) =
     IdentityOperator{T}(src, dest)

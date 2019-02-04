@@ -180,5 +180,5 @@ end
 
 function spantype_dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT) where DICT <: Dictionary
     @assert size(dict) == size(spandict)
-    OperatedDict(inv(gramoperator(dict, measure)))
+    conj(inv(gramoperator(dict, measure))) * dict
 end

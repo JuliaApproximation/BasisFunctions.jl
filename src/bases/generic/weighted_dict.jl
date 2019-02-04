@@ -136,3 +136,9 @@ string(dict::WeightedDict) = name(dict) * ", weighted by " * string(weightfuncti
 
 modifiersymbol(dict::WeightedDict) = PrettyPrintSymbol{:ω}(weightfunction(dict))
 name(s::PrettyPrintSymbol{:ω}) = "Weight function: " * string(s.object)
+
+function dualdictionary(dict::WeightedDict, measure::Measure; options...)
+    dtilde = dualdictionary(superdict(dict), measure;options...)
+    invweight = x -> conj(1/dict.weightfun(x))
+    WeightedDict(dtilde, invweight)
+end

@@ -234,7 +234,7 @@ struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
     end
 end
 
-DiscreteMeasure(grid::AbstractGrid, weights) =
+DiscreteMeasure(grid::AbstractGrid, weights=Ones{eltype(grid)}(length(grid))) =
     GenericDiscreteMeasure(grid, weights)
 
 name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(grid(m)))"

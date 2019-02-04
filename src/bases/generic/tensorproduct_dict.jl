@@ -261,3 +261,7 @@ object_parentheses(dict::TensorProductDict) = true
 grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;
             T = op_eltype(dict,gb), options...) =
     tensorproduct(map( (d,g) -> evaluation_operator(d, g; T=T), elements(dict), elements(grid))...)
+
+
+dualdictionary(dict::TensorProductDict, measure::ProductMeasure=measure(dict); options...) = 
+    TensorProductDict([dualdictionary(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
