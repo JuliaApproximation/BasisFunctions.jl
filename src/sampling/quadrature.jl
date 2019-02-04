@@ -102,20 +102,22 @@ function rescale_fejer_quad(x, w, a, b)
     y,v
 end
 
-function graded_rule(sigma, a, b, M, n, T = Float64)
-    x, w = BasisFunctions.fejer_first_rule(n, T)
-    xg = zeros(T, M*length(x))
-    wg = zeros(T, M*length(w))
+function graded_rule(sigma, a, b, M, n, T = Float64, ndiff = 2)
+    xg = zeros(T, 0)
+    wg = zeros(T, 0)
     q1 = one(T)
     for m = M-1:-1:1
+        x,w = BasisFunctions.fejer_first_rule(n, T)
         q0 = sigma*q1
-        y,v = rescale_fejer_quad(x, w, q0, q1)
-        xg[m*n+1:(m+1)*n] .= y
-        wg[m*n+1:(m+1)*n] .= v
+        xs,ws = rescale_fejer_quad(x, w, q0, q1)
+        xg = [xg; xs]
+        wg = [wg; ws]
         q1 = q0
+        n -= ndiff
     end
-    y,v = rescale_fejer_quad(x, w, 0, q1)
-    xg[1:n] .= y
-    wg[1:n] .= v
+    x,w = BasisFunctions.fejer_first_rule(n, T)
+    xs,ws = rescale_fejer_quad(x, w, 0, q1)
+    xg = [xg; xs]
+    wg = [wg; ws]
     a .+ xg*(b-a), wg * (b-a)
 end
