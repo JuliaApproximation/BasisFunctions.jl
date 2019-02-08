@@ -102,7 +102,7 @@ end
 
 function quadraturenormalization(gb, grid, measure; warnslow = BF_WARNSLOW, options...)
 	if warnslow
-		@warn "No known quadrature normalization available, choosing Riemann sum normalization"
+		@warn "No known quadrature normalization available for grid $(typeof(grid)) with measure $(typeof(measure)),\n choosing Riemann sum normalization"
 	end
 	riemann_normalization(gb, grid, measure; options...)
 end

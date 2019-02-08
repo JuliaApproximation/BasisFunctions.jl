@@ -187,21 +187,21 @@ end
 
 function test_fourier_orthogonality()
     test_orthogonality_orthonormality(Fourier(10), true, false, FourierMeasure())
-    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(10))))
-    test_orthogonality_orthonormality(Fourier(10), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(10))))
-    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(20))))
-    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(20))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, DiracCombMeasure(interpolation_grid(Fourier(10))))
+    test_orthogonality_orthonormality(Fourier(10), true, true, DiracCombProbabilityMeasure(interpolation_grid(Fourier(10))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, DiracCombMeasure(interpolation_grid(Fourier(20))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, DiracCombProbabilityMeasure(interpolation_grid(Fourier(20))))
 
     test_orthogonality_orthonormality(Fourier(11), true, true, FourierMeasure())
-    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(11))))
-    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(11))))
-    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(22))))
-    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(22))))
+    test_orthogonality_orthonormality(Fourier(11), true, false, DiracCombMeasure(interpolation_grid(Fourier(11))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, DiracCombProbabilityMeasure(interpolation_grid(Fourier(11))))
+    test_orthogonality_orthonormality(Fourier(11), true, false, DiracCombMeasure(interpolation_grid(Fourier(22))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, DiracCombProbabilityMeasure(interpolation_grid(Fourier(22))))
 
-    test_orthogonality_orthonormality(Fourier(11), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(23))))
-    test_orthogonality_orthonormality(Fourier(11), true, true, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(23))))
-    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombMeasure(interpolation_grid(Fourier(23))))
-    test_orthogonality_orthonormality(Fourier(10), true, false, BasisFunctions.DiracCombProbablityMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(11), true, false, DiracCombMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(11), true, true, DiracCombProbabilityMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, DiracCombMeasure(interpolation_grid(Fourier(23))))
+    test_orthogonality_orthonormality(Fourier(10), true, false, DiracCombProbabilityMeasure(interpolation_grid(Fourier(23))))
 
     test_orthogonality_orthonormality(Fourier(11), false, false, BasisFunctions.DiracCombMeasure(EquispacedGrid(20,0,1)))
 end

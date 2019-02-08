@@ -28,16 +28,9 @@ end
 
 weightfunction(m::Measure) = x->weight(m, x)
 unsafe_weightfunction(m::Measure) = x->unsafe_weight(m, x)
-
 codomaintype(m::Measure{T}) where {T} = subeltype(T)
-
 iscomposite(m::Measure) = false
 
-"Supertype of all Lebesgue measures."
-abstract type LebesgueMeasure{T} <: Measure{T}
-end
-
-unsafe_weight(m::LebesgueMeasure{T}, x) where {T} = one(T)
 
 """
 The abstract supertype of discrete measures.
@@ -59,24 +52,11 @@ unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m
 @inline isdiscrete(::DiscreteMeasure) = true
 @inline isprobabilitymeasure(m::DiscreteMeasure) = sum(m.weights) ≈ 1
 
-"""
-The abstract supertype of all discrete measures based on an equispaced grid.
-"""
-abstract type AbstractDiracCombMeasure{T} <: DiscreteMeasure{T}
+"Supertype of all Lebesgue measures."
+abstract type LebesgueMeasure{T} <: Measure{T}
 end
 
-@inline unsafe_discrete_weight(m::AbstractDiracCombMeasure{T}, i) where {T} = one(T)
-@inline isprobabilitymeasure(::AbstractDiracCombMeasure) = false # assuming length one grid is never used...
-@inline weights(m::AbstractDiracCombMeasure{T}) where {T} = Ones{T}(length(grid(m)))
-
-"""
-The abstract supertype of all discrete measures based on an equispaced grid with weights not equal to 1.
-"""
-abstract type AbstractWeightedDiracCombMeasure{T} <: AbstractDiracCombMeasure{T}
-end
-
-@inline weights(m::AbstractWeightedDiracCombMeasure{T}) where {T} = m.weights
-unsafe_discrete_weight(m::AbstractWeightedDiracCombMeasure, i) where {T} = Base.unsafe_getindex(weights(m), i)
+unsafe_weight(m::LebesgueMeasure{T}, x) where {T} = one(T)
 
 "A measure on a general domain with a general weight function `dσ = w(x) dx`."
 struct GenericWeightMeasure{T} <: Measure{T}
@@ -212,60 +192,6 @@ unsafe_weight(m::HermiteMeasure, x) = exp(-x^2)
 isprobabilitymeasure(::HermiteMeasure) = false
 
 
-"A Dirac function at a point `x`."
-struct DiracMeasure{T} <: DiscreteMeasure{T}
-    x   ::  T
-end
-
-support(m::DiracMeasure) = Point(m.x)
-name(m::DiracMeasure) = "Dirac measure at x = $(m.x)"
-point(m::DiracMeasure) = m.x
-grid(m::DiracMeasure) = ScatteredGrid(m.x)
-checkbounds(::DiracMeasure, i) = (convert(Int,i)==1) || throw(BoundsError())
-isprobabilitymeasure(::DiracMeasure) = true
-weights(::DiracMeasure{T}) where T = Ones{T}(1)
-
-struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
-    grid   ::  GRID
-    weights   ::  W
-    function GenericDiscreteMeasure(grid::AbstractGrid, weights)
-        @assert size(grid) == size(weights)
-        new{eltype(grid),typeof(grid),typeof(weights)}(grid, weights)
-    end
-end
-
-DiscreteMeasure(grid::AbstractGrid, weights=Ones{eltype(grid)}(length(grid))) =
-    GenericDiscreteMeasure(grid, weights)
-
-name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(grid(m)))"
-
-
-struct DiracCombMeasure{T,EG<:AbstractEquispacedGrid} <: AbstractDiracCombMeasure{T}
-    grid      :: EG
-
-    DiracCombMeasure(eg::AbstractEquispacedGrid) = new{eltype(eg),typeof(eg)}(eg)
-end
-
-struct WeightedDiracCombMeasure{T,EG<:AbstractEquispacedGrid,W<:AbstractArray} <: AbstractWeightedDiracCombMeasure{T}
-    grid      :: EG
-    weights         :: W
-
-    function WeightedDiracCombMeasure(eg::AbstractEquispacedGrid{T}, w::AbstractArray=Ones{T}(length(eq))) where T
-        @assert length(eq) == length(w)
-        new{eltype(eg),typeof(eg),typeof(w)}(eg, w)
-    end
-end
-
-struct DiracCombProbablityMeasure{T,EG<:AbstractEquispacedGrid} <: AbstractWeightedDiracCombMeasure{T}
-    grid      :: EG
-    DiracCombProbablityMeasure(eg::AbstractEquispacedGrid) = new{eltype(eg),typeof(eg)}(eg)
-end
-
-weights(m::DiracCombProbablityMeasure{T}) where T = Ones{T}(length(grid(m)))/convert(T,length(grid(m)))
-unsafe_discrete_weight(m::DiracCombProbablityMeasure{T}, i::Int) where {T} = one(T)/length(grid(m))
-@inline isprobabilitymeasure(m::DiracCombProbablityMeasure) = true
-
-
 ######################################################
 # Generating new measures from existing measures
 ######################################################
@@ -288,9 +214,6 @@ end
 
 SubMeasure(measure::Measure{T}, domain::Domain) where {T} =
     SubMeasure{typeof(measure),typeof(domain),T}(measure,domain)
-# TODO move subgrid to BasisFunctions
-SubMeasure(measure::DiscreteMeasure{T}, domain::Domain) where {T} =
-    DiscreteMeasure(subgrid(grid(measure), domain), weights(measure)[in.(grid, domain)])
 
 name(m::SubMeasure) = "Restriction of a measure"
 
@@ -311,9 +234,6 @@ end
 
 MappedMeasure(map, measure::Measure{T}) where {T} =
     MappedMeasure{typeof(map),typeof(measure),T}(map, measure)
-
-MappedMeasure(map, measure::DiscreteMeasure) =
-    DiscreteMeasure(MappedGrid(grid(measure), map), weights(measure))
 
 name(m::MappedMeasure) = "Mapped measure"
 
@@ -342,13 +262,10 @@ function ProductMeasure(measures...)
     T = product_domaintype(measures...)
     ProductMeasure{typeof(measures),T}(measures)
 end
-ProductMeasure(measures::DiscreteMeasure...) =
-    DiscreteMeasure(tensorproduct(map(grid, measures)...), tensorproduct(map(weights, measures)...))
 
 iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
-isdiscrete(m::ProductMeasure) = reduce(&, map(isdiscrete, elements(m)))
 isprobabilitymeasure(m::ProductMeasure) = reduce(&, map(isprobabilitymeasure, elements(m)))
 
 support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
@@ -372,3 +289,8 @@ end
 # By default, measures are compatible only when they are equal.
 iscompatible(m1::M, m2::M) where {M <: Measure} = m1==m2
 iscompatible(m1::Measure, m2::Measure) = false
+
+#############################
+# Discrete measures
+#############################
+include("discretemeasure.jl")

@@ -116,7 +116,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
             if isa(op, IdentityOperator)
                 add_thisone = false
             end
-            if isa(op, ScalingOperator) && scalar(op) == 1
+            if isa(op, ScalingOperator) && scalar(op) ≈ 1
                 add_thisone = false
             end
             if add_thisone

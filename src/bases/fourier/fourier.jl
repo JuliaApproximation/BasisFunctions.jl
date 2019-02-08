@@ -49,13 +49,12 @@ isreal(b::Fourier) = false
 
 isbasis(b::Fourier) = true
 isorthogonal(b::Fourier, ::FourierMeasure) = true
-isorthogonal(b::Fourier, measure::AbstractDiracCombMeasure) = islooselycompatible(b, grid(measure))
-isorthogonal(b::Fourier, ::AbstractWeightedDiracCombMeasure) = false
-isorthogonal(b::Fourier, measure::DiracCombProbablityMeasure) = islooselycompatible(b, grid(measure))
+isorthogonal(b::Fourier, measure::DiracCombMeasure) = islooselycompatible(b, grid(measure))
+isorthogonal(b::Fourier, measure::DiracCombProbabilityMeasure) = islooselycompatible(b, grid(measure))
 
 
 isorthonormal(b::Fourier, ::FourierMeasure) = oddlength(b)
-isorthonormal(b::Fourier, measure::DiracCombProbablityMeasure) = iscompatible(b, grid(measure)) || islooselycompatible(b, grid(measure)) && oddlength(b)
+isorthonormal(b::Fourier, measure::DiracCombProbabilityMeasure) = iscompatible(b, grid(measure)) || islooselycompatible(b, grid(measure)) && oddlength(b)
 isbiorthogonal(b::Fourier) = true
 
 # Methods for purposes of testing functionality.
@@ -646,12 +645,12 @@ function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttyp
 	end
 end
 
-gramoperator(dict::Fourier, measure::AbstractDiracCombMeasure; options...) =
+gramoperator(dict::Fourier, measure::UniformDiracCombMeasure; options...) =
 	_fourierdiracgramoperator(dict, measure, grid(measure); options...)
 
 _fourierdiracgramoperator(dict, measure, grid; options...) = default_gramoperator(dict, measure; options...)
 
-function _fourierdiracgramoperator(dict::Fourier, measure::AbstractDiracCombMeasure, grid::AbstractEquispacedGrid;
+function _fourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
 			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
 	if isorthonormal(dict, measure)
 		return IdentityOperator{T}(dict)
@@ -662,17 +661,17 @@ function _fourierdiracgramoperator(dict::Fourier, measure::AbstractDiracCombMeas
 	default_gramoperator(dict, measure; options...)
 end
 
-function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombMeasure, grid::AbstractEquispacedGrid;
+function _diagonalfourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
 			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
 	@assert isorthogonal(dict, measure) && !isorthonormal(dict, measure)
 	if isodd(length(dict)) || (length(dict)==length(grid))
-		ScalingOperator(dict, length(grid); T=T)
+		ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
 	else
-		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, length(grid); T=T)
+		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
 	end
 end
 
-function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombProbablityMeasure, grid::AbstractEquispacedGrid;
+function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombProbabilityMeasure, grid::AbstractEquispacedGrid;
 			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
 	@assert isorthogonal(dict, measure)
 	if isodd(length(dict)) || (length(dict)==length(grid))

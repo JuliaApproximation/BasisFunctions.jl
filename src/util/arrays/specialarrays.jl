@@ -1,5 +1,3 @@
-# These are a set of vectors with special values, for use in conjunction
-# with `Diagonal` in order to create special diagonal operators.
 
 """
 Shell for something that implements size, eltype and *
@@ -26,6 +24,55 @@ Base.Matrix(A::MyAbstractMatrix) = matrix_by_mul(A)
 Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
 
 Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
+
+struct ProbabilityArray{T,N,Axes} <:FillArrays.AbstractFill{T,N,Axes}
+    axes::Axes
+    @inline ProbabilityArray{T, N}(sz::Axes) where Axes<:Tuple{Vararg{AbstractUnitRange,N}} where {T, N} =
+        new{T,N,Axes}(sz)
+    @inline ProbabilityArray{T,0,Tuple{}}(sz::Tuple{}) where T = new{T,0,Tuple{}}(sz)
+end
+
+
+@inline ProbabilityArray{T, 0}(sz::Tuple{}) where {T} = ProbabilityArray{T,0,Tuple{}}(sz)
+@inline ProbabilityArray{T, N}(sz::Tuple{Vararg{<:Integer, N}}) where {T, N} = ProbabilityArray{T,N}(Base.OneTo.(sz))
+@inline ProbabilityArray{T, N}(sz::Vararg{<:Integer, N}) where {T, N} = ProbabilityArray{T,N}(sz)
+@inline ProbabilityArray{T}(sz::Vararg{Integer,N}) where {T, N} = ProbabilityArray{T, N}(sz)
+@inline ProbabilityArray{T}(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where {T, N} = ProbabilityArray{T, N}(sz)
+@inline ProbabilityArray(sz::Vararg{Any,N}) where N = ProbabilityArray{Float64,N}(sz)
+@inline ProbabilityArray(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where N = ProbabilityArray{Float64,N}(sz)
+
+@inline ProbabilityArray{T,N}(A::AbstractArray{V,N}) where{T,V,N} = ProbabilityArray{T,N}(size(A))
+@inline ProbabilityArray{T}(A::AbstractArray) where{T} = ProbabilityArray{T}(size(A))
+@inline ProbabilityArray(A::AbstractArray) = ProbabilityArray(size(A))
+
+@inline axes(Z::ProbabilityArray) = Z.axes
+@inline size(Z::ProbabilityArray) = length.(Z.axes)
+@inline FillArrays.getindex_value(Z::ProbabilityArray{T}) where T = one(T)/convert(T,length(Z))
+
+AbstractArray{T}(F::ProbabilityArray{T}) where T = F
+AbstractArray{T,N}(F::ProbabilityArray{T,N}) where {T,N} = F
+AbstractArray{T}(F::ProbabilityArray) where T = ProbabilityArray{T}(F.axes)
+AbstractArray{T,N}(F::ProbabilityArray{V,N}) where {T,V,N} = ProbabilityArray{T}(F.axes)
+convert(::Type{AbstractArray{T}}, F::ProbabilityArray{T}) where T = AbstractArray{T}(F)
+convert(::Type{AbstractArray{T,N}}, F::ProbabilityArray{T,N}) where {T,N} = AbstractArray{T,N}(F)
+convert(::Type{AbstractArray{T}}, F::ProbabilityArray) where T = AbstractArray{T}(F)
+convert(::Type{AbstractArray{T,N}}, F::ProbabilityArray) where {T,N} = AbstractArray{T,N}(F)
+
+getindex(F::ProbabilityArray{T,0}) where T = getindex_value(F)
+function getindex(F::ProbabilityArray{T}, kj::Vararg{AbstractVector{II},N}) where {T,II<:Integer,N}
+    checkbounds(F, kj...)
+    Fill{T}(FillArrays.getindex_value(F),length.(kj))
+end
+
+function getindex(A::ProbabilityArray{T}, kr::AbstractVector{Bool}) where T
+    length(A) == length(kr) || throw(DimensionMismatch())
+    Fill{T}(FillArrays.getindex_value(F),count(kr))
+end
+function getindex(A::ProbabilityArray{T}, kr::AbstractArray{Bool}) where T
+    size(A) == size(kr) || throw(DimensionMismatch())
+    Fill{T}(FillArrays.getindex_value(F),count(kr))
+end
+
 
 "A vector of the form `[1,-1,1,-1,...]`."
 struct AlternatingSigns{T} <: AbstractArray{T,1}
