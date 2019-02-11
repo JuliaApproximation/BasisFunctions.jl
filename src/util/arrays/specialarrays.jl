@@ -25,53 +25,60 @@ Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
 
 Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
 
-struct ProbabilityArray{T,N,Axes} <:FillArrays.AbstractFill{T,N,Axes}
-    axes::Axes
-    @inline ProbabilityArray{T, N}(sz::Axes) where Axes<:Tuple{Vararg{AbstractUnitRange,N}} where {T, N} =
-        new{T,N,Axes}(sz)
-    @inline ProbabilityArray{T,0,Tuple{}}(sz::Tuple{}) where T = new{T,0,Tuple{}}(sz)
+for (Tp,fun) in zip((:ProbabilityArray, :ChebyshevTWeights), (:probabilityarray_fun, :chebyshevtweights_fun))
+    @eval begin
+        struct $Tp{T,N,Axes} <:FillArrays.AbstractFill{T,N,Axes}
+            axes::Axes
+            @inline $Tp{T, N}(sz::Axes) where Axes<:Tuple{Vararg{AbstractUnitRange,N}} where {T, N} =
+                new{T,N,Axes}(sz)
+            @inline $Tp{T,0,Tuple{}}(sz::Tuple{}) where T = new{T,0,Tuple{}}(sz)
+        end
+
+
+        @inline $Tp{T, 0}(sz::Tuple{}) where {T} = $Tp{T,0,Tuple{}}(sz)
+        @inline $Tp{T, N}(sz::Tuple{Vararg{<:Integer, N}}) where {T, N} = $Tp{T,N}(Base.OneTo.(sz))
+        @inline $Tp{T, N}(sz::Vararg{<:Integer, N}) where {T, N} = $Tp{T,N}(sz)
+        @inline $Tp{T}(sz::Vararg{Integer,N}) where {T, N} = $Tp{T, N}(sz)
+        @inline $Tp{T}(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where {T, N} = $Tp{T, N}(sz)
+        @inline $Tp(sz::Vararg{Any,N}) where N = $Tp{Float64,N}(sz)
+        @inline $Tp(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where N = $Tp{Float64,N}(sz)
+
+        @inline $Tp{T,N}(A::AbstractArray{V,N}) where{T,V,N} = $Tp{T,N}(size(A))
+        @inline $Tp{T}(A::AbstractArray) where{T} = $Tp{T}(size(A))
+        @inline $Tp(A::AbstractArray) = $Tp(size(A))
+
+        @inline axes(Z::$Tp) = Z.axes
+        @inline size(Z::$Tp) = length.(Z.axes)
+        @inline FillArrays.getindex_value(Z::$Tp) = $fun(Z)
+
+        AbstractArray{T}(F::$Tp{T}) where T = F
+        AbstractArray{T,N}(F::$Tp{T,N}) where {T,N} = F
+        AbstractArray{T}(F::$Tp) where T = $Tp{T}(F.axes)
+        AbstractArray{T,N}(F::$Tp{V,N}) where {T,V,N} = $Tp{T}(F.axes)
+        convert(::Type{AbstractArray{T}}, F::$Tp{T}) where T = AbstractArray{T}(F)
+        convert(::Type{AbstractArray{T,N}}, F::$Tp{T,N}) where {T,N} = AbstractArray{T,N}(F)
+        convert(::Type{AbstractArray{T}}, F::$Tp) where T = AbstractArray{T}(F)
+        convert(::Type{AbstractArray{T,N}}, F::$Tp) where {T,N} = AbstractArray{T,N}(F)
+
+        getindex(F::$Tp{T,0}) where T = getindex_value(F)
+        function getindex(F::$Tp{T}, kj::Vararg{AbstractVector{II},N}) where {T,II<:Integer,N}
+            checkbounds(F, kj...)
+            Fill{T}(FillArrays.getindex_value(F),length.(kj))
+        end
+
+        function getindex(A::$Tp{T}, kr::AbstractVector{Bool}) where T
+            length(A) == length(kr) || throw(DimensionMismatch())
+            Fill{T}(FillArrays.getindex_value(F),count(kr))
+        end
+        function getindex(A::$Tp{T}, kr::AbstractArray{Bool}) where T
+            size(A) == size(kr) || throw(DimensionMismatch())
+            Fill{T}(FillArrays.getindex_value(F),count(kr))
+        end
+    end
 end
 
-
-@inline ProbabilityArray{T, 0}(sz::Tuple{}) where {T} = ProbabilityArray{T,0,Tuple{}}(sz)
-@inline ProbabilityArray{T, N}(sz::Tuple{Vararg{<:Integer, N}}) where {T, N} = ProbabilityArray{T,N}(Base.OneTo.(sz))
-@inline ProbabilityArray{T, N}(sz::Vararg{<:Integer, N}) where {T, N} = ProbabilityArray{T,N}(sz)
-@inline ProbabilityArray{T}(sz::Vararg{Integer,N}) where {T, N} = ProbabilityArray{T, N}(sz)
-@inline ProbabilityArray{T}(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where {T, N} = ProbabilityArray{T, N}(sz)
-@inline ProbabilityArray(sz::Vararg{Any,N}) where N = ProbabilityArray{Float64,N}(sz)
-@inline ProbabilityArray(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where N = ProbabilityArray{Float64,N}(sz)
-
-@inline ProbabilityArray{T,N}(A::AbstractArray{V,N}) where{T,V,N} = ProbabilityArray{T,N}(size(A))
-@inline ProbabilityArray{T}(A::AbstractArray) where{T} = ProbabilityArray{T}(size(A))
-@inline ProbabilityArray(A::AbstractArray) = ProbabilityArray(size(A))
-
-@inline axes(Z::ProbabilityArray) = Z.axes
-@inline size(Z::ProbabilityArray) = length.(Z.axes)
-@inline FillArrays.getindex_value(Z::ProbabilityArray{T}) where T = one(T)/convert(T,length(Z))
-
-AbstractArray{T}(F::ProbabilityArray{T}) where T = F
-AbstractArray{T,N}(F::ProbabilityArray{T,N}) where {T,N} = F
-AbstractArray{T}(F::ProbabilityArray) where T = ProbabilityArray{T}(F.axes)
-AbstractArray{T,N}(F::ProbabilityArray{V,N}) where {T,V,N} = ProbabilityArray{T}(F.axes)
-convert(::Type{AbstractArray{T}}, F::ProbabilityArray{T}) where T = AbstractArray{T}(F)
-convert(::Type{AbstractArray{T,N}}, F::ProbabilityArray{T,N}) where {T,N} = AbstractArray{T,N}(F)
-convert(::Type{AbstractArray{T}}, F::ProbabilityArray) where T = AbstractArray{T}(F)
-convert(::Type{AbstractArray{T,N}}, F::ProbabilityArray) where {T,N} = AbstractArray{T,N}(F)
-
-getindex(F::ProbabilityArray{T,0}) where T = getindex_value(F)
-function getindex(F::ProbabilityArray{T}, kj::Vararg{AbstractVector{II},N}) where {T,II<:Integer,N}
-    checkbounds(F, kj...)
-    Fill{T}(FillArrays.getindex_value(F),length.(kj))
-end
-
-function getindex(A::ProbabilityArray{T}, kr::AbstractVector{Bool}) where T
-    length(A) == length(kr) || throw(DimensionMismatch())
-    Fill{T}(FillArrays.getindex_value(F),count(kr))
-end
-function getindex(A::ProbabilityArray{T}, kr::AbstractArray{Bool}) where T
-    size(A) == size(kr) || throw(DimensionMismatch())
-    Fill{T}(FillArrays.getindex_value(F),count(kr))
-end
+probabilityarray_fun(Z::ProbabilityArray{T}) where T = one(T) / convert(T,length(Z))
+chebyshevtweights_fun(Z::ChebyshevTWeights{T}) where T =  convert(T,π) / convert(T,length(Z))
 
 
 "A vector of the form `[1,-1,1,-1,...]`."
@@ -100,6 +107,8 @@ ScaledEntry(n::Int) = ScaledEntry{Float64}(n)
 
 size(A::ScaledEntry) = (A.n,)
 getindex(A::ScaledEntry{T}, i::Int) where {T} = i==A.index ? A.scalar : one(T)
+conj(vc::ScaledEntry{T}) where T<:Real = vc
+conj(vc::ScaledEntry{T}) where T = ScaledEntry{T}(vc.n, vc.index, conj(vc.scalar))
 
 inv(D::Diagonal{T,ScaledEntry{T}}) where {T} = Diagonal(ScaledEntry{T}(D.diag.n, D.diag.index, inv(D.diag.scalar)))
 
@@ -140,6 +149,11 @@ end
 
 HorizontalBandedMatrix(m::Int,n::Int,array::Vector, step::Int=1, offset::Int=0) =
     HorizontalBandedMatrix{eltype(array)}(m, n, array, step, offset)
+
+similar(A::HorizontalBandedMatrix{S}, ::Type{T}) where {S,T} =
+    HorizontalBandedMatrix{T}(size(A)..., similar(A.array, T), A.step, A.offset)
+# The method below is moved to SparseArrays for now
+similar(A::HorizontalBandedMatrix, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
 
 Base.copy(A::HorizontalBandedMatrix{T}) where T =
     HorizontalBandedMatrix{T}(size(A,1), size(A,2), Base.copy(A.array), A.step, A.offset)
@@ -206,6 +220,10 @@ VerticalBandedMatrix(m::Int,n::Int,array::Vector, step::Int=1, offset::Int=0) =
 
 Base.copy(A::VerticalBandedMatrix{T}) where T =
     VerticalBandedMatrix{T}(size(A,1), size(A,2), Base.copy(A.array), A.step, A.offset)
+similar(A::VerticalBandedMatrix{S}, ::Type{T}) where {S,T} =
+    VerticalBandedMatrix{T}(size(A)..., similar(A.array, T), A.step, A.offset)
+# The method below is moved to SparseArrays for now
+similar(A::VerticalBandedMatrix, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
 
 isefficient(::VerticalBandedMatrix) = true
 
@@ -350,10 +368,22 @@ function (*)(A::IndexMatrix, B::AbstractMatrix)
     TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
     C = similar(B, TS, (size(A,1),size(B,2)))
 
-
+    if isextensionmatrix(A)
+        fill!(C, zero(TS))
+        for (i,j) in enumerate(LinearIndices(CartesianIndices(_original_size(A)))[subindices(A)])
+            copyto!(C, CartesianIndices((j:j,1:size(C,2))), B, CartesianIndices(i:i,1:size(C,2)))
+        end
+    else
+        for (i,j) in enumerate(LinearIndices(CartesianIndices(_original_size(A)))[subindices(A)])
+            copyto!(C, CartesianIndices((i:i,1:size(C,2))), B, CartesianIndices((j:j,1:size(C,2))))
+        end
+    end
+    C
 end
 
 (*)(A::IndexMatrix, B::Diagonal) = _sparse_res_mul(A, B)
+(*)(A::IndexMatrix, B::VerticalBandedMatrix) = _sparse_res_mul(A, B)
+(*)(A::IndexMatrix, B::HorizontalBandedMatrix) = _sparse_res_mul(A, B)
 
 function _sparse_res_mul(A::IndexMatrix, B::Diagonal)
     @boundscheck (size(A,2)==size(B,1)) || throw(BoundsError("Sizes do not match"))
@@ -370,6 +400,7 @@ function _sparse_res_mul(A::IndexMatrix, B::AbstractArray)
     TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
     C = similar(B, TS, (size(A,1),size(B,2)))
     @assert C isa AbstractSparseArray
+    @warn "Creation of sparse array is not yet efficient."
     mul!(C,A,B)
 end
 
@@ -407,3 +438,8 @@ function _tensor_mul!(dest, A::ExtensionIndexMatrix, src, subindices)
     end
     dest
 end
+
+Base.adjoint(C::Circulant{T}) where T<:Real  =
+    Circulant{T}(real(ifft(conj.(C.vcvr_dft))))
+Base.adjoint(C::Circulant{T}) where T  =
+    Circulant{T}(ifft(conj.(C.vcvr_dft)))

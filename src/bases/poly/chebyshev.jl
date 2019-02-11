@@ -287,18 +287,12 @@ grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; 
 grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) =
 	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
 
-# gauss_rule(dict::ChebyshevT{T}) where T= ChebyshevTNodes{T}(length(dict)), ChebyshevTWeights{T}(length(dict))
+gauss_rule(dict::ChebyshevT{T}) where T= ChebyshevTNodes{T}(length(dict)), ChebyshevTWeights{T}(length(dict))
 struct ChebyshevTNodes{T} <: NodesAndWeights{T}
     n   :: Int
 end
 length(nodes::ChebyshevTNodes) = nodes.n
 unsafe_getindex(nodes::ChebyshevTNodes{T}, i::Int) where T = cos((2 * convert(T,nodes.n+1-i) - 1) * convert(T,pi) / (2 * nodes.n))
-
-struct ChebyshevTWeights{T} <: NodesAndWeights{T}
-    n   :: Int
-end
-length(weights::ChebyshevTWeights) = weights.n
-unsafe_getindex(weights::ChebyshevTWeights{T}, i::Int) where T = convert(T,π) / weights.n
 
 function chebyshev_transform_nodes(dict::ChebyshevT, T; options...)
 	grid = interpolation_grid(dict)
@@ -341,7 +335,23 @@ transform_from_grid(src::GridBasis, dest::ChebyshevT, grid; options...) =
 
 
 
+function diagonal_gramoperator(dict::ChebyshevT, measure::OPSNodesMeasure{S,<:ChebyshevT{S}}; T=promote_type(S,coefficienttype(dict)), options...) where S
+    @assert isorthogonal(dict, measure)
+    if length(dict) == length(grid(measure))
+        CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,pi)/2)
+    else
+        default_diagonal_gramoperator(dict, measure; T=T, options...)
+    end
+end
 
+const UniformDiscreteChebyshevTMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G <: ChebyshevNodes where W <:FillArrays.AbstractFill
+
+function diagonal_gramoperator(dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure; T=promote_type(domaintype(measure),coefficienttype(dict)), options...)
+    @assert length(dict) == length(grid(measure))
+    CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,length(dict))/2)
+end
+
+iscompatible(dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure) = length(dict) == length(grid(measure))
 
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 

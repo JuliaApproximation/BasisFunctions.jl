@@ -237,21 +237,14 @@ weight(b::OPS, x) = weight(measure(b), x)
 function gramoperator(dict::OPS, m; T = promote_type(coefficienttype(dict), domaintype(m)), options...)
     isorthonormal(dict, m) && return IdentityOperator{T}(dict)
 	if isorthogonal(dict, m)
-		ops_diagonal_gramoperator(dict, m; T=T, options...)
+		diagonal_gramoperator(dict, m; T=T, options...)
 	else
 		default_gramoperator(dict, m; T=T, options...)
 	end
 end
 
-function ops_diagonal_gramoperator(dict::OPS, measure; T = coefficienttype(dict), options...)
-	n = length(dict)
-	diag = zeros(T, n)
-	for i in 1:n
-		diag[i] = innerproduct(dict, i, dict, i, measure; options...)
-	end
-	DiagonalOperator(dict, diag)
-end
-
+diagonal_gramoperator(dict::OPS, measure; options...) =
+    default_diagonal_gramoperator(dict::OPS, measure; options...)
 
 function symmetric_jacobi_matrix(b::OPS)
     T = codomaintype(b)

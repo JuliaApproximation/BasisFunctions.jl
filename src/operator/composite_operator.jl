@@ -26,6 +26,7 @@ elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
 iscomposite(op::GenericCompositeOperator) = true
 
+
 # If the GenericCompositeOperator happens to be a composite operator of
 # product operators, then the result is a product operator too. You can select
 # its elements with the productelement routine.
@@ -227,9 +228,11 @@ function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators
     coef_srcdest
 end
 
-inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
+inv(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(inv, op.operators)...))
+adjoint(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(adjoint, op.operators)...)) 
 
-adjoint(op::CompositeOperator)::DictionaryOperator = (*)(map(adjoint, op.operators)...)
+conj(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(conj,op.operators), op.scratch)
+conj(op::CompositeOperator{T}) where {T<:Real} = op
 
 apply(op1::AbstractOperator, op2::AbstractOperator) = compose(op2,op1)
 apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)

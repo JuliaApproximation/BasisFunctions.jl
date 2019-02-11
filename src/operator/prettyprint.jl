@@ -324,6 +324,7 @@ end
 
 
 strings(any) = tuple(repr(any))
+strings(vc::AbstractVector) = (string(vc),)
 
 # Determine number of children of operator (to determine where to split)
 function nchildren(op)

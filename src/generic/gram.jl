@@ -90,6 +90,15 @@ function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_W
     R = ArrayOperator(A, dict, dict)
 end
 
+function default_diagonal_gramoperator(dict::Dictionary, measure; T = coefficienttype(dict), options...)
+    @assert isorthogonal(dict, measure)
+	n = length(dict)
+	diag = zeros(T, n)
+	for i in 1:n
+		diag[i] = innerproduct(dict, i, dict, i, measure; options...)
+	end
+	DiagonalOperator(dict, diag)
+end
 
 """
 Project the function onto the space spanned by the given dictionary.

@@ -58,6 +58,7 @@ unsafe_matrix(op::ArrayOperator) = op.A
 isefficient(::AbstractArray) = false
 isefficient(::AbstractSparseArray) = true
 isefficient(::UniformScaling) = true
+isefficient(::ToeplitzMatrices.AbstractToeplitz) = true
 
 string(op::ArrayOperator) = string(op, op.A)
 string(op::ArrayOperator,array) = "Multiplication by "*string(typeof(op.A))

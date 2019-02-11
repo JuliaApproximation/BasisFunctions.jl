@@ -15,9 +15,32 @@ mul!(y::AbstractMatrix, A::DictionaryOperator, x::AbstractMatrix) = apply_multip
 # LazyArrays does not work as well as composite operator.
 # include("../util/lazyarrays.jl")
 # (∘)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(Mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
-(*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
-(+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
-(-)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), -unsafe_matrix(op2)), src(op2), dest(op1))
+# (*)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+# (+)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+# (-)(op1::ArrayOperator, op2::ArrayOperator) = ArrayOperator(_checked_sum(unsafe_matrix(op1), -unsafe_matrix(op2)), src(op2), dest(op1))
+
+# Hacks for some operators
+
+for (OP) in (:DiagonalOperator, :CirculantOperator, :ScalingOperator)
+    @eval begin
+        (*)(op1::$OP, op2::$OP) = ArrayOperator(_checked_mul(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+        (+)(op1::$OP, op2::$OP) = ArrayOperator(_checked_sum(unsafe_matrix(op1), unsafe_matrix(op2)), src(op2), dest(op1))
+        (-)(op1::$OP, op2::$OP) = ArrayOperator(_checked_sum(unsafe_matrix(op1), -unsafe_matrix(op2)), src(op2), dest(op1))
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (*)(a::Number, op::ArrayOperator) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
 (*)(op::ArrayOperator, a::Number) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))

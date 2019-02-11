@@ -176,7 +176,7 @@ export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         ArrayOperator, FunctionOperator,
         MultiplicationOperator,
         IndexRestrictionOperator, IndexExtensionOperator,
-        HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator
+        HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
 # from operator/solvers.jl
 export QR_solver, SVD_solver, regularized_SVD_solver, operator
 
