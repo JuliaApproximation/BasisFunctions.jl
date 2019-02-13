@@ -272,3 +272,7 @@ function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
     end
     DiagonalOperator(dest(op),src(op), newdiag)
 end
+
+for f in (:eigvals, :svdvals, :norm, :rank)
+    @eval $f(op::DictionaryOperator) = $f(Matrix(op))
+end#matrix related features

@@ -436,8 +436,8 @@ function test_generic_dict_interface(basis)
 
         R = restriction_operator(basis2, basis)
         e3 = R * e2
-        @test e2(x1) ≈ e3(x1)
-        @test e2(x2) ≈ e3(x2)
+        @test e1(x1) ≈ e3(x1)
+        @test e1(x2) ≈ e3(x2)
     end
 
     # Verify whether evaluation in a larger grid works

@@ -251,7 +251,7 @@ function innerproduct_chebyshev_full(i, j, T)
 	end
 end
 
-function gramoperator(dict::ChebyshevT; T = coefficienttype(dict), options...)
+function gramoperator(dict::ChebyshevT, ::ChebyshevMeasure; T = coefficienttype(dict), options...)
 	diag = zeros(T, length(dict))
 	fill!(diag, convert(T, pi)/2)
 	diag[1] = convert(T,pi)
@@ -412,7 +412,7 @@ function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU
 	end
 end
 
-gramoperator(dict::ChebyshevU; T = coefficienttype(dict), options...) =
+gramoperator(dict::ChebyshevU, ::ChebyshevUMeasure; T = coefficienttype(dict), options...) =
 	ScalingOperator(dict, convert(T, pi)/2)
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial

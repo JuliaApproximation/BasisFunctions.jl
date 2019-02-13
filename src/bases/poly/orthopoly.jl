@@ -234,7 +234,7 @@ hasmeasure(dict::OPS) = true
 weight(b::OPS, x) = weight(measure(b), x)
 
 
-function gramoperator(dict::OPS, m; T = promote_type(coefficienttype(dict), domaintype(m)), options...)
+function gramoperator1(dict::OPS, m; T = promote_type(coefficienttype(dict), domaintype(m)), options...)
     isorthonormal(dict, m) && return IdentityOperator{T}(dict)
 	if isorthogonal(dict, m)
 		diagonal_gramoperator(dict, m; T=T, options...)

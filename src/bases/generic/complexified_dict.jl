@@ -37,7 +37,7 @@ hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
 
 measure(dict::ComplexifiedDict) = measure(superdict(dict))
 
-gramoperator(dict::ComplexifiedDict, measure; T=coefficienttype(dict), options...) =
+gramoperator1(dict::ComplexifiedDict, measure; T=coefficienttype(dict), options...) =
     wrap_operator(dict, dict, gramoperator(superdict(dict), measure; T=T, options...))
 
 innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =

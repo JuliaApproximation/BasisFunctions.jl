@@ -38,8 +38,8 @@ import Base: show, string
 
 
 ## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!
-import LinearAlgebra: diag, isdiag, eigvals, issymmetric
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank
+import LinearAlgebra: diag, isdiag, eigvals, issymmetric, svdvals
 
 import BlockArrays.BlockVector
 export BlockVector
@@ -246,7 +246,7 @@ export GridBasis
 export grid, gridbasis, grid_multiplication_operator
 
 # from sampling/sampling_operator.jl
-export GridSampling, ProjectionSampling
+export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator
 export sample
 
 # from sampling/quadrature.jl
@@ -336,6 +336,7 @@ include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
 include("operator/arithmetics.jl")
+include("operator/simplify.jl")
 include("operator/orthogonality.jl")
 
 include("operator/generic_operators.jl")
@@ -368,6 +369,7 @@ include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
 include("sampling/normalization.jl")
+include("sampling/interaction.jl")
 
 
 ################################################################

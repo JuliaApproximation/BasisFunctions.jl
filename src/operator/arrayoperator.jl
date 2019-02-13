@@ -21,7 +21,7 @@ for f in (:size, :isefficient)
     @eval $f(op::ArrayOperator) = $f(op.A)
 end#object related features
 
-for f in (:isdiag, :diag, :eigvals, :Matrix)
+for f in (:isdiag, :diag, :eigvals, :Matrix, :svdvals, :norm, :rank)
     @eval $f(op::ArrayOperator) = $f(unsafe_matrix(op))
 end#matrix related features
 
@@ -180,6 +180,7 @@ end
 to_diag(A::AbstractArray{T}) where {T} = to_diag(T, A)
 to_diag(::Type{T}, A::AbstractVector) where {T} = to_diag(T, collect(A))
 to_diag(::Type{T}, A::Vector{T}) where {T} = Diagonal(A)
+to_diag(::Type{T}, A::FillArrays.AbstractFill{T,1}) where {T} = Diagonal(A)
 to_diag(::Type{T}, A::Vector{S}) where {S,T} = to_diag(T, convert(Vector{T}, A))
 to_diag(::Type{T}, A::Diagonal{T,Array{T,1}})  where {T} = A
 to_diag(::Type{T}, A::Diagonal{T}) where {T} = to_diag(T, diag(A))
@@ -326,6 +327,10 @@ end
 
 const IdentityOperator{T} = DiagonalOperator{T,Ones{T,1,Tuple{Base.OneTo{Int64}}}} where T
 Base.conj(vc::Ones) = vc
+Base.broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Ones{S,N}) where {T<:Number,S,N} =
+    Ones{T}(axes(a))
+Base.broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Zeros{S,N}) where {T<:Number,S,N} =
+    Zeros{T}(axes(a))
 
 IdentityOperator(src::Dictionary, dest::Dictionary = src; T=op_eltype(src,dest)) =
     IdentityOperator{T}(src, dest)
@@ -336,7 +341,7 @@ function IdentityOperator{T}(src::Dictionary, dest = src) where {T}
 end
 
 strings(op::IdentityOperator) = ("Identity Operator of size $(size(op)) with element type $(eltype(op))",strings(src(op)))
-
+symbol(op::IdentityOperator) = "I"
 
 struct DenseMatrixOperator{T} <: ArrayOperator{T}
     src     ::  Dictionary

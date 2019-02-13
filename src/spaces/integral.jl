@@ -6,12 +6,17 @@ integral(f, domain::AbstractInterval; options...) =
 integral(f, domain::DomainSets.FullSpace{T}; options...) where {T <: Real} =
     numerical_integral(f, -convert(T, Inf), convert(T, Inf); options...)
 
-function numerical_integral(f, a::T, b::T; atol = 0, rtol = sqrt(eps(T)), verbose=false, numquad = false, options...) where {T}
+function numerical_integral(f, a::T, b::T; atol = 0, rtol = sqrt(eps(T)), verbose=false, numquad = false, overquad = 2, options...) where {T}
     if numquad
         x, w = options[:quadrule]
         sum(w .* f.(x))
     else
-        I,e = QuadGK.quadgk(f, a, b; rtol=rtol, atol=atol)
+        if overquad == 2
+            nodes = (a,b)
+        else
+            nodes = LinRange(a,b,overquad)
+        end
+        I,e = QuadGK.quadgk(f, nodes...; rtol=rtol, atol=atol)
         if verbose && (e > sqrt(rtol))
             @warn "Numerical evaluation of integral did not converge"
         end

@@ -62,7 +62,7 @@ hasinterpolationgrid(b::Fourier) = true
 hasderivative(b::Fourier) = true
 # Until adapted for DC coefficient
 hasantiderivative(b::Fourier) = false
-hasextension(b::Fourier) = true
+hasextension(b::Fourier) = isodd(length(b))
 
 # For hastransform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
@@ -412,7 +412,11 @@ function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 		for i = 1:nh-1
 			coef_dest[nh+1+i] = coef_src[end-nh+i+1]
 		end
-		coef_dest[nh+1] = coef_src[nh+1] + coef_src[end-nh+1]
+		# if isodd(length(coef_src))
+			# coef_dest[nh+1] = (coef_src[nh+1] + coef_src[end-nh+1])
+		# else
+			coef_dest[nh+1] = (coef_src[nh+1] + coef_src[end-nh+1]) / 2 # Added  / 2 to get adjoint correct
+		# end
 	end
 	coef_dest
 end

@@ -79,18 +79,28 @@ function grammatrix!(G, dict::Dictionary, m=measure(dict); options...)
     G
 end
 
-gramoperator(dict::Dictionary; options...) = gramoperator(dict, measure(dict); options...)
+gramoperator(dict::Dictionary; options...) =
+    gramoperator(dict, measure(dict); options...)
 
-gramoperator(dict::Dictionary, measure; options...) =
+gramoperator(dict::Dictionary, measure::Measure; options...) =
+    gramoperator1(dict, measure; options...)
+
+gramoperator1(dict::Dictionary, measure; options...) =
+    gramoperator2(dict, measure; options...)
+
+gramoperator2(dict, measure::Measure; options...) =
     default_gramoperator(dict, measure; options...)
 
-function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
+gramoperator2(dict, measure::DiscreteMeasure; options...) =
+    default_mixedgramoperator_discretemeasure(dict, dict, measure; options...)
+
+@inline function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of Gram matrix entrywise."
     A = grammatrix(dict, m; warnslow = warnslow, options...)
     R = ArrayOperator(A, dict, dict)
 end
 
-function default_diagonal_gramoperator(dict::Dictionary, measure; T = coefficienttype(dict), options...)
+@inline function default_diagonal_gramoperator(dict::Dictionary, measure; T = coefficienttype(dict), options...)
     @assert isorthogonal(dict, measure)
 	n = length(dict)
 	diag = zeros(T, n)
@@ -98,6 +108,14 @@ function default_diagonal_gramoperator(dict::Dictionary, measure; T = coefficien
 		diag[i] = innerproduct(dict, i, dict, i, measure; options...)
 	end
 	DiagonalOperator(dict, diag)
+end
+
+@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure;
+            T = promote_type(op_eltype(dict1,dict2),domaintype(measure)), options...)
+    E1 = evaluation_operator(dict1, grid(measure); T=T, options...)
+    E2 = evaluation_operator(dict2, grid(measure); T=T, options...)
+    W = DiagonalOperator(dest(E2),dest(E1),weights(measure); T=T)
+    E1'*W*E2
 end
 
 """
@@ -123,9 +141,9 @@ end
 # If no measure is given, try to determine a default choice from the measures of
 # the given dictionaries. If they agree, we use that one, otherwise we throw an error.
 mixedgramoperator(d1::Dictionary, d2::Dictionary; options...) =
-    _mixedgramoperator(d1, d2, measure(d1), measure(d2); options...)
+    mixedgramoperator(d1, d2, measure(d1), measure(d2); options...)
 
-function _mixedgramoperator(d1, d2, m1::Measure, m2::Measure; options...)
+function mixedgramoperator(d1, d2, m1::Measure, m2::Measure; options...)
     if iscompatible(m1, m2)
         mixedgramoperator(d1, d2, m1; options...)
     else
@@ -138,24 +156,40 @@ Compute the mixed Gram matrix corresponding to two dictionaries. The matrix
 has elements given by the inner products between the elements of the dictionaries,
 relative to the given measure.
 """
-mixedgramoperator(d1, d2, measure; options...) = mixedgramoperator1(d1, d2, measure; options...)
+mixedgramoperator(d1, d2, measure; options...) =
+    mixedgramoperator1(d1, d2, measure; options...)
 
 # The routine mixedgramoperator1 can be specialized by concrete subtypes of the
 # first dictionary, while mixedgramoperator2 can be specialized on the second dictionary.
+# mixedgramoperator3 can be specialized on the measure
 mixedgramoperator1(d1::Dictionary, d2, measure; options...) =
     mixedgramoperator2(d1, d2, measure; options...)
 
 mixedgramoperator2(d1, d2::Dictionary, measure; options...) =
+    mixedgramoperator3(d1, d2, measure; options...)
+
+mixedgramoperator3(d1, d2, measure::Measure; options...) =
     default_mixedgramoperator(d1, d2, measure; options...)
 
-function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
+mixedgramoperator3(d1, d2, measure::DiscreteMeasure; options...) =
+    default_gramoperator_discretemeasure(d1, d2, measure; options...)
+
+function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) where DICT<:Dictionary
+    if d1 == d2
+        gramoperator(d1, measure; options...)
+    else
+        mixedgramoperator1(d1, d2, measure; options...)
+    end
+end
+
+@inline function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
     warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; warnslow = warnslow, options...)
     T = eltype(A)
     ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
 end
 
-function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
+@inline function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
     T = promote_type(coefficienttype(d1),coefficienttype(d2))
     G = zeros(T, length(d1), length(d2))
     mixedgrammatrix!(G, d1, d2, measure; options...)
@@ -176,13 +210,13 @@ end
 # Duality
 ########################
 
-@inline dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype) =
-    _dualdictionary(dict, measure, space; dualtype=dualtype)
+@inline dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype, options...) =
+    _dualdictionary(dict, measure, space; dualtype=dualtype, options...)
 
 @inline _dualdictionary(dict::Dictionary, measure::Measure, space::Span; dualargs...) =
     _dualdictionary(dict, measure, space, dictionary(space); dualargs...)
 
-function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype) where DICT <: Dictionary
+function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype, options...) where DICT <: Dictionary
     (dualtype==:spantype) || @warn "At this point, the unique dual dictionary is of `:spantype`"
     spantype_dualdictionary(dict, measure, space, spandict)
 end

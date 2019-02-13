@@ -104,33 +104,15 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
 #       TODO: at one point we should enable strict checking again as follows:
 #        @assert dest(operators[i]) == src(operators[i+1])
     end
-
+    
     # Checks pass, now apply some simplifications
     if simplify
         # Flatten away nested CompositeOperators
         operators = flatten(CompositeOperator, operators...)
-        # Iterate over the operators and remove the ones that don't do anything
-        c_operators = Array{AbstractOperator}(undef, 0)
-        for op in operators
-            add_thisone = true
-            # We forget about identity operators
-            if isa(op, IdentityOperator)
-                add_thisone = false
-            end
-            if isa(op, ScalingOperator) && scalar(op) ≈ 1
-                add_thisone = false
-            end
-            if add_thisone
-                push!(c_operators, op)
-            end
-        end
-        operators = tuple(c_operators...)
+        operators = compose_and_simplify(operators...)
     end
 
     L = length(operators)
-    if L == 0
-        return IdentityOperator(composite_src, composite_dest)
-    end
     if L == 1
         return wrap_operator(composite_src, composite_dest, operators[1])
     end
@@ -229,7 +211,7 @@ function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators
 end
 
 inv(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(inv, op.operators)...))
-adjoint(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(adjoint, op.operators)...)) 
+adjoint(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(adjoint, op.operators)...))
 
 conj(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(conj,op.operators), op.scratch)
 conj(op::CompositeOperator{T}) where {T<:Real} = op

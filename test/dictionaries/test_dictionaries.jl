@@ -28,7 +28,7 @@ for T in domaintypes
         end
     end
     # also try a Fourier series with an even length
-    test_generic_dict_interface(Fourier{T}(8))
+    @testset begin test_generic_dict_interface(Fourier{T}(8)) end
 
     delimit("derived dictionaries ($(T))")
     test_derived_dicts(T)

@@ -212,6 +212,9 @@ for T in fourier_types
     end
 end
 
-@testset "$(rpad("Fourier orthogonality",80))" begin
+@testset "$(rpad("Fourier orthogonality, gram functionality",80))" begin
     test_fourier_orthogonality()
+    F = Fourier(10)
+    P = ProjectionSampling(F)
+    @test (P')'*P' == gramoperator(F)
 end

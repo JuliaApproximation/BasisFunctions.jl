@@ -28,13 +28,3 @@ end
 
 tensorproduct(v::AbstractVector...)  =
     OuterProductArray(v...)
-
-# for Tp in (:Zeros, :Ones, :ProbabilityArray)
-#     @eval begin
-#         tensorproduct(v::$Tp{T,1}...) where {T} =
-#             $Tp(map(length, v))
-#         elements(FA::$Tp) = map($Tp{eltype(FA)}, size(FA))
-#         element(FA::$Tp, i) = $Tp{eltype(FA)}(size(FA, i))
-#         iscomposite(::$Tp) = true
-#     end
-# end

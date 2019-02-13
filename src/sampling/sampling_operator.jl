@@ -10,7 +10,6 @@ function apply(op::SamplingOperator, f::AbstractVector; options...)
 	f
 end
 
-
 """
 A `GridSampling` is an operator that maps a function to its samples
 in a grid.
@@ -115,9 +114,6 @@ function sample!(result, grid, f; options...)
 	result
 end
 
-apply(op::GridSampling, dict::Dictionary; T = op_eltype(dict, dest(op)), options...) =
-	evaluation_operator(dict, grid(op); T=T, options...)
-
 hasstencil(op::GridSampling) = true
 stencilarray(op::GridSampling) = [modifiersymbol(op), "[", grid(dest(op)), "]"]
 
@@ -130,14 +126,16 @@ A `ProjectionSampling` is an operator that maps a function to its inner products
 with a projection basis.
 """
 struct ProjectionSampling <: SamplingOperator
-    dict	::  Dictionary
-	measure	::	Measure
-	space	::	FunctionSpace
+    dict		::  Dictionary
+	measure		::	Measure
+	src_space	::	FunctionSpace
 end
+
+const AnalysisOperator = ProjectionSampling
 
 space(dict::Dictionary) = space(measure(dict))
 
-ProjectionSampling(dict::Dictionary) = ProjectionSampling(dict, measure(dict))
+ProjectionSampling(dict::Dictionary) = ProjectionSampling(dict, measure(dict), Span(dict))
 
 ProjectionSampling(dict::Dictionary, measure::Measure) = ProjectionSampling(dict, measure, space(measure))
 
@@ -149,20 +147,9 @@ dictionary(op::ProjectionSampling) = op.dict
 
 dest(op::ProjectionSampling) = dictionary(op)
 
-src_space(op::ProjectionSampling) = op.space
+src_space(op::ProjectionSampling) = op.src_space
 
 measure(op::ProjectionSampling) = op.measure
-
-function apply(op::ProjectionSampling, dict::Dictionary; T = op_eltype(dict, dest(op)), options...)
-	projmeasure = measure(op)
-	projdict = dictionary(op)
-	# Check whether we can just compute the gram matrix instead. We have to be strict though.
-	if hasmeasure(dict) && iscompatible(projdict, dict) && iscompatible(projmeasure, measure(dict)) && size(projdict)==size(dict)
-		gramoperator(dict; T=T, options...)
-	else
-		mixedgramoperator(projdict, dict, projmeasure; T=T, options...)
-	end
-end
 
 apply!(result, op::ProjectionSampling, f; options...) = project!(result, f, dictionary(op), measure(op); options...)
 
@@ -176,5 +163,6 @@ end
 hasstencil(op::ProjectionSampling) = true
 stencilarray(op::ProjectionSampling) = [modifiersymbol(op), "[", dictionary(op), ", ", measure(op), "]"]
 
-modifiersymbol(op::ProjectionSampling) = PrettyPrintSymbol{:ℙ}()
-name(::PrettyPrintSymbol{:ℙ}) = "Continuous projection operator onto a dictionary"
+modifiersymbol(op::ProjectionSampling) = PrettyPrintSymbol{:(𝒯⃰)}() #PrettyPrintSymbol{:ℙ}()
+name(::PrettyPrintSymbol{:ℙ}) = "Projection operator onto a dictionary"
+name(::PrettyPrintSymbol{:(𝒯⃰)}) = "Analysis operator of a dictionary"
