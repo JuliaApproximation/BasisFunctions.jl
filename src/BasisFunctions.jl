@@ -28,6 +28,7 @@ import Base: checkbounds, checkbounds_indices, checkindex
 import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1
 import Base: broadcast, similar
+import Base.Broadcast: broadcasted, DefaultArrayStyle, broadcast_shape
 
 import Base: cos, sin, exp, log, sqrt
 import Base: zeros, ones, one, zero, fill!, rand
@@ -57,7 +58,7 @@ import DomainSets: element, elements, numelements
 # cartesian product utility functions
 import DomainSets: cartesianproduct, ×, product_eltype
 
-import DomainSets: forward_map, inverse_map, WrappedDomain
+import DomainSets: forward_map, inverse_map
 
 import FastGaussQuadrature: gaussjacobi
 

@@ -44,7 +44,7 @@ function unsafe_weight(m::DiscreteMeasure{T}, x) where {T}
 end
 
 @inline grid(m::DiscreteMeasure) = m.grid
-@inline support(m::DiscreteMeasure) = WrappedDomain(grid(m))
+@inline support(m::DiscreteMeasure) = DomainSets.WrappedDomain(grid(m))
 weights(m::DiscreteMeasure) = m.weights
 discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
 checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)

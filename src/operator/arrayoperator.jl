@@ -326,10 +326,10 @@ end
 
 
 const IdentityOperator{T} = DiagonalOperator{T,Ones{T,1,Tuple{Base.OneTo{Int64}}}} where T
-Base.conj(vc::Ones) = vc
-Base.broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Ones{S,N}) where {T<:Number,S,N} =
+conj(vc::Ones) = vc
+broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Ones{S,N}) where {T<:Number,S,N} =
     Ones{T}(axes(a))
-Base.broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Zeros{S,N}) where {T<:Number,S,N} =
+broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Zeros{S,N}) where {T<:Number,S,N} =
     Zeros{T}(axes(a))
 
 IdentityOperator(src::Dictionary, dest::Dictionary = src; T=op_eltype(src,dest)) =
