@@ -186,3 +186,7 @@ Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
 Base.collect(e::Expansion) = coefficients(e)
 
 Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+
+
++(f1::Function, f2::Expansion) = (x->f1(x)+f2(x))
++(f1::Expansion, f2::Function) = (x->f1(x)+f2(x))

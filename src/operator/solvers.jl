@@ -1,25 +1,43 @@
-
 """
-Supertype of all solver operators. A solver operator typically implements an
+Supertype of all dictionary solver operators. A solver operator typically implements an
 efficient algorithm to apply the inverse of an operator. Examples include
 a solver based on QR or SVD factorizations.
 
 A solver operator stores the operator it has inverted.
 """
-abstract type AbstractSolverOperator{T} <: DictionaryOperator{T}
+abstract type AbstractSolverOperator <: AbstractOperator
 end
 
 operator(op::AbstractSolverOperator) = op.op
 
-src(op::AbstractSolverOperator) = dest(operator(op))
+src_space(op::AbstractSolverOperator) = dest_space(operator(op))
 
+dest_space(op::AbstractSolverOperator) = src_space(operator(op))
 dest(op::AbstractSolverOperator) = src(operator(op))
 
-inv(op::AbstractSolverOperator) = op.op
+inv(op::AbstractSolverOperator) = operator(op)
+
+"""
+Supertype of all dictionary solver operators. A solver operator typically implements an
+efficient algorithm to apply the inverse of an operator. Examples include
+a solver based on QR or SVD factorizations.
+
+A solver operator stores the operator it has inverted.
+"""
+abstract type DictionarySolverOperator{T} <: DictionaryOperator{T}
+end
+
+operator(op::DictionarySolverOperator) = op.op
+
+src(op::DictionarySolverOperator) = dest(operator(op))
+
+dest(op::DictionarySolverOperator) = src(operator(op))
+
+inv(op::DictionarySolverOperator) = operator(op)
 
 
 "A GenericSolverOperator wraps around a generic solver type."
-struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
+struct GenericSolverOperator{Q,T} <: DictionarySolverOperator{T}
     op      ::  DictionaryOperator
     solver  ::  Q
     # In case the operator does not map between vectors, we allocate space

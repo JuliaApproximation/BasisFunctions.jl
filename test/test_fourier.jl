@@ -217,4 +217,14 @@ end
     F = Fourier(10)
     P = ProjectionSampling(F)
     @test (P')'*P' == gramoperator(F)
+
+    for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.DiscreteMeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
+        D = dualdictionary(P, M)
+        @test Matrix(gramoperator(P, M)) ≈ Matrix(inv(gramoperator(D,M)))
+        A = SynthesisOperator(P, M)
+        Z = SynthesisOperator(D, M)
+        Zt = Z'
+        G1 = Zt*A
+        @test Matrix(G1) ≈ Matrix(I,size(G1))
+    end
 end

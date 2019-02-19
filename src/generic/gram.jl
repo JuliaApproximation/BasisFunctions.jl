@@ -172,7 +172,7 @@ mixedgramoperator3(d1, d2, measure::Measure; options...) =
     default_mixedgramoperator(d1, d2, measure; options...)
 
 mixedgramoperator3(d1, d2, measure::DiscreteMeasure; options...) =
-    default_gramoperator_discretemeasure(d1, d2, measure; options...)
+    default_mixedgramoperator_discretemeasure(d1, d2, measure; options...)
 
 function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) where DICT<:Dictionary
     if d1 == d2
@@ -218,10 +218,10 @@ end
 
 function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype, options...) where DICT <: Dictionary
     (dualtype==:spantype) || @warn "At this point, the unique dual dictionary is of `:spantype`"
-    spantype_dualdictionary(dict, measure, space, spandict)
+    spantype_dualdictionary(dict, measure, space, spandict; options...)
 end
 
-function spantype_dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT) where DICT <: Dictionary
+function spantype_dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; options...) where DICT <: Dictionary
     @assert size(dict) == size(spandict)
-    conj(inv(gramoperator(dict, measure))) * dict
+    conj(inv(gramoperator(dict, measure; options...))) * dict
 end

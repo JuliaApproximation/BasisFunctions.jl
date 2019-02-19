@@ -33,12 +33,12 @@ src_space(op::SynthesisOperator) = Span(src(op))
 dest_space(op::SynthesisOperator) = Span(dictionary(op))
 
 # We attempt to convert the given coefficients to the container type of the dictionary
-apply(op::SynthesisOperator, coef) = _apply(op, coef, dictionary(op))
+apply(op::SynthesisOperator, coef; options...) = _apply(op, coef, dictionary(op))
 _apply(op::SynthesisOperator, coef, dict) = Expansion(dict, convert(containertype(dict), coef))
 
-apply(op::SynthesisOperator, expansion::Expansion{D}) where {D <: DiscreteDictionary} =
-    apply(op, coefficients(expansion))
-apply(op::SynthesisOperator, coef::Expansion) =
+apply(op::SynthesisOperator, expansion::Expansion{D}; options...) where {D <: DiscreteDictionary} =
+    apply(op, coefficients(expansion); options...)
+apply(op::SynthesisOperator, coef::Expansion; opts...) =
     error("A synthesis operator applies only to coefficients or expansions in discrete sets.")
 
 
@@ -72,7 +72,7 @@ dest(op::DesynthesisOperator) = discrete_set(dictionary(op))
 dest_space(op::DesynthesisOperator) = Span(dest(op))
 
 # We accept any expansion and return its coefficients
-apply(op::DesynthesisOperator, expansion::Expansion) = coefficients(expansion)
+apply(op::DesynthesisOperator, expansion::Expansion; opts...) = coefficients(expansion)
 
 (*)(op::DesynthesisOperator, expansion::Expansion) = apply(op, expansion)
 

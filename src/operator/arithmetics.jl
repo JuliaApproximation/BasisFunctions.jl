@@ -30,23 +30,11 @@ for (OP) in (:DiagonalOperator, :CirculantOperator, :ScalingOperator)
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 (*)(a::Number, op::ArrayOperator) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
 (*)(op::ArrayOperator, a::Number) = ArrayOperator(a*unsafe_matrix(op), src(op), dest(op))
 
-(*)(a::Number, op::AbstractOperator) = ScalingOperator(dest(op), a) * op
-(*)(op::AbstractOperator, a::Number) = op * ScalingOperator(src(op), a)
+(*)(a::Number, op::DictionaryOperator) = ScalingOperator(dest(op), a) * op
+(*)(op::DictionaryOperator, a::Number) = op * ScalingOperator(src(op), a)
 
 
 for op in (:unchecked_mul,:unchecked_sum, :∘)

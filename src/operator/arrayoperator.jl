@@ -303,9 +303,6 @@ function _apply!(op::ScalingOperator, λ::Number, y, x)
 end
 
 diag(op::ScalingOperator{T}) where {T} = Fill{T}(scalar(op), size(op,1))
-
-*(scalar::Number, op::DictionaryOperator) = ScalingOperator(dest(op), scalar) * op
-
 sqrt(op::ScalingOperator) = ScalingOperator(src(op), sqrt(scalar(op)); dest=dest(op))
 
 function string(op::ScalingOperator)
