@@ -106,9 +106,9 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
-export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure
+export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, DiscreteMeasure
 export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
-export supermeasure
+export supermeasure, applymeasure
 
 # from spaces/spaces.jl
 export GenericFunctionSpace, space
@@ -188,7 +188,7 @@ export GenericIdentityOperator
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export gramelement, gramoperator, dualdictionary
+export gramelement, gramoperator, dualdictionary, mixedgramoperator
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
