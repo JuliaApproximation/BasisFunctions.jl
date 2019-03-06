@@ -655,7 +655,7 @@ gramoperator(dict::Fourier, measure::UniformDiracCombMeasure; options...) =
 _fourierdiracgramoperator(dict, measure, grid; options...) = default_gramoperator(dict, measure; options...)
 
 function _fourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
 	if isorthonormal(dict, measure)
 		return IdentityOperator{T}(dict)
 	end
@@ -666,7 +666,7 @@ function _fourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasu
 end
 
 function _diagonalfourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
 	@assert isorthogonal(dict, measure) && !isorthonormal(dict, measure)
 	if isodd(length(dict)) || (length(dict)==length(grid))
 		ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
@@ -676,7 +676,7 @@ function _diagonalfourierdiracgramoperator(dict::Fourier, measure::UniformDiracC
 end
 
 function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombProbabilityMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(domaintype(measure), coefficienttype(dict)), options...)
+			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
 	@assert isorthogonal(dict, measure)
 	if isodd(length(dict)) || (length(dict)==length(grid))
 		@assert isorthonormal(dict, measure)

@@ -4,11 +4,12 @@ struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
     grid   ::  GRID
     weights   ::  W
     function GenericDiscreteMeasure(grid::AbstractGrid, weights)
-        grid isa AbstractSubGrid || @assert size(grid) == size(weights)
+        grid isa Union{AbstractSubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
         new{eltype(grid),typeof(grid),typeof(weights)}(grid, weights)
     end
 end
-genericweights(grid) = Ones{eltype(grid)}(length(grid))
+genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...)
+genericweights(grid::ProductGrid) = tensorproduct([Ones{subeltype(eltype(grid))}(l) for l in size(grid)]...)
 
 DiscreteMeasure(grid::AbstractGrid, weights=genericweights(grid)) =
     GenericDiscreteMeasure(grid, weights)
@@ -55,9 +56,11 @@ const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:Ab
 ######################################################
 # The weighs saved are the weights of the supermeasure. (there may be a better solution cf SubMeasure)
 const DiscreteSubMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractSubGrid
-DiscreteMeasure(grid::AbstractSubGrid) = DiscreteMeasure(grid, genericweights(supergrid(grid)))
-DiscreteSubMeasure(grid::AbstractSubGrid) = DiscreteMeasure(grid, genericweights(supergrid(grid)))
-DiscreteSubMeasure(grid::AbstractSubGrid, weights) = (@assert length(weights)==length(supergrid(grid)); DiscreteMeasure(grid, weights))
+
+DiscreteMeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(grid, genericweights(supergrid(grid)))
+DiscreteSubMeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(grid, genericweights(supergrid(grid)))
+
+DiscreteSubMeasure(grid, weights) = (@assert size(weights)==size(supergrid(grid)); DiscreteMeasure(grid, weights))
 
 weights(measure::DiscreteSubMeasure) = subweights(measure, subindices(grid(measure)), measure.weights)
 subweights(_, subindices, w) = w[subindices]
@@ -94,10 +97,24 @@ support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
 
 
 const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:ProductGrid where  W<:AbstractOuterProductArray
+
+const DiscreteTensorSubMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:TensorSubGrid where W<:AbstractOuterProductArray
+supermeasure(m::DiscreteTensorSubMeasure) = ProductMeasure(map(supermeasure, elements(m))...)
+
+name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 ProductMeasure(measures::DiscreteMeasure...) =
-    DiscreteMeasure(tensorproduct(map(grid, measures)...), tensorproduct(map(weights, measures)...))
+    DiscreteMeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
 
 
 iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(DiscreteMeasure, elements(grid(m)), elements(weights(m)))
-element(m::DiscreteProductMeasure, i) = m.measures[i]
+element(m::DiscreteProductMeasure, i) = DiscreteMeasure(element(grid(m), i), element(weights(m), i))
+function stencilarray(m::DiscreteProductMeasure)
+    A = Any[]
+    push!(A, element(m,1))
+    for i = 2:length(elements(m))
+        push!(A," ⊗ ")
+        push!(A, element(m,i))
+    end
+    A
+end

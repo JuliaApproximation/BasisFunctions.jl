@@ -183,6 +183,7 @@ hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators,
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
 adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array{DictionaryOperator}(adjoint(op.operators)))
+conj(op::BlockOperator) = BlockOperator(Array{DictionaryOperator}(conj(op.operators)))
 
 
 
@@ -273,7 +274,8 @@ function apply!(op::BlockDiagonalOperator, coef_dest::BlockVector, coef_src::Blo
     coef_dest
 end
 
-adjoint(op::BlockDiagonalOperator)::DictionaryOperator = BlockDiagonalOperator(map(adjoint, operators(op)))
+adjoint(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(adjoint, operators(op)), dest(op), src(op))
+conj(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(conj, operators(op)), src(op), dest(op))
 
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])

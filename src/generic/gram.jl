@@ -111,7 +111,7 @@ end
 end
 
 @inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure;
-            T = promote_type(op_eltype(dict1,dict2),domaintype(measure)), options...)
+            T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
     E1 = evaluation_operator(dict1, grid(measure); T=T, options...)
     E2 = evaluation_operator(dict2, grid(measure); T=T, options...)
     W = DiagonalOperator(dest(E2),dest(E1),weights(measure); T=T)

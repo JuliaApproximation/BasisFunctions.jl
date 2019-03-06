@@ -16,7 +16,7 @@ function apply(analysis::ProjectionSampling, synthesis::SynthesisOperator; T=op_
 	analysismeasure = measure(analysis)
 	analysisdict = dictionary(analysis)
 	# Check whether we can just compute the gram matrix instead.
-	if iscompatible(analysisdict, synthesisdict) && size(analysisdict)==size(synthesisdict)
+	if isequal(analysisdict, synthesisdict) && size(analysisdict)==size(synthesisdict)
 		gramoperator(synthesisdict, analysismeasure; T=T, options...)
 	else
 		mixedgramoperator(analysisdict, synthesisdict, analysismeasure; T=T, options...)

@@ -61,7 +61,7 @@ function quadraturenormalization(gb, grid::MappedGrid, measure::MappedMeasure; o
 	wrap_operator(gb, gb, quadraturenormalization(sgb, sgrid, supermeasure(measure); options...))
 end
 
-quadraturenormalization(gb, grid::ProductGrid, measure::ProductMeasure; options...) =
+quadraturenormalization(gb, grid::ProductGrid, measure::Union{ProductMeasure,DiscreteTensorSubMeasure}; options...) =
 	tensorproduct( map( (g,m) -> quadraturenormalization(g, m; options...), elements(gb), elements(measure))...)
 
 function quadraturenormalization(gb, grid::AbstractSubGrid, measure::SubMeasure; options...)

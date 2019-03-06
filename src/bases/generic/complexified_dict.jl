@@ -16,6 +16,8 @@ Base.complex(dict::Dictionary) = promote_coefficienttype(dict, complex(coefficie
 
 similar_dictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
+elements(dict::ComplexifiedDict) = map(ComplexifiedDict, elements(superdict(dict)))
+element(dict::ComplexifiedDict, i) = ComplexifiedDict(element(superdict(dict), i))
 # This is the general rule to complexify a dictionary
 _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} =
     ComplexifiedDict(dict)

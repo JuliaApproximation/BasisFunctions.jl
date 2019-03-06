@@ -346,7 +346,7 @@ end
 
 const UniformDiscreteChebyshevTMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G <: ChebyshevNodes where W <:FillArrays.AbstractFill
 
-function diagonal_gramoperator(dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure; T=promote_type(domaintype(measure),coefficienttype(dict)), options...)
+function diagonal_gramoperator(dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure; T=promote_type(subdomaintype(measure),coefficienttype(dict)), options...)
     @assert length(dict) == length(grid(measure))
     CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,length(dict))/2)
 end

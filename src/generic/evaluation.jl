@@ -32,7 +32,7 @@ evaluation_operator(dict::Dictionary, grid::AbstractGrid; options...) =
     evaluation_operator(dict, GridBasis(dict, grid); options...)
 
 evaluation_operator(dict::Dictionary, grid::AbstractSubGrid; T = coefficienttype(dict), options...) =
-     restriction_operator(GridBasis{T}(supergrid(grid)), GridBasis{T}(grid); options...) * evaluation_operator(dict, supergrid(grid); options...)
+     restriction_operator(GridBasis{T}(supergrid(grid)), GridBasis{T}(grid); T=T, options...) * evaluation_operator(dict, supergrid(grid); T=T, options...)
 
 evaluation_operator(dict::Dictionary, gb::GridBasis;
             T = op_eltype(dict, gb), options...) =

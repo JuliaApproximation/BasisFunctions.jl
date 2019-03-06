@@ -6,6 +6,7 @@ abstract type Measure{T}
 end
 
 domaintype(m::Measure{T}) where {T} = T
+subdomaintype(m::Measure) = subeltype(domaintype(m))
 
 weight(m::Measure{T}, x::T) where {T} = weight1(m, x)
 
@@ -215,6 +216,8 @@ end
 SubMeasure(measure::Measure{T}, domain::Domain) where {T} =
     SubMeasure{typeof(measure),typeof(domain),T}(measure,domain)
 
+submeasure(measure::Measure, domain::Domain) = SubMeasure(measure, domain)
+
 name(m::SubMeasure) = "Restriction of a measure"
 
 supermeasure(measure::SubMeasure) = measure.measure
@@ -267,6 +270,8 @@ iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 isprobabilitymeasure(m::ProductMeasure) = reduce(&, map(isprobabilitymeasure, elements(m)))
+
+submeasure(measure::ProductMeasure, domain::ProductDomain) = ProductMeasure(map(SubMeasure, elements(measure), elements(domain))...)
 
 support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
 

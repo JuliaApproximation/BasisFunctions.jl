@@ -100,7 +100,7 @@ qr_factorization(op::DictionaryOperator) = qr(matrix(op), Val(true))
 
 function svd_factorization(op::DictionaryOperator)
     local F
-    A = matrix(op)
+    A = Matrix(op)
     try
         F = svd(A, full=false)
     catch

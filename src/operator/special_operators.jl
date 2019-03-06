@@ -91,7 +91,7 @@ _apply!(op::MultiplicationOperator{ELT2,Array{ELT1,2},false}, coef_dest::Abstrac
 apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest) where {T,ARRAY} =
     _apply_inplace!(op, coef_srcdest, op.object)
 
-_apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) where {T,ARRAY} =
+_apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) where {T,ARRAY} = 
     object * coef_srcdest
 
 
@@ -239,10 +239,10 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
-(+)(I1::UniformScaling, op2::DictionaryOperator) = (+)(ScalingOperator(dest(op2),I1.λ), op2)
-(-)(I1::UniformScaling, op2::DictionaryOperator) = (-)(ScalingOperator(dest(op2),I1.λ), op2)
-(+)(op1::DictionaryOperator, I2::UniformScaling) = (+)(op1, ScalingOperator(dest(op1),I2.λ))
-(-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(dest(op1),I2.λ))
+(+)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (+)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
+(-)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (-)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
+(+)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (+)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
+(-)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (-)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
 
 
 function stencilarray(op::OperatorSum)

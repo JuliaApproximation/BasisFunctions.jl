@@ -73,3 +73,11 @@ issubindex(i, g::IndexSubGrid) = in(i, subindices(g))
 # getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
 
 getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
+
+const TensorSubGrid = ProductGrid{NTuple{N,GRID}} where N where {GRID<:AbstractSubGrid}
+
+mask(grid::TensorSubGrid) = tensorproduct(map(mask, elements(grid))...)
+subindices(grid::TensorSubGrid) = findall(mask(grid))
+supergrid(grid::TensorSubGrid) = ProductGrid(map(supergrid, elements(grid))...)
+issubindex(i, g::TensorSubGrid) = all(map(issubindex, i, elements(g)))
+issubindex(i::CartesianIndex, g::TensorSubGrid) = issubindex(i.I, g)
