@@ -539,7 +539,7 @@ derivative_dict(dict::Dictionary; options...) = derivative_dict(dict, 1; options
 """
 Evaluate an expansion given by the set of coefficients in the point x.
 """
-function eval_expansion(dict::Dictionary, coefficients, x)
+function eval_expansion(dict::Dictionary, coefficients, x; options...)
     @assert size(coefficients) == size(dict)
 
     T = span_codomaintype(dict)
@@ -552,14 +552,14 @@ function eval_expansion(dict::Dictionary, coefficients, x)
     z
 end
 
-function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
+function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
     @assert dimension(dict) == dimension(grid)
     @assert size(coefficients) == size(dict)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)
 
     T = coefficienttype(dict)
-    E = evaluation_operator(dict, GridBasis{T}(grid))
+    E = evaluation_operator(dict, GridBasis{T}(grid); options...)
     E * coefficients
 end
 

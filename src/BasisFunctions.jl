@@ -1,6 +1,7 @@
 module BasisFunctions
 
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
+using IterativeSolvers: lsqr, lsmr
 using FillArrays
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra, FastGaussQuadrature
@@ -179,7 +180,7 @@ export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
         IndexRestrictionOperator, IndexExtensionOperator,
         HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
 # from operator/solvers.jl
-export QR_solver, SVD_solver, regularized_SVD_solver, operator
+export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSMR_solver
 
 # from operator/generic_operators.jl
 export GenericIdentityOperator

@@ -137,3 +137,19 @@ SVD_solver(op::DictionaryOperator; options...) =
 
 regularized_SVD_solver(op::DictionaryOperator; options...) =
     GenericSolverOperator(op, regularized_svd_factorization(op; options...))
+
+struct LSQR_solver{T} <: BasisFunctions.DictionarySolverOperator{T}
+    op      ::  DictionaryOperator{T}
+    options ::  NamedTuple
+    LSQR_solver(op::DictionaryOperator; atol=1e-6, btol=1e-6, conlim=1e14, options...) = new{eltype(op)}(op, (atol=atol, btol=btol, conlim=conlim))
+end
+
+apply!(op::LSQR_solver, coef_dest, coef_src) = copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
+
+struct LSMR_solver{T} <: BasisFunctions.DictionarySolverOperator{T}
+    op      ::  DictionaryOperator{T}
+    options ::  NamedTuple
+    LSMR_solver(op::DictionaryOperator; atol=1e-6, btol=1e-6, conlim=1e14, options...) = new{eltype(op)}(op, (atol=atol, btol=btol, conlim=conlim))
+end
+
+apply!(op::LSMR_solver, coef_dest, coef_src) = copy!(coef_dest, lsmr(op.op, coef_src; op.options...))
