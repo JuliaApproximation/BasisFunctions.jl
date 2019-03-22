@@ -36,8 +36,29 @@ dest(op::DictionarySolverOperator) = src(operator(op))
 inv(op::DictionarySolverOperator) = operator(op)
 
 
+abstract type VectorizingSolverOperator{T} <: DictionarySolverOperator{T} end
+
+apply!(op::VectorizingSolverOperator, coef_dest::Vector, coef_src::Vector) =
+    linearized_apply!(op, coef_dest, coef_src)
+
+function apply!(op::VectorizingSolverOperator, coef_dest, coef_src)
+    copyto!(op.src_linear, coef_src)
+    linearized_apply!(op, op.dest_linear, op.src_linear)
+    copyto!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::VectorizingSolverOperator, coef_dest, coef_src::Vector)
+    linearized_apply!(op, op.dest_linear, coef_src)
+    copyto!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::VectorizingSolverOperator, coef_dest::Vector, coef_src)
+    copyto!(op.src_linear, coef_src)
+    linearized_apply!(op, coef_dest, op.src_linear)
+end
+
 "A GenericSolverOperator wraps around a generic solver type."
-struct GenericSolverOperator{Q,T} <: DictionarySolverOperator{T}
+struct GenericSolverOperator{Q,T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator
     solver  ::  Q
     # In case the operator does not map between vectors, we allocate space
@@ -49,6 +70,8 @@ struct GenericSolverOperator{Q,T} <: DictionarySolverOperator{T}
         new{Q,T}(op, solver, zeros(T, length(dest(op))), zeros(T, length(src(op))))
 end
 
+linearized_apply!(op::GenericSolverOperator, dest_vc::Vector, src_vc::Vector) =
+    linearized_apply!(op, dest_vc, src_vc, op.solver)
 
 # The solver should be the inverse of the given operator
 GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
@@ -57,28 +80,9 @@ GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
 similar_operator(op::GenericSolverOperator, src, dest) =
     GenericSolverOperator(similar_operator(operator(op), dest, src), op.solver)
 
-apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector) =
-    _apply!(op, coef_dest, coef_src, op.solver)
-
-function apply!(op::GenericSolverOperator, coef_dest, coef_src)
-    copyto!(op.src_linear, coef_src)
-    _apply!(op, op.dest_linear, op.src_linear, op.solver)
-    copyto!(coef_dest, op.dest_linear)
-end
-
-function apply!(op::GenericSolverOperator, coef_dest, coef_src::Vector)
-    _apply!(op, op.dest_linear, coef_src, op.solver)
-    copyto!(coef_dest, op.dest_linear)
-end
-
-function apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src)
-    copyto!(op.src_linear, coef_src)
-    _apply!(op, coef_dest, op.src_linear, op.solver)
-end
-
 
 # This is the generic case
-function _apply!(op::GenericSolverOperator, coef_dest, coef_src, solver)
+function linearized_apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver)
     coef_dest[:] = solver \ coef_src
     coef_dest
 end
@@ -138,18 +142,29 @@ SVD_solver(op::DictionaryOperator; options...) =
 regularized_SVD_solver(op::DictionaryOperator; options...) =
     GenericSolverOperator(op, regularized_svd_factorization(op; options...))
 
-struct LSQR_solver{T} <: BasisFunctions.DictionarySolverOperator{T}
+struct LSQR_solver{T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator{T}
     options ::  NamedTuple
-    LSQR_solver(op::DictionaryOperator; atol=1e-6, btol=1e-6, conlim=1e14, options...) = new{eltype(op)}(op, (atol=atol, btol=btol, conlim=conlim))
+
+    src_linear  ::  Vector{T}
+    dest_linear ::  Vector{T}
+    LSQR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=1e14, options...) where T =
+        new{T}(op, (atol=atol, btol=btol, conlim=conlim),
+            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op))))
 end
 
-apply!(op::LSQR_solver, coef_dest, coef_src) = copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
+linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
 
-struct LSMR_solver{T} <: BasisFunctions.DictionarySolverOperator{T}
+struct LSMR_solver{T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator{T}
     options ::  NamedTuple
-    LSMR_solver(op::DictionaryOperator; atol=1e-6, btol=1e-6, conlim=1e14, options...) = new{eltype(op)}(op, (atol=atol, btol=btol, conlim=conlim))
+
+    src_linear  ::  Vector{T}
+    dest_linear ::  Vector{T}
+    LSMR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=1e14, options...) where T =
+        new{T}(op, (atol=atol, btol=btol, conlim=conlim),
+            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op)))
+        )
 end
 
-apply!(op::LSMR_solver, coef_dest, coef_src) = copy!(coef_dest, lsmr(op.op, coef_src; op.options...))
+linearized_apply!(op::LSMR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsmr(op.op, coef_src; op.options...))
