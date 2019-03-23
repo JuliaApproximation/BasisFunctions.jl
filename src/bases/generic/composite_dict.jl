@@ -69,6 +69,8 @@ function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
     similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
+resize(d::CompositeDict, size) = similar_dictionary(d, map(resize, elements(d), size))
+
 composite_length(d::CompositeDict) = tuple(map(length, elements(d))...)
 block_length(dict::CompositeDict) = composite_length(dict)
 
