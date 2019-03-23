@@ -131,7 +131,7 @@ export native_index, linear_index, multilinear_index, native_size, linear_size, 
 export iscomposite
 export isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal
 export in_support
-export approx_length, extension_size
+export dimensions, approx_length, extension_size
 export hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!

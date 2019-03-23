@@ -87,11 +87,17 @@ isorthonormal(d::Dictionary, measure::Measure) = false
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
 isbiorthogonal(d::Dictionary, measure::Measure) = isorthogonal(d, measure)
 
-"Return the size of the dictionary."
 function size(d::Dictionary) end
 
-"Return the size of the j-th dimension of the dictionary (if applicable)."
 size(d::Dictionary, j) = size(d)[j]
+
+"""
+The length and size of a dictionary may not be enough to uniquely determine the
+size of the dictionary, if it has additional internal structure. The output of
+dimensions is such that `resize(dict, dimensions(dict)) == dict`.
+"""
+dimensions(d::Dictionary1d) = length(d)
+dimensions(d::Dictionary) = size(d)
 
 length(d::Dictionary) = prod(size(d))
 

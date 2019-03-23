@@ -53,6 +53,7 @@ unsafe_offsets(dict::CompositeDict) = dict.offsets
 
 size(s::CompositeDict) = (s.offsets[end],)
 
+dimensions(d::CompositeDict) = map(dimensions, elements(d))
 
 ## Concrete subtypes should override similar_dictionary and call their own constructor
 

@@ -197,7 +197,8 @@ end
 
 
 
-extension_size(b::Fourier) = evenlength(b) ? 2*length(b) : 2*length(b)+1
+# By default, we preserve the odd/even property of the size when extending
+extension_size(b::Fourier) = evenlength(b) ? 2*length(b) : max(3,2*length(b)-1)
 
 approx_length(b::Fourier, n::Int) = n
 

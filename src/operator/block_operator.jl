@@ -71,6 +71,8 @@ function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: Dictionar
     BlockOperator(operators)
 end
 
+unsafe_wrap_operator(src, dest, op::BlockOperator) = similar_operator(op, src, dest)
+
 similar_operator(op::BlockOperator{T}, src, dest) where T =
     BlockOperator{T}(op.operators, src, dest)
 

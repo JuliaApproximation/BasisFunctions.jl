@@ -56,6 +56,8 @@ end
 
 size(d::TensorProductDict) = d.size
 
+dimensions(d::TensorProductDict) = map(dimensions, elements(d))
+
 similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} = similar(dict, T, approx_length(dict, size))
 
 similar(dict::TensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
@@ -114,7 +116,7 @@ for op in (:derivative_dict, :antiderivative_dict)
 end
 
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
-
+resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, elements(d), dims)...)
 
 
 # Delegate dict_in_support to _dict_in_support with the composing dicts as extra arguments,

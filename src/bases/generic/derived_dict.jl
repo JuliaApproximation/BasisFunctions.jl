@@ -32,6 +32,8 @@ superdict(s::DerivedDict) = s.superdict
 similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
     similar_dictionary(d, similar(superdict(d), T, dims))
 
+resize(d::DerivedDict, dims) = similar_dictionary(d, resize(superdict(d), dims))
+
 promote_coefficienttype(dict::DerivedDict, ::Type{T}) where {T} =
     similar_dictionary(dict, promote_coefficienttype(superdict(dict), T))
 
@@ -73,7 +75,7 @@ tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
 for op in (:length, :extension_size, :size, :interpolation_grid, :iscomposite, :numelements,
-    :elements, :tail, :ordering, :support)
+    :elements, :tail, :ordering, :support, :dimensions)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
