@@ -104,7 +104,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
 #       TODO: at one point we should enable strict checking again as follows:
 #        @assert dest(operators[i]) == src(operators[i+1])
     end
-    
+
     # Checks pass, now apply some simplifications
     if simplify
         # Flatten away nested CompositeOperators
@@ -215,6 +215,8 @@ adjoint(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map
 
 conj(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(conj,op.operators), op.scratch)
 conj(op::CompositeOperator{T}) where {T<:Real} = op
+
+sqrt(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(sqrt,op.operators), op.scratch)
 
 apply(op1::AbstractOperator, op2::AbstractOperator) = compose(op2,op1)
 apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)
