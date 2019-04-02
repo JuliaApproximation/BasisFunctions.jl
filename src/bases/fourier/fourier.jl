@@ -629,7 +629,7 @@ end
 
 function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::LebesgueMeasure; options...)
 	d = support(m)
-	if typeof(d) <: AbstractInterval
+	if d isa AbstractInterval
 		if infimum(d) == 0 && supremum(d) == 1
 			innerproduct_fourier_full(b1, i, b2, j)
 		else

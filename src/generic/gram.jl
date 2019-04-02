@@ -41,11 +41,11 @@ innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
 # - innerproduct_native: if not specialized, called innerproduct1
 innerproduct_native(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
     innerproduct1(dict1, i,  dict2, j, measure; options...)
-# - innerproduct1: possibility to dispatch on the first dictionary without amibiguity.
+# - innerproduct1: possibility to dispatch on the first dictionary without ambiguity.
 #                  If not specialized, we call innerproduct2
 innerproduct1(dict1::Dictionary, i, dict2, j, measure; options...) =
     innerproduct2(dict1, i, dict2, j, measure; options...)
-# - innerproduct2: possibility to dispatch on the second dictionary without amibiguity
+# - innerproduct2: possibility to dispatch on the second dictionary without ambiguity
 innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
     default_dict_innerproduct(dict1, i, dict2, j, measure; options...)
 

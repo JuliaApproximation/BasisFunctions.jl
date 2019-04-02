@@ -1,7 +1,10 @@
 # Routines for evaluating integrals
 
 integral(f, domain::AbstractInterval; options...) =
-    numerical_integral(f, leftendpoint(domain), rightendpoint(domain); options...)
+    numerical_integral(f, infimum(domain), supremum(domain); options...)
+
+integral(f, domain::UnionDomain; options...) =
+    sum([integral(f, d; options...) for d in elements(domain)])
 
 integral(f, domain::DomainSets.FullSpace{T}; options...) where {T <: Real} =
     numerical_integral(f, -convert(T, Inf), convert(T, Inf); options...)

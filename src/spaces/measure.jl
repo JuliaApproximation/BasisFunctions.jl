@@ -44,14 +44,14 @@ function unsafe_weight(m::DiscreteMeasure{T}, x) where {T}
     convert(T, NaN)
 end
 
-@inline grid(m::DiscreteMeasure) = m.grid
-@inline support(m::DiscreteMeasure) = DomainSets.WrappedDomain(grid(m))
+grid(m::DiscreteMeasure) = m.grid
+support(m::DiscreteMeasure) = DomainSets.WrappedDomain(grid(m))
 weights(m::DiscreteMeasure) = m.weights
 discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
 checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)
 unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m.weights, i)
-@inline isdiscrete(::DiscreteMeasure) = true
-@inline isprobabilitymeasure(m::DiscreteMeasure) = sum(m.weights) ≈ 1
+isdiscrete(::DiscreteMeasure) = true
+isprobabilitymeasure(m::DiscreteMeasure) = sum(m.weights) ≈ 1
 
 "Supertype of all Lebesgue measures."
 abstract type LebesgueMeasure{T} <: Measure{T}
