@@ -1,8 +1,10 @@
-# Convenient aliases
-const Domain1d{T <: Number} = Domain{T}
-const Domain2d{T} = EuclideanDomain{2,T}
-const Domain3d{T} = EuclideanDomain{3,T}
-const Domain4d{T} = EuclideanDomain{4,T}
+if !isdefined(DomainSets, :Domain1d)
+    # Convenient aliases
+    const Domain1d{T <: Number} = Domain{T}
+    const Domain2d{T} = EuclideanDomain{2,T}
+    const Domain3d{T} = EuclideanDomain{3,T}
+    const Domain4d{T} = EuclideanDomain{4,T}
+end
 
 iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 
