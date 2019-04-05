@@ -15,6 +15,8 @@ const MappedGrid1d{G,M,T<:Number,N} = MappedGrid{G,M,T,N}
 MappedGrid(grid::AbstractGrid{T,N}, map::AbstractMap) where {T,N} =
 	MappedGrid{typeof(grid),typeof(map),T,N}(grid, map)
 
+name(grid::MappedGrid) = "Mapped grid"
+
 supergrid(g::MappedGrid) = g.supergrid
 
 mapping(g::MappedGrid) = g.map
@@ -27,7 +29,7 @@ mapped_grid(g::MappedGrid, map::AbstractMap) = MappedGrid(supergrid(g), map∘ma
 # Convenience function, similar to apply_map for Dictionary's
 apply_map(grid::AbstractGrid, map::AbstractMap) = mapped_grid(grid, map)
 
-for op in (:length, :size, :eachindex, :indextype)
+for op in (:length, :size, :eachindex, :indextype, :isperiodic)
 	@eval $op(g::MappedGrid) = $op(supergrid(g))
 end
 
@@ -51,3 +53,9 @@ function rescale(g::ProductGrid, a::SVector{N}, b::SVector{N}) where {N}
 	scaled_grids = [ rescale(element(g, i), a[i], b[i]) for i in 1:N]
 	ProductGrid(scaled_grids...)
 end
+
+
+## Printing
+
+hasstencil(grid::MappedGrid) = true
+stencilarray(grid::MappedGrid) = [ mapping(grid), "(", supergrid(grid), ")" ]

@@ -11,11 +11,12 @@ rightendpoint(g::AbstractIntervalGrid) = g.b
 support(g::AbstractIntervalGrid) = Interval(leftendpoint(g), rightendpoint(g))
 
 size(g::AbstractIntervalGrid) = (g.n,)
-
+isperiodic(::AbstractIntervalGrid) = false
 
 
 # Perhaps we should add a stepsize field, for better efficiency?
 # Now the stepsize is recomputed with every call to getindex.
+# Alternatively, we should just wrap around a native Julia range
 
 "An equispaced grid has equispaced points, and therefore it has a stepsize."
 abstract type AbstractEquispacedGrid{T} <: AbstractIntervalGrid{T}
@@ -25,15 +26,15 @@ range(g::AbstractEquispacedGrid) = range(leftendpoint(g), stepsize(g), length(g)
 
 unsafe_getindex(g::AbstractEquispacedGrid, i) = g.a + (i-1)*stepsize(g)
 
-similar_grid(g::AbstractEquispacedGrid, a, b) =
-    similar_grid(g, a, b, promote_type(eltype(g), typeof((b-a)/length(g))))
+similar_equispacedgrid(g::AbstractEquispacedGrid, a, b) =
+    similar_equispacedgrid(g, a, b, promote_type(eltype(g), typeof((b-a)/length(g))))
 
 # Equispaced grids already support rescaling - avoid the construction of a LinearMappedGrid,
 # but make sure to retain the type of the original grid.
-rescale(g::AbstractEquispacedGrid, a, b) = similar_grid(g, a, b)
+rescale(g::AbstractEquispacedGrid, a, b) = similar_equispacedgrid(g, a, b)
 
 mapped_grid(g::AbstractEquispacedGrid, map::AffineMap) =
-    similar_grid(g, applymap(map, leftendpoint(g)), applymap(map, rightendpoint(g)))
+    similar_equispacedgrid(g, applymap(map, leftendpoint(g)), applymap(map, rightendpoint(g)))
 
 """
 An equispaced grid with n points on an interval [a,b], including the endpoints.
@@ -53,11 +54,13 @@ EquispacedGrid(n::Int, a, b) = EquispacedGrid{typeof((b-a)/n)}(n, a, b)
 
 EquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = EquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+name(g::EquispacedGrid) = "Equispaced grid"
 
-similar_grid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
+similargrid(g::EquispacedGrid, ::Type{T}, n::Int) where {T} = EquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
-has_extension(::EquispacedGrid) = true
+similar_equispacedgrid(g::EquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = EquispacedGrid{T}(length(g), a, b)
+
+hasextension(::EquispacedGrid) = true
 
 extend(g::EquispacedGrid, factor::Int) = resize(g, factor*g.n-1)
 
@@ -66,6 +69,7 @@ stepsize(g::EquispacedGrid) = (g.b-g.a)/(g.n-1)
 
 # Support conversion from a LinSpace in julia Base
 # (What about more general ranges?)
+# TODO: update, LinRange no longer exists
 convert(::Type{EquispacedGrid}, x::LinRange) = EquispacedGrid(length(x), first(x), last(x))
 
 
@@ -87,17 +91,21 @@ PeriodicEquispacedGrid(n::Int, a, b) = PeriodicEquispacedGrid{typeof((b-a)/n)}(n
 
 PeriodicEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = PeriodicEquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar_grid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
+name(g::PeriodicEquispacedGrid) = "Periodic equispaced grid"
 
-similar(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+similar_equispacedgrid(g::PeriodicEquispacedGrid, a, b, T = eltype(g)) = PeriodicEquispacedGrid{T}(length(g), a, b)
+
+similargrid(g::PeriodicEquispacedGrid, ::Type{T}, n::Int) where {T} = PeriodicEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
 
 stepsize(g::PeriodicEquispacedGrid) = (g.b-g.a)/g.n
+
+isperiodic(::PeriodicEquispacedGrid) = true
 
 # We need this basic definition, otherwise equality does not seem to hold when T is BigFloat...
 ==(g1::PeriodicEquispacedGrid, g2::PeriodicEquispacedGrid) =
     (g1.n == g2.n) && (g1.a == g2.a) && (g1.b==g2.b)
 
-has_extension(::PeriodicEquispacedGrid) = true
+hasextension(::PeriodicEquispacedGrid) = true
 
 extend(g::PeriodicEquispacedGrid, factor::Int) = resize(g, factor*g.n)
 
@@ -121,13 +129,51 @@ MidpointEquispacedGrid(n::Int, a, b) = MidpointEquispacedGrid{typeof((b-a)/n)}(n
 
 MidpointEquispacedGrid(n::Int, d::AbstractInterval{T}) where {T} = MidpointEquispacedGrid{T}(n, infimum(d), supremum(d))
 
-similar(g::MidpointEquispacedGrid, ::Type{T}, n::Int) where {T} = MidpointEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+name(g::MidpointEquispacedGrid) = "Equispaced midpoints grid"
 
-similar_grid(g::MidpointEquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = MidpointEquispacedGrid{T}(length(g), a, b)
+similargrid(g::MidpointEquispacedGrid, ::Type{T}, n::Int) where {T} = MidpointEquispacedGrid{T}(n, convert(T, g.a), convert(T, g.b))
+
+similar_equispacedgrid(g::MidpointEquispacedGrid, a, b, ::Type{T} = eltype(g)) where {T} = MidpointEquispacedGrid{T}(length(g), a, b)
 
 unsafe_getindex(g::MidpointEquispacedGrid{T}, i) where {T} = g.a + (i-one(T)/2)*stepsize(g)
 
 stepsize(g::MidpointEquispacedGrid) = (g.b-g.a)/g.n
+
+isperiodic(::MidpointEquispacedGrid) = true
+
+
+"A Fourier grid is a periodic equispaced grid on the interval [0,1]."
+struct FourierGrid{T} <: AbstractEquispacedGrid{T}
+    n   ::  Int
+end
+
+FourierGrid(n::Int) = FourierGrid{Float64}(n)
+
+name(g::FourierGrid) = "Periodic Fourier grid"
+
+leftendpoint(g::FourierGrid{T}) where {T} = zero(T)
+rightendpoint(g::FourierGrid{T}) where {T} = one(T)
+support(g::FourierGrid{T}) where {T} = UnitInterval{T}()
+
+similargrid(g::FourierGrid, ::Type{T}, n::Int) where {T} =
+    FourierGrid{T}(n)
+
+stepsize(g::FourierGrid{T}) where {T} = one(T)/length(g)
+
+unsafe_getindex(g::FourierGrid, i) = (i-1)*stepsize(g)
+
+has_extension(::FourierGrid) = true
+
+extend(g::FourierGrid, factor::Int) = resize(g, factor*g.n)
+
+mapped_grid(g::FourierGrid, map::AffineMap) = MappedGrid(g, map)
+
+isperiodic(::FourierGrid) = true
+
+function rescale(g::FourierGrid, a, b)
+	m = interval_map(leftendpoint(g), rightendpoint(g), a, b)
+	mapped_grid(g, m)
+end
 
 
 struct ChebyshevNodes{T} <: AbstractIntervalGrid{T}
@@ -140,13 +186,15 @@ const ChebyshevPoints = ChebyshevNodes
 ChebyshevNodes(n::Int) = ChebyshevNodes{Float64}(n)
 ChebyshevNodes(n::Int, a, b) = rescale(ChebyshevNodes{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevNodes, ::Type{T}, n::Int) where {T} = ChebyshevNodes{T}(n)
+similargrid(g::ChebyshevNodes, ::Type{T}, n::Int) where {T} = ChebyshevNodes{T}(n)
 
 leftendpoint(g::ChebyshevNodes{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevNodes{T}) where {T} = one(T)
 
 # The minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
 unsafe_getindex(g::ChebyshevNodes{T}, i) where {T} = T(-1)*cos((i-T(1)/2) * T(pi) / (g.n) )
+
+name(g::ChebyshevNodes) = "Chebyshev nodes"
 
 
 struct ChebyshevExtremae{T} <: AbstractIntervalGrid{T}
@@ -158,12 +206,14 @@ ChebyshevPointsOfTheSecondKind = ChebyshevExtremae
 ChebyshevExtremae(n::Int) = ChebyshevExtremae{Float64}(n)
 ChebyshevExtremae(n::Int, a, b) = rescale(ChebyshevExtremae{typeof((b-a)/n)}(n), a, b)
 
-similar(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtremae{T}(n)
+similargrid(g::ChebyshevExtremae, ::Type{T}, n::Int) where {T} = ChebyshevExtremae{T}(n)
 
 leftendpoint(g::ChebyshevExtremae{T}) where {T} = -one(T)
 rightendpoint(g::ChebyshevExtremae{T}) where {T} = one(T)
 
-# Likewise, the minus sign is added to avoid having to flip the inputs to the dct. More elegant fix required.
+# TODO: flip the values so that they are sorted
 unsafe_getindex(g::ChebyshevExtremae{T}, i) where {T} = i == 0 ? T(0) : cos((i-1)*T(pi) / (g.n-1) )
 
-strings(g::AbstractIntervalGrid)=(name(g)*" of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))",)
+name(g::ChebyshevExtremae) = "Chebyshev extremae"
+
+string(g::AbstractIntervalGrid) = name(g) * " of length $(length(g)) on [$(leftendpoint(g)), $(rightendpoint(g))], ELT = $(eltype(g))"

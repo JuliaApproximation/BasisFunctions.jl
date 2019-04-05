@@ -7,26 +7,26 @@ abstract type AbstractOperator
 end
 
 "Is the operator a combination of other operators"
-is_composite(op::AbstractOperator) = false
-
-# make times (*) a synonym for applying the operator
-(*)(op::AbstractOperator, object) = apply(op, object)
+iscomposite(op::AbstractOperator) = false
 
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
 _dest(op::AbstractOperator, span::Span) = dictionary(span)
 _dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
 
-has_span_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
+hasspan_dest(op::AbstractOperator) = typeof(dest_space(op)) <: Span
 
-function apply(op::AbstractOperator, f)
-	if has_span_dest(op)
-		result = zeros(eltype(op), dest(op))
-		apply!(result, op, f)
+function apply(op::AbstractOperator, f; options...)
+	if hasspan_dest(op)
+		result = zeros(dest(op))
+		apply!(result, op, f; options...)
 	else
 		error("Don't know how to apply operator $(string(op)). Please implement.")
 	end
 end
 
+
+size(op::AbstractOperator) = _size(op, dest_space(op), src_space(op))
+_size(op::AbstractOperator, dest, src) = (length(dest), length(src))
 
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of
@@ -57,7 +57,13 @@ dest(op::DictionaryOperator) = op.dest
 src_space(op::DictionaryOperator) = Span(src(op))
 dest_space(op::DictionaryOperator) = Span(dest(op))
 
-isreal(op::DictionaryOperator) = isreal(src(op)) && isreal(dest(op))
+isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
+
+"""
+True if the operator has a better computational complexity than the corresponding
+matrix-vector product.
+"""
+isefficient(op::DictionaryOperator) = false
 
 "Return a suitable element type for an operator between the given dictionaries."
 op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coefficienttype(src), coefficienttype(dest))
@@ -85,10 +91,10 @@ size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 #+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
 "Is the action of the operator in-place?"
-is_inplace(op::DictionaryOperator) = false
+isinplace(op::DictionaryOperator) = false
 
 "Is the operator diagonal?"
-is_diagonal(op::DictionaryOperator) = false
+isdiag(op::DictionaryOperator) = false
 
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))
@@ -101,11 +107,11 @@ end
 # - call apply!(op, dest(op), src(op), coef_dest, coef_src), which can be
 #   implemented by operators whose action depends on src and/or dest.
 function apply!(op::DictionaryOperator, coef_dest, coef_src)
-	if is_inplace(op)
+	if isinplace(op)
 		copyto!(coef_dest, coef_src)
 		apply_inplace!(op, coef_dest)
 	else
-		apply!(op, dest(op), src(op), coef_dest, coef_src)
+		apply_not_inplace!(op, coef_dest, coef_src)
 	end
 	# We expect each operator to return coef_dest, but we repeat here to make
 	# sure our method is type-stable.
@@ -118,21 +124,13 @@ function apply!(op::DictionaryOperator, coef_srcdest)
 		coef_srcdest
 end
 
-function apply_inplace!(op::DictionaryOperator, coef_srcdest)
-		apply_inplace!(op, dest(op), src(op), coef_srcdest)
-		coef_srcdest
-end
-
+# Catch-all for missing implementations
+apply_not_inplace!(op::DictionaryOperator, coef_dest, coef_src) =
+	error("Operation of ", typeof(op), " on ", typeof(dest(op)), " and ", typeof(src(op)), " not implemented.")
 
 # Catch-all for missing implementations
-function apply!(op::DictionaryOperator, dest, src, coef_dest, coef_src)
-	error("Operation of ", typeof(op), " on ", typeof(dest), " and ", typeof(src), " not implemented.")
-end
-
-# Catch-all for missing implementations
-function apply_inplace!(op::DictionaryOperator, dest, src, coef_srcdest)
-	error("In-place operation of ", typeof(op), " not implemented.")
-end
+apply_inplace!(op::DictionaryOperator, coef_srcdest) =
+	error("In-place operation of ", typeof(op), " on ", typeof(dest(op)), " and ", typeof(src(op)), " not implemented.")
 
 
 """
@@ -188,7 +186,7 @@ function sparse_matrix(op::DictionaryOperator; sparse_tol = 1e-14, options...)
     R
 end
 
-
+Base.Matrix(op::DictionaryOperator) = matrix(op)
 function matrix(op::DictionaryOperator)
     a = Array{eltype(op)}(undef, size(op))
     matrix!(op, a)
@@ -241,8 +239,8 @@ end
 
 
 "Return the diagonal of the operator."
-function diagonal(op::DictionaryOperator)
-    if is_diagonal(op)
+function diag(op::DictionaryOperator)
+    if isdiag(op)
         # Make data of all ones in the native representation of the operator
         all_ones = ones(src(op))
         # Apply the operator: this extracts the diagonal because the operator is diagonal
@@ -250,27 +248,31 @@ function diagonal(op::DictionaryOperator)
         # Convert to vector
         linearize_coefficients(dest(op), diagonal_native)
     else
-		# Compute the diagonal by calling unsafe_diagonal for each index
-        [unsafe_diagonal(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
+		# Compute the diagonal by calling unsafe_diag for each index
+        [unsafe_diag(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
 
 "Return the diagonal element op[i,i] of the operator."
-function diagonal(op::DictionaryOperator, i)
-	# Perform bounds checking and call unsafe_diagonal
+function diag(op::DictionaryOperator, i)
+	# Perform bounds checking and call unsafe_diag
 	checkbounds(op, i, i)
-	unsafe_diagonal(op, i)
+	unsafe_diag(op, i)
 end
 
 # Default behaviour: call unsafe_getindex
-unsafe_diagonal(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
+unsafe_diag(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
-    @assert is_diagonal(op)
-    newdiag = copy(diagonal(op))
+    @assert isdiag(op)
+    newdiag = copy(diag(op))
     for i = 1:length(newdiag)
         newdiag[i] = abs(newdiag[i])>tolerance ? newdiag[i].^(-1) : 0
     end
     DiagonalOperator(dest(op),src(op), newdiag)
 end
+
+for f in (:eigvals, :svdvals, :norm, :rank)
+    @eval $f(op::DictionaryOperator) = $f(Matrix(op))
+end#matrix related features

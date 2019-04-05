@@ -32,25 +32,25 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 
 function test_generic_ops_from_quadrature()
     N = 10
-    # LegendrePolynomials
+    # Legendre
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),Interval(-1,1))
-    c2 = LegendrePolynomials(N)
+    c2 = Legendre(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),Interval(-1,1))
-    c2 = JacobiPolynomials(N, 0, 0)
+    c2 = Jacobi(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
     # chebyshevI
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),Interval(-1,1))
-    c2 = ChebyshevBasis(N)
+    c2 = ChebyshevT(N)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, -.5),Interval(-1,1))
-    c2 = JacobiPolynomials(N, -.5, -.5)
+    c2 = Jacobi(N, -.5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
@@ -61,19 +61,19 @@ function test_generic_ops_from_quadrature()
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, .5),Interval(-1,1))
-    c2 = JacobiPolynomials(N, .5, .5)
+    c2 = Jacobi(N, .5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi/2, 1)
 
     # ChebyshevIII
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, -.5, .5),Interval(-1,1))
-    c2 = JacobiPolynomials(N, -.5, .5)
+    c2 = Jacobi(N, -.5, .5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 
     # ChebyshevIIII
     c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, .5, -.5),Interval(-1,1))
-    c2 = JacobiPolynomials(N, .5, -.5)
+    c2 = Jacobi(N, .5, -.5)
 
     compare_OPS(N, c1, c2, -1, 1, pi, 1)
 end
@@ -145,9 +145,9 @@ function test_roots_of_legendre_halfrangechebyshev()
     N = 10
     B = HalfRangeChebyshevIkind(N,2.)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = LegendrePolynomials(N)
+    B = Legendre(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = LegendrePolynomials{BigFloat}(N)
+    B = Legendre{BigFloat}(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     # B = HalfRangeChebyshevIkind(N,BigFloat(2))
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1

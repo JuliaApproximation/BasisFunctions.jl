@@ -8,10 +8,8 @@ end
 
 const OPS{S,T} = OrthogonalPolynomials{S,T}
 
-
-
-is_orthogonal(b::OPS) = true
-is_biorthogonal(b::OPS) = true
+isorthogonal(dict::OPS, measure::Measure) =
+    iscompatible(dict, measure)
 
 approx_length(b::OPS, n::Int) = n
 
@@ -22,48 +20,19 @@ size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
 
-function dot(s::OPS, f1::Function, f2::Function, nodes::Array=native_nodes(dictionary(s)); options...)
-    T = real(coefficienttype(s))
-	# To avoid difficult points at the ends of the domain.
-	dot(x->weight(s,x)*f1(x)*f2(x), clip_and_cut(nodes, -T(1)+eps(real(T)), +T(1)-eps(real(T))); options...)
-end
-
-clip(a::Real, low::Real, up::Real) = min(max(low, a), up)
-
-function clip_and_cut(a::Array{T,1}, low, up) where {T <: Real}
-	clipped = clip.(a,low, up)
-	t = clipped[1]
-	s = 1
-	for i in 2:length(a)
-		t != clipped[i] && break
-		t = clipped[i]
-		s += 1
-	end
-	t = clipped[end]
-	e = length(a)
-	for i in length(a)-1:-1:1
-		t != clipped[i] && break
-		t = clipped[i]
-		e -= 1
-	end
-	clipped[s:e]
-end
-
-has_extension(b::OPS) = true
-
-# CAVE: we have to add D <: OrthogonalPolynomials at the end, otherwise
+hasextension(b::OPS) = true
 
 # Using OPS as types of the arguments, i.e. without parameters, is fine and
 # only matches with polynomial sets. But here we use parameters to enforce that
 # the two spaces have the same type of set, and same type of coefficients.
-function extension_operator(s1::OPS, s2::OPS; options...)
+function extension_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1))
+    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
 end
 
-function restriction_operator(s1::OPS, s2::OPS; options...)
+function restriction_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2))
+    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
 end
 
 
@@ -260,6 +229,22 @@ function monic_recurrence_eval(α, β, idx, x)
     end
 end
 
+hasmeasure(dict::OPS) = true
+
+weight(b::OPS, x) = weight(measure(b), x)
+
+
+function gramoperator1(dict::OPS, m; T = promote_type(coefficienttype(dict), domaintype(m)), options...)
+    isorthonormal(dict, m) && return IdentityOperator{T}(dict)
+	if isorthogonal(dict, m)
+		diagonal_gramoperator(dict, m; T=T, options...)
+	else
+		default_gramoperator(dict, m; T=T, options...)
+	end
+end
+
+diagonal_gramoperator(dict::OPS, measure; options...) =
+    default_diagonal_gramoperator(dict::OPS, measure; options...)
 
 function symmetric_jacobi_matrix(b::OPS)
     T = codomaintype(b)
@@ -291,16 +276,41 @@ end
 
 gauss_points(b::OPS) = roots(b)
 
-# We say that has_grid is true only for Float64 because it relies on an
-# eigenvalue decomposition and that is currently not (natively) supported in
-# BigFloat
-has_grid(b::OPS{Float64}) = true
 
-grid(b::OPS{Float64}) = ScatteredGrid(roots(b))
+struct OPSNodes{T,OPS} <: AbstractGrid{T,1}
+	dict	::	OPS
+	nodes	::	AbstractVector{T}
+end
+
+
+OPSNodes(dict::OPS) = OPSNodes(dict, roots(dict))
+
+size(grid::OPSNodes) = (length(grid.nodes),)
+getindex(grid::OPSNodes, i::Int) = grid.nodes[i]
+
+struct OPSNodesMeasure{T,OPS} <: DiscreteMeasure{T}
+    dict    ::  OPS
+    grid    ::  OPSNodes{T,OPS}
+    weights ::  AbstractVector{T}
+end
+
+function OPSNodesMeasure(dict::OPS)
+    x,w = gauss_rule(dict)
+    OPSNodesMeasure(dict, OPSNodes(dict, x), w)
+end
+name(m::OPSNodesMeasure) = "Discrete OPS of "*name(m.dict)
+support(measure::OPSNodesMeasure) = support(measure.dict)
+
+hasinterpolationgrid(dict::OPS) = true
+interpolation_grid(dict::OPS) = OPSNodes(dict)
+iscompatible(dict::OPS, grid::OPSNodes) = iscompatible(dict, grid.dict)
+iscompatible(dict::OPS, measure::OPSNodesMeasure) = iscompatible(dict, measure.dict) && length(dict) -issymmetric(dict) <= length(grid(measure))
+
+
 
 "Return the first moment, i.e., the integral of the weight function."
 function first_moment(b::OPS)
-    # To be implemented by the concrete subtypes
+    @warn "implement first_moment for $b"
 end
 
 """
@@ -342,7 +352,7 @@ function sorted_gauss_rule(b::OPS)
 end
 
 function gaussjacobi(n::Int,α::T,β::T) where {T<:BigFloat}
-    x, w = sorted_gauss_rule(JacobiPolynomials(n,α,β))
+    x, w = sorted_gauss_rule(Jacobi(n,α,β))
     @assert norm(imag(x)) < eps(T)
     @assert norm(imag(w)) < eps(T)
     real(x), real(w)
@@ -624,4 +634,13 @@ function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c
     b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
     c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
     a,b,c
+end
+
+abstract type NodesAndWeights{T} <: AbstractVector{T} end
+size(vector::NodesAndWeights) = (length(vector),)
+unsafe_getindex(vector::NodesAndWeights, i) = unsafe_getindex(vector, convert(Int, i))
+getindex(vector::NodesAndWeights, i) = getindex(vector, convert(Int,i))
+function getindex(vector::NodesAndWeights, i::Int)
+    @boundscheck (1 <= convert(Int,i) <= length(vector)) || throw(BoundsError())
+    @inbounds unsafe_getindex(vector, i)
 end

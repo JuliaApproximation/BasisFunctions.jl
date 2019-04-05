@@ -27,15 +27,15 @@ instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
 
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
-is_basis(b::CosineSeries) = true
-is_orthogonal(b::CosineSeries) = true
+isbasis(b::CosineSeries) = true
+isorthogonal(b::CosineSeries, ::FourierMeasure) = true
 
 
-has_grid(b::CosineSeries) = true
-has_derivative(b::CosineSeries) = false #for now
-has_antiderivative(b::CosineSeries) = false #for now
-has_transform(b::CosineSeries, d::GridBasis{G}) where {G <: PeriodicEquispacedGrid} = false #for now
-has_extension(b::CosineSeries) = true
+hasinterpolationgrid(b::CosineSeries) = true
+hasderivative(b::CosineSeries) = false #for now
+hasantiderivative(b::CosineSeries) = false #for now
+hastransform(b::CosineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
+hasextension(b::CosineSeries) = true
 
 size(b::CosineSeries) = (b.n,)
 
@@ -44,7 +44,8 @@ support(b::CosineSeries{T}) where {T} = UnitInterval{T}()
 
 period(b::CosineSeries{T}, idx) where {T} = T(2)
 
-grid(b::CosineSeries{T}) where {T} = MidpointEquispacedGrid(b.n, zero(T), one(T))
+interpolation_grid(b::CosineSeries{T}) where {T} =
+	MidpointEquispacedGrid(b.n, zero(T), one(T))
 
 
 ##################
@@ -84,26 +85,40 @@ function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency
     -arg * sin(arg * x)
 end
 
-function extension_operator(s1::CosineSeries, s2::CosineSeries; options...)
+function extension_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1))
+    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
 end
 
-function restriction_operator(s1::CosineSeries, s2::CosineSeries; options...)
+function restriction_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2))
+    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
 end
 
-function Gram(s::CosineSeries; options...)
-    T = codomaintype(s)
-    diag = ones(T,length(s))/2
+
+## Inner products
+
+hasmeasure(dict::CosineSeries) = true
+measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
+
+function gramoperator(dict::CosineSeries, ::FourierMeasure; T = coefficienttype(dict), options...)
+    diag = ones(T,length(dict))/2
     diag[1] = 1
-    DiagonalOperator(s, s, diag)
+    DiagonalOperator(diag, src=dict)
 end
 
-function UnNormalizedGram(s::CosineSeries, oversampling)
-    T = codomaintype(s)
-    d = T(length_oversampled_grid(s, oversampling))/2*ones(T,length(s))
-    d[1] = length_oversampled_grid(s, oversampling)
-    DiagonalOperator(s, s, d)
+innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;
+			T = coefficienttype(b1), options...) =
+	innerproduct_cosine_full(i, j, T)
+
+function innerproduct_cosine_full(i, j, T)
+	if i == j
+		if i == CosineFrequency(0)
+			one(T)
+		else
+			one(T)/2
+		end
+	else
+		zero(T)
+	end
 end

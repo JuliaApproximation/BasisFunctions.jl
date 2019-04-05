@@ -1,4 +1,3 @@
-# test_ops.jl
 
 using BasisFunctions, BasisFunctions.Test, DomainSets
 
@@ -12,7 +11,7 @@ types = (Float64, BigFloat)
 
 function test_chebyshevT(T)
     println("- ChebyshevT polynomials ($T)")
-    bc = ChebyshevBasis{T}(20)
+    bc = ChebyshevT{T}(20)
     test_ops_generic(bc)
     x1 = T(4//10)
     @test bc[4](x1) ≈ cos(3*acos(x1))
@@ -20,22 +19,22 @@ function test_chebyshevT(T)
     @test support(bc) == ChebyshevInterval{T}()
 
     n1 = 160
-    b1 = ChebyshevBasis{T}(n1)
+    b1 = ChebyshevT{T}(n1)
 
     n1 = 160
-    b1 = ChebyshevBasis{T}(n1)
+    b1 = ChebyshevT{T}(n1)
     f = exp
     e = approximate(b1, exp)
     x0 = T(1//2)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
-    @test has_transform(b1)
-    @test has_transform(b1, grid(b1))
-    @test has_transform(b1, ChebyshevExtremae(n1))
-    @test has_transform(b1, ChebyshevNodes(n1))
-    @test ~has_transform(b1, PeriodicEquispacedGrid(n1, -1, 1))
-    @test ~has_transform(b1, ChebyshevExtremae(n1+5))
-    @test ~has_transform(b1, ChebyshevNodes(n1+5))
+    @test hastransform(b1)
+    @test hastransform(b1, interpolation_grid(b1))
+    @test hastransform(b1, ChebyshevExtremae(n1))
+    @test hastransform(b1, ChebyshevNodes(n1))
+    @test ~hastransform(b1, PeriodicEquispacedGrid(n1, -1, 1))
+    @test ~hastransform(b1, ChebyshevExtremae(n1+5))
+    @test ~hastransform(b1, ChebyshevNodes(n1+5))
     @test BasisFunctions.jacobi_α(b1) ≈ -.5 ≈ BasisFunctions.jacobi_β(b1)
 end
 
@@ -53,7 +52,7 @@ end
 
 function test_legendre(T)
     println("- Legendre polynomials ($T)")
-    bl = LegendrePolynomials{T}(10)
+    bl = Legendre{T}(10)
     test_ops_generic(bl)
     x1 = T(4//10)
     @test abs(bl[6](x1) - 0.27064) < 1e-5
@@ -61,7 +60,7 @@ end
 
 function test_laguerre(T)
     println("- Laguerre polynomials ($T)")
-    bl = LaguerrePolynomials(10, T(1//3))
+    bl = Laguerre(10, T(1//3))
     test_ops_generic(bl)
     x1 = T(4//10)
     @test abs(bl[6](x1) + 0.08912346) < 1e-5
@@ -69,7 +68,7 @@ end
 
 function test_hermite(T)
     println("- Hermite polynomials ($T)")
-    bh = HermitePolynomials{T}(10)
+    bh = Hermite{T}(10)
     test_ops_generic(bh)
     x1 = T(4//10)
     @test abs(bh[6](x1) - 38.08768) < 1e-5
@@ -77,7 +76,7 @@ end
 
 function test_jacobi(T)
     println("- Jacobi polynomials ($T)")
-    bj = JacobiPolynomials(10, T(2//3), T(3//4))
+    bj = Jacobi(10, T(2//3), T(3//4))
     test_ops_generic(bj)
     x1 = T(4//10)
     @test abs(bj[6](x1) - 0.335157) < 1e-5
@@ -124,4 +123,14 @@ for T in types
         test_jacobi(T)
     end
     println()
+end
+
+@testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
+    OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
+    for ops in OPSs, n in (5,6), T in (Float64,BigFloat)
+        B = instantiate(ops, n, T)
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(B))
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(resize(B,2n)))
+        test_orthogonality_orthonormality(B, OPSNodesMeasure(resize(B,n-1)))
+    end
 end

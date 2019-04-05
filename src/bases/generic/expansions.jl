@@ -46,7 +46,7 @@ element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coeffic
 elements(e::Expansion) = map(Expansion, elements(e.dictionary), elements(e.coefficients))
 
 # Delegation of methods
-for op in (:length, :size, :support, :grid)
+for op in (:length, :size, :support, :interpolation_grid)
     @eval $op(e::Expansion) = $op(dictionary(e))
 end
 
@@ -55,8 +55,8 @@ for op in (:numtype, :dimension, :numelements)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
-has_basis(e::Expansion) = is_basis(dictionary(e))
-has_frame(e::Expansion) = is_frame(dictionary(e))
+hasbasis(e::Expansion) = isbasis(dictionary(e))
+hasframe(e::Expansion) = isframe(dictionary(e))
 
 eachindex(e::Expansion) = eachindex(coefficients(e))
 
@@ -66,14 +66,14 @@ setindex!(e::Expansion, v, i...) = (e.coefficients[i...] = v)
 
 
 # This indirect call enables dispatch on the type of the dict of the expansion
-(e::Expansion)(x) = call_expansion(e, dictionary(e), coefficients(e), x)
-(e::Expansion)(x, y) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
-(e::Expansion)(x, y, z) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
-(e::Expansion)(x, y, z, t) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
-(e::Expansion)(x, y, z, t, u...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
+(e::Expansion)(x; options...) = call_expansion(e, dictionary(e), coefficients(e), x; options...)
+(e::Expansion)(x, y; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y); options...)
+(e::Expansion)(x, y, z; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z); options...)
+(e::Expansion)(x, y, z, t; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t); options...)
+(e::Expansion)(x, y, z, t, u...; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...); options...)
 
-call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
-    eval_expansion(dict, coefficients, x)
+call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
+    eval_expansion(dict, coefficients, x; options...)
 
 function differentiate(e::Expansion, order=1)
     op = differentiation_operator(dictionary(e), order)
@@ -86,8 +86,6 @@ function antidifferentiate(e::Expansion, order=1)
 end
 
 Base.broadcast(e::Expansion, grid::AbstractGrid) = eval_expansion(dictionary(e), coefficients(e), grid)
-
-Base.broadcast(e::Expansion, x::LinRange{T}) where {T} = broadcast(e, EquispacedGrid(x))
 
 # Shorthands for partial derivatives
 ∂x(f::Expansion) = differentiate(f, 1, 1)
@@ -143,13 +141,13 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 ##############################
 
 # Arithmetics are only possible when the basis type is equal.
-is_compatible(s1::S, s2::S) where {S<:Dictionary} = true
-is_compatible(s1::Dictionary, s2::Dictionary) = false
+iscompatible(s1::S, s2::S) where {S<:Dictionary} = true
+iscompatible(s1::Dictionary, s2::Dictionary) = false
 
 for op in (:+, :-)
     @eval function ($op)(s1::Expansion, s2::Expansion)
         # First check if the Dictionarys are arithmetically compatible
-        @assert is_compatible(dictionary(s1),dictionary(s2))
+        @assert iscompatible(dictionary(s1),dictionary(s2))
         # If the sizes are equal, we can just operate on the coefficients.
         # If not, we have to extend the smaller set to the size of the larger set.
         if size(s1) == size(s2)
@@ -165,7 +163,7 @@ for op in (:+, :-)
 end
 
 function (*)(s1::Expansion, s2::Expansion)
-    @assert is_compatible(dictionary(s1),dictionary(s2))
+    @assert iscompatible(dictionary(s1),dictionary(s2))
     (mset,mcoefficients) = (*)(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
     Expansion(mset,mcoefficients)
 end
@@ -188,3 +186,7 @@ Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
 Base.collect(e::Expansion) = coefficients(e)
 
 Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
+
+
++(f1::Function, f2::Expansion) = (x->f1(x)+f2(x))
++(f1::Expansion, f2::Function) = (x->f1(x)+f2(x))

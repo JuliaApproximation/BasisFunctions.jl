@@ -32,16 +32,10 @@ end
 apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
 
 
-has_stencil(s::Subdictionary) = true
-function stencil(s::Subdictionary,S)
-    A = Any[]
-    has_stencil(superdict(s)) && push!(A,"(")
-    push!(A,superdict(s))
-    has_stencil(superdict(s)) && push!(A,")")
-    push!(A,"["*string(superindices(s))*"]")
-    return recurse_stencil(s,A,S)
-end
-myLeaves(s::Subdictionary) = myLeaves(superdict(s))
+hasstencil(dict::Subdictionary) = true
+stencilarray(dict::Subdictionary) = [ superdict(dict), "(", string(superindices(dict)), ")" ]
+
+stencil_parentheses(dict::Subdictionary) = true
 
 support(s::Subdictionary) = support(superdict(s))
 
@@ -58,29 +52,34 @@ size(s::Subdictionary) = size(superindices(s))
 
 resize(s::Subdictionary, n) = subdict_resize(s, n, superdict(s), superindices(s))
 
-has_grid(s::Subdictionary) = subdict_has_grid(s, superdict(s), superindices(s))
-has_derivative(s::Subdictionary) = subdict_has_derivative(s, superdict(s), superindices(s))
-has_antiderivative(s::Subdictionary) = subdict_has_antiderivative(s, superdict(s), superindices(s))
-has_transform(s::Subdictionary) = subdict_has_transform(s, superdict(s), superindices(s))
+hasinterpolationgrid(s::Subdictionary) = subdict_hasinterpolationgrid(s, superdict(s), superindices(s))
+hasderivative(s::Subdictionary) = subdict_hasderivative(s, superdict(s), superindices(s))
+hasantiderivative(s::Subdictionary) = subdict_hasantiderivative(s, superdict(s), superindices(s))
+hastransform(s::Subdictionary) = subdict_hastransform(s, superdict(s), superindices(s))
 
 derivative_dict(s::Subdictionary, order; options...) = subdict_derivative_dict(s, order, superdict(s), superindices(s); options...)
 antiderivative_dict(s::Subdictionary, order; options...) = subdict_antiderivative_dict(s, order, superdict(s), superindices(s); options...)
 
-grid(s::Subdictionary) = subdict_grid(s, superdict(s), superindices(s))
+interpolation_grid(s::Subdictionary) = subdict_interpolation_grid(s, superdict(s), superindices(s))
 
-subdict_grid(s::Subdictionary, gb::GridBasis, indices) = grid(gb)[indices]
+subdict_interpolation_grid(s::Subdictionary, gb::GridBasis, indices) =
+    interpolation_grid(gb)[indices]
 
 # By default, we have none of the properties
-subdict_has_derivative(s::Subdictionary, superdict, superindices) = false
-subdict_has_antiderivative(s::Subdictionary, superdict, superindices) = false
-subdict_has_transform(s::Subdictionary, superdict, superindices) = false
-subdict_has_grid(s::Subdictionary, superdict, superindices) = false
+subdict_hasderivative(s::Subdictionary, superdict, superindices) = false
+subdict_hasantiderivative(s::Subdictionary, superdict, superindices) = false
+subdict_hastransform(s::Subdictionary, superdict, superindices) = false
+subdict_hasinterpolationgrid(s::Subdictionary, superdict, superindices) = false
 
 
 
 
-for op in (:isreal, :is_orthogonal, :is_basis)
+for op in (:isreal, :isbasis)
     @eval $op(dict::Subdictionary) = $op(superdict(dict))
+end
+
+for op in (:isreal, :isbiorthogonal, :isorthonormal, :isorthogonal)
+    @eval $op(dict::Subdictionary, measure::Measure) = $op(superdict(dict), measure::Measure)
 end
 
 for op in (:moment, :norm)
@@ -93,7 +92,13 @@ unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), 
 
 unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x)
 
+hasmeasure(dict::Subdictionary) = hasmeasure(superdict(dict))
+measure(dict::Subdictionary) = measure(superdict(dict))
 
+innerproduct1(d1::Subdictionary, i, d2, j, measure; options...) =
+    innerproduct(superdict(d1), superindices(d1,i), d2, j, measure; options...)
+innerproduct2(d1, i, d2::Subdictionary, j, measure; options...) =
+    innerproduct(d1, i, superdict(d2), superindices(d2, j), measure; options...)
 
 
 #####################
@@ -118,23 +123,23 @@ struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-
-
 LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
+name(dict::LargeSubdict) = "Large subdictionary"
+
 similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superindices)
 
-grid(d::LargeSubdict) = grid(superdict(d))
+interpolation_grid(d::LargeSubdict) = interpolation_grid(superdict(d))
 
 function extension_operator(s1::LargeSubdict, s2::Dictionary; options...)
     @assert s2 == superdict(s1)
-    IndexExtensionOperator(s1, s2, superindices(s1))
+    IndexExtensionOperator(s1, s2, superindices(s1); options...)
 end
 
 function restriction_operator(s1::Dictionary, s2::LargeSubdict; options...)
     @assert s1 == superdict(s2)
-    IndexRestrictionOperator(s1, s2, superindices(s2))
+    IndexRestrictionOperator(s1, s2, superindices(s2); options...)
 end
 
 # In general, the derivative set of a subdict can be the whole derivative set
@@ -143,8 +148,8 @@ end
 # Yet, we can generically define a differentiation_operator by extending the subdict
 # to the whole set and then invoking the differentiation operator of the latter,
 # and we choose that to be the default.
-subdict_has_derivative(s::LargeSubdict, superdict, superindices) = has_derivative(superdict)
-subdict_has_antiderivative(s::LargeSubdict, superdict, superindices) = has_antiderivative(superdict)
+subdict_hasderivative(s::LargeSubdict, superdict, superindices) = hasderivative(superdict)
+subdict_hasantiderivative(s::LargeSubdict, superdict, superindices) = hasantiderivative(superdict)
 
 subdict_derivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
     derivative_dict(superdict, order; options...)
@@ -189,6 +194,8 @@ end
 SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
+name(dict::SmallSubdict) = "Small subdictionary"
+
 
 similar_subdict(d::SmallSubdict, dict, superindices) = SmallSubdict(dict, superindices)
 
@@ -206,10 +213,11 @@ struct SingletonSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     end
 end
 
-
-
 SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
     SingletonSubdict{typeof(dict),typeof(index),S,T}(dict, index)
+
+name(dict::SingletonSubdict) = _name(dict, superdict(dict))
+_name(dict::SingletonSubdict, superdict::Dictionary) = "Dictionary element (singleton subdictionary)"
 
 similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
 
@@ -226,6 +234,12 @@ index(s::SingletonSubdict) = s.index
 # x, y, z arguments and so on. These are wrapped into an SVector.
 (s::SingletonSubdict)(x) = eval_element(superdict(s), index(s), x)
 (s::SingletonSubdict)(x, y...) = s(SVector(x, y...))
+
+innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
+    innerproduct(superdict(f), index(f), superdict(g), index(g), measure; options...)
+
+innerproduct(d::SingletonSubdict, f; options...) =
+    innerproduct(d, f, measure(superdict(d)); options...)
 
 
 #########################################
@@ -270,3 +284,14 @@ subdict(s::Dictionary, ::Colon) = s
 
 # Avoid creating nested subdicts
 subdict(s::Subdictionary, idx) = subdict(superdict(s), superindices(s)[idx])
+
+# A gramoperator of a subdict orthonormal/orthogonal dictionary is also Identity/Diagonal
+function gramoperator1(s::Subdictionary, m;
+            T = promote_type(coefficienttype(s), domaintype(m)), options...)
+    if isorthonormal(s, m)
+        return IdentityOperator{T}(s)
+    elseif isorthogonal(s, m)
+        return DiagonalOperator(s, diag(gramoperator(superdict(s), m; T=T, options...))[superindices(s)]; T=T, options...)
+    end
+    default_gramoperator(s, m; T=T, options...)
+end

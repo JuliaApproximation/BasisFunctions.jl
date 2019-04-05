@@ -1,12 +1,16 @@
-# domain_extensions.jl
+if !isdefined(DomainSets, :Domain1d)
+    # Convenient aliases
+    const Domain1d{T <: Number} = Domain{T}
+    const Domain2d{T} = EuclideanDomain{2,T}
+    const Domain3d{T} = EuclideanDomain{3,T}
+    const Domain4d{T} = EuclideanDomain{4,T}
+end
 
-# Convenient aliases
-# const Domain1d{T <: Number} = Domain{T}
-# const Domain2d{T} = EuclideanDomain{2,T}
-# const Domain3d{T} = EuclideanDomain{3,T}
-# const Domain4d{T} = EuclideanDomain{4,T}
+iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 
-is_compatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
+iscompatible(map1::AffineMap, map2::AffineMap) = (map1.a ≈ map2.a) && (map1.b ≈ map2.b)
+
+iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
 
 "Assign a floating point type to a domain element type T."
 float_type(::Type{T}) where {T <: Real} = T

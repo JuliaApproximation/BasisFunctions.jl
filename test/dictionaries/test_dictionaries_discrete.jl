@@ -5,7 +5,7 @@ function test_discrete_sets(T)
     @test domaintype(s1) == Int
     @test codomaintype(s1) == T
     @test length(s1) == n
-    @test is_discrete(s1)
+    @test isdiscrete(s1)
 
     s2 = resize(s1, 2*n)
     @test domaintype(s2) == Int

@@ -70,6 +70,8 @@ end
 getindex(v::Array, idxn::NativeIndex) =
 	getindex(v, linear_index(idxn, size(v), eltype(v)))
 
+setindex!(v::Array, val, idxn::NativeIndex) =
+	setindex!(v, val, linear_index(idxn, size(v), eltype(v)))
 
 
 

@@ -5,7 +5,7 @@ end
 
 superoperator(op::DerivedOperator) = op.superoperator
 
-for op in (:src, :dest, :is_inplace, :is_diagonal, :diagonal, :unsafe_diagonal)
+for op in (:src, :dest, :isinplace, :isdiag, :diag, :unsafe_diag)
 	@eval $op(operator::DerivedOperator) = $op(superoperator(operator))
 end
 
@@ -33,12 +33,5 @@ end
 similar_operator(op::ConcreteDerivedOperator, ::Type{S}, src, dest) where {S} =
 	ConcreteDerivedOperator(similar_operator(superoperator(op), S, src, dest))
 
-has_stencil(op::DerivedOperator) = true
-function stencil(op::DerivedOperator,S)
-    A = Any[]
-    push!(A,S[op])
-    push!(A,"(")
-    push!(A,superoperator(op))
-    push!(A,")")
-    return recurse_stencil(op,A,S)
-end
+hasstencil(op::DerivedOperator) = true
+stencilarray(op::DerivedOperator) = [modifiersymbol(op), "(", superoperator(op), ")"]

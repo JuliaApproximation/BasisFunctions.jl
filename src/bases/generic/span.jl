@@ -6,14 +6,12 @@ dictionary, with coefficient eltype determined uniquely by the Dictionary.
 The span of a dictionary is a function space, mapping `S` to `T`. Here, `S` is
 the domain type of the dictionary. The `T` is the codomain type.
 """
-struct Span{S,T} <: AbstractFunctionSpace{S,T}
+struct Span{S,T} <: FunctionSpace{S,T}
     dictionary  ::  Dictionary{S}
 end
 
 Span(dict::Dictionary{S}) where S = Span{S,span_codomaintype(dict)}(dict)
 
-# What is the codomain type of a span? It depends on the type A of the
-# coefficients, and on the codomain type T of the dictionary:
 span_codomaintype(dict::Dictionary) =
     span_codomaintype(coefficienttype(dict), codomaintype(dict))
 # - When the types are the same, that type is the result
@@ -41,3 +39,8 @@ random_expansion(span::Span) = Expansion(dictionary(span), rand(dictionary(span)
 zero(span::Span) = Expansion(dictionary(span), zeros(dictionary(span)))
 
 tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionary(s2)))
+
+size(span::Span) = size(dictionary(span))
+length(span::Span) = length(dictionary(span))
+
+name(span::Span) = "Span of a dictionary"

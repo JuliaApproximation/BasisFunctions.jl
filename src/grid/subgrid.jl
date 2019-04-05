@@ -3,6 +3,19 @@ abstract type AbstractSubGrid{T,N} <: AbstractGrid{T,N} end
 
 supergrid(g::AbstractSubGrid) = g.supergrid
 
+## Printing
+
+hasstencil(grid::AbstractSubGrid) = true
+
+stencilarray(grid::AbstractSubGrid) = [ supergrid(grid), "[", setsymbol(subindices(grid)), "]" ]
+
+setsymbol(indices) = PrettyPrintSymbol{:𝕀}(indices)
+setsymbol(indices::UnitRange) = repr(indices)
+setsymbol(indices::Base.OneTo) = setsymbol(UnitRange(indices))
+
+string(s::PrettyPrintSymbol{:𝕀}) = string(s.object)
+
+
 """
 An IndexSubGrid is a subgrid corresponding to a certain range of indices of the
 underlying grid.
@@ -20,6 +33,8 @@ end
 
 IndexSubGrid(grid::AbstractGrid{T,N}, i) where {T,N} =
     IndexSubGrid{typeof(grid),typeof(i),T,N}(grid, i)
+
+name(g::IndexSubGrid) = "Index-based subgrid"
 
 supergrid(g::IndexSubGrid) = g.supergrid
 
@@ -53,20 +68,16 @@ support(g::IndexSubGrid{G}) where G<:AbstractIntervalGrid = Interval(first(g), l
 
 
 # Check whether element grid[i] (of the underlying grid) is in the indexed subgrid.
-is_subindex(i, g::IndexSubGrid) = in(i, subindices(g))
-
-function grid_extension_operator(src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
-    @assert supergrid(src_grid) == dest_grid
-    IndexExtensionOperator(src, dest, subindices(src_grid))
-end
-
-function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
-    @assert supergrid(dest_grid) == src_grid
-    IndexRestrictionOperator(src, dest, subindices(dest_grid))
-end
+issubindex(i, g::IndexSubGrid) = in(i, subindices(g))
 
 # getindex(grid::AbstractGrid, i::Range) = IndexSubGrid(grid, i)
 
 getindex(grid::AbstractGrid, i::AbstractArray{Int}) = IndexSubGrid(grid, i)
 
-strings(grid::IndexSubGrid) = ("IndexSubGrid with subindices $(subindices(grid))", (strings(supergrid(grid)),))
+const TensorSubGrid = ProductGrid{NTuple{N,GRID}} where N where {GRID<:AbstractSubGrid}
+
+mask(grid::TensorSubGrid) = tensorproduct(map(mask, elements(grid))...)
+subindices(grid::TensorSubGrid) = findall(mask(grid))
+supergrid(grid::TensorSubGrid) = ProductGrid(map(supergrid, elements(grid))...)
+issubindex(i, g::TensorSubGrid) = all(map(issubindex, i, elements(g)))
+issubindex(i::CartesianIndex, g::TensorSubGrid) = issubindex(i.I, g)

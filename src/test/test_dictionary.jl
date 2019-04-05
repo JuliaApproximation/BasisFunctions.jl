@@ -1,16 +1,15 @@
 
-global TEST_CONTINUOUS = true
 # We try to test approximation for all function sets, except those that
 # are currently known to fail for lack of an implementation.
 supports_approximation(s::Dictionary) = true
-supports_interpolation(s::Dictionary) = is_basis(s)
+supports_interpolation(s::Dictionary) = isbasis(s)
 # Pick a simple function to approximate
 suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
 suitable_function(s::Dictionary) = (x...) -> prod(x)
 
 function suitable_interpolation_grid(basis::Dictionary)
-    if BF.has_grid(basis)
-        grid(basis)
+    if BF.hasinterpolationgrid(basis)
+        interpolation_grid(basis)
     else
         T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
@@ -94,7 +93,7 @@ function test_generic_dict_evaluation(basis)
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ eval_element(basis, idx, x)
 
-    if ! (typeof(basis) <: HermitePolynomials)
+    if ! (typeof(basis) <: Hermite)
         x_outside = point_outside_domain(basis)
         @test bf(x_outside) == 0
     end
@@ -124,13 +123,13 @@ function test_generic_dict_coefficient_linearization(basis)
 end
 
 function test_generic_dict_grid(basis)
-    grid1 = grid(basis)
+    grid1 = interpolation_grid(basis)
     @test length(grid1) == length(basis)
     e = random_expansion(basis)
     z1 = e(grid1)
     z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
     @test z1 ≈ z2
-    E = evaluation_operator(basis, gridbasis(basis))
+    E = evaluation_operator(basis, GridBasis(basis))
     z3 = E * coefficients(e)
     @test z1 ≈ z3
 end
@@ -161,27 +160,45 @@ function test_generic_dict_approximation(basis)
     A = approximation_operator(basis)
     f = suitable_function(basis)
     e = Expansion(basis, A*f)
-    x = random_point_in_domain(basis)
 
     # We choose a fairly large error, because the ndof's can be very small.
     # We don't want to test convergence, only that something terrible did
     # not happen, so an error of 1e-3 will do.
-    @test abs.(e(x)-f(x...)) < 1e-3
+    x = random_point_in_domain(basis)
+    @test abs(e(x)-f(x...)) < 1e-3
+end
 
-    # # continuous operator only supported for 1 D
-    # No efficient implementation for BigFloat to construct full gram matrix.
-    # if dimension(basis)==1 && is_biorthogonal(basis) && !(   ((typeof(basis) <: OperatedDict) || (typeof(basis)<:BasisFunctions.ConcreteDerivedDict) || typeof(basis)<:WeightedDict) && eltype(basis)==BigFloat)
-    if TEST_CONTINUOUS && dimension(basis)==1 && is_biorthogonal(basis) && !((typeof(basis) <: DerivedDict) && real(codomaintype(basis))==BigFloat)
-        e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
-        @test abs(e(x)-f(x...)) < 1e-3
+function test_gram_projection(basis)
+    if hasmeasure(basis)
+        G = gramoperator(basis)
+        @test src(G) == basis
+        @test dest(G) == basis
+        n = length(basis)
+        @test size(G) == (n,n)
+        z = zero(coefficienttype(basis))
+        for i in 1:n
+            for j in 1:n
+                z += abs(G[i,j] - innerproduct(basis, i, basis, j))
+            end
+        end
+        @test abs(z) < 1000test_tolerance(domaintype(basis))
+
+        # No efficient implementation for BigFloat to construct full gram matrix.
+        if !(domaintype(basis)==BigFloat)
+            f = suitable_function(basis)
+            e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
+            x = random_point_in_domain(basis)
+            @test abs(e(x)-f(x...)) < 1e-3
+        end
     end
 end
+
 
 function test_generic_dict_interpolation(basis)
     ELT = coefficienttype(basis)
     g = suitable_interpolation_grid(basis)
     I = interpolation_operator(basis, g)
-    x = rand(gridbasis(g,coefficienttype(basis)))
+    x = rand(GridBasis{coefficienttype(basis)}(g))
     e = Expansion(basis, I*x)
     @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
 end
@@ -222,46 +239,31 @@ function test_generic_dict_evaluation_different_grid(basis)
     @test  z ≈ ELT[ basis[idx](grid2[i]) for i in eachindex(grid2) ]
 end
 
-function test_generic_dict_transform(basis)
-    ELT = coefficienttype(basis)
+function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
     T = domaintype(basis)
+    EPS = test_tolerance(T)
 
-    # We have to look into this test
-    @test BasisFunctions.has_transform(basis) == BasisFunctions.has_transform(basis, gridbasis(basis))
-    # Check whether it is unitary
-    tbasis = transform_dict(basis)
+    tbasis = GridBasis{coefficienttype(basis)}(grid)
+
+    @test hastransform(basis, grid)
+    @test hastransform(basis, tbasis)
+
     t = transform_operator(tbasis, basis)
     it = transform_operator(basis, tbasis)
-    A = matrix(t)
-    if has_unitary_transform(basis)
-        if T == Float64
-            @test cond(A) ≈ 1
-        else
-            #@test_skip cond(A) ≈ 1
-        end
-        AI = matrix(it)
-        if T == Float64
-            @test cond(AI) ≈ 1
-        else
-            #@test_skip cond(AI) ≈ 1
-        end
-    end
 
-    # Verify the pre and post operators and their inverses
-    pre1 = transform_operator_pre(tbasis, basis)
-    post1 = transform_operator_post(tbasis, basis)
-    pre2 = transform_operator_pre(basis, tbasis)
-    post2 = transform_operator_post(basis, tbasis)
-    # - try interpolation using transform+pre/post-normalization
-    x = rand(tbasis)
-    e = Expansion(basis, (post1*t*pre1)*x)
-    g = grid(basis)
-    @test maximum(abs.(e(g)-x)) < test_tolerance(ELT)
-    # - try evaluation using transform+pre/post-normalization
+    # - transform from grid
+    x = random_expansion(tbasis)
+    e = t*x
+    @test abs(e(grid[1]) - x.coefficients[1]) < EPS
+    @test maximum(abs.(e(grid)-x.coefficients)) < EPS
+    # - transform to grid
     e = random_expansion(basis)
-    x1 = (post2*it*pre2)*coefficients(e)
-    x2 = e(grid(basis))
-    @test maximum(abs.(x1-x2)) < test_tolerance(ELT)
+    x = it*e
+    @test abs(e(grid[1]) - x.coefficients[1]) < EPS
+    @test abs(e(grid[end]) - x.coefficients[end]) < EPS
+
+    @test maximum(abs.(matrix(t)'-matrix(t'))) < EPS
+    @test maximum(abs.(matrix(it)'-matrix(it'))) < EPS
 end
 
 function test_generic_dict_evaluation_operator(basis)
@@ -373,11 +375,21 @@ function test_generic_dict_interface(basis)
     RT = codomaintype(basis)
 
     n = length(basis)
-    if is_basis(basis)
-        @test is_frame(basis)
+    if isbasis(basis)
+        @test isframe(basis)
     end
-    if is_orthogonal(basis)
-        @test is_biorthogonal(basis)
+    if hasmeasure(basis)
+        @test isorthogonal(basis) == isorthogonal(basis, measure(basis))
+        @test isorthonormal(basis) == isorthonormal(basis, measure(basis))
+        @test isbiorthogonal(basis) == isbiorthogonal(basis, measure(basis))
+    end
+
+    if isorthonormal(basis)
+        @test isorthogonal(basis)
+    end
+
+    if isorthogonal(basis)
+        @test isbiorthogonal(basis)
     end
 
     test_generic_dict_domaintype(basis)
@@ -399,7 +411,7 @@ function test_generic_dict_interface(basis)
     test_generic_dict_coefficient_linearization(basis)
 
     ## Verify evaluation on the associated grid
-    if BF.has_grid(basis)
+    if BF.hasinterpolationgrid(basis)
         test_generic_dict_grid(basis)
     end
 
@@ -411,7 +423,7 @@ function test_generic_dict_interface(basis)
     end
 
     ## Test extensions
-    if has_extension(basis)
+    if hasextension(basis)
         n2 = extension_size(basis)
         basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
@@ -424,36 +436,36 @@ function test_generic_dict_interface(basis)
 
         R = restriction_operator(basis2, basis)
         e3 = R * e2
-        @test e2(x1) ≈ e3(x1)
-        @test e2(x2) ≈ e3(x2)
+        @test e1(x1) ≈ e3(x1)
+        @test e1(x2) ≈ e3(x2)
     end
 
     # Verify whether evaluation in a larger grid works
-    if BF.has_extension(basis) && BF.has_grid(basis)
-        basis_ext = extend(basis)
-        grid_ext = grid(basis_ext)
+    if BF.hasextension(basis) && BF.hasinterpolationgrid(basis)
+        basisext = extend(basis)
+        grid_ext = interpolation_grid(basisext)
         L = evaluation_operator(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(basis_ext, grid_ext) * extension_operator(basis, basis_ext)
+        L2 = evaluation_operator(basisext, grid_ext) * extension_operator(basis, basisext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators
-        # @test is_fast(L2) == is_fast(L)
+        # @test isfast(L2) == isfast(L)
     end
 
     ## Test derivatives
-    if BF.has_derivative(basis)
+    if BF.hasderivative(basis)
         test_generic_dict_derivative(basis)
     end
 
     ## Test antiderivatives
-    if BF.has_antiderivative(basis)
+    if BF.hasantiderivative(basis)
         test_generic_dict_antiderivative(basis)
     end
 
     ## Test associated transform
-    if BF.has_transform(basis)
+    if BF.hastransform(basis)
         test_generic_dict_transform(basis)
     end
 
@@ -467,5 +479,10 @@ function test_generic_dict_interface(basis)
     ## Test approximation operator
     if supports_approximation(basis)
         test_generic_dict_approximation(basis)
+        test_gram_projection(basis)
+    end
+
+    if hasmeasure(basis)
+        test_orthogonality_orthonormality(basis)
     end
 end

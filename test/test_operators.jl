@@ -34,19 +34,25 @@ function test_operators(T)
 end
 
 function test_generic_operators(T)
-    b1 = FourierBasis{T}(3)
-    b2 = ChebyshevBasis{T}(4)
-    b3 = ChebyshevBasis{T}(3)
-    b4 = LegendrePolynomials{T}(3)
+    b1 = Fourier{T}(3)
+    b2 = ChebyshevT{T}(4)
+    b3 = ChebyshevT{T}(3)
+    b4 = Legendre{T}(3)
 
+    cartlist = [CartesianIndex(1,1),CartesianIndex(2,3)]
     operators = [
         ["Scaling operator", ScalingOperator(b1, b1, T(2))],
-        ["Zero operator", ZeroOperator(b1, b2)],
-        ["Diagonal operator", DiagonalOperator(b2, b2, map(T, rand(length(b2))))],
-        ["Coefficient scaling operator", CoefficientScalingOperator(b1, b1, 1, T(2))],
-        ["Wrapped operator", WrappedOperator(b3, b3, ScalingOperator(b4, b4, T(2))) ],
+        ["Zero operator", BF.ZeroOperator(b1, b2)],
+        ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
+        ["Block operator", differentiation_operator(b1⊕b2)],
+        ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, 1, T(2))],
         ["Index restriction operator", IndexRestrictionOperator(b2, b1, 1:3) ],
-        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, map(T, rand(length(b2)))))],
+        ["Index restriction operator (2)", IndexRestrictionOperator(b1⊗b2, cartlist) ],
+        ["Index extension operator", IndexExtensionOperator(b1, b2, 1:3) ],
+        ["Index extension operator (2)", IndexExtensionOperator(b1⊗b2, cartlist) ],
+        ["Linearization operator", BasisFunctions.LinearizationOperator(b1⊗b2) ],
+        ["DelinearizationOperator operator", BasisFunctions.DelinearizationOperator(b1⊗b2) ],
+        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],
     ]
 
     for ops in operators
@@ -61,19 +67,13 @@ function test_tensor_operators(T)
     n1 = 4
     m2 = 10
     n2 = 24
-    A1 = MatrixOperator(rand(T,m1,n1))
-    A2 = MatrixOperator(rand(T,m2,n2))
+    A1 = ArrayOperator(rand(T,m1,n1))
+    A2 = ArrayOperator(rand(T,m2,n2))
 
     A_tp = TensorProductOperator(A1, A2)
     b = rand(T, n1, n2)
     c_tp = zeros(T, m1, m2)
     apply!(A_tp, c_tp, b)
-
-    d1 = dimension_operator(src(A1) ⊗ src(A2), dest(A1) ⊗ src(A2), A1, 1)
-    d2 = dimension_operator(dest(A1) ⊗ src(A2), dest(A1) ⊗ dest(A2), A2, 2)
-    A_dim = compose(d1, d2)
-    c_dim = zeros(T, m1, m2)
-    apply!(A_dim, c_dim, b)
 
     # Apply the operators manually, row by row and then column by column
     intermediate = zeros(T, m1, n2)
@@ -90,21 +90,19 @@ function test_tensor_operators(T)
     end
 
     @test sum(abs.(c_tp-c_manual)) + 1 ≈ 1
-    @test sum(abs.(c_dim-c_manual)) + 1 ≈ 1
-    @test sum(abs.(c_tp-c_dim)) + 1 ≈ 1
 end
 
 function test_diagonal_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
-            UnevenSignFlipOperator(SRC), IdentityOperator(SRC),
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(11))
+        operators = (BF.CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
+            BF.AlternatingSignOperator(SRC), IdentityOperator(SRC),
             ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
             DiagonalOperator(SRC, rand(coefficienttype(SRC), size(SRC))))
            # PseudoDiagonalOperator(SRC, map(coefficienttype(SRC), rand(size(SRC)))))
         for Op in operators
             m = matrix(Op)
             # Test in-place
-            if is_inplace(Op)
+            if isinplace(Op)
                 coef_src = rand(src(Op))
                 coef_dest_m = m * coef_src
                 coef_dest = apply!(Op, coef_src)
@@ -124,27 +122,27 @@ function test_diagonal_operators(T)
             # Test Sum
             @test abs(sum(abs.((Op+Op)*coef_src-2*(Op*coef_src)))) + 1 ≈ 1
             # Test Equivalence to diagonal operator
-            @test abs(sum(abs.(Op*coef_src-diagonal(Op).*coef_src))) + 1 ≈ 1
+            @test abs(sum(abs.(Op*coef_src-diag(Op).*coef_src))) + 1 ≈ 1
             # Make sure diagonality is retained
-            @test is_diagonal(2*Op)
-            @test is_diagonal(Op')
-            @test is_diagonal(inv(Op))
-            @test is_diagonal(Op*Op)
+            @test isdiag(2*Op)
+            @test isdiag(Op')
+            @test isdiag(inv(Op))
+            @test isdiag(Op*Op)
             # Make sure in_place is retained
-            if is_inplace(Op)
-                @test is_inplace(2*Op)
-                @test is_inplace(Op')
-                @test is_inplace(inv(Op))
-                @test is_inplace(Op*Op)
+            if isinplace(Op)
+                @test isinplace(2*Op)
+                @test isinplace(Op')
+                @test isinplace(inv(Op))
+                @test isinplace(Op*Op)
             end
         end
     end
 end
 
 function test_multidiagonal_operators(T)
-    MSet = FourierBasis{T}(10)⊕ChebyshevBasis{T}(11)
-    operators = (CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
-        UnevenSignFlipOperator(MSet), IdentityOperator(MSet),
+    MSet = Fourier{T}(10)⊕ChebyshevT{T}(11)
+    operators = (BF.CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
+        BF.AlternatingSignOperator(MSet), IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
         DiagonalOperator(MSet, rand(coefficienttype(MSet),length(MSet))))
     for Op in operators
@@ -175,22 +173,22 @@ function test_multidiagonal_operators(T)
         # Test Sum
         @test (Op+Op)*coef_src≈2*(Op*coef_src)
         # Test Equivalence to diagonal operator
-        @test linearize_coefficients(MSet,Op*coef_src)≈diagonal(Op).*linearize_coefficients(MSet,coef_src)
+        @test linearize_coefficients(MSet,Op*coef_src)≈ diag(Op).*linearize_coefficients(MSet,coef_src)
         # Make sure diagonality is retained
-        @test is_diagonal(2*Op) && is_inplace(2*Op)
-        @test is_diagonal(Op') && is_inplace(Op')
-        @test is_diagonal(inv(Op)) && is_inplace(inv(Op))
-        @test is_diagonal(Op*Op) && is_inplace(Op*Op)
+        @test isdiag(2*Op) && isinplace(2*Op)
+        @test isdiag(Op') && isinplace(Op')
+        @test isdiag(inv(Op)) && isinplace(inv(Op))
+        @test isdiag(Op*Op) && isinplace(Op*Op)
     end
 end
 
 function test_sparse_operator(ELT)
-    S = SparseOperator(MatrixOperator(map(ELT,rand(4,4))))
+    S = SparseOperator(ArrayOperator(rand(ELT,4,4)))
     test_generic_operator_interface(S, ELT)
 end
 function test_banded_operator(ELT)
     a = [ELT(1),ELT(2),ELT(3)]
-    H = HorizontalBandedOperator(FourierBasis{ELT}(6,0,1), FourierBasis{ELT}(3,0,1),a,3,2)
+    H = HorizontalBandedOperator(Fourier{ELT}(6,0,1), Fourier{ELT}(3,0,1),a,3,2)
     test_generic_operator_interface(H, ELT)
     h = matrix(H)
     e = zeros(ELT,6,1)
@@ -203,7 +201,7 @@ function test_banded_operator(ELT)
         @test e ≈ h[i,:]
     end
 
-    V = VerticalBandedOperator(FourierBasis{ELT}(3,0,1), FourierBasis{ELT}(6,0,1),a,3,2)
+    V = VerticalBandedOperator(Fourier{ELT}(3,0,1), Fourier{ELT}(6,0,1),a,3,2)
     test_generic_operator_interface(V, ELT)
     v = matrix(V)
     e = zeros(ELT,6,1)
@@ -221,14 +219,14 @@ function test_circulant_operator(ELT)
     n = 20
     for T in (ELT, complex(ELT))
         e1 = zeros(T,n); e1[1] = 1
-        c = map(T, rand(n))
+        c = rand(T, n)
         C = CirculantOperator(c)
         m = matrix(C)
         for i in 1:n
             @test m[:,i] ≈ circshift(c,i-1)
         end
         invC = inv(C)
-        @test BasisFunctions.eigenvalues(invC).*BasisFunctions.eigenvalues(C) ≈ ones(T,n)
+        @test BasisFunctions.eigvals(invC).*BasisFunctions.eigvals(C) ≈ ones(T,n)
         @test m'*e1 ≈ C'*e1
 
         sumC = invC+C
@@ -254,21 +252,21 @@ function test_circulant_operator(ELT)
 end
 
 function test_identity_operator(T)
-    b = FourierBasis{T}(10)
+    b = Fourier{T}(10)
     I = IdentityOperator(b)
-    @test scalar(I) == one(T)
+    @test I isa IdentityOperator
     @test eltype(I) == Complex{T}
     @test src(I) == b
-    I = IdentityOperator(FourierBasis{T}(10), ChebyshevBasis{T}(10))
-    @test src(I) == FourierBasis{T}(10)
-    @test dest(I) == ChebyshevBasis{T}(10)
+    I = IdentityOperator(Fourier{T}(10), ChebyshevT{T}(10))
+    @test src(I) == Fourier{T}(10)
+    @test dest(I) == ChebyshevT{T}(10)
 end
 
 function test_invertible_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(10))
-        operators = (MultiplicationOperator(SRC, SRC, map(coefficienttype(SRC),rand(length(SRC),length(SRC)))),
-            CirculantOperator(map(T,rand(10))),
-            CirculantOperator(map(complex(T),rand(10))))
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(10))
+        operators = (MultiplicationOperator(SRC, SRC, rand(coefficienttype(SRC),length(SRC),length(SRC))),
+            CirculantOperator(rand(T, 10)),
+            CirculantOperator(rand(complex(T), 10)))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place
@@ -290,9 +288,9 @@ end
 
 # FunctionOperator is currently not tested, since we cannot assume it is a linear operator.
 function test_noninvertible_operators(T)
-    for SRC in (FourierBasis{T}(10), ChebyshevBasis{T}(11))
-        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), map(coefficienttype(SRC),rand(length(SRC)+2,length(SRC)))),
-            ZeroOperator(SRC))
+    for SRC in (Fourier{T}(10), ChebyshevT{T}(11))
+        operators = (MultiplicationOperator(SRC, resize(SRC,length(SRC)+2), rand(coefficienttype(SRC),length(SRC)+2,length(SRC))),
+            BF.ZeroOperator(SRC))
         for Op in operators
             m = matrix(Op)
             # Test out-of-place

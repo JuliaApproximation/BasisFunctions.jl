@@ -69,26 +69,35 @@ isreal(d::Dictionary) = isreal(codomaintype(d))
 
 # Is a given set a basis? In general, it is not. But it could be.
 # Hence, we need a property for it:
-is_basis(d::Dictionary) = false
+isbasis(d::Dictionary) = false
 
 # Any basis is a frame
-is_frame(d::Dictionary) = is_basis(d)
+isframe(d::Dictionary) = isbasis(d)
 
 
 "Property to indicate whether a dictionary is orthogonal."
-is_orthogonal(d::Dictionary) = false
+isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
+isorthogonal(d::Dictionary, measure::Measure) = isorthonormal(d, measure)
 
 "Property to indicate whether a dictionary is orthonormal"
-is_orthonormal(d::Dictionary) = false
+isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
+isorthonormal(d::Dictionary, measure::Measure) = false
 
 "Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
-is_biorthogonal(d::Dictionary) = is_orthogonal(d)
+isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
+isbiorthogonal(d::Dictionary, measure::Measure) = isorthogonal(d, measure)
 
-"Return the size of the dictionary."
 function size(d::Dictionary) end
 
-"Return the size of the j-th dimension of the dictionary (if applicable)."
 size(d::Dictionary, j) = size(d)[j]
+
+"""
+The length and size of a dictionary may not be enough to uniquely determine the
+size of the dictionary, if it has additional internal structure. The output of
+dimensions is such that `resize(dict, dimensions(dict)) == dict`.
+"""
+dimensions(d::Dictionary1d) = length(d)
+dimensions(d::Dictionary) = size(d)
 
 length(d::Dictionary) = prod(size(d))
 
@@ -96,7 +105,7 @@ firstindex(d::Dictionary) = 1
 lastindex(d::Dictionary) = length(d)
 
 "Is the dictionary composite, i.e. does it consist of several components?"
-is_composite(d::Dictionary) = false
+iscomposite(d::Dictionary) = false
 
 """
 The instantiate function takes a dict type, size and numeric type as argument, and
@@ -202,6 +211,11 @@ The implementation is efficient in many cases, but may allocate memory to hold
 one set of coefficients in some cases.
 """
 containertype(d::Dictionary) = typeof(zeros(d))
+
+"""
+Transforms the container of coefficients `a` to the native containertype of the dictionary `d`.
+"""
+tocoefficientformat(a, d::Dictionary) = reshape(a, size(d))
 
 function rand(dict::Dictionary)
     c = zeros(dict)
@@ -314,33 +328,29 @@ approx_length(d::Dictionary, n::Real) = approx_length(d, round(Int,n))
 # not intended to be used in a time-critical path of the code.
 
 "Does the dictionary implement a derivative?"
-has_derivative(d::Dictionary) = false
+hasderivative(d::Dictionary) = false
 
 "Does the dictionary implement an antiderivative?"
-has_antiderivative(d::Dictionary) = false
+hasantiderivative(d::Dictionary) = false
 
 "Does the dictionary have an associated interpolation grid?"
-has_grid(d::Dictionary) = false
+hasinterpolationgrid(d::Dictionary) = false
+
+function grid(d::Dictionary)
+    error("replace grid(dict) by interpolation_grid(dict)")
+    interpolation_grid(d)
+end
 
 "Does the dictionary have a transform associated with some space?"
-has_transform(d1::Dictionary, d2) = false
-
-"Does the dictionary have a transform associated with some space that is unitary"
-has_unitary_transform(d::Dictionary) = has_transform(d)
-# If a dict has a transform, we assume it is unitary. If it is not,
-# this function has to be over written.
+hastransform(d1::Dictionary, d2) = false
 
 # Convenience functions: default grid, and conversion from grid to space
-has_transform(d::Dictionary) = has_grid(d) && has_transform(d, grid(d))
-has_transform(d::Dictionary, grid::AbstractGrid) =
-    has_transform(d, gridbasis(grid, codomaintype(d)))
-
-"Does the grid span the same interval as the dictionary"
-has_grid_equal_span(set::Dictionary1d, grid::AbstractGrid1d) =
-    (1+(infimum(support(set)) - leftendpoint(grid))≈1) && (1+(supremum(support(set)) - rightendpoint(grid))≈1)
+hastransform(d::Dictionary) = hasinterpolationgrid(d) && hastransform(d, interpolation_grid(d))
+hastransform(d::Dictionary, grid::AbstractGrid) =
+    hastransform(d, GridBasis{coefficienttype(d)}(grid))
 
 "Does the dictionary support extension and restriction operators?"
-has_extension(d::Dictionary) = false
+hasextension(d::Dictionary) = false
 
 
 # A concrete Dictionary may also override extension_set and restriction_set
@@ -495,7 +505,7 @@ end
     _default_unsafe_eval_element_in_grid(dict, idx, grid)
 
 function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
-    result = zeros(gridbasis(grid, codomaintype(dict)))
+    result = zeros(GridBasis(dict, grid))
     for k in eachindex(grid)
         @inbounds result[k] = eval_element(dict, idx, grid[k])
     end
@@ -530,12 +540,12 @@ end
 unsafe_eval_element_derivative(dict::Dictionary, idx, x) =
     unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
 
-
+derivative_dict(dict::Dictionary; options...) = derivative_dict(dict, 1; options...)
 
 """
 Evaluate an expansion given by the set of coefficients in the point x.
 """
-function eval_expansion(dict::Dictionary, coefficients, x)
+function eval_expansion(dict::Dictionary, coefficients, x; options...)
     @assert size(coefficients) == size(dict)
 
     T = span_codomaintype(dict)
@@ -548,14 +558,14 @@ function eval_expansion(dict::Dictionary, coefficients, x)
     z
 end
 
-function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid)
+function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
     @assert dimension(dict) == dimension(grid)
     @assert size(coefficients) == size(dict)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)
 
     T = coefficienttype(dict)
-    E = evaluation_operator(dict, gridbasis(grid, T))
+    E = evaluation_operator(dict, GridBasis{T}(grid); options...)
     E * coefficients
 end
 
@@ -568,15 +578,16 @@ end
 Compute the moment of the given basisfunction, i.e. the integral on its
 support.
 """
-function moment(dict::Dictionary1d, idx)
+function moment(dict::Dictionary1d, idx; options...)
     @boundscheck checkbounds(dict, idx)
-    unsafe_moment(dict, native_index(dict, idx))
+    unsafe_moment(dict, native_index(dict, idx); options...)
 end
 
 # This routine is called after the boundscheck. Call another function,
 # default moment, so that unsafe_moment of the concrete dictionary can still
 # fall back to `default_moment` as well for some values of the index.
-unsafe_moment(dict::Dictionary1d, idx) = default_moment(dict, idx)
+unsafe_moment(dict::Dictionary, idx; options...) = default_moment(dict, idx; options...)
 
 # Default to numerical integration
-default_moment(dict::Dictionary1d, idx) = quadgk(dict[idx], left(d), right(d))[1]
+default_moment(dict::Dictionary, idx; measure = lebesguemeasure(support(dict)), options...) =
+    innerproduct(dict[idx], x->1, measure; options...)

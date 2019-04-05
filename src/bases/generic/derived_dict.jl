@@ -32,6 +32,8 @@ superdict(s::DerivedDict) = s.superdict
 similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
     similar_dictionary(d, similar(superdict(d), T, dims))
 
+resize(d::DerivedDict, dims) = similar_dictionary(d, resize(superdict(d), dims))
+
 promote_coefficienttype(dict::DerivedDict, ::Type{T}) where {T} =
     similar_dictionary(dict, promote_coefficienttype(superdict(dict), T))
 
@@ -42,32 +44,38 @@ for op in (:coefficienttype,)
 end
 
 # Delegation of properties
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal, :is_discrete)
+for op in (:isreal, :isbasis, :isframe, :isdiscrete)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
+
+for op in (:isorthogonal, :isbiorthogonal, :isorthonormal)
+    @eval $op(s::DerivedDict, m::Measure) = $op(superdict(s), m)
+end
+
+
 
 # Delegation of feature methods
-for op in (:has_derivative, :has_antiderivative, :has_grid, :has_extension)
+for op in (:hasderivative, :hasantiderivative, :hasinterpolationgrid, :hasextension)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
-# has_transform has extra arguments
-has_grid_transform(s::DerivedDict, gs, grid) = has_grid_transform(superdict(s), gs, grid)
+# hastransform has extra arguments
+hasgrid_transform(s::DerivedDict, gs, grid) = hasgrid_transform(superdict(s), gs, grid)
 
 # When getting started with a discrete set, you may want to write:
-# has_derivative(s::ConcreteSet) = false
-# has_antiderivative(s::ConcreteSet) = false
-# has_grid(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet) = false
-# has_transform(s::ConcreteSet, dgs::GridBasis) = false
-# has_extension(s::ConcreteSet) = false
+# hasderivative(s::ConcreteSet) = false
+# hasantiderivative(s::ConcreteSet) = false
+# hasinterpolationgrid(s::ConcreteSet) = false
+# hastransform(s::ConcreteSet) = false
+# hastransform(s::ConcreteSet, dgs::GridBasis) = false
+# hasextension(s::ConcreteSet) = false
 # ... and then implement those operations one by one and remove the definitions.
 
 zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
-
+tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
-for op in (:length, :extension_size, :size, :grid, :is_composite, :numelements,
-    :elements, :tail, :ordering, :support)
+for op in (:length, :extension_size, :size, :interpolation_grid, :iscomposite, :numelements,
+    :elements, :tail, :ordering, :support, :dimensions)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -128,30 +136,14 @@ for op in (:extension_operator, :restriction_operator)
         wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); T = T, options...))
 end
 
-# By default we return the underlying set when simplifying transforms
-simplify_transform_pair(s::DerivedDict, grid::AbstractGrid) = (superdict(s),grid)
-
-# Simplify invocations of transform_from/to_grid with DerivedDict's
-for op in ( (:transform_from_grid, :s1, :s2),
-            (:transform_from_grid_pre, :s1, :s1),
-            (:transform_from_grid_post, :s1, :s2))
-
-    @eval function $(op[1])(s1, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
-    end
+function transform_from_grid(s1::GridBasis, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
+    op = transform_from_grid(s1, superdict(s2), grid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
 
-for op in ( (:transform_to_grid, :s1, :s2),
-            (:transform_to_grid_pre, :s1, :s1),
-            (:transform_to_grid_post, :s1, :s2))
-
-    @eval function $(op[1])(s1::DerivedDict, s2, grid; T = op_eltype(s1,s2), options...)
-        simple_s1, simple_s2, simple_grid = simplify_transform_sets(s1, s2, grid)
-        operator = $(op[1])(simple_s1, simple_s2, simple_grid; T = T, options...)
-        wrap_operator($(op[2]), $(op[3]), operator)
-    end
+function transform_to_grid(s1::DerivedDict, s2::GridBasis, grid; T = op_eltype(s1,s2), options...)
+    op = transform_to_grid(superdict(s1), s2, grid; T=T, options...)
+    wrap_operator(s1, s2, op)
 end
 
 
@@ -163,17 +155,19 @@ end
 pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol;options...)
 pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractGrid;
-        T = op_eltype(set, dgs), options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
 
-grid_evaluation_operator(set::DerivedDict, dgs::GridBasis, grid::AbstractSubGrid;
-        T = op_eltype(set, dgs), options...) =
-    wrap_operator(set, dgs, grid_evaluation_operator(superdict(set), dgs, grid; T = T, options...))
+function grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
+        T = op_eltype(dict, gb), options...)
+    A = grid_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
+    wrap_operator(dict, gb, A)
+end
 
-dot(s::DerivedDict, f1::Function, f2::Function, nodes::Array=native_nodes(superdict(s)); options...) =
-    dot(superdict(s), f1, f2, nodes; options...)
+## Printing
 
+hasstencil(dict::DerivedDict) = true
+stencilarray(dict::DerivedDict) = [modifiersymbol(dict), "(", superdict(dict), ")"]
+modifiersymbol(dict::DerivedDict) = PrettyPrintSymbol{:DefDerive}(dict)
+name(::PrettyPrintSymbol{:DefDerive}) = "Derived"
 
 #########################
 # Concrete dict
@@ -190,13 +184,3 @@ end
 # Implementing similar_dictionary is all it takes.
 
 similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
-
-function stencil(d::DerivedDict,S)
-    A = Any[]
-    push!(A,S[d])
-    push!(A,"(")
-    push!(A,superdict(d))
-    push!(A,")")
-    return recurse_stencil(d,A,S)
-end
-has_stencil(d::DerivedDict) = true

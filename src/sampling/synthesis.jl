@@ -19,7 +19,12 @@ in the span of a dictionary.
 """
 struct SynthesisOperator <: AbstractOperator
     dictionary  ::  Dictionary
+    measure     ::  Union{Measure,Nothing}
 end
+
+SynthesisOperator(dict::Dictionary) = hasmeasure(dict) ?
+    SynthesisOperator(dict, measure(dict)) :
+    SynthesisOperator(dict, nothing)
 
 dictionary(op::SynthesisOperator) = op.dictionary
 
@@ -28,15 +33,28 @@ src_space(op::SynthesisOperator) = Span(src(op))
 dest_space(op::SynthesisOperator) = Span(dictionary(op))
 
 # We attempt to convert the given coefficients to the container type of the dictionary
-apply(op::SynthesisOperator, coef) = _apply(op, coef, dictionary(op))
+apply(op::SynthesisOperator, coef; options...) = _apply(op, coef, dictionary(op))
 _apply(op::SynthesisOperator, coef, dict) = Expansion(dict, convert(containertype(dict), coef))
 
-apply(op::SynthesisOperator, expansion::Expansion{D}) where {D <: DiscreteDictionary} =
-    apply(op, coefficients(expansion))
-apply(op::SynthesisOperator, coef::Expansion) =
+apply(op::SynthesisOperator, expansion::Expansion{D}; options...) where {D <: DiscreteDictionary} =
+    apply(op, coefficients(expansion); options...)
+apply(op::SynthesisOperator, coef::Expansion; opts...) =
     error("A synthesis operator applies only to coefficients or expansions in discrete sets.")
 
-(*)(op::SynthesisOperator, coef) = apply(op, coef)
+
+hasstencil(op::SynthesisOperator) = true
+stencilarray(op::SynthesisOperator) = stencilarray(op, dictionary(op), op.measure)
+stencilarray(op::SynthesisOperator, dict::Dictionary, ::Nothing) =
+    [modifiersymbol(op), "[", dict, "]"]
+stencilarray(op::SynthesisOperator, dict::Dictionary, measure::Measure) =
+    [modifiersymbol(op), "[", dict, ", ", measure, "]"]
+
+modifiersymbol(op::SynthesisOperator) = PrettyPrintSymbol{:𝒯}()#PrettyPrintSymbol{:ℙ}()
+name(::PrettyPrintSymbol{:𝒯}) = "Synthesis operator of a dictionary"
+name(op::SynthesisOperator) = "Synthesis operator of a dictionary"
+strings(op::SynthesisOperator) = strings(op, dictionary(op), op.measure)
+strings(op::SynthesisOperator, dict::Dictionary, ::Nothing) = (strings(dict),)
+strings(op::SynthesisOperator, dict::Dictionary, measure::Measure) = (strings(dict),strings(measure))
 
 
 """
@@ -54,25 +72,9 @@ dest(op::DesynthesisOperator) = discrete_set(dictionary(op))
 dest_space(op::DesynthesisOperator) = Span(dest(op))
 
 # We accept any expansion and return its coefficients
-apply(op::DesynthesisOperator, expansion::Expansion) = coefficients(expansion)
+apply(op::DesynthesisOperator, expansion::Expansion; opts...) = coefficients(expansion)
 
 (*)(op::DesynthesisOperator, expansion::Expansion) = apply(op, expansion)
 
 inv(op::SynthesisOperator) = DesynthesisOperator(dictionary(op))
 inv(op::DesynthesisOperator) = SynthesisOperator(dictionary(op))
-
-
-"""
-The analysis operator associated with a dictionary maps a function to the vector
-of inner products with the elements of the dictionary.
-"""
-struct AnalysisOperator{S,T} <: AbstractOperator
-    dictionary  ::  Dictionary{S,T}
-end
-
-dictionary(op::AnalysisOperator) = op.dictionary
-
-src(op::AnalysisOperator{S,T}) where {S,T} = FunctionSpace{S,T}()
-dest(op::AnalysisOperator) = discrete_set(dictionary(op))
-
-apply(op::AnalysisOperator, span::Span; options...) = Gram(D; options...)

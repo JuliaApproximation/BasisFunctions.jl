@@ -1,5 +1,5 @@
 
-function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
+function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = EquispacedGrid(n, a, b)
     weights = stepsize(grid) * ones(T, n)
     weights[1] /= 2
@@ -7,7 +7,7 @@ function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)
     grid, weights
 end
 
-function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where T
+function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = PeriodicEquispacedGrid(n, a, b)
     weight = stepsize(grid)
     grid, weight
@@ -32,7 +32,7 @@ function fejer_vector1!(v)
     v
 end
 
-function fejer_first_rule(n::Int, ::Type{T} = Float64) where T
+function fejer_first_rule(n::Int, ::Type{T} = Float64) where {T}
     v = zeros(Complex{T}, n)
     fejer_vector1!(v)
     ChebyshevNodes{T}(n), real(ifft(v))
@@ -55,7 +55,8 @@ function fejer_vector2!(v)
     v
 end
 
-function fejer_second_rule(n::Int, ::Type{T} = Float64) where T
+# TODO: verify, is this correct?
+function fejer_second_rule(n::Int, ::Type{T} = Float64) where {T}
     v = zeros(T, n)
     weights = zeros(T, n+1)
     fejer_vector2!(v)
@@ -77,7 +78,7 @@ function cc_vector_g!(g)
     g
 end
 
-function clenshaw_curtis(n, ::Type{T} = Float64) where T
+function clenshaw_curtis(n, ::Type{T} = Float64) where {T}
     v = zeros(T, n)
     g = zeros(T, n)
     weights = zeros(T, n+1)
@@ -86,4 +87,37 @@ function clenshaw_curtis(n, ::Type{T} = Float64) where T
     weights[1:n] = real(ifft(v+g))
     weights[n+1] = weights[1]
     ChebyshevExtremae{T}(n+1), weights
+end
+
+
+function rescale_cc_quad(x, w, a, b)
+    y = (reverse(x).+1)/2 * (b-a) .+ a
+    v = w .* (b-a)/2
+    y,v
+end
+
+function rescale_fejer_quad(x, w, a, b)
+    y = (x.+1)/2 * (b-a) .+ a
+    v = w .* (b-a)/2
+    y,v
+end
+
+function graded_rule(sigma, a, b, M, n, T = Float64, ndiff = 2)
+    xg = zeros(T, 0)
+    wg = zeros(T, 0)
+    q1 = one(T)
+    for m = M-1:-1:1
+        x,w = BasisFunctions.fejer_first_rule(n, T)
+        q0 = sigma*q1
+        xs,ws = rescale_fejer_quad(x, w, q0, q1)
+        xg = [xg; xs]
+        wg = [wg; ws]
+        q1 = q0
+        n -= ndiff
+    end
+    x,w = BasisFunctions.fejer_first_rule(n, T)
+    xs,ws = rescale_fejer_quad(x, w, 0, q1)
+    xg = [xg; xs]
+    wg = [wg; ws]
+    a .+ xg*(b-a), wg * (b-a)
 end

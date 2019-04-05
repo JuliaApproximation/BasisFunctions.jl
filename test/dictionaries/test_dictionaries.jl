@@ -1,12 +1,11 @@
 
-using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
+using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays, Test
 import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
 BF = BasisFunctions
 
-using Test
 # types = [Float64,]
 
-types = (Float64, BigFloat)
+domaintypes = (Float64, BigFloat)
 
 include("test_dictionaries_util.jl")
 include("test_dictionaries_derived.jl")
@@ -14,12 +13,12 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
-oned_dictionaries = [FourierBasis, ChebyshevBasis, ChebyshevU, LegendrePolynomials,
-        LaguerrePolynomials, HermitePolynomials, CosineSeries, SineSeries,]
+test_dictionaries = [Fourier, ChebyshevT, ChebyshevU, Legendre,
+        Laguerre, Hermite, Jacobi, CosineSeries, SineSeries]
 
-for T in types
+for T in domaintypes
     delimit("1D dictionaries ($(T))")
-    for DICT in oned_dictionaries
+    for DICT in test_dictionaries
         @testset "$(rpad(string(DICT),80))" begin
             n = 9
             basis = instantiate(DICT, n, T)
@@ -29,7 +28,7 @@ for T in types
         end
     end
     # also try a Fourier series with an even length
-    test_generic_dict_interface(FourierBasis{T}(8))
+    @testset begin test_generic_dict_interface(Fourier{T}(8)) end
 
     delimit("derived dictionaries ($(T))")
     test_derived_dicts(T)
@@ -42,12 +41,12 @@ for T in types
     delimit("Tensor product set interfaces ($(T))")
     # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in
-                ( FourierBasis(11) ⊗ FourierBasis(21), # Two odd-length Fourier series
-                  FourierBasis(10) ⊗ ChebyshevBasis(12), # combination of Fourier and Chebyshev
-                  FourierBasis(11) ⊗ FourierBasis(10), # Odd and even-length Fourier series
-                  ChebyshevBasis(11) ⊗ ChebyshevBasis(20), # Two Chebyshev sets
-                  FourierBasis(11, 2, 3) ⊗ FourierBasis(11, 4, 5), # Two mapped Fourier series
-                  ChebyshevBasis(9, 2, 3) ⊗ ChebyshevBasis(7, 4, 5)) # Two mapped Chebyshev series
+                ( Fourier(11) ⊗ Fourier(21), # Two odd-length Fourier series
+                  Fourier(10) ⊗ ChebyshevT(12), # combination of Fourier and Chebyshev
+                  Fourier(11) ⊗ Fourier(10), # Odd and even-length Fourier series
+                  ChebyshevT(11) ⊗ ChebyshevT(20), # Two Chebyshev sets
+                  Fourier(11, 2, 3) ⊗ Fourier(11, 4, 5), # Two mapped Fourier series
+                  ChebyshevT(9, 2, 3) ⊗ ChebyshevT(7, 4, 5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
     end
 

@@ -28,7 +28,7 @@ function test_generic_grid(grid; show_timings=false)
         @test eltype(grid) <: Number
     end
 
-    if has_extension(grid)
+    if hasextension(grid)
         g_ext = extend(grid, 2)
         for i in 1:length(grid)
             @test grid[i] ≈ g_ext[2i-1]

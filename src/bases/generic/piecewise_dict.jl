@@ -1,7 +1,7 @@
 
 """
 A `PiecewiseDict` has a dictionary for each piece in a partition. Its representation
-is a `MultiArray` containing the expansions of all dictionaries combined.
+is a `BlockVector` containing the expansions of all dictionaries combined.
 """
 struct PiecewiseDict{P <: Partition,DICTS,S,T} <: CompositeDict{S,T}
     dicts       ::  DICTS
@@ -50,21 +50,24 @@ function PiecewiseDict(set::Dictionary, partition::Partition)
     PiecewiseDict(dicts, partition)
 end
 
+name(dict::PiecewiseDict) = "Piecewise dictionary"
+
 dictionaries(set::PiecewiseDict) = set.dicts
 
 partition(set::PiecewiseDict) = set.partition
 
-is_composite(set::PiecewiseDict) = true
-function stencil(set::PiecewiseDict)
-    A=Any[]
-    push!(A,"(")
-    i=1
-    for s in dictionaries(set)
-        i!=1 && push!(A,", ")
-        push!(A,s)
-        i+=1
+iscomposite(set::PiecewiseDict) = true
+
+function stencilarray(dict::PiecewiseDict)
+    A = Any[]
+    push!(A, "(")
+    i = 1
+    for s in dictionaries(dict)
+        i != 1 && push!(A, ", ")
+        push!(A, s)
+        i += 1
     end
-    push!(A,")")
+    push!(A, ")")
     A
 end
 
@@ -73,9 +76,16 @@ end
 similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
-for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
+for op in (:isbasis, :isframe)
     @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 end
+
+# The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
+for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
+    @eval $op(s::PiecewiseDict, m::Measure) =
+        (@warn "definition unclear";reduce(&, map(x->$op(x, m), elements(s))))# or take intersection of measure and support of dictpiece
+end
+isorthonormal(s::PiecewiseDict, m::Measure) = false
 
 for op in (:support,)
     @eval $op(set::PiecewiseDict) = $op(partition(set))
@@ -85,7 +95,7 @@ end
 
 # The set has a grid and a transform if all its subsets have it
 # Disable for now, until grids can be collected into a MultiGrid or something
-#for op in (:has_grid, :has_transform)
+#for op in (:hasinterpolationgrid, :hastransform)
 #    @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
 #end
 
@@ -107,16 +117,15 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-evaluation_operator(s::PiecewiseDict, dgs::GridBasis; options...) =
-    MultiplicationOperator(s, dgs, evaluation_matrix(s, grid(dgs))) *
-        LinearizationOperator(s)
+grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; T=op_eltype(dict,gb), options...) =
+    ArrayOperator(evaluation_matrix(dict, grid; T=T), dict, gb) * LinearizationOperator(dict; T=T)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; options...)
+    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; T=op_eltype(s1,s2), options...)
         @assert numelements(s1) == numelements(s2)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+        BlockDiagonalOperator(DictionaryOperator{T}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2; T=T)
     end
 end
 
@@ -166,17 +175,17 @@ function split_interval_expansion(set::Dictionary1d, coefficients, x)
     pset, z
 end
 
-function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, x)
+function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector, x)
     part = partition(set)
     i = partition_index(part, x)
     set_i = element(set, i)
-    coef_i = element(coefficients, i)
+    coef_i = getblock(coefficients, i)
     split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
     # We compute the types of the individual sets and their coefficients
     # in a hacky way to help inference further on. TODO: fix, because this
     # violates encapsulation and it assumes homogeneous elements
     S = eltype(set.dicts)
-    C = eltype(coefficients.arrays)
+    C = eltype(coefficients)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
     # Technicalities arise when i is 1 or i equals the numelements of the set
@@ -198,21 +207,9 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::MultiArray, 
         dicts = S[element(split_set, 1), element(split_set, 2), old_dicts[i+1:end]...]
         coefs = C[element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
     end
-    PiecewiseDict(dicts), MultiArray(coefs)
+    PiecewiseDict(dicts), BlockVector(coefs)
 end
 
-dot(s::PiecewiseDict, f1::Int, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...) =
-    dot(s, native_index(s, f1), f2, nodes; options...)
-
-function dot(s::PiecewiseDict, f1, f2::Function, nodes::Array=BasisFunctions.native_nodes(s); options...)
-    # idxn = native_index(s, f1)
-    # set.dicts[idxn[1]]
-    # b = element(s, idxn[1])
-    b = element(s, f1[1])
-
-    dot(b, linear_index(b, f1[2]), f2, clip_and_cut(nodes, infimum(support(b)), supremum(support(b))); options...)
-end
-
-function Gram(s::PiecewiseDict; options...)
-    BlockDiagonalOperator(DictionaryOperator{coefficienttype(s)}[Gram(element(s,i); options...) for i in 1:numelements(s)], s, s)
-end
+# TODO: add the measure argument here
+gramoperator(dict::PiecewiseDict; T=coefficienttype(dict), options...) =
+    BlockDiagonalOperator(DictionaryOperator{T}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict; T=T)

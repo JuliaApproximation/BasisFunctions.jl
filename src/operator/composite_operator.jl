@@ -24,13 +24,29 @@ dest_space(op::GenericCompositeOperator) = dest_space(op.operators[end])
 # Generic functions for composite types:
 elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
-is_composite(op::GenericCompositeOperator) = true
+iscomposite(op::GenericCompositeOperator) = true
 
-function apply(comp::GenericCompositeOperator, fun)
+
+# If the GenericCompositeOperator happens to be a composite operator of
+# product operators, then the result is a product operator too. You can select
+# its elements with the productelement routine.
+function productelement(op::GenericCompositeOperator, j::Int)
+    GenericCompositeOperator(map(t -> element(t, j), elements(op))...)
+end
+productelements(op::GenericCompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
+numproductelements(op::GenericCompositeOperator) = numproductelements(element(op,1))
+
+function apply(comp::GenericCompositeOperator, fun; options...)
     output = fun
     for op in elements(comp)
         input = output
-        output = apply(op, input)
+        # TODO: clean this op. The apply of a generic operator can accept options,
+        # but the apply of a DictionaryOperator can not.
+        if op isa DictionaryOperator
+            output = apply(op, input)
+        else
+            output = apply(op, input; options...)
+        end
     end
     output
 end
@@ -43,7 +59,7 @@ can_allocate_output(op::DictionaryOperator) = true
 # - AbstractOperator: it depends on the output, which we determine using dispatch
 can_allocate_output(op::AbstractOperator) = _can_allocate_output(op, dest_space(op))
 _can_allocate_output(op, span::Span) = true
-_can_allocate_output(op, space::AbstractFunctionSpace) = false
+_can_allocate_output(op, space::FunctionSpace) = false
 
 allocate_output(op::DictionaryOperator{T}) where {T} = zeros(T, dest(op))
 
@@ -70,9 +86,15 @@ end
 elements(op::CompositeOperator) = op.operators
 element(op::CompositeOperator, j::Int) = op.operators[j]
 
-is_inplace(op::CompositeOperator) = reduce(&, map(is_inplace, op.operators))
-is_diagonal(op::CompositeOperator) = reduce(&, map(is_diagonal, op.operators))
-is_composite(op::CompositeOperator) = true
+function productelement(op::CompositeOperator, j::Int)
+    compose(map(t -> element(t, j), elements(op))...)
+end
+productelements(op::CompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
+numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
+
+isinplace(op::CompositeOperator) = reduce(&, map(isinplace, op.operators))
+isdiag(op::CompositeOperator) = reduce(&, map(isdiag, op.operators))
+iscomposite(op::CompositeOperator) = true
 
 
 function compose_and_simplify(composite_src::Dictionary, composite_dest::Dictionary, operators::DictionaryOperator...; simplify = true)
@@ -87,25 +109,10 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
     if simplify
         # Flatten away nested CompositeOperators
         operators = flatten(CompositeOperator, operators...)
-        # Iterate over the operators and remove the ones that don't do anything
-        c_operators = Array{AbstractOperator}(undef, 0)
-        for op in operators
-            add_this_one = true
-            # We forget about identity operators
-            if isa(op, ScalingOperator) && scalar(op) == 1
-                add_this_one = false
-            end
-            if add_this_one
-                push!(c_operators, op)
-            end
-        end
-        operators = tuple(c_operators...)
+        operators = compose_and_simplify(operators...)
     end
 
     L = length(operators)
-    if L == 0
-        return IdentityOperator(composite_src, composite_dest)
-    end
     if L == 1
         return wrap_operator(composite_src, composite_dest, operators[1])
     end
@@ -116,7 +123,7 @@ function compose_and_simplify(composite_src::Dictionary, composite_dest::Diction
     # In that case we need a place to store the result of the first operator.
     scratch_array = Any[zeros(T, dest(operators[1]))]
     for m = 2:L-1
-        if ~is_inplace(operators[m])
+        if ~isinplace(operators[m])
             push!(scratch_array, zeros(T, dest(operators[m])))
         end
     end
@@ -139,7 +146,7 @@ function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators,
     apply!(operators[1], scratch[1], coef_src)
     l = 1
     for i in 2:L-1
-        if is_inplace(operators[i])
+        if isinplace(operators[i])
             apply_inplace!(operators[i], scratch[l])
         else
             apply!(operators[i], scratch[l+1], scratch[l])
@@ -155,7 +162,7 @@ end
 
 # Below is the ideal scenario for lengths 2 and 3, written explicitly.
 # function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{2}, scratch)
-#     if is_inplace(operators[2])
+#     if isinplace(operators[2])
 #         apply!(operators[1], coef_dest, coef_src)
 #         apply!(operators[2], coef_dest)
 #     else
@@ -166,8 +173,8 @@ end
 # end
 #
 # function apply_composite!(op::CompositeOperator, coef_dest, coef_src, operators::NTuple{3}, scratch)
-#     ip2 = is_inplace(operators[2])
-#     ip3 = is_inplace(operators[3])
+#     ip2 = isinplace(operators[2])
+#     ip3 = isinplace(operators[3])
 #     if ip2
 #         if ip3
 #             # 2 and 3 are in-place
@@ -203,12 +210,14 @@ function apply_inplace_composite!(op::CompositeOperator, coef_srcdest, operators
     coef_srcdest
 end
 
-inv(op::CompositeOperator) = (*)(map(inv, op.operators)...)
+inv(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(inv, op.operators)...))
+adjoint(op::CompositeOperator) = unsafe_wrap_operator(dest(op), src(op), (*)(map(adjoint, op.operators)...))
 
-adjoint(op::CompositeOperator)::DictionaryOperator = (*)(map(adjoint, op.operators)...)
+conj(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(conj,op.operators), op.scratch)
+conj(op::CompositeOperator{T}) where {T<:Real} = op
 
-(*)(ops::AbstractOperator...) = compose([ops[i] for i in length(ops):-1:1]...)
-(∘)(ops::AbstractOperator...) = (*)(ops...)
+sqrt(op::CompositeOperator{T}) where T  = CompositeOperator{T}(src(op), dest(op), map(sqrt,op.operators), op.scratch)
+
 apply(op1::AbstractOperator, op2::AbstractOperator) = compose(op2,op1)
 apply(op1::DictionaryOperator, op2::AbstractOperator) = compose(op2,op1)
 
@@ -222,12 +231,15 @@ sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options
 
 CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 
-function stencil(op::CompositeOperators)
+function stencilarray(op::CompositeOperators)
     A = Any[]
-    push!(A,element(op,length(elements(op))))
-    for i=length(elements(op))-1:-1:1
-        push!(A," * ")
-        push!(A,element(op,i))
+    push!(A,element(op,numelements(op)))
+    for i in numelements(op)-1:-1:1
+        push!(A, " * ")
+        push!(A, element(op,i))
     end
     A
 end
+
+stencil_parentheses(op::CompositeOperators) = true
+object_parentheses(op::CompositeOperators) = true

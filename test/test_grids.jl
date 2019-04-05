@@ -112,7 +112,7 @@ function test_grids(T)
     @test typeof(supergrid(mg3)) <: PeriodicEquispacedGrid
 
     # Scattered grid
-    pts = map(T, rand(10))
+    pts = rand(T, 10)
     sg = ScatteredGrid(pts)
     test_generic_grid(sg)
 end
@@ -130,3 +130,65 @@ for T in types
         test_grids(T)
     end
 end
+
+function test_subgrids()
+    delimit("Grid functionality")
+    n = 20
+    grid1 = EquispacedGrid(n, -1.0, 1.0)
+    subgrid2 = IndexSubGrid(grid1, 4:12)
+
+    G1 = EquispacedGrid(n, -1.0, 1.0)
+    G2 = EquispacedGrid(n, -1.0, 1.0)
+    ProductG = G1 × G2
+
+    C = disk(1.0)
+    @testset begin
+
+
+        G1s = IndexSubGrid(G1,2:4)
+        G2s = IndexSubGrid(G2,3:5)
+        ProductGs = G1s × G2s
+        @test G1s[1] == G1[2]
+        @test G2s[1] == G2[3]
+        @test ProductGs[1,1] == [G1[2],G2[3]]
+    end
+
+    # Generic tests for the subgrids
+    @testset begin
+        grid,subgrid = (grid1,subgrid2)
+        cnt = 0
+        for i in 1:length(grid)
+            if issubindex(i, subgrid)
+                cnt += 1
+            end
+        end
+        @test cnt == length(subgrid)
+
+        space = GridBasis(grid)
+        subspace = GridBasis(subgrid)
+        R = restriction_operator(space, subspace)
+        E = extension_operator(subspace, space)
+
+        e = random_expansion(subspace)
+        e_ext = E * e
+        # Are the elements in the right place?
+        cnt = 0
+        diff = 0.0
+        for i in 1:length(grid)
+            if issubindex(i, subgrid)
+                cnt += 1
+                diff += abs(e[cnt] - e_ext[i])
+            else
+                # all other entries should be zero
+                diff += abs(e_ext[i])
+            end
+        end
+        @test diff < 1e-6
+
+        e_rest = R * e_ext
+        @test sum([abs(e[i]-e_rest[i]) for i in 1:length(e)]) < 1e-6
+    end
+end
+
+
+test_subgrids()

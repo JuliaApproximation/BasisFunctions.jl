@@ -1,8 +1,9 @@
 module Test
 
 using ..BasisFunctions, DomainSets, StaticArrays
+using FillArrays: Ones, Eye
 import ..BasisFunctions: instantiate
-using Test, Random, LinearAlgebra
+using Test, LinearAlgebra
 BF = BasisFunctions
 
 export Delimit, delimit, instantiate
@@ -23,4 +24,6 @@ include("test_grids.jl")
 export test_generic_operator_interface
 include("test_operator.jl")
 
+export test_orthogonality_orthonormality
+include("test_functionality.jl")
 end

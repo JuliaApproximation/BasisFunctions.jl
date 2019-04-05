@@ -4,7 +4,7 @@ A `MultiDict` is the concatenation of several dictionaries. The elements are con
 in an indexable set, such as a tuple or an array. In case of an array, the number
 of dictionaries may be large.
 
-The native representation of a `MultiDict` is a `MultiArray`, of which each element
+The native representation of a `MultiDict` is a `BlockVector`, of which each element
 is the native representation of the corresponding element of the multidict.
 
 Evaluation of an expansion at a point is defined by summing the evaluation of all
@@ -75,10 +75,10 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 ∪(d1::Dictionary, d2::Dictionary) =
     error("Union of dictionaries is not supported: use ⊕ instead")
 
-name(s::MultiDict) = "A dictionary consisting of $(numelements(s)) dictionaries"
+name(dict::MultiDict) = "Union of dictionaries"
 
-for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
-    # Redirect the calls to multiple_is_basis with the elements as extra arguments,
+for op in (:isbasis, :isframe)
+    # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
     @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
@@ -86,7 +86,16 @@ for op in (:is_orthogonal, :is_biorthogonal, :is_basis, :is_frame)
     @eval ($fname)(s, elements...) = false
 end
 
-for op in (:has_grid, :has_transform)
+for op in (:isorthogonal, :isbiorthogonal)
+    # Redirect the calls to multiple_isbasis with the elements as extra arguments,
+    # and that method can decide whether the property holds for the multidict.
+    fname = Symbol("multiple_$(op)")
+    @eval $op(s::MultiDict, m::Measure) = ($fname)(s, m, elements(s)...)
+    # By default, multidicts do not have these properties:
+    @eval ($fname)(s, m::Measure, elements...) = false
+end
+
+for op in (:hasinterpolationgrid, :hastransform)
     fname = Symbol("multiple_$(op)")
     @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
     @eval ($fname)(s, elements...) = false
@@ -131,9 +140,9 @@ antiderivative_dict(s::MultiDict, order; options...) =
     MultiDict(map(b-> antiderivative_dict(b, order; options...), elements(s)))
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::MultiDict, s2::MultiDict, order; options...)
+    @eval function $op(s1::MultiDict, s2::MultiDict, order; T=op_eltype(s1,s2), options...)
         if numelements(s1) == numelements(s2)
-            BlockDiagonalOperator(DictionaryOperator{coefficienttype(s1)}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
+            BlockDiagonalOperator(DictionaryOperator{T}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2)
         else
             # We have a situation because the sizes of the multidicts don't match.
             # The derivative set may have been a nested multidict that was flattened. This
@@ -143,34 +152,42 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
             # Resolve the situation by looking at the standard derivative sets of each element of s1.
             # This may not be correct if one of the elements has multiple derivative sets, and
             # the user had chosen a non-standard one.
-            ops = DictionaryOperator{coefficienttype(s1)}[$op(el; options...) for el in elements(s1)]
+            ops = DictionaryOperator{T}[$op(el; options...) for el in elements(s1)]
             BlockDiagonalOperator(ops, s1, s2)
         end
     end
 end
 
-grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractGrid; options...) =
-    block_row_operator( DictionaryOperator{coefficienttype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
-
-## Avoid ambiguity
-grid_evaluation_operator(set::MultiDict, dgs::GridBasis, grid::AbstractSubGrid; options...) =
-    block_row_operator( DictionaryOperator{coefficienttype(set)}[grid_evaluation_operator(el, dgs, grid; options...) for el in elements(set)], set, dgs)
+grid_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
+    block_row_operator( DictionaryOperator{T}[grid_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
 
 ## Rescaling
 
 apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))
 
 ## Projecting
-project(s::MultiDict, f::Function; options...) = MultiArray([project(el, f; options...) for el in elements(s)])
+function project(s::MultiDict, f::Function; options...)
+    Z = BlockArray{T}(undef,[length(e) for e in elements(s)])
+    for (i,el) in enumerate(elements(s))
+        setblock!(Z, project(el, f; options...), i)
+    end
+    Z
+end
 
-function stencil(d::MultiDict)
+
+## Printing
+
+string(dict::MultiDict) = "Union of $(numelements(dict)) dictionaries"
+
+function stencilarray(dict::MultiDict)
     A = Any[]
-    push!(A,element(d,1))
-    for i=2:length(elements(d))
-        push!(A," ⊕ ")
-        push!(A,element(d,i))
+    push!(A, element(dict, 1))
+    for i = 2:numelements(dict)
+        push!(A, " ⊕ ")
+        push!(A, element(dict, i))
     end
     A
 end
 
-## Differentiation
+stencil_parentheses(dict::MultiDict) = true
+object_parentheses(dict::MultiDict) = true

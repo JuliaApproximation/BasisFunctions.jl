@@ -24,13 +24,16 @@ const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
 const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 
-
 # Generic functions for composite types:
-is_composite(dict::TensorProductDict) = true
+iscomposite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
 numelements(dict::TensorProductDict{N}) where {N} = N
+
+productelements(dict::TensorProductDict) = elements(dict)
+productelement(dict::TensorProductDict, j::Int) = element(dict, j)
+numproductelements(dict::TensorProductDict) = numelements(dict)
 
 tolerance(dict::TensorProductDict)=minimum(map(tolerance,elements(dict)))
 
@@ -53,7 +56,11 @@ end
 
 size(d::TensorProductDict) = d.size
 
-similar(dict::TensorProductDict, ::Type{T}, size::Int...) where {T} =
+dimensions(d::TensorProductDict) = map(dimensions, elements(d))
+
+similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} = similar(dict, T, approx_length(dict, size))
+
+similar(dict::TensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
     TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
 
 coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,elements(s))...)
@@ -64,10 +71,13 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 
 ## Properties
 
-for op in (:isreal, :is_basis, :is_frame, :is_orthogonal, :is_biorthogonal)
+for op in (:isreal, :isbasis, :isframe)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
+for op in (:isorthogonal, :isorthonormal)
+    @eval $op(s::TensorProductDict, m::ProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
+end
 
 ## Native indices are of type ProductIndex
 
@@ -75,16 +85,6 @@ end
 ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
 
 native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
-
-"""
-A recursive native index of a `TensorProductDict` is a tuple consisting of
-native indices of each of the elements of the dictionary.
-"""
-recursive_native_index(d::TensorProductDict, idxn::ProductIndex) =
-    map(native_index, elements(d), indextuple(idxn))
-
-recursive_native_index(d::TensorProductDict, idx::LinearIndex) =
-    recursive_native_index(d, native_index(d, idx))
 
 # We have to amend the boundscheck ecosystem to catch some cases:
 # - This line will catch indexing with tuples of integers, and we assume
@@ -101,14 +101,14 @@ checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
 
 ## Feature methods
 
-for op in (:has_grid, :has_extension, :has_derivative, :has_antiderivative)
+for op in (:hasinterpolationgrid, :hasextension, :hasderivative, :hasantiderivative)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
 
-has_grid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
-    reduce(&, map(has_transform, elements(s), elements(grid)))
+hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
+    reduce(&, map(hastransform, elements(s), elements(grid)))
 
-has_grid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
+hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =
@@ -116,7 +116,7 @@ for op in (:derivative_dict, :antiderivative_dict)
 end
 
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
-
+resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, elements(d), dims)...)
 
 
 # Delegate dict_in_support to _dict_in_support with the composing dicts as extra arguments,
@@ -150,11 +150,7 @@ end
 
 extension_size(s::TensorProductDict) = map(extension_size, elements(s))
 
-# It would be odd if the first method below was ever called, because LEN=1 makes
-# little sense for a tensor product. But perhaps in generic code somewhere...
-name(s::TensorProductDict) = "tensor product (" * name(element(s,1)) * names(s.dicts[2:end]...) * ")"
-names(s1::Dictionary) = " x " * name(s1)
-names(s1::Dictionary, s::Dictionary...) = " x " * name(s1) * names(s...)
+name(dict::TensorProductDict) = "Tensor product dictionary"
 
 
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
@@ -173,7 +169,8 @@ getindex(s::TensorProductDict, i::Int, ::Colon, ::Colon) =
 getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements(s)==3; s)
 
 
-grid(s::TensorProductDict) = ProductGrid(map(grid, elements(s))...)
+interpolation_grid(s::TensorProductDict) =
+    ProductGrid(map(interpolation_grid, elements(s))...)
 #grid(b::TensorProductDict, j::Int) = grid(element(b,j))
 
 # In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.
@@ -220,7 +217,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
 
 
-
+measure(dict::TensorProductDict) = ProductMeasure(map(measure, elements(dict))...)
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
@@ -249,39 +246,28 @@ function _index_set_total_degree(s, n)
     end
 end
 
-"Return a list of all indices in an n-dimensional hyperbolic cross."
-function index_set_hyperbolic_cross(s, n, α = 1)
-    I = _index_set_hyperbolic_cross(s, n, α)
-    [tuple((1+i)...) for i in I]
-end
-
-function _index_set_hyperbolic_cross(s, n, α = 1)
-    if n == 1
-        smax = floor(Int, s^(1/α))-1
-        I = [[i] for i in 0:smax]
-    else
-        I = Array{Array{Int,1}}(0)
-        I_rec = _index_set_total_degree(s, n-1)
-        for idx in I_rec
-            for m in 0:floor(Int,s^(1/α)/prod(1+abs.(idx)))-1
-                push!(I, [idx...; m])
-            end
-        end
-        I
-    end
-end
-
-oversampled_grid(b::TensorProductDict, oversampling::Real) = ProductGrid([oversampled_grid(bi, oversampling) for bi in elements(b)]...)
-
-BasisFunctions.DiscreteGram(s::BasisFunctions.TensorProductDict; oversampling = 1) =
-    tensorproduct([DiscreteGram(si, oversampling=oversampling) for si in elements(s)]...)
-
-function stencil(op::TensorProductDict)
+function stencilarray(dict::TensorProductDict)
     A = Any[]
-    push!(A,element(op,1))
-    for i=2:length(elements(op))
-        push!(A," ⊗ ")
-        push!(A,element(op,i))
+    push!(A, element(dict,1))
+    for i=2:numelements(dict)
+        push!(A, " ⊗ ")
+        push!(A, element(dict,i))
     end
     A
 end
+
+stencil_parentheses(dict::TensorProductDict) = true
+object_parentheses(dict::TensorProductDict) = true
+
+
+grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;
+            T = op_eltype(dict,gb), options...) =
+    tensorproduct(map( (d,g) -> evaluation_operator(d, g; T= T), elements(dict), elements(grid))...)
+
+
+
+dualdictionary(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
+    TensorProductDict([dualdictionary(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
+
+gramoperator(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
+    TensorProductOperator(map((x,y)->gramoperator(x,y; options...), elements(dict), elements(measure))...)

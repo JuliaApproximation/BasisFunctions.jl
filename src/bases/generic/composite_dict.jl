@@ -4,8 +4,8 @@
 several subdictionaries. The `CompositeDict` type defines common routines for
 indexing and iteration.
 
-The representation of a `CompositeDict` is a `MultiArray`. The outer array of this
-`MultiArray` adopts the structure of the elements of the `CompositeDict`: if the elements
+The representation of a `CompositeDict` is a `BlockVector`. The outer array of this
+`BlockVector` adopts the structure of the elements of the `CompositeDict`: if the elements
 are stored in a tuple, the outer array will be a tuple. If the elements are
 stored in an array, the outer array will be an array as well.
 
@@ -22,9 +22,11 @@ abstract type CompositeDict{S,T} <: Dictionary{S,T}
 end
 
 # We assume that every subset has an indexable field called dicts
-is_composite(set::CompositeDict) = true
+iscomposite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
+elements(set::Dictionary) = (set,)
 element(set::CompositeDict, j) = set.dicts[j]
+element(set::Dictionary, j) = (@assert j==1; (set,))
 numelements(set::CompositeDict) = length(elements(set))
 
 # For a generic implementation of range indexing, we need a 'similar_dictionary' function
@@ -51,6 +53,7 @@ unsafe_offsets(dict::CompositeDict) = dict.offsets
 
 size(s::CompositeDict) = (s.offsets[end],)
 
+dimensions(d::CompositeDict) = map(dimensions, elements(d))
 
 ## Concrete subtypes should override similar_dictionary and call their own constructor
 
@@ -66,6 +69,10 @@ function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
     similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
+resize(d::CompositeDict, size) = similar_dictionary(d, map(resize, elements(d), size))
+
+composite_length(d::CompositeDict) = tuple(map(length, elements(d))...)
+block_length(dict::CompositeDict) = composite_length(dict)
 
 function composite_size(d::CompositeDict, n::Int)
     if n == length(d)
@@ -77,15 +84,23 @@ function composite_size(d::CompositeDict, n::Int)
     end
 end
 
-zeros(::Type{T}, set::CompositeDict) where {T} = MultiArray(map(s->zeros(T,s),elements(set)))
+function zeros(::Type{T}, set::CompositeDict) where {T}
+    Z = BlockArray{T}(undef,[length(e) for e in elements(set)])
+    fill!(Z, 0)
+    Z
+end
+
+tocoefficientformat(a, d::CompositeDict) = BlockVector(a, [length(e) for e in elements(set)])
 
 for op in (:isreal, )
     @eval $op(set::CompositeDict) = reduce($op, elements(set))
 end
 
-for op in (:has_derivative, :has_antiderivative, :has_extension)
+for op in (:hasderivative, :hasantiderivative, :hasextension)
     @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
 end
+
+coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 
 ##################
 # Indexing
@@ -130,8 +145,8 @@ eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(se
 extension_size(set::CompositeDict) = map(extension_size, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
-    @eval $op(s1::CompositeDict, s2::CompositeDict; options...) =
-        BlockDiagonalOperator( DictionaryOperator{coefficienttype(s2)}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
+    @eval $op(s1::CompositeDict, s2::CompositeDict; T=op_eltype(s1,s2), options...) =
+        BlockDiagonalOperator( DictionaryOperator{T}[$op(element(s1,i),element(s2,i); options...) for i in 1:numelements(s1)], s1, s2)
 end
 
 # Calling and evaluation
@@ -153,3 +168,14 @@ derivative_dict(s::CompositeDict, order; options...) =
 
 antiderivative_dict(s::CompositeDict, order; options...) =
     similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))
+
+function evaluation_matrix(dict::CompositeDict, pts; T = codomaintype(dict))
+    a = BlockArray{T}(undef, [length(pts),], collect(composite_length(dict)))
+    evaluation_matrix!(a, dict, pts)
+end
+
+
+innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
+    innerproduct(element(d1, i[1]), i[2], d2, j, measure; options...)
+innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
+    innerproduct(d1, i, element(d2, j[1]), j[2], measure; options...)

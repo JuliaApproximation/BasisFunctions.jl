@@ -1,5 +1,3 @@
-# tensorproductoperator.jl
-
 
 """
 A TensorProductOperator represents the tensor product of other operators.
@@ -19,10 +17,16 @@ end
 elements(op::TensorProductOperator) = op.operators
 element(op::TensorProductOperator, j::Int) = op.operators[j]
 
-is_composite(op::TensorProductOperator) = true
+productelements(op::TensorProductOperator) = elements(op)
+productelement(op::TensorProductOperator, j::Int) = element(op, j)
+numproductelements(op::TensorProductOperator) = numelements(op)
 
-function TensorProductOperator(operators...)
-    T = promote_type(map(eltype, operators)...)
+iscomposite(op::TensorProductOperator) = true
+
+TensorProductOperator(operators...; T=promote_type(map(eltype, operators)...)) =
+    TensorProductOperator{T}(operators...)
+
+function TensorProductOperator{T}(operators...) where {T}
     L = length(operators)
     tp_src = tensorproduct(map(src, operators)...)
     tp_dest = tensorproduct(map(dest, operators)...)
@@ -38,13 +42,18 @@ function TensorProductOperator(operators...)
 
     # scr_scratch and dest_scratch are tuples of length len that contain preallocated
     # storage to hold a vector for source and destination for each operator
-    src_scratch_array = [zeros(src(operators[j])) for j=1:L]
+    src_scratch_array = [zeros(T, src(operators[j])) for j=1:L]
     src_scratch = (src_scratch_array...,)
-    dest_scratch_array = [zeros(dest(operators[j])) for j=1:L]
+    dest_scratch_array = [zeros(T, dest(operators[j])) for j=1:L]
     dest_scratch = (dest_scratch_array...,)
     TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
+function tensorproduct(ops::IdentityOperator...)
+    tp_src = tensorproduct(map(src, ops)...)
+    tp_dest = tensorproduct(map(dest, ops)...)
+    IdentityOperator(tp_src, tp_dest)
+end
 
 # Element-wise src and dest functions
 src(op::TensorProductOperator, j::Int) = src(element(op, j))
@@ -57,15 +66,38 @@ size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
 
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
-adjoint(op::TensorProductOperator)::DictionaryOperator = TensorProductOperator(map(adjoint, elements(op))...)
+adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)
+conj(op::TensorProductOperator) = TensorProductOperator(map(conj, elements(op))...)
+
+pinv(op::TensorProductOperator) = TensorProductOperator(map(pinv, elements(op))...)
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
-is_inplace(op::TensorProductOperator) = reduce(&, map(is_inplace, op.operators))
-is_diagonal(op::TensorProductOperator) = reduce(&, map(is_diagonal, op.operators))
+isinplace(op::TensorProductOperator) = reduce(&, map(isinplace, op.operators))
+isdiag(op::TensorProductOperator) = reduce(&, map(isdiag, op.operators))
 
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
+
+# We reshape any incoming or outgoing coefficients into an array of the right size
+function apply!(op::TensorProductOperator, coef_dest, coef_src::AbstractVector)
+    @warn "Reshaping input of tensor product operator from vector to tensor"
+    apply!(op, coef_dest, reshape(coef_src, size(src(op))))
+end
+
+function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src)
+    @warn "Reshaping output of tensor product operator from vector to tensor"
+    apply!(op, reshape(coef_dest, size(dest(op))), coef_src)
+end
+
+function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src::AbstractVector)
+    @warn "Reshaping input and output of tensor product operator from vector to tensor"
+    apply!(op, reshape(coef_dest, size(dest(op))), reshape(coef_src, size(src(op))))
+end
+
+apply_inplace!(op::TensorProductOperator, coef_srcdest::AbstractVector) =
+    apply_inplace!(op, reshape(coef_srcdest, size(src(op))))
+
 
 apply!(op::TensorProductOperator, coef_dest, coef_src) =
     apply_tensor!(op, coef_dest, coef_src, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
@@ -256,12 +288,15 @@ end
 SparseOperator(op::TensorProductOperator; options...) =
     TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
 
-function stencil(op::TensorProductOperator)
+function stencilarray(op::TensorProductOperator)
     A = Any[]
-    push!(A,element(op,1))
-    for i=2:length(elements(op))
-        push!(A," ⊗ ")
-        push!(A,element(op,i))
+    push!(A, element(op,1))
+    for i in 2:numelements(op)
+        push!(A, " ⊗ ")
+        push!(A, element(op,i))
     end
     A
 end
+
+stencil_parentheses(op::TensorProductOperator) = true
+object_parentheses(op::TensorProductOperator) = true

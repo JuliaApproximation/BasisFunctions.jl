@@ -1,25 +1,64 @@
-
 """
-Supertype of all solver operators. A solver operator typically implements an
+Supertype of all dictionary solver operators. A solver operator typically implements an
 efficient algorithm to apply the inverse of an operator. Examples include
 a solver based on QR or SVD factorizations.
 
 A solver operator stores the operator it has inverted.
 """
-abstract type AbstractSolverOperator{T} <: DictionaryOperator{T}
+abstract type AbstractSolverOperator <: AbstractOperator
 end
 
 operator(op::AbstractSolverOperator) = op.op
 
-src(op::AbstractSolverOperator) = dest(operator(op))
+src_space(op::AbstractSolverOperator) = dest_space(operator(op))
 
+dest_space(op::AbstractSolverOperator) = src_space(operator(op))
 dest(op::AbstractSolverOperator) = src(operator(op))
 
-inv(op::AbstractSolverOperator) = op.op
+inv(op::AbstractSolverOperator) = operator(op)
 
+"""
+Supertype of all dictionary solver operators. A solver operator typically implements an
+efficient algorithm to apply the inverse of an operator. Examples include
+a solver based on QR or SVD factorizations.
+
+A solver operator stores the operator it has inverted.
+"""
+abstract type DictionarySolverOperator{T} <: DictionaryOperator{T}
+end
+
+operator(op::DictionarySolverOperator) = op.op
+
+src(op::DictionarySolverOperator) = dest(operator(op))
+
+dest(op::DictionarySolverOperator) = src(operator(op))
+
+inv(op::DictionarySolverOperator) = operator(op)
+
+
+abstract type VectorizingSolverOperator{T} <: DictionarySolverOperator{T} end
+
+apply!(op::VectorizingSolverOperator, coef_dest::Vector, coef_src::Vector) =
+    linearized_apply!(op, coef_dest, coef_src)
+
+function apply!(op::VectorizingSolverOperator, coef_dest, coef_src)
+    copyto!(op.src_linear, coef_src)
+    linearized_apply!(op, op.dest_linear, op.src_linear)
+    copyto!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::VectorizingSolverOperator, coef_dest, coef_src::Vector)
+    linearized_apply!(op, op.dest_linear, coef_src)
+    copyto!(coef_dest, op.dest_linear)
+end
+
+function apply!(op::VectorizingSolverOperator, coef_dest::Vector, coef_src)
+    copyto!(op.src_linear, coef_src)
+    linearized_apply!(op, coef_dest, op.src_linear)
+end
 
 "A GenericSolverOperator wraps around a generic solver type."
-struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
+struct GenericSolverOperator{Q,T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator
     solver  ::  Q
     # In case the operator does not map between vectors, we allocate space
@@ -31,6 +70,8 @@ struct GenericSolverOperator{Q,T} <: AbstractSolverOperator{T}
         new{Q,T}(op, solver, zeros(T, length(dest(op))), zeros(T, length(src(op))))
 end
 
+linearized_apply!(op::GenericSolverOperator, dest_vc::Vector, src_vc::Vector) =
+    linearized_apply!(op, dest_vc, src_vc, op.solver)
 
 # The solver should be the inverse of the given operator
 GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
@@ -39,28 +80,9 @@ GenericSolverOperator(op::DictionaryOperator{T}, solver) where T =
 similar_operator(op::GenericSolverOperator, src, dest) =
     GenericSolverOperator(similar_operator(operator(op), dest, src), op.solver)
 
-apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector) =
-    _apply!(op, coef_dest, coef_src, op.solver)
-
-function apply!(op::GenericSolverOperator, coef_dest, coef_src)
-    copyto!(op.src_linear, coef_src)
-    _apply!(op, op.dest_linear, op.src_linear, op.solver)
-    copyto!(coef_dest, op.dest_linear)
-end
-
-function apply!(op::GenericSolverOperator, coef_dest, coef_src::Vector)
-    _apply!(op, op.dest_linear, coef_src, op.solver)
-    copyto!(coef_dest, op.dest_linear)
-end
-
-function apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src)
-    copyto!(op.src_linear, coef_src)
-    _apply!(op, coef_dest, op.src_linear, op.solver)
-end
-
 
 # This is the generic case
-function _apply!(op::GenericSolverOperator, coef_dest, coef_src, solver)
+function linearized_apply!(op::GenericSolverOperator, coef_dest::Vector, coef_src::Vector, solver)
     coef_dest[:] = solver \ coef_src
     coef_dest
 end
@@ -76,10 +98,73 @@ end
 #         coef_dest[:] = ldiv!(solver, coef_dest)
 #     end
 
-adjoint(op::GenericSolverOperator) = warn("not implemented")
+adjoint(op::GenericSolverOperator) = @warn("not implemented")
 
-qr_factorization(matrix) = qr(matrix, Val(true))
-svd_factorization(matrix) = svd(matrix, full=false)
+qr_factorization(op::DictionaryOperator) = qr(matrix(op), Val(true))
 
-QR_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, qr_factorization(matrix(op)))
-SVD_solver(op::DictionaryOperator; options...) = GenericSolverOperator(op, svd_factorization(matrix(op)))
+function svd_factorization(op::DictionaryOperator)
+    local F
+    A = Matrix(op)
+    try
+        F = svd(A, full=false)
+    catch
+        # Sometimes svd does not work because A is a structured matrix.
+        # In that case, we convert to a dense matrix.
+        F = svd(collect(A), full=false)
+    end
+    return F
+end
+
+function regularized_svd_factorization(op::DictionaryOperator;
+            verbose = false, threshold = 1000*eps(real(eltype(op))), options...)
+    F = svd_factorization(op)
+    U = F.U
+    S = F.S
+    Vt = F.Vt
+    I = findfirst(F.S .< threshold)
+    if I == nothing
+        verbose && println("SVD: no regularization needed (threshold: $threshold)")
+        return F
+    else
+        verbose && println("SVD truncated at rank $I of $(minimum(size(op))) (threshold: $threshold)")
+        U_reg = U[:,1:I]
+        Vt_reg = Vt[1:I,:]
+        S_reg = S[1:I]
+        return SVD(U_reg, S_reg, Vt_reg)
+    end
+end
+
+QR_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, qr_factorization(op))
+SVD_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, svd_factorization(op))
+
+regularized_SVD_solver(op::DictionaryOperator; options...) =
+    GenericSolverOperator(op, regularized_svd_factorization(op; options...))
+
+struct LSQR_solver{T} <: VectorizingSolverOperator{T}
+    op      ::  DictionaryOperator{T}
+    options ::  NamedTuple
+
+    src_linear  ::  Vector{T}
+    dest_linear ::  Vector{T}
+    LSQR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, verbose=false, options...) where T =
+        new{T}(op, (damp=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
+            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op))))
+end
+
+linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
+
+struct LSMR_solver{T} <: VectorizingSolverOperator{T}
+    op      ::  DictionaryOperator{T}
+    options ::  NamedTuple
+
+    src_linear  ::  Vector{T}
+    dest_linear ::  Vector{T}
+    LSMR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, verbose=false, options...) where T =
+        new{T}(op, (λ=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
+            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op)))
+        )
+end
+
+linearized_apply!(op::LSMR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsmr(op.op, coef_src; op.options...))

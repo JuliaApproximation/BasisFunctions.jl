@@ -1,8 +1,10 @@
-
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees
-using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
+using IterativeSolvers: lsqr, lsmr
+using FillArrays
+import Calculus: derivative
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra, FastGaussQuadrature
 using Base.Cartesian
 
 ## Some specific functions of Base we merely use
@@ -10,14 +12,13 @@ using Base.Cartesian
 using Base: IteratorSize
 using SpecialFunctions: gamma
 using DSP: conv
-using Base.Sys: isapple
 
 ## Imports from Base of functions we extend
 
 import Base: +, *, /, ==, |, &, -, \, ^
 import Base: <, <=, >, >=
 import Base: ≈
-import Base: ∘
+import Base: ∘, ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
@@ -28,18 +29,22 @@ import Base: checkbounds, checkbounds_indices, checkindex
 import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1
 import Base: broadcast, similar
+import Base.Broadcast: broadcasted, DefaultArrayStyle, broadcast_shape
 
-import Base: cos, sin, exp, log
+import Base: cos, sin, exp, log, sqrt
 import Base: zeros, ones, one, zero, fill!, rand
 
-import Base: isreal, iseven, isodd, real, complex
+import Base: isreal, iseven, isodd, real, complex, conj
 
 import Base: show, string
 
 
 ## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint
+import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank
+import LinearAlgebra: diag, isdiag, eigvals, issymmetric, svdvals
 
+import BlockArrays.BlockVector
+export BlockVector
 
 ## Imports from DomainSets
 
@@ -84,7 +89,7 @@ export element, elements, numelements
 # from grid/grid.jl
 export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
         AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        DyadicPeriodicEquispacedGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
+        FourierGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
         AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
 export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point
@@ -94,20 +99,21 @@ export leftendpoint, rightendpoint, range
 export ProductGrid
 
 # from grid/subgrid.jl
-export AbstractSubGrid, IndexSubGrid, subindices, supergrid, is_subindex,
+export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
     similar_subgrid
 
 # from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
 
+# from spaces/measure.jl
+export innerproduct
+export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, DiscreteMeasure
+export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
+export supermeasure, applymeasure
+
 # from spaces/spaces.jl
-export FunctionSpace
+export GenericFunctionSpace, space
 
-# from operator/dimop.jl
-export DimensionOperator, dimension_operator
-
-# from operators/banded_operators.jl
-export HorizontalBandedOperator, VerticalBandedOperator
 
 export SparseOperator
 
@@ -115,18 +121,18 @@ export SparseOperator
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
 export domaintype, codomaintype, coefficienttype
 export promote_domaintype, promote_domainsubtype, promote_coefficienttype
-export grid, left, right, support, domain, codomain
-export measure
+export interpolation_grid, left, right, support, domain, codomain
+export measure, hasmeasure
 export eval_expansion, eval_element, eval_element_derivative
 export name
 export instantiate, resize
 export ordering
 export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
-export is_composite
-export is_basis, is_frame, is_orthogonal, is_biorthogonal, is_orthonormal
+export iscomposite
+export isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal
 export in_support
-export approx_length, extension_size
-export has_transform, has_unitary_transform, has_extension, has_derivative, has_antiderivative, has_grid
+export dimensions, approx_length, extension_size
+export hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid
 export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!
 export moment, norm
@@ -153,13 +159,13 @@ export MappedDict, mapped_dict, mapping, superdict, rescale
 export Expansion, TensorProductExpansion
 export expansion, coefficients, dictionary, roots,
         random_expansion, differentiate, antidifferentiate,
-        ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, is_compatible
+        ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, iscompatible
 
 # from operator/operator.jl
 export AbstractOperator, DictionaryOperator
 export src, dest, src_space, dest_space
 export apply!, apply, apply_multiple, apply_inplace!
-export matrix, diagonal, is_diagonal, is_inplace, sparse_matrix
+export matrix, diag, isdiag, isinplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -169,29 +175,21 @@ export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
-        CoefficientScalingOperator, MatrixOperator, FunctionOperator,
-        MultiplicationOperator, WrappedOperator, UnevenSignFlipOperator, ZeroOperator,
-        IndexRestrictionOperator, IndexExtensionOperator, RealifyOperator, ComplexifyOperator
+        ArrayOperator, FunctionOperator,
+        MultiplicationOperator,
+        IndexRestrictionOperator, IndexExtensionOperator,
+        HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
 # from operator/solvers.jl
-export QR_solver, SVD_solver, operator
-# from operator/circulant_operator.jl
-export CirculantOperator
-# from operator/pseudo_diagonal.jl
-#export PseudoDiagonalOperator
+export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSMR_solver
+
 # from operator/generic_operators.jl
 export GenericIdentityOperator
 
 # from generic/transform.jl
-export transform_operator, transform_dict, full_transform_operator,
-    transform_operator_pre, transform_operator_post,
-    transform_to_grid, transform_to_grid_pre, transform_to_grid_post,
-    transform_from_grid, transform_from_grid_pre, transform_from_grid_post,
-    transform_operators
+export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export Gram, DualGram, MixedGram, gram_entry
-export DiscreteGram, DiscreteDualGram, DiscreteMixedGram
-export dual
+export gramelement, gramoperator, dualdictionary, mixedgramoperator
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -199,14 +197,10 @@ export extension_operator, default_extension_operator, extension_size, extend,
     Extension, Restriction
 
 # from generic/evaluation.jl
-export evaluation_operator, grid_evaluation_operator, default_evaluation_operator,
-    evaluation_matrix, discrete_dual_evaluation_operator
+export evaluation_operator, evaluation_matrix
 
 # from generic/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
-
-# from generic/leastsquares.jl
-export leastsquares_operator, default_leastsquares_operator, leastsquares_matrix
 
 # from generic/approximation.jl
 export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
@@ -216,16 +210,13 @@ export differentiation_operator, antidifferentiation_operator, derivative_dict,
     antiderivative_dict, Differentiation, Antidifferentiation
 
 # from products.jl
-export is_homogeneous, basetype, tensorproduct
+export ishomogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
 
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
-
-# from util/functors.jl
-export Cos, Sin, Exp, Log, PowerFunction, IdentityFunction
 
 # from bases/generic/weighted_dict.jl
 export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
@@ -246,51 +237,51 @@ export VectorvaluedDict
 
 # from bases/generic/operated_dict.jl
 export OperatedDict
-export derivative, src_dictionary, dest_dictionary
+export derivative
 
 # from bases/generic/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary
-export is_discrete
+export isdiscrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
-export gridbasis, grid_multiplication_operator
+export grid, gridbasis, grid_multiplication_operator
 
 # from sampling/sampling_operator.jl
-export GridSamplingOperator
+export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator
 export sample
 
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
 
+# from sampling/normalization.jl
+export quadraturenormalization, sampling_normalization
+
 # from bases/fourier/fourier.jl
-export FourierBasis, FourierBasisEven, FourierBasisOdd, FourierBasisNd,
+export Fourier,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
     frequency2idx, idx2frequency,
-    fourier_basis_even, fourier_basis_odd, pseudodifferential_operator
+    fourier_basiseven, fourier_basisodd, pseudodifferential_operator
 
 # from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries
 
 
 # from bases/poly/chebyshev.jl
-export ChebyshevBasis, ChebyshevT, ChebyshevU,
+export ChebyshevT, ChebyshevU,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
 # from util/recipes.jl
 export plotgrid, postprocess
 
-# from util/MultiArray.jl
-export MultiArray
-
 # from util/domain_extensions.jl
 export float_type, dimension
 
 # from bases/poly/orthopoly.jl and friends
-export LegendrePolynomials, JacobiPolynomials, LaguerrePolynomials, HermitePolynomials
+export Legendre, Jacobi, Laguerre, Hermite
 export Monomials, RationalBasis, GenericOPS
 export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
 export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment
@@ -301,14 +292,14 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
 export gaussjacobi
 
-
-
+diagonal(a...) = error("diagonal is replaced by the LinearAlgebra-type function diag")
+isdiagonal(a...) = error("isdiagonal is replaced by the LinearAlgebra-type function isdiag")
+export diagonal, isdiagonal
 
 include("util/common.jl")
 include("util/indexing.jl")
-include("util/multiarray.jl")
-include("util/slices.jl")
-include("util/functors.jl")
+include("util/arrays/specialarrays.jl")
+include("util/arrays/outerproductarrays.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
@@ -316,6 +307,10 @@ include("maps/partition.jl")
 include("grid/grid.jl")
 include("grid/productgrid.jl")
 include("grid/derived_grid.jl")
+include("grid/intervalgrids.jl")
+include("grid/mappedgrid.jl")
+include("grid/scattered_grid.jl")
+include("grid/subgrid.jl")
 
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
@@ -332,27 +327,19 @@ include("operator/operator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
-include("grid/mappedgrid.jl")
-include("grid/intervalgrids.jl")
-include("grid/scattered_grid.jl")
-include("grid/subgrid.jl")
-
 include("bases/generic/derived_dict.jl")
 include("bases/generic/complexified_dict.jl")
 include("bases/generic/tensorproduct_dict.jl")
 include("bases/generic/mapped_dict.jl")
 
-include("operator/dimop.jl")
-
 include("operator/arrayoperator.jl")
-include("operator/basic_operators.jl")
-include("operator/banded_operators.jl")
 include("operator/solvers.jl")
 include("operator/special_operators.jl")
 include("operator/tensorproductoperator.jl")
 include("operator/block_operator.jl")
-#include("operator/pseudo_diagonal.jl")
-include("operator/circulant_operator.jl")
+include("operator/arithmetics.jl")
+include("operator/simplify.jl")
+include("operator/orthogonality.jl")
 
 include("operator/generic_operators.jl")
 
@@ -383,6 +370,9 @@ include("bases/generic/vector_dict.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
+include("sampling/normalization.jl")
+include("sampling/interaction.jl")
+
 
 ################################################################
 # Trigonometric sets: Fourier, cosines and sines

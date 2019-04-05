@@ -14,6 +14,7 @@ struct ProductGrid{TG,T,N} <: AbstractGrid{T,N}
 end
 
 # Generic functions for composite types:
+iscomposite(grid::ProductGrid) = true
 elements(grid::ProductGrid) = grid.grids
 element(grid::ProductGrid, j::Int) = grid.grids[j]
 element(grid::ProductGrid, range::AbstractRange) = cartesianproduct(grid.grids[range]...)
@@ -36,3 +37,21 @@ rightendpoint(g::ProductGrid, j) = rightendpoint(g.grids[j])
 
 getindex(g::ProductGrid{TG,T,N}, I::Vararg{Int,N}) where {TG,T,N} =
 	convert(T, map(getindex, g.grids, I))
+
+similargrid(grid::ProductGrid, ::Type{T}, dims...) where T = ProductGrid([similargrid(g, eltype(T), dims[i]) for (i,g) in enumerate(elements(grid))]...)
+
+
+## Printing
+
+function stencilarray(grid::ProductGrid)
+	A = Any[]
+    push!(A, element(grid, 1))
+    for i in 2:numelements(grid)
+        push!(A, " × ")
+        push!(A, element(grid, i))
+    end
+    A
+end
+
+object_parentheses(grid::ProductGrid) = true
+stencil_parentheses(grid::ProductGrid) = true

@@ -3,42 +3,52 @@
 A basis of Legendre polynomials on the interval `[-1,1]`. These classical
 polynomials are orthogonal with respect to the weight function `w(x) = 1`.
 """
-struct LegendrePolynomials{T} <: OPS{T,T}
+struct Legendre{T} <: OPS{T,T}
     n   ::  Int
 end
 
+Legendre(n::Int) = Legendre{Float64}(n)
 
+instantiate(::Type{Legendre}, n, ::Type{T}) where {T} = Legendre{T}(n)
 
-name(b::LegendrePolynomials) = "Legendre OPS"
+similar(b::Legendre, ::Type{T}, n::Int) where {T} = Legendre{T}(n)
 
-LegendrePolynomials(n::Int) = LegendrePolynomials{Float64}(n)
+support(b::Legendre{T}) where {T} = ChebyshevInterval{T}()
 
-instantiate(::Type{LegendrePolynomials}, n, ::Type{T}) where {T} = LegendrePolynomials{T}(n)
+first_moment(b::Legendre{T}) where {T} = T(2)
 
-similar(b::LegendrePolynomials, ::Type{T}, n::Int) where {T} = LegendrePolynomials{T}(n)
+jacobi_α(b::Legendre{T}) where {T} = T(0)
+jacobi_β(b::Legendre{T}) where {T} = T(0)
 
-support(b::LegendrePolynomials{T}) where {T} = ChebyshevInterval{T}()
+measure(b::Legendre{T}) where {T} = LegendreMeasure{T}()
+iscompatible(::Legendre, ::LegendreMeasure) = true
+issymmetric(::Legendre) = true
 
-#grid(b::LegendrePolynomials) = LegendreGrid(b.n)
+function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreMeasure; options...)
+	T = coefficienttype(d1)
+	if i == j
+		2 / convert(T, 2*value(i)+1)
+	else
+		zero(T)
+	end
+end
 
-first_moment(b::LegendrePolynomials{T}) where {T} = T(2)
-
-jacobi_α(b::LegendrePolynomials{T}) where {T} = T(0)
-jacobi_β(b::LegendrePolynomials{T}) where {T} = T(0)
-
-weight(b::LegendrePolynomials{T}, x) where {T} = T(1)
-
-function gramdiagonal!(result, ::LegendrePolynomials; options...)
-    T = eltype(result)
-    for i in 1:length(result)
-        result[i] = T(2//(2(i-1)+1))
-    end
+function quadraturenormalization(gb, grid::OPSNodes{<:Legendre}, ::LegendreMeasure; options...)
+	T = eltype(grid)
+	x, w = gauss_rule(Legendre{T}(length(grid)))
+	DiagonalOperator(gb, w)
 end
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
-rec_An(b::LegendrePolynomials{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
+rec_An(b::Legendre{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
 
-rec_Bn(b::LegendrePolynomials{T}, n::Int) where {T} = zero(T)
+rec_Bn(b::Legendre{T}, n::Int) where {T} = zero(T)
 
-rec_Cn(b::LegendrePolynomials{T}, n::Int) where {T} = T(n)/T(n+1)
+rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
+
+name(dict::Legendre) = "Legendre polynomials"
+
+name(g::OPSNodes{<:Legendre}) = "Legendre points"
+
+gauss_rule(dict::Legendre{Float64}) = FastGaussQuadrature.gausslegendre(length(dict))

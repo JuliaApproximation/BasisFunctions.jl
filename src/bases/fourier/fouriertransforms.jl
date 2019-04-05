@@ -9,107 +9,73 @@
 #
 # This situation will improve once the pure-julia implementation of FFT lands (#6193).
 
+# The types T for which we can use FFTW's fft routines (with element type Complex{T})
+FFTW_TYPES = Union{Float32,Float64}
+
+# The types for which we can use FFTW's dct routines
+DCT_FFTW_TYPES = Union{Float32,Float64,Complex{Float32},Complex{Float64}}
+
 
 #############################
 # The Fast Fourier transform
 #############################
 
-function fftw_scaling_operator(dict::Dictionary)
-    T = coefficienttype(dict)
-    scalefactor = 1/(convert(T, length(dict)))
-    ScalingOperator{T}(dict, dict, scalefactor)
+inverse_fourier_operator(src, dest; options...) =
+    inverse_fourier_operator(src, dest, op_eltype(src,dest); options...)
+forward_fourier_operator(src, dest; options...) =
+    forward_fourier_operator(src, dest, op_eltype(src,dest); options...)
+
+
+# For any type but the FFTW types
+inverse_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T} =
+    length(dest) * FunctionOperator{T}(src, dest, ifft)
+forward_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T} =
+    inv(inverse_fourier_operator(dest, src, Complex{T}; options...))
+
+
+inverse_fourier_operator(src, dest, ::Type{Complex{T}};
+            fftwflags = FFTW.MEASURE, options...) where {T <: FFTW_TYPES} =
+    bfftw_operator(src, dest, Complex{T}; options...)
+
+function forward_fourier_operator(src, dest, ::Type{Complex{T}};
+            fftwflags = FFTW.MEASURE, options...) where {T <: FFTW_TYPES}
+    t_op = fftw_operator(src, dest, Complex{T}; options...)
+    1/convert(T, length(src)) * t_op
 end
 
-for (op, plan_, f) in ((:fftw_operator, :plan_fft!, :fft ),
-                            (:ifftw_operator, :plan_bfft!, :bfft))
-    # fftw_operator and ifftw_operator take a different route depending on the eltype of dest
-    @eval $op(src::Dictionary, dest::Dictionary, dims, fftwflags; T=coefficienttype(dest)) =
-        $op(src, dest, T, dims, fftwflags)
-    # In the default case apply fft or ifft
-    @eval $op(src::Dictionary, dest::Dictionary, ::Type{Complex{T}}, dims, fftwflags) where {T} =
-        FunctionOperator{Complex{T}}(src, dest, $f)
-    # When possible apply the fast FFTW operator
-    for T in (:(Complex{Float32}), :(Complex{Float64}))
-    	@eval function $op(src::Dictionary, dest::Dictionary, ::Type{$(T)}, dims, fftwflags)
-            plan = $plan_(zeros($(T), dest), dims; flags = fftwflags)
-            MultiplicationOperator{$(T)}(src, dest, plan; inplace = true)
-        end
-    end
+
+function bfftw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+    dims = 1:dimension(src)
+    plan = plan_bfft!(zeros(T, dest), dims; flags = fftwflags)
+    MultiplicationOperator{T}(src, dest, plan; inplace = true)
 end
 
-for (transform, FastTransform, FFTWTransform, fun, op, scalefactor) in ((:forward_fourier_operator, :FastFourierTransform, :FastFourierTransformFFTW, :fft, :fftw_operator, :fft_scalefactor),
-                                   (:backward_fourier_operator, :InverseFastFourierTransform, :InverseFastFourierTransformFFTW, :ifft, :ifftw_operator, :ifft_scalefactor))
-    # These are the generic fallbacks
-    @eval $transform(src, dest, ::Type{Complex{T}}; options...) where {T} =
-        $FastTransform(src, dest; T=Complex{T})
-    # But for some types we can use FFTW
-    for T in (:(Complex{Float32}), :(Complex{Float64}))
-        @eval function $transform(src, dest, ::Type{$(T)}; options...)
-            # TODO: this scaling can't be correct if dims is not equal to 1:dimension(dest)
-            s_op = ScalingOperator{$(T)}(dest, dest, $scalefactor(src,$(T)))
-            t_op = $FFTWTransform(src, dest; T=$(T), options...)
-            s_op * t_op
-  	end
-    end
-
-    # Now the generic implementation, based on using fft and ifft
-    @eval function $FastTransform(src, dest; T = op_eltype(src,dest))
-        s_op = ScalingOperator{T}(dest, dest, $scalefactor(src, T))
-        t_op = FunctionOperator{T}(src, dest, $fun)
-
-        s_op*t_op
-    end
-
-    # We use the fft routine provided by FFTW, but scale the result by 1/sqrt(N)
-    # in order to have a unitary transform. Additional scaling is done in the _pre and
-    # _post routines.
-    # Note that we choose to use bfft, an unscaled inverse fft.
-    @eval function $FFTWTransform(src::Dictionary, dest::Dictionary,
-        dims = 1:dimension(src); fftwflags = FFTW.MEASURE, options...)
-
-        t_op = $op(src, dest, dims, fftwflags)
-        t_op
-    end
+function fftw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+    dims = 1:dimension(src)
+    plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
+    MultiplicationOperator{T}(src, dest, plan; inplace = true)
 end
 
-fft_scalefactor(src, ::Type{T}) where {T} = 1/convert(T, length(src))
-
-ifft_scalefactor(src, ::Type{T}) where {T} = convert(T,  length(src))
-
-ifft_scalefactor(src, ::Type{Complex{Float64}}) = 1
-
-ifft_scalefactor(src, ::Type{Complex{Float32}}) = 1
 
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
-# dimension_operator. These are important to catch, since there are specific FFT-plans
-# that work along one dimension and they are more efficient than our own generic implementation.
+# adjoint and inv.
 FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N}
 IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N}
-#IFFTPLAN{T,N,S} = Base.DFT.ScaledPlan{T,FFTW.cFFTWPlan{T,1,true,N},S}
 
-dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
-    dim, object::FFTPLAN; options...) =
-        FastFourierTransformFFTW(src, dest, dim:dim; options...)
-
-dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
-    dim, object::IFFTPLAN; options...) =
-        InverseFastFourierTransformFFTW(src, dest, dim:dim; options...)
-
-
+# We define adjoints ourselves, since FFTW doesn't
 adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    ifftw_operator(dest(op), src(op), 1:dimension(dest(op)), object.flags)
+    bfftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 adjoint_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    fftw_operator(dest(op), src(op), 1:dimension(dest(op)),object.flags)
+    fftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
+# Explicitly return an inverse in order to avoid creating a scaled FFT plan.
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-#        adjoint_multiplication(op, object)
-adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+    1/convert(eltype(object), length(src(op))) * bfftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-#        adjoint_multiplication(op, object)
-    adjoint_multiplication(op, object) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
+    1/convert(eltype(object), length(src(op))) * fftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 
 adjoint_function(op::FunctionOperator, fun::typeof(fft)) =
@@ -126,61 +92,111 @@ inv(fun::typeof(ifft)) = fft
 
 
 
-
-
 ##################################
 # The Discrete Cosine transform
 ##################################
 
-# We implement the standard type II DCT and less standard type I DCT here.
+# We invoke the standard type II DCT and less standard type I DCT here.
 # The type II DCT is used for the discrete Chebyshev transform from Chebyshev roots
-# The type I DCT is used for the discrete Chebyshev transforn from Chebyshev extrema
+# The type I DCT is used for the discrete Chebyshev transform from Chebyshev extrema
 # See Strang's paper for the different versions:
 # http://www-math.mit.edu/~gs/papers/dct.pdf
 
-# First: the FFTW routines. We can use MultiplicationOperator with the DCT plans.
+inverse_chebyshev_operator(src, dest; options...) =
+    inverse_chebyshev_operator(src, dest, op_eltype(src,dest); options...)
+forward_chebyshev_operator(src, dest; options...) =
+    forward_chebyshev_operator(src, dest, op_eltype(src,dest); options...)
 
-for (transform, plan) in
-    ((:FastChebyshevTransformFFTW, :plan_dct!),
-    (:InverseFastChebyshevTransformFFTW, :plan_idct!))
-    @eval begin
-        function $transform(src, dest, dims = 1:dimension(dest);
-                    fftwflags = FFTW.MEASURE, T = op_eltype(src,dest), options...)
-            plan = FFTW.$plan(zeros(T, src), dims; flags = fftwflags)
-            MultiplicationOperator(src, dest, plan; inplace=true)
-        end
-    end
+inverse_chebyshevI_operator(src, dest; options...) =
+    inverse_chebyshevI_operator(src, dest, op_eltype(src,dest); options...)
+forward_chebyshevI_operator(src, dest; options...) =
+    forward_chebyshevI_operator(src, dest, op_eltype(src,dest); options...)
+
+# The generic routines for the DCTII. They rely on dct and idct being available for the
+# types of coefficients.
+inverse_chebyshev_operator(src, dest, ::Type{T}; options...) where {T} =
+    FunctionOperator{T}(src, dest, idct)
+forward_chebyshev_operator(src, dest, ::Type{T}; options...) where {T} =
+    FunctionOperator{T}(src, dest, dct)
+
+# The generic routines for the DCTI. They they are not yet available
+inverse_chebyshevI_operator(src, dest, ::Type{T}; options...) where {T} =
+    error("The inverse DCTI-type transform is not available for type ", eltype(src))
+forward_chebyshevI_operator(src, dest, ::Type{T}; options...) where {T} =
+    error("The DCTI-type transform is not available for type ", eltype(src))
+
+
+# For the FFTW routines, we use a MultiplicationOperator with the DCT plans.
+inverse_chebyshev_operator(src, dest, ::Type{T};
+            fftwflags = FFTW.MEASURE, options...) where {T <: DCT_FFTW_TYPES} =
+    idctw_operator(src, dest, T; fftwflags = fftwflags, options...)
+
+forward_chebyshev_operator(src, dest, ::Type{T};
+            fftwflags = FFTW.MEASURE, options...) where {T <: DCT_FFTW_TYPES} =
+    dctw_operator(src, dest, T; fftwflags = fftwflags, options...)
+
+
+function idctw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+    dims = 1:dimension(src)
+    plan = plan_idct!(zeros(T, dest), dims; flags = fftwflags)
+    MultiplicationOperator{T}(src, dest, plan; inplace = true)
 end
 
-function FastChebyshevITransformFFTW(src, dest, dims = 1:dimension(src);
-        fftwflags = FFTW.MEASURE, T = op_eltype(src, dest), options...)
+function dctw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+    dims = 1:dimension(src)
+    plan = plan_dct!(zeros(T, dest), dims; flags = fftwflags)
+    MultiplicationOperator{T}(src, dest, plan; inplace = true)
+end
+
+inverse_chebyshevI_operator(src, dest, ::Type{T};
+            fftwflags = FFTW.MEASURE, options...) where {T <: DCT_FFTW_TYPES} =
+    dctIw_operator(src, dest, T; fftwflags = fftwflags, options...)
+
+forward_chebyshevI_operator(src, dest, ::Type{T};
+            fftwflags = FFTW.MEASURE, options...) where {T <: DCT_FFTW_TYPES} =
+    dctIw_operator(dest, src, T; fftwflags = fftwflags, options...)
+
+
+function dctIw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+    dims = 1:dimension(src)
     plan = FFTW.plan_r2r!(zeros(T, src), FFTW.REDFT00, dims; flags = fftwflags)
-    MultiplicationOperator(src, dest, plan; inplace=true)
+    MultiplicationOperator{T}(src, dest, plan; inplace = true)
 end
 
-# We have to know the precise type of the DCT plan in order to intercept calls to
-# dimension_operator. These are important to catch, since there are specific DCT-plans
-# that work along one dimension and they are more efficient than our own generic implementation.
-DCTPLAN{T} = FFTW.DCTPlan{T,5,true}
-IDCTPLAN{T} = FFTW.DCTPlan{T,4,true}
-DCTIPLAN{T} = FFTW.r2rFFTWPlan{T,(3,),false,1}
 
-for (plan, transform, invtransform) in (
-      (:DCTPLAN, :FastChebyshevTransformFFTW, :InverseFastChebyshevTransform),
-      (:IDCTPLAN, :InverseFastChebyshevTransformFFTW, :FastChebyshevTransform),
-      (:DCTIPLAN, :FastChebyshevITransformFFTW, :FastChebyshevITransformFFTW))
-    @eval begin
-        dimension_operator_multiplication(src::Dictionary, dest::Dictionary, op::MultiplicationOperator,
-            dim, object::$plan; options...) =
-                $transform(src, dest, dim:dim; options...)
+# We have to know the precise type of the DCT plans in order to intercept calls to
+# adjoint and inv.
+DCTII_PLAN{T} = FFTW.DCTPlan{T,5,true}
+INV_DCTII_PLAN{T} = FFTW.DCTPlan{T,4,true}
+DCTI_PLAN{T} = FFTW.r2rFFTWPlan{T,(3,),true,1}
 
-        adjoint_multiplication(op::MultiplicationOperator, object::$plan) =
-            $invtransform(dest(op), src(op))
+const DCTPLANS = Union{DCTII_PLAN,INV_DCTII_PLAN,DCTI_PLAN}
 
-        inv_multiplication(op::MultiplicationOperator, object::$plan) =
-            adjoint_multiplication(op, object)
-    end
+inv_multiplication(op::MultiplicationOperator, object::DCTII_PLAN) =
+    idctw_operator(dest(op), src(op), eltype(object))
+
+inv_multiplication(op::MultiplicationOperator, object::INV_DCTII_PLAN) =
+    dctw_operator(dest(op), src(op), eltype(object))
+
+inv_multiplication(op::MultiplicationOperator, object::DCTI_PLAN) =
+    1/(2*convert(eltype(object), size(op,1))-2) * dctIw_operator(dest(op), src(op), eltype(object))
+
+adjoint_multiplication(op::MultiplicationOperator, object::INV_DCTII_PLAN) =
+    inv_multiplication(op, object)
+
+adjoint_multiplication(op::MultiplicationOperator, object::DCTII_PLAN) =
+    inv_multiplication(op, object)
+
+function adjoint_multiplication(op::MultiplicationOperator, object::DCTI_PLAN)
+    T = eltype(object)
+    diag = ones(T, size(op,1))
+    diag[1] = 2
+    diag[end] = 2
+    D1 = DiagonalOperator(dest(op), dest(op), diag)
+    D2 = DiagonalOperator(src(op), src(op), inv.(diag))
+    D2 * op * D1
 end
+
 
 # The four functions below are used when computing the adjoint or inv of a
 # FunctionOperator that uses dct/idct:
@@ -189,12 +205,3 @@ inv(fun::typeof(idct)) = dct
 
 adjoint(fun::typeof(dct)) = idct
 adjoint(fun::typeof(idct)) = dct
-
-# The generic routines for the DCTII. They rely on dct and idct being available for the
-# types of coefficients.
-FastChebyshevTransform(src, dest; T = op_eltype(src, dest), options...) = FunctionOperator{T}(src, dest, dct)
-InverseFastChebyshevTransform(src, dest; T = op_eltype(src,dest), options...) = FunctionOperator{T}(src, dest, idct)
-
-# The generic routines for the DCTI. They they are not yet available
-FastChebyshevITransform(src, dest) = error("The FastChebyshevITransform is not available for the type ", eltype(src))
-InverseFastChebyshevITransform(src, dest) = error("The InverseFastChebyshevITransform is not available for the type ", eltype(src))
