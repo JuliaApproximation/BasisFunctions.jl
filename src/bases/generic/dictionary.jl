@@ -87,8 +87,6 @@ isorthonormal(d::Dictionary, measure::Measure) = false
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
 isbiorthogonal(d::Dictionary, measure::Measure) = isorthogonal(d, measure)
 
-function size(d::Dictionary) end
-
 size(d::Dictionary, j) = size(d)[j]
 
 """
@@ -416,7 +414,7 @@ support(dict::Dictionary, idx) = support(dict)
 # dictionaries, for example for univariate functions with non-connected support.
 # Make sure to override, and make sure that the overridden version is called.
 
-tolerance(dict::Dictionary) = tolerance(domaintype(dict))
+tolerance(dict::Dictionary) = tolerance(codomaintype(dict))
 
 "Does the given point lie inside the support of the given function or dictionary?"
 in_support(dict::Dictionary, idx) = dict_in_support(dict, idx)
