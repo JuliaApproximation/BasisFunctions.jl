@@ -51,7 +51,8 @@ export BlockVector
 
 ## Imports from DomainSets
 
-import DomainSets: domaintype, codomaintype, dimension, domain
+import DomainSets: domaintype, codomaintype, dimension, domain,
+    indomain, approx_indomain
 # For intervals
 import DomainSets: leftendpoint, rightendpoint, endpoints
 # For maps

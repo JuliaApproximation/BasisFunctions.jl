@@ -12,6 +12,10 @@ iscompatible(map1::AffineMap, map2::AffineMap) = (map1.a ≈ map2.a) && (map1.b 
 
 iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
 
+# We provide a fallback for approx_indomain, for domains that do not implement
+# approximate in, by simply dropping the tolerance.
+approx_indomain(x, domain::Domain, tolerance) = indomain(x, domain)
+
 "Assign a floating point type to a domain element type T."
 float_type(::Type{T}) where {T <: Real} = T
 float_type(::Type{Complex{T}}) where {T <: Real} = Complex{T}
