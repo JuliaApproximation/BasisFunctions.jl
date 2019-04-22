@@ -210,10 +210,10 @@ end
 # Duality
 ########################
 
-@inline dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype, options...) =
+dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype, options...) =
     _dualdictionary(dict, measure, space; dualtype=dualtype, options...)
 
-@inline _dualdictionary(dict::Dictionary, measure::Measure, space::Span; dualargs...) =
+_dualdictionary(dict::Dictionary, measure::Measure, space::Span; dualargs...) =
     _dualdictionary(dict, measure, space, dictionary(space); dualargs...)
 
 function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype, options...) where DICT <: Dictionary

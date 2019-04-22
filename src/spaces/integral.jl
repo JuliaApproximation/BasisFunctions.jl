@@ -42,10 +42,18 @@ integral(f, measure::LebesgueMeasure; options...) =
 integral(f, measure::DiracMeasure; options...) =
     f(point(measure))
 
-function integral(f, measure::DiscreteMeasure; T = subdomaintype(measure), options...)
+function integral(f, measure::DiscreteMeasure; options...)
+    T = subdomaintype(measure)
     r = zero(T)
-    for (xi,x) in enumerate(grid(measure))
-        r += unsafe_discrete_weight(measure,xi)*f(x)
+    # For some reason, the code below allocates memory:
+    # for (xi,x) in enumerate(grid(measure))
+    #     r += unsafe_discrete_weight(measure,xi)*f(x)
+    # end
+    # So we do it more explicitly:
+    w = weights(measure)
+    g = grid(measure)
+    for i in 1:length(g)
+        r += w[i] * f(g[i])
     end
     r
 end
