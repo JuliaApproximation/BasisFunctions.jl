@@ -4,6 +4,7 @@ if !isdefined(DomainSets, :Domain1d)
     const Domain2d{T} = EuclideanDomain{2,T}
     const Domain3d{T} = EuclideanDomain{3,T}
     const Domain4d{T} = EuclideanDomain{4,T}
+    export Domain1d, Domain2d, Domain3d, Domain4d
 end
 
 iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
