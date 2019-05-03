@@ -30,13 +30,13 @@ quadraturenormalization(gb::GridBasis, measure; options...) =
 	quadraturenormalization(gb, grid(gb), measure; options...)
 
 quadraturenormalization(gb, grid::PeriodicEquispacedGrid, ::LebesgueMeasure; options...) =
-	ScalingOperator(gb, stepsize(grid))
+	ScalingOperator(gb, step(grid))
 
 quadraturenormalization(gb, grid::MidpointEquispacedGrid, ::LebesgueMeasure; options...) =
-	ScalingOperator(gb, stepsize(grid))
+	ScalingOperator(gb, step(grid))
 
 quadraturenormalization(gb, grid::FourierGrid, ::LebesgueMeasure; options...) =
-	ScalingOperator(gb, stepsize(grid))
+	ScalingOperator(gb, step(grid))
 
 quadraturenormalization(gb::GridBasis, grid::ChebyshevNodes, ::ChebyshevTMeasure; options...) =
 	ScalingOperator(gb, convert(coefficienttype(gb), pi)/length(grid))
@@ -116,7 +116,7 @@ function riemann_normalization(gb, grid::AbstractGrid1d, measure; options...)
 end
 
 
-function riemannsum_normalization(grid::AbstractGrid, a = leftendpoint(grid), b = rightendpoint(grid); T)
+function riemannsum_normalization(grid::AbstractGrid, a = leftendpoint(support(grid)), b = rightendpoint(support(grid)); T)
 	M = length(grid)
 	L = b-a
 	t = [grid[end] - L; collect(grid); grid[1]+L]

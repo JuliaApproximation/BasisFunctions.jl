@@ -59,17 +59,7 @@ for (BaseType,TPType) in [(:DictionaryOperator,:TensorProductOperator),
     # Disallow tensor products with just one argument
     @eval tensorproduct(arg::$BaseType) = arg
 
-end
-
-for (BaseType,TPType) in [ (:AbstractGrid, :ProductGrid)]
-    # Override × for grids
-    @eval cross(args::$BaseType...) = cartesianproduct(args...)
-    # In order to avoid strange nested structures, we flatten the arguments
-    @eval cartesianproduct(args::$BaseType...) = $TPType(flatten($TPType, args...)...)
-    @eval cartesianproduct(arg::$BaseType, n::Int) = cartesianproduct([arg for i in 1:n]...)
-    # Disallow cartesian products with just one argument
-    @eval cartesianproduct(arg::$BaseType) = arg
-end
+end 
 
 function ishomogeneous(tp)
     T = typeof(element(tp, 1))

@@ -25,9 +25,6 @@ const show_timings = false
 Delimit("Utilities")
 include("util/test_utilities.jl")
 
-Delimit("Grids")
-include("test_grids.jl")
-
 Delimit("Operators")
 include("test_operators.jl")
 

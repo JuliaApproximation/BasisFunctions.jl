@@ -1,6 +1,7 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport
+@reexport using Grids
 using IterativeSolvers: lsqr, lsmr
 using FillArrays
 import Calculus: derivative
@@ -50,7 +51,7 @@ export BlockVector
 
 import DomainSets: domaintype, codomaintype, dimension, domain
 # For intervals
-import DomainSets: leftendpoint, rightendpoint
+import DomainSets: leftendpoint, rightendpoint, endpoints
 # For maps
 import DomainSets: matrix, vector, tensorproduct
 
@@ -60,6 +61,9 @@ import DomainSets: element, elements, numelements
 import DomainSets: cartesianproduct, ×, product_eltype
 
 import DomainSets: forward_map, inverse_map
+
+using Grids: AbstractSubGrid, IndexSubGrid
+import Grids: iscomposite, support, apply_map, mapping
 
 import FastGaussQuadrature: gaussjacobi
 
@@ -86,11 +90,6 @@ export split_interval
 export tensorproduct, ⊗
 export element, elements, numelements
 
-# from grid/grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
-        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        FourierGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
-        AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
 export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point
 export leftendpoint, rightendpoint, range
@@ -303,14 +302,6 @@ include("util/arrays/outerproductarrays.jl")
 include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
-
-include("grid/grid.jl")
-include("grid/productgrid.jl")
-include("grid/derived_grid.jl")
-include("grid/intervalgrids.jl")
-include("grid/mappedgrid.jl")
-include("grid/scattered_grid.jl")
-include("grid/subgrid.jl")
 
 include("spaces/measure.jl")
 include("spaces/spaces.jl")

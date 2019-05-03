@@ -77,7 +77,7 @@ iscompatible(dict::Fourier, grid::AbstractGrid) = false
 hasgrid_transform(dict::Fourier, gb, grid) = iscompatible(dict, grid)
 
 islooselycompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
-	isperiodic(grid) && (leftendpoint(grid)+1 ≈ 1) & (rightendpoint(grid) ≈ 1)
+	isperiodic(grid) && support(dict) ≈ support(grid)
 
 
 interpolation_grid(b::Fourier{T}) where {T} = FourierGrid{T}(length(b))
@@ -233,7 +233,7 @@ grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::FourierGrid; option
 
 function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
 			grid::PeriodicEquispacedGrid; warnslow = BF_WARNSLOW, options...)
-	if (leftendpoint(grid) ≈ 0) && (rightendpoint(grid) ≈ 1)
+	if support(grid)≈support(dict)
 		resize_and_transform(dict, gb, grid; warnslow=warnslow, options...)
 	else
 		warnslow && (@warn "Periodic grid mismatch with Fourier basis")
@@ -259,13 +259,17 @@ end
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedGrid; T=op_eltype(fs, dgs), options...)
-	a = leftendpoint(grid)
-	b = rightendpoint(grid)
+
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
-	if (a > 0) || (b < 1)
+	if support(grid) ≈ support(fs)
+		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
+		# but with the right endpoint added
+		return dense_evaluation_operator(fs, dgs; T=T, options...)
+	elseif support(grid) ∈ support(fs)
+		a, b = endpoints(support(grid))
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
-		h = stepsize(grid)
+		h = step(grid)
 		nleft = a/h
 		nright = (1-b)/h
 		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))
@@ -280,10 +284,6 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 		else
 			dense_evaluation_operator(fs, dgs; T=T, options...)
 		end
-	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
-		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
-		# but with the right endpoint added
-		dense_evaluation_operator(fs, dgs; T=T, options...)
 	else
 		dense_evaluation_operator(fs, dgs; T=T, options...)
 	end
@@ -291,11 +291,11 @@ end
 
 function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid;
 			T=op_eltype(dict, gb), options...)
-	if isodd(length(grid)) && (leftendpoint(grid) +1 ≈ 1) && (rightendpoint(grid) ≈ 1)
+	if isodd(length(grid)) && support(grid)≈support(dict)
 		if length(grid) == length(dict)
 			A = evaluation_operator(dict, FourierGrid{domaintype(dict)}(length(dict)); T=T, options...)
 			diag = zeros(T, length(dict))
-			delta = stepsize(grid)/2
+			delta = step(grid)/2
 			for i in 1:length(dict)
 				diag[i] = exp(2 * T(pi) * im * idx2frequency(dict, i) * delta)
 			end
@@ -497,13 +497,11 @@ end
 # The case of a periodic grid is handled generically in generic/evaluation, because
 # it is the associated grid of the function set.
 function evaluation_operator(fs::Fourier, gb::GridBasis, grid::EquispacedGrid; T=op_eltype(fs,gb), options...)
-	a = leftendpoint(grid)
-	b = rightendpoint(grid)
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
-	if (a > 0) || (b < 1)
+	if support(grid) ∈ support(fs)
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
-		h = stepsize(grid)
+		h = step(grid)
 		nleft = a/h
 		nright = (1-b)/h
 		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))

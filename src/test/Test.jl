@@ -17,10 +17,6 @@ export supports_approximation, supports_interpolation
 export suitable_interpolation_grid, suitable_function
 include("test_dictionary.jl")
 
-export test_generic_grid, test_interval_grid
-export grid_iterator1, grid_iterator2
-include("test_grids.jl")
-
 export test_generic_operator_interface
 include("test_operator.jl")
 

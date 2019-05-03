@@ -1,4 +1,4 @@
-using BasisFunctions, BasisFunctions.Test, DomainSets
+using BasisFunctions, BasisFunctions.Test, DomainSets, Grids
 
 using Test, LinearAlgebra, Plots
 
@@ -10,12 +10,6 @@ delimit("Plots")
     plot(e, exp)
 
     plot(random_expansion(Fourier(4)⊗Fourier(4)))
-
-    plot(EquispacedGrid(4))
-
-    plot(EquispacedGrid(4)×EquispacedGrid(4))
-
-    plot(EquispacedGrid(4)×EquispacedGrid(4)×EquispacedGrid(4))
 
     plot(Fourier(4))
 

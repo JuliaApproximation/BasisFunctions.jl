@@ -1,7 +1,7 @@
 
 function trapezoidal_rule(n::Int, a = -1.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = EquispacedGrid(n, a, b)
-    weights = stepsize(grid) * ones(T, n)
+    weights = step(grid) * ones(T, n)
     weights[1] /= 2
     weights[end] /= 2
     grid, weights
@@ -9,7 +9,7 @@ end
 
 function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = PeriodicEquispacedGrid(n, a, b)
-    weight = stepsize(grid)
+    weight = step(grid)
     grid, weight
 end
 

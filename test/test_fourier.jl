@@ -28,9 +28,9 @@ function test_fourier_series(T)
     @test supremum(support(fb)) ≈ b
 
     g = interpolation_grid(fb)
-    @test typeof(g) <: MappedGrid
-    @test leftendpoint(g) ≈ a
-    @test rightendpoint(g) ≈ b
+    @test typeof(g) <: PeriodicEquispacedGrid
+    @test leftendpoint(support(g)) ≈ a
+    @test rightendpoint(support(g)) ≈ b
     @test length(g) == length(fb)
 
     # Take a random point in the domain

@@ -39,46 +39,6 @@ end
     grid, log10.(real(vals))
 end
 
-
-# Plot a vector of values on a 1D grid
-# @recipe function f(grid::AbstractGrid1d{S <: Real,N}, vals::AbstractArray{S}) where {S,N}
-#     size --> (800,400)
-#     collect(grid), vals
-# end
-#
-# # Implement the same function as above to resolve an ambiguity
-# @recipe function f(grid::AbstractGrid1d{S <: Real,N}, vals::AbstractArray{Complex{S}}) where {S,N}
-#     size --> (800,400)
-#     collect(grid), vals
-# end
-
-# Plot a matrix of values on a 2D equispaced grid
-@recipe function f(grid::AbstractGrid2d, vals)
-    seriestype --> :surface
-    size --> (500,400)
-    xrange = linspace(leftendpoint(grid)[1],rightendpoint(grid)[1],size(grid,1))
-    yrange = linspace(leftendpoint(grid)[2],rightendpoint(grid)[2],size(grid,2))
-    xrange, yrange, vals'
-end
-
-# Plot an Nd grid
-@recipe function f(grid::AbstractGrid)
-    seriestype --> :scatter
-    size --> (500,400)
-    legend --> false
-    broadcast(x->tuple(x...),collect(grid)[1:end])
-end
-
-# Plot a 1D grid
-@recipe function f(grid::AbstractGrid1d)
-    seriestype --> :scatter
-    yticks --> []
-    ylims --> [-1 1]
-    size --> (500,200)
-    legend --> false
-    collect(grid), zeros(size(grid))
-end
-
 # Plot a Dictionary
 @recipe function f(F::Dictionary; plot_complex = false, n=200)
     for i in eachindex(F)
