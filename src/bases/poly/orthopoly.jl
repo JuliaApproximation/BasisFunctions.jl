@@ -330,7 +330,7 @@ end
 # over the full eigenvector.
 function gauss_rule(b::OPS{T}) where {T <: Complex}
     J = symmetric_jacobi_matrix(b)
-    x,v = eig(J)
+    x,v = eigen(J)
     b0 = first_moment(b)
     w = similar(x)
     for i in 1:length(w)
