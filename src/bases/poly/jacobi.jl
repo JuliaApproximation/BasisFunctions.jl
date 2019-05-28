@@ -41,10 +41,14 @@ measure(b::Jacobi) = JacobiMeasure(b.α, b.β)
 
 iscompatible(d1::Jacobi, d2::Jacobi) = d1.α == d2.α && d1.β == d2.β
 
-iscompatible(dict::Jacobi, measure::JacobiMeasure) =
+isorthogonal(dict::Jacobi, measure::JacobiMeasure) =
 	dict.α == measure.α && dict.β == measure.β
 
-issymmetric(dict::Jacobi) = abs(dict.α)==abs(dict.β)
+interpolation_grid(dict::Jacobi) = JacobiNodes(length(dict), dict.α, dict.β)
+iscompatible(dict::Jacobi, grid::JacobiNodes) =  length(dict) == length(grid) && dict.α ≈ grid.α && dict.β ≈ grid.β
+isorthogonal(dict::Jacobi, measure::JacobiGaussMeasure) = dict.α ≈ measure.α && dict.β ≈ measure.β && opsorthogonal(dict, measure)
+
+issymmetric(dict::Jacobi) = (dict.α)≈(dict.β)
 
 # See DLMF (18.9.2)
 # http://dlmf.nist.gov/18.9#i
@@ -69,7 +73,7 @@ rec_Cn(b::Jacobi{T}, n::Int) where {T} =
 
 function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::PolynomialDegree, measure::JacobiMeasure; options...)
 	T = coefficienttype(d1)
-	if iscompatible(d1, d2) && iscompatible(d1, measure)
+	if iscompatible(d1, d2) && isorthogonal(d1, measure)
 		if i == j
 			a = d1.α
 			b = d1.β
@@ -82,7 +86,6 @@ function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::Pol
 		innerproduct1(d1, i, d2, j, measure; options...)
 	end
 end
-
 
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
@@ -97,7 +100,3 @@ jacobi_β(b::UltrasphericalBasis) = b.α
 weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
 
 name(dict::Jacobi) = "Jacobi polynomials  (α = $(dict.α), β = $(dict.β))"
-
-name(g::OPSNodes{<:Jacobi}) = "Jacobi points (α = $(g.dict.α), β = $(g.dict.β))"
-
-gauss_rule(dict::Jacobi{Float64}) = FastGaussQuadrature.gaussjacobi(length(dict), jacobi_α(dict), jacobi_β(dict))

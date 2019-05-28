@@ -17,9 +17,8 @@ isprobabilitymeasure(m::Measure; options...) = error("isprobabilitymeasure not i
 applymeasure(m::Measure, f::Function; options...) = default_applymeasure(m, f; options...)
 isdiscrete(::Measure) = false
 
-function default_applymeasure(measure::Measure, f::Function;
-            warnslow = BF_WARNSLOW, options...)
-    warnslow && !(isdiscrete(measure)) && @warn "Applying measure $(typeof(measure)) numerically"
+function default_applymeasure(measure::Measure, f::Function; options...)
+    @debug  "Applying measure $(typeof(measure)) numerically" maxlog=3
     integral(f, measure; options...)
 end
 

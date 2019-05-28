@@ -95,3 +95,17 @@ for (OP) in (:DiagonalOperator, :CirculantOperator)
         unsafe_compose_and_simplify(op1::$OP, op2::$OP) = ArrayOperator(_checked_mul(unsafe_matrix(op2), unsafe_matrix(op1)), cas_src(op1,op2), cas_dest(op1,op2))
     end
 end
+
+function unsafe_compose_and_simplify(op1::IndexExtensionOperator, op2::IndexRestrictionOperator)
+    if subindices(op1) == subindices(op2)
+        IdentityOperator(cas_src(op1,op2), cas_dest(op1,op2))
+    else
+        default_unsafe_compose_and_simplify(op1, op2)
+    end
+end
+
+unsafe_compose_and_simplify(op1::DiagonalOperator, op2::ScalingOperator) =
+    DiagonalOperator(cas_src(op1,op2),cas_dest(op1,op2),Diagonal(diag(op1)*scalar(op2)))
+
+unsafe_compose_and_simplify(op1::ScalingOperator, op2::DiagonalOperator) =
+    DiagonalOperator(cas_src(op1,op2),cas_dest(op1,op2),Diagonal(diag(op2)*scalar(op1)))

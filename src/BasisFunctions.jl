@@ -1,13 +1,15 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport,
+    FillArrays
 @reexport using Grids
 import Grids: subindices, instantiate
 
 using IterativeSolvers: lsqr, lsmr
-using FillArrays
 import Calculus: derivative
-using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra, FastGaussQuadrature
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+import FastGaussQuadrature: gaussjacobi, gausslaguerre, gausslegendre, gausshermite
+using GaussQuadrature: jacobi, laguerre, legendre, hermite
 using Base.Cartesian
 
 ## Some specific functions of Base we merely use
@@ -68,8 +70,6 @@ import DomainSets: forward_map, inverse_map
 using Grids: AbstractSubGrid, IndexSubGrid
 import Grids: iscomposite, support, apply_map, mapping
 
-import FastGaussQuadrature: gaussjacobi
-
 import AbstractTrees: children
 
 
@@ -109,7 +109,7 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
-export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, DiscreteMeasure
+export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
 export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
 export supermeasure, applymeasure
 
@@ -191,7 +191,7 @@ export GenericIdentityOperator
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export gramelement, gramoperator, dualdictionary, mixedgramoperator
+export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -292,8 +292,6 @@ export leading_order_coefficient
 # from specialOPS.jl
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
 
-export gaussjacobi
-
 diagonal(a...) = error("diagonal is replaced by the LinearAlgebra-type function diag")
 isdiagonal(a...) = error("isdiagonal is replaced by the LinearAlgebra-type function isdiag")
 export diagonal, isdiagonal
@@ -309,6 +307,7 @@ include("maps/partition.jl")
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
 include("spaces/integral.jl")
+include("spaces/logic.jl")
 
 include("bases/generic/dictionary.jl")
 include("bases/generic/span.jl")
@@ -385,7 +384,7 @@ include("bases/fourier/sineseries.jl")
 include("bases/poly/polynomials.jl")
 include("bases/poly/monomials.jl")
 include("bases/poly/orthopoly.jl")
-include("bases/poly/chebyshev.jl")
+include("bases/poly/chebyshev/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
@@ -393,6 +392,8 @@ include("bases/poly/hermite.jl")
 include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
+include("bases/poly/discretemeasure.jl")
+
 
 include("operator/prettyprint.jl")
 

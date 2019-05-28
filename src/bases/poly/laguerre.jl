@@ -34,15 +34,19 @@ jacobi_α(b::Laguerre) = b.α
 measure(b::Laguerre) = LaguerreMeasure(b.α)
 
 iscompatible(d1::Laguerre, d2::Laguerre) = d1.α == d2.α
-isorthonormal(dict::Laguerre, measure::LaguerreMeasure) = iscompatible(dict, measure) && dict.α == 0
-isorthonormal(dict::Laguerre, measure::OPSNodesMeasure{T,<:Laguerre}) where T = iscompatible(dict, measure) && dict.α == 0
+interpolation_grid(dict::Laguerre) = LaguerreNodes(length(dict), dict.α)
+iscompatible(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(grid) && dict.α ≈ grid.α
+isorthogonal(dict::Laguerre, measure::LaguerreGaussMeasure) = dict.α ≈ measure.α && opsorthogonal(dict, measure)
+
+isorthonormal(dict::Laguerre, measure::LaguerreMeasure) = isorthogonal(dict, measure) && dict.α == 0
+isorthonormal(dict::Laguerre, measure::LaguerreGaussMeasure) where T = isorthogonal(dict, measure) && dict.α == 0
 issymmetric(::Laguerre) = false
 
-iscompatible(dict::Laguerre, measure::LaguerreMeasure) = dict.α == measure.α
+isorthogonal(dict::Laguerre, measure::LaguerreMeasure) = dict.α == measure.α
 
 function innerproduct_native(d1::Laguerre, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreMeasure; options...)
 	T = coefficienttype(d1)
-	if iscompatible(d1, d2) && iscompatible(d1, measure)
+	if iscompatible(d1, d2) && isorthogonal(d1, measure)
 		if i == j
 			gamma(convert(T, value(i)+1+jacobi_α(d1))) / convert(T, factorial(value(i)))
 		else
@@ -73,7 +77,3 @@ function name(dict::Laguerre)
 		"Generalized Laguerre polynomials (α = $(dict.α))"
 	end
 end
-
-name(g::OPSNodes{<:Laguerre}) = "Laguerre points (α = $(g.dict.α))"
-
-gauss_rule(dict::Laguerre{Float64}) = FastGaussQuadrature.gausslaguerre(length(dict), jacobi_α(dict))

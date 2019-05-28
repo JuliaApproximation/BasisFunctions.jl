@@ -92,11 +92,14 @@ gramoperator2(dict, measure::Measure; options...) =
     default_gramoperator(dict, measure; options...)
 
 gramoperator2(dict, measure::DiscreteMeasure; options...) =
-    default_mixedgramoperator_discretemeasure(dict, dict, measure; options...)
+    gramoperator(dict, measure, grid(measure), weights(measure))
 
-@inline function default_gramoperator(dict::Dictionary, m=measure(dict); warnslow = BF_WARNSLOW, options...)
-    warnslow && @warn "Slow computation of Gram matrix entrywise."
-    A = grammatrix(dict, m; warnslow = warnslow, options...)
+gramoperator(dict, measure::DiscreteMeasure, grid, weights; options...) =
+    default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; options...)
+
+@inline function default_gramoperator(dict::Dictionary, m=measure(dict); options...)
+    @debug "Slow computation of Gram matrix entrywise."
+    A = grammatrix(dict, m; options...)
     R = ArrayOperator(A, dict, dict)
 end
 
@@ -110,11 +113,11 @@ end
 	DiagonalOperator(dict, diag)
 end
 
-@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure;
+@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid, weights;
             T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
-    E1 = evaluation_operator(dict1, grid(measure); T=T, options...)
-    E2 = evaluation_operator(dict2, grid(measure); T=T, options...)
-    W = DiagonalOperator(dest(E2),dest(E1),weights(measure); T=T)
+    E1 = evaluation_operator(dict1, grid; T=T, options...)
+    E2 = evaluation_operator(dict2, grid; T=T, options...)
+    W = DiagonalOperator(dest(E2),dest(E1), weights, T=T)
     E1'*W*E2
 end
 
@@ -172,7 +175,10 @@ mixedgramoperator3(d1, d2, measure::Measure; options...) =
     default_mixedgramoperator(d1, d2, measure; options...)
 
 mixedgramoperator3(d1, d2, measure::DiscreteMeasure; options...) =
-    default_mixedgramoperator_discretemeasure(d1, d2, measure; options...)
+    mixedgramoperator(d1, d2, measure, grid, weights; options...)
+
+mixedgramoperator(d1, d2, measure::DiscreteMeasure, grid, weights; options...) =
+    default_mixedgramoperator_discretemeasure(d1, d2, measure, grid, weights; options...)
 
 function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) where DICT<:Dictionary
     if d1 == d2
@@ -182,9 +188,9 @@ function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) whe
     end
 end
 
-@inline function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; warnslow = BF_WARNSLOW, options...)
-    warnslow && @warn "Slow computation of mixed Gram matrix entrywise."
-    A = mixedgrammatrix(d1, d2, measure; warnslow = warnslow, options...)
+@inline function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; options...)
+    @debug "Slow computation of mixed Gram matrix entrywise."
+    A = mixedgrammatrix(d1, d2, measure; options...)
     T = eltype(A)
     ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
 end
@@ -210,18 +216,11 @@ end
 # Duality
 ########################
 
-dualdictionary(dict::Dictionary, measure::Measure=measure(dict), space::FunctionSpace=Span(dict); dualtype=:spantype, options...) =
-    _dualdictionary(dict, measure, space; dualtype=dualtype, options...)
+dual(dict::Dictionary, measure::BasisFunctions.Measure=measure(dict); dualtype=gramdual, options...) =
+    dualtype(dict, measure; options...)
 
-_dualdictionary(dict::Dictionary, measure::Measure, space::Span; dualargs...) =
-    _dualdictionary(dict, measure, space, dictionary(space); dualargs...)
+gramdual(dict::Dictionary, measure::Measure; options...) =
+    default_gramdual(dict, measure; options...)
 
-function _dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; dualtype=:spantype, options...) where DICT <: Dictionary
-    (dualtype==:spantype) || @warn "At this point, the unique dual dictionary is of `:spantype`"
-    spantype_dualdictionary(dict, measure, space, spandict; options...)
-end
-
-function spantype_dualdictionary(dict::DICT, measure::Measure, space::Span, spandict::DICT; options...) where DICT <: Dictionary
-    @assert size(dict) == size(spandict)
+default_gramdual(dict::Dictionary, measure::Measure; options...) =
     conj(inv(gramoperator(dict, measure; options...))) * dict
-end

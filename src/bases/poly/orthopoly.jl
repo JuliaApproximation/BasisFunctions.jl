@@ -8,8 +8,6 @@ end
 
 const OPS{S,T} = OrthogonalPolynomials{S,T}
 
-isorthogonal(dict::OPS, measure::Measure) =
-    iscompatible(dict, measure)
 
 approx_length(b::OPS, n::Int) = n
 
@@ -274,89 +272,44 @@ function roots(b::OPS{T}) where {T<:Union{BigFloat}}
     sort(real(eigvals!(J)))
 end
 
-gauss_points(b::OPS) = roots(b)
-
-
-struct OPSNodes{T,OPS} <: AbstractGrid{T,1}
-	dict	::	OPS
-	nodes	::	AbstractVector{T}
-end
-
-
-OPSNodes(dict::OPS) = OPSNodes(dict, roots(dict))
-
-size(grid::OPSNodes) = (length(grid.nodes),)
-getindex(grid::OPSNodes, i::Int) = grid.nodes[i]
-
-struct OPSNodesMeasure{T,OPS} <: DiscreteMeasure{T}
-    dict    ::  OPS
-    grid    ::  OPSNodes{T,OPS}
-    weights ::  AbstractVector{T}
-end
-
-function OPSNodesMeasure(dict::OPS)
-    x,w = gauss_rule(dict)
-    OPSNodesMeasure(dict, OPSNodes(dict, x), w)
-end
-name(m::OPSNodesMeasure) = "Discrete OPS of "*name(m.dict)
-support(measure::OPSNodesMeasure) = support(measure.dict)
-
+interpolation_grid(b) = roots(b)
 hasinterpolationgrid(dict::OPS) = true
-interpolation_grid(dict::OPS) = OPSNodes(dict)
-iscompatible(dict::OPS, grid::OPSNodes) = iscompatible(dict, grid.dict)
-iscompatible(dict::OPS, measure::OPSNodesMeasure) = iscompatible(dict, measure.dict) && length(dict) -issymmetric(dict) <= length(grid(measure))
-
-
+opsorthogonal(dict, measure) = length(dict) -issymmetric(dict) <= length(grid(measure))
 
 "Return the first moment, i.e., the integral of the weight function."
 function first_moment(b::OPS)
     @warn "implement first_moment for $b"
 end
 
-"""
-Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
-"""
-function gauss_rule(b::OPS{T}) where {T <: Real}
-    J = symmetric_jacobi_matrix(b)
-    x,v = eigen(J)
-    b0 = first_moment(b)
-    # In the real-valued case it is sufficient to use the first element of the
-    # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
-    w = b0 * v[1,:].^2
-    x,w
-end
+# """
+# Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
+# """
+# function gauss_rule(b::OPS{T}) where {T <: Real}
+#     J = symmetric_jacobi_matrix(b)
+#     x,v = eigen(J)
+#     b0 = first_moment(b)
+#     # In the real-valued case it is sufficient to use the first element of the
+#     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
+#     w = b0 * v[1,:].^2
+#     x,w
+# end
+#
+# # In the complex-valued case, we have to compute the weights by summing explicitly
+# # over the full eigenvector.
+# function gauss_rule(b::OPS{T}) where {T <: Complex}
+#     J = symmetric_jacobi_matrix(b)
+#     x,v = eigen(J)
+#     b0 = first_moment(b)
+#     w = similar(x)
+#     for i in 1:length(w)
+#         w[i] = b0 * v[1,i]^2 / sum(v[:,i].^2)
+#     end
+#     x,w
+# end
 
-# In the complex-valued case, we have to compute the weights by summing explicitly
-# over the full eigenvector.
-function gauss_rule(b::OPS{T}) where {T <: Complex}
-    J = symmetric_jacobi_matrix(b)
-    x,v = eigen(J)
-    b0 = first_moment(b)
-    w = similar(x)
-    for i in 1:length(w)
-        w[i] = b0 * v[1,i]^2 / sum(v[:,i].^2)
-    end
-    x,w
-end
 
-function gauss_rule(b::OPS{T}) where {T <: Union{BigFloat,Complex{BigFloat}}}
-    x = gauss_points(b)
-    w = gauss_weights_from_points(b, x)
-    x,w
-end
-
-function sorted_gauss_rule(b::OPS)
-    x,w = gauss_rule(b)
-    idx = sortperm(real(x))
-    x[idx], w[idx]
-end
-
-function gaussjacobi(n::Int,α::T,β::T) where {T<:BigFloat}
-    x, w = sorted_gauss_rule(Jacobi(n,α,β))
-    @assert norm(imag(x)) < eps(T)
-    @assert norm(imag(w)) < eps(T)
-    real(x), real(w)
-end
+gaussjacobi(n::Integer,α::T,β::T) where T<:AbstractFloat =
+    jacobi(n, α, β)
 
 """
 Compute the weights of Gaussian quadrature rule from the given roots of the
@@ -634,13 +587,4 @@ function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c
     b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
     c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
     a,b,c
-end
-
-abstract type NodesAndWeights{T} <: AbstractVector{T} end
-size(vector::NodesAndWeights) = (length(vector),)
-unsafe_getindex(vector::NodesAndWeights, i) = unsafe_getindex(vector, convert(Int, i))
-getindex(vector::NodesAndWeights, i) = getindex(vector, convert(Int,i))
-function getindex(vector::NodesAndWeights, i::Int)
-    @boundscheck (1 <= convert(Int,i) <= length(vector)) || throw(BoundsError())
-    @inbounds unsafe_getindex(vector, i)
 end

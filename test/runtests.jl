@@ -35,6 +35,7 @@ Delimit("Check evaluations, interpolations, extensions, expansions")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
 include("test_ops.jl")
+include("test_gram.jl")
 
 Delimit("Generic OPS")
 include("test_generic_OPS.jl")

@@ -232,11 +232,11 @@ grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::FourierGrid; option
 
 
 function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
-			grid::PeriodicEquispacedGrid; warnslow = BF_WARNSLOW, options...)
+			grid::PeriodicEquispacedGrid; options...)
 	if support(grid)≈support(dict)
-		resize_and_transform(dict, gb, grid; warnslow=warnslow, options...)
+		resize_and_transform(dict, gb, grid; options...)
 	else
-		warnslow && (@warn "Periodic grid mismatch with Fourier basis")
+		@debug "Periodic grid mismatch with Fourier basis"
 		dense_evaluation_operator(dict, gb; options...)
 	end
 end
@@ -246,13 +246,13 @@ to_periodic_grid(dict::Fourier, grid::PeriodicEquispacedGrid{T}) where {T} =
 	iscompatible(dict, grid) ? FourierGrid{T}(length(grid)) : nothing
 
 function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid;
-			warnslow = BF_WARNSLOW, options...)
+			options...)
 	grid2 = to_periodic_grid(dict, grid)
 	if grid2 != nothing
 		gb2 = GridBasis{coefficienttype(gb)}(grid2)
-		evaluation_operator(dict, gb2, grid2; warnslow=warnslow, options...) * gridconversion(gb, gb2; warnslow=warnslow, options...)
+		evaluation_operator(dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
 	else
-		warnslow && (@warn "Evaluation: could not convert $(string(grid)) to periodic grid")
+		@debug "Evaluation: could not convert $(string(grid)) to periodic grid"
 		dense_evaluation_operator(dict, gb; options...)
 	end
 end
@@ -648,39 +648,19 @@ function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttyp
 	end
 end
 
-gramoperator(dict::Fourier, measure::UniformDiracCombMeasure; options...) =
-	_fourierdiracgramoperator(dict, measure, grid(measure); options...)
-
-_fourierdiracgramoperator(dict, measure, grid; options...) = default_gramoperator(dict, measure; options...)
-
-function _fourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
-	if isorthonormal(dict, measure)
-		return IdentityOperator{T}(dict)
-	end
-	if isorthogonal(dict, measure)
-		return _diagonalfourierdiracgramoperator(dict, measure, grid; T=T, options...)
-	end
-	default_gramoperator(dict, measure; options...)
-end
-
-function _diagonalfourierdiracgramoperator(dict::Fourier, measure::UniformDiracCombMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
-	@assert isorthogonal(dict, measure) && !isorthonormal(dict, measure)
-	if isodd(length(dict)) || (length(dict)==length(grid))
-		ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
+function gramoperator(dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill;
+	T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
+	if support(grid) ≈ support(dict) && isperiodic(grid)
+		if isorthonormal(dict, measure)
+			IdentityOperator{T}(dict)
+		elseif isorthogonal(dict, measure)
+			if isodd(length(dict)) || (length(dict)==length(grid))
+				ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
+			else
+				CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, weights[1]*length(grid); T=T)
+			end
+		end
 	else
-		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
-	end
-end
-
-function _diagonalfourierdiracgramoperator(dict::Fourier, measure::DiracCombProbabilityMeasure, grid::AbstractEquispacedGrid;
-			T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
-	@assert isorthogonal(dict, measure)
-	if isodd(length(dict)) || (length(dict)==length(grid))
-		@assert isorthonormal(dict, measure)
-		IdentityOperator{T}(dict)
-	else
-		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
+		default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; T=T, options...)
 	end
 end

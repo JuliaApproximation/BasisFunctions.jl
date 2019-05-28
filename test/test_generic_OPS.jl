@@ -33,12 +33,12 @@ _coef(k::BigInt) = (k==1 || k==0) ? 1 : (k-1)//k*_coef(k-2)
 function test_generic_ops_from_quadrature()
     N = 10
     # Legendre
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),Interval(-1,1))
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0., 0.),Interval(-1,1))
     c2 = Legendre(N)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
 
-    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0, 0),Interval(-1,1))
+    c1 = BasisFunctions.OrthonormalOPSfromQuadrature(N,N->gaussjacobi(N, 0., 0.),Interval(-1,1))
     c2 = Jacobi(N, 0, 0)
 
     compare_OPS(N, c1, c2, -1, 1, 2, 1)
