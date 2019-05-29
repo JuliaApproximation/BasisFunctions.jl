@@ -18,6 +18,7 @@ similar_dictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
 elements(dict::ComplexifiedDict) = map(ComplexifiedDict, elements(superdict(dict)))
 element(dict::ComplexifiedDict, i) = ComplexifiedDict(element(superdict(dict), i))
+
 # This is the general rule to complexify a dictionary
 _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} =
     ComplexifiedDict(dict)
@@ -39,7 +40,7 @@ hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
 
 measure(dict::ComplexifiedDict) = measure(superdict(dict))
 
-gramoperator1(dict::ComplexifiedDict, measure; T=coefficienttype(dict), options...) =
+gramoperator1(dict::BasisFunctions.ComplexifiedDict, measure; T=coefficienttype(dict), options...) =
     wrap_operator(dict, dict, gramoperator(superdict(dict), measure; T=T, options...))
 
 innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =

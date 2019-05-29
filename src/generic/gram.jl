@@ -62,8 +62,8 @@ gramelement(dict::Dictionary, i, j, m = measure(dict); options...) =
 default_gramelement(dict::Dictionary, i, j, m=measure(dict); options...) =
     default_dict_innerproduct(dict, i, dict, j, m; options...)
 
-function grammatrix(dict::Dictionary, m=measure(dict); options...)
-    G = zeros(codomaintype(dict), length(dict), length(dict))
+function grammatrix(dict::Dictionary, m=measure(dict); T=codomaintype(dict),options...)
+    G = zeros(T, length(dict), length(dict))
     grammatrix!(G, dict, m; options...)
 end
 
@@ -92,18 +92,18 @@ gramoperator2(dict, measure::Measure; options...) =
     default_gramoperator(dict, measure; options...)
 
 gramoperator2(dict, measure::DiscreteMeasure; options...) =
-    gramoperator(dict, measure, grid(measure), weights(measure))
+    gramoperator(dict, measure, grid(measure), weights(measure); options...)
 
-gramoperator(dict, measure::DiscreteMeasure, grid, weights; options...) =
+gramoperator(dict, measure::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
     default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; options...)
 
-@inline function default_gramoperator(dict::Dictionary, m=measure(dict); options...)
+@inline function default_gramoperator(dict::Dictionary, m::Measure=measure(dict); options...)
     @debug "Slow computation of Gram matrix entrywise."
     A = grammatrix(dict, m; options...)
     R = ArrayOperator(A, dict, dict)
 end
 
-@inline function default_diagonal_gramoperator(dict::Dictionary, measure; T = coefficienttype(dict), options...)
+@inline function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = coefficienttype(dict), options...)
     @assert isorthogonal(dict, measure)
 	n = length(dict)
 	diag = zeros(T, n)
@@ -113,7 +113,7 @@ end
 	DiagonalOperator(dict, diag)
 end
 
-@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid, weights;
+@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid::AbstractGrid, weights;
             T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
     E1 = evaluation_operator(dict1, grid; T=T, options...)
     E2 = evaluation_operator(dict2, grid; T=T, options...)
@@ -175,9 +175,9 @@ mixedgramoperator3(d1, d2, measure::Measure; options...) =
     default_mixedgramoperator(d1, d2, measure; options...)
 
 mixedgramoperator3(d1, d2, measure::DiscreteMeasure; options...) =
-    mixedgramoperator(d1, d2, measure, grid, weights; options...)
+    mixedgramoperator(d1, d2, measure, grid(measure), weights(measure); options...)
 
-mixedgramoperator(d1, d2, measure::DiscreteMeasure, grid, weights; options...) =
+mixedgramoperator(d1, d2, measure::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
     default_mixedgramoperator_discretemeasure(d1, d2, measure, grid, weights; options...)
 
 function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) where DICT<:Dictionary

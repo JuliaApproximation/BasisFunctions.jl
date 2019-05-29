@@ -23,14 +23,17 @@ numproductelements(op::TensorProductOperator) = numelements(op)
 
 iscomposite(op::TensorProductOperator) = true
 
-TensorProductOperator(operators...; T=promote_type(map(eltype, operators)...)) =
+TensorProductOperator(operators::AbstractOperator...; T=promote_type(map(eltype, operators)...)) =
     TensorProductOperator{T}(operators...)
 
-function TensorProductOperator{T}(operators...) where {T}
-    L = length(operators)
+function TensorProductOperator{T}(operators::AbstractOperator...) where {T}
     tp_src = tensorproduct(map(src, operators)...)
     tp_dest = tensorproduct(map(dest, operators)...)
+    TensorProductOperator{T}(tp_src, tp_dest, operators...)
+end
 
+function TensorProductOperator{T}(tp_src::Dictionary, tp_dest::Dictionary, operators::AbstractOperator...) where {T}
+    L = length(operators)
     # Scratch contains matrices of sufficient size to hold intermediate results
     # in the application of the tensor product operator.
     # Example, for L=3 scratch is a length (L-1)-tuple of matrices of size:
@@ -49,6 +52,8 @@ function TensorProductOperator{T}(operators...) where {T}
     TensorProductOperator{T}(tp_src, tp_dest, operators, scratch, src_scratch, dest_scratch)
 end
 
+
+
 function tensorproduct(ops::IdentityOperator...)
     tp_src = tensorproduct(map(src, ops)...)
     tp_dest = tensorproduct(map(dest, ops)...)
@@ -64,7 +69,8 @@ dest(op::TensorProductOperator, j::Int) = dest(element(op, j))
 size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, elements(dest(op)))) : prod(map(length, elements(src(op))))
 size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
-
+wrap_operator(dict1::Dictionary, dict2::Dictionary, op::TensorProductOperator{T}) where {T} =
+    TensorProductOperator{T}(dict1, dict2, map(wrap_operator, elements(dict1), elements(dict2), elements(op))...)
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
 adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)
 conj(op::TensorProductOperator) = TensorProductOperator(map(conj, elements(op))...)

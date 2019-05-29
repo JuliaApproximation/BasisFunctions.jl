@@ -111,6 +111,7 @@ export MappedGrid, mapped_grid, apply_map
 export innerproduct
 export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
 export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
+export mappedmeasure, productmeasure, submeasure
 export supermeasure, applymeasure
 
 # from spaces/spaces.jl
@@ -355,6 +356,7 @@ include("bases/generic/piecewise_dict.jl")
 include("bases/generic/operated_dict.jl")
 include("bases/generic/weighted_dict.jl")
 include("bases/generic/vector_dict.jl")
+include("bases/generic/logic.jl")
 
 ################################################################
 # Sampling

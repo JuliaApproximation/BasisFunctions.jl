@@ -91,7 +91,7 @@ _apply!(op::MultiplicationOperator{ELT2,Array{ELT1,2},false}, coef_dest::Abstrac
 apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest) where {T,ARRAY} =
     _apply_inplace!(op, coef_srcdest, op.object)
 
-_apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) where {T,ARRAY} = 
+_apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) where {T,ARRAY} =
     object * coef_srcdest
 
 

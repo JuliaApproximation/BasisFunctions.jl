@@ -35,18 +35,18 @@ weights(::DiracMeasure{T}) where T = Ones{T}(1)
 
 const DiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W <: Ones
 DiracCombMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg)
-name(m::DiracCombMeasure) = "Dirac comb measure with sampling weights (GenericWeightMeasure)"
+name(m::DiracCombMeasure) = "Dirac comb measure with sampling weights"
 
 
 const WeightedDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid
 WeightedDiracCombMeasure(eg::AbstractEquispacedGrid, weights) = discretemeasure(eg, weights)
-name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight (GenericWeightMeasure)"
+name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight"
 
 
 const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:ProbabilityArray
 DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, ProbabilityArray{eltype(eg)}(size(eg)))
 @inline isprobabilitymeasure(m::DiracCombProbabilityMeasure) = true
-name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weights (GenericWeightMeasure)"
+name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weights"
 
 const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
 
@@ -55,22 +55,22 @@ const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:Ab
 # Generating new measures from existing measures
 ######################################################
 
-struct DiscreteSubMeasure{T,M<:DiscreteMeasure{T},I} <: DiscreteMeasure{T}
+struct DiscreteSubMeasure{T,M<:DiscreteMeasure{T},G<:AbstractGrid} <: DiscreteMeasure{T}
     supermeasure   :: M
-    indices        :: I
-    DiscreteSubMeasure(measure::DiscreteMeasure{T}, indices) where T = new{T,typeof(measure),typeof(indices)}(measure, indices)
+    subgrid        :: G
+    DiscreteSubMeasure(measure::DiscreteMeasure{T}, grid::AbstractGrid) where T = new{T,typeof(measure),typeof(grid)}(measure, grid)
 end
-subindices(measure::DiscreteSubMeasure) = measure.indices
+subindices(measure::DiscreteSubMeasure) = subindices(measure.subgrid)
 supermeasure(measure::DiscreteSubMeasure) = measure.supermeasure
 supermeasure(measure::GenericDiscreteMeasure{T,<:AbstractSubGrid,W}) where {T,W} =
-    GenericDiscreteMeasure(supergrid(grid(measure)), weights(measure))
-discretemeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(GenericDiscreteMeasure(supergrid(grid), genericweights(supergrid(grid))),subindices(grid))
-DiscreteSubMeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(GenericDiscreteMeasure(grid, genericweights(supergrid(grid))),subindices(grid))
+    discretemeasure(supergrid(grid(measure)), weights(measure))
+discretemeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(discretemeasure(supergrid(grid)), grid)
 
 weights(measure::DiscreteSubMeasure) = subweights(measure, subindices(measure), weights(supermeasure(measure)))
 subweights(_, subindices, w) = w[subindices]
-grid(measure::DiscreteSubMeasure) = subgrid(measure, subindices(measure), grid(supermeasure(measure)))
-Grids.subgrid(_, subindices, g) = g[subindices]
+
+grid(measure::DiscreteSubMeasure) = measure.subgrid
+
 unsafe_discrete_weight(m::DiscreteSubMeasure, i) where {T} = Base.unsafe_getindex(weights(supermeasure(measure)), subindices(measure)[i])
 isprobabilitymeasure(::DiscreteSubMeasure) = false
 
@@ -78,11 +78,11 @@ name(m::DiscreteSubMeasure) = "Restriction of a "*name(supermeasure(m))
 
 
 # # TODO move subgrid to BasisFunctions or SubMeasure to FrameFun
-# restrict(measure::DiscreteMeasure, domain::Domain) = DiscreteSubMeasure(subgrid(grid(measure), domain), weights(measure))
+restrict(measure::DiscreteMeasure, domain::Domain) = DiscreteSubMeasure(measure, subgrid(grid, domain))
 
 
 const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
-MappedMeasure(map, measure::DiscreteMeasure) =
+mappedmeasure(map, measure::DiscreteMeasure) =
 discretemeasure(MappedGrid(grid(measure), map), weights(measure))
 
 name(m::DiscreteMappedMeasure) = "Mapping of a "*name(supermeasure(m))
@@ -96,10 +96,10 @@ support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
 const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:ProductGrid where  W<:AbstractOuterProductArray
 
 const DiscreteTensorSubMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:TensorSubGrid where W<:AbstractOuterProductArray
-supermeasure(m::DiscreteTensorSubMeasure) = ProductMeasure(map(supermeasure, elements(m))...)
+supermeasure(m::DiscreteTensorSubMeasure) = productmeasure(map(supermeasure, elements(m))...)
 
 name(m::DiscreteProductMeasure) = "Discrete Product Measure"
-ProductMeasure(measures::DiscreteMeasure...) =
+productmeasure(measures::DiscreteMeasure...) =
     discretemeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
 
 

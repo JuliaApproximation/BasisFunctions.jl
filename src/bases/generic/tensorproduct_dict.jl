@@ -180,7 +180,7 @@ getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements
 interpolation_grid(s::TensorProductDict) =
     ProductGrid(map(interpolation_grid, elements(s))...)
 gauss_rule(s::TensorProductDict) =
-    ProductMeasure(map(gauss_rule, elements(s))...)
+    productmeasure(map(gauss_rule, elements(s))...)
 #grid(b::TensorProductDict, j::Int) = grid(element(b,j))
 
 # In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.
@@ -227,7 +227,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
 
 
-measure(dict::TensorProductDict) = ProductMeasure(map(measure, elements(dict))...)
+measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
 
 
 "Return a list of all tensor product indices (1:s+1)^n."

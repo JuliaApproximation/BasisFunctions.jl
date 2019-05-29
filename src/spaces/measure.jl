@@ -236,6 +236,8 @@ end
 
 MappedMeasure(map, measure::Measure{T}) where {T} =
     MappedMeasure{typeof(map),typeof(measure),T}(map, measure)
+mappedmeasure(map, measure::Measure) =
+    MappedMeasure(map, measure)
 
 name(m::MappedMeasure) = "Mapped measure"
 
@@ -264,6 +266,7 @@ function ProductMeasure(measures...)
     T = product_domaintype(measures...)
     ProductMeasure{typeof(measures),T}(measures)
 end
+productmeasure(measures...) = ProductMeasure(measures...)
 
 iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
