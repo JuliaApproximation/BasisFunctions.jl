@@ -11,3 +11,34 @@ The main goal of the package is generality: one can select a subset of a basis, 
 Operations on functions are implemented via linear operators that act on the coefficients of an expansion. The focus of the package lies on finite expansions, i.e. with some fixed length N. Care is being taken in the implementation of operators such that operators do not allocate memory (or at most an N-independent amount) when they are applied, only when they are created.
 
 Some examples of how to use this code can be found in the [FrameFun](https://github.com/daanhb/FrameFun.jl) package.
+
+
+
+## Installation
+
+BasisFunctions.jl is not added to the Julia General registry and depends on a unregistered package Grids.jl.
+
+### Recomanded
+For Julia 1.1 or higher, you can add the FrameFun registry and than add Grids.
+From the Julia REPL, type `]` to enter Pkg mode and run
+
+```julia
+pkg> add https://github.com/vincentcp/FrameFunRegistry
+pkg> add BasisFunctions
+```
+
+### Legacy
+In Julia 1.0, the packages can be installed by cloning their git repository. From the Julia REPL, type `]` to enter Pkg mode and run
+
+```julia
+pkg> add https://github.com/vincentcp/Grids.jl
+pkg> add https://github.com/daanhb/BasisFunctions.jl
+```
+
+or in a file you could use
+
+```julia
+using Pkg
+pkg"add https://github.com/vincentcp/Grids.jl"
+pkg"add https://github.com/vincentcp/BasisFunctions.jl"
+```
