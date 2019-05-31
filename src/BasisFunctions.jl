@@ -1,10 +1,15 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices
+using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport,
+    FillArrays
+@reexport using Grids
+import Grids: subindices, instantiate
+
 using IterativeSolvers: lsqr, lsmr
-using FillArrays
 import Calculus: derivative
-using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra, FastGaussQuadrature
+using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
+import FastGaussQuadrature: gaussjacobi, gausslaguerre, gausslegendre, gausshermite
+using GaussQuadrature: jacobi, laguerre, legendre, hermite
 using Base.Cartesian
 
 ## Some specific functions of Base we merely use
@@ -48,9 +53,10 @@ export BlockVector
 
 ## Imports from DomainSets
 
-import DomainSets: domaintype, codomaintype, dimension, domain
+import DomainSets: domaintype, codomaintype, dimension, domain,
+    indomain, approx_indomain
 # For intervals
-import DomainSets: leftendpoint, rightendpoint
+import DomainSets: leftendpoint, rightendpoint, endpoints
 # For maps
 import DomainSets: matrix, vector, tensorproduct
 
@@ -61,7 +67,8 @@ import DomainSets: cartesianproduct, ×, product_eltype
 
 import DomainSets: forward_map, inverse_map
 
-import FastGaussQuadrature: gaussjacobi
+using Grids: AbstractSubGrid, IndexSubGrid
+import Grids: iscomposite, support, apply_map, mapping
 
 import AbstractTrees: children
 
@@ -86,11 +93,6 @@ export split_interval
 export tensorproduct, ⊗
 export element, elements, numelements
 
-# from grid/grid.jl
-export AbstractGrid, AbstractGrid1d, AbstractGrid2d, AbstractGrid3d,
-        AbstractEquispacedGrid, EquispacedGrid, PeriodicEquispacedGrid,
-        FourierGrid, MidpointEquispacedGrid, RandomEquispacedGrid,
-        AbstractIntervalGrid, eachelement, stepsize, ScatteredGrid
 export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
 export Point
 export leftendpoint, rightendpoint, range
@@ -107,12 +109,14 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
-export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, DiscreteMeasure
-export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
+export FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
+export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
+    DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure, WeightedDiracCombMeasure
+export mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure
 export supermeasure, applymeasure
 
 # from spaces/spaces.jl
-export GenericFunctionSpace, space
+export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace, ChebyshevSpace, L2
 
 
 export SparseOperator
@@ -189,7 +193,7 @@ export GenericIdentityOperator
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from generic/gram.jl
-export gramelement, gramoperator, dualdictionary, mixedgramoperator
+export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
 # from generic/extension
 export extension_operator, default_extension_operator, extension_size, extend,
@@ -245,7 +249,7 @@ export isdiscrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
-export grid, gridbasis, grid_multiplication_operator
+export grid, gridbasis, grid_multiplication_operator, weights
 
 # from sampling/sampling_operator.jl
 export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator
@@ -254,9 +258,6 @@ export sample
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
-
-# from sampling/normalization.jl
-export quadraturenormalization, sampling_normalization
 
 # from bases/fourier/fourier.jl
 export Fourier,
@@ -289,11 +290,6 @@ export leading_order_coefficient
 
 # from specialOPS.jl
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
-
-export gaussjacobi
-
-diagonal(a...) = error("diagonal is replaced by the LinearAlgebra-type function diag")
-isdiagonal(a...) = error("isdiagonal is replaced by the LinearAlgebra-type function isdiag")
 export diagonal, isdiagonal
 
 include("util/common.jl")
@@ -304,17 +300,10 @@ include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
 
-include("grid/grid.jl")
-include("grid/productgrid.jl")
-include("grid/derived_grid.jl")
-include("grid/intervalgrids.jl")
-include("grid/mappedgrid.jl")
-include("grid/scattered_grid.jl")
-include("grid/subgrid.jl")
-
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
 include("spaces/integral.jl")
+include("sampling/gaussweights.jl")
 
 include("bases/generic/dictionary.jl")
 include("bases/generic/span.jl")
@@ -362,6 +351,7 @@ include("bases/generic/piecewise_dict.jl")
 include("bases/generic/operated_dict.jl")
 include("bases/generic/weighted_dict.jl")
 include("bases/generic/vector_dict.jl")
+include("bases/generic/logic.jl")
 
 ################################################################
 # Sampling
@@ -370,6 +360,7 @@ include("bases/generic/vector_dict.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
+export sampling_normalization
 include("sampling/normalization.jl")
 include("sampling/interaction.jl")
 
@@ -391,7 +382,7 @@ include("bases/fourier/sineseries.jl")
 include("bases/poly/polynomials.jl")
 include("bases/poly/monomials.jl")
 include("bases/poly/orthopoly.jl")
-include("bases/poly/chebyshev.jl")
+include("bases/poly/chebyshev/chebyshev.jl")
 include("bases/poly/legendre.jl")
 include("bases/poly/jacobi.jl")
 include("bases/poly/laguerre.jl")
@@ -399,6 +390,8 @@ include("bases/poly/hermite.jl")
 include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
+include("bases/poly/discretemeasure.jl")
+
 
 include("operator/prettyprint.jl")
 

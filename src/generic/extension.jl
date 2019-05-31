@@ -38,8 +38,20 @@ extension_operator(src::GridBasis, dest::GridBasis; options...) =
 restriction_operator(src::GridBasis, dest::GridBasis; options...) =
     grid_restriction_operator(src, dest, grid(src), grid(dest); options...)
 
-grid_restriction_operator(src, dest, src_grid, dest_grid; options...) =
+function grid_restriction_operator(src, dest, src_grid, dest_grid; options...)
+    @show src, dest, src_grid, dest_grid
     default_restriction_operator(src, dest; options...)
+end
+
+function grid_restriction_operator(src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::Grids.MaskedGrid{G,M,I,T}; options...) where {G<:AbstractGrid,M,I,T}
+    @assert supergrid(dest_grid) == src_grid
+    IndexRestrictionOperator(src, dest, subindices(dest_grid))
+end
+
+
+hasextension(dg::GridBasis{T,G}) where {T,G <: Grids.AbstractSubGrid} = true
+hasextension(dg::GridBasis{T,G}) where {T,G <: Grids.TensorSubGrid} = true
+
 
 
 """

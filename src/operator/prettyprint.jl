@@ -354,3 +354,40 @@ function print_strings(strings::AbstractString, depth=0, prefix="")
     end
     result
 end
+
+
+
+## Printing
+
+function stencilarray(grid::ProductGrid)
+	A = Any[]
+    push!(A, element(grid, 1))
+    for i in 2:numelements(grid)
+        push!(A, " × ")
+        push!(A, element(grid, i))
+    end
+    A
+end
+
+object_parentheses(grid::ProductGrid) = true
+stencil_parentheses(grid::ProductGrid) = true
+
+
+## Printing
+
+hasstencil(grid::MappedGrid) = true
+stencilarray(grid::MappedGrid) = [ mapping(grid), "(", supergrid(grid), ")" ]
+
+
+
+## Printing
+
+hasstencil(grid::AbstractSubGrid) = true
+
+stencilarray(grid::AbstractSubGrid) = [ supergrid(grid), "[", setsymbol(subindices(grid)), "]" ]
+
+setsymbol(indices) = PrettyPrintSymbol{:𝕀}(indices)
+setsymbol(indices::UnitRange) = repr(indices)
+setsymbol(indices::Base.OneTo) = setsymbol(UnitRange(indices))
+
+string(s::PrettyPrintSymbol{:𝕀}) = string(s.object)

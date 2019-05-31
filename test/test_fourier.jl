@@ -28,9 +28,9 @@ function test_fourier_series(T)
     @test supremum(support(fb)) ≈ b
 
     g = interpolation_grid(fb)
-    @test typeof(g) <: MappedGrid
-    @test leftendpoint(g) ≈ a
-    @test rightendpoint(g) ≈ b
+    @test typeof(g) <: Grids.MappedGrid
+    @test leftendpoint(support(g)) ≈ a
+    @test rightendpoint(support(g)) ≈ b
     @test length(g) == length(fb)
 
     # Take a random point in the domain
@@ -218,8 +218,8 @@ end
     P = ProjectionSampling(F)
     @test (P')'*P' == gramoperator(F)
 
-    for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.DiscreteMeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
-        D = dualdictionary(P, M)
+    for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
+        D = dual(P, M)
         @test Matrix(gramoperator(P, M)) ≈ Matrix(inv(gramoperator(D,M)))
         A = SynthesisOperator(P, M)
         Z = SynthesisOperator(D, M)

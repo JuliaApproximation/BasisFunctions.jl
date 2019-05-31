@@ -39,22 +39,19 @@ evaluation_operator(dict::Dictionary, gb::GridBasis;
     grid_evaluation_operator(dict, gb, grid(gb); T=T, options...)
 
 function grid_evaluation_operator(dict::Dictionary, gb::GridBasis, grid;
-            T = op_eltype(dict, gb), warnslow=false, options...)
-    warnslow && (@warn "No fast evaluation available in $grid, using dense evaluation matrix instead.")
+            T = op_eltype(dict, gb), options...)
+    @debug "No fast evaluation available in $grid, using dense evaluation matrix instead."
     dense_evaluation_operator(dict, gb; T=T, options...)
 end
 
-function resize_and_transform(dict::Dictionary, gb::GridBasis, grid;
-            warnslow = BF_WARNSLOW, options...)
+function resize_and_transform(dict::Dictionary, gb::GridBasis, grid; options...)
     if size(dict) == size(grid)
         transform_to_grid(dict, gb, grid; options...)
     elseif length(grid) > length(dict)
         dlarge = resize(dict, size(grid))
         transform_to_grid(dlarge, gb, grid; options...) * extension_operator(dict, dlarge; options...)
     else
-        if warnslow
-            @warn "Resize and transform: dictionary evaluated in small grid"
-        end
+        @debug "Resize and transform: dictionary evaluated in small grid"
         dense_evaluation_operator(dict, gb; options...)
     end
 end

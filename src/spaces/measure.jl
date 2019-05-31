@@ -7,6 +7,7 @@ end
 
 domaintype(m::Measure{T}) where {T} = T
 subdomaintype(m::Measure) = subeltype(domaintype(m))
+rangetype(m::Measure{T}) where {T} = T
 
 weight(m::Measure{T}, x::T) where {T} = weight1(m, x)
 
@@ -15,16 +16,14 @@ weight(m::Measure{T}, x) where {T} = weight1(m, convert(T, x))
 isprobabilitymeasure(m::Measure; options...) = error("isprobabilitymeasure not implemented for measure $(typeof(m)).")
 
 applymeasure(m::Measure, f::Function; options...) = default_applymeasure(m, f; options...)
-isdiscrete(::Measure) = false
 
-function default_applymeasure(measure::Measure, f::Function;
-            warnslow = BF_WARNSLOW, options...)
-    warnslow && !(isdiscrete(measure)) && @warn "Applying measure $(typeof(measure)) numerically"
+function default_applymeasure(measure::Measure, f::Function; options...)
+    @debug  "Applying measure $(typeof(measure)) numerically" maxlog=3
     integral(f, measure; options...)
 end
 
 function weight1(m::Measure{T}, x) where {T}
-    x ∈ support(m) ? unsafe_weight(m, x) : zero(T)
+    x ∈ support(m) ? unsafe_weight(m, x) : zero(rangetype(m))
 end
 
 weightfunction(m::Measure) = x->weight(m, x)
@@ -50,7 +49,6 @@ weights(m::DiscreteMeasure) = m.weights
 discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
 checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)
 unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m.weights, i)
-isdiscrete(::DiscreteMeasure) = true
 isprobabilitymeasure(m::DiscreteMeasure) = sum(m.weights) ≈ 1
 
 "Supertype of all Lebesgue measures."
@@ -67,9 +65,9 @@ end
 
 name(m::GenericWeightMeasure) = "Measure with generic weight function"
 
-unsafe_weight(m::GenericWeightMeasure{T}, x) where {T} = weight.weightfunction(x)
+unsafe_weight(m::GenericWeightMeasure{T}, x) where {T} = m.weightfunction(x)
 
-support(m::GenericWeightMeasure, x) = m.support
+support(m::GenericWeightMeasure) = m.support
 
 strings(m::GenericWeightMeasure) = (name(m), (string(m.support),), (string(m.weightfunction),))
 
@@ -87,6 +85,8 @@ name(m::GenericLebesgueMeasure) = "Lebesgue measure"
 struct LegendreMeasure{T} <: LebesgueMeasure{T}
 end
 
+LegendreMeasure() = LegendreMeasure{Float64}()
+
 support(m::LegendreMeasure{T}) where {T} = ChebyshevInterval{T}()
 
 name(m::LegendreMeasure) = "Legendre measure"
@@ -97,7 +97,7 @@ isprobabilitymeasure(::LegendreMeasure) = false
 struct FourierMeasure{T} <: LebesgueMeasure{T}
 end
 
-FourierMeasure(; T=Float64) = FourierMeasure{T}()
+FourierMeasure() = FourierMeasure{Float64}()
 
 support(m::FourierMeasure{T}) where {T} = UnitInterval{T}()
 
@@ -116,6 +116,7 @@ Chebyshev weight `w(x) = 1/√(1-x^2)`.
 """
 struct ChebyshevTMeasure{T} <: Measure{T}
 end
+ChebyshevTMeasure() = ChebyshevTMeasure{Float64}()
 
 const ChebyshevMeasure = ChebyshevTMeasure
 
@@ -133,6 +134,7 @@ of the second kind `w(x) = √(1-x^2).`
 """
 struct ChebyshevUMeasure{T} <: Measure{T}
 end
+ChebyshevUMeasure() = ChebyshevUMeasure{Float64}()
 
 support(m::ChebyshevUMeasure{T}) where {T} = ChebyshevInterval{T}()
 
@@ -237,6 +239,8 @@ end
 
 MappedMeasure(map, measure::Measure{T}) where {T} =
     MappedMeasure{typeof(map),typeof(measure),T}(map, measure)
+mappedmeasure(map, measure::Measure) =
+    MappedMeasure(map, measure)
 
 name(m::MappedMeasure) = "Mapped measure"
 
@@ -259,12 +263,14 @@ struct ProductMeasure{M,T} <: Measure{T}
     measures ::  M
 end
 
+
 product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
 
 function ProductMeasure(measures...)
     T = product_domaintype(measures...)
     ProductMeasure{typeof(measures),T}(measures)
 end
+productmeasure(measures...) = ProductMeasure(measures...)
 
 iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
@@ -275,7 +281,7 @@ submeasure(measure::ProductMeasure, domain::ProductDomain) = ProductMeasure(map(
 
 support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
 
-unsafe_weight(m::ProductMeasure, x) = prod(map(unsafe_weight, elements(m), x))
+weight1(m::ProductMeasure, x) = prod(map(weight1, elements(m), x))
 
 function stencilarray(m::ProductMeasure)
     A = Any[]

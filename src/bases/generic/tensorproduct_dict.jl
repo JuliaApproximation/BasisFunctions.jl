@@ -79,6 +79,14 @@ for op in (:isorthogonal, :isorthonormal)
     @eval $op(s::TensorProductDict, m::ProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
 end
 
+for op in (:isorthogonal, :isorthonormal)
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
+end
+
+for op in (:isorthogonal, :iscompatible)
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = reduce(&, map($op, elements(s), elements(m)))
+end
+
 ## Native indices are of type ProductIndex
 
 # The native indices of a tensor product dict are of type ProductIndex
@@ -171,6 +179,8 @@ getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements
 
 interpolation_grid(s::TensorProductDict) =
     ProductGrid(map(interpolation_grid, elements(s))...)
+gauss_rule(s::TensorProductDict) =
+    productmeasure(map(gauss_rule, elements(s))...)
 #grid(b::TensorProductDict, j::Int) = grid(element(b,j))
 
 # In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.
@@ -217,7 +227,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
 
 
-measure(dict::TensorProductDict) = ProductMeasure(map(measure, elements(dict))...)
+measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
@@ -266,8 +276,8 @@ grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGr
 
 
 
-dualdictionary(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
-    TensorProductDict([dualdictionary(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
+dual(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
+    TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
 
 gramoperator(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
     TensorProductOperator(map((x,y)->gramoperator(x,y; options...), elements(dict), elements(measure))...)

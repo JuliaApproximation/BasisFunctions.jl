@@ -276,3 +276,8 @@ end
 for f in (:eigvals, :svdvals, :norm, :rank)
     @eval $f(op::DictionaryOperator) = $f(Matrix(op))
 end#matrix related features
+
+function ≈(op1::DictionaryOperator,op2::DictionaryOperator)
+    r = rand(src(op1))
+    op1*r≈op2*r
+end

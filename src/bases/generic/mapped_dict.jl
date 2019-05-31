@@ -120,6 +120,14 @@ function gramoperator(dict::MappedDict, m::MappedMeasure; T = coefficienttype(di
     end
 end
 
+function gramoperator(dict::MappedDict, m::DiscreteMeasure, grid::MappedGrid, weights; T = coefficienttype(dict), options...)
+    if iscompatible(mapping(grid), mapping(dict))
+        wrap_operator(dict, dict, gramoperator(superdict(dict), supermeasure(m); T=T, options...))
+    else
+        default_gramoperator(dict, m; T=T, options...)
+    end
+end
+
 
 
 ###############

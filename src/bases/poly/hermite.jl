@@ -19,15 +19,11 @@ support(b::Hermite{T}) where {T} = DomainSets.FullSpace(T)
 first_moment(b::Hermite{T}) where {T} = sqrt(T(pi))
 
 measure(b::Hermite{T}) where {T} = HermiteMeasure{T}()
-iscompatible(::Hermite, ::HermiteMeasure) = true
+interpolation_grid(b::Hermite{T}) where T = HermiteNodes{T}(length(b))
+iscompatible(b::Hermite,grid::HermiteNodes) = length(b) == length(grid)
+isorthogonal(dict::Hermite, measure::HermiteGaussMeasure) = opsorthogonal(dict, measure)
+isorthogonal(::Hermite, ::HermiteMeasure) = true
 issymmetric(::Hermite) = true
-
-function quadraturenormalization(gb, grid::OPSNodes{<:Hermite,T}, ::HermiteMeasure) where {T}
-	x, w = gauss_rule(Hermite{T}(length(grid)))
-	DiagonalOperator(gb, w)
-end
-
-gauss_rule(dict::Hermite{T}) where {T<:Float64} = FastGaussQuadrature.gausshermite(length(dict))
 
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
@@ -47,5 +43,3 @@ function innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::P
 end
 
 name(dict::Hermite) = "Hermite polynomials"
-
-name(g::OPSNodes{<:Hermite}) = "Hermite points"

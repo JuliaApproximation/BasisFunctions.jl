@@ -2,8 +2,6 @@
 
 (*)(op::ProjectionSampling, object::SynthesisOperator) = apply(op, object)
 
-
-(*)(op::SynthesisOperator, object::Dictionary) = apply(op, object)
 apply(op::SamplingOperator, dict::Dictionary; options...) =
 	apply(op, SynthesisOperator(dict); options...)
 

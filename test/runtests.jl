@@ -22,11 +22,10 @@ const show_timings = false
 # Testing
 ##########
 
+include("test_scenariolist.jl")
+
 Delimit("Utilities")
 include("util/test_utilities.jl")
-
-Delimit("Grids")
-include("test_grids.jl")
 
 Delimit("Operators")
 include("test_operators.jl")
@@ -38,6 +37,7 @@ Delimit("Check evaluations, interpolations, extensions, expansions")
 include("test_fourier.jl")
 include("test_chebyshev.jl")
 include("test_ops.jl")
+include("test_gram.jl")
 
 Delimit("Generic OPS")
 include("test_generic_OPS.jl")
