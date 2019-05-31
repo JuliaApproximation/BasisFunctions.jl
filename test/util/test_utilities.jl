@@ -43,3 +43,5 @@ B = rand(2,400)
 
 include("test_normalization.jl")
 include("test_space.jl")
+include("test_discrete_measure.jl")
+include("test_measure.jl")
