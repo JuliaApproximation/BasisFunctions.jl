@@ -61,8 +61,6 @@ struct DiscreteSubMeasure{T,M<:DiscreteMeasure{T},G<:AbstractGrid} <: DiscreteMe
 end
 subindices(measure::DiscreteSubMeasure) = subindices(measure.subgrid)
 supermeasure(measure::DiscreteSubMeasure) = measure.supermeasure
-supermeasure(measure::GenericDiscreteMeasure{T,<:AbstractSubGrid,W}) where {T,W} =
-    discretemeasure(supergrid(grid(measure)), weights(measure))
 discretemeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(discretemeasure(supergrid(grid)), grid)
 _discretesubmeasure(grid::Union{AbstractSubGrid,TensorSubGrid},weights) = DiscreteSubMeasure(discretemeasure(supergrid(grid),weights), grid)
 
@@ -71,7 +69,6 @@ subweights(_, subindices, w) = w[subindices]
 
 grid(measure::DiscreteSubMeasure) = measure.subgrid
 
-unsafe_discrete_weight(m::DiscreteSubMeasure, i) where {T} = Base.unsafe_getindex(weights(supermeasure(measure)), subindices(measure)[i])
 isprobabilitymeasure(::DiscreteSubMeasure) = false
 
 name(m::DiscreteSubMeasure) = "Restriction of a "*name(supermeasure(m))

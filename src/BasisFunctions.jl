@@ -110,7 +110,8 @@ export MappedGrid, mapped_grid, apply_map
 # from spaces/measure.jl
 export innerproduct
 export FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
-export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure, DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure
+export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
+    DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure, WeightedDiracCombMeasure
 export mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure
 export supermeasure, applymeasure
 

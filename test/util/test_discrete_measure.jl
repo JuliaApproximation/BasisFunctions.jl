@@ -29,9 +29,19 @@ generic_test_discrete_measure(μ)
 
 μ = discretemeasure(PeriodicEquispacedGrid(3,0,1))
 @test  μ isa DiracCombMeasure && μ isa UniformDiracCombMeasure
-@test discretemeasure(MidpointEquispacedGrid(3,0,1)) isa DiracCombMeasure
-@test discretemeasure(EquispacedGrid(3,0,1)) isa DiracCombMeasure
-@test DiracCombProbabilityMeasure(EquispacedGrid(3,0,1)) isa DiracCombProbabilityMeasure
+generic_test_discrete_measure(μ)
+μ = discretemeasure(MidpointEquispacedGrid(3,0,1))
+@test μ isa DiracCombMeasure
+generic_test_discrete_measure(μ)
+μ = discretemeasure(EquispacedGrid(3,0,1))
+@test μ isa DiracCombMeasure
+generic_test_discrete_measure(μ)
+μ = DiracCombProbabilityMeasure(EquispacedGrid(3,0,1))
+@test μ isa DiracCombProbabilityMeasure
+@test isprobabilitymeasure(μ)
+generic_test_discrete_measure(μ)
+μ = WeightedDiracCombMeasure(MidpointEquispacedGrid(3,0,1),rand(3))
+generic_test_discrete_measure(μ)
 
 g = PeriodicEquispacedGrid(3,-1,1)^2
 d = UnitDisk()

@@ -9,16 +9,16 @@ for g in (PeriodicEquispacedGrid(10,support(F)), interpolation_grid(F), Midpoint
     @test abs(sum(s*s*f)-applymeasure(BasisFunctions.GenericLebesgueMeasure(support(F)),f)) < .1
 end
 
-C = ChebyshevT(10)
+C = ChebyshevT(9)
 f = exp
-g = ChebyshevNodes(10)
+g = ChebyshevNodes(9)
 s = sampling_normalization(GridBasis(g), BasisFunctions.GenericLebesgueMeasure(support(C)))
 @test abs(sum(s*s*f)-applymeasure(BasisFunctions.GenericLebesgueMeasure(support(C)),f)) < .1
 s = sampling_normalization(GridBasis(g), LegendreMeasure{Float64}())
 @test abs(sum(s*s*f)-applymeasure(BasisFunctions.GenericLebesgueMeasure(support(C)),f)) < .1
 
 
-g = ChebyshevExtremae(10)
+g = ChebyshevExtremae(9)
 s = sampling_normalization(GridBasis(g), BasisFunctions.GenericLebesgueMeasure(support(C)))
 @test abs(sum(s*s*f)-applymeasure(BasisFunctions.GenericLebesgueMeasure(support(C)),f)) < .1
 s = sampling_normalization(GridBasis(g), LegendreMeasure{Float64}())
