@@ -10,7 +10,7 @@ end
 function rectangular_rule(n::Int, a = 0.0, b = 1.0, ::Type{T} = typeof((b-a)/n)) where {T}
     grid = PeriodicEquispacedGrid(n, a, b)
     weight = step(grid)
-    grid, weight
+    grid, Fill(weight,length(grid))
 end
 
 # The implementation of the first and second Fejer rule and of Clenshaw-Curtis

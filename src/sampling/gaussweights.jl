@@ -48,10 +48,10 @@ gaussweights(grid::MidpointEquispacedGrid{T}, measure::FourierMeasure{T}) where 
     (@assert support(grid)≈support(measure);ProbabilityArray{T}(length(grid)))
 
 gaussweights(grid::PeriodicEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T} =
-    (@assert support(grid)≈support(measure); duration(support(measure))*ProbabilityArray{T}(length(grid)))
+    (@assert support(grid)≈support(measure); DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid)))
 
 gaussweights(grid::MidpointEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T} =
-    (@assert support(grid)≈support(measure); duration(support(measure))*ProbabilityArray{T}(length(grid)))
+    (@assert support(grid)≈support(measure); DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid)))
 
 function gaussweights(grid::ChebyshevNodes{T}, ::LegendreMeasure{T}) where {T}
 	x, w = fejer_first_rule(length(grid), T)
@@ -64,10 +64,10 @@ function gaussweights(grid::ChebyshevExtremae{T}, ::LegendreMeasure{T}) where {T
 end
 
 gaussweights(grid::ChebyshevNodes{T}, measure::LebesgueMeasure{T}) where {T} =
-    (@assert ≈(map(support, (grid,measure))); gaussweights(grid, LegendreMeasure{T}()))
+    (@assert ≈(map(support, (grid,measure))...); gaussweights(grid, LegendreMeasure{T}()))
 
 gaussweights(grid::ChebyshevExtremae{T}, measure::LebesgueMeasure{T}) where {T} =
-    (@assert ≈(map(support, (grid,measure))); gaussweights(grid, LegendreMeasure{T}()))
+    (@assert ≈(map(support, (grid,measure))...); gaussweights(grid, LegendreMeasure{T}()))
 
 gaussweights(grid::AbstractGrid, measure::Measure; options...) =
 	default_quadratureweights(grid, measure; options...)

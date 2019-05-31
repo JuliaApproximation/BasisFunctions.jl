@@ -40,3 +40,6 @@ B = rand(400,2)
 @test R*B == Matrix(R)*Matrix(B)
 B = rand(2,400)
 @test B*E == Matrix(B)*Matrix(E)
+
+include("test_normalization.jl")
+include("test_space.jl")

@@ -22,6 +22,8 @@ const show_timings = false
 # Testing
 ##########
 
+include("test_scenariolist.jl")
+
 Delimit("Utilities")
 include("util/test_utilities.jl")
 

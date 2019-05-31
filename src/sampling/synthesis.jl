@@ -34,7 +34,7 @@ dest_space(op::SynthesisOperator) = Span(dictionary(op))
 
 # We attempt to convert the given coefficients to the container type of the dictionary
 apply(op::SynthesisOperator, coef; options...) = _apply(op, coef, dictionary(op))
-_apply(op::SynthesisOperator, coef, dict) = Expansion(dict, convert(containertype(dict), coef))
+_apply(op::SynthesisOperator, coef, dict::Dictionary) = Expansion(dict, convert(containertype(dict), coef))
 
 apply(op::SynthesisOperator, expansion::Expansion{D}; options...) where {D <: DiscreteDictionary} =
     apply(op, coefficients(expansion); options...)

@@ -109,13 +109,13 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct
-export FourierMeasure, ChebyshevMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
-export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure
-export mappedmeasure, productmeasure, submeasure
+export FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure
+export MappedMeasure, ProductMeasure, SubMeasure, DiracCombMeasure, DiracCombProbabilityMeasure, DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure
+export mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure
 export supermeasure, applymeasure
 
 # from spaces/spaces.jl
-export GenericFunctionSpace, space
+export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace, ChebyshevSpace, L2
 
 
 export SparseOperator
@@ -248,7 +248,7 @@ export isdiscrete
 
 # from bases/generic/gridbasis.jl
 export GridBasis
-export grid, gridbasis, grid_multiplication_operator
+export grid, gridbasis, grid_multiplication_operator, weights
 
 # from sampling/sampling_operator.jl
 export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator
@@ -257,9 +257,6 @@ export sample
 # from sampling/quadrature.jl
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule
 export trapezoidal_rule, rectangular_rule
-
-# from sampling/normalization.jl
-export quadraturenormalization, sampling_normalization
 
 # from bases/fourier/fourier.jl
 export Fourier,
@@ -292,9 +289,6 @@ export leading_order_coefficient
 
 # from specialOPS.jl
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
-
-diagonal(a...) = error("diagonal is replaced by the LinearAlgebra-type function diag")
-isdiagonal(a...) = error("isdiagonal is replaced by the LinearAlgebra-type function isdiag")
 export diagonal, isdiagonal
 
 include("util/common.jl")
@@ -308,7 +302,7 @@ include("maps/partition.jl")
 include("spaces/measure.jl")
 include("spaces/spaces.jl")
 include("spaces/integral.jl")
-include("spaces/logic.jl")
+include("sampling/gaussweights.jl")
 
 include("bases/generic/dictionary.jl")
 include("bases/generic/span.jl")
@@ -365,6 +359,7 @@ include("bases/generic/logic.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
+export sampling_normalization
 include("sampling/normalization.jl")
 include("sampling/interaction.jl")
 

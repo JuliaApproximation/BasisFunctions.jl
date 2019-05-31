@@ -8,6 +8,7 @@ struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
         new{eltype(grid),typeof(grid),typeof(weights)}(grid, weights)
     end
 end
+≈(m1::DiscreteMeasure, m2::DiscreteMeasure) = ≈(map(grid,(m1,m2))...) &&  ≈(map(weights,(m1,m2))...)
 genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...)
 genericweights(grid::ProductGrid) = tensorproduct([Ones{subeltype(eltype(grid))}(l) for l in size(grid)]...)
 
@@ -26,9 +27,7 @@ end
 
 support(m::DiracMeasure) = Point(m.x)
 name(m::DiracMeasure) = "Dirac measure at x = $(m.x)"
-point(m::DiracMeasure) = m.x
-grid(m::DiracMeasure) = ScatteredGrid(m.x)
-checkbounds(::DiracMeasure, i) = (convert(Int,i)==1) || throw(BoundsError())
+grid(m::DiracMeasure) = ScatteredGrid([m.x])
 isprobabilitymeasure(::DiracMeasure) = true
 weights(::DiracMeasure{T}) where T = Ones{T}(1)
 
@@ -65,6 +64,7 @@ supermeasure(measure::DiscreteSubMeasure) = measure.supermeasure
 supermeasure(measure::GenericDiscreteMeasure{T,<:AbstractSubGrid,W}) where {T,W} =
     discretemeasure(supergrid(grid(measure)), weights(measure))
 discretemeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(discretemeasure(supergrid(grid)), grid)
+_discretesubmeasure(grid::Union{AbstractSubGrid,TensorSubGrid},weights) = DiscreteSubMeasure(discretemeasure(supergrid(grid),weights), grid)
 
 weights(measure::DiscreteSubMeasure) = subweights(measure, subindices(measure), weights(supermeasure(measure)))
 subweights(_, subindices, w) = w[subindices]
@@ -78,7 +78,7 @@ name(m::DiscreteSubMeasure) = "Restriction of a "*name(supermeasure(m))
 
 
 # # TODO move subgrid to BasisFunctions or SubMeasure to FrameFun
-restrict(measure::DiscreteMeasure, domain::Domain) = DiscreteSubMeasure(measure, subgrid(grid, domain))
+restrict(measure::DiscreteMeasure, domain::Domain) = DiscreteSubMeasure(measure, subgrid(grid(measure), domain))
 
 
 const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
@@ -88,15 +88,20 @@ discretemeasure(MappedGrid(grid(measure), map), weights(measure))
 name(m::DiscreteMappedMeasure) = "Mapping of a "*name(supermeasure(m))
 mapping(measure::DiscreteMappedMeasure) = mapping(grid(measure))
 supermeasure(m::DiscreteMappedMeasure) = discretemeasure(supergrid(grid(m)), m.weights)
-apply_map(measure::DiscreteMeasure, map) = discretemeasure(apply_map(grid(measure)), weights(measure))
-apply_map(measure::DiscreteMappedMeasure, map) = MappedMeasure(map*mapping(measure), supermeasure(measure))
+apply_map(measure::DiscreteMeasure, map) = discretemeasure(apply_map(grid(measure),map), weights(measure))
 support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
+
 
 
 const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:ProductGrid where  W<:AbstractOuterProductArray
 
-const DiscreteTensorSubMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:TensorSubGrid where W<:AbstractOuterProductArray
-supermeasure(m::DiscreteTensorSubMeasure) = productmeasure(map(supermeasure, elements(m))...)
+const DiscreteTensorSubMeasure{T,G,W} = DiscreteSubMeasure{T,M,G} where {T,M<:BasisFunctions.DiscreteProductMeasure,G<:TensorSubGrid}
+
+name(m::DiscreteTensorSubMeasure) = "Tensor of submeasures (supermeasure:"*name(supermeasure(m))
+elements(m::DiscreteTensorSubMeasure) = map(BasisFunctions._discretesubmeasure,elements(grid(m)),elements(weights(supermeasure(m))))
+element(m::DiscreteTensorSubMeasure, i) = BasisFunctions._discretesubmeasure(element(grid(m),i),element(weights(supermeasure(m)),i))
+iscomposite(m::DiscreteTensorSubMeasure) = true
+
 
 name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 productmeasure(measures::DiscreteMeasure...) =
@@ -106,7 +111,7 @@ productmeasure(measures::DiscreteMeasure...) =
 iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(grid(m)), elements(weights(m)))
 element(m::DiscreteProductMeasure, i) = discretemeasure(element(grid(m), i), element(weights(m), i))
-function stencilarray(m::DiscreteProductMeasure)
+function stencilarray(m::Union{DiscreteProductMeasure,DiscreteTensorSubMeasure})
     A = Any[]
     push!(A, element(m,1))
     for i = 2:length(elements(m))
