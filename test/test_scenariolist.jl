@@ -1,4 +1,4 @@
-using BasisFunctions, LinearAlgebra, DomainSets, Grids, Test, StaticArrays
+using BasisFunctions, LinearAlgebra, DomainSets, GridArrays, Test, StaticArrays
 @testset begin
 
     F = Fourier(3)
@@ -20,5 +20,5 @@ using BasisFunctions, LinearAlgebra, DomainSets, Grids, Test, StaticArrays
     g3 = BasisFunctions.default_gramoperator(Fourier(3))
 
     @test g1≈g2≈g3
-    
+
 end

@@ -16,10 +16,10 @@ Some examples of how to use this code can be found in the [FrameFun](https://git
 
 ## Installation
 
-BasisFunctions.jl is not added to the Julia General registry and depends on a unregistered package Grids.jl.
+BasisFunctions.jl is not added to the Julia General registry and depends on a unregistered package GridArrays.jl.
 
 ### Recomanded
-For Julia 1.1 or higher, you can add the FrameFun registry and than add Grids.
+For Julia 1.1 or higher, you can add the FrameFun registry.
 From the Julia REPL, type `]` to enter Pkg mode and run
 
 ```julia
@@ -31,7 +31,7 @@ pkg> add BasisFunctions
 In Julia 1.0, the packages can be installed by cloning their git repository. From the Julia REPL, type `]` to enter Pkg mode and run
 
 ```julia
-pkg> add https://github.com/vincentcp/Grids.jl
+pkg> add https://github.com/vincentcp/GridArrays.jl
 pkg> add https://github.com/daanhb/BasisFunctions.jl
 ```
 
@@ -39,6 +39,6 @@ or in a file you could use
 
 ```julia
 using Pkg
-pkg"add https://github.com/vincentcp/Grids.jl"
-pkg"add https://github.com/vincentcp/BasisFunctions.jl"
+pkg"add https://github.com/vincentcp/GridArrays.jl"
+pkg"add https://github.com/daanhb/BasisFunctions.jl"
 ```

@@ -281,31 +281,31 @@ function first_moment(b::OPS)
     @warn "implement first_moment for $b"
 end
 
-# """
-# Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
-# """
-# function gauss_rule(b::OPS{T}) where {T <: Real}
-#     J = symmetric_jacobi_matrix(b)
-#     x,v = eigen(J)
-#     b0 = first_moment(b)
-#     # In the real-valued case it is sufficient to use the first element of the
-#     # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
-#     w = b0 * v[1,:].^2
-#     x,w
-# end
-#
-# # In the complex-valued case, we have to compute the weights by summing explicitly
-# # over the full eigenvector.
-# function gauss_rule(b::OPS{T}) where {T <: Complex}
-#     J = symmetric_jacobi_matrix(b)
-#     x,v = eigen(J)
-#     b0 = first_moment(b)
-#     w = similar(x)
-#     for i in 1:length(w)
-#         w[i] = b0 * v[1,i]^2 / sum(v[:,i].^2)
-#     end
-#     x,w
-# end
+"""
+Compute the Gaussian quadrature rule using the roots of the orthogonal polynomial.
+"""
+function gauss_rule(b::OPS{T}) where {T <: Real}
+    J = symmetric_jacobi_matrix(b)
+    x,v = eigen(J)
+    b0 = first_moment(b)
+    # In the real-valued case it is sufficient to use the first element of the
+    # eigenvector. See e.g. Gautschi's book, "Orthogonal Polynomials and Computation".
+    w = b0 * v[1,:].^2
+    x,w
+end
+
+# In the complex-valued case, we have to compute the weights by summing explicitly
+# over the full eigenvector.
+function gauss_rule(b::OPS{T}) where {T <: Complex}
+    J = symmetric_jacobi_matrix(b)
+    x,v = eigen(J)
+    b0 = first_moment(b)
+    w = similar(x)
+    for i in 1:length(w)
+        w[i] = b0 * v[1,i]^2 / sum(v[:,i].^2)
+    end
+    x,w
+end
 
 
 gaussjacobi(n::Integer,α::T,β::T) where T<:AbstractFloat =

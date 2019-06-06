@@ -557,7 +557,7 @@ function eval_expansion(dict::Dictionary, coefficients, x; options...)
 end
 
 function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
-    @assert dimension(dict) == Grids.dimension(grid)
+    @assert dimension(dict) == GridArrays.dimension(grid)
     @assert size(coefficients) == size(dict)
     # TODO: reenable test once product grids and product sets have compatible types again
     # @assert eltype(grid) == domaintype(dict)

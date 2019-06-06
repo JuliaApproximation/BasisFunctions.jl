@@ -148,7 +148,7 @@ struct LSQR_solver{T} <: VectorizingSolverOperator{T}
 
     src_linear  ::  Vector{T}
     dest_linear ::  Vector{T}
-    LSQR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, verbose=false, options...) where T =
+    LSQR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, maxiter=100*max(size(op)...),verbose=false, options...) where T =
         new{T}(op, (damp=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
             Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op))))
 end
@@ -161,7 +161,7 @@ struct LSMR_solver{T} <: VectorizingSolverOperator{T}
 
     src_linear  ::  Vector{T}
     dest_linear ::  Vector{T}
-    LSMR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, verbose=false, options...) where T =
+    LSMR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, maxiter=100*max(size(op)...),verbose=false, options...) where T =
         new{T}(op, (λ=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
             Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op)))
         )

@@ -28,7 +28,7 @@ function test_fourier_series(T)
     @test supremum(support(fb)) ≈ b
 
     g = interpolation_grid(fb)
-    @test typeof(g) <: Grids.MappedGrid
+    @test typeof(g) <: GridArrays.MappedGrid
     @test leftendpoint(support(g)) ≈ a
     @test rightendpoint(support(g)) ≈ b
     @test length(g) == length(fb)

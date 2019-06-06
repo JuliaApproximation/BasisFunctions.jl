@@ -43,14 +43,14 @@ function grid_restriction_operator(src, dest, src_grid, dest_grid; options...)
     default_restriction_operator(src, dest; options...)
 end
 
-function grid_restriction_operator(src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::Grids.MaskedGrid{G,M,I,T}; options...) where {G<:AbstractGrid,M,I,T}
+function grid_restriction_operator(src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::GridArrays.MaskedGrid{G,M,I,T}; options...) where {G<:AbstractGrid,M,I,T}
     @assert supergrid(dest_grid) == src_grid
     IndexRestrictionOperator(src, dest, subindices(dest_grid))
 end
 
 
-hasextension(dg::GridBasis{T,G}) where {T,G <: Grids.AbstractSubGrid} = true
-hasextension(dg::GridBasis{T,G}) where {T,G <: Grids.TensorSubGrid} = true
+hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.AbstractSubGrid} = true
+hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.TensorSubGrid} = true
 
 
 

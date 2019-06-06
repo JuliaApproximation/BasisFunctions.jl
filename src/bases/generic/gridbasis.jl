@@ -29,7 +29,7 @@ for op in (:size, :eachindex)
     @eval $op(b::GridBasis) = $op(grid(b))
 end
 
-dimension(b::GridBasis) = Grids.dimension(grid(b))
+dimension(b::GridBasis) = GridArrays.dimension(grid(b))
 
 name(dict::GridBasis) = "Discrete grid basis"
 

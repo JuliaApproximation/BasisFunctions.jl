@@ -1,4 +1,4 @@
-using BasisFunctions, Test, DomainSets, Grids
+using BasisFunctions, Test, DomainSets, GridArrays
 
 @testset "Measure" begin
 function generic_test_measure(measure)

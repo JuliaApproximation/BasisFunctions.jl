@@ -1,4 +1,4 @@
-using BasisFunctions, BasisFunctions.Test, DomainSets, Grids
+using BasisFunctions, BasisFunctions.Test, DomainSets, GridArrays
 
 using Test, LinearAlgebra, Plots
 
