@@ -119,121 +119,69 @@ function stencilarray(m::Union{DiscreteProductMeasure,DiscreteTensorSubMeasure})
 end
 
 
-
-abstract type VectorAlias{T} <: AbstractVector{T} end
-getindex(vector::VectorAlias, i::Int) = getindex(vector.vector, i)
-unsafe_getindex(vector::VectorAlias, i::Int) = unsafe_getindex(vector.vector, i)
-size(vector::VectorAlias) = size(vector.vector)
-
-abstract type FunctionVector{T} <: AbstractVector{T} end
-length(vector::FunctionVector) = vector.n
-size(vector::FunctionVector) = (length(vector),)
-
-function getindex(vector::FunctionVector, i::Int)
-    @boundscheck (1 <= i <= length(vector)) || throw(BoundsError())
-    @inbounds unsafe_getindex(vector, i)
-end
-
-
-struct ChebyshevUWeights{T} <: FunctionVector{T}
-    n   :: Int
-end
-
-unsafe_getindex(weights::ChebyshevUWeights{T}, i::Int) where {T} =
-    convert(T,π)/(weights.n + 1) * sin(convert(T,weights.n + 1 -i) / (weights.n + 1) * convert(T,π))^2
-
-
-
 struct ChebyshevTGaussMeasure{T} <:DiscreteMeasure{T}
-    grid    :: ChebyshevTNodes{T}
-    weights :: ChebyshevTWeights{T}
-    ChebyshevTGaussMeasure{T}(n::Int) where T =
-        new{T}(ChebyshevTNodes{T}(n), ChebyshevTWeights{T}(n))
+    grid    :: GridArrays.ChebyshevTNodes{T}
+    weights :: GridArrays.ChebyshevTWeights{T}
+    function ChebyshevTGaussMeasure{T}(n::Int) where T
+        x, w = GridArrays.gausschebyshev(T,n)
+        new{T}(x, w)
+    end
     ChebyshevTGaussMeasure(n::Int) = ChebyshevTGaussMeasure{Float64}(n)
 end
 
 struct ChebyshevUGaussMeasure{T} <:DiscreteMeasure{T}
-    grid   :: ChebyshevUNodes{T}
-    weights:: ChebyshevUWeights{T}
-    ChebyshevUGaussMeasure{T}(n::Int) where T =
-        new{T}(ChebyshevUNodes{T}(n), ChebyshevUWeights{T}(n))
+    grid   :: GridArrays.ChebyshevUNodes{T}
+    weights:: GridArrays.ChebyshevUWeights{T}
+    function ChebyshevUGaussMeasure{T}(n::Int) where T
+        x, w = GridArrays.gausschebyshevu(T,n)
+        new{T}(x, w)
+    end
     ChebyshevUGaussMeasure(n::Int) = ChebyshevUGaussMeasure{Float64}(n)
 end
 
-struct LegendreWeights{T} <: VectorAlias{T}
-    vector  ::  Vector{T}
-end
 struct LegendreGaussMeasure{T} <: DiscreteMeasure{T}
-    grid    :: LegendreNodes{T}
-    weights :: LegendreWeights{T}
+    grid    :: GridArrays.LegendreNodes{T}
+    weights :: GridArrays.LegendreWeights{T}
 
-    function LegendreGaussMeasure{Float64}(n::Int)
-        x,w = gausslegendre(n)
-        new{Float64}(LegendreNodes(x), LegendreWeights(w))
-    end
     function LegendreGaussMeasure{T}(n::Int) where T
-        x,w = legendre(T, n)
-        new{T}(LegendreNodes(x), LegendreWeights(w))
+        x, w = GridArrays.gausslegendre(T, n)
+        new{T}(x, w)
     end
     LegendreGaussMeasure(n::Int) = LegendreGaussMeasure{Float64}(n)
 end
 
-struct LaguerreWeights{T} <: VectorAlias{T}
-    α       ::  T
-    vector  ::  Vector{T}
-end
 struct LaguerreGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
-    grid    :: LaguerreNodes{T}
-    weights :: LaguerreWeights{T}
+    grid    :: GridArrays.LaguerreNodes{T}
+    weights :: GridArrays.LaguerreWeights{T}
 
-    function LaguerreGaussMeasure{Float64}(n::Int, α::Float64)
-        x,w = gausslaguerre(n, α)
-        new{Float64}(α, LaguerreNodes(α, x), LaguerreWeights(α, w))
-    end
     function LaguerreGaussMeasure{T}(n::Int, α::T) where T
-        x,w = laguerre(n, α)
-        new{T}(α, LaguerreNodes(α, x), LaguerreWeights(α, w))
+        x, w = GridArrays.gausslaguerre(T, n, α)
+        new{T}(α, x, w)
     end
     LaguerreGaussMeasure(n::Int, α::T) where T = LaguerreGaussMeasure{T}(n, α)
 end
 
-struct HermiteWeights{T} <: VectorAlias{T}
-    vector  ::  Vector{T}
-end
 struct HermiteGaussMeasure{T} <: DiscreteMeasure{T}
-    grid    :: HermiteNodes{T}
-    weights :: HermiteWeights{T}
+    grid    :: GridArrays.HermiteNodes{T}
+    weights :: GridArrays.HermiteWeights{T}
 
-    function HermiteGaussMeasure{Float64}(n::Int)
-        x,w = gausshermite(n)
-        new{Float64}(HermiteNodes(x), HermiteWeights(w))
-    end
     function HermiteGaussMeasure{T}(n::Int) where T
-        x,w = hermite(T, n)
-        new{T}(HermiteNodes(x), HermiteWeights(w))
+        x, w = GridArrays.gausshermite(T,n)
+        new{T}(x, w)
     end
     HermiteGaussMeasure(n::Int) = HermiteGaussMeasure{Float64}(n)
 end
 
-struct JacobiWeights{T} <: VectorAlias{T}
-    α       ::  T
-    β       ::  T
-    vector  ::  Vector{T}
-end
 struct JacobiGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
     β       :: T
-    grid    :: JacobiNodes{T}
-    weights :: JacobiWeights{T}
+    grid    :: GridArrays.JacobiNodes{T}
+    weights :: GridArrays.JacobiWeights{T}
 
-    function JacobiGaussMeasure{Float64}(n::Int, α::Float64, β::Float64)
-        x,w = gaussjacobi(n, α, β)
-        new{Float64}(α, β, JacobiNodes(α, β, x), JacobiWeights(α, β, w))
-    end
     function JacobiGaussMeasure{T}(n::Int, α::T, β::T) where T
-        x,w = jacobi(n, α, β)
-        new{T}(α, β, JacobiNodes(α, β, x), JacobiWeights(α, β, w))
+        x, w = GridArrays.gaussjacobi(T, n, α, β)
+        new{T}(α, β, x, w)
     end
     JacobiGaussMeasure(n::Int, α::T, β::T) where T = JacobiGaussMeasure{T}(n, α, β)
 end

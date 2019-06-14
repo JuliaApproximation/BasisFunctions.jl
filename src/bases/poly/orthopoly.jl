@@ -307,7 +307,8 @@ function gauss_rule(b::OPS{T}) where {T <: Complex}
     x,w
 end
 
-
+import FastGaussQuadrature: gaussjacobi
+using GaussQuadrature: jacobi
 gaussjacobi(n::Integer,α::T,β::T) where T<:AbstractFloat =
     jacobi(n, α, β)
 

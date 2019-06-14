@@ -8,8 +8,7 @@
     legend --> false
     # title --> "Expansion"
     grid = plotgrid(dictionary(S), n)
-    vals = plot_complex ? S(grid) : real(S(grid))
-    z = postprocess(dictionary(S), grid, vals)
+    vals = plot_complex ? S(grid) : real.(S(grid))
     grid, postprocess(dictionary(S), grid, vals)
 end
 
@@ -77,12 +76,12 @@ plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
     @series begin
         subplot := 1
         title := "Real"
-        A,real(B)
+        A,real.(B)
     end
     @series begin
         subplot :=2
         title := "Imaginary"
-        A,imag(B)
+        A,imag.(B)
     end
     nothing
 end
@@ -96,12 +95,12 @@ end
     @series begin
         subplot := 1
         title := "Real"
-        A,B,real(C)
+        A,B,real.(C)
     end
     @series begin
         subplot :=2
         title := "Imaginary"
-        A,B,imag(C)
+        A,B,imag.(C)
     end
     nothing
 end

@@ -543,7 +543,10 @@ derivative_dict(dict::Dictionary; options...) = derivative_dict(dict, 1; options
 """
 Evaluate an expansion given by the set of coefficients in the point x.
 """
-function eval_expansion(dict::Dictionary, coefficients, x; options...)
+eval_expansion(dict::Dictionary, coefficients, x; options...) =
+    default_eval_expansion(dict, coefficients, x)
+
+function default_eval_expansion(dict::Dictionary, coefficients, x)
     @assert size(coefficients) == size(dict)
 
     T = span_codomaintype(dict)

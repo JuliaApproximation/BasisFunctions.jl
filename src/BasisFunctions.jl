@@ -8,8 +8,6 @@ import GridArrays: subindices, instantiate
 using IterativeSolvers: lsqr, lsmr
 import Calculus: derivative
 using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
-import FastGaussQuadrature: gaussjacobi, gausslaguerre, gausslegendre, gausshermite
-using GaussQuadrature: jacobi, laguerre, legendre, hermite
 using Base.Cartesian
 
 ## Some specific functions of Base we merely use

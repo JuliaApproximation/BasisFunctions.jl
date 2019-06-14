@@ -44,7 +44,7 @@ for op in (:coefficienttype,)
 end
 
 # Delegation of properties
-for op in (:isreal, :isbasis, :isframe, :isdiscrete)
+for op in (:isreal, :isbasis, :isframe, :isdiscrete, :measure)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 

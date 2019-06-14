@@ -127,6 +127,8 @@ end
 
 support(set::MultiDict) = union(map(support,elements(set))...)
 
+measure(dict::MultiDict) = measure(element(dict, 1))
+
 resize(d::MultiDict, n::Int) = resize(d, approx_length(d, n))
 
 approx_length(d::MultiDict, n::Int) = ceil(Int, n/numelements(d)) * ones(Int,numelements(d))

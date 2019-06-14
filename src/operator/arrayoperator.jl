@@ -202,6 +202,10 @@ DiagonalOperator(src::Dictionary, dest::Dictionary, A::AbstractArray; options...
 DiagonalOperator(src::Dictionary, A::AbstractArray; options...) = DiagonalOperator(A; src=src, options...)
 DiagonalOperator{T}(src::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src)
 DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {T} = DiagonalOperator{T}(A; src=src, dest=dest)
+function DiagonalOperator(src::Dictionary, dest::Dictionary, A::OuterProductArray; options...)
+    tensorproduct(map(DiagonalOperator, elements(src), elements(dest), elements(A))...)
+
+end
 
 isdiag(op::DiagonalOperator) = true
 isinplace(op::DiagonalOperator) = true

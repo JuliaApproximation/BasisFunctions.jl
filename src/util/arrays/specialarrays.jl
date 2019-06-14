@@ -25,7 +25,7 @@ Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
 
 Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
 
-for (Tp,fun) in zip((:ProbabilityArray, :ChebyshevTWeights), (:probabilityarray_fun, :chebyshevtweights_fun))
+for (Tp,fun) in zip((:ProbabilityArray,), (:probabilityarray_fun,))
     @eval begin
         struct $Tp{T,N,Axes} <:FillArrays.AbstractFill{T,N,Axes}
             axes::Axes
@@ -78,7 +78,6 @@ for (Tp,fun) in zip((:ProbabilityArray, :ChebyshevTWeights), (:probabilityarray_
 end
 
 probabilityarray_fun(Z::ProbabilityArray{T}) where T = one(T) / convert(T,length(Z))
-chebyshevtweights_fun(Z::ChebyshevTWeights{T}) where T =  convert(T,π) / convert(T,length(Z))
 
 
 "A vector of the form `[1,-1,1,-1,...]`."

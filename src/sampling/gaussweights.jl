@@ -21,10 +21,10 @@ gaussweights(grid::ProductGrid, measure::ProductMeasure) =
     OuterProductArray(map(gaussweights, elements(grid), elements(measure))...)
 
 gaussweights(grid::ChebyshevTNodes{T}, ::ChebyshevTMeasure{T}) where {T} =
-    ChebyshevTWeights{T}(length(grid))
+    GridArrays.ChebyshevTWeights{T}(length(grid))
 
 gaussweights(grid::ChebyshevUNodes{T}, ::ChebyshevUMeasure{T}) where {T} =
-    ChebyshevUWeights{T}(length(grid))
+    GridArrays.ChebyshevUWeights{T}(length(grid))
 
 gaussweights(grid::LegendreNodes{T}, ::LegendreMeasure{T}) where {T} =
     weights(LegendreGaussMeasure{T}(length(grid)))

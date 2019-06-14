@@ -87,17 +87,17 @@ unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
 
 # We reshape any incoming or outgoing coefficients into an array of the right size
 function apply!(op::TensorProductOperator, coef_dest, coef_src::AbstractVector)
-    @warn "Reshaping input of tensor product operator from vector to tensor"
+    @warn "Reshaping input of tensor product operator from vector to tensor" maxlog=4
     apply!(op, coef_dest, reshape(coef_src, size(src(op))))
 end
 
 function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src)
-    @warn "Reshaping output of tensor product operator from vector to tensor"
+    @warn "Reshaping output of tensor product operator from vector to tensor" maxlog=4
     apply!(op, reshape(coef_dest, size(dest(op))), coef_src)
 end
 
 function apply!(op::TensorProductOperator, coef_dest::Vector, coef_src::AbstractVector)
-    @warn "Reshaping input and output of tensor product operator from vector to tensor"
+    @warn "Reshaping input and output of tensor product operator from vector to tensor" maxlog=4
     apply!(op, reshape(coef_dest, size(dest(op))), reshape(coef_src, size(src(op))))
 end
 
