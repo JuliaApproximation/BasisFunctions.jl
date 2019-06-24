@@ -18,7 +18,8 @@ end
 
 @inline Base.unsafe_getindex(F::AbstractOuterProductArray{T,N}, kj::NTuple{N,Int}) where {T,N} =
     prod(map(getindex, elements(F), kj))
-
+    
+export OuterProductArray
 struct OuterProductArray{T,N,V} <: AbstractOuterProductArray{T,N}
     vectors   ::  V
     OuterProductArray(v::AbstractVector...) =

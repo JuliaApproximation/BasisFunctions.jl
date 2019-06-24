@@ -277,7 +277,7 @@ export ChebyshevT, ChebyshevU,
 export plotgrid, postprocess
 
 # from util/domain_extensions.jl
-export float_type, dimension
+export dimension
 
 # from bases/poly/orthopoly.jl and friends
 export Legendre, Jacobi, Laguerre, Hermite

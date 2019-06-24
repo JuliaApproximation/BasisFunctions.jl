@@ -17,14 +17,6 @@ iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
 # approximate in, by simply dropping the tolerance.
 approx_indomain(x, domain::Domain, tolerance) = indomain(x, domain)
 
-"Assign a floating point type to a domain element type T."
-float_type(::Type{T}) where {T <: Real} = T
-float_type(::Type{Complex{T}}) where {T <: Real} = Complex{T}
-float_type(::Type{SVector{N,T}}) where {N,T} = T
-float_type(::Type{NTuple{N,T}}) where {N,T} = T
-
-# Fallback: we return Float64
-float_type(::Type{T}) where {T} = Float64
 
 dimension(::Type{T}) where {T <: Number} = 1
 dimension(::Type{SVector{N,T}}) where {N,T <: Number} = N
