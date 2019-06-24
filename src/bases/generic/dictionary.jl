@@ -500,7 +500,7 @@ end
 # We implement unsafe_eval_element1, so the bounds check on idx has already happened
 # TODO: implement using broadcast instead, because evaluation in a grid is like vectorization
 @inline unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid) =
-    _default_unsafe_eval_element_in_grid(dict, idx, grid)
+    BasisFunctions._default_unsafe_eval_element_in_grid(dict, idx, grid)
 
 function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
     result = zeros(GridBasis(dict, grid))

@@ -199,15 +199,15 @@ isprobabilitymeasure(::HermiteMeasure) = false
 # Generating new measures from existing measures
 ######################################################
 
-function restrict(m::LebesgueMeasure{T}, d::Domain{T}) where {T}
-    @assert issubset(d, support(m))
-    GenericLebesgueMeasure(d)
-end
-
-function restrict(m::LebesgueMeasure{T}, d::UnitInterval{T}) where {T}
-    @assert issubset(d, support(m))
-    FourierMeasure{T}()
-end
+# function restrict(m::LebesgueMeasure{T}, d::Domain{T}) where {T}
+#     @assert issubset(d, support(m))
+#     GenericLebesgueMeasure(d)
+# end
+#
+# function restrict(m::LebesgueMeasure{T}, d::UnitInterval{T}) where {T}
+#     @assert issubset(d, support(m))
+#     FourierMeasure{T}()
+# end
 
 
 struct SubMeasure{M,D,T} <: Measure{T}
@@ -266,11 +266,11 @@ end
 
 product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
 
-function ProductMeasure(measures...)
+function ProductMeasure(measures::Measure...)
     T = product_domaintype(measures...)
     ProductMeasure{typeof(measures),T}(measures)
 end
-productmeasure(measures...) = ProductMeasure(measures...)
+productmeasure(measures::Measure...) = ProductMeasure(measures...)
 
 iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures

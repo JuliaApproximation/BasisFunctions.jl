@@ -28,6 +28,8 @@ end
 
 tensorproduct(v::AbstractVector...)  =
     OuterProductArray(v...)
+tensorproduct(v::GridArrays.AbstractIntervalGrid...)  =
+    ProductGrid(v...)
 
 struct OPArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end
 Broadcast.BroadcastStyle(::Type{<:OuterProductArray{T,N}}) where {T,N} = OPArrayStyle{N}()

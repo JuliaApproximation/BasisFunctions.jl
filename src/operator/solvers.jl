@@ -153,7 +153,8 @@ struct LSQR_solver{T} <: VectorizingSolverOperator{T}
             Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op))))
 end
 
-linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
+linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector) =
+    copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
 
 struct LSMR_solver{T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator{T}

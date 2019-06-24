@@ -272,7 +272,7 @@ function roots(b::OPS{T}) where {T<:Union{BigFloat}}
     sort(real(eigvals!(J)))
 end
 
-interpolation_grid(b) = roots(b)
+interpolation_grid(b::OPS) = roots(b)
 hasinterpolationgrid(dict::OPS) = true
 opsorthogonal(dict, measure) = length(dict) -issymmetric(dict) <= length(grid(measure))
 

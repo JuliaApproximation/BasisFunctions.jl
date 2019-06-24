@@ -21,4 +21,6 @@ using BasisFunctions, LinearAlgebra, DomainSets, GridArrays, Test, StaticArrays
 
     @test g1≈g2≈g3
 
+    @test weights(discretemeasure(subgrid(PeriodicEquispacedGrid(10,0,1)^2,(0.0..0.5)^2))) isa OuterProductArray
+
 end

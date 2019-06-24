@@ -281,3 +281,5 @@ dual(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasu
 
 gramoperator(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
     TensorProductOperator(map((x,y)->gramoperator(x,y; options...), elements(dict), elements(measure))...)
+mixedgramoperator(dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict1); options...) =
+    TensorProductOperator(map((x,y,z)->mixedgramoperator(x,y,z; options...), elements(dict1), elements(dict2), elements(measure))...)

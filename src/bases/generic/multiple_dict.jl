@@ -163,6 +163,13 @@ end
 grid_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
     block_row_operator( DictionaryOperator{T}[grid_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
 
+
+
+function gramdual(dict::MultiDict, measure::Measure; options...)
+    @debug "Are you sure you want `dualtype=gramdual` and not `weightedsumdual`"
+    default_gramdual(dict, measure; options...)
+end
+
 ## Rescaling
 
 apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))

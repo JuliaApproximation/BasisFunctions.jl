@@ -82,15 +82,15 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
 weightfun_scaling_operator(gb::GridBasis, weightfunction) = weightfun_scaling_operator(gb, weightfunction, grid(gb))
 
 weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid1d; T=coefficienttype(gb)) =
-    DiagonalOperator(gb, gb, T[weightfunction(x) for x in grid])
+    DiagonalOperator(gb, gb, map(T,map(weightfunction, grid)))
 
 function weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid; T=coefficienttype(gb))
-	A = T[weightfunction(x...) for x in grid]
+	A = map(T,map(x->weightfunction(x...), grid))
     DiagonalOperator(gb, gb, A[:])
 end
 
 function weightfun_scaling_operator(gb, weightfunction, grid::ProductGrid; T=coefficienttype(gb))
-	A = T[weightfunction(x...) for x in grid]
+	A = map(T, map(x->weightfunction(x...), grid))
     DiagonalOperator(gb, gb, A[:])
 end
 

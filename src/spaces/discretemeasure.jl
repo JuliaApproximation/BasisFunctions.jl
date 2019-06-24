@@ -99,11 +99,12 @@ elements(m::DiscreteTensorSubMeasure) = map(BasisFunctions._discretesubmeasure,e
 element(m::DiscreteTensorSubMeasure, i) = BasisFunctions._discretesubmeasure(element(grid(m),i),element(weights(supermeasure(m)),i))
 iscomposite(m::DiscreteTensorSubMeasure) = true
 
+weights(m::DiscreteTensorSubMeasure) = OuterProductArray(map(weights, elements(m))...)
+
 
 name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 productmeasure(measures::DiscreteMeasure...) =
     discretemeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
-
 
 iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(grid(m)), elements(weights(m)))
