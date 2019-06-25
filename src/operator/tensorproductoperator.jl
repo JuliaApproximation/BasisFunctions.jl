@@ -79,8 +79,8 @@ pinv(op::TensorProductOperator) = TensorProductOperator(map(pinv, elements(op)).
 
 inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
 
-isinplace(op::TensorProductOperator) = reduce(&, map(isinplace, op.operators))
-isdiag(op::TensorProductOperator) = reduce(&, map(isdiag, op.operators))
+isinplace(op::TensorProductOperator) = all(map(isinplace, op.operators))
+isdiag(op::TensorProductOperator) = all(map(isdiag, op.operators))
 
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)

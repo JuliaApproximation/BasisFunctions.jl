@@ -92,8 +92,8 @@ end
 productelements(op::CompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
 numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
 
-isinplace(op::CompositeOperator) = reduce(&, map(isinplace, op.operators))
-isdiag(op::CompositeOperator) = reduce(&, map(isdiag, op.operators))
+isinplace(op::CompositeOperator) = all(map(isinplace, op.operators))
+isdiag(op::CompositeOperator) = all(map(isdiag, op.operators))
 iscomposite(op::CompositeOperator) = true
 
 
