@@ -8,9 +8,6 @@ gaussweights(grid::AbstractGrid, weights, measure::Measure) =
 gaussweights(grid::AbstractGrid, ::Ones, measure::Measure) =
     gaussweights(grid, measure)
 
-gaussweights(grid::AbstractSubGrid, measure::SubMeasure) =
-    gaussweights(supergrid(grid), supermeasure(measure))[subindices(grid)]
-
 function gaussweights(grid::MappedGrid, measure::MappedMeasure; options...)
     @assert iscompatible(mapping(grid), mapping(measure))
     sgrid = supergrid(grid)

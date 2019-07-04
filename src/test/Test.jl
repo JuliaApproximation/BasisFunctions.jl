@@ -22,4 +22,22 @@ include("test_operator.jl")
 
 export test_orthogonality_orthonormality
 include("test_functionality.jl")
+
+export generic_test_discrete_measure, generic_test_measure
+function generic_test_discrete_measure(measure)
+    io = IOBuffer()
+    show(io, measure)
+    @test length(take!(io))>0
+    @test length(weights(measure)) == length(grid(measure))
+
+end
+
+function generic_test_measure(measure)
+    io = IOBuffer()
+    show(io, measure)
+    @test length(take!(io))>0
+    support(measure)
+    x = rand()
+    @test weight(measure,x) ≈ weightfunction(measure)(x)
+end
 end

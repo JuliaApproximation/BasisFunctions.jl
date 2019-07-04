@@ -199,39 +199,6 @@ isprobabilitymeasure(::HermiteMeasure) = false
 # Generating new measures from existing measures
 ######################################################
 
-# function restrict(m::LebesgueMeasure{T}, d::Domain{T}) where {T}
-#     @assert issubset(d, support(m))
-#     GenericLebesgueMeasure(d)
-# end
-#
-# function restrict(m::LebesgueMeasure{T}, d::UnitInterval{T}) where {T}
-#     @assert issubset(d, support(m))
-#     FourierMeasure{T}()
-# end
-
-
-struct SubMeasure{M,D,T} <: Measure{T}
-    measure     ::  M
-    domain      ::  D
-end
-
-SubMeasure(measure::Measure{T}, domain::Domain) where {T} =
-    SubMeasure{typeof(measure),typeof(domain),T}(measure,domain)
-
-submeasure(measure::Measure, domain::Domain) = SubMeasure(measure, domain)
-
-name(m::SubMeasure) = "Restriction of a measure"
-
-supermeasure(measure::SubMeasure) = measure.measure
-support(measure::SubMeasure) = measure.domain
-
-unsafe_weight(m::SubMeasure, x) = unsafe_weight(supermeasure(m), x)
-
-restrict(measure::Measure, domain::Domain) = SubMeasure(measure, domain)
-
-strings(m::SubMeasure) = (name(m), (string(support(m)),), strings(supermeasure(m)))
-
-
 struct MappedMeasure{MAP,M,T} <: Measure{T}
     map     ::  MAP
     measure ::  M
@@ -276,8 +243,6 @@ iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 isprobabilitymeasure(m::ProductMeasure) = reduce(&, map(isprobabilitymeasure, elements(m)))
-
-submeasure(measure::ProductMeasure, domain::ProductDomain) = ProductMeasure(map(SubMeasure, elements(measure), elements(domain))...)
 
 support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
 

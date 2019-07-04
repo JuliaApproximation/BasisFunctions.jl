@@ -50,34 +50,6 @@ name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weig
 const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
 
 
-######################################################
-# Generating new measures from existing measures
-######################################################
-
-struct DiscreteSubMeasure{T,M<:DiscreteMeasure{T},G<:AbstractGrid} <: DiscreteMeasure{T}
-    supermeasure   :: M
-    subgrid        :: G
-    DiscreteSubMeasure(measure::DiscreteMeasure{T}, grid::AbstractGrid) where T = new{T,typeof(measure),typeof(grid)}(measure, grid)
-end
-subindices(measure::DiscreteSubMeasure) = subindices(measure.subgrid)
-supermeasure(measure::DiscreteSubMeasure) = measure.supermeasure
-discretemeasure(grid::Union{AbstractSubGrid,TensorSubGrid}) = DiscreteSubMeasure(discretemeasure(supergrid(grid)), grid)
-_discretesubmeasure(grid::Union{AbstractSubGrid,TensorSubGrid},weights) = DiscreteSubMeasure(discretemeasure(supergrid(grid),weights), grid)
-
-weights(measure::DiscreteSubMeasure) = subweights(measure, subindices(measure), weights(supermeasure(measure)))
-subweights(_, subindices, w) = w[subindices]
-
-grid(measure::DiscreteSubMeasure) = measure.subgrid
-
-isprobabilitymeasure(::DiscreteSubMeasure) = false
-
-name(m::DiscreteSubMeasure) = "Restriction of a "*name(supermeasure(m))
-
-
-# # TODO move subgrid to BasisFunctions or SubMeasure to FrameFun
-restrict(measure::DiscreteMeasure, domain::Domain) = DiscreteSubMeasure(measure, subgrid(grid(measure), domain))
-
-
 const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
 mappedmeasure(map, measure::DiscreteMeasure) =
 discretemeasure(MappedGrid(grid(measure), map), weights(measure))
@@ -92,16 +64,6 @@ support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
 
 const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:ProductGrid where  W<:AbstractOuterProductArray
 
-const DiscreteTensorSubMeasure{T,G,W} = DiscreteSubMeasure{T,M,G} where {T,M<:BasisFunctions.DiscreteProductMeasure,G<:TensorSubGrid}
-
-name(m::DiscreteTensorSubMeasure) = "Tensor of submeasures (supermeasure:"*name(supermeasure(m))
-elements(m::DiscreteTensorSubMeasure) = map(BasisFunctions._discretesubmeasure,elements(grid(m)),elements(weights(supermeasure(m))))
-element(m::DiscreteTensorSubMeasure, i) = BasisFunctions._discretesubmeasure(element(grid(m),i),element(weights(supermeasure(m)),i))
-iscomposite(m::DiscreteTensorSubMeasure) = true
-
-weights(m::DiscreteTensorSubMeasure) = OuterProductArray(map(weights, elements(m))...)
-
-
 name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 productmeasure(measures::DiscreteMeasure...) =
     discretemeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
@@ -109,7 +71,8 @@ productmeasure(measures::DiscreteMeasure...) =
 iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(grid(m)), elements(weights(m)))
 element(m::DiscreteProductMeasure, i) = discretemeasure(element(grid(m), i), element(weights(m), i))
-function stencilarray(m::Union{DiscreteProductMeasure,DiscreteTensorSubMeasure})
+
+function stencilarray(m::DiscreteProductMeasure)
     A = Any[]
     push!(A, element(m,1))
     for i = 2:length(elements(m))
@@ -118,7 +81,6 @@ function stencilarray(m::Union{DiscreteProductMeasure,DiscreteTensorSubMeasure})
     end
     A
 end
-
 
 struct ChebyshevTGaussMeasure{T} <:DiscreteMeasure{T}
     grid    :: GridArrays.ChebyshevTNodes{T}

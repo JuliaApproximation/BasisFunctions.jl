@@ -616,15 +616,6 @@ end
 innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::FourierMeasure; options...) =
 	innerproduct_fourier_full(b1, i, b2, j)
 
-function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::SubMeasure{<:FourierMeasure}; options...)
-	d = support(m)
-	if d isa AbstractInterval
-		innerproduct_fourier_part(b1, i, b2, j, infimum(d), supremum(d))
-	else
-		default_dict_innerproduct(b1, i, b2, j, m; options...)
-	end
-end
-
 function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::LebesgueMeasure; options...)
 	d = support(m)
 	if d isa AbstractInterval
