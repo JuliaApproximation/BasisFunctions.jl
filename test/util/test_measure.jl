@@ -1,14 +1,7 @@
 using BasisFunctions, Test, DomainSets, GridArrays
-
+using BasisFunctions.Test: generic_test_measure
 @testset "Measure" begin
-function generic_test_measure(measure)
-    io = IOBuffer()
-    show(io, measure)
-    @test length(take!(io))>0
-    support(measure)
-    x = rand()
-    @test weight(measure,x) ≈ weightfunction(measure)(x)
-end
+
 
 μ = BasisFunctions.GenericWeightMeasure(UnitInterval(),x->1.)
 generic_test_measure(μ)
@@ -40,14 +33,6 @@ generic_test_measure(μ)
 μ = JacobiMeasure(rand(),rand())
 generic_test_measure(μ)
 @test !isprobabilitymeasure(μ)
-
-m = JacobiMeasure(rand(),rand())
-μ = restrict(m, UnitInterval())
-generic_test_measure(μ)
-@test supermeasure(μ) == m
-μ = submeasure(m, UnitInterval())
-generic_test_measure(μ)
-@test supermeasure(μ) == m
 
 m = mapping(FourierGrid(10,-1,1))
 μ = mappedmeasure(m,FourierMeasure())

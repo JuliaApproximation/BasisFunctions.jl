@@ -222,5 +222,11 @@ dual(dict::Dictionary, measure::BasisFunctions.Measure=measure(dict); dualtype=g
 gramdual(dict::Dictionary, measure::Measure; options...) =
     default_gramdual(dict, measure; options...)
 
-default_gramdual(dict::Dictionary, measure::Measure; options...) =
-    conj(inv(gramoperator(dict, measure; options...))) * dict
+function default_gramdual(dict::Dictionary, measure::Measure; options...)
+    try
+        conj(inv(gramoperator(dict, measure; options...))) * dict
+    catch DimensionMismatch
+        @warn "Convert DictionaryOperator to dense ArrayOperator"
+        ArrayOperator(inv(conj(Matrix(gramoperator(dict, measure; options...)))),dict,dict) * dict
+    end
+end
