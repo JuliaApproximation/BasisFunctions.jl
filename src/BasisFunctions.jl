@@ -3,7 +3,7 @@ module BasisFunctions
 using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport,
     FillArrays
 @reexport using GridArrays
-import GridArrays: subindices, instantiate
+import GridArrays: subindices, instantiate, resize
 
 using IterativeSolvers: lsqr, lsmr
 import Calculus: derivative

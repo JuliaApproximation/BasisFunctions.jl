@@ -196,20 +196,29 @@ function symbol_leaves(object)
         return S
     end
 end
-
+using OrderedCollections
 # Collect all symbols used
 function symbollist(op)
     # Find all leaves
     ops = symbol_leaves(op)
     # find the unique elements in ops
-    U = unique(ops)
+    U = sort(unique(ops);by=string)
     # Create a dictionary that maps the unique elements to their Symbols
-    S = Dict{Any,Any}(u => symbol(u) for u in U)
+    S = OrderedCollections.OrderedDict(u => symbol(u) for u in U)
+
     # Get a list of the unique symbols
-    Sym = unique(values(S))
+    Sym = sort(unique(values(S)), by=string)
     for i in 1:length(Sym)
         # For each of the unique symbols, filter the dictionary for those values
-        Sf = filter(u->u.second==Sym[i],S)
+        Sf = []  #
+        for u in S
+            if u.second==Sym[i]
+                push!(Sf,u)
+            end
+        end
+        Sf = OrderedCollections.OrderedDict(Sf...)
+        # Sf = filter(u->u.second==Sym[i],S)
+
         if length(Sf)>1
             j=1
             for k in keys(Sf)
@@ -307,7 +316,8 @@ function show_composite_object(io::IO, object)
     S = symbollist(object)
     printstencil(io, object, S)
     print(io, "\n\n")
-    SortS = sort(collect(S), by=x->string(x[2]), rev=true)
+    SortS = sort(collect(S), by=x->string(x[2])*string(x[1]), rev=true)
+    
     for (key,value) in SortS
         if iscomposite(key)
             print(io, value, " = ")
@@ -316,7 +326,7 @@ function show_composite_object(io::IO, object)
             print(io, "\n\n")
         end
     end
-    SortS = sort(collect(S), by=x->string(x[2]), rev=true)
+
     for (key,value) in SortS
         print(io, value, "\t:\t", print_strings(strings(key),0,"\t\t"))
     end
