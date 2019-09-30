@@ -28,8 +28,8 @@ struct BlockOperator{T} <: DictionaryOperator{T}
 end
 
 function BlockOperator(operators::AbstractArray{OP,2},
-            op_src = multidict(map(src, operators[1,:])),
-            op_dest = multidict(map(dest, operators[:,1]));
+            op_src = multidict(map(src, operators[1,:])...),
+            op_dest = multidict(map(dest, operators[:,1])...);
             T=op_eltype(op_src, op_dest)) where {OP <: DictionaryOperator}
     # Avoid 1x1 block operators
     @assert size(operators,1) + size(operators,2) > 2
@@ -184,8 +184,8 @@ vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(o
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))
 
-adjoint(op::BlockOperator)::DictionaryOperator = BlockOperator(Array{DictionaryOperator}(adjoint(op.operators)))
-conj(op::BlockOperator) = BlockOperator(Array{DictionaryOperator}(conj(op.operators)))
+adjoint(op::BlockOperator) = BlockOperator(Array{DictionaryOperator}(adjoint(op.operators)), dest(op), src(op))
+conj(op::BlockOperator) = BlockOperator(Array{DictionaryOperator}(conj(op.operators)), src(op), dest(op))
 
 
 
