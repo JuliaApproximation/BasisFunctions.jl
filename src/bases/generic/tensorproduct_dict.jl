@@ -134,6 +134,9 @@ dict_in_support(dict::TensorProductDict, idx, x) =
 
 # This line is a bit slower than the lines below:
 _dict_in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
+# - catch CartesianIndex, convert to tuple, so that iteration works
+_dict_in_support(dict::TensorProductDict, dicts, idx::CartesianIndex, x) =
+    _dict_in_support(dict, dicts, Tuple(idx), x)
 
 # That is why we handcode a few cases:
 _dict_in_support(::TensorProductDict1, dicts, idx, x) =
@@ -225,6 +228,8 @@ _unsafe_eval_element(set::TensorProductDict4, dicts, i, x) =
 # Generic implementation, slightly slower
 _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
+_unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
+    _unsafe_eval_element(s, dicts, Tuple(i), x)
 
 
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
