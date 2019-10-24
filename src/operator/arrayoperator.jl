@@ -96,7 +96,7 @@ end
 VerticalBandedOperator(src::Dictionary, dest::Dictionary, array::Vector{S}, step::Int=1, offset::Int=0; T=promote_type(S,op_eltype(src,dest))) where S =
     VerticalBandedOperator{T}(VerticalBandedMatrix(length(dest), length(src), T.(array), step, offset), src, dest)
 
-ArrayOperator(A::VerticalBandedOperator{T}, src::Dictionary, dest::Dictionary) where T =
+ArrayOperator(A::VerticalBandedMatrix{T}, src::Dictionary, dest::Dictionary) where T =
     VerticalBandedOperator{T}(A, src, dest)
 
 """

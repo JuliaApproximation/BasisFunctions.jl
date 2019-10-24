@@ -10,7 +10,8 @@ struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
 end
 ≈(m1::DiscreteMeasure, m2::DiscreteMeasure) = ≈(map(grid,(m1,m2))...) &&  ≈(map(weights,(m1,m2))...)
 genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...)
-genericweights(grid::ProductGrid) = tensorproduct([Ones{subeltype(eltype(grid))}(l) for l in size(grid)]...)
+genericweights(grid::ProductGrid{T,S,N}) where {T,S,N} =
+    tensorproduct(ntuple(k->Ones{subeltype(eltype(grid))}(size(grid,k)) ,Val(N)))
 
 discretemeasure(grid::AbstractGrid, weights=genericweights(grid)) =
     GenericDiscreteMeasure(grid, weights)
