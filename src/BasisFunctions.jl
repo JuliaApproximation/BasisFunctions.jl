@@ -1,22 +1,32 @@
 module BasisFunctions
 
-using StaticArrays, RecipesBase, QuadGK, DomainSets, AbstractTrees, BlockArrays, ToeplitzMatrices, Reexport,
-    FillArrays
+# This file lists dependencies, imports, exports and includes.
+
+## Dependencies
+
+using StaticArrays, BlockArrays, SparseArrays, FillArrays
+using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
+using FFTW, FastTransforms
+using DomainSets
+
+using QuadGK, Base.Cartesian
+using RecipesBase
+
+using Reexport, AbstractTrees
+
 @reexport using GridArrays
 import GridArrays: subindices, instantiate, resize
 
-using IterativeSolvers: lsqr, lsmr
-import Calculus: derivative
-using FFTW, LinearAlgebra, SparseArrays, FastTransforms, GenericLinearAlgebra
-using Base.Cartesian
-
-## Some specific functions of Base we merely use
+## Some specific functions we merely use
 
 using Base: IteratorSize
-using SpecialFunctions: gamma
 using DSP: conv
+using IterativeSolvers: lsqr, lsmr
+using SpecialFunctions: gamma
+import Calculus: derivative
 
-## Imports from Base of functions we extend
+
+## Imports
 
 import Base:
     +, *, /, ==, |, &, -, \, ^,
@@ -24,77 +34,83 @@ import Base:
     ≈,
     ∘, ∘
 
-import Base: promote, promote_rule, convert, promote_eltype, widen, convert
+import Base:
+    promote, promote_rule, convert, promote_eltype, widen, convert,
+    # array methods
+    length, size, eachindex, firstindex, lastindex, range, collect,
+    first, last, copyto!,
+    transpose, inv, hcat, vcat,
+    getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
+    IndexStyle, axes, axes1,
+    broadcast, similar,
+    checkbounds, checkbounds_indices, checkindex,
+    zeros, ones, one, zero, fill!, rand,
+    # math functions
+    cos, sin, exp, log, sqrt,
+    # numbers
+    isreal, iseven, isodd, real, complex, conj,
+    # io
+    show, string
 
-import Base: length, size, eachindex, firstindex, lastindex,
-        range, collect, first, last, copyto!
-import Base: transpose, inv, hcat, vcat
-import Base: checkbounds, checkbounds_indices, checkindex
-import Base: getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
-    IndexStyle, axes, axes1
-import Base: broadcast, similar
 import Base.Broadcast: broadcasted, DefaultArrayStyle, broadcast_shape
 
-import Base: cos, sin, exp, log, sqrt
-import Base: zeros, ones, one, zero, fill!, rand
 
-import Base: isreal, iseven, isodd, real, complex, conj
+import LinearAlgebra:
+    norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank,
+    diag, isdiag, eigvals, issymmetric, svdvals
 
-import Base: show, string
-
-
-## Imports from LinearAlgebra
-import LinearAlgebra: norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank
-import LinearAlgebra: diag, isdiag, eigvals, issymmetric, svdvals
 
 import BlockArrays.BlockVector
 export BlockVector
 
-## Imports from DomainSets
 
-import DomainSets: domaintype, codomaintype, dimension, domain,
-    indomain, approx_indomain
-# For intervals
-import DomainSets: leftendpoint, rightendpoint, endpoints
-# For maps
-import DomainSets: matrix, vector, tensorproduct
+import DomainSets:
+    domaintype, codomaintype, dimension, domain,
+    indomain, approx_indomain,
+    # intervals
+    leftendpoint, rightendpoint, endpoints,
+    # maps
+    matrix, vector,
+    forward_map, inverse_map,
+    # composite types
+    element, elements, numelements,
+    # products
+    tensorproduct, cartesianproduct, ×, product_eltype
 
-# composite type interface
-import DomainSets: element, elements, numelements
-# cartesian product utility functions
-import DomainSets: cartesianproduct, ×, product_eltype
-
-import DomainSets: forward_map, inverse_map
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
-import GridArrays: iscomposite, support, apply_map, mapping
+import GridArrays:
+    iscomposite, support, apply_map, mapping
+
 
 import AbstractTrees: children
 
 
-## Exhaustive list of exports
+## Exports
+
+# Re-exports
+export element, elements, numelements, iscomposite,
+    ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
+    Point,
+    leftendpoint, rightendpoint, range
 
 # from util/indexing.jl
-export LinearIndex, NativeIndex
-export DefaultNativeIndex, DefaultIndexList
-export value
+export LinearIndex, NativeIndex,
+    DefaultNativeIndex, DefaultIndexList,
+    value
 
 # from util/domain_extensions.jl
 export interval, circle, sphere, disk, ball, rectangle, cube, simplex
 # export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
-export PiecewiseInterval, Partition
-export partition
-export split_interval
+export PiecewiseInterval, Partition,
+    partition,
+    split_interval
 
 # from src/products.jl
-export tensorproduct, ⊗
-export element, elements, numelements
-
-export ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae
-export Point
-export leftendpoint, rightendpoint, range
+export tensorproduct, ⊗,
+    element, elements, numelements
 
 # from grid/productgrid.jl
 export ProductGrid
@@ -107,50 +123,51 @@ export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
 export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
-export innerproduct
-export FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure, LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure, Measure
-export MappedMeasure, ProductMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
-    DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure, WeightedDiracCombMeasure
-export mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure
-export supermeasure, applymeasure
+export innerproduct,
+    FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure,
+    LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure, Measure,
+    MappedMeasure, ProductMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
+    DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure, WeightedDiracCombMeasure,
+    mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure,
+    supermeasure, applymeasure
 
 # from spaces/spaces.jl
-export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace, ChebyshevSpace, L2
+export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace,
+    ChebyshevSpace, L2
 
 
 export SparseOperator
 
 # from bases/generic/dictionary.jl
-export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d
-export domaintype, codomaintype, coefficienttype
-export promote_domaintype, promote_domainsubtype, promote_coefficienttype
-export interpolation_grid, left, right, support, domain, codomain
-export measure, hasmeasure
-export eval_expansion, eval_element, eval_element_derivative
-export name
-export instantiate, resize
-export ordering
-export native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients
-export iscomposite
-export isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal
-export in_support
-export dimensions, approx_length, extension_size
-export hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid
-export linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
-    delinearize_coefficients!
-export moment, norm
+export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
+    domaintype, codomaintype, coefficienttype,
+    promote_domaintype, promote_domainsubtype, promote_coefficienttype,
+    interpolation_grid, left, right, support, domain, codomain,
+    measure, hasmeasure,
+    eval_expansion, eval_element, eval_element_derivative,
+    name,
+    instantiate, resize,
+    ordering,
+    native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients,
+    isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal,
+    in_support,
+    dimensions, approx_length, extension_size,
+    hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid,
+    linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
+    delinearize_coefficients!,
+    moment, norm
 
 # from bases/generic/span.jl
 export Span
 
 # from bases/generic/subdicts.jl
-export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict
-export subdict, superindices
+export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict,
+    subdict, superindices
 
 # from bases/generic/tensorproduct_dict.jl
 export TensorProductDict, TensorProductDict1, TensorProductDict2,
-        TensorProductDict3, ProductIndex
-export recursive_native_index
+    TensorProductDict3, ProductIndex,
+    recursive_native_index
 
 # from bases/generic/derived_dict.jl
 export DerivedDict
@@ -162,16 +179,16 @@ export MappedDict, mapped_dict, mapping, superdict, rescale
 export param_dict, ParamDict, image
 
 #from bases/generic/expansions.jl
-export Expansion, TensorProductExpansion
-export expansion, coefficients, dictionary, roots,
-        random_expansion, differentiate, antidifferentiate,
-        ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, iscompatible
+export Expansion, TensorProductExpansion,
+    expansion, coefficients, dictionary, roots,
+    random_expansion, differentiate, antidifferentiate,
+    ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, iscompatible
 
 # from operator/operator.jl
-export AbstractOperator, DictionaryOperator
-export src, dest, src_space, dest_space
-export apply!, apply, apply_multiple, apply_inplace!
-export matrix, diag, isdiag, isinplace, sparse_matrix
+export AbstractOperator, DictionaryOperator,
+    src, dest, src_space, dest_space,
+    apply!, apply, apply_multiple, apply_inplace!,
+    matrix, diag, isdiag, isinplace, sparse_matrix
 
 # from operator/derived_op.jl
 export ConcreteDerivedOperator
@@ -181,10 +198,11 @@ export CompositeOperator, compose
 
 # from operator/special_operators.jl
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
-        ArrayOperator, FunctionOperator,
-        MultiplicationOperator,
-        IndexRestrictionOperator, IndexExtensionOperator,
-        HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
+    ArrayOperator, FunctionOperator,
+    MultiplicationOperator,
+    IndexRestrictionOperator, IndexExtensionOperator,
+    HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
+
 # from operator/solvers.jl
 export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSMR_solver
 
@@ -209,7 +227,8 @@ export evaluation_operator, evaluation_matrix
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
 
 # from generic/approximation.jl
-export approximation_operator, default_approximation_operator, approximate, discrete_approximation_operator, continuous_approximation_operator, project
+export approximation_operator, default_approximation_operator, approximate,
+    discrete_approximation_operator, continuous_approximation_operator, project
 
 # from generic/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_dict,
@@ -246,20 +265,20 @@ export OperatedDict
 export derivative
 
 # from bases/generic/discrete_sets.jl
-export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary
-export isdiscrete
+export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,
+    isdiscrete
 
 # from bases/generic/gridbasis.jl
-export GridBasis
-export grid, gridbasis, grid_multiplication_operator, weights
+export GridBasis,
+    grid, gridbasis, grid_multiplication_operator, weights
 
 # from sampling/sampling_operator.jl
-export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator
-export sample
+export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator,
+    sample
 
 # from sampling/quadrature.jl
-export clenshaw_curtis, fejer_first_rule, fejer_second_rule
-export trapezoidal_rule, rectangular_rule
+export clenshaw_curtis, fejer_first_rule, fejer_second_rule,
+    trapezoidal_rule, rectangular_rule
 
 # from bases/fourier/fourier.jl
 export Fourier,
@@ -284,15 +303,18 @@ export plotgrid, postprocess
 export dimension
 
 # from bases/poly/orthopoly.jl and friends
-export Legendre, Jacobi, Laguerre, Hermite
-export Monomials, RationalBasis, GenericOPS
-export recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval, monic_recurrence_coefficients
-export symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment
-export leading_order_coefficient
+export Legendre, Jacobi, Laguerre, Hermite,
+    Monomials, RationalBasis, GenericOPS,
+    recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval,
+    monic_recurrence_coefficients,
+    symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment,
+    leading_order_coefficient
 
 # from specialOPS.jl
-export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS
-export diagonal, isdiagonal
+export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS,
+    diagonal, isdiagonal
+
+## Includes
 
 include("util/common.jl")
 include("util/indexing.jl")

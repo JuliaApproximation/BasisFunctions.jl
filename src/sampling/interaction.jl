@@ -23,7 +23,7 @@ end
 
 function adjoint(op::SynthesisOperator)
     if op.measure == nothing
-        @warn("adjoint does not exists if measure is not defined. Returning inverse.")
+        @warn("Adjoint of $(typeof(op)) does not exist if measure is not defined. Returning inverse.")
         inv(op)
     else
         AnalysisOperator(dictionary(op), op.measure, dest_space(op))
@@ -35,6 +35,6 @@ function adjoint(op::AnalysisOperator)
     if src_space(op) isa Span && iscompatible(dictionary(src_space(op)), dictionary(op))
         SynthesisOperator(dictionary(op), measure(op))
     else
-        error("Adjoint of $(typeof(op)) does not exists if spaces do not match.")
+        error("Adjoint of $(typeof(op)) does not exist if spaces do not match.")
     end
 end

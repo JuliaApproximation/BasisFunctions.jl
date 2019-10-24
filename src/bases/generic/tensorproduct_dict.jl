@@ -131,12 +131,12 @@ resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, elements(d), 
 # in order to avoid extra memory allocation.
 dict_in_support(dict::TensorProductDict, idx, x) =
     _dict_in_support(dict, elements(dict), idx, x)
+# catch CartesianIndex, convert to tuple, so that iteration works
+dict_in_support(dict::TensorProductDict, idx::CartesianIndex, x) =
+    _dict_in_support(dict, elements(dict), Tuple(idx), x)
 
 # This line is a bit slower than the lines below:
 _dict_in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
-# - catch CartesianIndex, convert to tuple, so that iteration works
-_dict_in_support(dict::TensorProductDict, dicts, idx::CartesianIndex, x) =
-    _dict_in_support(dict, dicts, Tuple(idx), x)
 
 # That is why we handcode a few cases:
 _dict_in_support(::TensorProductDict1, dicts, idx, x) =
@@ -213,23 +213,23 @@ unsafe_eval_element(set::TensorProductDict, idx::ProductIndex, x) = _unsafe_eval
 
 # We assume that x has exactly as many components as the index i does
 # We can call unsafe_eval_element on the subsets because we have already done bounds checking
-_unsafe_eval_element(set::TensorProductDict1, dicts, i, x) =
+_unsafe_eval_element(set::TensorProductDict1, dicts, i::ProductIndex, x) =
     unsafe_eval_element(dicts[1], i[1], x[1])
 
-_unsafe_eval_element(set::TensorProductDict2, dicts, i, x) =
+_unsafe_eval_element(set::TensorProductDict2, dicts, i::ProductIndex, x) =
     unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2])
 
-_unsafe_eval_element(set::TensorProductDict3, dicts, i, x) =
+_unsafe_eval_element(set::TensorProductDict3, dicts, i::ProductIndex, x) =
     unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3])
 
-_unsafe_eval_element(set::TensorProductDict4, dicts, i, x) =
+_unsafe_eval_element(set::TensorProductDict4, dicts, i::ProductIndex, x) =
     unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3]) * unsafe_eval_element(dicts[4], i[4], x[4])
 
 # Generic implementation, slightly slower
 _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
     reduce(*, map(unsafe_eval_element, dicts, i, x))
 _unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
-    _unsafe_eval_element(s, dicts, Tuple(i), x)
+    reduce(*, map(unsafe_eval_element, dicts, Tuple(i), x))
 
 
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
