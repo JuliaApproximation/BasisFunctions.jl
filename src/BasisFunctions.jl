@@ -18,10 +18,11 @@ using DSP: conv
 
 ## Imports from Base of functions we extend
 
-import Base: +, *, /, ==, |, &, -, \, ^
-import Base: <, <=, >, >=
-import Base: ≈
-import Base: ∘, ∘
+import Base:
+    +, *, /, ==, |, &, -, \, ^,
+    <, <=, >, >=,
+    ≈,
+    ∘, ∘
 
 import Base: promote, promote_rule, convert, promote_eltype, widen, convert
 
@@ -156,6 +157,9 @@ export DerivedDict
 
 # from bases/generic/mapped_dict.jl
 export MappedDict, mapped_dict, mapping, superdict, rescale
+
+# from bases/generic/paramdict.jl
+export param_dict, ParamDict, image
 
 #from bases/generic/expansions.jl
 export Expansion, TensorProductExpansion
@@ -318,6 +322,7 @@ include("bases/generic/derived_dict.jl")
 include("bases/generic/complexified_dict.jl")
 include("bases/generic/tensorproduct_dict.jl")
 include("bases/generic/mapped_dict.jl")
+include("bases/generic/paramdict.jl")
 
 include("operator/arrayoperator.jl")
 include("operator/solvers.jl")
