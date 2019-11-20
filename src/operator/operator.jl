@@ -28,6 +28,8 @@ end
 size(op::AbstractOperator) = _size(op, dest_space(op), src_space(op))
 _size(op::AbstractOperator, dest, src) = (length(dest), length(src))
 
+size(op::AbstractOperator, j::Int) = j <= 2 ? size(op)[j] : 1
+
 """
 `DictionaryOperator` represents any linear operator that maps coefficients of
 a source set to coefficients of a destination set. Typically, source and
@@ -85,8 +87,6 @@ _op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) 
 # The size of the operator as a linear map from source to destination.
 # It is equal to the size of its matrix representation.
 size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))
-
-size(op::DictionaryOperator, j::Int) = j <= 2 ? size(op)[j] : 1
 
 #+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 

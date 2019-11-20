@@ -71,7 +71,7 @@ import DomainSets:
     leftendpoint, rightendpoint, endpoints,
     # maps
     matrix, vector,
-    forward_map, inverse_map,
+    forward_map, inverse_map, image,
     # composite types
     element, elements, numelements,
     # products

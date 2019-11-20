@@ -101,6 +101,7 @@ innerproduct2(d1, i, d2::Subdictionary, j, measure; options...) =
     innerproduct(d1, i, superdict(d2), superindices(d2, j), measure; options...)
 
 
+
 #####################
 # Concrete subdicts
 #####################
@@ -235,12 +236,26 @@ index(s::SingletonSubdict) = s.index
 (s::SingletonSubdict)(x) = eval_element(superdict(s), index(s), x)
 (s::SingletonSubdict)(x, y...) = s(SVector(x, y...))
 
-innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
-    innerproduct(superdict(f), index(f), superdict(g), index(g), measure; options...)
-
+# Inner product with a basis function: we choose the measure associated with the dictionary
 innerproduct(d::SingletonSubdict, f; options...) =
     innerproduct(d, f, measure(superdict(d)); options...)
 
+# The inner product between two basis functions: invoke the implementation of the dictionary
+innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
+    innerproduct(superdict(f), index(f), superdict(g), index(g), measure; options...)
+
+# The inner product of a basis function with another function: this is an analysis integral
+# We introduce a separate function name for this for easier dispatch.
+innerproduct(f::SingletonSubdict, g, measure; options...) =
+    analysis_integral(superdict(f), index(f), g, measure; options...)
+
+analysis_integral(dict::Dictionary, idx, g, measure; options...) =
+    _analysis_integral(dict, idx, g, measure, support(dict, idx), support(measure); options...)
+
+# We take the intersection of the support of the basis function with the support of the measure.
+# Perhaps one is smaller than the other.
+_analysis_integral(dict, idx, g, measure, domain1, domain2; options...) =
+    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain1 ∩ domain2; options...)
 
 #########################################
 # The default logic of creating subdicts

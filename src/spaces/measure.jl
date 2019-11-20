@@ -72,6 +72,14 @@ support(m::GenericWeightMeasure) = m.support
 strings(m::GenericWeightMeasure) = (name(m), (string(m.support),), (string(m.weightfunction),))
 
 
+struct WholeLebesgueMeasure{T} <: LebesgueMeasure{T}
+end
+
+support(m::WholeLebesgueMeasure{T}) where {T} = DomainSets.FullSpace{T}()
+
+name(m::WholeLebesgueMeasure) = "Lebesgue measure on the full space"
+
+
 "Lebesgue measure supported on a general domain."
 struct GenericLebesgueMeasure{T} <: LebesgueMeasure{T}
     support  ::  Domain{T}
@@ -107,6 +115,7 @@ isprobabilitymeasure(::FourierMeasure) = true
 
 lebesguemeasure(domain::UnitInterval{T}) where {T} = FourierMeasure{T}()
 lebesguemeasure(domain::ChebyshevInterval{T}) where {T} = LegendreMeasure{T}()
+lebesguemeasure(domain::DomainSets.FullSpace{T}) where {T} = WholeLebesgueMeasure{T}(domain)
 lebesguemeasure(domain::Domain{T}) where {T} = GenericLebesgueMeasure{T}(domain)
 
 

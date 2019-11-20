@@ -18,7 +18,7 @@ end
 # In the constructor we check the domain and codomain types.
 # - The domain of the ParamDict is the same as the domain of the map.
 # - The map maps to the same type as elements of the domain
-ParamDict(dict::Dictionary{S,T}, map::AbstractMap{S,U}, imag::Domain{U}) where {S,T,U} =
+ParamDict(dict::Dictionary{S,T}, map::AbstractMap{S,U}, image::Domain{U}) where {S,T,U} =
     ParamDict{typeof(dict),typeof(map),S,T}(dict, map, image)
 
 param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
@@ -26,7 +26,8 @@ param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
 mapping(dict::ParamDict) = dict.map
 image(dict::ParamDict) = dict.image
 
-similar_dictionary(dict::ParamDict, dict2::Dictionary) = ParamDict(dict2, mapping(dict), image(dict))
+similar_dictionary(dict::ParamDict, dict2::Dictionary) =
+    ParamDict(dict2, mapping(dict), image(dict))
 
 
 iscompatible(dict1::ParamDict, dict2::ParamDict) =
