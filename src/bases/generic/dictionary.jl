@@ -417,7 +417,7 @@ support(dict::Dictionary, idx) = support(dict)
 tolerance(dict::Dictionary) = tolerance(codomaintype(dict))
 
 "Does the given point lie inside the support of the given function or dictionary?"
-in_support(dict::Dictionary, idx) = dict_in_support(dict, idx)
+in_support(dict::Dictionary, x) = dict_in_support(dict, x)
 in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
 # The mechanism is as follows:
 # - in_support(dict::Dictionary, ...) calls dict_in_support
@@ -433,14 +433,12 @@ in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
 # This is the standard conversion to a native_index for any index of type
 # LinearIndex. This calls a different function, hence it is fine if the native
 # index happens to be a linear index.
-in_support(dict::Dictionary, idx::LinearIndex) =
-    dict_in_support(dict, native_index(dict, idx))
 in_support(dict::Dictionary, idx::LinearIndex, x) =
     dict_in_support(dict, native_index(dict, idx), x)
 
 # The default fallback is implemented below in terms of the support of the dictionary:
 dict_in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
-dict_in_support(dict::Dictionary, idx) = default_in_support(dict, idx)
+dict_in_support(dict::Dictionary, x) = default_in_support(dict, x)
 
 default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
 default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))
