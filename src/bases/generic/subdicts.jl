@@ -230,6 +230,8 @@ superindices(s::SingletonSubdict, i::Int) = s.index[i]
 
 index(s::SingletonSubdict) = s.index
 
+support(s::SingletonSubdict) = support(superdict(s), index(s))
+
 # Internally, we use StaticArrays (SVector) to represent points, except in
 # 1d where we use scalars. Here, for convenience, you can call a function with
 # x, y, z arguments and so on. These are wrapped into an SVector.
@@ -254,8 +256,13 @@ analysis_integral(dict::Dictionary, idx, g, measure; options...) =
 
 # We take the intersection of the support of the basis function with the support of the measure.
 # Perhaps one is smaller than the other.
-_analysis_integral(dict, idx, g, measure, domain1, domain2; options...) =
-    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain1 ∩ domain2; options...)
+function _analysis_integral(dict, idx, g, measure, domain1, domain2; options...)
+    if domain1 == domain2
+        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure; options...)
+    else
+        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain1 ∩ domain2; options...)
+    end
+end
 
 #########################################
 # The default logic of creating subdicts
