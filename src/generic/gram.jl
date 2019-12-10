@@ -53,7 +53,7 @@ innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
 default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-    applymeasure(measure, x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x); options...)
+    applymeasure(measure, x->conj(eval_element(dict1, i, x)) * eval_element(dict2, j, x); options...)
 
 gramelement(dict::Dictionary, i, j, m = measure(dict); options...) =
     innerproduct(dict, i, dict, j, m; options...)
