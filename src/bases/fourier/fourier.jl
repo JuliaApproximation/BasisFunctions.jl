@@ -235,7 +235,7 @@ function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
 			grid::PeriodicEquispacedGrid; options...)
 	if support(grid)≈support(dict)
 		resize_and_transform(dict, gb, grid; options...)
-	else
+	else 
 		@debug "Periodic grid mismatch with Fourier basis"
 		dense_evaluation_operator(dict, gb; options...)
 	end

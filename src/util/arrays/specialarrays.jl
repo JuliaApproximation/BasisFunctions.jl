@@ -449,12 +449,15 @@ end
 #     return Circulant(C.dft \ vdft, cvdft, similar(vdft), C.dft)
 # end
 
-function mul!(y::StridedVector{T}, A::Circulant{T}, x::StridedVector, α::T, β::T) where T
+function mul!(out::StridedVector{T}, A::Circulant{T}, in::StridedVector, α::T, β::T) where T<:Number
     fill!(A.tmp, 0)
     copyto!(A.tmp, in)
     mul!(A.tmp, A.dft, A.tmp)
-    ldiv!(A.tmp, A.vcvr_dft)
+    for i in 1:length(A.tmp)
+        A.tmp[i] *= A.vcvr_dft[i]
+    end
     A.dft \ A.tmp
+    copyto!(out, A.tmp)
 end
 
 function mul!(out::StridedVector{T}, A::Circulant{T}, in::StridedVector{T}, _::T, _::T) where {T<:Real}

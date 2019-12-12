@@ -50,6 +50,9 @@ discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe
 checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)
 unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m.weights, i)
 isprobabilitymeasure(m::DiscreteMeasure) = sum(m.weights) ≈ 1
+function default_applymeasure(measure::DiscreteMeasure, f::Function; options...)
+    integral(f, measure; options...)
+end
 
 "Supertype of all Lebesgue measures."
 abstract type LebesgueMeasure{T} <: Measure{T}

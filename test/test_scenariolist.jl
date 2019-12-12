@@ -1,7 +1,7 @@
 using BasisFunctions, LinearAlgebra, DomainSets, GridArrays, Test, StaticArrays
 @testset begin
 
-    F = Fourier(3)
+    F = Fourier(3,-1,1)
     S = SynthesisOperator(F)
     G = GridSampling(PeriodicEquispacedGrid(3,-1,1))
     @test Matrix(G*S)≈Matrix(G*F)

@@ -21,11 +21,12 @@ const show_timings = false
 ##########
 # Testing
 ##########
-
+ENV["JULIA_DEBUG"]="all"
 include("test_scenariolist.jl")
 
 Delimit("Utilities")
 include("util/test_utilities.jl")
+include("util/test_pgfplots.jl")
 
 Delimit("Operators")
 include("test_operators.jl")

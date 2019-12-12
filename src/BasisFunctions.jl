@@ -421,6 +421,7 @@ include("bases/poly/discretemeasure.jl")
 include("operator/prettyprint.jl")
 
 include("util/recipes.jl")
+include("util/pgfplots.jl")
 
 include("test/Test.jl")
 
