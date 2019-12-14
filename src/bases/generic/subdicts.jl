@@ -251,16 +251,29 @@ innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
 innerproduct(f::SingletonSubdict, g, measure; options...) =
     analysis_integral(superdict(f), index(f), g, measure; options...)
 
-analysis_integral(dict::Dictionary, idx, g, measure; options...) =
-    _analysis_integral(dict, idx, g, measure, support(dict, idx), support(measure); options...)
+# We want to check whether the supports of the basis function and the measure differ.
+# The integral may be easier to evaluate by restricting to the intersection of these
+# supports. However, we only perform this optimization if the intersection does not
+# lead to an IntersectionDomain (i.e., the intersection is not recognized) since
+# that leads to incomputable integrals.
+function analysis_integral(dict::Dictionary, idx, g, measure; options...)
+    domain1 = support(dict, idx)
+    domain2 = support(measure)
+    _analysis_integral(dict, idx, g, measure, domain1, domain2, domain1 ∩ domain2; options...)
+end
 
-# We take the intersection of the support of the basis function with the support of the measure.
-# Perhaps one is smaller than the other.
-function _analysis_integral(dict, idx, g, measure, domain1, domain2; options...)
-    if domain1 == domain2
+_analysis_integral(dict, idx, g, measure, d1, d2, domain::IntersectionDomain; options...) =
+    # -> disregard the intersection domain
+    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure; options...)
+
+function _analysis_integral(dict, idx, g, measure, d1, d2, domain; options...)
+    if d1 == d2
+        # -> domains are the same, don't convert the measure
         integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure; options...)
     else
-        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain1 ∩ domain2; options...)
+        # -> do compute on the smaller domain and convert the measure
+        # TODO: use DomainIntegrals.jl code that enables both measures and domains
+        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain; options...)
     end
 end
 
