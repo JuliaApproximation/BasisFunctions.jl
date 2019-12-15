@@ -118,7 +118,7 @@ isprobabilitymeasure(::FourierMeasure) = true
 
 lebesguemeasure(domain::UnitInterval{T}) where {T} = FourierMeasure{T}()
 lebesguemeasure(domain::ChebyshevInterval{T}) where {T} = LegendreMeasure{T}()
-lebesguemeasure(domain::DomainSets.FullSpace{T}) where {T} = WholeLebesgueMeasure{T}(domain)
+lebesguemeasure(domain::DomainSets.FullSpace{T}) where {T} = WholeLebesgueMeasure{T}()
 lebesguemeasure(domain::Domain{T}) where {T} = GenericLebesgueMeasure{T}(domain)
 
 
