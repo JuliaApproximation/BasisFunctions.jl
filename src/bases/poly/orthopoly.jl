@@ -11,7 +11,14 @@ const OPS{S,T} = OrthogonalPolynomials{S,T}
 
 approx_length(b::OPS, n::Int) = n
 
-derivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)-order)
+function derivative_dict(dict::OPS, order::Int; reducedegree = true, options...)
+	if reducedegree
+		resize(dict, length(dict)-order)
+	else
+		dict
+	end
+end
+
 antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
 
 size(o::OrthogonalPolynomials) = (o.n,)

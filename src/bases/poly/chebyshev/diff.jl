@@ -119,10 +119,20 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...) =
-    ChebyshevDifferentiation{T}(src, dest, order)
+function differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
+			T = op_eltype(src, dest), options...)
+	if order == 0
+		IdentityOperator{T}(src, dest)
+	else
+		ChebyshevDifferentiation{T}(src, dest, order)
+	end
+end
 
-antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...) =
-    ChebyshevAntidifferentiation{T}(src, dest, order)
+function antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
+			T = op_eltype(src, dest), options...)
+	if order == 0
+		IdentityOperator{T}(src, dest)
+	else
+    	ChebyshevAntidifferentiation{T}(src, dest, order)
+	end
+end
