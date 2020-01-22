@@ -214,7 +214,7 @@ export GenericIdentityOperator
 # from modifiers/transform.jl
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
-# from modifiers/gram.jl
+# from bases/dictionary/gram.jl
 export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
 # from modifiers/extension
@@ -331,8 +331,8 @@ include("sampling/gaussweights.jl")
 include("bases/dictionary/indexing.jl")
 include("bases/dictionary/dictionary.jl")
 include("bases/dictionary/span.jl")
-include("computations/gram.jl")
-
+include("bases/dictionary/gram.jl")
+include("bases/dictionary/duality.jl")
 include("bases/dictionary/discrete_sets.jl")
 include("bases/dictionary/gridbasis.jl")
 
