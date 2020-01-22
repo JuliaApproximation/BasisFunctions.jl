@@ -13,6 +13,12 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
+@testset "$(rpad("test custom dictionary",80))" begin
+    mydict = BasisFunctions.MyDictionary()
+    test_generic_dict_interface(mydict)
+end
+
+
 test_dictionaries = [Fourier, ChebyshevT, ChebyshevU, Legendre,
         Laguerre, Hermite, Jacobi, CosineSeries, SineSeries]
 

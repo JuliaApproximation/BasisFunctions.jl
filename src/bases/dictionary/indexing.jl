@@ -1,4 +1,3 @@
-# indexing.jl
 
 ############
 # Overview #

@@ -94,7 +94,7 @@ export element, elements, numelements, iscomposite,
     Point,
     leftendpoint, rightendpoint, range
 
-# from util/indexing.jl
+# from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,
     DefaultNativeIndex, DefaultIndexList,
     value
@@ -317,7 +317,6 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS,
 ## Includes
 
 include("util/common.jl")
-include("util/indexing.jl")
 include("util/arrays/specialarrays.jl")
 include("util/arrays/outerproductarrays.jl")
 include("util/domain_extensions.jl")
@@ -329,6 +328,7 @@ include("spaces/spaces.jl")
 include("spaces/integral.jl")
 include("sampling/gaussweights.jl")
 
+include("bases/dictionary/indexing.jl")
 include("bases/dictionary/dictionary.jl")
 include("bases/dictionary/span.jl")
 include("computations/gram.jl")
@@ -377,6 +377,8 @@ include("bases/modifiers/operated_dict.jl")
 include("bases/modifiers/weighted_dict.jl")
 include("bases/modifiers/vector_dict.jl")
 include("bases/modifiers/logic.jl")
+
+include("bases/dictionary/custom_dictionary.jl")
 
 ################################################################
 # Sampling

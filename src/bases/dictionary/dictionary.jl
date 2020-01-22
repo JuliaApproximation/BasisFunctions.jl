@@ -15,7 +15,7 @@ codomain type is the type of the output.
 Each dictionary is ordered via its index set: the ordering is determined by the
 iterator of the index set. A dictionary `d` can be indexed in several ways:
 - the linear index is a positive natural number between `1` and `length(d)`
-- the natural index is an index that more closely corresponds to the conventional
+- the native index is an index that more closely corresponds to the conventional
   mathematical notation of the dictionary, if that differs from linear indexing.
   For example, polynomials may have degree ranging from `0` to `length(d)-1`.
   Fourier series may have negative frequencies.
@@ -125,6 +125,12 @@ similar(s::Dictionary, size::Int...) = similar(s, domaintype(s), size...)
 similar(s::Dictionary, dims::Base.Dims) = similar(s, domaintype(s), dims...)
 
 similar(s::Dictionary, ::Type{T}, dims::Base.Dims) where {T} = similar(s, T, dims...)
+
+# This is a default routine that ony appies when nothing changes.
+function similar(dict::Dictionary{S,T}, ::Type{S}, n::Int) where {S,T}
+    @assert n == length(dict)
+    dict
+end
 
 resize(s::Dictionary, dims...) = similar(s, domaintype(s), dims...)
 
