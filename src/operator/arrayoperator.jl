@@ -130,7 +130,7 @@ name(::PrettyPrintSymbol{:R}) = "Restriction of coefficients to subset"
 
 
 """
-An IndexExtensionOperator embeds coefficients in a larger set based on their indices.
+An `IndexExtensionOperator` embeds coefficients in a larger set based on their indices.
 """
 struct IndexExtensionOperator{T,N,I} <: ArrayOperator{T}
     A           ::  ExtensionIndexMatrix{T,N,I}

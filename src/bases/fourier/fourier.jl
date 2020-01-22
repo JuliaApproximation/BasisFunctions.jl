@@ -92,8 +92,8 @@ const FFreq = FourierFrequency
 
 frequency(idxn::FourierFrequency) = value(idxn)
 
-Base.show(io::IO, idx::BasisFunctions.NativeIndex{:fourier}) =
-	print(io, "Fourier frequency: $(value(idx))")
+Base.show(io::IO, idx::NativeIndex{:fourier}) =
+	print(io, "Fourier frequency $(value(idx))")
 
 """
 `FFTIndexList` defines the map from native indices to linear indices
@@ -235,7 +235,7 @@ function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
 			grid::PeriodicEquispacedGrid; options...)
 	if support(grid)≈support(dict)
 		resize_and_transform(dict, gb, grid; options...)
-	else 
+	else
 		@debug "Periodic grid mismatch with Fourier basis"
 		dense_evaluation_operator(dict, gb; options...)
 	end

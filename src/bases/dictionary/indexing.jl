@@ -16,64 +16,6 @@
 
 
 
-##################
-# Native indices
-##################
-
-# Dictionaries can be indexed in various ways. We assume that the semantics
-# of the index is determined by its type and, moreover, that linear indices
-# are always Int's. This means that no other index can have type Int.
-const LinearIndex = Int
-
-"""
-A native index has to be distinguishable from a linear index by its type, but
-a linear index is always an integer. If a native index is also an integer type,
-then its value should be wrapped in a different type.
-
-That is the purpose of `NativeIndex`.
-
-A `NativeIndex` inherits from `Integer` and implements basic functionality such
-that one can do computations with native indices or construct ranges.
-"""
-struct NativeIndex{S} <: Integer
-    value   ::  LinearIndex
-end
-
-NativeIndex{S}(a::NativeIndex{S}) where {S} = a
-
-convert(::Type{NativeIndex{S}}, value::LinearIndex) where {S} = NativeIndex{S}(value)
-convert(::Type{T}, idx::NativeIndex) where {T <: Number} = convert(T, value(idx))
-# Resolve an ambiguity with mpfr code...
-convert(::Type{BigFloat}, idx::NativeIndex) = convert(BigFloat, value(idx))
-
-value(idx::NativeIndex) = idx.value
-
-# With this line we inherit binary operations involving integers and native indices
-Base.promote_rule(::Type{NativeIndex{S}}, ::Type{LinearIndex}) where {S} = NativeIndex{S}
-# For floating points, we choose to convert to the numeric value
-Base.promote_rule(::Type{N}, ::Type{T}) where {N<:NativeIndex,T<:AbstractFloat} = T
-
-for op in (:+, :-, :*)
-    @eval $op(a::NativeIndex{S}, b::NativeIndex{S}) where {S} = typeof(a)($op(value(a),value(b)))
-end
-
-for op in (:<, :<=, :>, :>=)
-    @eval $op(a::NativeIndex{S}, b::NativeIndex{S}) where {S} = $op(value(a),value(b))
-end
-
-(-)(a::NativeIndex) = typeof(a)(-value(a))
-
-# Convenience: make a vector indexable using native indices, if possible
-# It is possible whenever the size and element type of the vector completely
-# determine the index map from native to linear indices
-getindex(v::Array, idxn::NativeIndex) =
-	getindex(v, linear_index(idxn, size(v), eltype(v)))
-
-setindex!(v::Array, val, idxn::NativeIndex) =
-	setindex!(v, val, linear_index(idxn, size(v), eltype(v)))
-
-
-
 """
 The `type IndexList` implements a map from linear indices to another family
 of indices, and vice-versa.
@@ -98,61 +40,136 @@ end
 Base.IndexStyle(list::IndexList) = Base.IndexLinear()
 
 
+
+##################
+# Native indices
+##################
+
+# Dictionaries can be indexed in various ways. We assume that the semantics
+# of the index is determined by its type and, moreover, that linear indices
+# are always Int's. This means that no other index can have type Int.
+const LinearIndex = Int
+
+"""
+An `AbstractIntegerIndex` represents an integer that is being used as an index
+in the BasisFunctions package.
+
+The type implements basic functionality of integers such that one can do
+computations with the indices or construct ranges.
+"""
+abstract type AbstractIntegerIndex <: Integer end
+
+convert(I::Type{<:AbstractIntegerIndex}, value::Int) = I(value)
+convert(::Type{T}, idx::AbstractIntegerIndex) where {T <: Number} = convert(T, value(idx))
+# Resolve an ambiguity with mpfr code...
+convert(::Type{BigFloat}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
+
+# With this line we inherit binary operations involving integers and native indices
+Base.promote_rule(I::Type{<:AbstractIntegerIndex}, ::Type{Int}) = I
+# For floating points, we choose to convert to the numeric value
+Base.promote_rule(I::Type{<:AbstractIntegerIndex}, F::Type{<:AbstractFloat}) = F
+
+for op in (:+, :-, :*)
+    @eval $op(a::I, b::I) where {I<:AbstractIntegerIndex} = I($op(value(a),value(b)))
+end
+
+for op in (:<, :<=, :>, :>=)
+    @eval $op(a::I, b::I) where {I<:AbstractIntegerIndex} = $op(value(a),value(b))
+end
+
+(-)(a::AbstractIntegerIndex) = typeof(a)(-value(a))
+
+# Convenience: make a vector indexable using native indices, if possible
+# It is possible whenever the size and element type of the vector completely
+# determine the index map from native to linear indices
+getindex(v::Array, idxn::AbstractIntegerIndex) =
+    getindex(v, linear_index(idxn, size(v), eltype(v)))
+
+setindex!(v::Array, val, idxn::AbstractIntegerIndex) =
+    setindex!(v, val, linear_index(idxn, size(v), eltype(v)))
+
+
+"""
+A native index is distinguishable from a linear index by its type, but otherwise
+it simply wraps an integer and it acts like an integer.
+"""
+struct NativeIndex{S} <: AbstractIntegerIndex
+    value   ::  Int
+end
+
+NativeIndex{S}(a::NativeIndex{S}) where {S} = a
+
+value(idx::NativeIndex) = idx.value
+
+
+
+
+"""
+The native index list is an identity map from integers to themselves, wrapped
+in a `NativeIndex{S}` for some symbol `S`.
+"""
+struct NativeIndexList{S} <: IndexList{NativeIndex{S}}
+    n		::	Int
+end
+
+size(list::NativeIndexList) = (list.n,)
+
+getindex(list::NativeIndexList{S}, idx::Int) where {S} = NativeIndex{S}(idx)
+getindex(list::NativeIndexList{S}, idxn::NativeIndex{S}) where {S} = value(idxn)
+
+# In this case, we can compute the linear index without reference to
+# any dictionary or list:
+linear_index(idx::NativeIndex) = value(idx)
+# The line below may be called with the size and eltype of an array when indexing
+# into an array using a native index.
+linear_index(idx::NativeIndex, size, T) = linear_index(idx)
+
+
 """
 If a dictionary does not have a native index, we use the `DefaultNativeIndex`
 type to distinguish between linear and native indices. However, the default
 native index simply wraps the integer linear index.
 """
 const DefaultNativeIndex = NativeIndex{:default}
+const DefaultIndexList = NativeIndexList{:default}
 
-"""
-The default index list is an identity map from integers to themselves, wrapped
-in a `DefaultNativeIndex`.
-"""
-struct DefaultIndexList <: IndexList{DefaultNativeIndex}
-    n   ::  Int
-end
-
-size(list::DefaultIndexList) = (list.n,)
-
-getindex(list::DefaultIndexList, idx::LinearIndex) = DefaultNativeIndex(idx)
-getindex(list::DefaultIndexList, idxn::DefaultNativeIndex) = value(idxn)
-
-# In this case, we can compute the linear index without reference to
-# any dictionary or list:
-linear_index(idx::DefaultNativeIndex) = value(idx)
-# The line below may be called with the size and eltype of an array when indexing
-# into an array using a native index, see dictionary.jl
-linear_index(idx::DefaultNativeIndex, size, T) = linear_index(idx)
 
 
 """
 A `ShiftedIndex{S}` is a linear index shifted by `S`. Thus, its value starts at
 `1-S` and ranges up to `n-S`. A typical case is `S=1`.
-
-We use the `S` type parameter of `NativeIndex` to store the shift.
 """
-const ShiftedIndex{S} = NativeIndex{S}
+abstract type AbstractShiftedIndex{S} <: AbstractIntegerIndex end
 
-shift(idx::ShiftedIndex{S}) where {S} = S
-
-struct ShiftedIndexList{S} <: IndexList{ShiftedIndex{S}}
-    n       ::  Int
-end
-
-# Default value of the shift is 1
-ShiftedIndexList(n::Int) = ShiftedIndexList{1}(n)
-
-size(list::ShiftedIndexList) = (list.n,)
-shift(list::ShiftedIndexList{S}) where {S} = S
-
-getindex(list::ShiftedIndexList{S}, idx::LinearIndex) where {S} = ShiftedIndex{S}(idx-S)
-getindex(list::ShiftedIndexList{S}, idxn::ShiftedIndex) where {S} = value(idxn)+S
+shift(idx::AbstractShiftedIndex{S}) where {S} = S
+value(idx::AbstractShiftedIndex) = idx.value
 
 # Here too, as with the DefaultIndex above, we can compute the linear index
 # without reference to any dictionary or list
-linear_index(idx::ShiftedIndex) = value(idx) + shift(idx)
-linear_index(idx::ShiftedIndex, size, T) = linear_index(idx)
+linear_index(idx::AbstractShiftedIndex) = value(idx) + shift(idx)
+linear_index(idx::AbstractShiftedIndex, size, T) = linear_index(idx)
+
+
+struct ShiftedIndex{S} <: AbstractShiftedIndex{S}
+    value   ::  Int
+end
+
+ShiftedIndex{S}(a::ShiftedIndex{S}) where {S} = a
+
+
+struct ShiftedIndexList{S,T<:AbstractShiftedIndex{S}} <: IndexList{T}
+    n       ::  Int
+end
+
+ShiftedIndexList(n, T::Type{<:AbstractShiftedIndex{S}}) where {S} =
+	ShiftedIndexList{S,T}(n)
+
+size(list::ShiftedIndexList) = (list.n,)
+shift(list::ShiftedIndexList{S,T}) where {S,T} = S
+
+getindex(list::ShiftedIndexList{S,T}, idx::Int) where {S,T} = T(idx-S)
+getindex(list::ShiftedIndexList{S,T}, idxn::AbstractShiftedIndex) where {S,T} = value(idxn)+S
+
 
 
 ########################
@@ -193,7 +210,7 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 eachindex(list::ProductIndexList) = CartesianIndices(axes(list))
 
 # We convert between integers and product indices using ind2sub and sub2ind
-product_native_index(size, idx::LinearIndex) = ProductIndex(CartesianIndices(size)[idx])
+product_native_index(size, idx::Int) = ProductIndex(CartesianIndices(size)[idx])
 product_linear_index(size, idxn::ProductIndex) = LinearIndices(size)[indextuple(idxn)...]
 
 
@@ -201,7 +218,7 @@ product_linear_index(size, idxn::ProductIndex) = LinearIndices(size)[indextuple(
 product_native_index(size::NTuple{N,Int}, idx::NTuple{N,Int}) where {N} = ProductIndex(idx)
 product_native_index(size::NTuple{N,Int}, idx::ProductIndex{N}) where {N} = idx
 
-getindex(list::ProductIndexList, idx::LinearIndex) =
+getindex(list::ProductIndexList, idx::Int) =
     product_native_index(size(list), idx)
 getindex(list::ProductIndexList, idxn::ProductIndex) =
     product_linear_index(size(list), idxn)
@@ -263,7 +280,7 @@ end
 # and vice-versa
 offsets_linear_index(offsets, idx::MultilinearIndex) = offsets[idx[1]] + idx[2]
 
-getindex(list::MLIndexList, idx::LinearIndex) = offsets_multilinear_index(list.offsets, idx)
+getindex(list::MLIndexList, idx::Int) = offsets_multilinear_index(list.offsets, idx)
 getindex(list::MLIndexList, idx::MultilinearIndex) = offsets_linear_index(list.offsets, idx)
 
 

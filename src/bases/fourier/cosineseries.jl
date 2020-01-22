@@ -52,24 +52,16 @@ interpolation_grid(b::CosineSeries{T}) where {T} =
 # Native indices
 ##################
 
-const CosineFrequency = NativeIndex{:cosine}
+struct CosineFrequency <: AbstractShiftedIndex{1}
+	value	::	Int
+end
+
+Base.show(io::IO, idx::CosineFrequency) =
+	print(io, "Cosine frequency $(value(idx))")
 
 frequency(idxn::CosineFrequency) = value(idxn)
 
-"""
-`CosineIndices` defines the map from native indices to linear indices
-for a finite number of cosines.
-"""
-struct CosineIndices <: IndexList{CosineFrequency}
-	n	::	Int
-end
-
-size(list::CosineIndices) = (list.n,)
-
-getindex(list::CosineIndices, idx::Int) = CosineFrequency(idx-1)
-getindex(list::CosineIndices, idxn::CosineFrequency) = value(idxn)+1
-
-ordering(b::CosineSeries) = CosineIndices(length(b))
+ordering(b::CosineSeries) = ShiftedIndexList(length(b), CosineFrequency)
 
 
 ##################

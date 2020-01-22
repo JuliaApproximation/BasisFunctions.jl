@@ -52,8 +52,11 @@ innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
 
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
-default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-    applymeasure(measure, x->conj(eval_element(dict1, i, x)) * eval_element(dict2, j, x); options...)
+function default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...)
+	@boundscheck checkbounds(dict1, i)
+	@boundscheck checkbounds(dict2, i)
+    applymeasure(measure, x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x); options...)
+end
 
 gramelement(dict::Dictionary, i, j, m = measure(dict); options...) =
     innerproduct(dict, i, dict, j, m; options...)
@@ -97,13 +100,13 @@ gramoperator2(dict, measure::DiscreteMeasure; options...) =
 gramoperator(dict, measure::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
     default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; options...)
 
-@inline function default_gramoperator(dict::Dictionary, m::Measure=measure(dict); options...)
+function default_gramoperator(dict::Dictionary, m::Measure=measure(dict); options...)
     @debug "Slow computation of Gram matrix entrywise."
     A = grammatrix(dict, m; options...)
     R = ArrayOperator(A, dict, dict)
 end
 
-@inline function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = coefficienttype(dict), options...)
+function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = coefficienttype(dict), options...)
     @assert isorthogonal(dict, measure)
 	n = length(dict)
 	diag = zeros(T, n)
@@ -113,7 +116,7 @@ end
 	DiagonalOperator(dict, diag)
 end
 
-@inline function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid::AbstractGrid, weights;
+function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid::AbstractGrid, weights;
             T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
     E1 = evaluation_operator(dict1, grid; T=T, options...)
     E2 = evaluation_operator(dict2, grid; T=T, options...)
@@ -188,14 +191,14 @@ function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) whe
     end
 end
 
-@inline function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; options...)
+function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; options...)
     @debug "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; options...)
     T = eltype(A)
     ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
 end
 
-@inline function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
+function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
     T = promote_type(coefficienttype(d1),coefficienttype(d2))
     G = zeros(T, length(d1), length(d2))
     mixedgrammatrix!(G, d1, d2, measure; options...)

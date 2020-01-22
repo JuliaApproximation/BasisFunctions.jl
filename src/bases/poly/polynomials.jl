@@ -9,15 +9,17 @@ end
 ##################
 
 # The native index of a polynomial basis is the degree, which starts from 0 rather
-# than from 1. Since it is an integer, it is wrapped in a different type.
-const PolynomialDegree = ShiftedIndex{1}
+# than from 1.
+struct PolynomialDegree <: AbstractShiftedIndex{1}
+	value	::	Int
+end
 
 degree(idx::PolynomialDegree) = value(idx)
 
-Base.show(io::IO, idx::BasisFunctions.ShiftedIndex{1}) =
-	print(io, "Index shifted by 1: $(degree(idx))")
+Base.show(io::IO, idx::PolynomialDegree) =
+	print(io, "Polynomial degree $(degree(idx))")
 
-ordering(b::PolynomialBasis) = ShiftedIndexList{1}(length(b))
+ordering(b::PolynomialBasis) = ShiftedIndexList(length(b), PolynomialDegree)
 
 
 

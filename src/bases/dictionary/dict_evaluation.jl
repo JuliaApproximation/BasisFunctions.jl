@@ -20,6 +20,8 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, B
 #  does not have access to the dict anymore)
 checkbounds(::Type{Bool}, dict::Dictionary, i::NativeIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
+checkbounds(::Type{Bool}, dict::Dictionary, i::AbstractShiftedIndex) =
+    checkbounds(Bool, dict, linear_index(dict, i))
 checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 

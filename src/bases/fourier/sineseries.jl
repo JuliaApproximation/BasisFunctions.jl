@@ -51,20 +51,11 @@ const SineFrequency = NativeIndex{:sine}
 
 frequency(idxn::SineFrequency) = value(idxn)
 
-"""
-`SineIndices` defines the map from native indices to linear indices
-for a finite number of sines. It is merely the identity map.
-"""
-struct SineIndices <: IndexList{SineFrequency}
-	n	::	Int
-end
+Base.show(io::IO, idx::SineFrequency) =
+	print(io, "Sine frequency $(value(idx))")
 
-size(list::SineIndices) = (list.n,)
+ordering(b::SineSeries) = NativeIndexList{:sine}(length(b))
 
-getindex(list::SineIndices, idx::Int) = SineFrequency(idx)
-getindex(list::SineIndices, idxn::SineFrequency) = value(idxn)
-
-ordering(b::SineSeries) = SineIndices(length(b))
 
 ##################
 # Evaluation
