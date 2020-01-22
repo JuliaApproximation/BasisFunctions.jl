@@ -163,7 +163,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
 export Span
 
 # from bases/modifiers/subdicts.jl
-export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict,
+export Subdictionary, DenseSubdict, SparseSubdict, SingletonSubdict,
     subdict, superindices
 
 # from bases/modifiers/tensorproduct_dict.jl

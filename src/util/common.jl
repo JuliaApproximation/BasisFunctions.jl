@@ -8,15 +8,29 @@ macro add_properties(T, props...)
     e
 end
 
-tolerance(::Type{T}) where {T} = sqrt(eps(T))
-tolerance(::Type{Complex{T}}) where {T} = tolerance(T)
+export prectype
+"The floating point precision type associated with the argument."
+prectype(x) = prectype(typeof(x))
+prectype(::Type{<:Complex{T}}) where {T} = prectype(T)
+prectype(::Type{<:AbstractArray{T}}) where {T} = prectype(T)
+prectype(T::Type{<:AbstractFloat}) = T
+prectype(::Type{T}) where {T} = prectype(float(T))
 
-linspace(a,b,c) = range(a, stop=b, length=c)
+prectype(a, b) = promote_type(prectype(a), prectype(b))
+prectype(a, b, c...) = prectype(prectype(a, b), c...)
+
+tolerance(x) = tolerance(typeof(x))
+tolerance(::Type{T}) where {T} = tolerance(prectype(T))
+tolerance(T::Type{<:AbstractFloat}) = sqrt(eps(T))
+
+default_threshold(x) = default_threshold(typeof(x))
+default_threshold(T::Type{<:AbstractFloat}) = 100eps(T)
+default_threshold(::Type{T}) where {T} = default_threshold(prectype(T))
 
 
-# Convenience definitions for the implementation of traits
-const True = Val{true}
-const False = Val{false}
+
+linspace(a, b, n=100) = range(a, stop=b, length=n)
+
 
 # delinearize_coefficients!(dest::BlockVector, src::AbstractVector) =
 #     dest[:] .= src[:]
@@ -76,11 +90,6 @@ end
 
 isdyadic(n::Int) = n == 1<<round(Int, log2(n))
 
-
-default_threshold(y) = default_threshold(typeof(y))
-default_threshold(::Type{T}) where {T <: AbstractFloat} = 100eps(T)
-default_threshold(::Type{Complex{T}}) where {T <: AbstractFloat} = 100eps(T)
-default_threshold(::AbstractArray{T}) where {T} = default_threshold(T)
 
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?

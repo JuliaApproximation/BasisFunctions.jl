@@ -108,37 +108,37 @@ innerproduct2(d1, i, d2::Subdictionary, j, measure; options...) =
 
 
 """
-A `LargeSubdict` is a large subset of a dictionary. Operators associated with the
+A `DenseSubdict` is a large subset of a dictionary. Operators associated with the
 subset are implemented in terms of corresponding operators on the underlying dictionary.
 This often leads to an explicit extension to the full set, but it can take
 advantage of possible fast implementations for the underlying dictionary. For
 large subsets this is more efficient than iterating over the individual elements.
 """
-struct LargeSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
+struct DenseSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     superdict       ::  SET
     superindices    ::  IDX
 
-    function LargeSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, idx::IDX) where {SET,IDX,S,T}
+    function DenseSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, idx::IDX) where {SET,IDX,S,T}
         checkbounds(dict, idx)
         new(dict, idx)
     end
 end
 
-LargeSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
-    LargeSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
+DenseSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
+    DenseSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
-name(dict::LargeSubdict) = "Large subdictionary"
+name(dict::DenseSubdict) = "Dense subdictionary"
 
-similar_subdict(d::LargeSubdict, dict, superindices) = LargeSubdict(dict, superindices)
+similar_subdict(d::DenseSubdict, dict, superindices) = DenseSubdict(dict, superindices)
 
-interpolation_grid(d::LargeSubdict) = interpolation_grid(superdict(d))
+interpolation_grid(d::DenseSubdict) = interpolation_grid(superdict(d))
 
-function extension_operator(s1::LargeSubdict, s2::Dictionary; options...)
+function extension_operator(s1::DenseSubdict, s2::Dictionary; options...)
     @assert s2 == superdict(s1)
     IndexExtensionOperator(s1, s2, superindices(s1); options...)
 end
 
-function restriction_operator(s1::Dictionary, s2::LargeSubdict; options...)
+function restriction_operator(s1::Dictionary, s2::DenseSubdict; options...)
     @assert s1 == superdict(s2)
     IndexRestrictionOperator(s1, s2, superindices(s2); options...)
 end
@@ -149,22 +149,22 @@ end
 # Yet, we can generically define a differentiation_operator by extending the subdict
 # to the whole set and then invoking the differentiation operator of the latter,
 # and we choose that to be the default.
-subdict_hasderivative(s::LargeSubdict, superdict, superindices) = hasderivative(superdict)
-subdict_hasantiderivative(s::LargeSubdict, superdict, superindices) = hasantiderivative(superdict)
+subdict_hasderivative(s::DenseSubdict, superdict, superindices) = hasderivative(superdict)
+subdict_hasantiderivative(s::DenseSubdict, superdict, superindices) = hasantiderivative(superdict)
 
-subdict_derivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
+subdict_derivative_dict(s::DenseSubdict, order, superdict, superindices; options...) =
     derivative_dict(superdict, order; options...)
-subdict_antiderivative_dict(s::LargeSubdict, order, superdict, superindices; options...) =
+subdict_antiderivative_dict(s::DenseSubdict, order, superdict, superindices; options...) =
     antiderivative_dict(superdict, order; options...)
 
-function differentiation_operator(s1::LargeSubdict, s2::Dictionary, order; options...)
+function differentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
     @assert s2 == derivative_dict(s1, order)
     D = differentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)
     D*E
 end
 
-function antidifferentiation_operator(s1::LargeSubdict, s2::Dictionary, order; options...)
+function antidifferentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
     @assert s2 == antiderivative_dict(s1, order)
     D = antidifferentiation_operator(superdict(s1), s2, order; options...)
     E = extension_operator(s1, superdict(s1); options...)
@@ -175,16 +175,16 @@ end
 
 
 """
-A `SmallSubdict` is a subset of a dictionary with a small number of indices.
+A `SparseSubdict` is a subset of a dictionary with a small number of indices.
 The difference with a regular function subset is that operators on a small set
 are implemented by iterating explicitly over the indices, and not in terms of
 an operator on the full underlying set.
 """
-struct SmallSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
+struct SparseSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     superdict       ::  SET
     superindices    ::  IDX
 
-    function SmallSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, indices::IDX) where {SET,IDX,S,T}
+    function SparseSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, indices::IDX) where {SET,IDX,S,T}
         checkbounds(dict, indices)
         new(dict, indices)
     end
@@ -192,13 +192,12 @@ end
 
 
 
-SmallSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
-    SmallSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
+SparseSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
+    SparseSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
-name(dict::SmallSubdict) = "Small subdictionary"
+name(dict::SparseSubdict) = "Sparse subdictionary"
 
-
-similar_subdict(d::SmallSubdict, dict, superindices) = SmallSubdict(dict, superindices)
+similar_subdict(d::SparseSubdict, dict, superindices) = SparseSubdict(dict, superindices)
 
 
 """
@@ -222,7 +221,7 @@ _name(dict::SingletonSubdict, superdict::Dictionary) = "Dictionary element (sing
 
 similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
 
-Base.length(::SingletonSubdict) = 1
+size(::SingletonSubdict) = (1,)
 
 # Override the default `superindices` because the field has a different name
 superindices(s::SingletonSubdict) = s.index
@@ -289,10 +288,10 @@ getindex(dict::Dictionary, idx) = subdict(dict, idx)
 getindex(dict::Dictionary, idx, superindices...) = subdict(dict, (idx, superindices...))
 
 # - By default we generate a large subdict
-subdict(dict::Dictionary, superindices) = LargeSubdict(dict, superindices)
+subdict(dict::Dictionary, superindices) = DenseSubdict(dict, superindices)
 
 # - If the type indicates there is only one element we create a singleton subdict
-for singleton_type in (:Int, :Tuple, :CartesianIndex, :NativeIndex)
+for singleton_type in (:Int, :Tuple, :CartesianIndex, :NativeIndex, :AbstractShiftedIndex)
     @eval subdict(s::Dictionary, idx::$singleton_type) = SingletonSubdict(s, idx)
     # Specialize for Subdictionary's in order to avoid ambiguities...
     @eval subdict(s::Subdictionary, idx::$singleton_type) = SingletonSubdict(superdict(s), superindices(s)[idx])
@@ -300,7 +299,7 @@ end
 
 # - For an array, which as far as we know has no additional structure, we create
 # a small subdict by default. For large arrays, a large subdict may be more efficient.
-subdict(s::Dictionary, superindices::Array) = SmallSubdict(s, superindices)
+subdict(s::Dictionary, superindices::Array) = SparseSubdict(s, superindices)
 
 subdict(s::Dictionary, ::Colon) = s
 

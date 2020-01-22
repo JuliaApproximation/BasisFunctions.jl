@@ -55,6 +55,8 @@ codomaintype(dict::Dictionary) = codomaintype(typeof(dict))
 coefficienttype(D::Type{<:Dictionary{S,T}}) where {S,T} = codomaintype(D)
 coefficienttype(dict::Dictionary) = coefficienttype(typeof(dict))
 
+prectype(D::Type{<:Dictionary}) = prectype(domaintype(D), codomaintype(D))
+
 # The dimension of a function set is the dimension of its domain type
 dimension(dict::Dictionary) = dimension(domaintype(dict))
 
