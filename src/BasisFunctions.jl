@@ -108,9 +108,11 @@ export PiecewiseInterval, Partition,
     partition,
     split_interval
 
-# from src/products.jl
+# from src/util/products.jl
 export tensorproduct, ⊗,
     element, elements, numelements
+export ishomogeneous, basetype
+
 
 # from grid/productgrid.jl
 export ProductGrid
@@ -138,7 +140,7 @@ export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace,
 
 export SparseOperator
 
-# from bases/generic/dictionary.jl
+# from bases/modifiers/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     domaintype, codomaintype, coefficienttype,
     promote_domaintype, promote_domainsubtype, promote_coefficienttype,
@@ -157,28 +159,28 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     delinearize_coefficients!,
     moment, norm
 
-# from bases/generic/span.jl
+# from bases/modifiers/span.jl
 export Span
 
-# from bases/generic/subdicts.jl
+# from bases/modifiers/subdicts.jl
 export Subdictionary, LargeSubdict, SmallSubdict, SingletonSubdict,
     subdict, superindices
 
-# from bases/generic/tensorproduct_dict.jl
+# from bases/modifiers/tensorproduct_dict.jl
 export TensorProductDict, TensorProductDict1, TensorProductDict2,
     TensorProductDict3, ProductIndex,
     recursive_native_index
 
-# from bases/generic/derived_dict.jl
+# from bases/modifiers/derived_dict.jl
 export DerivedDict
 
-# from bases/generic/mapped_dict.jl
+# from bases/modifiers/mapped_dict.jl
 export MappedDict, mapped_dict, mapping, superdict, rescale
 
-# from bases/generic/paramdict.jl
+# from bases/modifiers/paramdict.jl
 export param_dict, ParamDict, image
 
-#from bases/generic/expansions.jl
+#from bases/modifiers/expansions.jl
 export Expansion, TensorProductExpansion,
     expansion, coefficients, dictionary, roots,
     random_expansion, differentiate, antidifferentiate,
@@ -209,33 +211,31 @@ export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSM
 # from operator/generic_operators.jl
 export GenericIdentityOperator
 
-# from generic/transform.jl
+# from modifiers/transform.jl
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
-# from generic/gram.jl
+# from modifiers/gram.jl
 export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
-# from generic/extension
+# from modifiers/extension
 export extension_operator, default_extension_operator, extension_size, extend,
     restriction_operator, default_restriction_operator, restriction_size, restrict,
     Extension, Restriction
 
-# from generic/evaluation.jl
+# from modifiers/evaluation.jl
 export evaluation_operator, evaluation_matrix
 
-# from generic/interpolation.jl
+# from modifiers/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
 
-# from generic/approximation.jl
+# from modifiers/approximation.jl
 export approximation_operator, default_approximation_operator, approximate,
     discrete_approximation_operator, continuous_approximation_operator, project
 
-# from generic/differentiation.jl
+# from modifiers/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_dict,
     antiderivative_dict, Differentiation, Antidifferentiation
 
-# from products.jl
-export ishomogeneous, basetype, tensorproduct
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -243,32 +243,32 @@ export TensorProductOperator
 # from operator/block_operator.jl
 export BlockOperator, block_row_operator, block_column_operator, composite_size
 
-# from bases/generic/weighted_dict.jl
+# from bases/modifiers/weighted_dict.jl
 export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
     weightfunction, weightfun_scaling_operator
 
 
-# from bases/generic/composite_dict.jl
+# from bases/modifiers/composite_dict.jl
 export tail, numelements
 
-# from bases/generic/multiple_dict.jl
+# from bases/modifiers/multiple_dict.jl
 export MultiDict, multidict, ⊕
 
-# from bases/generic/piecewise_dict.jl
+# from bases/modifiers/piecewise_dict.jl
 export PiecewiseDict, dictionaries
 
-# from bases/generic/vector_dict.jl
+# from bases/modifiers/vector_dict.jl
 export VectorvaluedDict
 
-# from bases/generic/operated_dict.jl
+# from bases/modifiers/operated_dict.jl
 export OperatedDict
 export derivative
 
-# from bases/generic/discrete_sets.jl
+# from bases/dictionary/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,
     isdiscrete
 
-# from bases/generic/gridbasis.jl
+# from bases/modifiers/gridbasis.jl
 export GridBasis,
     grid, gridbasis, grid_multiplication_operator, weights
 
@@ -329,22 +329,22 @@ include("spaces/spaces.jl")
 include("spaces/integral.jl")
 include("sampling/gaussweights.jl")
 
-include("bases/generic/dictionary.jl")
-include("bases/generic/span.jl")
-include("generic/gram.jl")
+include("bases/dictionary/dictionary.jl")
+include("bases/dictionary/span.jl")
+include("computations/gram.jl")
 
-include("bases/generic/discrete_sets.jl")
-include("bases/generic/gridbasis.jl")
+include("bases/dictionary/discrete_sets.jl")
+include("bases/dictionary/gridbasis.jl")
 
 include("operator/operator.jl")
 include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
-include("bases/generic/derived_dict.jl")
-include("bases/generic/complexified_dict.jl")
-include("bases/generic/tensorproduct_dict.jl")
-include("bases/generic/mapped_dict.jl")
-include("bases/generic/paramdict.jl")
+include("bases/modifiers/derived_dict.jl")
+include("bases/modifiers/complexified_dict.jl")
+include("bases/modifiers/tensorproduct_dict.jl")
+include("bases/modifiers/mapped_dict.jl")
+include("bases/modifiers/paramdict.jl")
 
 include("operator/arrayoperator.jl")
 include("operator/solvers.jl")
@@ -358,25 +358,25 @@ include("operator/orthogonality.jl")
 include("operator/generic_operators.jl")
 
 
-include("bases/generic/expansions.jl")
+include("bases/dictionary/expansions.jl")
 
 
-include("products.jl")
+include("util/products.jl")
 
-include("generic/generic_operators.jl")
+include("computations/generic_operators.jl")
 
 ################################################################
 # Generic dictionaries
 ################################################################
 
-include("bases/generic/subdicts.jl")
-include("bases/generic/composite_dict.jl")
-include("bases/generic/multiple_dict.jl")
-include("bases/generic/piecewise_dict.jl")
-include("bases/generic/operated_dict.jl")
-include("bases/generic/weighted_dict.jl")
-include("bases/generic/vector_dict.jl")
-include("bases/generic/logic.jl")
+include("bases/modifiers/subdicts.jl")
+include("bases/modifiers/composite_dict.jl")
+include("bases/modifiers/multiple_dict.jl")
+include("bases/modifiers/piecewise_dict.jl")
+include("bases/modifiers/operated_dict.jl")
+include("bases/modifiers/weighted_dict.jl")
+include("bases/modifiers/vector_dict.jl")
+include("bases/modifiers/logic.jl")
 
 ################################################################
 # Sampling
@@ -418,7 +418,7 @@ include("bases/poly/rational.jl")
 include("bases/poly/discretemeasure.jl")
 
 
-include("operator/prettyprint.jl")
+include("util/prettyprint.jl")
 
 include("util/recipes.jl")
 include("util/pgfplots.jl")
