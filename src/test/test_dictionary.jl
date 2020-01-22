@@ -67,7 +67,7 @@ function test_generic_dict_indexing(basis)
     # is always the set that was indexed is false, e.g., for multidicts.
     #@test dictionary(bf) == basis
 
-    @test lastindex(basis) == length(basis)
+    @test linear_index(basis, lastindex(basis)) == length(basis)
 
     # Is a boundserror thrown when the index is too large?
     @test try

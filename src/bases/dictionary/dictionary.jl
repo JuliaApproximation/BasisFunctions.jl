@@ -1,11 +1,14 @@
 
-######################
-# Type hierarchy
-######################
+export domaintype,
+    codomaintype,
+    coefficienttype,
+    prectype
+
 
 """
 A `Dictionary{S,T}` is an ordered family of functions, in which each function
-maps a variable of type `S` to a variable of type `T`.
+maps a variable of type `S` to a variable of type `T`. The dictionary can be
+thought of as an array, where the elements are functions that map `S` to `T`.
 
 A `Dictionary{S,T}` has domain type `S` and codomain type `T`. The domain type
 corresponds to the type of a domain in the `DomainSets.jl` package, and it is the
@@ -100,8 +103,8 @@ dimensions(d::Dictionary) = size(d)
 
 length(d::Dictionary) = prod(size(d))
 
-firstindex(d::Dictionary) = 1
-lastindex(d::Dictionary) = length(d)
+firstindex(d::Dictionary) = first(eachindex(d))
+lastindex(d::Dictionary) = last(eachindex(d))
 
 "Is the dictionary composite, i.e. does it consist of several components?"
 iscomposite(d::Dictionary) = false
@@ -117,9 +120,9 @@ This function is mainly used to create instances for testing purposes.
 instantiate(::Type{S}, n) where {S <: Dictionary}= instantiate(S, n, Float64)
 
 
-##############################
+#############################
 # Domain and codomain type
-##############################
+#############################
 
 similar(s::Dictionary, ::Type{T}) where {T} = similar(s, T, size(s))
 
@@ -147,17 +150,6 @@ end
 
 promote_domaintype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
     promote_domaintype(promote_domaintype(dict1,dict2), dicts...)
-
-"Promote the domain sub type of the dictionary."
-promote_domainsubtype(d::Dictionary{S,T}, ::Type{U}) where {S<:Number,T,U<:Number} = promote_domaintype(d, U)
-
-promote_domainsubtype(dict::Dictionary{SVector{N,S},T}, ::Type{S}) where {N,S<:Number,T} = dict
-promote_domainsubtype(dict::Dictionary{SVector{N,S},T}, ::Type{U}) where {N,S<:Number,T,U} =
-    promote_domaintype(dict, SVector{N,U})
-
-promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{S}) where {N,S<:Number,T} = dict
-promote_domainsubtype(dict::Dictionary{NTuple{N,S},T}, ::Type{U}) where {N,S<:Number,T,U} =
-    promote_domaintype(dict, NTuple{N,U})
 
 "Promote the coefficient type of the dictionary."
 promote_coefficienttype(dict::Dictionary, ::Type{T}) where {T} =

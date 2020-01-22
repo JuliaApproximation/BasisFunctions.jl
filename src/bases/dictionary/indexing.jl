@@ -321,3 +321,5 @@ function Base.iterate(it::MultilinearIndexIterator, state)
 end
 
 Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}
+
+last(iter::MultilinearIndexIterator) = (length(iter.lengths), iter.lengths[end])

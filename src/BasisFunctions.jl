@@ -142,8 +142,7 @@ export SparseOperator
 
 # from bases/modifiers/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
-    domaintype, codomaintype, coefficienttype,
-    promote_domaintype, promote_domainsubtype, promote_coefficienttype,
+    promote_domaintype, promote_coefficienttype,
     interpolation_grid, left, right, support, domain, codomain,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative,

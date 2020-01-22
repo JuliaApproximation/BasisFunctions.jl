@@ -1,7 +1,7 @@
 
 """
 `MyDictionary` is a custom dictionary type that illustrates the minimal
-effort required to implement a dictionary.
+functionailty required to implement a dictionary.
 """
 struct MyDictionary{S,T} <: Dictionary{S,T}
     n       ::  Int
@@ -20,6 +20,7 @@ size(dict::MyDictionary) = (dict.n,)
 # as resizing the dictionary.
 # If resizing is not possible, one can add a statement such as
 # "@assert n == length(dict)", which will cause an error upon any user attempt to resize.
+# Same for promotion.
 similar(dict::MyDictionary, ::Type{S}, n::Int) where {S} = MyDictionary{S}(n)
 
 support(dict::MyDictionary) = UnitInterval{domaintype(dict)}()
