@@ -200,68 +200,6 @@ name(dict::SparseSubdict) = "Sparse subdictionary"
 similar_subdict(d::SparseSubdict, dict, superindices) = SparseSubdict(dict, superindices)
 
 
-"""
-A SingletonSubdict represent a single element from an underlying set.
-"""
-struct SingletonSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
-    superdict   ::  SET
-    index       ::  IDX
-
-    function SingletonSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, index::IDX) where {SET,IDX,S,T}
-        checkbounds(dict, index)
-        new(dict, index)
-    end
-end
-
-SingletonSubdict(dict::Dictionary{S,T}, index) where {S,T} =
-    SingletonSubdict{typeof(dict),typeof(index),S,T}(dict, index)
-
-name(dict::SingletonSubdict) = _name(dict, superdict(dict))
-_name(dict::SingletonSubdict, superdict::Dictionary) = "Dictionary element (singleton subdictionary)"
-
-similar_subdict(d::SingletonSubdict, dict, index) = SingletonSubdict(dict, index)
-
-size(::SingletonSubdict) = (1,)
-
-# Override the default `superindices` because the field has a different name
-superindices(s::SingletonSubdict) = s.index
-superindices(s::SingletonSubdict, i::Int) = s.index[i]
-
-index(s::SingletonSubdict) = s.index
-
-support(s::SingletonSubdict) = support(superdict(s), index(s))
-
-# Internally, we use StaticArrays (SVector) to represent points, except in
-# 1d where we use scalars. Here, for convenience, you can call a function with
-# x, y, z arguments and so on. These are wrapped into an SVector.
-(s::SingletonSubdict)(x) = eval_element(superdict(s), index(s), x)
-(s::SingletonSubdict)(x, y...) = s(SVector(x, y...))
-
-# Inner product with a basis function: we choose the measure associated with the dictionary
-innerproduct(d::SingletonSubdict, f; options...) =
-    innerproduct(d, f, measure(superdict(d)); options...)
-
-# The inner product between two basis functions: invoke the implementation of the dictionary
-innerproduct(f::SingletonSubdict, g::SingletonSubdict, measure; options...) =
-    innerproduct(superdict(f), index(f), superdict(g), index(g), measure; options...)
-
-# The inner product of a basis function with another function: this is an analysis integral
-# We introduce a separate function name for this for easier dispatch.
-innerproduct(f::SingletonSubdict, g, measure; options...) =
-    analysis_integral(superdict(f), index(f), g, measure; options...)
-
-analysis_integral(dict::Dictionary, idx, g, measure; options...) =
-    _analysis_integral(dict, idx, g, measure, support(dict, idx), support(measure); options...)
-
-# We take the intersection of the support of the basis function with the support of the measure.
-# Perhaps one is smaller than the other.
-function _analysis_integral(dict, idx, g, measure, domain1, domain2; options...)
-    if domain1 == domain2
-        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure; options...)
-    else
-        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain1 ∩ domain2; options...)
-    end
-end
 
 #########################################
 # The default logic of creating subdicts
@@ -281,30 +219,29 @@ function checkbounds(::Type{Bool}, dict::Dictionary, indices::Array)
 end
 
 
-# We define the behaviour of getindex for function sets: `subdict` creates a
-# suitable subdict based on the type of the indices
-getindex(dict::Dictionary, idx) = subdict(dict, idx)
-# convert multiple indices to a single tuple
-getindex(dict::Dictionary, idx, superindices...) = subdict(dict, (idx, superindices...))
+# We intercept getindex only if we are sure the indices are a set. We have no
+# way of knowing what are all the user defined index types.
+getindex(dict::Dictionary, idx::AbstractUnitRange) = sub(dict, idx)
+getindex(dict::Dictionary, idx::CartesianIndices) = sub(dict, idx)
+getindex(dict::Dictionary, idx::AbstractArray) = sub(dict, idx)
+getindex(dict::Dictionary, idx::Colon) = sub(dict, idx)
 
-# - By default we generate a large subdict
-subdict(dict::Dictionary, superindices) = DenseSubdict(dict, superindices)
+# By default we generate a large subdict
+sub(dict::Dictionary, superindices) = DenseSubdict(dict, superindices)
 
-# - If the type indicates there is only one element we create a singleton subdict
-for singleton_type in (:Int, :Tuple, :CartesianIndex, :NativeIndex, :AbstractShiftedIndex)
-    @eval subdict(s::Dictionary, idx::$singleton_type) = SingletonSubdict(s, idx)
-    # Specialize for Subdictionary's in order to avoid ambiguities...
-    @eval subdict(s::Subdictionary, idx::$singleton_type) = SingletonSubdict(superdict(s), superindices(s)[idx])
-end
-
-# - For an array, which as far as we know has no additional structure, we create
+# For an array, which as far as we know has no additional structure, we create
 # a small subdict by default. For large arrays, a large subdict may be more efficient.
-subdict(s::Dictionary, superindices::Array) = SparseSubdict(s, superindices)
+sub(dict::Dictionary, superindices::Array) = SparseSubdict(dict, superindices)
 
-subdict(s::Dictionary, ::Colon) = s
+sub(dict::Dictionary, ::Colon) = dict
 
 # Avoid creating nested subdicts
-subdict(s::Subdictionary, idx) = subdict(superdict(s), superindices(s)[idx])
+getindex(dict::Subdictionary, idx) =
+    getindex(superdict(dict), superindices(dict)[idx])
+sub(dict::Subdictionary, idx) =
+    sub(superdict(dict), superindices(dict)[idx])
+
+
 
 # A gramoperator of a subdict orthonormal/orthogonal dictionary is also Identity/Diagonal
 function gramoperator1(s::Subdictionary, m;

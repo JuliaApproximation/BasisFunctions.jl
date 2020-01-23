@@ -378,7 +378,6 @@ function Base.iterate(d::Dictionary, state)
     end
 end
 
-Base.eltype(::Type{Dict}) where {Dict<:Dictionary} = SingletonSubdict
 
 
 include("dict_evaluation.jl")

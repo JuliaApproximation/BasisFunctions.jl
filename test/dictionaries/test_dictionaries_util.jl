@@ -8,9 +8,6 @@ supports_approximation(s::OperatedDict) = false
 supports_approximation(s::TensorProductDict) =
     reduce(&, map(supports_approximation, elements(s)))
 
-# disable for now
-supports_interpolation(s::SingletonSubdict) = false
-
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::Fourier) =  x -> 1/(10+cos(2*pi*x))
 # The function has to be periodic and even symmetric

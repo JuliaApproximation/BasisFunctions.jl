@@ -130,9 +130,8 @@ checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
     checkbounds(Bool, d, linear_index(d, idx))
 
 # For getindex: return indexed basis function of the underlying set
-getindex(set::CompositeDict, idx::LinearIndex) = getindex(set, native_index(set, idx))
-getindex(set::CompositeDict, idx::MultilinearIndices) = getindex(set, idx[1], idx[2])
-getindex(set::CompositeDict, i, j) = set.dicts[i][j]
+getindex(dict::CompositeDict, idx::LinearIndex) = getindex(dict, native_index(dict, idx))
+getindex(dict::CompositeDict, idx::MultilinearIndices) = dict.dicts[idx[1]][idx[2]]
 
 
 dict_in_support(set::CompositeDict, idx, x) = _dict_in_support(set, elements(set), idx, x)

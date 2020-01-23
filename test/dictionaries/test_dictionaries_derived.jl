@@ -59,7 +59,9 @@ function test_derived_dicts(T)
         test_generic_dict_interface(s[1:5]) end
 
     @testset "$(rpad("Piecewise dictionaries",80))" begin
-        part = PiecewiseInterval(T(0), T(10), 10)
+        # Changed the number of partitions to 7 (from 10) in order to avoid alignment of a
+        # grid point in one of the tests with the boundary of a subinterval.
+        part = PiecewiseInterval(T(0), T(10), 7)
         pw = PiecewiseDict(b2, part)
         test_generic_dict_interface(pw) end
 

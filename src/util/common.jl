@@ -44,7 +44,7 @@ delinearize_coefficients!(dest::AbstractArray{T,N}, src::AbstractVector{T}) wher
 linearize_coefficients!(dest::AbstractVector{T}, src::AbstractArray{T,N}) where {T,N} =
     dest[:] .= src[:]
 
-elements(bv::BlockVector) = [getblock(bv, i) for i in 1:nblocks(bv,1)]
+elements(bv::BlockVector) = [getblock(bv, i) for i in 1:blocklength(bv)]
 
 function BlockArrays.BlockVector(arrays::AbstractVector{T}...) where {T}
     A = BlockArray{T}(undef_blocks, [length(array) for array in arrays])
@@ -61,8 +61,6 @@ function BlockArrays.BlockMatrix(arrays::AbstractMatrix{T}...) where {T}
     end
     A
 end
-
-mul!
 
 "Return true if the set is indexable and has elements whose type is a subtype of T."
 indexable_list(set, ::Type{T}) where {T} = typeof(set[1]) <: T

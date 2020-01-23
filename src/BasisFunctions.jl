@@ -162,7 +162,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
 export Span
 
 # from bases/modifiers/subdicts.jl
-export Subdictionary, DenseSubdict, SparseSubdict, SingletonSubdict,
+export Subdictionary, DenseSubdict, SparseSubdict,
     subdict, superindices
 
 # from bases/modifiers/tensorproduct_dict.jl
@@ -334,6 +334,7 @@ include("bases/dictionary/gram.jl")
 include("bases/dictionary/duality.jl")
 include("bases/dictionary/discrete_sets.jl")
 include("bases/dictionary/gridbasis.jl")
+include("bases/dictionary/basisfunction.jl")
 
 include("operator/operator.jl")
 include("operator/derived_op.jl")
