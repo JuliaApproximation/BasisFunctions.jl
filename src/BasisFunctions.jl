@@ -142,7 +142,6 @@ export SparseOperator
 
 # from bases/modifiers/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
-    promote_domaintype, promote_coefficienttype,
     interpolation_grid, left, right, support, domain, codomain,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative,
@@ -329,6 +328,7 @@ include("sampling/gaussweights.jl")
 
 include("bases/dictionary/indexing.jl")
 include("bases/dictionary/dictionary.jl")
+include("bases/dictionary/promotion.jl")
 include("bases/dictionary/span.jl")
 include("bases/dictionary/gram.jl")
 include("bases/dictionary/duality.jl")

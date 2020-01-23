@@ -139,54 +139,54 @@ end
 
 resize(s::Dictionary, dims...) = similar(s, domaintype(s), dims...)
 
-"Promote the domain type of the dictionary."
-promote_domaintype(dict::Dictionary{S,T}, ::Type{S}) where {S,T} = dict
-promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = similar(dict, U, size(dict))
-
-function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
-    S = promote_type(S1,S2)
-    promote_domaintype(dict1, S), promote_domaintype(dict2, S)
-end
-
-promote_domaintype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
-    promote_domaintype(promote_domaintype(dict1,dict2), dicts...)
-
-"Promote the coefficient type of the dictionary."
-promote_coefficienttype(dict::Dictionary, ::Type{T}) where {T} =
-    _promote_coefficienttype(coefficienttype(dict), dict, T)
-
-promote_coefficienttype(dict::Dictionary, ::Type{Any}) = dict
-
-# TODO: we make some assumptions here about the connection between S and T of a dictionary (that S=T
-# and that changing S changes T accordingly)
-# - coefficient types are the same
-_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T} = dict
-# - coefficient types are real and the same
-_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T<:Real} = dict
-# - coefficient types are real but different
-_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Real,U<:Real} =
-    similar(dict, promote_type(T, U))
-# - coefficient types are complex and the same
-_promote_coefficienttype(::Type{Complex{T}}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} = dict
-# - coefficient types are complex but different
-_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Complex} =
-    similar(dict, promote_type(real(T), real(U)))
-# - coefficient type is complex but promotion type is real
-_promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Real} =
-    similar(dict, promote_type(U, real(T)))
-# - the case where coefficient type is real and promotion type is complex is implemented
-#   in complexified_dict.jl
-
-
-promote_coefficienttype(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
-
-function promote_coefficienttype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
-    T = promote_type(T1,T2)
-    promote_coefficienttype(dict1, T), promote_coefficienttype(dict2, T)
-end
-
-promote_coefficienttype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
-    promote_coefficienttype(promote_coefficienttype(dict1,dict2), dicts...)
+# "Promote the domain type of the dictionary."
+# promote_domaintype(dict::Dictionary{S,T}, ::Type{S}) where {S,T} = dict
+# promote_domaintype(dict::Dictionary{S,T}, ::Type{U}) where {S,T,U} = similar(dict, U, size(dict))
+#
+# function promote_domaintype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
+#     S = promote_type(S1,S2)
+#     promote_domaintype(dict1, S), promote_domaintype(dict2, S)
+# end
+#
+# promote_domaintype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+#     promote_domaintype(promote_domaintype(dict1,dict2), dicts...)
+#
+# "Promote the coefficient type of the dictionary."
+# promote_coefficienttype(dict::Dictionary, ::Type{T}) where {T} =
+#     _promote_coefficienttype(coefficienttype(dict), dict, T)
+#
+# promote_coefficienttype(dict::Dictionary, ::Type{Any}) = dict
+#
+# # TODO: we make some assumptions here about the connection between S and T of a dictionary (that S=T
+# # and that changing S changes T accordingly)
+# # - coefficient types are the same
+# _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T} = dict
+# # - coefficient types are real and the same
+# _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{T}) where {T<:Real} = dict
+# # - coefficient types are real but different
+# _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Real,U<:Real} =
+#     similar(dict, promote_type(T, U))
+# # - coefficient types are complex and the same
+# _promote_coefficienttype(::Type{Complex{T}}, dict::Dictionary, ::Type{Complex{T}}) where {T<:Real} = dict
+# # - coefficient types are complex but different
+# _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Complex} =
+#     similar(dict, promote_type(real(T), real(U)))
+# # - coefficient type is complex but promotion type is real
+# _promote_coefficienttype(::Type{T}, dict::Dictionary, ::Type{U}) where {T<:Complex,U<:Real} =
+#     similar(dict, promote_type(U, real(T)))
+# # - the case where coefficient type is real and promotion type is complex is implemented
+# #   in complexified_dict.jl
+#
+#
+# promote_coefficienttype(dict1::Dictionary{S1,T}, dict2::Dictionary{S2,T}) where {S1,S2,T} = (dict1,dict2)
+#
+# function promote_coefficienttype(dict1::Dictionary{S1,T1}, dict2::Dictionary{S2,T2}) where {S1,S2,T1,T2}
+#     T = promote_type(T1,T2)
+#     promote_coefficienttype(dict1, T), promote_coefficienttype(dict2, T)
+# end
+#
+# promote_coefficienttype(dict1::Dictionary, dict2::Dictionary, dicts::Dictionary...) =
+#     promote_coefficienttype(promote_coefficienttype(dict1,dict2), dicts...)
 
 
 widen(d::Dictionary) = similar(d, widen(domaintype(d)))

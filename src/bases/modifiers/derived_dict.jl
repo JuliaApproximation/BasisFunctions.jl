@@ -34,11 +34,6 @@ similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
 
 resize(d::DerivedDict, dims) = similar_dictionary(d, resize(superdict(d), dims))
 
-promote_coefficienttype(dict::DerivedDict, ::Type{T}) where {T} =
-    similar_dictionary(dict, promote_coefficienttype(superdict(dict), T))
-
-promote_coefficienttype(dict::DerivedDict, ::Type{Any}) = dict
-
 for op in (:coefficienttype,)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end

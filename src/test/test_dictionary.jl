@@ -206,14 +206,14 @@ end
 function test_generic_dict_domaintype(basis)
     T = domaintype(basis)
     # Test type promotion
-    @test domaintype(promote_domaintype(basis, T)) == T
+    @test domaintype(ensure_domaintype(T,basis)) == T
     try
         # We attempt to widen the type. This will throw an exception if
         # the dictionary does not implement `similar` for domain types different
         # from its own. We just ignore that. Otherwise, if no exception is thrown,
         # we test whether the promotion succeeded.
         T2 = widen_type(T)
-        basis2 = promote_domaintype(basis, T2)
+        basis2 = ensure_domaintype(T2, basis)
         @test domaintype(basis2) == T2
     catch
     end

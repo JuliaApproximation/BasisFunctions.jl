@@ -1,4 +1,6 @@
 
+export isefficient
+
 """
 An `AbstractOperator` is the supertype of all objects that map between function
 spaces.
@@ -48,9 +50,7 @@ The element type should be equal for src and dest.
 abstract type DictionaryOperator{T} <: AbstractOperator
 end
 
-eltype(::DictionaryOperator{T}) where {T} = T
-eltype(::Type{DictionaryOperator{T}}) where {T} = T
-eltype(::Type{OP}) where {OP <: DictionaryOperator} = eltype(supertype(OP))
+eltype(::Type{<:DictionaryOperator{T}}) where {T} = T
 
 # Default implementation of src and dest: assume they are fields
 src(op::DictionaryOperator) = op.src
@@ -62,8 +62,8 @@ dest_space(op::DictionaryOperator) = Span(dest(op))
 isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
 
 """
-True if the operator has a better computational complexity than the corresponding
-matrix-vector product.
+True if the action of the operator has a better computational complexity than
+the corresponding matrix-vector product.
 """
 isefficient(op::DictionaryOperator) = false
 

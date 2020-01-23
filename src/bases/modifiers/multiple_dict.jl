@@ -37,21 +37,21 @@ function MultiDict(dicts)
     S = reduce(promote_type, map(domaintype, dicts))
     T = reduce(promote_type, map(codomaintype, dicts))
     C = reduce(promote_type, map(coefficienttype, dicts))
-    MultiDict(map(s->promote_coefficienttype(s,C), dicts), S, T)
+    MultiDict(map(dict->ensure_coefficienttype(C, dict), dicts), S, T)
 end
 
 similar_dictionary(set::MultiDict, dicts) = MultiDict(dicts)
 
-multidict(set::Dictionary) = set
+multidict(dict::Dictionary) = dict
 
 # When manipulating multidicts, we create Array's of dicts by default
-multidict(s1::Dictionary, s2::Dictionary) = MultiDict([s1,s2])
-multidict(s1::MultiDict, s2::MultiDict) = MultiDict(vcat(elements(s1), elements(s2)))
-multidict(s1::MultiDict, s2::Dictionary) = MultiDict(vcat(elements(s1), s2))
-multidict(s1::Dictionary, s2::MultiDict) = MultiDict(vcat(s1, elements(s2)))
+multidict(d1::Dictionary, d2::Dictionary) = MultiDict([d1,d2])
+multidict(d1::MultiDict, d2::MultiDict) = MultiDict(vcat(elements(d1), elements(d2)))
+multidict(d1::MultiDict, d2::Dictionary) = MultiDict(vcat(elements(d1), d2))
+multidict(d1::Dictionary, d2::MultiDict) = MultiDict(vcat(d1, elements(d2)))
 
-multidict(s1::Dictionary, s2::Dictionary, s3::Dictionary...) =
-    multidict(multidict(s1,s2), s3...)
+multidict(d1::Dictionary, d2::Dictionary, dicts::Dictionary...) =
+    multidict(multidict(d1,d2), dicts...)
 
 function multidict(dicts::AbstractArray)
     if length(dicts) == 1

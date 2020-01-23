@@ -195,7 +195,7 @@ function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; opti
     @debug "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(d1, d2, measure; options...)
     T = eltype(A)
-    ArrayOperator(A, promote_coefficienttype(d2,T), promote_coefficienttype(d1,T))
+    ArrayOperator(A, ensure_coefficienttype(T, d2, d1)...)
 end
 
 function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
