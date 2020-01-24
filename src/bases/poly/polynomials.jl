@@ -1,6 +1,6 @@
 
 "PolynomialBasis is the abstract supertype of all univariate polynomials."
-abstract type PolynomialBasis{S,T} <: Dictionary{S,T}
+abstract type PolynomialBasis{T} <: Dictionary{T,T}
 end
 
 
@@ -21,8 +21,6 @@ Base.show(io::IO, idx::PolynomialDegree) =
 
 ordering(b::PolynomialBasis) = ShiftedIndexList(length(b), PolynomialDegree)
 
-
-
 isbasis(b::PolynomialBasis) = true
 
 function subdict(b::PolynomialBasis, idx::OrdinalRange)
@@ -31,4 +29,7 @@ function subdict(b::PolynomialBasis, idx::OrdinalRange)
     else
         DenseSubdict(b, idx)
     end
+end
+
+abstract type Polynomial{T} <: TypedFunction{T,T}
 end

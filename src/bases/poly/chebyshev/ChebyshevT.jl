@@ -2,7 +2,7 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevT{T} <: OPS{T,T}
+struct ChebyshevT{T} <: OPS{T}
     n			::	Int
 end
 

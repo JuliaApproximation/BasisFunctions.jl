@@ -3,10 +3,10 @@
 `OrthogonalPolynomials` is the abstract supertype of all univariate orthogonal
 polynomials.
 """
-abstract type OrthogonalPolynomials{S,T} <: PolynomialBasis{S,T}
+abstract type OrthogonalPolynomials{T} <: PolynomialBasis{T}
 end
 
-const OPS{S,T} = OrthogonalPolynomials{S,T}
+const OPS{T} = OrthogonalPolynomials{T}
 
 
 approx_length(b::OPS, n::Int) = n

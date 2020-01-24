@@ -6,7 +6,7 @@ These polynomials are orthogonal with respect to the weight function
 w(x) = (1-x)^α (1+x)^β.
 ```
 """
-struct Jacobi{T} <: OPS{T,T}
+struct Jacobi{T} <: OPS{T}
     n       ::  Int
     α       ::  T
     β       ::  T
@@ -89,7 +89,7 @@ end
 
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
-struct UltrasphericalBasis{T} <: OPS{T,T}
+struct UltrasphericalBasis{T} <: OPS{T}
 	n		::	Int
 	alpha	::	T
 end

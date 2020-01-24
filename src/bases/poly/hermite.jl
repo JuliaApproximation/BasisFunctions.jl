@@ -4,7 +4,7 @@ A basis of the classicale Hermite polynomials. These polynomials are orthogonal
 on the real line `(-∞,∞)` with respect to the weight function
 `w(x)=exp(-x^2)`.
 """
-struct Hermite{T} <: OPS{T,T}
+struct Hermite{T} <: OPS{T}
     n           ::  Int
 end
 

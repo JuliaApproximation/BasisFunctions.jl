@@ -14,6 +14,8 @@ prectype(F::Type{<:TypedFunction}) = prectype(domaintype(F),codomaintype(F))
 
 eltype(::Type{<:Dictionary{S,T}}) where {S,T} = TypedFunction{S,T}
 
+promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) where {S1,T1,S2,T2} =
+    TypedFunction{promote_type(S1,S2),promote_type(T1,T2)}
 
 "A `BasisFunction` is one element of a dictionary."
 struct BasisFunction{S,T,D<:Dictionary{S,T},I} <: TypedFunction{S,T}
@@ -33,10 +35,11 @@ _name(φ::BasisFunction, dict::Dictionary) = "Dictionary element"
 (φ::BasisFunction)(x) = unsafe_eval_element1(dictionary(φ), index(φ), x)
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))
 
+basisfunction(dict::Dictionary, idx) = BasisFunction(dict, idx)
 
 function getindex(dict::Dictionary, idx)
     @boundscheck checkbounds(dict, idx)
-    BasisFunction(dict, idx)
+    basisfunction(dict, idx)
 end
 getindex(dict::Dictionary, i, j, indices...) =
     getindex(dict, (i,j,indices...))

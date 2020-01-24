@@ -7,6 +7,8 @@ supports_approximation(s::Subdictionary) = false
 supports_approximation(s::OperatedDict) = false
 supports_approximation(s::TensorProductDict) =
     reduce(&, map(supports_approximation, elements(s)))
+# Monomials have no associated domain
+supports_approximation(m::Monomials) = false
 
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(set::Fourier) =  x -> 1/(10+cos(2*pi*x))

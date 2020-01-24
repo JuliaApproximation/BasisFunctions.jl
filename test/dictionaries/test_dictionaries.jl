@@ -20,7 +20,7 @@ end
 
 
 test_dictionaries = [Fourier, ChebyshevT, ChebyshevU, Legendre,
-        Laguerre, Hermite, Jacobi, CosineSeries, SineSeries]
+        Laguerre, Hermite, Jacobi, CosineSeries, SineSeries, Monomials]
 
 for T in domaintypes
     delimit("1D dictionaries ($(T))")
