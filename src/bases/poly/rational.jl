@@ -35,6 +35,8 @@ pole(r::RationalBasisFunction) = r.pole
 
 RationalBasisFunction{T}(r::RationalBasisFunction) where {T} = RationalBasisFunction{T}(r.pole)
 
+name(φ::RationalBasisFunction) = "1/(z-$(pole(φ)))"
+
 convert(::Type{TypedFunction{T,T}}, r::RationalBasisFunction) where {T} = RationalBasisFunction{T}(r.pole)
 
 (r::RationalBasisFunction)(x) = 1/(x-pole(r))

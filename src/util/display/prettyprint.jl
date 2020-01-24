@@ -12,21 +12,20 @@ pretty_object_types = (
     AbstractOperator,
     Dictionary,
     Measure,
+    TypedFunction
 )
 
 
 do_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = true; nothing))
 no_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = false; nothing))
 
-if DO_PRETTYPRINTING
-    for OT in pretty_object_types
-        @eval begin
-            function show(io::IO, object::$OT)
-                if DO_PRETTYPRINTING
-                    pretty_show(io, object)
-                else
-                    Base.show_default(io, object)
-                end
+for OT in pretty_object_types
+    @eval begin
+        function show(io::IO, object::$OT)
+            if DO_PRETTYPRINTING
+                pretty_show(io, object)
+            else
+                Base.show_default(io, object)
             end
         end
     end
@@ -47,7 +46,13 @@ pretty_show(io, object) =
     hasstencil(object) ? show_composite(io, object) : show_simple(io, object)
 
 # The "simple" representation of an object by default prints its "strings"
-show_simple(io::IO, object) = println(io, print_strings(strings(object), 0, ""))
+function show_simple(io::IO, object)
+    str = print_strings(strings(object), 0, "")
+    if str[end] == '\n'
+        str = str[1:end-1]
+    end
+    print(io, str)
+end
 
 
 ## Default names
@@ -136,7 +141,14 @@ strings(d::Dictionary) = (string(d),
      "$(domaintype(d)) -> $(codomaintype(d))",
      "support = $(support(d))"))
 
+####
+# Basisfunction symbols and strings
+####
 
+symbol(φ::TypedFunction) = string(φ)[1]
+
+# Default string is a brief structured representation of the dictionary
+strings(φ::TypedFunction) = (string(φ),)
 
 
 ####
@@ -317,7 +329,7 @@ function show_composite_object(io::IO, object)
     printstencil(io, object, S)
     print(io, "\n\n")
     SortS = sort(collect(S), by=x->string(x[2])*string(x[1]), rev=true)
-    
+
     for (key,value) in SortS
         if iscomposite(key)
             print(io, value, " = ")
@@ -346,7 +358,8 @@ function nchildren(op)
     j
 end
 
-# These functions convert the strings tuples to multiline strings, by prefixing a variable number of spaces, and possibly a downrright arrow
+# These functions convert the strings tuples to multiline strings, by prefixing
+# a variable number of spaces, and possibly a downright arrow
 function print_strings(strings::Tuple, depth=0, prefix="")
     s = strings
     result = ""

@@ -420,10 +420,10 @@ include("bases/poly/rational.jl")
 include("bases/poly/discretemeasure.jl")
 
 
-include("util/prettyprint.jl")
+include("util/display/prettyprint.jl")
 
-include("util/recipes.jl")
-include("util/pgfplots.jl")
+include("util/display/recipes.jl")
+include("util/display/pgfplots.jl")
 
 include("test/Test.jl")
 

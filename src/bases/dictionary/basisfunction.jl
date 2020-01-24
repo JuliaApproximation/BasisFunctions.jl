@@ -17,6 +17,9 @@ eltype(::Type{<:Dictionary{S,T}}) where {S,T} = TypedFunction{S,T}
 promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) where {S1,T1,S2,T2} =
     TypedFunction{promote_type(S1,S2),promote_type(T1,T2)}
 
+iscomposite(f::TypedFunction) = false
+
+
 "A `BasisFunction` is one element of a dictionary."
 struct BasisFunction{S,T,D<:Dictionary{S,T},I} <: TypedFunction{S,T}
     dictionary  ::  D
@@ -30,7 +33,7 @@ support(φ::BasisFunction) = support(dictionary(φ), index(φ))
 measure(φ::BasisFunction) = measure(dictionary(φ))
 
 name(φ::BasisFunction) = _name(φ, dictionary(φ))
-_name(φ::BasisFunction, dict::Dictionary) = "Dictionary element"
+_name(φ::BasisFunction, dict::Dictionary) = "Dictionary element of $(name(dict))"
 
 (φ::BasisFunction)(x) = unsafe_eval_element1(dictionary(φ), index(φ), x)
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))

@@ -31,7 +31,11 @@ end
 
 Monomial{T}(m::Monomial) where {T} = Monomial{T}(m.degree)
 
+name(m::Monomial) = "x^$(degree(m))"
+
 convert(::Type{TypedFunction{T,T}}, d::Monomial) where {T} = Monomial{T}(d.degree)
+
+support(::Monomial{T}) where {T} = DomainSets.FullSpace{T}()
 
 degree(m::Monomial) = m.degree
 
