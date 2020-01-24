@@ -8,8 +8,6 @@ struct Hermite{T} <: OPS{T}
     n           ::  Int
 end
 
-instantiate(::Type{Hermite}, n, ::Type{T}) where {T} = Hermite{T}(n)
-
 Hermite(n::Int) = Hermite{Float64}(n)
 
 similar(b::Hermite, ::Type{T}, n::Int) where {T} = Hermite{T}(n)

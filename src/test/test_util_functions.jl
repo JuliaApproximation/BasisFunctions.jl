@@ -85,6 +85,3 @@ widen_type(::Type{Tuple{A,B,C}}) where {A,B,C} = Tuple{widen(A),widen(B),widen(C
 test_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{Complex{T}}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{T}) where {T} = test_tolerance(float_type(T))
-
-instantiate(d::Type{T} where {T <: Dictionary}) = error("Instantiate not implemented for $(typeof(d)), implement to use generic testing")
-instantiate(o::Type{T} where {T <: DictionaryOperator}) = error("Instantiate not implemented for $(typeof(o)), implement to use generic testing")

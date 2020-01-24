@@ -2,11 +2,10 @@ module Test
 
 using ..BasisFunctions, DomainSets, StaticArrays
 using FillArrays: Ones, Eye
-import ..BasisFunctions: instantiate
 using Test, LinearAlgebra
 BF = BasisFunctions
 
-export Delimit, delimit, instantiate
+export Delimit, delimit
 export point_in_domain, point_outside_domain, random_point_in_domain, fixed_point_in_domain
 export random_index
 export test_tolerance

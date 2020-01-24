@@ -23,8 +23,6 @@ function SineSeries(n::Int, a::Number, b::Number)
     SineSeries{T}(n, a, b)
 end
 
-instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
-
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 isbasis(b::SineSeries) = true

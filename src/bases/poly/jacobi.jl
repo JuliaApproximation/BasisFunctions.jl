@@ -24,8 +24,6 @@ Jacobi(n::Int, α::Integer, β::Integer) = Jacobi(n, float(α), float(β))
 
 similar(b::Jacobi, ::Type{T}, n::Int) where {T} = Jacobi{T}(n, b.α, b.β)
 
-instantiate(::Type{Jacobi}, n::Int, ::Type{T}) where {T} = Jacobi{T}(n)
-
 support(b::Jacobi{T}) where {T} = ChebyshevInterval{T}()
 
 first_moment(b::Jacobi{T}) where {T} = (b.α+b.β+1≈0) ?

@@ -39,8 +39,6 @@ size(b::Fourier) = (b.n,)
 oddlength(b::Fourier) = isodd(length(b))
 evenlength(b::Fourier) = iseven(length(b))
 
-instantiate(::Type{Fourier}, n, ::Type{T}) where {T} = Fourier{T}(n)
-
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 
 # Properties

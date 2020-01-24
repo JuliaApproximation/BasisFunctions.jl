@@ -9,8 +9,6 @@ end
 
 Monomials(n) = Monomials{Float64}(n)
 
-instantiate(::Type{Monomials}, n, ::Type{T}) where {T} = Monomials{T}(n)
-
 support(dict::Monomials{T}) where {T} = DomainSets.FullSpace{T}()
 
 size(dict::Monomials) = (dict.n,)

@@ -19,15 +19,24 @@ include("test_dictionaries_mapped.jl")
 end
 
 
-test_dictionaries = [Fourier, ChebyshevT, ChebyshevU, Legendre,
-        Laguerre, Hermite, Jacobi, CosineSeries, SineSeries, Monomials]
+test_dictionaries = [Fourier,
+    ChebyshevT,
+    ChebyshevU,
+    Legendre,
+    Laguerre,
+    Hermite,
+    Jacobi,
+    CosineSeries,
+    SineSeries,
+    Monomials,
+    Rationals]
 
 for T in domaintypes
     delimit("1D dictionaries ($(T))")
     for DICT in test_dictionaries
         @testset "$(rpad(string(DICT),80))" begin
             n = 9
-            basis = instantiate(DICT, n, T)
+            basis = DICT{T}(n)
             @test length(basis) == n
             @test domaintype(basis) == T
             test_generic_dict_interface(basis)

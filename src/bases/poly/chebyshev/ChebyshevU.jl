@@ -8,8 +8,6 @@ end
 
 ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
-instantiate(::Type{ChebyshevU}, n, ::Type{T}) where {T} = ChebyshevU{T}(n)
-
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
 
 name(b::ChebyshevU) = "Chebyshev polynomials (second kind)"

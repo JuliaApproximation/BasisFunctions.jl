@@ -9,8 +9,6 @@ end
 
 Legendre(n::Int) = Legendre{Float64}(n)
 
-instantiate(::Type{Legendre}, n, ::Type{T}) where {T} = Legendre{T}(n)
-
 similar(b::Legendre, ::Type{T}, n::Int) where {T} = Legendre{T}(n)
 
 support(b::Legendre{T}) where {T} = ChebyshevInterval{T}()

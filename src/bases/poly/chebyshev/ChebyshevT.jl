@@ -18,8 +18,6 @@ function ChebyshevT(n::Int, a::Number, b::Number)
     ChebyshevT{T}(n, a, b)
 end
 
-instantiate(::Type{ChebyshevT}, n, ::Type{T}) where {T} = ChebyshevT{T}(n)
-
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
 

@@ -23,8 +23,6 @@ function CosineSeries(n::Int, a::Number, b::Number)
     CosineSeries{T}(n, a, b)
 end
 
-instantiate(::Type{CosineSeries}, n, ::Type{T}) where {T} = CosineSeries{T}(n)
-
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
 isbasis(b::CosineSeries) = true

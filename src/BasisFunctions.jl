@@ -15,7 +15,7 @@ using RecipesBase
 using Reexport, AbstractTrees
 
 @reexport using GridArrays
-import GridArrays: subindices, instantiate, resize
+import GridArrays: subindices, resize
 
 ## Some specific functions we merely use
 
@@ -146,7 +146,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative,
     name,
-    instantiate, resize,
+    resize,
     ordering,
     native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients,
     isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal,
