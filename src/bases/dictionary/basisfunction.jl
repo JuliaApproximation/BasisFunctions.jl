@@ -33,7 +33,7 @@ support(φ::BasisFunction) = support(dictionary(φ), index(φ))
 measure(φ::BasisFunction) = measure(dictionary(φ))
 
 name(φ::BasisFunction) = _name(φ, dictionary(φ))
-_name(φ::BasisFunction, dict::Dictionary) = "Dictionary element of $(name(dict))"
+_name(φ::BasisFunction, dict::Dictionary) = "φ(x)   (dictionary element of $(name(dict)))"
 
 (φ::BasisFunction)(x) = unsafe_eval_element1(dictionary(φ), index(φ), x)
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))

@@ -90,7 +90,7 @@ isorthonormal(s::PiecewiseDict, m::Measure) = false
 for op in (:support,)
     @eval $op(set::PiecewiseDict) = $op(partition(set))
     @eval $op(set::PiecewiseDict, idx::Int) = $op(set, multilinear_index(set, idx))
-    @eval $op(set::PiecewiseDict, idx) = $op(element(set, idx[1]), idx[2])
+    @eval $op(set::PiecewiseDict, idx) = $op(element(set, outerindex(idx)), innerindex(idx))
 end
 
 # The set has a grid and a transform if all its subsets have it
@@ -107,9 +107,8 @@ end
 # Perhaps this should change, and any function should be zero outside its support.
 getindex(set::PiecewiseDict, i, j) = subdict(set, (i,j))
 
-function unsafe_eval_element(set::PiecewiseDict, idx::Tuple{Int,Any}, x)
-    x ∈ set.partition[idx[1]] ? unsafe_eval_element( element(set, idx[1]), idx[2], x) : zero(eltype(x))
-end
+unsafe_eval_element(set::PiecewiseDict, idx::MultilinearIndex, x) =
+    x ∈ set.partition[outerindex(idx)] ? unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x) : zero(eltype(x))
 
 function eval_expansion(set::PiecewiseDict, x)
     i = partition_index(set, x)

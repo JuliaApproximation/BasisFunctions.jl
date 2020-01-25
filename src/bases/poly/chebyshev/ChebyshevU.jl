@@ -4,8 +4,6 @@ struct ChebyshevU{T} <: OPS{T}
     n			::	Int
 end
 
-
-
 ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
@@ -51,3 +49,21 @@ rec_Bn(b::ChebyshevU{T}, n::Int) where {T} = zero(T)
 rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
 
 support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
+
+
+struct ChebyshevUPolynomial{T} <: OrthogonalPolynomial{T}
+    degree  ::  Int
+end
+
+ChebyshevUPolynomial{T}(p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
+
+name(p::ChebyshevUPolynomial) = "U_$(degree(p))(x) (Chebyshev polynomial of the second kind)"
+
+convert(::Type{TypedFunction{T,T}}, p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
+
+support(::ChebyshevUPolynomial{T}) where {T} = ChebyshevInterval{T}()
+
+(p::ChebyshevUPolynomial{T})(x) where {T} = eval_element(ChebyshevU{T}(degree(p)+1), degree(p)+1, x)
+
+basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, idx))
+basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))

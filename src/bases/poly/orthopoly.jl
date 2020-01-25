@@ -8,6 +8,7 @@ end
 
 const OPS{T} = OrthogonalPolynomials{T}
 
+abstract type OrthogonalPolynomial{T} <: Polynomial{T} end
 
 approx_length(b::OPS, n::Int) = n
 

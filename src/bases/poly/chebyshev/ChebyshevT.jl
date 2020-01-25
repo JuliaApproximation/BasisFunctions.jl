@@ -197,3 +197,21 @@ function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     end
     (dest,coef_dest)
 end
+
+
+struct ChebyshevTPolynomial{T} <: OrthogonalPolynomial{T}
+    degree  ::  Int
+end
+
+ChebyshevTPolynomial{T}(p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
+
+name(p::ChebyshevTPolynomial) = "T_$(degree(p))(x) (Chebyshev polynomial of the first kind)"
+
+convert(::Type{TypedFunction{T,T}}, p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
+
+support(::ChebyshevTPolynomial{T}) where {T} = ChebyshevInterval{T}()
+
+(p::ChebyshevTPolynomial{T})(x) where {T} = eval_element(ChebyshevT{T}(degree(p)+1), degree(p)+1, x)
+
+basisfunction(dict::ChebyshevT, idx) = basisfunction(dict, native_index(dict, idx))
+basisfunction(dict::ChebyshevT{T}, idx::PolynomialDegree) where {T} = ChebyshevTPolynomial{T}(degree(idx))

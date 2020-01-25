@@ -29,21 +29,19 @@ struct Monomial{T} <: Polynomial{T}
     degree  ::  Int
 end
 
-Monomial{T}(m::Monomial) where {T} = Monomial{T}(m.degree)
+Monomial{T}(p::Monomial) where {T} = Monomial{T}(p.degree)
 
-name(m::Monomial) = "x^$(degree(m))"
+name(p::Monomial) = "x^$(degree(p)) (monomial)"
 
-convert(::Type{TypedFunction{T,T}}, d::Monomial) where {T} = Monomial{T}(d.degree)
+convert(::Type{TypedFunction{T,T}}, p::Monomial) where {T} = Monomial{T}(p.degree)
 
 support(::Monomial{T}) where {T} = DomainSets.FullSpace{T}()
 
-degree(m::Monomial) = m.degree
-
 (m::Monomial)(x) = x^degree(m)
 
-(*)(m1::Monomial, m2::Monomial) = (*)(promote(m1,m2)...)
+(*)(p1::Monomial, p2::Monomial) = (*)(promote(p1,p2)...)
 
-(*)(m1::Monomial{T}, m2::Monomial{T}) where {T} = Monomial{T}(degree(m1)+degree(m2))
+(*)(p1::Monomial{T}, p2::Monomial{T}) where {T} = Monomial{T}(degree(p1)+degree(p2))
 
 
 basisfunction(dict::Monomials, idx) = basisfunction(dict, native_index(dict, idx))

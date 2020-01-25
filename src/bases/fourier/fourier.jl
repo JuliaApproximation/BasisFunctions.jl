@@ -157,40 +157,57 @@ measure(b::Fourier{T}) where T = FourierMeasure{T}()
 
 period(b::Fourier{T}) where {T} = T(1)
 
-
 # One has to be careful here not to match Floats and BigFloats by accident.
-# Hence the conversions to S in the lines below.
-function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
-	S = domaintype(b)
-	k = frequency(idxn)
+# Hence the conversion of pi to T here:
+exponent(b::Fourier{T}, k::FourierFrequency) where {T} = 2*T(pi)*im*k
 
-	# Even-length Fourier series have a cosine at the maximal frequency.
-	# We do a test to distinguish between the complex exponentials and the cosine
-	if oddlength(b) || k != maxfrequency(b)
-		exp(x * 2 * S(pi) * 1im  * k)
-	else
-		# We convert to a complex number for type safety here, because the
-		# exponentials above are complex-valued but the cosine is real
-		complex(cospi(2*S(x)*k))
+# Even-length Fourier series have a cosine at the maximal frequency.
+iscosine(b::Fourier, k::FourierFrequency) = iseven(length(b)) && (k==length(b)>>1)
+
+function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
+	z = exp(exponent(b, idxn)*x)
+	if iscosine(b, idxn)
+		# The cosine is the real part of the exponential, but we make it a complex
+		# number for type-stability
+		z = complex(real(z))
 	end
+	z
 end
 
 function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x)
-	# The structure for this reason is similar to the unsafe_eval_element routine above
-	S = domaintype(b)
-	k = frequency(idxn)
-	if oddlength(b) || k != maxfrequency(b)
-		arg = 2*S(pi)*1im*k
-		arg * exp(arg * x)
-	else
-		arg = 2*S(pi)*k
-		complex(-arg * sin(arg*x))
+	f = exponent(b, idxn)
+	z = f * exp(f * x)
+	if iscosine(b, idxn)
+		# The sine is the real part of the complex exponential
+		z = complex(real(z))
 	end
+	z
 end
 
 function unsafe_moment(b::Fourier, idxn::FourierFrequency)
 	T = codomaintype(b)
 	frequency(idx) == 0 ? T(1) : T(0)
+end
+
+twiddle(T, x) = exp(T(pi)*2im*x)
+
+# For large n, the routine below is slightly faster than evaluating all
+# the complex exponentials. It is based on the fact that the Fourier exponentials
+# are integer powers of an exponential.
+function unsafe_dict_eval!(result, dict::Fourier, x)
+	result[1] = 1
+	n1 = nhalf(dict)
+	w = twiddle(domaintype(dict), x)
+	z = one(w)
+	for i in 1:n1
+		z *= w
+		result[i+1] = z
+		result[end-i+1] = conj(z)
+	end
+	if evenlength(dict)
+		result[n1+1] = real(result[n1+1])
+	end
+	result
 end
 
 
@@ -549,7 +566,6 @@ function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
 	end
 end
 
-iscosine(b::Fourier, i::FourierFrequency) = iseven(length(b)) && (i==length(b)>>1)
 
 
 ## Inner products

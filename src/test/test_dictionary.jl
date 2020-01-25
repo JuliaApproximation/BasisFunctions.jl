@@ -110,6 +110,10 @@ function test_generic_dict_evaluation(basis)
     x_array = [random_point_in_domain(basis) for i in 1:10]
     z = map(e, x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
+
+    # Test dictionary evaluation
+    x = random_point_in_domain(basis)
+    @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
 end
 
 function test_generic_dict_coefficient_linearization(basis)

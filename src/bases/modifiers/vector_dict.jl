@@ -19,7 +19,7 @@ end
 unit_vector(k, ::Val{N}, T) where {N} = SVector{N,T}(ntuple( i->i==k, Val{N}()))
 
 function unsafe_eval_element(dict::VectorvaluedDict{DICTS,S,N,T}, idx::MultilinearIndex, x) where {DICTS,S,N,T}
-    idx1 = idx[1]
-    idx2 = idx[2]
+    idx1 = outerindex(idx)
+    idx2 = innerindex(idx)
     z = unit_vector(idx1, Val{N}(), T) * unsafe_eval_element(element(dict, idx1), idx2, x)
 end

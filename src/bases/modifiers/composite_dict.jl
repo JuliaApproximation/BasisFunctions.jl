@@ -106,7 +106,6 @@ coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 # Indexing
 ##################
 
-const MultilinearIndices = Union{MultilinearIndex,Tuple{Int,Any}}
 
 native_index(dict::CompositeDict, idx::MultilinearIndex) = idx
 
@@ -120,22 +119,22 @@ linear_index(dict::CompositeDict, idx::MultilinearIndex) =
 # The native index is a MultilinearIndex, defined in util/indexing.jl
 ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
 
-# We have to amend the boundscheck ecosystem to catch some cases:
-# - This line will catch indexing with tuples of integers, and we assume
-#   the user wanted to use a CartesianIndex
-checkbounds(::Type{Bool}, d::CompositeDict, idx::MultilinearIndices) =
-    checkbounds(Bool, d, (idx[1], linear_index(element(d,idx[1]), idx[2])))
-# - and this line to avoid an ambiguity
-checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
-    checkbounds(Bool, d, linear_index(d, idx))
+# # We have to amend the boundscheck ecosystem to catch some cases:
+# # - This line will catch indexing with tuples of integers, and we assume
+# #   the user wanted to use a CartesianIndex
+# checkbounds(::Type{Bool}, d::CompositeDict, idx::MultilinearIndices) =
+#     checkbounds(Bool, d, (outerindex(idx), linear_index(element(d,innerindex(idx)), outerindex(idx))))
+# # - and this line to avoid an ambiguity
+# checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
+#     checkbounds(Bool, d, linear_index(d, idx))
 
 # For getindex: return indexed basis function of the underlying set
 getindex(dict::CompositeDict, idx::LinearIndex) = getindex(dict, native_index(dict, idx))
-getindex(dict::CompositeDict, idx::MultilinearIndices) = dict.dicts[idx[1]][idx[2]]
+getindex(dict::CompositeDict, idx::MultilinearIndices) = dict.dicts[outerindex(idx)][innerindex(idx)]
 
 
 dict_in_support(set::CompositeDict, idx, x) = _dict_in_support(set, elements(set), idx, x)
-_dict_in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[idx[1]], idx[2], x)
+_dict_in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[outerindex(idx)], innerindex(idx), x)
 
 eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(set)))
 
@@ -151,15 +150,13 @@ end
 # Calling and evaluation
 unsafe_eval_element(set::CompositeDict, idx::Int, x) = unsafe_eval_element(set, multilinear_index(set,idx), x)
 
-function unsafe_eval_element(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
-    convert(T, unsafe_eval_element( element(set, idx[1]), idx[2], x))
-end
+unsafe_eval_element(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
+    convert(T, unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x))
 
 unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x)
 
-function unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::Tuple{Int,Any}, x) where {S,T}
-    convert(T, unsafe_eval_element_derivative( element(set, idx[1]), idx[2], x))
-end
+unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
+    convert(T, unsafe_eval_element_derivative( element(set, outerindex(idx)), innerindex(idx), x))
 
 
 derivative_dict(s::CompositeDict, order; options...) =
@@ -175,6 +172,6 @@ end
 
 
 innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
-    innerproduct(element(d1, i[1]), i[2], d2, j, measure; options...)
+    innerproduct(element(d1, outerindex(i)), innerindex(i), d2, j, measure; options...)
 innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
-    innerproduct(d1, i, element(d2, j[1]), j[2], measure; options...)
+    innerproduct(d1, i, element(d2, outerindex(j)), innerindex(j), measure; options...)

@@ -1,4 +1,8 @@
 
+export BlockIndex,
+	outerindex,
+	innerindex
+
 ############
 # Overview #
 ############
@@ -254,7 +258,20 @@ promote_product_indices(size, idx1, idx2) = (idx1,idx2)
 ########################
 
 
-const MultilinearIndex = NTuple{2,Int}
+const MultilinearIndex = BlockIndex{1}
+
+const MultilinearIndices = Union{MultilinearIndex,Tuple{Int,Any}}
+
+# At the time of writing, BlockIndex has two fields I and α.
+# For BlockIndex{1} they are a tuple with one entry. We provide
+# outerindex and innerindex as generic access routines for the values they contain.
+outerindex(idx::MultilinearIndex) = idx.I[1]
+innerindex(idx::MultilinearIndex) = idx.α[1]
+
+# For compatibility, we do the same for tuples with two elements.
+outerindex(idx::Tuple{Int,Any}) = idx[1]
+innerindex(idx::Tuple{Int,Any}) = idx[2]
+
 
 """
 `MultiLinearIndexList` is a list of indices suitable for use as the ordering
@@ -274,14 +291,14 @@ function offsets_multilinear_index(offsets, idx::Int)
     while idx > offsets[i+1]
         i += 1
     end
-    (i,idx-offsets[i])
+    BlockIndex(i, idx-offsets[i])
 end
 
 # and vice-versa
-offsets_linear_index(offsets, idx::MultilinearIndex) = offsets[idx[1]] + idx[2]
+offsets_linear_index(offsets, idx::MultilinearIndices) = offsets[outerindex(idx)] + innerindex(idx)
 
 getindex(list::MLIndexList, idx::Int) = offsets_multilinear_index(list.offsets, idx)
-getindex(list::MLIndexList, idx::MultilinearIndex) = offsets_linear_index(list.offsets, idx)
+getindex(list::MLIndexList, idx::MultilinearIndices) = offsets_linear_index(list.offsets, idx)
 
 
 
@@ -306,20 +323,20 @@ end
 
 length(it::MultilinearIndexIterator) = sum(it.lengths)
 
-Base.iterate(it::MultilinearIndexIterator) = (1,1), (1,1)
+Base.iterate(it::MultilinearIndexIterator) = BlockIndex(1,1), (1,1)
 
 function Base.iterate(it::MultilinearIndexIterator, state)
     i, j = state
     if j == it.lengths[i]
-        next_item = (i+1,1)
+        next = (i+1,1)
     else
-        next_item = (i,j+1)
+        next = (i,j+1)
     end
-    if next_item[1] <= length(it.lengths)
-        next_item, next_item
+    if next[1] <= length(it.lengths)
+        BlockIndex(next...), next
     end
 end
 
 Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}
 
-last(iter::MultilinearIndexIterator) = (length(iter.lengths), iter.lengths[end])
+last(iter::MultilinearIndexIterator) = BlockIndex(length(iter.lengths), iter.lengths[end])
