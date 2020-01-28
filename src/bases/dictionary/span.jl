@@ -14,6 +14,8 @@ Span(dict::Dictionary{S}) where S = Span{S,span_codomaintype(dict)}(dict)
 
 span_codomaintype(dict::Dictionary) =
     span_codomaintype(coefficienttype(dict), codomaintype(dict))
+span_codomaintype(dict::Dictionary, coefficients) =
+    span_codomaintype(eltype(coefficients), codomaintype(dict))
 # - When the types are the same, that type is the result
 span_codomaintype(::Type{T}, ::Type{T}) where {T <: Number} = T
 # - the coefficient types are complex and the set itself is real

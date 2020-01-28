@@ -184,25 +184,10 @@ interpolation_grid(s::TensorProductDict) =
     ProductGrid(map(interpolation_grid, elements(s))...)
 gauss_rule(s::TensorProductDict) =
     productmeasure(map(gauss_rule, elements(s))...)
-#grid(b::TensorProductDict, j::Int) = grid(element(b,j))
 
-# In general, left(f::Dictionary, j::Int) returns the left of the jth function in the set, not the jth dimension.
-# The methods below follow this convention.
-#left(s::TensorProductDict) = SVector(map(left, elements(s)))
-# left(s::TensorProductDict, j::Int) = SVector{N}([left(element(s,i),multilinear_index(s,j)[i]) for i=1:numelements(s)])
-#left(b::TensorProductDict, idx::Int, j) = left(b, multilinear_index(b,j), j)
-#left(b::TensorProductDict, idxt::NTuple, j) = left(b.dicts[j], idxt[j])
-
-#right(s::TensorProductDict) = SVector(map(right, elements(s)))
-# right{DT,N,T}(s::TensorProductDict{DT,N,T}, j::Int) = SVector{N}([right(element(s,i),multilinear_index(s,j)[i]) for i=1:numelements(s)])
-#right(b::TensorProductDict, j::Int) = right(element(b,j))
-#right(b::TensorProductDict, idx::Int, j) = right(b, multilinear_index(b,j), j)
-#right(b::TensorProductDict, idxt::NTuple, j) = right(b.dicts[j], idxt[j])
 
 support(s::TensorProductDict) = cartesianproduct(map(support, elements(s)))
-
 support(s::TensorProductDict, idx::LinearIndex) = support(s, native_index(s,idx))
-
 support(s::TensorProductDict, idx::ProductIndex) = cartesianproduct(map(support, elements(s), indextuple(idx)))
 
 

@@ -163,13 +163,16 @@ derivative_dict(dict::Dictionary; options...) = derivative_dict(dict, 1; options
 """
 Evaluate an expansion given by the set of coefficients in the point x.
 """
-eval_expansion(dict::Dictionary, coefficients, x; options...) =
+function eval_expansion(dict::Dictionary, coefficients, x; options...)
+    @assert size(coefficients) == size(dict)
+    in_support(dict, x) ? unsafe_eval_expansion(dict, coefficients, x) : zero(span_codomaintype(dict, coefficients))
+end
+
+unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
     default_eval_expansion(dict, coefficients, x)
 
 function default_eval_expansion(dict::Dictionary, coefficients, x)
-    @assert size(coefficients) == size(dict)
-
-    T = span_codomaintype(dict)
+    T = span_codomaintype(dict, coefficients)
     z = zero(T)
     # It is safer below to use eval_element than unsafe_eval_element, because of
     # the check on the support.
