@@ -304,13 +304,13 @@ restriction_set(d::Dictionary, n) = resize(d, n)
 ###############################
 
 # Default iterator over sets of functions: based on underlying index iterator.
-function Base.iterate(d::Dictionary)
+function iterate(d::Dictionary)
     iter = eachindex(d)
     first_item, first_state = iterate(iter)
     (d[first_item], (iter, (first_item, first_state)))
 end
 
-function Base.iterate(d::Dictionary, state)
+function iterate(d::Dictionary, state)
     iter, iter_tuple = state
     iter_item, iter_state = iter_tuple
     next_tuple = iterate(iter, iter_state)

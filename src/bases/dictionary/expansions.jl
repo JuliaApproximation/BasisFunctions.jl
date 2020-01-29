@@ -7,6 +7,9 @@ compatible_coefficients(dict::Dictionary, coefficients) =
 An `Expansion` describes a function using its expansion coefficients in a certain
 dictionary.
 
+An expansion acts both like an array, the array of coefficients, and like a
+function.
+
 Parameters:
 - D is the dictionary.
 - C is the type of the expansion coefficients
@@ -62,18 +65,18 @@ eachindex(e::Expansion) = eachindex(coefficients(e))
 
 getindex(e::Expansion, i...) = e.coefficients[i...]
 
-setindex!(e::Expansion, v, i...) = (e.coefficients[i...] = v)
+setindex!(e::Expansion, v, i...) = setindex!(e.coefficients, v, i...)
 
 
 # This indirect call enables dispatch on the type of the dict of the expansion
-(e::Expansion)(x; options...) = call_expansion(e, dictionary(e), coefficients(e), x; options...)
-(e::Expansion)(x, y; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y); options...)
-(e::Expansion)(x, y, z; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z); options...)
-(e::Expansion)(x, y, z, t; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t); options...)
-(e::Expansion)(x, y, z, t, u...; options...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...); options...)
+(e::Expansion)(x) = call_expansion(e, dictionary(e), coefficients(e), x)
+(e::Expansion)(x, y) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y))
+(e::Expansion)(x, y, z) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z))
+(e::Expansion)(x, y, z, t) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t))
+(e::Expansion)(x, y, z, t, u...) = call_expansion(e, dictionary(e), coefficients(e), SVector(x, y, z, t, u...))
 
-call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
-    eval_expansion(dict, coefficients, x; options...)
+call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
+    eval_expansion(dict, coefficients, x)
 
 function differentiate(e::Expansion, order=1)
     op = differentiation_operator(dictionary(e), order)
@@ -179,9 +182,9 @@ function apply(op::DictionaryOperator, e::Expansion)
     Expansion(dest(op), op * coefficients(e))
 end
 
-Base.iterate(e::Expansion) = iterate(coefficients(e))
+iterate(e::Expansion) = iterate(coefficients(e))
 
-Base.iterate(e::Expansion, state) = iterate(coefficients(e), state)
+iterate(e::Expansion, state) = iterate(coefficients(e), state)
 
 Base.collect(e::Expansion) = coefficients(e)
 

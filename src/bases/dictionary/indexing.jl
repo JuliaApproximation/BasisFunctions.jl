@@ -323,9 +323,9 @@ end
 
 length(it::MultilinearIndexIterator) = sum(it.lengths)
 
-Base.iterate(it::MultilinearIndexIterator) = BlockIndex(1,1), (1,1)
+iterate(it::MultilinearIndexIterator) = BlockIndex(1,1), (1,1)
 
-function Base.iterate(it::MultilinearIndexIterator, state)
+function iterate(it::MultilinearIndexIterator, state)
     i, j = state
     if j == it.lengths[i]
         next = (i+1,1)

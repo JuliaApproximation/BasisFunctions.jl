@@ -37,7 +37,7 @@ import Base:
 import Base:
     promote, promote_rule, convert, promote_eltype, widen, convert,
     # array methods
-    length, size, eachindex, firstindex, lastindex, range, collect,
+    length, size, eachindex, iterate, firstindex, lastindex, range, collect,
     first, last, copyto!,
     transpose, inv, hcat, vcat,
     getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,

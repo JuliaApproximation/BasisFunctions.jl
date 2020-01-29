@@ -13,7 +13,7 @@
 checkbounds(dict::Dictionary, I...) = checkbounds(Bool, dict, I...) || throw(BoundsError())
 
 # We make a special case for a linear index
-checkbounds(::Type{Bool}, dict::Dictionary, i::LinearIndex) = checkindex(Bool, Base.OneTo(length(dict)), i)
+checkbounds(::Type{Bool}, dict::Dictionary, i::Int) = checkindex(Bool, Base.OneTo(length(dict)), i)
 
 # We also convert some native indices to linear indices, before moving on.
 # (This is more difficult to do later on, e.g. in checkindex, because that routine
@@ -171,16 +171,8 @@ end
 unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
     default_eval_expansion(dict, coefficients, x)
 
-function default_eval_expansion(dict::Dictionary, coefficients, x)
-    T = span_codomaintype(dict, coefficients)
-    z = zero(T)
-    # It is safer below to use eval_element than unsafe_eval_element, because of
-    # the check on the support.
-    @inbounds for idx in eachindex(coefficients)
-        z = z + coefficients[idx] * eval_element(dict, idx, x)
-    end
-    z
-end
+default_eval_expansion(dict::Dictionary, coefficients, x) =
+    sum(coefficients[idx]*val for (idx,val) in pointvalues(dict, x))
 
 function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
     @assert dimension(dict) == GridArrays.dimension(grid)
@@ -199,12 +191,80 @@ end
 
 # evaluation of the dictionary is "unsafe" because the routine can assume that the
 # support of x has already been checked
-unsafe_dict_eval(dict::Dictionary, x) =
-    unsafe_dict_eval!(zeros(dict), dict, x)
+function unsafe_dict_eval(dict::Dictionary, x)
+    # We allocate the zeros ourselves, in order to make sure that the output has
+    # the same array structure as the dictionary itself. For example, it will be
+    # a BlockArray for a composite dictionary, rather than a flat array.
+    result = zeros(dict)
+    unsafe_dict_eval!(result, dict, x)
+end
 
-function unsafe_dict_eval!(result, dict::Dictionary, x)
-    for i in eachindex(dict)
-        result[i] = unsafe_eval_element(dict, i, x)
+function unsafe_dict_eval!(result, dict, x)
+    for (idx, z) in pointvalues(dict, x)
+        result[idx] = z
     end
     result
+end
+
+
+
+"""
+Supertype of iterators over the pointwise evaluation of a dictionary.
+
+The value iterator depends on a point `x` in the support of the dictionary, and
+iterates over all the function values of the elements of the dictionary in that
+point. Value iterators can be useful if the computation of all elements is required
+and computing them in one go is more efficient than computing them one by one
+independently.
+
+For example, orthogonal polynomial iterators may implement the three-term recurrence
+relation. The command
+'[val for val in pointvalues(ops, x)]'
+may be more efficient than
+'[eval_element(dict, i, x) for i in eachindex(dict)]'
+"""
+abstract type DictionaryValueIterator{T} end
+
+length(iter::DictionaryValueIterator) = length(dictionary(iter))
+size(iter::DictionaryValueIterator) = size(dictionary(iter))
+eltype(iter::DictionaryValueIterator{T}) where {T} = T
+
+dictionary(iter::DictionaryValueIterator) = iter.dict
+point(iter::DictionaryValueIterator) = iter.x
+
+"Iterate over the values of a dictionary at a point."
+struct GenericDictValueIterator{S,D<:Dictionary,I,T} <: DictionaryValueIterator{T}
+    dict    ::  D
+    x       ::  S
+    idxiter ::  I
+end
+
+GenericDictValueIterator(Φ::Dictionary, x) = GenericDictValueIterator(Φ, x, eachindex(Φ))
+GenericDictValueIterator(Φ::Dictionary, x, I) =
+    GenericDictValueIterator{typeof(x),typeof(Φ),typeof(I),codomaintype(Φ)}(Φ, x, I)
+
+function pointvalues(Φ::Dictionary, x)
+    # Let's discourage the use of the iterator for points outside the support.
+    @assert in_support(Φ, x)
+    GenericDictValueIterator(Φ, x)
+end
+
+indexiterator(iter::GenericDictValueIterator) = iter.idxiter
+
+function iterate(iter::GenericDictValueIterator)
+    state = iterate(indexiterator(iter))
+    if state != nothing
+        idx, idx_state = state
+        (idx, BasisFunctions.unsafe_eval_element(dictionary(iter), idx, point(iter))), idx_state
+    else
+        nothing
+    end
+end
+
+function iterate(iter::GenericDictValueIterator, state)
+    newstate = iterate(indexiterator(iter), state)
+    if newstate != nothing
+        idx, idx_state = newstate
+        (idx, BasisFunctions.unsafe_eval_element(dictionary(iter), idx, point(iter))), idx_state
+    end
 end

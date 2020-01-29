@@ -37,8 +37,8 @@ end
 
 @inline assert_compatible_compose_src_dest(op1, op2) = iscompatible(dest(op1), src(op2))
 
-Base.iterate(x::AbstractOperator) = (x, nothing)
-Base.iterate(x::AbstractOperator, ::Any) = nothing
+iterate(x::AbstractOperator) = (x, nothing)
+iterate(x::AbstractOperator, ::Any) = nothing
 
 
 function compose_and_simplify(op1::DictionaryOperator, op2::DictionaryOperator)

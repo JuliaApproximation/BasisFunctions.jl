@@ -1,7 +1,7 @@
 
 """
 `MyDictionary` is a custom dictionary type that illustrates the minimal
-functionailty required to implement a dictionary.
+functionality required to implement a dictionary.
 """
 struct MyDictionary{S,T} <: Dictionary{S,T}
     n       ::  Int

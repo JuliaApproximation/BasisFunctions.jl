@@ -34,49 +34,45 @@ end
 
 recurrence_eval(b::OPS, idx::LinearIndex, x) = recurrence_eval(b, native_index(b, idx), x)
 
-"""
-Evaluate all the polynomials in the orthogonal polynomial sequence in the given
-point `x` using the three-term recurrence relation.
-"""
-function recurrence_eval!(result, b::OPS, x)
-    @assert length(result) == length(b)
 
-    result[1] = p0(b)
-    if length(b) > 1
-        result[2] = rec_An(b, 0)*x + rec_Bn(b, 0)
-        for i = 2:length(b)-1
-            result[i+1] = (rec_An(b, i-1)*x + rec_Bn(b, i-1)) * result[i] - rec_Cn(b, i-1) * result[i-1]
-        end
-    end
-    result
+"Iterate over the values of an orthogonal polynomial sequence using the recurrence relation."
+struct OPSValueIterator{T,O<:OPS{T}} <: DictionaryValueIterator{T}
+	dict	::	O
+	x		::	T
 end
 
-unsafe_dict_eval!(result, dict::OPS, x) = recurrence_eval!(result, dict, x)
+pointvalues(ops::OPS, x) = OPSValueIterator(ops, x)
 
-function unsafe_eval_expansion(dict::OPS, coefficients, x)
-	T = codomaintype(dict)
-    z0 = T(p0(dict))
-    z1 = convert(T, rec_An(dict, 0) * x + rec_Bn(dict, 0))*z0
-
-    d = length(dict)-1
-	u = z0*coefficients[1]
-    if d == 0
-        return u
-    end
-	u += z1*coefficients[2]
-    if d == 1
-        return u
-    end
-
-    z = z1
-    for i = 1:d-1
-        z = (rec_An(dict, i)*x + rec_Bn(dict, i)) * z1 - rec_Cn(dict, i) * z0
-		u += z * coefficients[i+2]
-        z0 = z1
-        z1 = z
-    end
-    u
+# The state vector is (z0,z1,d) as follows:
+# - z0 is the value of the polynomial of degree d-1
+# - z1 is the value of the polynomial of degree d
+function iterate(iter::OPSValueIterator)
+	ops = dictionary(iter)
+	val = p0(ops)
+	if length(ops) > 0
+		(1,val), (zero(val),val,0)
+	else
+		nothing
+	end
 end
+
+# Here we have to compute the polynomial p_{d+1}(x) using p_d and p_{d-1}
+function iterate(iter::OPSValueIterator, state)
+	z0, z1, degree = state
+	dict = dictionary(iter)
+	x = point(iter)
+	if degree == 0
+		# We avoid evaluating rec_Cn with degree=0
+		z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1
+		(degree+2,z), (z1, z, degree+1)
+	elseif degree < length(dict)-1
+		z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1 - rec_Cn(dict, degree) * z0
+		(degree+2,z), (z1, z, degree+1)
+	else
+		nothing
+	end
+end
+
 
 """
 Evaluate all the orthonormal polynomials in the sequence in the given
@@ -209,43 +205,3 @@ function monic_recurrence_eval(α, β, idx, x)
         z_k
     end
 end
-
-
-# """
-# A recurrence vector lazily represents the recurrence coefficients of an
-# orthogonal polynomial.
-#
-# The type of recurrence coefficients it represents is encoded by an integer, such
-# that all vectors have the same type.
-# """
-# struct RecurrenceVector{T,O<:OrthogonalPolynomials{T}} <: AbstractArray{T,1}
-#     ops     ::  O
-#     type    ::  Int
-#
-#     function RecurrenceVector{T,O}(ops::O, type::Int) where {T,O<:OrthogonalPolynomials}
-#         @assert 1 <= type <= 3
-#         new(ops, type)
-#     end
-# end
-#
-# RecurrenceVector(ops::O, type::Int) where {T,O <: OrthogonalPolynomials{T}} =
-#     RecurrenceVector{T,O}(ops, type)
-#
-# recurrencetype(v::RecurrenceVector) = v.type
-# ops(v::RecurrenceVector) = v.ops
-#
-# size(v::RecurrenceVector) = v.type == 1 ? (length(v.ops),) : (length(v.ops)-1,)
-#
-# getindex(v::RecurrenceVector, i::Int) = getindex(v, PolynomialDegree(i-1))
-#
-# function getindex(v::RecurrenceVector, idx::PolynomialDegree)
-#     (idx >= 0) && (idx < length(v)) || throw(BoundsError())
-#     type = recurrencetype(v)
-#     if type == 1
-#         rec_An(v.ops, degree(idx))
-#     elseif type == 2
-#         rec_Bn(v.ops, degree(idx))
-#     elseif type == 3
-#         rec_Cn(v.ops, degree(idx))
-#     end
-# end
