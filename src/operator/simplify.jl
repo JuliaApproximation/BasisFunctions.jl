@@ -96,7 +96,7 @@ for (OP) in (:DiagonalOperator, :CirculantOperator)
     end
 end
 
-function unsafe_compose_and_simplify(op1::IndexExtensionOperator, op2::IndexRestrictionOperator)
+function unsafe_compose_and_simplify(op1::IndexExtension, op2::IndexRestriction)
     if subindices(op1) == subindices(op2)
         IdentityOperator(cas_src(op1,op2), cas_dest(op1,op2))
     else

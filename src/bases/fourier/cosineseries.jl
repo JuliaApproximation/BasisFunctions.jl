@@ -77,12 +77,12 @@ end
 
 function extension_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
+    IndexExtension(s1, s2, 1:length(s1); T=T)
 end
 
 function restriction_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
+    IndexRestriction(s1, s2, 1:length(s2); T=T)
 end
 
 

@@ -151,7 +151,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients,
     isbasis, isframe, isorthogonal, isbiorthogonal, isorthonormal,
     in_support,
-    dimensions, approx_length, extension_size,
+    dimensions, approx_length, extensionsize,
     hastransform, hasextension, hasderivative, hasantiderivative, hasinterpolationgrid,
     linearize_coefficients, delinearize_coefficients, linearize_coefficients!,
     delinearize_coefficients!,
@@ -200,7 +200,7 @@ export CompositeOperator, compose
 export IdentityOperator, ScalingOperator, scalar, DiagonalOperator,
     ArrayOperator, FunctionOperator,
     MultiplicationOperator,
-    IndexRestrictionOperator, IndexExtensionOperator,
+    IndexRestriction, IndexExtension,
     HorizontalBandedOperator, VerticalBandedOperator, CirculantOperator, Circulant
 
 # from operator/solvers.jl
@@ -216,7 +216,7 @@ export transform_operator, transform_dict, transform_to_grid, transform_from_gri
 export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
 # from modifiers/extension
-export extension_operator, default_extension_operator, extension_size, extend,
+export extension_operator, default_extension_operator, extensionsize, extend,
     restriction_operator, default_restriction_operator, restriction_size, restrict,
     Extension, Restriction
 
@@ -364,6 +364,7 @@ include("bases/dictionary/expansions.jl")
 include("util/products.jl")
 
 include("computations/generic_operators.jl")
+include("computations/conversion.jl")
 
 ################################################################
 # Generic dictionaries

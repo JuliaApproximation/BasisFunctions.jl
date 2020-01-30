@@ -435,7 +435,7 @@ function test_generic_dict_interface(basis)
 
     ## Test extensions
     if hasextension(basis)
-        n2 = extension_size(basis)
+        n2 = extensionsize(basis)
         basis2 = resize(basis, n2)
         E = extension_operator(basis, basis2)
         e1 = random_expansion(basis)

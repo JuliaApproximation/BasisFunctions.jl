@@ -2,7 +2,7 @@
 ####################################
 # Generic extension and restriction
 ####################################
- """
+"""
 An extension operator is an operator that can be used to extend a representation in a set s1 to a
 representation in a larger set s2.
 """
@@ -15,17 +15,6 @@ a representation in a set s1 to a representation in a smaller set s2. Loss of ac
 from the restriction.
 """
 function restriction_operator(s1::Dictionary, s2::Dictionary; options...) end
-
-"""
-Return a suitable length to extend to, for example one such that the corresponding grids are nested
-and function evaluations can be shared. The default is twice the length of the current set.
-"""
-extension_size(s::Dictionary) = 2*length(s)
-
-extend(s::Dictionary) = resize(s, extension_size(s))
-
-extension_operator(s1::Dictionary; options...) =
-    extension_operator(s1, extend(s1); options...)
 
 
 # For convenience with dispatch, add the grids as extra arguments when only
@@ -45,7 +34,7 @@ end
 
 function grid_restriction_operator(src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::GridArrays.MaskedGrid{G,M,I,T}; options...) where {G<:AbstractGrid,M,I,T}
     @assert supergrid(dest_grid) == src_grid
-    IndexRestrictionOperator(src, dest, subindices(dest_grid))
+    IndexRestriction(src, dest, subindices(dest_grid))
 end
 
 

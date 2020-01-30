@@ -33,13 +33,17 @@ hasextension(b::OPS) = true
 # the two spaces have the same type of set, and same type of coefficients.
 function extension_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
+    IndexExtension(s1, s2, 1:length(s1); T=T)
 end
+
+extension(::Type{T}, src::O, dest::O; options...) where {T,O <: OPS} = IndexExtension{T}(src, dest, 1:length(src))
 
 function restriction_operator(s1::OPS, s2::OPS; T=op_eltype(s1,s2), options...)
     @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
+    IndexRestriction(s1, s2, 1:length(s2); T=T)
 end
+
+restriction(::Type{T}, src::O, dest::O; options...) where {T,O <: OPS} = IndexRestriction{T}(src, dest, 1:length(dest))
 
 include("recurrence.jl")
 

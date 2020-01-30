@@ -22,10 +22,10 @@ function evaluation_matrix!(a::AbstractMatrix, dict::Dictionary, pts)
     a
 end
 
-function dense_evaluation_operator(s::Dictionary, dgs::GridBasis;
-            T = op_eltype(s,dgs), options...)
-    A = evaluation_matrix(s, grid(dgs); T=T)
-    ArrayOperator(A, s, dgs)
+function dense_evaluation_operator(s::Dictionary, gb::GridBasis;
+            T = op_eltype(s,gb), options...)
+    A = evaluation_matrix(s, grid(gb); T=T)
+    ArrayOperator(A, s, gb)
 end
 
 evaluation_operator(dict::Dictionary, grid::AbstractGrid; options...) =

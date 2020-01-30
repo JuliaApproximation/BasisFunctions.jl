@@ -23,6 +23,11 @@ end
 
 similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)
 
+extension(::Type{T}, src::Monomials, dest::Monomials; options...) where {T} =
+    IndexExtension{T}(src, dest, 1:length(src))
+
+restriction(::Type{T}, src::Monomials, dest::Monomials; options...) where {T} =
+    IndexRestriction{T}(src, dest, 1:length(dest))
 
 
 struct Monomial{T} <: Polynomial{T}

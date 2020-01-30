@@ -213,7 +213,7 @@ end
 
 
 # By default, we preserve the odd/even property of the size when extending
-extension_size(b::Fourier) = evenlength(b) ? 2*length(b) : max(3,2*length(b)-1)
+extensionsize(b::Fourier) = evenlength(b) ? 2*length(b) : max(3,2*length(b)-1)
 
 approx_length(b::Fourier, n::Int) = n
 
@@ -294,7 +294,7 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 			super_grid = FourierGrid(ntot)
 			super_dgs = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_dgs; T=T, options...)
-			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid); T=T)
+			R = IndexRestriction(super_dgs, dgs, nleft_int+1:nleft_int+length(grid); T=T)
 			R*E
 		else
 			dense_evaluation_operator(fs, dgs; T=T, options...)
@@ -332,31 +332,41 @@ end
 
 # We make special-purpose operators for the extension of a Fourier series,
 # since we have to add zeros in the middle of the given Fourier coefficients.
-# This can not be achieved with a single IndexExtensionOperator.
+# This can not be achieved with a single IndexExtension.
 # It could be a composition of two, but this special case is widespread and hence
 # we make it more efficient.
-struct FourierIndexExtensionOperator{T} <: DictionaryOperator{T}
+struct FourierIndexExtension{T} <: DictionaryOperator{T}
 	src		::	Dictionary
 	dest	::	Dictionary
 	n1		::	Int
 	n2		::	Int
+
+	function FourierIndexExtension{T}(src::Dictionary, dest::Dictionary, n1::Int, n2::Int) where {T}
+		@assert n1 <= n2
+		new(src, dest, n1, n2)
+	end
 end
 
-FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest);
+FourierIndexExtension{T}(src, dest) where {T} =
+	FourierIndexExtension{T}(src, dest, length(src), length(dest))
+
+FourierIndexExtension(src, dest, n1 = length(src), n2 = length(dest);
 			T=op_eltype(src,dest)) =
-	FourierIndexExtensionOperator{T}(src, dest, n1, n2)
+	FourierIndexExtension{T}(src, dest, n1, n2)
 
-string(op::FourierIndexExtensionOperator) = "Fourier series extension from length $(op.n1) to length $(op.n2)"
+string(op::FourierIndexExtension) = "Fourier series extension from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-wrap_operator(src, dest, op::FourierIndexExtensionOperator{T}) where {T} =
-	FourierIndexExtensionOperator{T}(src, dest, op.n1, op.n2)
+wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
+	FourierIndexExtension{T}(src, dest, op.n1, op.n2)
 
 function extension_operator(b1::Fourier, b2::Fourier; T = op_eltype(b1,b2), options...)
 	@assert length(b1) <= length(b2)
-	FourierIndexExtensionOperator(b1, b2; T=T)
+	FourierIndexExtension(b1, b2; T=T)
 end
 
-function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
+extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexExtension{T}(src, dest)
+
+function apply!(op::FourierIndexExtension, coef_dest, coef_src)
 	## @assert length(dest) > length(src)
 
 	nh = nhalf(length(coef_src))
@@ -389,28 +399,37 @@ function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
 end
 
 
-struct FourierIndexRestrictionOperator{T} <: DictionaryOperator{T}
+struct FourierIndexRestriction{T} <: DictionaryOperator{T}
 	src		::	Dictionary
 	dest	::	Dictionary
 	n1		::	Int
 	n2		::	Int
+
+	function FourierIndexRestriction{T}(src::Dictionary, dest::Dictionary, n1::Int, n2::Int) where {T}
+		@assert n1 >= n2
+		new(src, dest, n1, n2)
+	end
 end
 
-FourierIndexRestrictionOperator(src, dest, n1 = length(src), n2 = length(dest); T = op_eltype(src,dest), options...) =
-	FourierIndexRestrictionOperator{T}(src, dest, n1, n2)
+FourierIndexRestriction{T}(src, dest) where {T} =
+	FourierIndexRestriction{T}(src, dest, length(src), length(dest))
 
-string(op::FourierIndexRestrictionOperator) = "Fourier series restriction from length $(op.n1) to length $(op.n2)"
+FourierIndexRestriction(src, dest, n1 = length(src), n2 = length(dest); T = op_eltype(src,dest), options...) =
+	FourierIndexRestriction{T}(src, dest, n1, n2)
 
-wrap_operator(src, dest, op::FourierIndexRestrictionOperator{T}) where T =
-	FourierIndexRestrictionOperator{T}(src, dest, op.n1, op.n2)
+string(op::FourierIndexRestriction) = "Fourier series restriction from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
+
+wrap_operator(src, dest, op::FourierIndexRestriction{T}) where T =
+	FourierIndexRestriction{T}(src, dest, op.n1, op.n2)
 
 function restriction_operator(b1::Fourier, b2::Fourier; T=op_eltype(b1,b2), options...)
 	@assert length(b1) >= length(b2)
-	FourierIndexRestrictionOperator(b1, b2; T=T)
+	FourierIndexRestriction(b1, b2; T=T)
 end
 
+restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexRestriction{T}(src, dest)
 
-function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
+function apply!(op::FourierIndexRestriction, coef_dest, coef_src)
 	## @assert length(dest) < length(src)
 
 	nh = nhalf(length(coef_dest))
@@ -437,14 +456,14 @@ function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 	coef_dest
 end
 
-isdiag(::FourierIndexExtensionOperator) = true
-isdiag(::FourierIndexRestrictionOperator) = true
+isdiag(::FourierIndexExtension) = true
+isdiag(::FourierIndexRestriction) = true
 
-adjoint(op::FourierIndexExtensionOperator{T}) where {T} =
-	FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
+adjoint(op::FourierIndexExtension{T}) where {T} =
+	FourierIndexRestriction{T}(dest(op), src(op), op.n2, op.n1)
 
-adjoint(op::FourierIndexRestrictionOperator{T}) where {T} =
-	FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)::DictionaryOperator
+adjoint(op::FourierIndexRestriction{T}) where {T} =
+	FourierIndexExtension{T}(dest(op), src(op), op.n2, op.n1)::DictionaryOperator
 
 function derivative_dict(s::Fourier, order; options...)
 	if oddlength(s)
@@ -527,7 +546,7 @@ function evaluation_operator(fs::Fourier, gb::GridBasis, grid::EquispacedGrid; T
 			super_grid = FourierGrid(ntot)
 			super_gb = GridBasis(fs, super_grid)
 			E = evaluation_operator(fs, super_gb; T=T, options...)
-			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid); T=T)
+			R = IndexRestriction(super_gb, gb, nleft_int+1:nleft_int+length(grid); T=T)
 			R*E
 		else
 			dense_evaluation_operator(fs, gb; T=T, options...)

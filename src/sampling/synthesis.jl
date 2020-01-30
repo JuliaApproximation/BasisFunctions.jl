@@ -32,6 +32,8 @@ src(op::SynthesisOperator) = discrete_set(dictionary(op))
 src_space(op::SynthesisOperator) = Span(src(op))
 dest_space(op::SynthesisOperator) = Span(dictionary(op))
 
+(op::SynthesisOperator)(args...) = apply(op, args...)
+
 # We attempt to convert the given coefficients to the container type of the dictionary
 apply(op::SynthesisOperator, coef; options...) = _apply(op, coef, dictionary(op))
 _apply(op::SynthesisOperator, coef, dict::Dictionary) = Expansion(dict, convert(containertype(dict), coef))
@@ -78,3 +80,15 @@ apply(op::DesynthesisOperator, expansion::Expansion; opts...) = coefficients(exp
 
 inv(op::SynthesisOperator) = DesynthesisOperator(dictionary(op))
 inv(op::DesynthesisOperator) = SynthesisOperator(dictionary(op))
+
+
+"Object that can be indexed with a dictionary to construct a synthesis operator."
+struct SynthesisOperatorGenerator
+end
+
+getindex(op::SynthesisOperatorGenerator, Φ::Dictionary) = SynthesisOperator(Φ)
+
+# the symbol is \bscrT
+export 𝓣
+"Generate a synthesis operator of a dictionary by indexing 𝓣 with that dictionary."
+const 𝓣 = SynthesisOperatorGenerator()

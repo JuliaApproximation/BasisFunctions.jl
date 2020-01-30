@@ -100,67 +100,89 @@ ArrayOperator(A::VerticalBandedMatrix{T}, src::Dictionary, dest::Dictionary) whe
     VerticalBandedOperator{T}(A, src, dest)
 
 """
-An IndexRestrictionOperator selects a subset of coefficients based on their indices.
+An IndexRestriction selects a subset of coefficients based on their indices.
 """
-struct IndexRestrictionOperator{T,N,I} <: ArrayOperator{T}
+struct IndexRestriction{T,N,I} <: ArrayOperator{T}
     A           ::  RestrictionIndexMatrix{T,N,I}
     src         ::  Dictionary
     dest        ::  Dictionary
 
-    IndexRestrictionOperator{T}(A::RestrictionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
-        (@assert length(dest)<=length(src) && length(src)==size(A,2) && length(dest)==size(A,1); new{T,N,I}(A,src,dest))
+    function IndexRestriction{T,N,I}(A::RestrictionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I}
+        @assert length(dest)<=length(src) && length(src)==size(A,2) && length(dest)==size(A,1)
+        new{T,N,I}(A,src,dest)
+    end
 end
 
-IndexRestrictionOperator(src::Dictionary, subindices::AbstractVector; opts...) =
-    IndexRestrictionOperator(src, src[subindices], subindices; opts...)
+function IndexRestriction{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where {T}
+    @assert length(subindices) == length(dest) && length(dest)<=length(src)
+    IndexRestriction{T}(RestrictionIndexMatrix{T}(size(src), subindices), src, dest)
+end
 
-IndexRestrictionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
+IndexRestriction{T}(A::RestrictionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
+    IndexRestriction{T,N,I}(A, src, dest)
+
+
+IndexRestriction(src::Dictionary, subindices::AbstractVector; opts...) =
+    IndexRestriction(src, src[subindices], subindices; opts...)
+
+IndexRestriction(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     (@assert length(subindices) == length(dest) && length(dest)<=length(src);
-    IndexRestrictionOperator{T}(RestrictionIndexMatrix{T}(size(src), subindices), src, dest))
-subindices(op::IndexRestrictionOperator) = subindices(op.A)
+    IndexRestriction{T}(RestrictionIndexMatrix{T}(size(src), subindices), src, dest))
+subindices(op::IndexRestriction) = subindices(op.A)
 
 ArrayOperator(A::RestrictionIndexMatrix{T}, src::Dictionary, dest::Dictionary=src[subindices(A)]) where {T} =
-    IndexRestrictionOperator{T}(A, src, dest)
+    IndexRestriction{T}(A, src, dest)
 
-hasstencil(op::IndexRestrictionOperator) = true
-stencilarray(op::IndexRestrictionOperator) = [restrictionsymbol(op), "[", setsymbol(subindices(op.A)), " → 𝕀]"]
+hasstencil(op::IndexRestriction) = true
+stencilarray(op::IndexRestriction) = [restrictionsymbol(op), "[", setsymbol(subindices(op.A)), " → 𝕀]"]
 
-restrictionsymbol(op::IndexRestrictionOperator) = PrettyPrintSymbol{:R}()
+restrictionsymbol(op::IndexRestriction) = PrettyPrintSymbol{:R}()
 name(::PrettyPrintSymbol{:R}) = "Restriction of coefficients to subset"
 
 
 """
-An `IndexExtensionOperator` embeds coefficients in a larger set based on their indices.
+An `IndexExtension` embeds coefficients in a larger set based on their indices.
 """
-struct IndexExtensionOperator{T,N,I} <: ArrayOperator{T}
+struct IndexExtension{T,N,I} <: ArrayOperator{T}
     A           ::  ExtensionIndexMatrix{T,N,I}
     src         ::  Dictionary
     dest        ::  Dictionary
 
-    IndexExtensionOperator{T}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
-        (@assert length(dest)>=length(src) && length(src)==size(A,2) && length(dest)==size(A,1); new{T,N,I}(A,src,dest))
+    function IndexExtension{T,N,I}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I}
+        @assert length(dest)>=length(src) && length(src)==size(A,2) && length(dest)==size(A,1)
+        new(A, src, dest)
+    end
 end
 
-IndexExtensionOperator(dest::Dictionary, subindices::AbstractVector; opts...) =
-    IndexExtensionOperator(dest[subindices], dest, subindices; opts...)
+function IndexExtension{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where {T}
+    @assert length(src)==length(subindices) && length(dest)>=length(src)
+    IndexExtension{T}(ExtensionIndexMatrix{T}(size(dest), subindices), src, dest)
+end
 
-IndexExtensionOperator(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
+IndexExtension{T}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
+    IndexExtension{T,N,I}(A, src, dest)
+
+
+IndexExtension(dest::Dictionary, subindices::AbstractVector; opts...) =
+    IndexExtension(dest[subindices], dest, subindices; opts...)
+
+IndexExtension(src::Dictionary, dest::Dictionary, subindices::AbstractVector; T = op_eltype(src, dest)) =
     (@assert length(src)==length(subindices) && length(dest)>=length(src);
-    IndexExtensionOperator{T}(ExtensionIndexMatrix{T}(size(dest), subindices), src, dest))
-subindices(op::IndexExtensionOperator) = subindices(op.A)
+    IndexExtension{T}(ExtensionIndexMatrix{T}(size(dest), subindices), src, dest))
+subindices(op::IndexExtension) = subindices(op.A)
 
 ArrayOperator(A::ExtensionIndexMatrix{T}, src::Dictionary, dest::Dictionary) where {T} =
-    IndexExtensionOperator{T}(A, src, dest)
+    IndexExtension{T}(A, src, dest)
 
 ArrayOperator(A::ExtensionIndexMatrix{T}, dest::Dictionary) where {T} =
-    IndexRestrictionOperator{T}(A, dest[subindices(A)], dest)
+    IndexRestriction{T}(A, dest[subindices(A)], dest)
 
-string(op::IndexExtensionOperator) = "Zero padding, original elements in "*string(subindices(op.A))
+string(op::IndexExtension) = "Zero padding, original elements in "*string(subindices(op.A))
 
-hasstencil(op::IndexExtensionOperator) = true
-stencilarray(op::IndexExtensionOperator) = [extensionsymbol(op), "[ 𝕀 → ", setsymbol(subindices(op.A)), "]"]
+hasstencil(op::IndexExtension) = true
+stencilarray(op::IndexExtension) = [extensionsymbol(op), "[ 𝕀 → ", setsymbol(subindices(op.A)), "]"]
 
-extensionsymbol(op::IndexExtensionOperator) = PrettyPrintSymbol{:E}()
+extensionsymbol(op::IndexExtension) = PrettyPrintSymbol{:E}()
 name(::PrettyPrintSymbol{:E}) = "Extending coefficients by zero padding"
 
 

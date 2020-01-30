@@ -140,7 +140,7 @@ eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, elements(se
 
 ## Extension and restriction
 
-extension_size(set::CompositeDict) = map(extension_size, elements(set))
+extensionsize(set::CompositeDict) = map(extensionsize, elements(set))
 
 for op in [:extension_operator, :restriction_operator]
     @eval $op(s1::CompositeDict, s2::CompositeDict; T=op_eltype(s1,s2), options...) =

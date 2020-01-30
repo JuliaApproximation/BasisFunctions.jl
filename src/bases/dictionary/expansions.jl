@@ -18,13 +18,12 @@ struct Expansion{D,C}
     dictionary      ::  D
     coefficients    ::  C
 
-    function Expansion{D,C}(dict, coefficients) where {D,C}
+    function Expansion{D,C}(dict::D, coefficients::C) where {D,C}
         @assert compatible_coefficients(dict, coefficients)
         new(dict, coefficients)
     end
 end
 
-# Some constructors
 Expansion(dict::Dictionary) = Expansion(dict, zeros(dict))
 Expansion(dict::Dictionary, coef) = Expansion{typeof(dict),typeof(coef)}(dict, coef)
 
@@ -36,7 +35,6 @@ similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 eltype(::Type{Expansion{D,C}}) where {D,C} = eltype(C)
 
 dictionary(e::Expansion) = e.dictionary
-
 coefficients(e::Expansion) = e.coefficients
 
 Span(e::Expansion) = Span(dictionary(e))
@@ -144,26 +142,32 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 ##############################
 
 # Arithmetics are only possible when the basis type is equal.
-iscompatible(s1::S, s2::S) where {S<:Dictionary} = true
-iscompatible(s1::Dictionary, s2::Dictionary) = false
+iscompatible(d1::D, d2::D) where {D<:Dictionary} = true
+iscompatible(d1::Dictionary, d2::Dictionary) = false
 
-for op in (:+, :-)
-    @eval function ($op)(s1::Expansion, s2::Expansion)
-        # First check if the Dictionarys are arithmetically compatible
-        @assert iscompatible(dictionary(s1),dictionary(s2))
-        # If the sizes are equal, we can just operate on the coefficients.
-        # If not, we have to extend the smaller set to the size of the larger set.
-        if size(s1) == size(s2)
-            Expansion(dictionary(s1), $op(coefficients(s1), coefficients(s2)))
-        elseif length(s1) < length(s2)
-            s3 = extension_operator(dictionary(s1), dictionary(s2)) * s1
-            Expansion(dictionary(s2), $op(coefficients(s3), coefficients(s2)))
-        else
-            s3 = extension_operator(dictionary(s2), dictionary(s1)) * s2
-            Expansion(dictionary(s1), $op(coefficients(s1), coefficients(s3)))
-        end
+function promote_length(e1::Expansion, e2::Expansion)
+    if length(e1) == length(e2)
+        e1, e2
+    elseif length(e1) < length(e2)
+        extension_operator(dictionary(e1), dictionary(e2)) * e1, e2
+    else
+        e1, extension_operator(dictionary(e2), dictionary(e1)) * e2
     end
 end
+
+function (+)(e1::Expansion, e2::Expansion)
+    @assert iscompatible(dictionary(e1),dictionary(e2))
+    f1, f2 = promote_length(e1, e2)
+    Expansion(dictionary(f1), coefficients(f1)+coefficients(f2))
+end
+
+function (-)(e1::Expansion, e2::Expansion)
+    @assert iscompatible(dictionary(e1),dictionary(e2))
+    f1, f2 = promote_length(e1, e2)
+    Expansion(dictionary(f1), coefficients(f1)-coefficients(f2))
+end
+
+(-)(e::Expansion) = similar(e, -coefficients(e))
 
 function (*)(s1::Expansion, s2::Expansion)
     @assert iscompatible(dictionary(s1),dictionary(s2))
@@ -176,11 +180,7 @@ end
 (*)(a::Number, e::Expansion) = Expansion(dictionary(e), a*coefficients(e))
 (*)(e::Expansion, a::Number) = a*e
 
-function apply(op::DictionaryOperator, e::Expansion)
-    #@assert dictionary(e) == dictionary(src(op))
-
-    Expansion(dest(op), op * coefficients(e))
-end
+apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 
 iterate(e::Expansion) = iterate(coefficients(e))
 

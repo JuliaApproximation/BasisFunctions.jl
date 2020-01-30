@@ -5,8 +5,8 @@ isorthogonal(op::DictionaryOperator) = isdiag(op) || isorthonormal(op)
 isorthonormal(op::DictionaryOperator) = false
 
 isorthonormal(::IdentityOperator) = true
-isorthonormal(::IndexExtensionOperator) = true
-isorthonormal(::IndexRestrictionOperator) = true
+isorthonormal(::IndexExtension) = true
+isorthonormal(::IndexRestriction) = true
 function isorthonormal(op::CompositeOperator)
     @warn "just a rough estimate on orthonormality"
     reduce(&, map(isorthonormal, elements(op)))

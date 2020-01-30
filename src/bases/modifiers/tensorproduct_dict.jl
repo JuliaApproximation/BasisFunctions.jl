@@ -159,7 +159,7 @@ function approx_length(s::TensorProductDict, n::Int)
     tuple([approx_length(element(s, j), m^dimension(s, j)) for j in 1:numelements(s)]...)
 end
 
-extension_size(s::TensorProductDict) = map(extension_size, elements(s))
+extensionsize(s::TensorProductDict) = map(extensionsize, elements(s))
 
 name(dict::TensorProductDict) = "Tensor product dictionary"
 
