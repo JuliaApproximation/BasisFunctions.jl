@@ -65,12 +65,12 @@ native_index(d::ProductGridBasis, idx) = product_native_index(size(d), idx)
 ordering(d::ProductGridBasis) = ProductIndexList{dimension(grid(d))}(size(d))
 
 
-function grid_extension_operator(src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
+function gridextension(T, src::GridBasis, dest::GridBasis, src_grid::IndexSubGrid, dest_grid::AbstractGrid; options...)
     @assert supergrid(src_grid) == dest_grid
-    IndexExtension(src, dest, subindices(src_grid))
+    IndexExtension{T}(src, dest, subindices(src_grid))
 end
 
-function grid_restriction_operator(src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
+function gridrestriction(T, src::GridBasis, dest::GridBasis, src_grid::AbstractGrid, dest_grid::IndexSubGrid; options...)
     @assert supergrid(dest_grid) == src_grid
-    IndexRestriction(src, dest, subindices(dest_grid))
+    IndexRestriction{T}(src, dest, subindices(dest_grid))
 end

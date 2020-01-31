@@ -35,6 +35,9 @@ hasantiderivative(b::SineSeries) = false #for now
 hastransform(b::SineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
 hasextension(b::SineSeries) = true
 
+extension(::Type{T}, src::SineSeries, dest::SineSeries; options...) where {T} = IndexExtension{T}(src, dest, 1:length(src))
+restriction(::Type{T}, src::SineSeries, dest::SineSeries; options...) where {T} = IndexRestriction{T}(src, dest, 1:length(dest))
+
 size(b::SineSeries) = (b.n,)
 
 period(b::SineSeries{T}, idx) where {T} = T(2)
@@ -67,16 +70,6 @@ unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
 function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x) where {T}
     arg = T(pi) * frequency(idx)
     arg * cos(arg * x)
-end
-
-function extension_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
-    @assert length(s2) >= length(s1)
-    IndexExtension(s1, s2, 1:length(s1); T=T)
-end
-
-function restriction_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
-    @assert length(s2) <= length(s1)
-    IndexRestriction(s1, s2, 1:length(s2); T=T)
 end
 
 

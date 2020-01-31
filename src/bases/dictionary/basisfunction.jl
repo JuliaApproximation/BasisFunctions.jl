@@ -19,9 +19,11 @@ promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) whe
 
 iscomposite(f::TypedFunction) = false
 
+"The supertype of functions that can be associated with a dictionary or a family of basis functions."
+abstract type AbstractBasisFunction{S,T} <: TypedFunction{S,T} end
 
 "A `BasisFunction` is one element of a dictionary."
-struct BasisFunction{S,T,D<:Dictionary{S,T},I} <: TypedFunction{S,T}
+struct BasisFunction{S,T,D<:Dictionary{S,T},I} <: AbstractBasisFunction{S,T}
     dictionary  ::  D
     index       ::  I
 end

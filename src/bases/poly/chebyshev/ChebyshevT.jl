@@ -120,17 +120,6 @@ function innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT
 	(unsafe_moment(b1, PolynomialDegree(n1+n2), measure) + unsafe_moment(b1, PolynomialDegree(abs(n1-n2)), measure))/2
 end
 
-## Extension and restriction
-
-function extension_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
-    @assert length(s2) >= length(s1)
-    IndexExtension(s1, s2, 1:length(s1); T=T)
-end
-
-function restriction_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
-    @assert length(s2) <= length(s1)
-    IndexRestriction(s1, s2, 1:length(s2); T=T)
-end
 
 
 ###################################################################################
@@ -215,3 +204,5 @@ support(::ChebyshevTPolynomial{T}) where {T} = ChebyshevInterval{T}()
 
 basisfunction(dict::ChebyshevT, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::ChebyshevT{T}, idx::PolynomialDegree) where {T} = ChebyshevTPolynomial{T}(degree(idx))
+
+dictionary(p::ChebyshevTPolynomial{T}) where {T} = ChebyshevT{T}(degree(p)+1)

@@ -113,7 +113,10 @@ adjoint(f::Expansion) = differentiate(f)
 roots(f::Expansion) = roots(dictionary(f), coefficients(f))
 
 # Delegate generic operators
-for op in (:extension_operator, :restriction_operator, :transform_operator)
+for op in (:extension, :restriction)
+    @eval $op(src::Expansion, dest::Expansion) = $op(promote_type(eltype(src),eltype(dest)), dictionary(src), dictionary(dest))
+end
+for op in (:transform_operator,)
     @eval $op(s1::Expansion, s2::Expansion) = $op(dictionary(s1), dictionary(s2))
 end
 
@@ -149,9 +152,9 @@ function promote_length(e1::Expansion, e2::Expansion)
     if length(e1) == length(e2)
         e1, e2
     elseif length(e1) < length(e2)
-        extension_operator(dictionary(e1), dictionary(e2)) * e1, e2
+        extension(e1, e2) * e1, e2
     else
-        e1, extension_operator(dictionary(e2), dictionary(e1)) * e2
+        e1, extension(e2, e1) * e2
     end
 end
 

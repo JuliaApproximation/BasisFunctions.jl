@@ -133,14 +133,14 @@ similar_subdict(d::DenseSubdict, dict, superindices) = DenseSubdict(dict, superi
 
 interpolation_grid(d::DenseSubdict) = interpolation_grid(superdict(d))
 
-function extension_operator(s1::DenseSubdict, s2::Dictionary; options...)
-    @assert s2 == superdict(s1)
-    IndexExtension(s1, s2, superindices(s1); options...)
+function extension(::Type{T}, src::DenseSubdict, dest::Dictionary; options...) where {T}
+    @assert dest == superdict(src)
+    IndexExtension{T}(src, dest, superindices(src); options...)
 end
 
-function restriction_operator(s1::Dictionary, s2::DenseSubdict; options...)
-    @assert s1 == superdict(s2)
-    IndexRestriction(s1, s2, superindices(s2); options...)
+function restriction(::Type{T}, src::Dictionary, dest::DenseSubdict; options...) where {T}
+    @assert src == superdict(dest)
+    IndexRestriction{T}(src, dest, superindices(dest); options...)
 end
 
 # In general, the derivative set of a subdict can be the whole derivative set
@@ -160,14 +160,14 @@ subdict_antiderivative_dict(s::DenseSubdict, order, superdict, superindices; opt
 function differentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
     @assert s2 == derivative_dict(s1, order)
     D = differentiation_operator(superdict(s1), s2, order; options...)
-    E = extension_operator(s1, superdict(s1); options...)
+    E = extension(s1, superdict(s1); options...)
     D*E
 end
 
 function antidifferentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
     @assert s2 == antiderivative_dict(s1, order)
     D = antidifferentiation_operator(superdict(s1), s2, order; options...)
-    E = extension_operator(s1, superdict(s1); options...)
+    E = extension(s1, superdict(s1); options...)
     D*E
 end
 

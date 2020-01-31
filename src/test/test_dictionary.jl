@@ -437,7 +437,7 @@ function test_generic_dict_interface(basis)
     if hasextension(basis)
         n2 = extensionsize(basis)
         basis2 = resize(basis, n2)
-        E = extension_operator(basis, basis2)
+        E = extension(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
@@ -445,7 +445,7 @@ function test_generic_dict_interface(basis)
         x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
-        R = restriction_operator(basis2, basis)
+        R = restriction(basis2, basis)
         e3 = R * e2
         @test e1(x1) ≈ e3(x1)
         @test e1(x2) ≈ e3(x2)
@@ -458,7 +458,7 @@ function test_generic_dict_interface(basis)
         L = evaluation_operator(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(basisext, grid_ext) * extension_operator(basis, basisext)
+        L2 = evaluation_operator(basisext, grid_ext) * extension(basis, basisext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators

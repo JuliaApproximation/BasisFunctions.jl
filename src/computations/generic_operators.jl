@@ -1,10 +1,6 @@
 
 # In this file we define the interface for the following generic functions:
 #
-# Extension and restriction:
-# - extension_operator
-# - restriction_operator
-#
 # Approximation:
 # - interpolation_operator
 # - approximation_operator
@@ -19,8 +15,6 @@
 # These operators are also defined for TensorProductDict's.
 #
 # See the individual files for details on the interfaces.
-
-include("extension.jl")
 
 include("transform.jl")
 
@@ -50,9 +44,13 @@ transform_from_grid(s1::GridBasis, s2::TensorProductDict, grid::ProductGrid; opt
 transform_to_grid(s1::TensorProductDict, s2::GridBasis, grid::ProductGrid; options...) =
     tensorproduct(map( (u,v,w) -> transform_to_grid(u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
 
+for op in (:extension, :restriction, :conversion)
+    @eval $op(::Type{T}, src::TensorProductDict, dest::TensorProductDict; options...) where {T} =
+        tensorproduct(map( (u,v) -> $op(T, u, v; options...), elements(src), elements(dest))...)
+end
 
-for op in (:extension_operator, :restriction_operator,
-            :interpolation_operator, :leastsquares_operator)
+
+for op in (:interpolation_operator, :leastsquares_operator)
     @eval $op(s1::TensorProductDict, s2::TensorProductDict; options...) =
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end

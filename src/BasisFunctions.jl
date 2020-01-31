@@ -140,7 +140,7 @@ export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace,
 
 export SparseOperator
 
-# from bases/modifiers/dictionary.jl
+# from bases/dictionary/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, support, domain, codomain,
     measure, hasmeasure,
@@ -157,7 +157,7 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     delinearize_coefficients!,
     moment, norm
 
-# from bases/modifiers/span.jl
+# from bases/dictionary/span.jl
 export Span
 
 # from bases/modifiers/subdicts.jl
@@ -178,7 +178,7 @@ export MappedDict, mapped_dict, mapping, superdict, rescale
 # from bases/modifiers/paramdict.jl
 export param_dict, ParamDict, image
 
-#from bases/modifiers/expansions.jl
+#from bases/dictionary/expansions.jl
 export Expansion, TensorProductExpansion,
     expansion, coefficients, dictionary, roots,
     random_expansion, differentiate, antidifferentiate,
@@ -209,28 +209,23 @@ export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSM
 # from operator/generic_operators.jl
 export GenericIdentityOperator
 
-# from modifiers/transform.jl
+# from computations/transform.jl
 export transform_operator, transform_dict, transform_to_grid, transform_from_grid
 
 # from bases/dictionary/gram.jl
 export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
-# from modifiers/extension
-export extension_operator, default_extension_operator, extensionsize, extend,
-    restriction_operator, default_restriction_operator, restriction_size, restrict,
-    Extension, Restriction
-
-# from modifiers/evaluation.jl
+# from computations/evaluation.jl
 export evaluation_operator, evaluation_matrix
 
-# from modifiers/interpolation.jl
+# from computations/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix
 
-# from modifiers/approximation.jl
+# from computations/approximation.jl
 export approximation_operator, default_approximation_operator, approximate,
     discrete_approximation_operator, continuous_approximation_operator, project
 
-# from modifiers/differentiation.jl
+# from computations/differentiation.jl
 export differentiation_operator, antidifferentiation_operator, derivative_dict,
     antiderivative_dict, Differentiation, Antidifferentiation
 
@@ -266,7 +261,7 @@ export derivative
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,
     isdiscrete
 
-# from bases/modifiers/gridbasis.jl
+# from bases/dictionary/gridbasis.jl
 export GridBasis,
     grid, gridbasis, grid_multiplication_operator, weights
 

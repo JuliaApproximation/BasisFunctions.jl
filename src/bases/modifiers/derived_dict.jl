@@ -126,9 +126,9 @@ for op in (:derivative_dict, :antiderivative_dict)
 end
 
 
-for op in (:extension_operator, :restriction_operator)
-    @eval $op(s1::DerivedDict, s2::DerivedDict; T = op_eltype(s1,s2), options...) =
-        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2); T = T, options...))
+for op in (:extension, :restriction)
+    @eval $op(::Type{T}, src::DerivedDict, dest::DerivedDict; options...) where {T} =
+        wrap_operator(src, dest, $op(T, superdict(src), superdict(dest); options...))
 end
 
 function transform_from_grid(s1::GridBasis, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)

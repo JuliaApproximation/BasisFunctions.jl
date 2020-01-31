@@ -67,3 +67,5 @@ support(::ChebyshevUPolynomial{T}) where {T} = ChebyshevInterval{T}()
 
 basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))
+
+dictionary(p::ChebyshevUPolynomial{T}) where {T} = ChebyshevU{T}(degree(p)+1)

@@ -51,3 +51,5 @@ support(::Monomial{T}) where {T} = DomainSets.FullSpace{T}()
 
 basisfunction(dict::Monomials, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::Monomials{T}, idx::PolynomialDegree) where {T} = Monomial{T}(degree(idx))
+
+dictionary(p::Monomial{T}) where {T} = Monomials{T}(degree(p)+1)

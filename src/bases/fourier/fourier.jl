@@ -318,7 +318,7 @@ function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEq
 			wrap_operator(dict, gb, A*D)
 		else
 			dict2 = resize(dict, length(grid))
-			evaluation_operator(dict2, grid) * extension_operator(dict, dict2)
+			evaluation_operator(dict2, grid) * extension(dict, dict2)
 		end
 	else
 		dense_evaluation_operator(dict, gb; T=T, options...)
@@ -358,11 +358,6 @@ string(op::FourierIndexExtension) = "Fourier series extension from length $(op.n
 
 wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
 	FourierIndexExtension{T}(src, dest, op.n1, op.n2)
-
-function extension_operator(b1::Fourier, b2::Fourier; T = op_eltype(b1,b2), options...)
-	@assert length(b1) <= length(b2)
-	FourierIndexExtension(b1, b2; T=T)
-end
 
 extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexExtension{T}(src, dest)
 
@@ -421,11 +416,6 @@ string(op::FourierIndexRestriction) = "Fourier series restriction from length $(
 
 wrap_operator(src, dest, op::FourierIndexRestriction{T}) where T =
 	FourierIndexRestriction{T}(src, dest, op.n1, op.n2)
-
-function restriction_operator(b1::Fourier, b2::Fourier; T=op_eltype(b1,b2), options...)
-	@assert length(b1) >= length(b2)
-	FourierIndexRestriction(b1, b2; T=T)
-end
 
 restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexRestriction{T}(src, dest)
 
@@ -499,7 +489,7 @@ function pseudodifferential_operator(s1::Fourier{T},s2::Fourier{T}, symbol::Func
 		@assert s1 == s2
 		_pseudodifferential_operator(s2, symbol; options...)
 	else # The internal representation of Fourier is not closed under differentiation unless it is odd order
-		_pseudodifferential_operator(s2, symbol; options...) * extension_operator(s1, s2; options...)
+		_pseudodifferential_operator(s2, symbol; options...) * extension(s1, s2; options...)
 	end
 end
 
@@ -564,16 +554,16 @@ end
 function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
 	if oddlength(src1) && evenlength(src2)
 	    dsrc2 = resize(src2, length(src2)+1)
-	    (*)(src1, dsrc2, coef_src1, extension_operator(src2, dsrc2)*coef_src2)
+	    (*)(src1, dsrc2, coef_src1, extension(src2, dsrc2)*coef_src2)
 	elseif evenlength(src1) && oddlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
-	    (*)(dsrc1, src2, extension_operator(src1,dsrc1)*coef_src1,coef_src2)
+	    (*)(dsrc1, src2, extension(src1,dsrc1)*coef_src1,coef_src2)
 	elseif evenlength(src1) && evenlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
 	    dsrc2 = resize(src2, length(src2)+1)
 		T1 = eltype(coef_src1)
 		T2 = eltype(coef_src2)
-	    (*)(dsrc1,dsrc2,extension_operator(src1, dsrc1)*coef_src1, extension_operator(src2, dsrc2)*coef_src2)
+	    (*)(dsrc1,dsrc2,extension(src1, dsrc1)*coef_src1, extension(src2, dsrc2)*coef_src2)
 	else # they are both odd
 		@assert domaintype(src1) == domaintype(src2)
 	    dest = Fourier{domaintype(src1)}(length(src1)+length(src2)-1)

@@ -52,7 +52,7 @@ end
 end
 
 # Plot a basis function
-@recipe function f(φ::BasisFunction; plot_complex = false, n=200)
+@recipe function f(φ::AbstractBasisFunction; plot_complex = false, n=200)
     @series begin
         grid = plotgrid(φ,n)
         z = φ(grid)
@@ -68,7 +68,7 @@ postprocess(S::Dictionary, grid, vals) = vals
 
 # For function subsets, revert to the underlying Dictionary for postprocessing
 postprocess(S::Subdictionary, grid, vals) = postprocess(superdict(S), grid, vals)
-postprocess(φ::BasisFunction, grid, vals) = postprocess(dictionary(φ), grid, vals)
+postprocess(φ::AbstractBasisFunction, grid, vals) = postprocess(dictionary(φ), grid, vals)
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
@@ -79,7 +79,7 @@ plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)
 # NOTE: This only supoorts multi-dimensional tensor product dicts.
 plotgrid(F::TensorProductDict2, n) = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
 plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
-plotgrid(φ::BasisFunction, n) = plotgrid(dictionary(φ), n)
+plotgrid(φ::AbstractBasisFunction, n) = plotgrid(dictionary(φ), n)
 ## Split complex plots in real and imaginary parts
 # 1D
 @recipe function f(A::AbstractArray{S}, B::Array{Complex{T}}) where {S<:Real, T<:Real}

@@ -31,6 +31,6 @@ function subdict(b::PolynomialBasis, idx::OrdinalRange)
     end
 end
 
-abstract type Polynomial{T} <: TypedFunction{T,T} end
+abstract type Polynomial{T} <: AbstractBasisFunction{T,T} end
 
 degree(p::Polynomial) = p.degree

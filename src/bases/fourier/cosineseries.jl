@@ -75,15 +75,8 @@ function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency
     -arg * sin(arg * x)
 end
 
-function extension_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
-    @assert length(s2) >= length(s1)
-    IndexExtension(s1, s2, 1:length(s1); T=T)
-end
-
-function restriction_operator(s1::CosineSeries, s2::CosineSeries; T=op_eltype(s1,s2))
-    @assert length(s2) <= length(s1)
-    IndexRestriction(s1, s2, 1:length(s2); T=T)
-end
+extension(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where {T} = IndexExtension{T}(src, dest, 1:length(src))
+restriction(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where {T} = IndexRestriction{T}(src, dest, 1:length(dest))
 
 
 ## Inner products

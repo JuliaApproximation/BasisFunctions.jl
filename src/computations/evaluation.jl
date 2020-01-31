@@ -32,7 +32,7 @@ evaluation_operator(dict::Dictionary, grid::AbstractGrid; options...) =
     evaluation_operator(dict, GridBasis(dict, grid); options...)
 
 evaluation_operator(dict::Dictionary, grid::AbstractSubGrid; T = coefficienttype(dict), options...) =
-     restriction_operator(GridBasis{T}(supergrid(grid)), GridBasis{T}(grid); T=T, options...) * evaluation_operator(dict, supergrid(grid); T=T, options...)
+     restriction(T, GridBasis{T}(supergrid(grid)), GridBasis{T}(grid); options...) * evaluation_operator(dict, supergrid(grid); T=T, options...)
 
 evaluation_operator(dict::Dictionary, gb::GridBasis;
             T = op_eltype(dict, gb), options...) =
@@ -49,7 +49,7 @@ function resize_and_transform(dict::Dictionary, gb::GridBasis, grid; options...)
         transform_to_grid(dict, gb, grid; options...)
     elseif length(grid) > length(dict)
         dlarge = resize(dict, size(grid))
-        transform_to_grid(dlarge, gb, grid; options...) * extension_operator(dict, dlarge; options...)
+        transform_to_grid(dlarge, gb, grid; options...) * extension(dict, dlarge; options...)
     else
         @debug "Resize and transform: dictionary evaluated in small grid"
         dense_evaluation_operator(dict, gb; options...)

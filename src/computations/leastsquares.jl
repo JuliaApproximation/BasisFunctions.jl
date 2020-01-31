@@ -26,7 +26,7 @@ function leastsquares_operator(s::Dictionary, dgs::GridBasis; options...)
     if hasinterpolationgrid(s)
         larger_dict = resize(s, size(dgs))
         if interpolation_grid(larger_dict) == grid(dgs) && hastransform(larger_dict, dgs)
-            R = restriction_operator(larger_dict, s; options...)
+            R = restriction(larger_dict, s; options...)
             T = transform_operator(dgs, larger_s; options...)
             R * T
         else
