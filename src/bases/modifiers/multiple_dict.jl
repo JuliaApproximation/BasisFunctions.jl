@@ -160,8 +160,8 @@ for op in [:differentiation_operator, :antidifferentiation_operator]
     end
 end
 
-grid_evaluation_operator(dict::MultiDict, gb::GridBasis, grid::AbstractGrid; T = op_eltype(dict, gb), options...) =
-    block_row_operator( DictionaryOperator{T}[grid_evaluation_operator(el, gb, grid; T=T, options...) for el in elements(dict)], dict, gb)
+evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+    block_row_operator( DictionaryOperator{T}[evaluation(T, el, gb, grid; options...) for el in elements(dict)], dict, gb)
 
 
 

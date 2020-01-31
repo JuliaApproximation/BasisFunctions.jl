@@ -5,7 +5,6 @@
 # - interpolation_operator
 # - approximation_operator
 # - leastsquares_operator
-# - evaluation_operator
 # - transform_operator
 #
 # Calculus:
@@ -38,11 +37,11 @@ include("differentiation.jl")
 # TensorProductDict's.
 
 
-transform_from_grid(s1::GridBasis, s2::TensorProductDict, grid::ProductGrid; options...) =
-    tensorproduct(map( (u,v,w) -> transform_from_grid(u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
+transform_from_grid(T, s1::GridBasis, s2::TensorProductDict, grid::ProductGrid; options...) =
+    tensorproduct(map( (u,v,w) -> transform_from_grid(T, u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
 
-transform_to_grid(s1::TensorProductDict, s2::GridBasis, grid::ProductGrid; options...) =
-    tensorproduct(map( (u,v,w) -> transform_to_grid(u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
+transform_to_grid(T, s1::TensorProductDict, s2::GridBasis, grid::ProductGrid; options...) =
+    tensorproduct(map( (u,v,w) -> transform_to_grid(T, u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
 
 for op in (:extension, :restriction, :conversion)
     @eval $op(::Type{T}, src::TensorProductDict, dest::TensorProductDict; options...) where {T} =
@@ -55,8 +54,8 @@ for op in (:interpolation_operator, :leastsquares_operator)
         tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
 end
 
-dense_evaluation_operator(s1::TensorProductDict, s2::TensorProductDict; options...) =
-    tensorproduct(map( (u,v) -> dense_evaluation_operator(u, v; options...), elements(s1), elements(s2))...)
+dense_evaluation(s1::TensorProductDict, s2::TensorProductDict; options...) =
+    tensorproduct(map( (u,v) -> dense_evaluation(u, v; options...), elements(s1), elements(s2))...)
 
 for op in (:approximation_operator, )
     @eval $op(s::TensorProductDict; options...) =

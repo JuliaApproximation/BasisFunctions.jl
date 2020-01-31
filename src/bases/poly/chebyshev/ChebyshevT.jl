@@ -126,11 +126,11 @@ end
 # Methods to transform from ChebyshevT to ChebyshevNodes and ChebyshevExtremae
 ###################################################################################
 
-grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; options...) =
-	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
+evaluation(::Type{T}, dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; chebyshevpoints = :nodes, options...)
 
-grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) =
-	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
+evaluation(::Type{T}, dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; chebyshevpoints = :extremae, options...)
 
 function chebyshev_transform_nodes(dict::ChebyshevT, T; options...)
 	grid = interpolation_grid(dict)
@@ -156,20 +156,18 @@ function chebyshev_transform_extremae(dict::ChebyshevT, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevNodes;
-			T = op_eltype(src, dest), options...)
+function transform_to_grid(T, src::ChebyshevT, dest::GridBasis, grid::ChebyshevNodes; options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_nodes(src, T; options...)
 end
 
-function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevExtremae;
-			T = op_eltype(src, dest), options...)
+function transform_to_grid(T, src::ChebyshevT, dest::GridBasis, grid::ChebyshevExtremae; options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_extremae(src, T; options...)
 end
 
-transform_from_grid(src::GridBasis, dest::ChebyshevT, grid; options...) =
-	inv(transform_to_grid(dest, src, grid; options...))
+transform_from_grid(T, src::GridBasis, dest::ChebyshevT, grid; options...) =
+	inv(transform_to_grid(T, dest, src, grid; options...))
 
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 

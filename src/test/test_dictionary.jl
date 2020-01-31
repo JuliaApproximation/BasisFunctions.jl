@@ -133,7 +133,7 @@ function test_generic_dict_grid(basis)
     z1 = e(grid1)
     z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
     @test z1 ≈ z2
-    E = evaluation_operator(basis, GridBasis(basis))
+    E = evaluation(basis, GridBasis(basis))
     z3 = E * coefficients(e)
     @test z1 ≈ z3
 end
@@ -281,7 +281,7 @@ function test_generic_dict_evaluation_operator(basis)
     ELT = coefficienttype(basis)
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
-    E = evaluation_operator(basis, g)
+    E = evaluation(basis, g)
     e = random_expansion(basis)
     y = E*e
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < test_tolerance(ELT)
@@ -455,10 +455,10 @@ function test_generic_dict_interface(basis)
     if BF.hasextension(basis) && BF.hasinterpolationgrid(basis)
         basisext = extend(basis)
         grid_ext = interpolation_grid(basisext)
-        L = evaluation_operator(basis, grid_ext)
+        L = evaluation(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(basisext, grid_ext) * extension(basis, basisext)
+        L2 = evaluation(basisext, grid_ext) * extension(basis, basisext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators

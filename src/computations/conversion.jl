@@ -5,7 +5,9 @@ export conversion,
     extensionsize,
     restrict,
     restriction,
-    restrictionsize
+    restrictionsize,
+    evaluation,
+    approximation
 
 """
 ```
@@ -22,6 +24,9 @@ operatoreltype(Φ::Dictionary...) = promote_type(map(coefficienttype, Φ)...)
 for op in (:conversion, :extension, :restriction, :evaluation, :approximation)
     # Only dictionaries are given: compute the eltype
     @eval $op(dicts::Dictionary...; options...) = $op(operatoreltype(dicts...), dicts...; options...)
+    # Only grids are given: make a GridBasis dictionary
+    @eval $op(::Type{T}, src::AbstractGrid, dest::AbstractGrid; options...) where {T} =
+        $op(T, GridBasis{T}(src), GridBasis{T}(dest); options...)
 end
 
 
@@ -52,17 +57,17 @@ end
 hastransform(src::D, dest::D) where {D <: Dictionary} = true
 
 
-extension(T, src::D, dest::D; options...) where {D} =
+extension(::Type{T}, src::D, dest::D; options...) where {T,D} =
     error("Don't know how to extend dictionary $(name(src)) from size $(size(src)) to size $(size(dest))")
 
-extension(T, src::Dictionary, dest::Dictionary; options...) =
+extension(::Type{T}, src::Dictionary, dest::Dictionary; options...) where {T} =
     error("Can't do extension between dictionaries of different type")
 
 
-restriction(T, src::D, dest::D; options...) where {D} =
+restriction(::Type{T}, src::D, dest::D; options...) where {T,D} =
         error("Don't know how to extend dictionary $(name(src)) from size $(size(src)) to size $(size(dest))")
 
-restriction(T, src::Dictionary, dest::Dictionary; options...) =
+restriction(::Type{T}, src::Dictionary, dest::Dictionary; options...) where {T} =
     error("Can't do restriction between dictionaries of different type")
 
 """
@@ -74,7 +79,8 @@ extensionsize(s::Dictionary) = 2*length(s)
 extend(Φ::Dictionary) = resize(Φ, extensionsize(Φ))
 
 # only a single dictionary is given
-extension(T, src::Dictionary; options...) = extension(T, src, extend(src); options...)
+extension(::Type{T}, src::Dictionary; options...) where {T} =
+    extension(T, src, extend(src); options...)
 
 """
 Return a suitable length to restrict to, for example one such that the corresponding grids are nested
@@ -84,17 +90,17 @@ restrictionsize(Φ::Dictionary) = length(Φ)>>1
 
 restrict(Φ::Dictionary) = resize(Φ, restrictionsize(Φ))
 
-restriction(T, src::Dictionary; options...) = restriction(T, src, restrict(src); options...)
+restriction(::Type{T}, src::Dictionary; options...) where {T} =
+    restriction(T, src, restrict(src); options...)
 
 
 # For convenience with dispatch, add the grids as extra arguments when only
-# GridBasis's are involved
+# GridBasis's are involved, and support AbstractGrid arguments.
 extension(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     gridrestriction(T, dest, src, grid(dest), grid(src); options...)'
 
 restriction(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     gridrestriction(T, src, dest, grid(src), grid(dest); options...)
-
 
 function gridrestriction(::Type{T}, src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::GridArrays.MaskedGrid{G,M,I,S}; options...) where {T,G<:AbstractGrid,M,I,S}
     @assert supergrid(dest_grid) == src_grid
@@ -115,17 +121,21 @@ hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.TensorSubGrid} = true
 # From grid: we invoke `approximation`. This defaults to inverting the corresponding
 #  `evaluation` operator.
 
-conversion(T, src::Dictionary, dest::GridBasis; options...) =
+conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest; options...)
 
-evaluation(T, src::Dictionary, dest::GridBasis; options...) =
-    grid_evaluation(T, src, dest, grid(dest); options...)
-
-conversion(T, src::GridBasis, dest::Dictionary; options...) =
+conversion(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
     approximation(T, src, dest; options...)
 
 # Resolve ambiguity by the above methods
-conversion(T, src::GridBasis, dest::GridBasis; options...) =
+conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     extension_restriction(T, src, dest; options...)
 
-approximation(T, src, dest; options) = pinv(evaluation(T, dest, src; options...))
+evaluation(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
+    evaluation(T, src, dest, grid(dest); options...)
+
+approximation(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
+    approximation(T, src, dest, grid(src); options...)
+
+approximation(::Type{T}, src, dest, grid; options) where {T} =
+    pinv(evaluation(T, dest, src, grid; options...))

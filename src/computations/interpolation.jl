@@ -5,7 +5,7 @@
 
 function interpolation_matrix(dict::Dictionary, pts; T=coefficienttype(dict))
     @assert length(dict) == length(pts)
-    evaluation_matrix(dict, pts; T=T)
+    evaluation_matrix(T, dict, pts)
 end
 
 interpolation_operator(s::Dictionary; options...) =
@@ -24,7 +24,7 @@ function interpolation_operator(s::Dictionary, dgs::GridBasis; options...)
 end
 
 default_interpolation_operator(s::Dictionary, dgs::GridBasis; T=op_eltype(s,dgs), options...) =
-    QR_solver(ArrayOperator(evaluation_matrix(s, grid(dgs); T=T), s, dgs))
+    QR_solver(ArrayOperator(evaluation_matrix(T, s, grid(dgs)), s, dgs))
 
 
 function interpolate(s::Dictionary, pts, f; T=coefficienttype(s))

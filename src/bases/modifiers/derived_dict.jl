@@ -131,13 +131,13 @@ for op in (:extension, :restriction)
         wrap_operator(src, dest, $op(T, superdict(src), superdict(dest); options...))
 end
 
-function transform_from_grid(s1::GridBasis, s2::DerivedDict, grid; T = op_eltype(s1,s2), options...)
-    op = transform_from_grid(s1, superdict(s2), grid; T=T, options...)
+function transform_from_grid(T, s1::GridBasis, s2::DerivedDict, grid; options...)
+    op = transform_from_grid(T, s1, superdict(s2), grid; options...)
     wrap_operator(s1, s2, op)
 end
 
-function transform_to_grid(s1::DerivedDict, s2::GridBasis, grid; T = op_eltype(s1,s2), options...)
-    op = transform_to_grid(superdict(s1), s2, grid; T=T, options...)
+function transform_to_grid(T, s1::DerivedDict, s2::GridBasis, grid; options...)
+    op = transform_to_grid(T, superdict(s1), s2, grid; options...)
     wrap_operator(s1, s2, op)
 end
 
@@ -151,9 +151,8 @@ pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseu
 pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
 
 
-function grid_evaluation_operator(dict::DerivedDict, gb::GridBasis, grid;
-        T = op_eltype(dict, gb), options...)
-    A = grid_evaluation_operator(superdict(dict), gb, grid; T=T, options...)
+function evaluation(::Type{T}, dict::DerivedDict, gb::GridBasis, grid; options...) where {T}
+    A = evaluation(T, superdict(dict), gb, grid; options...)
     wrap_operator(dict, gb, A)
 end
 

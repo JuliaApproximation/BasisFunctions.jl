@@ -116,8 +116,8 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-grid_evaluation_operator(dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; T=op_eltype(dict,gb), options...) =
-    ArrayOperator(evaluation_matrix(dict, grid; T=T), dict, gb) * LinearizationOperator(dict; T=T)
+evaluation(::Type{T}, dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+    ArrayOperator(evaluation_matrix(T, dict, grid), dict, gb) * LinearizationOperator{T}(dict)
 
 
 for op in [:differentiation_operator, :antidifferentiation_operator]
@@ -155,6 +155,7 @@ end
 # Compute the coefficients in an expansion that results from splitting the given
 # expansion at a point x.
 function split_interval_expansion(set::Dictionary1d, coefficients, x)
+    T = eltype(coefficients)
     pset = split_interval(set, x)
     z = zeros(pset)
     pset1 = element(pset, 1)
@@ -164,8 +165,8 @@ function split_interval_expansion(set::Dictionary1d, coefficients, x)
     # to reconstruct the original function on each subinterval.
     A1 = approximation_operator(pset1)
     A2 = approximation_operator(pset2)
-    E1 = evaluation_operator(set, grid(src(A1)))
-    E2 = evaluation_operator(set, grid(src(A2)))
+    E1 = evaluation(T, set, grid(src(A1)))
+    E2 = evaluation(T, set, grid(src(A2)))
     z1 = A1*(E1*coefficients)
     z2 = A2*(E2*coefficients)
     coefficients!(z, 1, z1)

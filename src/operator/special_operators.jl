@@ -279,9 +279,11 @@ struct LinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src));
-            T=op_eltype(src, dest)) =
-    LinearizationOperator{T}(src, dest)
+LinearizationOperator(dicts::Dictionary...) =
+    LinearizationOperator{operatoreltype(dicts...)}(dicts...)
+
+LinearizationOperator{T}(src::Dictionary) where {T} =
+    LinearizationOperator{T}(src, DiscreteVectorDictionary{coefficienttype(src)}(length(src)))
 
 similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
     LinearizationOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
@@ -291,7 +293,7 @@ apply!(op::LinearizationOperator, coef_dest, coef_src) =
 
 isdiag(op::LinearizationOperator) = true
 
-Base.adjoint(op::LinearizationOperator) = DelinearizationOperator(dest(op), src(op))
+Base.adjoint(op::LinearizationOperator{T}) where {T} = DelinearizationOperator{T}(dest(op), src(op))
 
 
 "The inverse of a LinearizationOperator."
@@ -300,11 +302,11 @@ struct DelinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-DelinearizationOperator(dest::Dictionary; options...) =
-    DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest; options...)
+DelinearizationOperator(dicts::Dictionary...) =
+    DelinearizationOperator{operatoreltype(dicts...)}(dicts...)
 
-DelinearizationOperator(src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
-    DelinearizationOperator{T}(src, dest)
+DelinearizationOperator{T}(dest::Dictionary) where {T} =
+    DelinearizationOperator{T}(DiscreteVectorDictionary{T}(length(dest)), dest)
 
 similar_operator(::DelinearizationOperator, src, dest) =
     DelinearizationOperator(src, dest)
@@ -314,7 +316,7 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
 
 isdiag(op::DelinearizationOperator) = true
 
-Base.adjoint(op::DelinearizationOperator) = LinearizationOperator(dest(op), src(op))
+Base.adjoint(op::DelinearizationOperator{T}) where {T} = LinearizationOperator{T}(dest(op), src(op))
 
 function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)

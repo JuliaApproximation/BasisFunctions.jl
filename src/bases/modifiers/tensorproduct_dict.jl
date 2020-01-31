@@ -260,9 +260,8 @@ stencil_parentheses(dict::TensorProductDict) = true
 object_parentheses(dict::TensorProductDict) = true
 
 
-grid_evaluation_operator(dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;
-            T = op_eltype(dict,gb), options...) =
-    tensorproduct(map( (d,g) -> evaluation_operator(d, g; T= T), elements(dict), elements(grid))...)
+evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
+    tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), elements(dict), elements(grid))...)
 
 
 

@@ -165,7 +165,7 @@ derivative_dict(s::CompositeDict, order; options...) =
 antiderivative_dict(s::CompositeDict, order; options...) =
     similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))
 
-function evaluation_matrix(dict::CompositeDict, pts; T = codomaintype(dict))
+function evaluation_matrix(::Type{T}, dict::CompositeDict, pts) where {T}
     a = BlockArray{T}(undef, [length(pts),], collect(composite_length(dict)))
     evaluation_matrix!(a, dict, pts)
 end

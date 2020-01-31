@@ -79,27 +79,28 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
 # left multiplication:
 (*)(f::Function, dict::Dictionary) = WeightedDict(dict, f)
 
-weightfun_scaling_operator(gb::GridBasis, weightfunction) = weightfun_scaling_operator(gb, weightfunction, grid(gb))
+weightfun_scaling_operator(::Type{T}, gb::GridBasis, weightfunction) where {T} =
+	weightfun_scaling_operator(T, gb, weightfunction, grid(gb))
 
-weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid1d; T=coefficienttype(gb)) =
+weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::AbstractGrid1d) where {T} =
     DiagonalOperator(gb, gb, map(T,map(weightfunction, grid)))
 
-function weightfun_scaling_operator(gb, weightfunction, grid::AbstractGrid; T=coefficienttype(gb))
+function weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::AbstractGrid) where {T}
 	A = map(T,map(x->weightfunction(x...), grid))
     DiagonalOperator(gb, gb, A[:])
 end
 
-function weightfun_scaling_operator(gb, weightfunction, grid::ProductGrid; T=coefficienttype(gb))
+function weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::ProductGrid) where {T}
 	A = map(T, map(x->weightfunction(x...), grid))
     DiagonalOperator(gb, gb, A[:])
 end
 
 
-transform_to_grid(src::WeightedDict, dest::GridBasis, grid; options...) =
-    weightfun_scaling_operator(dest, weightfunction(src)) * wrap_operator(src, dest, transform_to_grid(superdict(src), dest, grid; options...))
+transform_to_grid(T, src::WeightedDict, dest::GridBasis, grid; options...) =
+    weightfun_scaling_operator(T, dest, weightfunction(src)) * wrap_operator(src, dest, transform_to_grid(T, superdict(src), dest, grid; options...))
 
-transform_from_grid(src::GridBasis, dest::WeightedDict, grid; options...) =
-	wrap_operator(src, dest, transform_from_grid(src, superdict(dest), grid; options...)) * inv(weightfun_scaling_operator(src, weightfunction(dest)))
+transform_from_grid(T, src::GridBasis, dest::WeightedDict, grid; options...) =
+	wrap_operator(src, dest, transform_from_grid(T, src, superdict(dest), grid; options...)) * inv(weightfun_scaling_operator(T, src, weightfunction(dest)))
 
 
 
@@ -124,9 +125,9 @@ function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; T=op_e
     block_column_operator([I,DW])
 end
 
-function grid_evaluation_operator(dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...)
-    A = grid_evaluation_operator(superdict(dict), gb, grid; options...)
-    D = weightfun_scaling_operator(gb, weightfunction(dict))
+function evaluation(::Type{T}, dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T}
+    A = evaluation(T, superdict(dict), gb, grid; options...)
+    D = weightfun_scaling_operator(T, gb, weightfunction(dict))
     D * wrap_operator(dict, gb, A)
 end
 

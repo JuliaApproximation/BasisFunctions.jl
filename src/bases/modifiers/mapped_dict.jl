@@ -148,15 +148,15 @@ function hasgrid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
     hasgrid_transform(superdict(dict), GridBasis{T}(sgrid), sgrid)
 end
 
-function transform_from_grid(s1::GridBasis, s2::MappedDict, grid; T = op_eltype(s1,s2), options...)
+function transform_from_grid(::Type{T}, s1::GridBasis, s2::MappedDict, grid; options...) where {T}
     sgrid = unmap_grid(s2, grid)
-    op = transform_from_grid(GridBasis{T}(sgrid), superdict(s2), sgrid; T=T, options...)
+    op = transform_from_grid(T, GridBasis{T}(sgrid), superdict(s2), sgrid; options...)
     wrap_operator(s1, s2, op)
 end
 
-function transform_to_grid(s1::MappedDict, s2::GridBasis, grid; T = op_eltype(s1,s2), options...)
+function transform_to_grid(::Type{T}, s1::MappedDict, s2::GridBasis, grid; options...) where {T}
     sgrid = unmap_grid(s1, grid)
-    op = transform_to_grid(superdict(s1), GridBasis{T}(sgrid), sgrid; T=T, options...)
+    op = transform_to_grid(T, superdict(s1), GridBasis{T}(sgrid), sgrid; options...)
     wrap_operator(s1, s2, op)
 end
 
@@ -167,9 +167,9 @@ end
 ###################
 
 
-function grid_evaluation_operator(dict::MappedDict, gb::GridBasis, grid; T = op_eltype(dict, gb), options...)
+function evaluation(::Type{T}, dict::MappedDict, gb::GridBasis, grid; options...) where {T}
     sgrid = unmap_grid(dict, grid)
-    op = grid_evaluation_operator(superdict(dict), GridBasis{T}(sgrid), sgrid; T=T, options...)
+    op = evaluation(T, superdict(dict), GridBasis{T}(sgrid), sgrid; options...)
     wrap_operator(dict, gb, op)
 end
 

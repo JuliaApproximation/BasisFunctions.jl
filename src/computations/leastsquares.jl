@@ -6,7 +6,7 @@
 
 function leastsquares_matrix(dict::Dictionary, pts; T=coefficienttype(dict))
     @assert length(dict) <= length(pts)
-    evaluation_matrix(dict, pts; T=T)
+    evaluation_matrix(T, dict, pts)
 end
 
 function leastsquares_operator(s::Dictionary; samplingfactor = 2, options...)

@@ -29,8 +29,8 @@ coefficienttype(dict::ComplexifiedDict) = complex(coefficienttype(superdict(dict
 
 transform_dict(dict::ComplexifiedDict) = complex(transform_dict(superdict(dict)))
 
-grid_evaluation_operator(dict::ComplexifiedDict, gb::GridBasis, grid::AbstractGrid; T = complex(op_eltype(superdict(dict),gb)), options...) =
-    grid_evaluation_operator(superdict(dict), gb, grid; T=T)
+evaluation(::Type{T}, dict::ComplexifiedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+    evaluation(T, superdict(dict), gb, grid; options...)
 
 
 hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))

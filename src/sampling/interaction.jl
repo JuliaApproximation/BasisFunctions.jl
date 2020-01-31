@@ -7,7 +7,7 @@ apply(op::SamplingOperator, dict::Dictionary; options...) =
 
 (*)(op::SamplingOperator, object::SynthesisOperator) = apply(op, object)
 apply(sampling::SamplingOperator, op::SynthesisOperator; T = op_eltype(dictionary(op), dest(sampling)), options...) =
-    evaluation_operator(dictionary(op), grid(sampling); T=T, options...)
+    evaluation(T, dictionary(op), grid(sampling); options...)
 
 function apply(analysis::ProjectionSampling, synthesis::SynthesisOperator; T=op_eltype(dictionary(synthesis), dest(analysis)), options...)
 	synthesisdict = dictionary(synthesis)

@@ -232,27 +232,26 @@ function shift(b::Fourier, coefficients, delta)
 end
 
 
-function transform_from_grid(src::GridBasis, dest::Fourier, grid; T = op_eltype(src,dest), options...)
+function transform_from_grid(T, src::GridBasis, dest::Fourier, grid; options...)
 	@assert iscompatible(dest, grid)
 	forward_fourier_operator(src, dest, T; options...)
 end
 
-function transform_to_grid(src::Fourier, dest::GridBasis, grid; T = op_eltype(src,dest), options...)
+function transform_to_grid(T, src::Fourier, dest::GridBasis, grid; options...)
 	@assert iscompatible(src, grid)
 	inverse_fourier_operator(src, dest, T; options...)
 end
 
-grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::FourierGrid; options...) =
-	resize_and_transform(dict, gb, grid; options...)
+evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::FourierGrid; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; options...)
 
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
-			grid::PeriodicEquispacedGrid; options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquispacedGrid; options...) where {T}
 	if support(grid)≈support(dict)
-		resize_and_transform(dict, gb, grid; options...)
+		resize_and_transform(T, dict, gb, grid; options...)
 	else
 		@debug "Periodic grid mismatch with Fourier basis"
-		dense_evaluation_operator(dict, gb; options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
@@ -260,26 +259,24 @@ to_periodic_grid(dict::Fourier, grid::AbstractGrid) = nothing
 to_periodic_grid(dict::Fourier, grid::PeriodicEquispacedGrid{T}) where {T} =
 	iscompatible(dict, grid) ? FourierGrid{T}(length(grid)) : nothing
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid;
-			options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; options...) where {T}
 	grid2 = to_periodic_grid(dict, grid)
 	if grid2 != nothing
-		gb2 = GridBasis{coefficienttype(gb)}(grid2)
-		evaluation_operator(dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
+		gb2 = GridBasis{T}(grid2)
+		evaluation(T, dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
 	else
 		@debug "Evaluation: could not convert $(string(grid)) to periodic grid"
-		dense_evaluation_operator(dict, gb; options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
-function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedGrid; T=op_eltype(fs, dgs), options...)
-
+function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid; options...) where {T}
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
 	if support(grid) ≈ support(fs)
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		return dense_evaluation_operator(fs, dgs; T=T, options...)
+		return dense_evaluation(T, fs, gb; options...)
 	elseif support(grid) ∈ support(fs)
 		a, b = endpoints(support(grid))
 		# We are dealing with a subgrid. The main question is: if we extend it
@@ -291,24 +288,23 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			super_grid = FourierGrid(ntot)
-			super_dgs = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_dgs; T=T, options...)
-			R = IndexRestriction(super_dgs, dgs, nleft_int+1:nleft_int+length(grid); T=T)
+			super_grid = FourierGrid{domaintype(fs)}(ntot)
+			super_gb = GridBasis{coefficienttype(grid)}(super_grid)
+			E = evaluation(T, fs, super_gb; options...)
+			R = IndexRestriction{T}(super_gb, gb, nleft_int+1:nleft_int+length(grid))
 			R*E
 		else
-			dense_evaluation_operator(fs, dgs; T=T, options...)
+			dense_evaluation(T, fs, gb; options...)
 		end
 	else
-		dense_evaluation_operator(fs, dgs; T=T, options...)
+		dense_evaluation(T, fs, gb; options...)
 	end
 end
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid;
-			T=op_eltype(dict, gb), options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid; options...) where {T}
 	if isodd(length(grid)) && support(grid)≈support(dict)
 		if length(grid) == length(dict)
-			A = evaluation_operator(dict, FourierGrid{domaintype(dict)}(length(dict)); T=T, options...)
+			A = evaluation(T, dict, FourierGrid{domaintype(dict)}(length(dict)); options...)
 			diag = zeros(T, length(dict))
 			delta = step(grid)/2
 			for i in 1:length(dict)
@@ -318,10 +314,10 @@ function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEq
 			wrap_operator(dict, gb, A*D)
 		else
 			dict2 = resize(dict, length(grid))
-			evaluation_operator(dict2, grid) * extension(dict, dict2)
+			evaluation(T, dict2, grid) * extension(T, dict, dict2)
 		end
 	else
-		dense_evaluation_operator(dict, gb; T=T, options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
@@ -347,19 +343,19 @@ struct FourierIndexExtension{T} <: DictionaryOperator{T}
 	end
 end
 
+FourierIndexExtension(src::Dictionary, dest::Dictionary) =
+	FourierIndexExtension{operatoreltype(src, dest)}(src, dest)
+
 FourierIndexExtension{T}(src, dest) where {T} =
 	FourierIndexExtension{T}(src, dest, length(src), length(dest))
-
-FourierIndexExtension(src, dest, n1 = length(src), n2 = length(dest);
-			T=op_eltype(src,dest)) =
-	FourierIndexExtension{T}(src, dest, n1, n2)
 
 string(op::FourierIndexExtension) = "Fourier series extension from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
 wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
 	FourierIndexExtension{T}(src, dest, op.n1, op.n2)
 
-extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexExtension{T}(src, dest)
+extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
+	FourierIndexExtension{T}(src, dest)
 
 function apply!(op::FourierIndexExtension, coef_dest, coef_src)
 	## @assert length(dest) > length(src)
@@ -406,18 +402,19 @@ struct FourierIndexRestriction{T} <: DictionaryOperator{T}
 	end
 end
 
+FourierIndexRestriction(src::Dictionary, dest::Dictionary) =
+	FourierIndexRestriction{operatoreltype(src, dest)}(src, dest)
+
 FourierIndexRestriction{T}(src, dest) where {T} =
 	FourierIndexRestriction{T}(src, dest, length(src), length(dest))
 
-FourierIndexRestriction(src, dest, n1 = length(src), n2 = length(dest); T = op_eltype(src,dest), options...) =
-	FourierIndexRestriction{T}(src, dest, n1, n2)
-
 string(op::FourierIndexRestriction) = "Fourier series restriction from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-wrap_operator(src, dest, op::FourierIndexRestriction{T}) where T =
+wrap_operator(src, dest, op::FourierIndexRestriction{T}) where {T} =
 	FourierIndexRestriction{T}(src, dest, op.n1, op.n2)
 
-restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} = FourierIndexRestriction{T}(src, dest)
+restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
+	FourierIndexRestriction{T}(src, dest)
 
 function apply!(op::FourierIndexRestriction, coef_dest, coef_src)
 	## @assert length(dest) < length(src)
@@ -516,54 +513,21 @@ end
 
 
 
-
-# Try to efficiently evaluate a Fourier series on a regular equispaced grid
-# The case of a periodic grid is handled generically in generic/evaluation, because
-# it is the associated grid of the function set.
-function evaluation_operator(fs::Fourier, gb::GridBasis, grid::EquispacedGrid; T=op_eltype(fs,gb), options...)
-	# We can use the fft if the equispaced grid is a subset of the periodic grid
-	if support(grid) ∈ support(fs)
-		# We are dealing with a subgrid. The main question is: if we extend it
-		# to the full support, is it compatible with a periodic grid?
-		h = step(grid)
-		nleft = a/h
-		nright = (1-b)/h
-		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))
-			nleft_int = round(Int, nleft)
-			nright_int = round(Int, nright)
-			ntot = length(grid) + nleft_int + nright_int - 1
-			T = domaintype(grid)
-			super_grid = FourierGrid(ntot)
-			super_gb = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_gb; T=T, options...)
-			R = IndexRestriction(super_gb, gb, nleft_int+1:nleft_int+length(grid); T=T)
-			R*E
-		else
-			dense_evaluation_operator(fs, gb; T=T, options...)
-		end
-	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
-		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
-		# but with the right endpoint added
-		dense_evaluation_operator(fs, gb; T=T, options...)
-	else
-		dense_evaluation_operator(fs, gb; T=T, options...)
-	end
-end
-
 # Multiplication of Fourier Series
 function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
+	T = promote_type(eltype(coef_src1), eltype(coef_src2))
 	if oddlength(src1) && evenlength(src2)
 	    dsrc2 = resize(src2, length(src2)+1)
-	    (*)(src1, dsrc2, coef_src1, extension(src2, dsrc2)*coef_src2)
+	    (*)(src1, dsrc2, coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	elseif evenlength(src1) && oddlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
-	    (*)(dsrc1, src2, extension(src1,dsrc1)*coef_src1,coef_src2)
+	    (*)(dsrc1, src2, extension(T, src1,dsrc1)*coef_src1,coef_src2)
 	elseif evenlength(src1) && evenlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
 	    dsrc2 = resize(src2, length(src2)+1)
 		T1 = eltype(coef_src1)
 		T2 = eltype(coef_src2)
-	    (*)(dsrc1,dsrc2,extension(src1, dsrc1)*coef_src1, extension(src2, dsrc2)*coef_src2)
+	    (*)(dsrc1,dsrc2,extension(T, src1, dsrc1)*coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	else # they are both odd
 		@assert domaintype(src1) == domaintype(src2)
 	    dest = Fourier{domaintype(src1)}(length(src1)+length(src2)-1)

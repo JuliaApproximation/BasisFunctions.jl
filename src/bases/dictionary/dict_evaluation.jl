@@ -181,7 +181,7 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; opti
     # @assert eltype(grid) == domaintype(dict)
 
     T = coefficienttype(dict)
-    E = evaluation_operator(dict, GridBasis{T}(grid); options...)
+    E = evaluation(T, dict, grid; options...)
     E * coefficients
 end
 

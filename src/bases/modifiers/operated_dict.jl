@@ -111,8 +111,8 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     diag(op, idx) * unsafe_eval_element(src(dict), idxn, x)
 end
 
-grid_evaluation_operator(dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) =
-    wrap_operator(dict, gb, grid_evaluation_operator(dest(dict), gb, grid; options...) * operator(dict))
+evaluation(::Type{T}, dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+    wrap_operator(dict, gb, evaluation(T, dest(dict), gb, grid; options...) * operator(dict))
 
 ## Properties
 
@@ -135,13 +135,13 @@ hastransform(dict::OperatedDict, dgs::GridBasis) = isdiag(operator(dict)) && has
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 
-function transform_to_grid(src::OperatedDict, dest::GridBasis, grid; options...)
-	op = transform_to_grid(superdict(src), dest, grid; options...) * operator(src)
+function transform_to_grid(T, src::OperatedDict, dest::GridBasis, grid; options...)
+	op = transform_to_grid(T, superdict(src), dest, grid; options...) * operator(src)
 	wrap_operator(src, dest, op)
 end
 
-function transform_from_grid(src::GridBasis, dest::OperatedDict, grid; options...)
-	 op = inv(operator(dest)) * transform_from_grid(src, superdict(dest), grid; options...)
+function transform_from_grid(T, src::GridBasis, dest::OperatedDict, grid; options...)
+	 op = inv(operator(dest)) * transform_from_grid(T, src, superdict(dest), grid; options...)
 	 wrap_operator(src, dest, op)
  end
 

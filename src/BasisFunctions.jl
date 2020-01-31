@@ -216,7 +216,7 @@ export transform_operator, transform_dict, transform_to_grid, transform_from_gri
 export gramelement, gramoperator, dual, mixedgramoperator, gramdual
 
 # from computations/evaluation.jl
-export evaluation_operator, evaluation_matrix
+export evaluation_matrix
 
 # from computations/interpolation.jl
 export interpolation_operator, default_interpolation_operator, interpolation_matrix

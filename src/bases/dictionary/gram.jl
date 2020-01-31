@@ -118,9 +118,9 @@ end
 
 function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid::AbstractGrid, weights;
             T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
-    E1 = evaluation_operator(dict1, grid; T=T, options...)
-    E2 = evaluation_operator(dict2, grid; T=T, options...)
-    W = DiagonalOperator(dest(E2),dest(E1), weights, T=T)
+    E1 = evaluation(T, dict1, grid; options...)
+    E2 = evaluation(T, dict2, grid; options...)
+    W = DiagonalOperator{T}(dest(E2),dest(E1), weights)
     E1'*W*E2
 end
 
