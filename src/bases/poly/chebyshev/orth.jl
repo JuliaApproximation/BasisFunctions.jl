@@ -21,7 +21,7 @@ gramoperator(dict::ChebyshevU, ::ChebyshevUMeasure; T = coefficienttype(dict), o
 function diagonal_gramoperator(dict::ChebyshevT, measure::ChebyshevTGaussMeasure{S}; T=promote_type(S,coefficienttype(dict)), options...) where S
     @assert isorthogonal(dict, measure)
     if length(dict) == length(grid(measure))
-        CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,pi)/2)
+        CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator{T}(dict, convert(T,pi)/2)
     else
         default_diagonal_gramoperator(dict, measure; T=T, options...)
     end

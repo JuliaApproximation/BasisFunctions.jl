@@ -158,8 +158,6 @@ end
 unsafe_eval_element_derivative(dict::Dictionary, idx, x) =
     unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
 
-derivative_dict(dict::Dictionary; options...) = derivative_dict(dict, 1; options...)
-
 """
 Evaluate an expansion given by the set of coefficients in the point x.
 """

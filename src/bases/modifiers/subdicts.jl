@@ -146,28 +146,40 @@ end
 # In general, the derivative set of a subdict can be the whole derivative set
 # of the underlying set. We can not know generically whether the derivative set
 # can be indexed as well. Same for antiderivative.
-# Yet, we can generically define a differentiation_operator by extending the subdict
+# Yet, we can generically define a differentiation operator by extending the subdict
 # to the whole set and then invoking the differentiation operator of the latter,
 # and we choose that to be the default.
 subdict_hasderivative(s::DenseSubdict, superdict, superindices) = hasderivative(superdict)
 subdict_hasantiderivative(s::DenseSubdict, superdict, superindices) = hasantiderivative(superdict)
 
-subdict_derivative_dict(s::DenseSubdict, order, superdict, superindices; options...) =
-    derivative_dict(superdict, order; options...)
-subdict_antiderivative_dict(s::DenseSubdict, order, superdict, superindices; options...) =
-    antiderivative_dict(superdict, order; options...)
+function subdict_derivative_dict(Φ::DenseSubdict, order, superdict, superindices; options...)
+    # We test explicitly for zero order derivative, in order to avoid changing
+    # the dictionary in this case.
+    if orderiszero(order)
+        Φ
+    else
+        derivative_dict(superdict, order; options...)
+    end
+end
+function subdict_antiderivative_dict(Φ::DenseSubdict, order, superdict, superindices; options...)
+    if orderiszero(order)
+        Φ
+    else
+        antiderivative_dict(superdict, order; options...)
+    end
+end
 
-function differentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
-    @assert s2 == derivative_dict(s1, order)
-    D = differentiation_operator(superdict(s1), s2, order; options...)
-    E = extension(s1, superdict(s1); options...)
+function differentiation(::Type{T}, src::DenseSubdict, dest::Dictionary, order; options...) where {T}
+    @assert dest == derivative_dict(src, order)
+    D = differentiation(T, superdict(src), dest, order; options...)
+    E = extension(T, src, superdict(src); options...)
     D*E
 end
 
-function antidifferentiation_operator(s1::DenseSubdict, s2::Dictionary, order; options...)
-    @assert s2 == antiderivative_dict(s1, order)
-    D = antidifferentiation_operator(superdict(s1), s2, order; options...)
-    E = extension(s1, superdict(s1); options...)
+function antidifferentiation(::Type{T}, src::DenseSubdict, dest::Dictionary, order; options...) where {T}
+    @assert dest == antiderivative_dict(src, order)
+    D = antidifferentiation(T, superdict(src), dest, order; options...)
+    E = extension(T, src, superdict(src); options...)
     D*E
 end
 

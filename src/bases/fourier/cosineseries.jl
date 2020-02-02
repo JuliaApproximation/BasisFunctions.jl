@@ -15,14 +15,6 @@ name(b::CosineSeries) = "Cosine series"
 
 CosineSeries(n::Int) = CosineSeries{Float64}(n)
 
-CosineSeries{T}(n::Int, a::Number, b::Number) where {T} =
-    rescale(CosineSeries{T}(n), a, b)
-
-function CosineSeries(n::Int, a::Number, b::Number)
-    T = float(promote_type(typeof(a),typeof(b)))
-    CosineSeries{T}(n, a, b)
-end
-
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
 isbasis(b::CosineSeries) = true
@@ -44,7 +36,6 @@ period(b::CosineSeries{T}, idx) where {T} = T(2)
 
 interpolation_grid(b::CosineSeries{T}) where {T} =
 	MidpointEquispacedGrid(b.n, zero(T), one(T))
-
 
 ##################
 # Native indices
@@ -74,6 +65,8 @@ function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency
     arg = T(pi) * frequency(idx)
     -arg * sin(arg * x)
 end
+
+
 
 extension(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where {T} = IndexExtension{T}(src, dest, 1:length(src))
 restriction(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where {T} = IndexRestriction{T}(src, dest, 1:length(dest))

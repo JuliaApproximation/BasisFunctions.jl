@@ -73,7 +73,7 @@ end
 
 
 
-similar_dictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
+similardictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isbasis, :isframe)
@@ -120,11 +120,11 @@ evaluation(::Type{T}, dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; op
     ArrayOperator(evaluation_matrix(T, dict, grid), dict, gb) * LinearizationOperator{T}(dict)
 
 
-for op in [:differentiation_operator, :antidifferentiation_operator]
-    @eval function $op(s1::PiecewiseDict, s2::PiecewiseDict, order; T=op_eltype(s1,s2), options...)
-        @assert numelements(s1) == numelements(s2)
+for op in (:differentiation, :antidifferentiation)
+    @eval function $op(::Type{T}, src::PiecewiseDict, dest::PiecewiseDict, order; options...) where {T}
+        @assert numelements(src) == numelements(dest)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator(DictionaryOperator{T}[$op(element(s1,i), element(s2, i), order; options...) for i in 1:numelements(s1)], s1, s2; T=T)
+        BlockDiagonalOperator{T}(map( (el_s,el_d) -> $op(T, el_s, el_d, order; options...), elements(src), elements(dest)), src, dest)
     end
 end
 

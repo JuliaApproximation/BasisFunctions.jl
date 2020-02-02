@@ -21,7 +21,7 @@ function test_fourier_series(T)
     n = 12
     a = -T(1.2)
     b = T(3.4)
-    fb = rescale(Fourier{T}(n), a, b)
+    fb = Fourier{T}(n) ⇒ a..b
     @test ~isreal(fb)
 
     @test infimum(support(fb)) ≈ a
@@ -81,13 +81,10 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = rand(complex(T), size(fb))
-    D = differentiation_operator(fb)
+    D = differentiation(fb)
     coef2 = D*coef
     e1 = Expansion(fb, coef)
     e2 = Expansion(rescale(Fourier{T}(length(fb)+1),support(fb)), coef2)
-
-    zero_orderD = pseudodifferential_operator(fb,x->1)
-    pseudoD = pseudodifferential_operator(fb,x->x^2+x)
 
     x = T(2//10)
     delta = sqrt(eps(T))
@@ -157,7 +154,7 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = rand(complex(T), size(fbo))
-    D = differentiation_operator(fbo)
+    D = differentiation(fbo)
     coef2 = D*coef
     e1 = Expansion(fbo, coef)
     e2 = Expansion(fbo, coef2)

@@ -41,10 +41,10 @@ function test_generic_operators(T)
 
     cartlist = [CartesianIndex(1,1),CartesianIndex(2,3)]
     operators = [
-        ["Scaling operator", ScalingOperator(b1, b1, T(2))],
+        ["Scaling operator", ScalingOperator(b1, T(2))],
         ["Zero operator", BF.ZeroOperator(b1, b2)],
         ["Diagonal operator", DiagonalOperator(b2, b2, rand(T, length(b2)))],
-        ["Block operator", differentiation_operator(b1⊕b2)],
+        ["Block operator", differentiation(b1⊕b2)],
         ["Coefficient scaling operator", BF.CoefficientScalingOperator(b1, 1, T(2))],
         ["Index restriction operator", IndexRestriction(b2, b1, 1:3) ],
         ["Index restriction operator (2)", IndexRestriction(b1⊗b2, cartlist) ],
@@ -188,7 +188,7 @@ function test_sparse_operator(ELT)
 end
 function test_banded_operator(ELT)
     a = [ELT(1),ELT(2),ELT(3)]
-    H = HorizontalBandedOperator(Fourier{ELT}(6,0,1), Fourier{ELT}(3,0,1),a,3,2)
+    H = HorizontalBandedOperator(Fourier{ELT}(6), Fourier{ELT}(3),a,3,2)
     test_generic_operator_interface(H, ELT)
     h = matrix(H)
     e = zeros(ELT,6,1)
@@ -201,7 +201,7 @@ function test_banded_operator(ELT)
         @test e ≈ h[i,:]
     end
 
-    V = VerticalBandedOperator(Fourier{ELT}(3,0,1), Fourier{ELT}(6,0,1),a,3,2)
+    V = VerticalBandedOperator(Fourier{ELT}(3), Fourier{ELT}(6),a,3,2)
     test_generic_operator_interface(V, ELT)
     v = matrix(V)
     e = zeros(ELT,6,1)

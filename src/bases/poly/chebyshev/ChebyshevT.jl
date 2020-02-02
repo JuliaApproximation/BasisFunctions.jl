@@ -10,12 +10,9 @@ name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
-# Convenience constructor: map the Chebyshev basis to the interval [a,b]
-ChebyshevT{T}(n, a, b) where {T} = rescale(ChebyshevT{T}(n), a, b)
-
-function ChebyshevT(n::Int, a::Number, b::Number)
-    T = float(promote_type(typeof(a),typeof(b)))
-    ChebyshevT{T}(n, a, b)
+function ChebyshevT(n, a::Number, b::Number)
+	@warn "The syntax ChebyshevT(n, a, b) is deprecated. Please use ChebyshevT(n) ⇒ a..b instead (the symbol ⇒ is \\Rightarrow)"
+	ChebyshevT(n) ⇒ a..b
 end
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
@@ -23,6 +20,7 @@ similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
 hasinterpolationgrid(b::ChebyshevT) = true
 hasderivative(b::ChebyshevT) = true
+hasderivative(b::ChebyshevT, order::Int) = true
 hasantiderivative(b::ChebyshevT) = true
 
 hasgrid_transform(b::ChebyshevT, gb, ::ChebyshevNodes) = length(b) == length(gb)

@@ -107,7 +107,7 @@ ensure_prectype(::Type{T}, dict::Dictionary) where {T} =
     _ensure_prectype(dict, T, prectype(dict))
 _ensure_prectype(dict::Dictionary, ::Type{T}, ::Type{T}) where {T} = dict
 _ensure_prectype(dict::Dictionary, ::Type{S}, ::Type{T}) where {S,T} =
-    _ensure_prectype(dict, S, T, promote_type{S,T})
+    _ensure_prectype(dict, S, T, promote_type(S,T))
 
 _ensure_prectype(dict::Dictionary, S, T, ::Type{U}) where {U} =
     similar(dict, widen_prectype(domaintype(dict), U))

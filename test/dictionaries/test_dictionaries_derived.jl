@@ -31,7 +31,7 @@ function test_derived_dicts(T)
         test_generic_dict_interface(D1*b1)
         D2 = ArrayOperator(rand(length(b1),length(b1)), b1, b1)
         test_generic_dict_interface(D2*b1)
-        D3 = differentiation_operator(b2)
+        D3 = differentiation(b2)
         test_generic_dict_interface(D3*b2)
     end
 

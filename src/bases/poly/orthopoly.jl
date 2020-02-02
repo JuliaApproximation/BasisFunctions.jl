@@ -12,15 +12,18 @@ abstract type OrthogonalPolynomial{T} <: Polynomial{T} end
 
 approx_length(b::OPS, n::Int) = n
 
+# Taking the derivative of a polynomial lowers its degree. This results in a
+# rectangular differentiation matrix. With the reducedegree option set to false,
+# the degree is maintained (resulting in a square differentiation matrix).
 function derivative_dict(dict::OPS, order::Int; reducedegree = true, options...)
-	if reducedegree
-		resize(dict, length(dict)-order)
-	else
-		dict
-	end
+	@assert order >= 0
+	reducedegree ? resize(dict, length(dict)-order) : dict
 end
 
-antiderivative_dict(s::OPS, order::Int; options...) = resize(s, length(s)+order)
+function antiderivative_dict(s::OPS, order::Int; options...)
+	@assert order >= 0
+	resize(s, length(s)+order)
+end
 
 size(o::OrthogonalPolynomials) = (o.n,)
 

@@ -20,7 +20,7 @@ const WeightedDict4d{S <: Number,T} = WeightedDict{SVector{4,S},T}
 
 weightfunction(dict::WeightedDict) = dict.weightfun
 
-similar_dictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2, weightfunction(dict1))
+similardictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2, weightfunction(dict1))
 
 name(dict::WeightedDict) = "Weighted " * name(superdict(dict))
 
@@ -105,23 +105,26 @@ transform_from_grid(T, src::GridBasis, dest::WeightedDict, grid; options...) =
 
 
 function derivative_dict(src::WeightedDict, order; options...)
-    @assert order == 1
-
-    s = superdict(src)
-    f = weightfunction(src)
-    f_prime = derivative(f)
-    s_prime = derivative_dict(s, order)
-    (f_prime * s) ⊕ (f * s_prime)
+	if order == 0
+		src
+	else
+    	@assert order == 1
+	    s = superdict(src)
+	    f = weightfunction(src)
+	    f_prime = derivative(f)
+	    s_prime = derivative_dict(s, order)
+	    (f_prime * s) ⊕ (f * s_prime)
+	end
 end
 
 # Assume order = 1...
-function differentiation_operator(s1::WeightedDict, s2::MultiDict, order; T=op_eltype(s1,s2), options...)
+function differentiation(::Type{T}, src::WeightedDict, dest::MultiDict, order; options...) where {T}
     @assert order == 1
-    @assert s2 == derivative_dict(s1, order)
+    @assert dest == derivative_dict(src, order)
 
-    I = IdentityOperator(s1, element(s2, 1); T=T)
-    D = differentiation_operator(superdict(s1); T=T)
-    DW = wrap_operator(s1, element(s2, 2), D)
+    I = IdentityOperator{T}(src, element(dest, 1))
+    D = differentiation(T, superdict(src), order)
+    DW = wrap_operator(src, element(dest, 2), D)
     block_column_operator([I,DW])
 end
 

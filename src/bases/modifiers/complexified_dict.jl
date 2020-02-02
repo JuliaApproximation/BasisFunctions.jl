@@ -14,7 +14,7 @@ ComplexifiedDict(d::Dictionary{S,T}) where {S,T<:Real} = ComplexifiedDict{typeof
 
 Base.complex(dict::Dictionary) = ensure_coefficienttype(complex(coefficienttype(dict)), dict)
 
-similar_dictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
+similardictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
 elements(dict::ComplexifiedDict) = map(ComplexifiedDict, elements(superdict(dict)))
 element(dict::ComplexifiedDict, i) = ComplexifiedDict(element(superdict(dict), i))

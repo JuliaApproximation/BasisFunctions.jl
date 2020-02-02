@@ -77,6 +77,7 @@ import DomainSets:
     # products
     tensorproduct, cartesianproduct, ×, product_eltype
 
+export ..
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:
@@ -170,10 +171,7 @@ export TensorProductDict, TensorProductDict1, TensorProductDict2,
     recursive_native_index
 
 # from bases/modifiers/derived_dict.jl
-export DerivedDict
-
-# from bases/modifiers/mapped_dict.jl
-export MappedDict, mapped_dict, mapping, superdict, rescale
+export DerivedDict, superdict
 
 # from bases/modifiers/paramdict.jl
 export param_dict, ParamDict, image
@@ -225,11 +223,6 @@ export interpolation_operator, default_interpolation_operator, interpolation_mat
 export approximation_operator, default_approximation_operator, approximate,
     discrete_approximation_operator, continuous_approximation_operator, project
 
-# from computations/differentiation.jl
-export differentiation_operator, antidifferentiation_operator, derivative_dict,
-    antiderivative_dict, Differentiation, Antidifferentiation
-
-
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
 
@@ -277,8 +270,7 @@ export clenshaw_curtis, fejer_first_rule, fejer_second_rule,
 export Fourier,
     FastFourierTransform, InverseFastFourierTransform,
     FastFourierTransformFFTW, InverseFastFourierTransformFFTW,
-    frequency2idx, idx2frequency,
-    fourier_basiseven, fourier_basisodd, pseudodifferential_operator
+    frequency2idx, idx2frequency
 
 # from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries

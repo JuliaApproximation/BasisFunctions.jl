@@ -112,6 +112,10 @@ checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
 for op in (:hasinterpolationgrid, :hasextension, :hasderivative, :hasantiderivative)
     @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
 end
+hasderivative(Φ::TensorProductDict, order) =
+    reduce(&, map(hasderivative, elements(Φ), order))
+hasantiderivative(Φ::TensorProductDict, order) =
+    reduce(&, map(hasantiderivative, elements(Φ), order))
 
 hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
     reduce(&, map(hastransform, elements(s), elements(grid)))
@@ -120,7 +124,15 @@ hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =
-        tensorproduct( map( i -> $op(element(s,i), order[i]; options...), 1:length(order))... )
+        tensorproduct( map( (el,ord) -> $op(el, ord; options...), elements(s), order)... )
+end
+
+for op in (:differentiation, :antidifferentiation)
+    @eval function $op(::Type{T}, src::TensorProductDict, dest::TensorProductDict, order; options...) where {T}
+        @assert length(order) == dimension(src)
+        @assert length(order) == dimension(dest)
+        tensorproduct(map( (el_s,el_d,ord) -> $op(T, el_s, el_d, ord; options...), elements(src), elements(dest), order)...)
+    end
 end
 
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))

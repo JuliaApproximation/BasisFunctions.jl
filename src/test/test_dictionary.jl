@@ -294,7 +294,13 @@ function test_generic_dict_antiderivative(basis)
     coef = coefficients(random_expansion(basis))
 
     for dim in 1:dimension(basis)
-        D = antidifferentiation_operator(basis; dim=dim)
+        if dimension(basis) == 1
+            D = antidifferentiation(basis)
+        else
+            N = dimension(basis)
+            order = dimension_tuple(Val{N}(), dim)
+            D = antidifferentiation(basis, order)
+        end
         @test basis == src(D)
         antidiff_dest = dest(D)
 
@@ -323,10 +329,17 @@ function test_generic_dict_derivative(basis)
     FT = float_type(T)
     for dim in 1:dimension(basis)
         # TODO: Sort out problem with dim and multidict
-        if dimension(basis)>1
-            D = differentiation_operator(basis; dim=dim)
+        if dimension(basis) == 1
+            D = differentiation(basis)
         else
-            D = differentiation_operator(basis)
+            N = dimension(basis)
+            order = dimension_tuple(Val{N}(), dim)
+            D = differentiation(basis, order)
+        end
+        if dimension(basis)>1
+            D = differentiation(basis; dim=dim)
+        else
+            D = differentiation(basis)
         end
 #        @test basis == src(D)
         diff_dest = dest(D)
@@ -351,8 +364,10 @@ function test_generic_dict_derivative(basis)
     end
 
     if dimension(basis) == 1
+        @test derivative_dict(basis, 0) == basis
+
         x = fixed_point_in_domain(basis)
-        D = differentiation_operator(basis)
+        D = differentiation(basis)
         # Verify derivatives in three basis functions: the first, the last,
         # and the middle one
         i1 = 1
@@ -374,6 +389,16 @@ function test_generic_dict_derivative(basis)
         u3 = D*c3
         @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)
     end
+
+    # TODO: experiment with this test and enable
+    # if dimension(basis) == 1 && hasderivative(basis,2)
+    #     D2 = differentiation(basis, 2)
+    #     e = random_expansion(basis)
+    #     f = D2*e
+    #     x = fixed_point_in_domain(basis)
+    #     delta = sqrt(test_tolerance(ELT))
+    #     @test abs(f(x+delta) -2f(x)+f(x-delta))/delta^2 < 100sqrt(test_tolerance(ELT))
+    # end
 end
 
 

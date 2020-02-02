@@ -21,18 +21,18 @@ end
 # Assume the concrete set has a field called set -- override if it doesn't
 superdict(s::DerivedDict) = s.superdict
 
-# The concrete subset should implement similar_dictionary, as follows:
+# The concrete subset should implement similardictionary, as follows:
 #
-# similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
+# similardictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
 #
 # This function calls the constructor of the concrete set. We can then
 # generically implement other methods that would otherwise call a constructor,
 # such as resize and promote_eltype.
 
 similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
-    similar_dictionary(d, similar(superdict(d), T, dims))
+    similardictionary(d, similar(superdict(d), T, dims))
 
-resize(d::DerivedDict, dims) = similar_dictionary(d, resize(superdict(d), dims))
+resize(d::DerivedDict, dims) = similardictionary(d, resize(superdict(d), dims))
 
 for op in (:coefficienttype,)
     @eval $op(s::DerivedDict) = $op(superdict(s))
@@ -51,8 +51,12 @@ end
 
 # Delegation of feature methods
 for op in (:hasderivative, :hasantiderivative, :hasinterpolationgrid, :hasextension)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
+    @eval $op(Φ::DerivedDict) = $op(superdict(Φ))
 end
+for op in (:hasderivative, :hasantiderivative)
+    @eval $op(Φ::DerivedDict, order) = $op(superdict(Φ), order)
+end
+
 # hastransform has extra arguments
 hasgrid_transform(s::DerivedDict, gs, grid) = hasgrid_transform(superdict(s), gs, grid)
 
@@ -81,7 +85,7 @@ end
 
 approx_length(s::DerivedDict, n::Int) = approx_length(superdict(s), n)
 
-apply_map(s::DerivedDict, map) = similar_dictionary(s, apply_map(superdict(s), map))
+apply_map(s::DerivedDict, map) = similardictionary(s, apply_map(superdict(s), map))
 
 dict_in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 
@@ -122,7 +126,8 @@ for op in (:transform_dict,)
 end
 
 for op in (:derivative_dict, :antiderivative_dict)
-    @eval $op(s::DerivedDict, order; options...) = similar_dictionary(s, $op(superdict(s), order; options...))
+    @eval $op(Φ::DerivedDict, order; options...) =
+        similardictionary(Φ, $op(superdict(Φ), order; options...))
 end
 
 
@@ -142,13 +147,10 @@ function transform_to_grid(T, s1::DerivedDict, s2::GridBasis, grid; options...)
 end
 
 
-for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval $op(s1::DerivedDict, s2::DerivedDict, order; T = op_eltype(s1,s2), options...) =
-        wrap_operator(s1, s2, $op(superdict(s1), superdict(s2), order; T=T, options...))
+for op in (:differentiation, :antidifferentiation)
+    @eval $op(::Type{T}, s1::DerivedDict, s2::DerivedDict, order; options...) where {T} =
+        wrap_operator(s1, s2, $op(T, superdict(s1), superdict(s2), order; options...))
 end
-
-pseudodifferential_operator(s::DerivedDict, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol;options...)
-pseudodifferential_operator(s1::DerivedDict,s2::DerivedDict, symbol::Function; options...) = wrap_operator(s1,s2,pseudodifferential_operator(superdict(s1),superdict(s2),symbol; options...))
 
 
 function evaluation(::Type{T}, dict::DerivedDict, gb::GridBasis, grid; options...) where {T}
@@ -175,6 +177,6 @@ struct ConcreteDerivedDict{S,T} <: DerivedDict{S,T}
     superdict   ::  Dictionary{S,T}
 end
 
-# Implementing similar_dictionary is all it takes.
+# Implementing similardictionary is all it takes.
 
-similar_dictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
+similardictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)

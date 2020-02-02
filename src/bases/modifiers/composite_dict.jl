@@ -29,9 +29,9 @@ element(set::CompositeDict, j) = set.dicts[j]
 element(set::Dictionary, j) = (@assert j==1; (set,))
 numelements(set::CompositeDict) = length(elements(set))
 
-# For a generic implementation of range indexing, we need a 'similar_dictionary' function
+# For a generic implementation of range indexing, we need a 'similardictionary' function
 # to create a new set of the same type as the given set.
-element(set::CompositeDict, range::AbstractRange) = similar_dictionary(set, set.dicts[range])
+element(set::CompositeDict, range::AbstractRange) = similardictionary(set, set.dicts[range])
 
 tail(set::CompositeDict) = numelements(set) == 2 ? element(set, 2) : element(set, 2:numelements(set))
 
@@ -55,21 +55,21 @@ size(s::CompositeDict) = (s.offsets[end],)
 
 dimensions(d::CompositeDict) = map(dimensions, elements(d))
 
-## Concrete subtypes should override similar_dictionary and call their own constructor
+## Concrete subtypes should override similardictionary and call their own constructor
 
 similar(d::CompositeDict, ::Type{T}, n::Int) where {T} = similar(d, T, composite_size(d, n))
 
 function similar(d::CompositeDict, ::Type{T}, size::Vector{Int}) where {T}
     @assert numelements(d) == length(size)
-    similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
+    similardictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
 function similar(d::CompositeDict, ::Type{T}, size::Int...) where {T}
     @assert numelements(d) == length(size)
-    similar_dictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
+    similardictionary(d, map( (s,l) -> similar(s, T, l), elements(d), size))
 end
 
-resize(d::CompositeDict, size) = similar_dictionary(d, map(resize, elements(d), size))
+resize(d::CompositeDict, size) = similardictionary(d, map(resize, elements(d), size))
 
 composite_length(d::CompositeDict) = tuple(map(length, elements(d))...)
 block_length(dict::CompositeDict) = composite_length(dict)
@@ -99,6 +99,10 @@ end
 for op in (:hasderivative, :hasantiderivative, :hasextension)
     @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
 end
+hasderivative(Φ::CompositeDict, order) =
+    reduce(&, map(hasderivative, elements(Φ)))
+hasantiderivative(Φ::CompositeDict, order) =
+    reduce(&, map(hasantiderivative, elements(Φ)))
 
 coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 
@@ -160,10 +164,10 @@ unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices,
 
 
 derivative_dict(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->derivative_dict(u, order; options...), elements(s)))
+    similardictionary(s,map(u->derivative_dict(u, order; options...), elements(s)))
 
 antiderivative_dict(s::CompositeDict, order; options...) =
-    similar_dictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))
+    similardictionary(s,map(u->antiderivative_dict(u, order; options...), elements(s)))
 
 function evaluation_matrix(::Type{T}, dict::CompositeDict, pts) where {T}
     a = BlockArray{T}(undef, [length(pts),], collect(composite_length(dict)))

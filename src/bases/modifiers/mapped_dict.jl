@@ -1,4 +1,10 @@
 
+export ⇒,
+    rescale,
+    MappedDict,
+    mapped_dict,
+    mapping
+
 """
 A `MappedDict` has a dictionary and a map. The domain of the dictionary is
 mapped to a different one. Evaluating the `MappedDict` in a point uses the
@@ -23,7 +29,7 @@ MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{T1,S}) where {S,T1,T} =
 # This does not (currently) work for all maps.
 function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{S2,T2}) where {S1,S2,T1,T2}
     S = promote_type(S1,S2)
-    MappedDict(promote_domaintype(dict, S), DomainSets.update_eltype(map, S))
+    MappedDict(ensure_domaintype(S, dict), DomainSets.update_eltype(map, S))
 end
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
@@ -35,7 +41,7 @@ apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map ∘ mapping(di
 
 mapping(dict::MappedDict) = dict.map
 
-similar_dictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
+similardictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
 hasderivative(dict::MappedDict) =
     hasderivative(superdict(dict)) && islinear(mapping(dict))
@@ -178,23 +184,29 @@ end
 # Differentiation
 ###################
 
-for op in (:derivative_dict, :antiderivative_dict)
-    @eval $op(s::MappedDict1d, order::Int; options...) =
-        (@assert islinear(mapping(s)); apply_map( $op(superdict(s), order; options...), mapping(s) ))
+function derivative_dict(Φ::MappedDict, order; options...)
+    @assert islinear(mapping(Φ))
+    similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
 end
 
-function differentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; T=op_eltype(s1,s2), options...)
-    @assert islinear(mapping(s1))
-    D = differentiation_operator(superdict(s1), superdict(s2), order; T=T, options...)
-    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(-order); T=T)
-    wrap_operator(s1, s2, S*D)
+function antiderivative_dict(Φ::MappedDict, order; options...)
+    @assert islinear(mapping(Φ))
+    similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
 end
 
-function antidifferentiation_operator(s1::MappedDict1d, s2::MappedDict1d, order; T=op_eltype(s1,s2), options...)
-    @assert islinear(mapping(s1))
-    D = antidifferentiation_operator(superdict(s1), superdict(s2), order; T=T, options...)
-    S = ScalingOperator(dest(D), jacobian(mapping(s1),1)^(order); T=T)
-    wrap_operator(s1, s2, S*D)
+# TODO: generalize to other orders
+function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
+    @assert islinear(mapping(dsrc))
+    D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
+    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))
+    wrap_operator(dsrc, ddest, S*D)
+end
+
+function antidifferentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
+    @assert islinear(mapping(dsrc))
+    D = antidifferentiation(T, superdict(dsrc), superdict(ddest), order; options...)
+    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(order))
+    wrap_operator(dsrc, ddest, S*D)
 end
 
 
@@ -208,8 +220,8 @@ mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapp
 mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
-function rescale(s::Dictionary1d, a, b)
-    T = domaintype(s)
+function rescale(s::Dictionary1d, a::Number, b::Number)
+    T = promote_type(domaintype(s), typeof(a), typeof(b))
     if abs(a-infimum(support(s))) < 10eps(T) && abs(b-supremum(support(s))) < 10eps(T)
         s
     else
@@ -218,8 +230,11 @@ function rescale(s::Dictionary1d, a, b)
     end
 end
 
-rescale(s::Dictionary, d::Domain) = rescale(s, infimum(d), supremum(d))
+rescale(s::Dictionary, d::AbstractInterval) = rescale(s, infimum(d), supremum(d))
 
+"Map a dictionary to a domain"
+(⇒)(Φ::Dictionary, domain::Domain) = rescale(Φ, domain)
+# The symbol is \Rightarrow
 
 # "Preserve Tensor Product Structure"
 function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}

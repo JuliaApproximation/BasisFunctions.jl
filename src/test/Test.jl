@@ -5,6 +5,8 @@ using FillArrays: Ones, Eye
 using Test, LinearAlgebra
 BF = BasisFunctions
 
+using BasisFunctions: dimension_tuple
+
 export Delimit, delimit
 export point_in_domain, point_outside_domain, random_point_in_domain, fixed_point_in_domain
 export random_index

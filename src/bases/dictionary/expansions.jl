@@ -76,13 +76,13 @@ setindex!(e::Expansion, v, i...) = setindex!(e.coefficients, v, i...)
 call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
     eval_expansion(dict, coefficients, x)
 
-function differentiate(e::Expansion, order=1)
-    op = differentiation_operator(dictionary(e), order)
+function differentiate(e::Expansion, order = difforder(dictionary(e)); options...)
+    op = differentiation(eltype(e), dictionary(e), order; options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
-function antidifferentiate(e::Expansion, order=1)
-    op = antidifferentiation_operator(dictionary(e), order)
+function antidifferentiate(e::Expansion, order = 1; options...)
+    op = antidifferentiation(eltype(e), dictionary(e); options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
@@ -124,8 +124,8 @@ for op in (:interpolation_operator, :approximation_operator)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
-differentiation_operator(s1::Expansion, s2::Expansion, var::Int...) = differentiation_operator(dictionary(s1), dictionary(s2), var...)
-differentiation_operator(s1::Expansion, var::Int...) = differentiation_operator(dictionary(s1), var...)
+differentiation(e::Expansion; options...) = differentiation(eltype(e), dictionary(e); options...)
+differentiation(e::Expansion, order; options...) = differentiation(eltype(e), dictionary(e), order; options...)
 
 
 show(io::IO, fun::Expansion) = show_setexpansion(io, fun, dictionary(fun))

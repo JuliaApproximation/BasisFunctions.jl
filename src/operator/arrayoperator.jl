@@ -284,26 +284,34 @@ to_scaling(A::UniformScaling{T}) where {T} = to_scaling(T, A)
 to_scaling(::Type{T}, scalar) where {T} = UniformScaling{T}(scalar)
 to_scaling(::Type{T}, A::UniformScaling{T}) where {T} = A
 to_scaling(::Type{T}, A::UniformScaling{S}) where {S,T} = UniformScaling{T}(A.λ)
-@inline unsafe_matrix(A::ScalingOperator) = size(A,1) == size(A,2) ?
-    Diagonal(Fill(scalar(A), size(A,1))) :
-    FillArrays.RectDiagonal(Fill(scalar(A), min(size(A)...)), size(A)...)
+
+function unsafe_matrix(A::ScalingOperator)
+    if size(A,1) == size(A,2)
+        Diagonal(Fill(scalar(A), size(A,1)))
+    else
+        FillArrays.RectDiagonal(Fill(scalar(A), min(size(A)...)), size(A)...)
+    end
+end
 
 const AnyScaling = Union{Number,UniformScaling}
-
-ScalingOperator(src::Dictionary, scalar::Number; dest = src, T=coefficienttype(src)) =
-    ScalingOperator(src, to_scaling(scalar); dest=dest,T=T)
-
-ScalingOperator(src::Dictionary, A::UniformScaling{S}; dest = src, T=op_eltype(src,dest)) where {S} =
-    ScalingOperator{promote_type(S,T)}(src, A, dest=dest)
 
 ScalingOperator{T}(src::Dictionary, scalar::AnyScaling; dest = src) where {T} =
     ScalingOperator{T}(src, dest, to_scaling(T, scalar))
 
-# For backwards compatibility
-ScalingOperator(src::Dictionary, dest::Dictionary, scalar::AnyScaling; T=op_eltype(src,dest)) =
-    ScalingOperator(src, scalar; dest=dest, T=T)
-ScalingOperator{T}(src::Dictionary, dest::Dictionary, scalar::Number) where {T} =
-    ScalingOperator{T}(src, scalar; dest=dest)
+ScalingOperator(src::Dictionary, args...; kwargs...) =
+    ScalingOperator{operatoreltype(src)}(src, args...; kwargs...)
+
+# ScalingOperator(src::Dictionary, scalar::Number; dest = src, T=coefficienttype(src)) =
+#     ScalingOperator(src, to_scaling(scalar); dest=dest,T=T)
+#
+# ScalingOperator(src::Dictionary, A::UniformScaling{S}; dest = src, T=op_eltype(src,dest)) where {S} =
+#     ScalingOperator{promote_type(S,T)}(src, A, dest=dest)
+#
+# # For backwards compatibility
+# ScalingOperator(src::Dictionary, dest::Dictionary, scalar::AnyScaling; T=op_eltype(src,dest)) =
+#     ScalingOperator(src, scalar; dest=dest, T=T)
+# ScalingOperator{T}(src::Dictionary, dest::Dictionary, scalar::Number) where {T} =
+#     ScalingOperator{T}(src, scalar; dest=dest)
 
 
 scalar(op::ScalingOperator) = op.A.λ
@@ -393,8 +401,8 @@ ArrayOperator(A::UniformScaling, src::Dictionary) =
 
 ArrayOperator(A::Diagonal, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
     DiagonalOperator(A; src=src, dest=dest, T=T)
-ArrayOperator(A::UniformScaling, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
-    ScalingOperator(src, A; dest=dest, T=T)
+ArrayOperator(A::UniformScaling{T}, src::Dictionary, dest::Dictionary) where {T} =
+    ScalingOperator{T}(src, A; dest=dest)
 ArrayOperator(A::AbstractMatrix, src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
     DenseMatrixOperator(A; src=src, dest=dest, T=T)
 

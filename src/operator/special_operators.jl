@@ -239,10 +239,10 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
-(+)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (+)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
-(-)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (-)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
-(+)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (+)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
-(-)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (-)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
+(+)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (+)(ScalingOperator{T}(src(op2), I1.λ, dest=dest(op2)), op2)
+(-)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (-)(ScalingOperator{T}(src(op2), I1.λ, dest=dest(op2)), op2)
+(+)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (+)(op1, ScalingOperator{T}(src(op), I2.λ, dest=dest(op2)))
+(-)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (-)(op1, ScalingOperator{T}(src(op), I2.λ, dest=dest(op2)))
 
 
 function stencilarray(op::OperatorSum)

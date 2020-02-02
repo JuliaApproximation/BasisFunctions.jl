@@ -1,6 +1,12 @@
 
 using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays, Test
-import BasisFunctions.Test: supports_approximation, supports_interpolation, suitable_function, suitable_interpolation_grid
+
+import BasisFunctions.Test:
+    supports_approximation,
+    supports_interpolation,
+    suitable_function,
+    suitable_interpolation_grid,
+    dimension_tuple
 BF = BasisFunctions
 
 # types = [Float64,]
@@ -60,8 +66,8 @@ for T in domaintypes
                   Fourier(10) ⊗ ChebyshevT(12), # combination of Fourier and Chebyshev
                   Fourier(11) ⊗ Fourier(10), # Odd and even-length Fourier series
                   ChebyshevT(11) ⊗ ChebyshevT(20), # Two Chebyshev sets
-                  Fourier(11, 2, 3) ⊗ Fourier(11, 4, 5), # Two mapped Fourier series
-                  ChebyshevT(9, 2, 3) ⊗ ChebyshevT(7, 4, 5)) # Two mapped Chebyshev series
+                  (Fourier(11) ⇒ 2..3) ⊗ (Fourier(11) ⇒ 4..5), # Two mapped Fourier series
+                  (ChebyshevT(9) ⇒ 2..3) ⊗ (ChebyshevT(7) ⇒ 4..5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
     end
 

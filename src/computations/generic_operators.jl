@@ -8,8 +8,8 @@
 # - transform_operator
 #
 # Calculus:
-# - differentiation_operator
-# - antidifferentation_operator
+# - differentiation operator
+# - antidifferentation operator
 #
 # These operators are also defined for TensorProductDict's.
 #
@@ -60,12 +60,4 @@ dense_evaluation(s1::TensorProductDict, s2::TensorProductDict; options...) =
 for op in (:approximation_operator, )
     @eval $op(s::TensorProductDict; options...) =
         tensorproduct(map( u -> $op(u; options...), elements(s))...)
-end
-
-for op in (:differentiation_operator, :antidifferentiation_operator)
-    @eval function $op(s1::TensorProductDict, s2::TensorProductDict, order::NTuple; options...)
-        @assert length(order) == dimension(s1)
-        @assert length(order) == dimension(s2)
-        tensorproduct(map( (u,v,w) -> $op(u, v, w; options...), elements(s1), elements(s2), order)...)
-    end
 end

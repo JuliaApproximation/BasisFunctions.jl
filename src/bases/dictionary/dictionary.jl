@@ -264,14 +264,34 @@ approx_length(d::Dictionary, n::Real) = approx_length(d, round(Int,n))
 ## Properties of function sets
 ###############################
 
-# The following properties are not implemented as traits with types, because they are
-# not intended to be used in a time-critical path of the code.
+"""
+Does the dictionary implement a differentiation operator?
+An optional second argument may specify an exact order of the derivative.
+"""
+hasderivative(Φ::Dictionary) = false
 
-"Does the dictionary implement a derivative?"
-hasderivative(d::Dictionary) = false
+function hasderivative(Φ::Dictionary, order)
+    # We have to be correct for zero order derivatives, because even if the
+    # dictionary itself does not support derivatives, it could be part of a
+    # composition where other elements do
+    if orderiszero(order)
+        true
+    else
+        order == 1 ? hasderivative(Φ) : false
+    end
+end
 
 "Does the dictionary implement an antiderivative?"
-hasantiderivative(d::Dictionary) = false
+hasantiderivative(Φ::Dictionary) = false
+
+function hasantiderivative(Φ::Dictionary, order)
+    if orderiszero(order)
+        true
+    else
+        order == 1 ? hasantiderivative(Φ) : false
+    end
+end
+
 
 "Does the dictionary have an associated interpolation grid?"
 hasinterpolationgrid(d::Dictionary) = false

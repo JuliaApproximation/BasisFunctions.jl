@@ -26,7 +26,7 @@ param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
 mapping(dict::ParamDict) = dict.map
 image(dict::ParamDict) = dict.image
 
-similar_dictionary(dict::ParamDict, dict2::Dictionary) =
+similardictionary(dict::ParamDict, dict2::Dictionary) =
     ParamDict(dict2, mapping(dict), image(dict))
 
 

@@ -15,14 +15,6 @@ name(b::SineSeries) = "Sine series"
 
 SineSeries(n::Int) = SineSeries{Float64}(n)
 
-SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
-    rescale(SineSeries{T}(n), a, b)
-
-function SineSeries(n::Int, a::Number, b::Number)
-    T = float(promote_type(typeof(a),typeof(b)))
-    SineSeries{T}(n, a, b)
-end
-
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 isbasis(b::SineSeries) = true
@@ -72,6 +64,36 @@ function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x)
     arg * cos(arg * x)
 end
 
+##################
+# Differentiation
+##################
+
+derivative_dict(Φ::CosineSeries{T}, order::Int) where {T} =
+	iseven(order) ? Φ : SineSeries{T}(length(Φ)-1)
+
+diff_scaling_function(Φ::CosineSeries{T}, idx::CosineFrequency, symbol) where {T} =
+	symbol(T(π)*frequency(idx))
+diff_scaling_function(Φ::CosineSeries, idx, symbol) =
+	diff_scaling_function(Φ, native_index(Φ, idx), symbol)
+
+function differentiation(::Type{T}, src::CosineSeries, dest::CosineSeries, order::Int; options...) where {T}
+	if orderiszero(order)
+		@assert src==dest
+		IdentityOperator{T}(src)
+	else
+		@assert iseven(order)
+		sign = (-1)^(order>>1)
+		pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
+	end
+end
+
+function differentiation(::Type{T}, src::CosineSeries, dest::SineSeries, order::Int; options...) where {T}
+	@assert isodd(order)
+	sign = (-1)^((order-1)>>1)
+	pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
+end
+
+
 
 ## Inner products
 
@@ -80,7 +102,7 @@ hasmeasure(dict::SineSeries) = true
 measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
 
 gramoperator(dict::SineSeries, ::FourierMeasure; T = coefficienttype(dict), options...) =
-    ScalingOperator(dict, one(T)/2)
+    ScalingOperator{T}(dict, one(T)/2)
 
 function innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;
 			T = coefficienttype(b1), quad = :analytic, options...)

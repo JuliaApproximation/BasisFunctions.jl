@@ -78,15 +78,17 @@ unsafe_compose_and_simplify1(op1::IdentityOperator, op2) = op2
 unsafe_compose_and_simplify2(op1, op2::IdentityOperator) = op1
 
 # Move scalars to last place
-unsafe_compose_and_simplify1(op1::ScalingOperator{T}, op2) where T =  op2, ScalingOperator(dest(op2), op1.A; T=T)
+unsafe_compose_and_simplify1(op1::ScalingOperator{T}, op2) where {T} =
+    op2, ScalingOperator{T}(dest(op2), op1.A)
 
 # Combine scalars to one / not type stable
 function unsafe_compose_and_simplify(op1::ScalingOperator, op2::ScalingOperator)
+    T = promote_type(eltype(op1),eltype(op2))
     A = op2.A*op1.A
     if A.λ ≈ 1 && iscompatible(cas_src(op1,op2), cas_dest(op1,op2))
-        IdentityOperator(cas_src(op1,op2), cas_dest(op1,op2); T = promote_type(eltype(op1),eltype(op2)))
+        IdentityOperator{T}(cas_src(op1,op2), cas_dest(op1,op2))
     else
-        ScalingOperator(cas_src(op1,op2), cas_dest(op1,op2), A; T = promote_type(eltype(op1),eltype(op2)))
+        ScalingOperator{T}(cas_src(op1,op2), cas_dest(op1,op2), A)
     end
 end
 

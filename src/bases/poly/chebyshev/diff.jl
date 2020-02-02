@@ -19,7 +19,7 @@ struct ChebyshevDifferentiation{T} <: DictionaryOperator{T}
 end
 
 ChebyshevDifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
-	ChebyshevDifferentiation{op_eltype(src,dest)}(src, dest, order)
+	ChebyshevDifferentiation{operatoreltype(src,dest)}(src, dest, order)
 
 ChebyshevDifferentiation(src::Dictionary, order::Int = 1) =
     ChebyshevDifferentiation(src, src, order)
@@ -80,7 +80,7 @@ struct ChebyshevAntidifferentiation{T} <: DictionaryOperator{T}
 end
 
 ChebyshevAntidifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
-	ChebyshevAntidifferentiation{op_eltype(src,dest)}(src, dest, order)
+	ChebyshevAntidifferentiation{operatoreltype(src,dest)}(src, dest, order)
 
 ChebyshevAntidifferentiation(src::Dictionary, order::Int = 1) =
     ChebyshevAntidifferentiation(src, src, order)
@@ -119,8 +119,8 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-function differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...)
+function differentiation(::Type{T}, src::ChebyshevT, dest::ChebyshevT, order::Int; options...) where {T}
+	@assert order >= 0
 	if order == 0
 		IdentityOperator{T}(src, dest)
 	else
@@ -128,8 +128,8 @@ function differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
 	end
 end
 
-function antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...)
+function antidifferentiation(::Type{T}, src::ChebyshevT, dest::ChebyshevT, order::Int; options...) where {T}
+	@assert order >= 0
 	if order == 0
 		IdentityOperator{T}(src, dest)
 	else

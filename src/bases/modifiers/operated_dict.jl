@@ -60,7 +60,7 @@ function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
     OperatedDict(similar_operator(operator(d), similar(src(d), T), similar(dest(d),T) ))
 end
 
-function similar_dictionary(d::OperatedDict, dict::Dictionary)
+function similardictionary(d::OperatedDict, dict::Dictionary)
     if dict == src(d)
         d
     elseif src(d) == dest(d)
@@ -150,15 +150,22 @@ function transform_from_grid(T, src::GridBasis, dest::OperatedDict, grid; option
 # Differentiation
 #################
 
-# hasderivative(dict::OperatedDict) = hasderivative(superdict(dict))
 hasderivative(dict::OperatedDict) = hasderivative(superdict(dict))
+hasderivative(dict::OperatedDict, order) = hasderivative(superdict(dict), order)
+
+# TODO: allow a diagonal operator
 hasantiderivative(dict::OperatedDict) = false
 
-derivative_dict(dict::OperatedDict, order::Int; options...) =
-	derivative_dict(dest(dict), order; options...)
+function derivative_dict(dict::OperatedDict, order; options...)
+	if orderiszero(order)
+		dict
+	else
+		derivative_dict(dest(dict), order; options...)
+	end
+end
 
-differentiation_operator(dict::OperatedDict, ddict::Dictionary, order::Int; options...) =
-	differentiation_operator(dest(dict), ddict, order; options...) * operator(dict)
+differentiation(::Type{T}, dsrc::OperatedDict, ddest::Dictionary, order; options...) where {T} =
+	differentiation(T, dest(dsrc), ddest, order; options...) * operator(dsrc)
 
 unsafe_eval_element_derivative(dict::OperatedDict, i, x) =
     _unsafe_eval_element_derivative(dict, i, x, operator(dict), dict.scratch_src, dict.scratch_dest)
@@ -171,7 +178,7 @@ function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, op, scratc
         scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)
         scratch_src[idx] = 0
-		D = differentiation_operator(superdict(dict))
+		D = differentiation(superdict(dict))
         eval_expansion(dest(D), D*scratch_dest, x)
     end
 end
@@ -228,14 +235,15 @@ end
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-derivative(dict::Dictionary; options...) = differentiation_operator(dict; options...) * dict
-
-derivative(dict::OperatedDict; options...) = differentiation_operator(dest(dict); options...) * dict
-
-function (*)(a::Number, s::Dictionary)
-    T = promote_type(typeof(a), coefficienttype(s))
-    OperatedDict(ScalingOperator(s, convert(T, a)))
+function derivative(dict::Dictionary; options...)
+	@assert hasderivative(dict)
+	differentiation(dict; options...) * dict
 end
+
+derivative(dict::OperatedDict; options...) = differentiation(dest(dict); options...) * dict
+
+(*)(a::Number, s::Dictionary) = ScalingOperator(s, a) * s
+(*)(a::Number, s::OperatedDict) = (ScalingOperator(s, a) * operator(s)) * superdict(s)
 
 function (*)(op::DictionaryOperator, dict::Dictionary)
     @assert src(op) == dict

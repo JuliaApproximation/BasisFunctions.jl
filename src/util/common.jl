@@ -96,6 +96,7 @@ isdyadic(n::Int) = n == 1<<round(Int, log2(n))
 # This is a candidate for a better implementation. How does one generate a
 # unit vector in a tuple?
 dimension_tuple(::Val{N}, dim::Int) where N = ntuple(k -> ((k==dim) ? 1 : 0), Val(N))
+dimension_tuple(N::Int, dim::Int) = ntuple(k -> ((k==dim) ? 1 : 0), N)
 
 subeltype(x) = subeltype(eltype(x))
 subeltype(::Type{T}) where {T <: Number} = T
