@@ -205,20 +205,18 @@ export QR_solver, SVD_solver, regularized_SVD_solver, operator, LSQR_solver, LSM
 export GenericIdentityOperator
 
 # from computations/transform.jl
-export transform_operator, transform_dict, transform_to_grid, transform_from_grid
+export transform, transform_dict, transform_to_grid, transform_from_grid
 
 # from bases/dictionary/gram.jl
-export gramelement, gramoperator, dual, mixedgramoperator, gramdual
+export gramelement, gram, dual, mixedgram, gramdual
 
 # from computations/evaluation.jl
 export evaluation_matrix
 
-# from computations/interpolation.jl
-export interpolation_operator, default_interpolation_operator, interpolation_matrix
-
 # from computations/approximation.jl
-export approximation_operator, default_approximation_operator, approximate,
-    discrete_approximation_operator, continuous_approximation_operator, project
+export approximation, default_approximation, approximate,
+    discrete_approximation, continuous_approximation, project,
+    interpolation, default_interpolation, interpolation_matrix
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator
@@ -253,7 +251,7 @@ export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,
 
 # from bases/dictionary/gridbasis.jl
 export GridBasis,
-    grid, gridbasis, grid_multiplication_operator, weights
+    grid, gridbasis, weights
 
 # from sampling/sampling_operator.jl
 export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator,

@@ -350,7 +350,7 @@ FourierIndexExtension{T}(src, dest) where {T} =
 
 string(op::FourierIndexExtension) = "Fourier series extension from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
+unsafe_wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
 	FourierIndexExtension{T}(src, dest, op.n1, op.n2)
 
 extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
@@ -409,7 +409,7 @@ FourierIndexRestriction{T}(src, dest) where {T} =
 
 string(op::FourierIndexRestriction) = "Fourier series restriction from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-wrap_operator(src, dest, op::FourierIndexRestriction{T}) where {T} =
+unsafe_wrap_operator(src, dest, op::FourierIndexRestriction{T}) where {T} =
 	FourierIndexRestriction{T}(src, dest, op.n1, op.n2)
 
 restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
@@ -519,23 +519,6 @@ end
 _pseudodifferential_operator(::Type{T}, src, dest, symbol::Function; options...) where {T} =
 	DiagonalOperator{T}([diff_scaling_function(src, idx, symbol) for idx in eachindex(src)], src, dest)
 
-# pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
-#
-# function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; T=op_eltype(s1,s2), options...)
-# 	#@assert length(first(methods(symbol)).sig.parameters) = dimension(s1) + 1
-# 	@assert s1 == s2 # There is currently no support for s1 != s2
-# 	# Build a vector of the first order differential operators in each spatial direction:
-# 	Diffs = map(x->differentiation(T, x; options...),elements(s1))
-# 	@assert isdiag(Diffs[1]) #should probably also check others too. This is a temp hack.
-# 	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
-# 	N = prod(size(s1))
-# 	diag = zeros(N)
-# 	for k = 1:N
-# 		vec = [diag(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
-# 		diag[k] = symbol(vec)
-# 	end
-# 	DiagonalOperator(s1,diag; T=T)
-# end
 
 
 ##########################
@@ -646,7 +629,7 @@ function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::Le
 	end
 end
 
-function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttype(dict), options...)
+function gram(::Type{T}, dict::Fourier, measure::FourierMeasure; options...) where {T}
 	@assert isorthogonal(dict, measure) # some robustness.
 	if iseven(length(dict))
 		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
@@ -656,8 +639,7 @@ function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttyp
 	end
 end
 
-function gramoperator(dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill;
-	T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
+function gram(::Type{T}, dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill; options...) where {T}
 	if support(grid) ≈ support(dict) && isperiodic(grid)
 		if isorthonormal(dict, measure)
 			IdentityOperator{T}(dict)
@@ -669,6 +651,6 @@ function gramoperator(dict::Fourier, measure::DiscreteMeasure, grid::AbstractEqu
 			end
 		end
 	else
-		default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; T=T, options...)
+		default_mixedgram_discretemeasure(T, dict, dict, measure, grid, weights; options...)
 	end
 end

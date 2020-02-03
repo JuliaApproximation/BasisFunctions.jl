@@ -37,8 +37,8 @@ hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
 
 measure(dict::ComplexifiedDict) = measure(superdict(dict))
 
-gramoperator1(dict::BasisFunctions.ComplexifiedDict, measure; T=coefficienttype(dict), options...) =
-    wrap_operator(dict, dict, gramoperator(superdict(dict), measure; T=T, options...))
+gram1(T, dict::BasisFunctions.ComplexifiedDict, measure; options...) =
+    wrap_operator(dict, dict, gram(T, superdict(dict), measure; options...))
 
 innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
     innerproduct(superdict(d1), i, d2, j, measure; options...)

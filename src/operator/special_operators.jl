@@ -1,18 +1,5 @@
 
 """
-The function wrap_operator returns an operator with the given source and destination,
-and with the action of the given operator. Depending on the operator, the result is
-a WrappedOperator, but sometimes that can be avoided.
-"""
-function wrap_operator(w_src, w_dest, op)
-    # We do some consistency checks
-    @assert size(w_src) == size(src(op))
-    @assert size(w_dest) == size(dest(op))
-    @assert promote_type(eltype(op),op_eltype(w_src,w_dest)) == eltype(op)
-    unsafe_wrap_operator(w_src, w_dest, op)
-end
-
-"""
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
 otherwise it is not in-place.
@@ -31,11 +18,11 @@ end
 
 object(op::MultiplicationOperator) = op.object
 
+MultiplicationOperator(args...; options...) =
+    MultiplicationOperator{deduce_eltype(args...)}(args...; options...)
+
 MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
     MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
-
-MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = false, T=op_eltype(src,dest)) =
-    MultiplicationOperator{promote_eltype(T,op_eltype(src,dest))}(src::Dictionary, dest::Dictionary, object; inplace=inplace)
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
@@ -109,20 +96,19 @@ inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(
 A FunctionOperator applies a given function to the set of coefficients and
 returns the result.
 """
-struct FunctionOperator{F,T} <: DictionaryOperator{T}
+struct FunctionOperator{T,F} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     fun     ::  F
 end
 
+FunctionOperator(args...) = FunctionOperator{deduce_eltype(args...)}(args...)
+
 FunctionOperator{T}(src, dest, fun) where {T} =
-    FunctionOperator{typeof(fun),T}(src, dest, fun)
+    FunctionOperator{T,typeof(fun)}(src, dest, fun)
 
-FunctionOperator(src::Dictionary, dest::Dictionary, fun; T=op_eltype(src,dest)) =
-    FunctionOperator{T}(src, dest, fun)
-
-similar_operator(op::FunctionOperator{F,S}, src, dest) where {F,S} =
-    FunctionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, op.fun)
+similar_operator(op::FunctionOperator{T,F}, src, dest) where {T,F} =
+    FunctionOperator{promote_type(T,operatoreltype(src,dest)),F}(src, dest, op.fun)
 
 unsafe_wrap_operator(src, dest, op::FunctionOperator) =
     similar_operator(op, src, dest)
@@ -144,7 +130,7 @@ inv(op::FunctionOperator) = inv_function(op, op.fun)
 # This can be overriden for types of functions that do not support inv
 inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
 
-string(op::FunctionOperator) = "Function "*string(op.fun)
+string(op::FunctionOperator) = "Function " * string(op.fun)
 
 
 
@@ -270,14 +256,15 @@ LinearizationOperator{T}(src::Dictionary) where {T} =
     LinearizationOperator{T}(src, DiscreteVectorDictionary{coefficienttype(src)}(length(src)))
 
 similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
-    LinearizationOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
+    LinearizationOperator{promote_type(T,operatoreltype(src,dest))}(src, dest)
 
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)
 
 isdiag(op::LinearizationOperator) = true
 
-Base.adjoint(op::LinearizationOperator{T}) where {T} = DelinearizationOperator{T}(dest(op), src(op))
+Base.adjoint(op::LinearizationOperator{T}) where {T} =
+    DelinearizationOperator{T}(dest(op), src(op))
 
 
 "The inverse of a LinearizationOperator."
@@ -292,15 +279,18 @@ DelinearizationOperator(dicts::Dictionary...) =
 DelinearizationOperator{T}(dest::Dictionary) where {T} =
     DelinearizationOperator{T}(DiscreteVectorDictionary{T}(length(dest)), dest)
 
-similar_operator(::DelinearizationOperator, src, dest) =
-    DelinearizationOperator(src, dest)
+similar_operator(::DelinearizationOperator{T}, src, dest) where {T} =
+    DelinearizationOperator{promote_type(T,operatoreltype(src,dest))}(src, dest)
 
 apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
 isdiag(op::DelinearizationOperator) = true
 
-Base.adjoint(op::DelinearizationOperator{T}) where {T} = LinearizationOperator{T}(dest(op), src(op))
+Base.adjoint(op::DelinearizationOperator{T}) where {T} =
+    LinearizationOperator{T}(dest(op), src(op))
+
+
 
 function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)

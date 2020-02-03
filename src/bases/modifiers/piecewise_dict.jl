@@ -163,8 +163,8 @@ function split_interval_expansion(set::Dictionary1d, coefficients, x)
     # We will manually evaluate the current function at the approximation grids
     # of the newly created sets with smaller support, and use those function values
     # to reconstruct the original function on each subinterval.
-    A1 = approximation_operator(pset1)
-    A2 = approximation_operator(pset2)
+    A1 = approximation(pset1)
+    A2 = approximation(pset2)
     E1 = evaluation(T, set, grid(src(A1)))
     E2 = evaluation(T, set, grid(src(A2)))
     z1 = A1*(E1*coefficients)
@@ -211,5 +211,5 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector,
 end
 
 # TODO: add the measure argument here
-gramoperator(dict::PiecewiseDict; T=coefficienttype(dict), options...) =
-    BlockDiagonalOperator(DictionaryOperator{T}[gramoperator(element(dict,i); options...) for i in 1:numelements(dict)], dict, dict; T=T)
+gram(::Type{T}, dict::PiecewiseDict; options...) where {T} =
+    BlockDiagonalOperator(DictionaryOperator{T}[gram(T, element(dict,i); options...) for i in 1:numelements(dict)], dict, dict)

@@ -21,15 +21,15 @@
 # The default transform space is the space associated with the grid of the set
 transform_dict(Φ::Dictionary; options...) = GridBasis(Φ)
 
-transform_operator(src::Dictionary; options...) = transform_operator(src, transform_dict(src); options...)
+transform(src::Dictionary; options...) = transform(src, transform_dict(src); options...)
 
-transform_operator(src::Dictionary, dest::Dictionary; options...) =
-    transform_operator(operatoreltype(src, dest), src, dest; options...)
+transform(src::Dictionary, dest::Dictionary; options...) =
+    transform(operatoreltype(src, dest), src, dest; options...)
 
 # If source or destination is a GridBasis, specialize
-transform_operator(T, src::Dictionary, dest::GridBasis; options...) =
+transform(T, src::Dictionary, dest::GridBasis; options...) =
     transform_to_grid(T, src, dest, grid(dest); options...)
-transform_operator(T, src::GridBasis, dest::Dictionary; options...) =
+transform(T, src::GridBasis, dest::Dictionary; options...) =
     transform_from_grid(T, src, dest, grid(src); options...)
 
 transform_to_grid(T, src::Dictionary, dest::GridBasis; options...) =
@@ -38,7 +38,7 @@ transform_from_grid(T, src::GridBasis, dest::Dictionary; options...) =
     transform_from_grid(T, src, dest, grid(src); options...)
 
 # Convert grid to GridBasis
-transform_operator(T, src::Dictionary, grid::AbstractGrid; options...) =
+transform(T, src::Dictionary, grid::AbstractGrid; options...) =
     transform_to_grid(T, src, GridBasis{T}(grid); options...)
-transform_operator(T, grid::AbstractGrid, dest::Dictionary; options...) =
+transform(T, grid::AbstractGrid, dest::Dictionary; options...) =
     transform_from_grid(T, GridBasis{T}(grid), dest; options...)

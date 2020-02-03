@@ -118,19 +118,19 @@ function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Mapp
     end
 end
 
-function gramoperator(dict::MappedDict, m::MappedMeasure; T = coefficienttype(dict), options...)
+function gram(::Type{T}, dict::MappedDict, m::MappedMeasure; options...) where {T}
     if iscompatible(mapping(dict), mapping(m))
-        wrap_operator(dict, dict, gramoperator(superdict(dict), supermeasure(m); T=T, options...))
+        wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else
-        default_gramoperator(dict, m; T=T, options...)
+        default_gram(T, dict, m; options...)
     end
 end
 
-function gramoperator(dict::MappedDict, m::DiscreteMeasure, grid::MappedGrid, weights; T = coefficienttype(dict), options...)
+function gram(::Type{T}, dict::MappedDict, m::DiscreteMeasure, grid::MappedGrid, weights; options...) where {T}
     if iscompatible(mapping(grid), mapping(dict))
-        wrap_operator(dict, dict, gramoperator(superdict(dict), supermeasure(m); T=T, options...))
+        wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else
-        default_gramoperator(dict, m; T=T, options...)
+        default_gram(T, dict, m; options...)
     end
 end
 

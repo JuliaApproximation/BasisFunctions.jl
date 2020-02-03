@@ -1,30 +1,10 @@
 
-# In this file we define the interface for the following generic functions:
-#
-# Approximation:
-# - interpolation_operator
-# - approximation_operator
-# - leastsquares_operator
-# - transform_operator
-#
-# Calculus:
-# - differentiation operator
-# - antidifferentation operator
-#
-# These operators are also defined for TensorProductDict's.
-#
+# In this file we define the interface for a number of generic functions:
 # See the individual files for details on the interfaces.
 
 include("transform.jl")
-
 include("evaluation.jl")
-
-include("interpolation.jl")
-
-include("leastsquares.jl")
-
 include("approximation.jl")
-
 include("differentiation.jl")
 
 
@@ -49,15 +29,15 @@ for op in (:extension, :restriction, :conversion)
 end
 
 
-for op in (:interpolation_operator, :leastsquares_operator)
-    @eval $op(s1::TensorProductDict, s2::TensorProductDict; options...) =
-        tensorproduct(map( (u,v) -> $op(u, v; options...), elements(s1), elements(s2))...)
+for op in (:interpolation, :leastsquares)
+    @eval $op(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
+        tensorproduct(map( (u,v) -> $op(T, u, v; options...), elements(s1), elements(s2))...)
 end
 
-dense_evaluation(s1::TensorProductDict, s2::TensorProductDict; options...) =
-    tensorproduct(map( (u,v) -> dense_evaluation(u, v; options...), elements(s1), elements(s2))...)
+dense_evaluation(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
+    tensorproduct(map( (u,v) -> dense_evaluation(T, u, v; options...), elements(s1), elements(s2))...)
 
-for op in (:approximation_operator, )
+for op in (:approximation, )
     @eval $op(s::TensorProductDict; options...) =
         tensorproduct(map( u -> $op(u; options...), elements(s))...)
 end

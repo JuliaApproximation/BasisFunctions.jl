@@ -196,8 +196,8 @@ for f in (:isorthogonal, :isorthonormal, :isbiorthogonal)
         $f(superdict(dict), measure) && $f(operator(dict))
 end
 
-gramoperator1(dict::OperatedDict, measure; options...) =
-	adjoint(operator(dict)) * gramoperator(dest(operator(dict)), measure; options...) * operator(dict)
+gram1(T, dict::OperatedDict, measure; options...) =
+	adjoint(operator(dict)) * gram(T, dest(operator(dict)), measure; options...) * operator(dict)
 
 function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
@@ -219,13 +219,13 @@ function innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
 	end
 end
 
-function mixedgramoperator1(dict1::OperatedDict, dict2, measure; options...)
-	G = mixedgramoperator(superdict(dict1), dict2, measure; options...)
+function mixedgram1(T, dict1::OperatedDict, dict2, measure; options...)
+	G = mixedgram(T, superdict(dict1), dict2, measure; options...)
 	wrap_operator(dict2, dict1, adjoint(operator(dict1)) * G)
 end
 
-function mixedgramoperator2(dict1, dict2::OperatedDict, measure; options...)
-	G = mixedgramoperator(dict1, superdict(dict2), measure; options...)
+function mixedgram2(T, dict1, dict2::OperatedDict, measure; options...)
+	G = mixedgram(T, dict1, superdict(dict2), measure; options...)
 	wrap_operator(dict2, dict1, G *  operator(dict2))
 end
 

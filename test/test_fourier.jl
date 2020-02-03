@@ -165,7 +165,7 @@ function test_fourier_series(T)
 
     # Transforms
     b1 = Fourier{T}(161)
-    A = approximation_operator(b1)
+    A = approximation(b1)
     f = x -> 1/(2+cos(2*T(pi)*x))
     e = approximate(b1, f)
     x0 = T(1//2)
@@ -213,11 +213,11 @@ end
     test_fourier_orthogonality()
     F = Fourier(10)
     P = ProjectionSampling(F)
-    @test (P')'*P' == gramoperator(F)
+    @test (P')'*P' == gram(F)
 
     for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
         D = dual(P, M)
-        @test Matrix(gramoperator(P, M)) ≈ Matrix(inv(gramoperator(D,M)))
+        @test Matrix(gram(P, M)) ≈ Matrix(inv(gram(D,M)))
         A = SynthesisOperator(P, M)
         Z = SynthesisOperator(D, M)
         Zt = Z'

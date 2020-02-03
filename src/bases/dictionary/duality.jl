@@ -10,9 +10,9 @@ gramdual(dict::Dictionary, measure::Measure; options...) =
 
 function default_gramdual(dict::Dictionary, measure::Measure; options...)
     try
-        conj(inv(gramoperator(dict, measure; options...))) * dict
+        conj(inv(gram(dict, measure; options...))) * dict
     catch DimensionMismatch
         @warn "Convert DictionaryOperator to dense ArrayOperator"
-        ArrayOperator(inv(conj(Matrix(gramoperator(dict, measure; options...)))),dict,dict) * dict
+        ArrayOperator(inv(conj(Matrix(gram(dict, measure; options...)))),dict,dict) * dict
     end
 end

@@ -21,7 +21,7 @@ conversion
 
 operatoreltype(Φ::Dictionary...) = promote_type(map(coefficienttype, Φ)...)
 
-for op in (:conversion, :extension, :restriction, :evaluation, :approximation)
+for op in (:conversion, :extension, :restriction, :evaluation)
     # Only dictionaries are given: compute the eltype
     @eval $op(dicts::Dictionary...; options...) = $op(operatoreltype(dicts...), dicts...; options...)
     # Only grids are given: make a GridBasis dictionary
@@ -133,9 +133,3 @@ conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
 
 evaluation(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest, grid(dest); options...)
-
-approximation(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
-    approximation(T, src, dest, grid(src); options...)
-
-approximation(::Type{T}, src, dest, grid; options) where {T} =
-    pinv(evaluation(T, dest, src, grid; options...))

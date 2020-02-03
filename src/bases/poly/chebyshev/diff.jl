@@ -31,7 +31,8 @@ string(op::ChebyshevDifferentiation) = "Chebyshev differentiation matrix of orde
 similar_operator(op::ChebyshevDifferentiation, src, dest) =
     ChebyshevDifferentiation(src, dest, order(op))
 
-wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+unsafe_wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+
 function adjoint(op::ChebyshevDifferentiation)
     @warn "Inefficient adjoint of `ChebyshevDifferentiation`"
     ArrayOperator(adjoint(Matrix(op)), dest(op), src(op))
@@ -92,7 +93,7 @@ string(op::ChebyshevAntidifferentiation) = "Chebyshev antidifferentiation matrix
 similar_operator(op::ChebyshevAntidifferentiation, src, dest) =
     ChebyshevAntidifferentiation(src, dest, order(op))
 
-wrap_operator(src, dest, op::ChebyshevAntidifferentiation) = similar_operator(op, src, dest)
+unsafe_wrap_operator(src, dest, op::ChebyshevAntidifferentiation) = similar_operator(op, src, dest)
 
 # TODO: this allocates lots of memory...
 function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)

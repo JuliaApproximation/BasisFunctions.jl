@@ -3,123 +3,131 @@
 
 # By convention Gram functionality is only implemented for dictionaries that are
 # associated with a measure.
-hasmeasure(dict::Dictionary) = false
+hasmeasure(Φ::Dictionary) = false
 
 # Determine a measure to use when two dictionaries are given
-defaultmeasure(dict1::Dictionary, dict2::Dictionary) =
-    _defaultmeasure(dict1, dict2, measure(dict1), measure(dict2))
+defaultmeasure(Φ1::Dictionary, Φ2::Dictionary) =
+    _defaultmeasure(Φ1, Φ2, measure(Φ1), measure(Φ2))
 
-function _defaultmeasure(dict1, dict2, m1, m2)
+function _defaultmeasure(Φ1, Φ2, m1, m2)
     if iscompatible(m1, m2)
         m1
     else
-        if iscompatible(support(dict1),support(dict2))
-            GenericLebesgueMeasure(support(dict1))
+        if iscompatible(support(Φ1),support(Φ2))
+            GenericLebesgueMeasure(support(Φ1))
         else
-            error("Please specify which measure to use for the combination of $(dict1) and $(dict2).")
+            error("Please specify which measure to use for the combination of $(Φ1) and $(Φ2).")
         end
     end
 end
 
 # Shortcut: Dictionaries of the same type have just one measure
-defaultmeasure(dict1::D, dict2::D) where {D <: Dictionary} = measure(dict1)
+defaultmeasure(Φ1::D, Φ2::D) where {D <: Dictionary} = measure(Φ1)
 
 
-innerproduct(dict1::Dictionary, i, dict2::Dictionary, j; options...) =
-    innerproduct(dict1, i, dict2, j, defaultmeasure(dict1, dict2); options...)
+innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) =
+    innerproduct(Φ1, i, Φ2, j, defaultmeasure(Φ1, Φ2); options...)
 
 # Convert linear indices to native indices, then call innerproduct_native
-innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j::Int, measure; options...) =
-    innerproduct_native(dict1, native_index(dict1, i), dict2, native_index(dict2, j), measure; options...)
-innerproduct(dict1::Dictionary, i, dict2::Dictionary, j::Int, measure; options...) =
-    innerproduct_native(dict1, i, dict2, native_index(dict2, j), measure; options...)
-innerproduct(dict1::Dictionary, i::Int, dict2::Dictionary, j, measure; options...) =
-    innerproduct_native(dict1, native_index(dict1, i), dict2, j, measure; options...)
-innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-    innerproduct_native(dict1, i, dict2, j, measure; options...)
+innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j::Int, measure; options...) =
+    innerproduct_native(Φ1, native_index(Φ1, i), Φ2, native_index(Φ2, j), measure; options...)
+innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j::Int, measure; options...) =
+    innerproduct_native(Φ1, i, Φ2, native_index(Φ2, j), measure; options...)
+innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j, measure; options...) =
+    innerproduct_native(Φ1, native_index(Φ1, i), Φ2, j, measure; options...)
+innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
+    innerproduct_native(Φ1, i, Φ2, j, measure; options...)
 
 # - innerproduct_native: if not specialized, called innerproduct1
-innerproduct_native(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...) =
-    innerproduct1(dict1, i,  dict2, j, measure; options...)
+innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
+    innerproduct1(Φ1, i,  Φ2, j, measure; options...)
 # - innerproduct1: possibility to dispatch on the first dictionary without ambiguity.
 #                  If not specialized, we call innerproduct2
-innerproduct1(dict1::Dictionary, i, dict2, j, measure; options...) =
-    innerproduct2(dict1, i, dict2, j, measure; options...)
+innerproduct1(Φ1::Dictionary, i, Φ2, j, measure; options...) =
+    innerproduct2(Φ1, i, Φ2, j, measure; options...)
 # - innerproduct2: possibility to dispatch on the second dictionary without ambiguity
-innerproduct2(dict1, i, dict2::Dictionary, j, measure; options...) =
-    default_dict_innerproduct(dict1, i, dict2, j, measure; options...)
+innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; options...) =
+    default_dict_innerproduct(Φ1, i, Φ2, j, measure; options...)
 
 
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
-function default_dict_innerproduct(dict1::Dictionary, i, dict2::Dictionary, j, measure; options...)
-	@boundscheck checkbounds(dict1, i)
-	@boundscheck checkbounds(dict2, i)
-    applymeasure(measure, x->conj(unsafe_eval_element(dict1, i, x)) * unsafe_eval_element(dict2, j, x); options...)
+function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...)
+	@boundscheck checkbounds(Φ1, i)
+	@boundscheck checkbounds(Φ2, i)
+    applymeasure(measure, x->conj(unsafe_eval_element(Φ1, i, x)) * unsafe_eval_element(Φ2, j, x); options...)
 end
 
-gramelement(dict::Dictionary, i, j, m = measure(dict); options...) =
-    innerproduct(dict, i, dict, j, m; options...)
+gramelement(dict::Dictionary, i, j, μ = measure(dict); options...) =
+    innerproduct(dict, i, dict, j, μ; options...)
 
 # Call this routine in order to evaluate the Gram matrix entry numerically
-default_gramelement(dict::Dictionary, i, j, m=measure(dict); options...) =
-    default_dict_innerproduct(dict, i, dict, j, m; options...)
+default_gramelement(dict::Dictionary, i, j, μ = measure(dict); options...) =
+    default_dict_innerproduct(dict, i, dict, j, μ; options...)
 
-function grammatrix(dict::Dictionary, m=measure(dict); T=codomaintype(dict),options...)
-    G = zeros(T, length(dict), length(dict))
-    grammatrix!(G, dict, m; options...)
+
+function grammatrix(Φ::Dictionary, μ = measure(Φ), T = codomaintype(Φ); options...)
+    G = zeros(T, length(Φ), length(Φ))
+    grammatrix!(G, Φ, μ; options...)
 end
 
-function grammatrix!(G, dict::Dictionary, m=measure(dict); options...)
-    n = length(dict)
+function grammatrix!(G, Φ::Dictionary, μ = measure(Φ); options...)
+    n = length(Φ)
     for i in 1:n
         for j in 1:i-1
-            G[i,j] = gramelement(dict, i, j, m; options...)
+            G[i,j] = gramelement(Φ, i, j, μ; options...)
             G[j,i] = conj(G[i,j])
         end
-        G[i,i] = gramelement(dict, i, i, m; options...)
+        G[i,i] = gramelement(Φ, i, i, μ; options...)
     end
     G
 end
 
-gramoperator(dict::Dictionary; options...) =
-    gramoperator(dict, measure(dict); options...)
+gram(Φ::Dictionary, args...; options...) = gram(operatoreltype(Φ), Φ, args...; options...)
 
-gramoperator(dict::Dictionary, measure::Measure; options...) =
-    gramoperator1(dict, measure; options...)
+gram(::Type{T}, Φ::Dictionary; options...) where {T} = gram(T, Φ, measure(Φ); options...)
 
-gramoperator1(dict::Dictionary, measure; options...) =
-    gramoperator2(dict, measure; options...)
+gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T} =
+	gram1(T, Φ, μ; options...)
 
-gramoperator2(dict, measure::Measure; options...) =
-    default_gramoperator(dict, measure; options...)
+gram1(T, Φ::Dictionary, μ; options...) =
+	gram2(T, Φ, μ; options...)
 
-gramoperator2(dict, measure::DiscreteMeasure; options...) =
-    gramoperator(dict, measure, grid(measure), weights(measure); options...)
+gram2(T, Φ, μ::Measure; options...) =
+	default_gram(T, Φ, μ; options...)
 
-gramoperator(dict, measure::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
-    default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; options...)
+gram2(T, Φ, μ::DiscreteMeasure; options...) =
+    gram(T, Φ, μ, grid(μ), weights(μ); options...)
 
-function default_gramoperator(dict::Dictionary, m::Measure=measure(dict); options...)
+gram(::Type{T}, Φ, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) where {T} =
+    default_mixedgram_discretemeasure(Φ, Φ, μ, grid, weights; options...)
+
+default_gram(Φ::Dictionary, args...; options...) =
+	default_gram(operatoreltype(Φ), Φ, args...; options...)
+
+function default_gram(::Type{T}, Φ::Dictionary, μ::Measure = measure(Φ); options...) where {T}
     @debug "Slow computation of Gram matrix entrywise."
-    A = grammatrix(dict, m; options...)
-    R = ArrayOperator(A, dict, dict)
+    A = grammatrix(Φ, μ, T; options...)
+    R = ArrayOperator(A, Φ, Φ)
 end
 
-function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = operatoreltype(dict), options...)
-    @assert isorthogonal(dict, measure)
-	n = length(dict)
+default_diagonal_gram(Φ::Dictionary, μ::Measure = measure(Φ); options...) =
+	default_diagonal_gram(operatoreltype(Φ), μ; options...)
+
+function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T}
+    @assert isorthogonal(Φ, μ)
+	n = length(Φ)
 	diag = zeros(T, n)
 	for i in 1:n
-		diag[i] = innerproduct(dict, i, dict, i, measure; options...)
+		diag[i] = innerproduct(Φ, i, Φ, i, μ; options...)
 	end
-	DiagonalOperator(dict, diag)
+	DiagonalOperator(Φ, diag)
 end
 
-function default_mixedgramoperator_discretemeasure(dict1::Dictionary, dict2::Dictionary, measure::DiscreteMeasure, grid::AbstractGrid, weights;
-            T = promote_type(op_eltype(dict1,dict2),subdomaintype(measure)), options...)
-    E1 = evaluation(T, dict1, grid; options...)
-    E2 = evaluation(T, dict2, grid; options...)
+function default_mixedgram_discretemeasure(::Type{T}, Φ1::Dictionary, Φ2::Dictionary,
+			μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) where {T}
+    E1 = evaluation(T, Φ1, grid; options...)
+    E2 = evaluation(T, Φ2, grid; options...)
     W = DiagonalOperator{T}(dest(E2),dest(E1), weights)
     E1'*W*E2
 end
@@ -127,12 +135,12 @@ end
 """
 Project the function onto the space spanned by the given dictionary.
 """
-project(dict::Dictionary, f, m = measure(dict); T = coefficienttype(dict), options...) =
-    project!(zeros(T,dict), dict, f, m; options...)
+project(Φ::Dictionary, f, m = measure(Φ); T = coefficienttype(Φ), options...) =
+    project!(zeros(T,Φ), Φ, f, m; options...)
 
-function project!(result, dict, f, measure; options...)
+function project!(result, Φ, f, μ; options...)
     for i in eachindex(result)
-        result[i] = innerproduct(dict[i], f, measure; options...)
+        result[i] = innerproduct(Φ[i], f, μ; options...)
     end
     result
 end
@@ -144,72 +152,67 @@ end
 ########################
 
 
-# If no measure is given, try to determine a default choice from the measures of
-# the given dictionaries. If they agree, we use that one, otherwise we throw an error.
-mixedgramoperator(d1::Dictionary, d2::Dictionary; options...) =
-    mixedgramoperator(d1, d2, measure(d1), measure(d2); options...)
+mixedgram(Φ1::Dictionary, Φ2::Dictionary, args...; options...) =
+	mixedgram(operatoreltype(Φ1,Φ2), Φ1, Φ2, args...; options...)
 
-function mixedgramoperator(d1, d2, m1::Measure, m2::Measure; options...)
-    if iscompatible(m1, m2)
-        mixedgramoperator(d1, d2, m1; options...)
-    else
-        error("Incompatible measures: mixed gram operator is ambiguous.")
-    end
-end
+mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary; options...) where {T} =
+    mixedgram(T, Φ1, Φ2, defaultmeasure(Φ1, Φ2); options...)
+
 
 """
 Compute the mixed Gram matrix corresponding to two dictionaries. The matrix
 has elements given by the inner products between the elements of the dictionaries,
 relative to the given measure.
 """
-mixedgramoperator(d1, d2, measure; options...) =
-    mixedgramoperator1(d1, d2, measure; options...)
+mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ::Measure; options...) where {T} =
+    mixedgram1(T, Φ1, Φ2, μ; options...)
 
-# The routine mixedgramoperator1 can be specialized by concrete subtypes of the
-# first dictionary, while mixedgramoperator2 can be specialized on the second dictionary.
-# mixedgramoperator3 can be specialized on the measure
-mixedgramoperator1(d1::Dictionary, d2, measure; options...) =
-    mixedgramoperator2(d1, d2, measure; options...)
+# The routine mixedgram1 can be specialized by concrete subtypes of the
+# first dictionary, while mixedgram2 can be specialized on the second dictionary.
+# mixedgram3 can be specialized on the measure
+mixedgram1(T, Φ1::Dictionary, Φ2, μ; options...) =
+    mixedgram2(T, Φ1, Φ2, μ; options...)
 
-mixedgramoperator2(d1, d2::Dictionary, measure; options...) =
-    mixedgramoperator3(d1, d2, measure; options...)
+mixedgram2(T, Φ1, Φ2::Dictionary, μ; options...) =
+    mixedgram3(T, Φ1, Φ2, μ; options...)
 
-mixedgramoperator3(d1, d2, measure::Measure; options...) =
-    default_mixedgramoperator(d1, d2, measure; options...)
+mixedgram3(T, Φ1, Φ2, μ::Measure; options...) =
+    default_mixedgram(T, Φ1, Φ2, μ; options...)
 
-mixedgramoperator3(d1, d2, measure::DiscreteMeasure; options...) =
-    mixedgramoperator(d1, d2, measure, grid(measure), weights(measure); options...)
+mixedgram3(T, Φ1, Φ2, μ::DiscreteMeasure; options...) =
+    mixedgram(T, Φ1, Φ2, μ, grid(μ), weights(μ); options...)
 
-mixedgramoperator(d1, d2, measure::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
-    default_mixedgramoperator_discretemeasure(d1, d2, measure, grid, weights; options...)
+mixedgram(T, Φ1, Φ2, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
+    default_mixedgram_discretemeasure(T, Φ1, Φ2, μ, grid, weights; options...)
 
-function mixedgramoperator(d1::DICT, d2::DICT, measure::Measure; options...) where DICT<:Dictionary
-    if d1 == d2
-        gramoperator(d1, measure; options...)
+function mixedgram(::Type{T}, Φ1::D, Φ2::D, μ::Measure; options...) where {T,D<:Dictionary}
+    if Φ1 == Φ2
+        gram(T, Φ1, μ; options...)
     else
-        mixedgramoperator1(d1, d2, measure; options...)
+        mixedgram1(T, Φ1, Φ2, μ; options...)
     end
 end
 
-function default_mixedgramoperator(d1::Dictionary, d2::Dictionary, measure; options...)
+default_mixedgram(Φ1::Dictionary, Φ2::Dictionary, args...; options...) =
+	default_mixedgram(operatoreltype(Φ1, Φ2), Φ1, Φ2, args...; options...)
+
+function default_mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ; options...) where {T}
     @debug "Slow computation of mixed Gram matrix entrywise."
-    A = mixedgrammatrix(d1, d2, measure; options...)
-    T = eltype(A)
-    ArrayOperator(A, ensure_coefficienttype(T, d2, d1)...)
+    A = mixedgrammatrix(Φ1, Φ2, μ, T; options...)
+    ArrayOperator(A, Φ2, Φ1)
 end
 
-function mixedgrammatrix(d1::Dictionary, d2::Dictionary, measure; options...)
-    T = promote_type(coefficienttype(d1),coefficienttype(d2))
-    G = zeros(T, length(d1), length(d2))
-    mixedgrammatrix!(G, d1, d2, measure; options...)
+function mixedgrammatrix(Φ1::Dictionary, Φ2::Dictionary, μ, T = operatoreltype(Φ1,Φ2); options...)
+    G = zeros(T, length(Φ1), length(Φ2))
+    mixedgrammatrix!(G, Φ1, Φ2, μ; options...)
 end
 
-function mixedgrammatrix!(G, d1::Dictionary, d2::Dictionary, measure; options...)
-    m = length(d1)
-    n = length(d2)
+function mixedgrammatrix!(G, Φ1::Dictionary, Φ2::Dictionary, μ; options...)
+    m = length(Φ1)
+    n = length(Φ2)
     for i in 1:m
         for j in 1:n
-            G[i,j] = innerproduct(d1, i, d2, j, measure; options...)
+            G[i,j] = innerproduct(Φ1, i, Φ2, j, μ; options...)
         end
     end
     G

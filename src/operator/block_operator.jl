@@ -21,6 +21,8 @@ struct BlockOperator{T} <: DictionaryOperator{T}
     scratch_dest
 
     function BlockOperator{T}(operators, src, dest) where {T}
+        # Avoid 1x1 block operators
+        @assert size(operators,1) + size(operators,2) > 2
         scratch_src = zeros(src)
         scratch_dest = zeros(dest)
         new(operators, src, dest, scratch_src, scratch_dest)
@@ -29,31 +31,28 @@ end
 
 function BlockOperator(operators::AbstractArray{OP,2},
             op_src = multidict(map(src, operators[1,:])...),
-            op_dest = multidict(map(dest, operators[:,1])...);
-            T=op_eltype(op_src, op_dest)) where {OP <: DictionaryOperator}
-    # Avoid 1x1 block operators
-    @assert size(operators,1) + size(operators,2) > 2
+            op_dest = multidict(map(dest, operators[:,1])...)) where {OP <: DictionaryOperator}
+    T = promote_type(operatoreltype(op_src, op_dest), map(eltype, operators)...)
     BlockOperator{T}(operators, op_src, op_dest)
 end
 
-ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where T =
+ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T} =
     BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements(dest)), (j,srcj) in enumerate(elements(src))], src, dest)
 
 # sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
-function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, sets::Dictionary...)
-    T = promote_type(eltype(op1), eltype(op2))
+function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, dicts::Dictionary...)
+    T = promote_type(eltype(op1), eltype(op2), operatoreltype(dicts...))
     operators = Array{DictionaryOperator{T}}(1, 2)
     operators[1] = op1
     operators[2] = op2
-    BlockOperator(operators, sets...)
+    BlockOperator(operators, dicts...)
 end
 
-function block_row_operator(ops::AbstractArray{OP, 1}, sets::Dictionary...) where {OP <: DictionaryOperator}
-    T = promote_type(map(eltype, ops)...)
+function block_row_operator(ops::AbstractArray{OP, 1}, dicts::Dictionary...) where {OP <: DictionaryOperator}
+    T = promote_type(operatoreltype(dicts...), map(eltype, ops)...)
     operators = Array{DictionaryOperator{T}}(undef, 1, length(ops))
-
     operators[:] = ops
-    BlockOperator(operators, sets...)
+    BlockOperator(operators, dicts...)
 end
 
 function block_column_operator(op1::DictionaryOperator, op2::DictionaryOperator)
@@ -73,7 +72,7 @@ end
 
 unsafe_wrap_operator(src, dest, op::BlockOperator) = similar_operator(op, src, dest)
 
-similar_operator(op::BlockOperator{T}, src, dest) where T =
+similar_operator(op::BlockOperator{T}, src, dest) where {T} =
     BlockOperator{T}(op.operators, src, dest)
 
 # Return a block operator the size of the given operator, but filled with zero
@@ -203,12 +202,14 @@ struct BlockDiagonalOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest;
-            T=op_eltype(src,dest)) where {O<:DictionaryOperator} =
-    BlockDiagonalOperator{promote_type(T,map(eltype, operators)...)}(operators, src, dest)
+function BlockDiagonalOperator(operators::AbstractArray{O,1}, src, dest) where {O<:DictionaryOperator}
+    T = promote_type(operatoreltype(src,dest), map(eltype, operators)...)
+    BlockDiagonalOperator{T}(operators, src, dest)
+end
 
-BlockDiagonalOperator(operators::AbstractArray{O,1}; T=promote_type(map(eltype, operators)...)) where {O<:DictionaryOperator} =
-    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)); T=T)
+function BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:DictionaryOperator}
+    BlockDiagonalOperator(operators, multidict(map(src, operators)), multidict(map(dest, operators)))
+end
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators

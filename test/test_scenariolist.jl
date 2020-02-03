@@ -8,16 +8,16 @@ using BasisFunctions, LinearAlgebra, DomainSets, GridArrays, Test, StaticArrays
     @test_throws MethodError SynthesisOperator(F,nothing)''
 
     g = interpolation_grid(Fourier(3) ⇒ -1..1)
-    g1 = gramoperator(Fourier(3) ⇒ -1..1,discretemeasure(mapped_grid(FourierGrid(6),mapping(g))))
-    g2 = gramoperator(Fourier(3),discretemeasure(FourierGrid(6)))
-    g3 = BasisFunctions.default_gramoperator(Fourier(3),discretemeasure(FourierGrid(6)))
+    g1 = gram(Fourier(3) ⇒ -1..1,discretemeasure(mapped_grid(FourierGrid(6),mapping(g))))
+    g2 = gram(Fourier(3),discretemeasure(FourierGrid(6)))
+    g3 = BasisFunctions.default_gram(Fourier(3),discretemeasure(FourierGrid(6)))
 
     @test g1≈g2≈g3
 
 
-    g1 = gramoperator(Fourier(3) ⇒ -1..1)
-    g2 = gramoperator(Fourier(3))
-    g3 = BasisFunctions.default_gramoperator(Fourier(3))
+    g1 = gram(Fourier(3) ⇒ -1..1)
+    g2 = gram(Fourier(3))
+    g3 = BasisFunctions.default_gram(Fourier(3))
 
     @test g1≈g2≈g3
 

@@ -113,14 +113,11 @@ adjoint(f::Expansion) = differentiate(f)
 roots(f::Expansion) = roots(dictionary(f), coefficients(f))
 
 # Delegate generic operators
-for op in (:extension, :restriction, :evaluation, :approximation)
+for op in (:extension, :restriction, :evaluation, :approximation, :transform)
     @eval $op(src::Expansion, dest::Expansion) = $op(promote_type(eltype(src),eltype(dest)), dictionary(src), dictionary(dest))
 end
-for op in (:transform_operator,)
-    @eval $op(s1::Expansion, s2::Expansion) = $op(dictionary(s1), dictionary(s2))
-end
 
-for op in (:interpolation_operator, :approximation_operator)
+for op in (:interpolation, :approximation)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 

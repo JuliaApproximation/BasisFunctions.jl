@@ -56,11 +56,6 @@ apply_map(s::GridBasis, map) = GridBasis{coefficienttype(s)}(apply_map(grid(s), 
 
 sample(s::GridBasis, f) = sample(grid(s), f, coefficienttype(s))
 
-grid_multiplication_operator(a::Function, GB::GridBasis; T=op_eltype(GB)) =
-	DiagonalOperator(GB, GB, map(a,grid(GB)); T=T)
-grid_multiplication_opearator(a::Function, grid::AbstractGrid; options...) =
-	grid_multiplication_operator(a,GridBasis(grid); options...)
-
 native_index(d::ProductGridBasis, idx) = product_native_index(size(d), idx)
 ordering(d::ProductGridBasis) = ProductIndexList{dimension(grid(d))}(size(d))
 

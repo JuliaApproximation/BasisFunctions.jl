@@ -77,10 +77,10 @@ restriction(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where 
 hasmeasure(dict::CosineSeries) = true
 measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
 
-function gramoperator(dict::CosineSeries, ::FourierMeasure; T = coefficienttype(dict), options...)
+function gram(::Type{T}, dict::CosineSeries, ::FourierMeasure; options...) where {T}
     diag = ones(T,length(dict))/2
     diag[1] = 1
-    DiagonalOperator{T}(dict, diag)
+    DiagonalOperator(dict, diag)
 end
 
 innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;

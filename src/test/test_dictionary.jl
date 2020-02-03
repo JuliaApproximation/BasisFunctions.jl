@@ -161,7 +161,7 @@ function test_generic_dict_codomaintype(basis)
 end
 
 function test_generic_dict_approximation(basis)
-    A = approximation_operator(basis)
+    A = approximation(basis)
     f = suitable_function(basis)
     e = Expansion(basis, A*f)
 
@@ -174,7 +174,7 @@ end
 
 function test_gram_projection(basis)
     if hasmeasure(basis)
-        G = gramoperator(basis)
+        G = gram(basis)
         @test src(G) == basis
         @test dest(G) == basis
         n = length(basis)
@@ -201,7 +201,7 @@ end
 function test_generic_dict_interpolation(basis)
     ELT = coefficienttype(basis)
     g = suitable_interpolation_grid(basis)
-    I = interpolation_operator(basis, g)
+    I = interpolation(basis, g)
     x = rand(GridBasis{coefficienttype(basis)}(g))
     e = Expansion(basis, I*x)
     @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
@@ -259,8 +259,8 @@ function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
     @test hastransform(basis, grid)
     @test hastransform(basis, tbasis)
 
-    t = transform_operator(tbasis, basis)
-    it = transform_operator(basis, tbasis)
+    t = transform(tbasis, basis)
+    it = transform(basis, tbasis)
 
     # - transform from grid
     x = random_expansion(tbasis)

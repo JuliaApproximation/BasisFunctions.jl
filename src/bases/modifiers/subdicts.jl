@@ -255,13 +255,12 @@ sub(dict::Subdictionary, idx) =
 
 
 
-# A gramoperator of a subdict orthonormal/orthogonal dictionary is also Identity/Diagonal
-function gramoperator1(s::Subdictionary, m;
-            T = promote_type(coefficienttype(s), domaintype(m)), options...)
+# A gram operator of a subdict orthonormal/orthogonal dictionary is also Identity/Diagonal
+function gram1(T, s::Subdictionary, m; options...)
     if isorthonormal(s, m)
         return IdentityOperator{T}(s)
     elseif isorthogonal(s, m)
-        return DiagonalOperator{T}(s, diag(gramoperator(superdict(s), m; T=T, options...))[superindices(s)])
+        return DiagonalOperator{T}(s, diag(gram(T, superdict(s), m; options...))[superindices(s)])
     end
-    default_gramoperator(s, m; T=T, options...)
+    default_gram(T, s, m; options...)
 end

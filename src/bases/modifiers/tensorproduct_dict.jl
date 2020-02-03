@@ -280,7 +280,7 @@ evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid;
 dual(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
     TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
 
-gramoperator(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
-    TensorProductOperator(map((x,y)->gramoperator(x,y; options...), elements(dict), elements(measure))...)
-mixedgramoperator(dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict1); options...) =
-    TensorProductOperator(map((x,y,z)->mixedgramoperator(x,y,z; options...), elements(dict1), elements(dict2), elements(measure))...)
+gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}; options...) where {T} =
+    TensorProductOperator(map((x,y)->gram(T, x,y; options...), elements(dict), elements(measure))...)
+mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}; options...) where {T} =
+    TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), elements(dict1), elements(dict2), elements(measure))...)
