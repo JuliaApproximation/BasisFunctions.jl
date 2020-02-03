@@ -188,9 +188,6 @@ export AbstractOperator, DictionaryOperator,
     apply!, apply, apply_multiple, apply_inplace!,
     matrix, diag, isdiag, isinplace, sparse_matrix
 
-# from operator/derived_op.jl
-export ConcreteDerivedOperator
-
 # from operator/composite_operator.jl
 export CompositeOperator, compose
 
@@ -324,7 +321,6 @@ include("bases/dictionary/gridbasis.jl")
 include("bases/dictionary/basisfunction.jl")
 
 include("operator/operator.jl")
-include("operator/derived_op.jl")
 include("operator/composite_operator.jl")
 
 include("bases/modifiers/derived_dict.jl")

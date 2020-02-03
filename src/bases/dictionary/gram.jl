@@ -106,7 +106,7 @@ function default_gramoperator(dict::Dictionary, m::Measure=measure(dict); option
     R = ArrayOperator(A, dict, dict)
 end
 
-function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = coefficienttype(dict), options...)
+function default_diagonal_gramoperator(dict::Dictionary, measure::Measure; T = operatoreltype(dict), options...)
     @assert isorthogonal(dict, measure)
 	n = length(dict)
 	diag = zeros(T, n)

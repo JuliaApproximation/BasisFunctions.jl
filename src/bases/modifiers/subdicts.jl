@@ -261,7 +261,7 @@ function gramoperator1(s::Subdictionary, m;
     if isorthonormal(s, m)
         return IdentityOperator{T}(s)
     elseif isorthogonal(s, m)
-        return DiagonalOperator(s, diag(gramoperator(superdict(s), m; T=T, options...))[superindices(s)]; T=T, options...)
+        return DiagonalOperator{T}(s, diag(gramoperator(superdict(s), m; T=T, options...))[superindices(s)])
     end
     default_gramoperator(s, m; T=T, options...)
 end

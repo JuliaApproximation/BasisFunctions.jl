@@ -71,10 +71,7 @@ end
 derivative_dict(Φ::CosineSeries{T}, order::Int) where {T} =
 	iseven(order) ? Φ : SineSeries{T}(length(Φ)-1)
 
-diff_scaling_function(Φ::CosineSeries{T}, idx::CosineFrequency, symbol) where {T} =
-	symbol(T(π)*frequency(idx))
-diff_scaling_function(Φ::CosineSeries, idx, symbol) =
-	diff_scaling_function(Φ, native_index(Φ, idx), symbol)
+diff_scaling_function(Φ::CosineSeries{T}, idx::Int, symbol) where {T} = symbol(T(π)*idx)
 
 function differentiation(::Type{T}, src::CosineSeries, dest::CosineSeries, order::Int; options...) where {T}
 	if orderiszero(order)
@@ -83,14 +80,14 @@ function differentiation(::Type{T}, src::CosineSeries, dest::CosineSeries, order
 	else
 		@assert iseven(order)
 		sign = (-1)^(order>>1)
-		pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
+		_pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
 	end
 end
 
 function differentiation(::Type{T}, src::CosineSeries, dest::SineSeries, order::Int; options...) where {T}
 	@assert isodd(order)
 	sign = (-1)^((order-1)>>1)
-	pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
+	_pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
 end
 
 

@@ -32,10 +32,10 @@ function _compose_and_simplify(ops::AbstractOperator...)
     tuple(ops...)
 end
 
-@inline cas_src(op1, op2) = src(op1)
-@inline cas_dest(op1, op2) = dest(op2)
+cas_src(op1, op2) = src(op1)
+cas_dest(op1, op2) = dest(op2)
 
-@inline assert_compatible_compose_src_dest(op1, op2) = iscompatible(dest(op1), src(op2))
+assert_compatible_compose_src_dest(op1, op2) = iscompatible(dest(op1), src(op2))
 
 iterate(x::AbstractOperator) = (x, nothing)
 iterate(x::AbstractOperator, ::Any) = nothing
@@ -71,7 +71,7 @@ unsafe_compose_and_simplify1(op1::DictionaryOperator, op2) =
 unsafe_compose_and_simplify2(op1, op2::DictionaryOperator) =
         default_unsafe_compose_and_simplify(op1, op2)
 
-@inline default_unsafe_compose_and_simplify(op1, op2) = (false, (op1, op2))
+default_unsafe_compose_and_simplify(op1, op2) = (false, (op1, op2))
 
 unsafe_compose_and_simplify(op1::IdentityOperator, op2::IdentityOperator) = op1
 unsafe_compose_and_simplify1(op1::IdentityOperator, op2) = op2
@@ -79,16 +79,16 @@ unsafe_compose_and_simplify2(op1, op2::IdentityOperator) = op1
 
 # Move scalars to last place
 unsafe_compose_and_simplify1(op1::ScalingOperator{T}, op2) where {T} =
-    op2, ScalingOperator{T}(dest(op2), op1.A)
+    op2, ScalingOperator{T}(dest(op2), scalar(op1))
 
 # Combine scalars to one / not type stable
 function unsafe_compose_and_simplify(op1::ScalingOperator, op2::ScalingOperator)
     T = promote_type(eltype(op1),eltype(op2))
-    A = op2.A*op1.A
-    if A.λ ≈ 1 && iscompatible(cas_src(op1,op2), cas_dest(op1,op2))
+    z = scalar(op1)*scalar(op2)
+    if z ≈ 1 && iscompatible(cas_src(op1,op2), cas_dest(op1,op2))
         IdentityOperator{T}(cas_src(op1,op2), cas_dest(op1,op2))
     else
-        ScalingOperator{T}(cas_src(op1,op2), cas_dest(op1,op2), A)
+        ScalingOperator{T}(cas_src(op1,op2), cas_dest(op1,op2), z)
     end
 end
 

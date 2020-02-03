@@ -52,7 +52,6 @@ function test_generic_operators(T)
         ["Index extension operator (2)", IndexExtension(b1⊗b2, cartlist) ],
         ["Linearization operator", BasisFunctions.LinearizationOperator(b1⊗b2) ],
         ["DelinearizationOperator operator", BasisFunctions.DelinearizationOperator(b1⊗b2) ],
-        ["Derived operator", ConcreteDerivedOperator(DiagonalOperator(b2, b2, rand(T, length(b2))))],
     ]
 
     for ops in operators

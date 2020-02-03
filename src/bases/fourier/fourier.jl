@@ -488,7 +488,15 @@ function differentiation(::Type{T}, src::Fourier, dest::Fourier, order::Int; opt
 		@assert src==dest
 		IdentityOperator{T}(src)
 	else
-		pseudodifferential_operator(T, src, dest, x->x^order; options...)
+		if oddlength(src)
+			@assert src == dest
+			pseudodifferential_operator(T, src, dest, x->x^order; options...)
+		else
+			@assert length(dest) == length(src)+1
+			E = extension(T, src, dest)
+			D = differentiation(T, dest, dest, order; options...)
+			D*E
+		end
 	end
 end
 
@@ -501,15 +509,15 @@ pseudodifferential_operator(::Type{T}, src::Fourier, symbol::Function; options..
 function pseudodifferential_operator(::Type{T}, src::Fourier, dest::Fourier, symbol::Function; options...) where {T}
 	if oddlength(src)
 		@assert src == dest
-		_pseudodifferential_operator(T, dest, symbol; options...)
+		_pseudodifferential_operator(T, src, dest, symbol; options...)
 	else
 		@assert length(dest) == length(src)+1
-		_pseudodifferential_operator(T, dest, symbol; options...) * extension(T, src, dest; options...)
+		_pseudodifferential_operator(T, src, dest, symbol; options...) * extension(T, src, dest; options...)
 	end
 end
 
-_pseudodifferential_operator(::Type{T}, Φ::Fourier, symbol::Function; options...) where {T} =
-	DiagonalOperator{T}(Φ, [diff_scaling_function(Φ, idx, symbol) for idx in eachindex(Φ)])
+_pseudodifferential_operator(::Type{T}, src, dest, symbol::Function; options...) where {T} =
+	DiagonalOperator{T}([diff_scaling_function(src, idx, symbol) for idx in eachindex(src)], src, dest)
 
 # pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
 #

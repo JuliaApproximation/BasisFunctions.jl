@@ -80,7 +80,7 @@ measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
 function gramoperator(dict::CosineSeries, ::FourierMeasure; T = coefficienttype(dict), options...)
     diag = ones(T,length(dict))/2
     diag[1] = 1
-    DiagonalOperator(diag, src=dict)
+    DiagonalOperator{T}(dict, diag)
 end
 
 innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;

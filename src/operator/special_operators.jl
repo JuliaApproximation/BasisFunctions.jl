@@ -16,9 +16,6 @@ end
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
 otherwise it is not in-place.
-
-An alias MatrixOperator is provided, for which type parameter ARRAY equals
-Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
 struct MultiplicationOperator{T,ARRAY,INPLACE} <: DictionaryOperator{T}
     src     ::  Dictionary
@@ -34,10 +31,6 @@ end
 
 object(op::MultiplicationOperator) = op.object
 
-# An MatrixOperator is defined by an actual matrix, i.e. the parameter
-# ARRAY is Array{T,2}.
-# const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
-
 MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
     MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
 
@@ -46,15 +39,6 @@ MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = fals
 
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
-
-# Provide aliases for when the object is an actual matrix.
-# MatrixOperator(matrix::AbstractMatrix) = MultiplicationOperator(matrix)
-#
-# function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatrix)
-#     @assert size(matrix, 1) == length(dest)
-#     @assert size(matrix, 2) == length(src)
-#     MultiplicationOperator(src, dest, matrix)
-# end
 
 similar_operator(op::MultiplicationOperator{S,ARRAY,INPLACE}, src, dest) where {S,ARRAY,INPLACE} =
     MultiplicationOperator(src, dest, object(op); inplace=INPLACE)
@@ -239,10 +223,10 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
-(+)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (+)(ScalingOperator{T}(src(op2), I1.λ, dest=dest(op2)), op2)
-(-)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (-)(ScalingOperator{T}(src(op2), I1.λ, dest=dest(op2)), op2)
-(+)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (+)(op1, ScalingOperator{T}(src(op), I2.λ, dest=dest(op2)))
-(-)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (-)(op1, ScalingOperator{T}(src(op), I2.λ, dest=dest(op2)))
+(+)(I1::UniformScaling, op2::DictionaryOperator) = (+)(ScalingOperator(I1.λ, src(op2), dest(op2)), op2)
+(-)(I1::UniformScaling, op2::DictionaryOperator) = (-)(ScalingOperator(I1.λ, src(op2), dest(op2)), op2)
+(+)(op1::DictionaryOperator, I2::UniformScaling) = (+)(op1, ScalingOperator(I2.λ, src(op1), dest(op1)))
+(-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(I2.λ, src(op1), dest(op1)))
 
 
 function stencilarray(op::OperatorSum)
@@ -326,17 +310,25 @@ end
 
 const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 
-AlternatingSignOperator(src; T=coefficienttype(src)) = AlternatingSignOperator{T}(src)
-AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
+AlternatingSignOperator(src::Dictionary) = AlternatingSignOperator{operatoreltype(src)}(src)
+
+function AlternatingSignOperator{T}(src::Dictionary) where {T}
+    diag = Diagonal(AlternatingSigns{T}(length(src)))
+    DiagonalOperator{T}(diag, src, src)
+end
 
 strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of length $(size(op,1))")
 
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
 
-CoefficientScalingOperator(src::Dictionary, index::Int, scalar; T=promote_type(coefficienttype(src),typeof(scalar))) =
-	CoefficientScalingOperator{T}(src, index, scalar)
-CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
-	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
+CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
+	CoefficientScalingOperator{promote_type(typeof(scalar),operatoreltype(src))}(src, index, scalar)
 
-strings(op::CoefficientScalingOperator) = tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")
+function CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T}
+    diag = Diagonal(ScaledEntry{T}(length(src), index, scalar))
+	DiagonalOperator{T}(diag, src, src)
+end
+
+strings(op::CoefficientScalingOperator) =
+    tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")

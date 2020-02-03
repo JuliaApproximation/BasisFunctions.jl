@@ -129,9 +129,11 @@ size(A::ProjectionMatrix) = (A.m, A.n)
 
 
 
-"A 2D array every row contains equal elements.
+"""
+A 2D array where every row contains equal elements.
 
-The top row starts at index offset, the second row at step+offset."
+The top row starts at index offset, the second row at step+offset.
+"""
 struct HorizontalBandedMatrix{T} <: MyAbstractMatrix{T}
     m       ::  Int
     n       ::  Int
@@ -142,12 +144,12 @@ struct HorizontalBandedMatrix{T} <: MyAbstractMatrix{T}
     function HorizontalBandedMatrix{T}(m::Int,n::Int,array::Vector{T}, step::Int=1, offset::Int=0) where T
         @assert length(array) <= n
         @assert step <= n # apply! only works if step is smaller then L
-        new{T}(m, n, array, step, offset)
+        new(m, n, array, step, offset)
     end
 end
 
-HorizontalBandedMatrix(m::Int,n::Int,array::Vector, step::Int=1, offset::Int=0) =
-    HorizontalBandedMatrix{eltype(array)}(m, n, array, step, offset)
+HorizontalBandedMatrix(m::Int, n::Int, array::Vector{T}, step::Int=1, offset::Int=0) where {T} =
+    HorizontalBandedMatrix{T}(m, n, array, step, offset)
 
 similar(A::HorizontalBandedMatrix{S}, ::Type{T}) where {S,T} =
     HorizontalBandedMatrix{T}(size(A)..., similar(A.array, T), A.step, A.offset)

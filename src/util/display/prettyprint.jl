@@ -119,7 +119,6 @@ function string(v::AbstractVector)
     String(take!(io))
 end
 
-strings(op::DiagonalOperator) = ("Diagonal operator with element type $(eltype(op))", strings(diag(op)))
 
 
 # Different operators with the same symbol get added subscripts
