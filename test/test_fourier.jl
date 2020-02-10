@@ -21,7 +21,7 @@ function test_fourier_series(T)
     n = 12
     a = -T(1.2)
     b = T(3.4)
-    fb = Fourier{T}(n) ⇒ a..b
+    fb = Fourier{T}(n) → a..b
     @test ~isreal(fb)
 
     @test infimum(support(fb)) ≈ a

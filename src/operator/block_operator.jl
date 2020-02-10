@@ -39,7 +39,8 @@ end
 ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T} =
     BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements(dest)), (j,srcj) in enumerate(elements(src))], src, dest)
 
-# sets... may contain src and dest sets, that will be passed on to the BlockOperator constructor
+
+# For legacy reasons
 function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, dicts::Dictionary...)
     T = promote_type(eltype(op1), eltype(op2), operatoreltype(dicts...))
     operators = Array{DictionaryOperator{T}}(1, 2)
@@ -48,26 +49,21 @@ function block_row_operator(op1::DictionaryOperator, op2::DictionaryOperator, di
     BlockOperator(operators, dicts...)
 end
 
-function block_row_operator(ops::AbstractArray{OP, 1}, dicts::Dictionary...) where {OP <: DictionaryOperator}
-    T = promote_type(operatoreltype(dicts...), map(eltype, ops)...)
+block_row_operator(ops::DictionaryOperator...) = block_row_operator(collect(ops))
+function block_row_operator(ops::AbstractArray{<:DictionaryOperator,1}, dicts...)
+    T = promote_type(map(eltype, ops)...)
     operators = Array{DictionaryOperator{T}}(undef, 1, length(ops))
     operators[:] = ops
     BlockOperator(operators, dicts...)
 end
 
-function block_column_operator(op1::DictionaryOperator, op2::DictionaryOperator)
-    T = promote_type(eltype(op1), eltype(op2))
-    operators = Array{DictionaryOperator{T}}(undef, 2, 1)
-    operators[1] = op1
-    operators[2] = op2
-    BlockOperator(operators)
-end
 
-function block_column_operator(ops::AbstractArray{OP, 1}) where {OP <: DictionaryOperator}
+block_column_operator(ops::DictionaryOperator...) = block_column_operator(collect(ops))
+function block_column_operator(ops::AbstractArray{<:DictionaryOperator,1}, dicts...)
     T = promote_type(map(eltype, ops)...)
     operators = Array{DictionaryOperator{T}}(undef, length(ops), 1)
     operators[:] = ops
-    BlockOperator(operators)
+    BlockOperator(operators, dicts...)
 end
 
 unsafe_wrap_operator(src, dest, op::BlockOperator) = similar_operator(op, src, dest)
@@ -177,8 +173,17 @@ function apply_columnoperator!(op::BlockOperator, coef_dest::AbstractVector, coe
     linearize_coefficients!(coef_dest, scratch_dest)
 end
 
-hcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_row_operator(op1, op2)
-vcat(op1::DictionaryOperator, op2::DictionaryOperator) = block_column_operator(op1, op2)
+hcat(ops::DictionaryOperator...) = block_row_operator(ops...)
+vcat(ops::DictionaryOperator...) = block_column_operator(ops...)
+
+function hvcat(rows::Tuple{Vararg{Int}}, ops::DictionaryOperator...)
+    T = promote_type(map(eltype, ops)...)
+    operators = Array{DictionaryOperator{T}}(undef, floor(Int,length(ops)/rows[1]), rows[1])
+    for i in 1:length(operators)
+        operators[i] = ops[i]
+    end
+    BlockOperator(operators)
+end
 
 hcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(hcat(op1.operators, op2.operators))
 vcat(op1::BlockOperator, op2::BlockOperator) = BlockOperator(vcat(op1.operators, op2.operators))

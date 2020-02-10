@@ -27,12 +27,12 @@ Fourier(n::Int) = Fourier{Float64}(n)
 
 # Convenience constructor: map the Fourier series to the interval [a,b]
 function Fourier(n, a::Number, b::Number)
-	@warn "The syntax Fourier(n, a, b) is deprecated. Please use Fourier(n) ⇒ a..b instead (the symbol ⇒ is \\Rightarrow)"
-	Fourier(n) ⇒ a..b
+	@warn "The syntax Fourier(n, a, b) is deprecated. Please use Fourier(n) → a..b instead (the symbol → is \\Rightarrow)"
+	Fourier(n) → a..b
 end
 function Fourier{T}(n, a::Number, b::Number) where {T}
-	@warn "The syntax Fourier{T}(n, a, b) is deprecated. Please use Fourier{T}(n) ⇒ a..b instead (the symbol ⇒ is \\Rightarrow)"
-	Fourier(n) ⇒ a..b
+	@warn "The syntax Fourier{T}(n, a, b) is deprecated. Please use Fourier{T}(n) → a..b instead (the symbol → is \\Rightarrow)"
+	Fourier(n) → a..b
 end
 
 size(b::Fourier) = (b.n,)
@@ -173,11 +173,11 @@ function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
 	z
 end
 
-function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x)
+function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x, order::Int = 1)
 	f = exponent(b, idxn)
-	z = f * exp(f * x)
+	z = f^order * exp(f * x)
 	if iscosine(b, idxn)
-		# The sine is the real part of the complex exponential
+		# We have to take the real part for the cosine, yet return a complex number
 		z = complex(real(z))
 	end
 	z
@@ -288,7 +288,7 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
 			super_grid = FourierGrid{domaintype(fs)}(ntot)
-			super_gb = GridBasis{coefficienttype(grid)}(super_grid)
+			super_gb = GridBasis{coefficienttype(gb)}(super_grid)
 			E = evaluation(T, fs, super_gb; options...)
 			R = IndexRestriction{T}(super_gb, gb, nleft_int+1:nleft_int+length(grid))
 			R*E

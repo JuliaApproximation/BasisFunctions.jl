@@ -37,8 +37,23 @@ support(dict::Dictionary, idx) = support(dict)
 tolerance(dict::Dictionary) = tolerance(codomaintype(dict))
 
 "Does the given point lie inside the support of the given function or dictionary?"
-in_support(dict::Dictionary, x) = dict_in_support(dict, x)
-in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
+in_support(dict::Dictionary, x) =
+    dict_in_support(dict, element_type_check(x, domaintype(dict)))
+in_support(dict::Dictionary, idx, x) =
+    dict_in_support(dict, idx, element_type_check(x, domaintype(dict)))
+
+element_type_check(x, T) = _element_type_check(x, T, typeof(x))
+_element_type_check(x, T, S) = _element_type_check(x, T, S, promote_type(S,T))
+_element_type_check(x, T, S, V) = x
+function _element_type_check(x, T, S, ::Type{Any})
+    @warn "Dictionary with domain type $(T) may not support evaluation with type $(S)."
+    x
+end
+
+# Some special cases
+_element_type_check(x, ::Tuple{T,N}, S::SVector{N,T}) where {T,N} = x
+
+
 # The mechanism is as follows:
 # - in_support(dict::Dictionary, ...) calls dict_in_support
 # - any linear index is converted to a native index
@@ -50,10 +65,10 @@ in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
 # The delegation to a method with a different name (dict_in_support) makes it
 # substantially easier to deal with ambiguity errors.
 
-# This is the standard conversion to a native_index for any index of type
-# LinearIndex. This calls a different function, hence it is fine if the native
-# index happens to be a linear index.
-in_support(dict::Dictionary, idx::LinearIndex, x) =
+# This is the standard conversion to a native_index for an index of type
+# Int. This calls a different function, hence it is fine if the native
+# index happens to be a linear index (Int).
+in_support(dict::Dictionary, idx::Int, x) =
     dict_in_support(dict, native_index(dict, idx), x)
 
 # The default fallback is implemented below in terms of the support of the dictionary:
@@ -94,7 +109,7 @@ end
 
 # For linear indices, bounds checking is very efficient, so we intercept this case
 # and only convert to a native index after the bounds check.
-function eval_element(dict::Dictionary, idx::LinearIndex, x)
+function eval_element(dict::Dictionary, idx::Int, x)
     @boundscheck checkbounds(dict, idx)
     unsafe_eval_element1(dict, native_index(dict, idx), x)
 end
@@ -135,28 +150,28 @@ end
 This function is exactly like `eval_element`, but it evaluates the derivative
 of the element instead.
 """
-function eval_element_derivative(dict::Dictionary, idx, x)
+function eval_element_derivative(dict::Dictionary, idx, x, order...)
     idxn = native_index(dict, idx)
     @boundscheck checkbounds(dict, idxn)
-    unsafe_eval_element_derivative1(dict, idxn, x)
+    unsafe_eval_element_derivative1(dict, idxn, x, order...)
 end
 
-function eval_element_derivative(dict::Dictionary, idx::LinearIndex, x)
+function eval_element_derivative(dict::Dictionary, idx::Int, x, order...)
     @boundscheck checkbounds(dict, idx)
-    unsafe_eval_element_derivative1(dict, native_index(dict, idx), x)
+    unsafe_eval_element_derivative1(dict, native_index(dict, idx), x, order...)
 end
 
-function eval_element_extension_derivative(dict::Dictionary, idx, x)
+function eval_element_extension_derivative(dict::Dictionary, idx, x, order...)
     @boundscheck checkbounds(dict, idx)
-    unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
+    unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order...)
 end
 
-function unsafe_eval_element_derivative1(dict::Dictionary{S,T}, idx, x) where {S,T}
-    in_support(dict, idx, x) ? unsafe_eval_element_derivative(dict, idx, x) : zero(T)
+function unsafe_eval_element_derivative1(dict::Dictionary, idx, x, order...)
+    in_support(dict, idx, x) ? unsafe_eval_element_derivative(dict, idx, x, order...) : zero(codomaintype(dict))
 end
 
-unsafe_eval_element_derivative(dict::Dictionary, idx, x) =
-    unsafe_eval_element_derivative(dict, native_index(dict, idx), x)
+unsafe_eval_element_derivative(dict::Dictionary, idx, x, order...) =
+    unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order...)
 
 """
 Evaluate an expansion given by the set of coefficients in the point x.

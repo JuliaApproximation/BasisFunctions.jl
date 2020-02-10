@@ -78,7 +78,6 @@ antidifferentiation(src::Dictionary, dest::Dictionary, args...; options...) =
     antidifferentiation(operatoreltype(src, dest), src, dest, args...; options...)
 
 
-
 # Assign a default order if none is given
 differentiation(::Type{T}, src::Dictionary; options...) where {T} =
     differentiation(T, src, difforder(src; options...); options...)

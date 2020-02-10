@@ -11,8 +11,8 @@ name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
 function ChebyshevT(n, a::Number, b::Number)
-	@warn "The syntax ChebyshevT(n, a, b) is deprecated. Please use ChebyshevT(n) ⇒ a..b instead (the symbol ⇒ is \\Rightarrow)"
-	ChebyshevT(n) ⇒ a..b
+	@warn "The syntax ChebyshevT(n, a, b) is deprecated. Please use ChebyshevT(n) → a..b instead (the symbol → is \\Rightarrow)"
+	ChebyshevT(n) → a..b
 end
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)

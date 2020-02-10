@@ -39,7 +39,7 @@ import Base:
     # array methods
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
     first, last, copyto!,
-    transpose, inv, hcat, vcat,
+    transpose, inv, hcat, vcat, hvcat,
     getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1,
     broadcast, similar,
@@ -403,6 +403,7 @@ include("bases/poly/discretemeasure.jl")
 
 
 include("util/display/prettyprint.jl")
+include("util/display/syntax.jl")
 
 include("util/display/recipes.jl")
 include("util/display/pgfplots.jl")

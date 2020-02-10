@@ -69,11 +69,8 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 # than an array of Dictionary's
 # vcat(s1::Dictionary, s2::Dictionary) = multidict(s1,s2)
 
-⊕(d1::Dictionary, d2::Dictionary) = multidict(d1, d2)
-⊕(d1::Span, d2::Span) = multispan(d1, d2)
-
-∪(d1::Dictionary, d2::Dictionary) =
-    error("Union of dictionaries is not supported: use ⊕ instead")
+vcat(dicts::Dictionary...) = multidict(dicts...)
+⊕(dicts::Dictionary...) = multidict(dicts...)
 
 name(dict::MultiDict) = "Union of dictionaries"
 

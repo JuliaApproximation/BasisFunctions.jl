@@ -1,5 +1,5 @@
 
-export ⇒,
+export →,
     rescale,
     MappedDict,
     mapped_dict,
@@ -233,8 +233,10 @@ end
 rescale(s::Dictionary, d::AbstractInterval) = rescale(s, infimum(d), supremum(d))
 
 "Map a dictionary to a domain"
-(⇒)(Φ::Dictionary, domain::Domain) = rescale(Φ, domain)
-# The symbol is \Rightarrow
+(→)(Φ::Dictionary, domain::Domain) = rescale(Φ, domain)
+# The symbol is \to
+
+(∘)(Φ::Dictionary, map::AbstractMap) = mapped_dict(Φ, map)
 
 # "Preserve Tensor Product Structure"
 function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
