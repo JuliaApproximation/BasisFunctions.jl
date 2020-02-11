@@ -8,21 +8,6 @@ macro add_properties(T, props...)
     e
 end
 
-export prectype
-"The floating point precision type associated with the argument."
-prectype(x) = prectype(typeof(x))
-prectype(::Type{<:Complex{T}}) where {T} = prectype(T)
-prectype(::Type{<:AbstractArray{T}}) where {T} = prectype(T)
-prectype(T::Type{<:AbstractFloat}) = T
-prectype(::Type{NTuple{N,T}}) where {N,T} = prectype(T)
-prectype(::Type{Tuple{A}}) where {A} = prectype(A)
-prectype(::Type{Tuple{A,B}}) where {A,B} = prectype(A,B)
-prectype(::Type{Tuple{A,B,C}}) where {A,B,C} = prectype(A,B,C)
-prectype(::Type{T}) where {T} = prectype(float(T))
-
-prectype(a, b) = promote_type(prectype(a), prectype(b))
-prectype(a, b, c...) = prectype(prectype(a, b), c...)
-
 tolerance(x) = tolerance(typeof(x))
 tolerance(::Type{T}) where {T} = tolerance(prectype(T))
 tolerance(T::Type{<:AbstractFloat}) = sqrt(eps(T))

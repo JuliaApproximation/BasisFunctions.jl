@@ -111,7 +111,7 @@ function test_fourier_series(T)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    e = Expansion(Fourier{T}(3, a, b), coef)
+    e = Expansion(Fourier{T}(3) → a..b, coef)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)

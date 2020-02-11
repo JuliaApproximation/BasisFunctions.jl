@@ -37,21 +37,26 @@ support(dict::Dictionary, idx) = support(dict)
 tolerance(dict::Dictionary) = tolerance(codomaintype(dict))
 
 "Does the given point lie inside the support of the given function or dictionary?"
-in_support(dict::Dictionary, x) =
-    dict_in_support(dict, element_type_check(x, domaintype(dict)))
-in_support(dict::Dictionary, idx, x) =
-    dict_in_support(dict, idx, element_type_check(x, domaintype(dict)))
+in_support(dict::Dictionary, x) = dict_in_support(dict, x)
+in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
 
-element_type_check(x, T) = _element_type_check(x, T, typeof(x))
-_element_type_check(x, T, S) = _element_type_check(x, T, S, promote_type(S,T))
-_element_type_check(x, T, S, V) = x
-function _element_type_check(x, T, S, ::Type{Any})
-    @warn "Dictionary with domain type $(T) may not support evaluation with type $(S)."
-    x
-end
-
-# Some special cases
-_element_type_check(x, ::Tuple{T,N}, S::SVector{N,T}) where {T,N} = x
+# in_support(dict::Dictionary, x) =
+#     dict_in_support(dict, element_type_check(x, domaintype(dict)))
+# in_support(dict::Dictionary, idx, x) =
+#     dict_in_support(dict, idx, element_type_check(x, domaintype(dict)))
+#
+# element_type_check(x, T) = _element_type_check(x, T, typeof(x))
+# _element_type_check(x, T, S) = _element_type_check(x, T, S, promote_type(S,T))
+# _element_type_check(x, T, S, V) = x
+# _element_type_check(x, T, S, V) = x
+# function _element_type_check(x, T, S, ::Type{Any})
+#     @warn "Dictionary with domain type $(T) may not support evaluation with type $(S)."
+#     x
+# end
+#
+# # Some special cases
+# _element_type_check(x, ::NTuple{N,T}, ::SVector{N,T}) where {T,N} = x
+# _element_type_check(x, ::SVector{N,T}, ::NTuple{N,T}) where {T,N} = x
 
 
 # The mechanism is as follows:
