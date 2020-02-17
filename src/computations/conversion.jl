@@ -19,6 +19,16 @@ source dictionary to coefficients of the destination dictionary.
 """
 conversion
 
+@deprecate op_eltype operatoreltype
+@deprecate evaluation_operator evaluation
+@deprecate interpolation_operator evaluation
+@deprecate approximation_operator approximation
+@deprecate transform_operator transform
+@deprecate extension_operator extension
+@deprecate restriction_operator restriction
+@deprecate differentiation_operator differentiation
+@deprecate antidifferentiation_operator antidifferentiation
+
 operatoreltype(Φ::Dictionary...) = promote_type(map(coefficienttype, Φ)...)
 
 for op in (:conversion, :extension, :restriction, :evaluation)
