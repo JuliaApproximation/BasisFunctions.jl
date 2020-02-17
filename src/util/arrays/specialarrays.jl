@@ -480,8 +480,3 @@ Base.adjoint(C::Circulant{T}) where T  =
     Circulant{T}(ifft(conj.(C.vcvr_dft)))
 Base.conj(C::Circulant{T}) where {T<:Complex} =
     Circulant{T}(conj(ifft(C.vcvr_dft)))
-
-function (*)(C1::Circulant{T1}, C2::Circulant{T2}) where {T1<:Real, T2<:Real}
-    @boundscheck (size(C1)==size(C2)) || throw(BoundsError())
-    Circulant(real.(ifft(C1.vcvr_dft.*C2.vcvr_dft)))
-end
