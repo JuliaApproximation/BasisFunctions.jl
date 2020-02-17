@@ -65,7 +65,7 @@ export BlockVector
 
 
 import DomainSets:
-    domaintype, codomaintype, dimension, prectype, domain,
+    domaintype, codomaintype, dimension, prectype, numtype, domain,
     indomain, approx_indomain,
     # intervals
     leftendpoint, rightendpoint, endpoints,
@@ -75,9 +75,9 @@ import DomainSets:
     # composite types
     element, elements, numelements,
     # products
-    tensorproduct, cartesianproduct, ×, product_eltype
+    tensorproduct, cartesianproduct, ×
 
-export ..
+export .., numtype
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:

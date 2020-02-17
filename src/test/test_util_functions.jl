@@ -58,20 +58,20 @@ end
 
 # Abuse point_in_domain with a scalar greater than one in order to get
 # a point outside the domain.
-point_outside_domain(basis::Dictionary) = point_in_domain(basis, convert(float_type(domaintype(basis)), 1.1))
+point_outside_domain(basis::Dictionary) = point_in_domain(basis, convert(prectype(domaintype(basis)), 1.1))
 
 point_outside_domain(basis::Laguerre) = -one(domaintype(basis))
 point_outside_domain(basis::Hermite) = one(domaintype(basis))+im
 
 function random_point_in_domain(basis::Dictionary)
-    T = float_type(domaintype(basis))
+    T = numtype(domaintype(basis))
     w = one(T) * rand()
     p =  point_in_domain(basis, w)
     in_support(basis, p) ? p : random_point_in_domain(basis)
 end
 
 function fixed_point_in_domain(basis::Dictionary)
-    T = float_type(domaintype(basis))
+    T = prectype(domaintype(basis))
     w = 1/sqrt(T(2))
     point_in_domain(basis, w)
 end
@@ -84,4 +84,4 @@ widen_type(::Type{Tuple{A,B,C}}) where {A,B,C} = Tuple{widen(A),widen(B),widen(C
 
 test_tolerance(::Type{T}) where {T <: Number} = sqrt(eps(T))
 test_tolerance(::Type{Complex{T}}) where {T <: Number} = sqrt(eps(T))
-test_tolerance(::Type{T}) where {T} = test_tolerance(float_type(T))
+test_tolerance(::Type{T}) where {T} = test_tolerance(prectype(T))

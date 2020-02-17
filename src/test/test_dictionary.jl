@@ -140,12 +140,12 @@ end
 
 function test_generic_dict_codomaintype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     n = length(basis)
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, real(FT)(0.5))) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, FT(0.5))) ]
         if length(basis) > 1
             indices = [1 2 n>>1 n-1 n]
         else
@@ -290,7 +290,7 @@ end
 function test_generic_dict_antiderivative(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     coef = coefficients(random_expansion(basis))
 
     for dim in 1:dimension(basis)
@@ -326,7 +326,7 @@ end
 function test_generic_dict_derivative(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     for dim in 1:dimension(basis)
         # TODO: Sort out problem with dim and multidict
         if dimension(basis) == 1
@@ -407,7 +407,7 @@ end
 function test_generic_dict_interface(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     RT = codomaintype(basis)
 
     n = length(basis)
