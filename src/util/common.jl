@@ -83,10 +83,6 @@ isdyadic(n::Int) = n == 1<<round(Int, log2(n))
 dimension_tuple(::Val{N}, dim::Int) where N = ntuple(k -> ((k==dim) ? 1 : 0), Val(N))
 dimension_tuple(N::Int, dim::Int) = ntuple(k -> ((k==dim) ? 1 : 0), N)
 
-subeltype(x) = subeltype(eltype(x))
-subeltype(::Type{T}) where {T <: Number} = T
-subeltype(::Type{SVector{N,T}}) where {N,T} = T
-
 function matrix_by_mul(A::AbstractMatrix{T}) where T
     Z = zeros(T, size(A))
     matrix_by_mul!(Z,A)
