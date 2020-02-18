@@ -15,7 +15,7 @@ delimit("Plots")
 
     plot(Fourier(4)[1])
 
-    plot(Fourier(4,-3,5))
+    plot(Fourier(4) → -3..5)
 
     plot(MultiDict((Fourier(4),Fourier(4))))
 end

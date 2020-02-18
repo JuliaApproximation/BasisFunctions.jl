@@ -2,6 +2,7 @@
 ###############
 # Arithmetics
 ###############
+
 # We can not specialize (*/∘/...)(ops::AbstractOperator...), since too general
 (*)(op1::AbstractOperator, op2::AbstractOperator) = compose(op2, op1)
 (∘)(op1::AbstractOperator, op2::AbstractOperator) = (*)(op1, op2)

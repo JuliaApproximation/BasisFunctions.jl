@@ -19,7 +19,7 @@ struct ChebyshevDifferentiation{T} <: DictionaryOperator{T}
 end
 
 ChebyshevDifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
-	ChebyshevDifferentiation{op_eltype(src,dest)}(src, dest, order)
+	ChebyshevDifferentiation{operatoreltype(src,dest)}(src, dest, order)
 
 ChebyshevDifferentiation(src::Dictionary, order::Int = 1) =
     ChebyshevDifferentiation(src, src, order)
@@ -31,7 +31,8 @@ string(op::ChebyshevDifferentiation) = "Chebyshev differentiation matrix of orde
 similar_operator(op::ChebyshevDifferentiation, src, dest) =
     ChebyshevDifferentiation(src, dest, order(op))
 
-wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+unsafe_wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
+
 function adjoint(op::ChebyshevDifferentiation)
     @warn "Inefficient adjoint of `ChebyshevDifferentiation`"
     ArrayOperator(adjoint(Matrix(op)), dest(op), src(op))
@@ -80,7 +81,7 @@ struct ChebyshevAntidifferentiation{T} <: DictionaryOperator{T}
 end
 
 ChebyshevAntidifferentiation(src::Dictionary, dest::Dictionary, order::Int = 1) =
-	ChebyshevAntidifferentiation{op_eltype(src,dest)}(src, dest, order)
+	ChebyshevAntidifferentiation{operatoreltype(src,dest)}(src, dest, order)
 
 ChebyshevAntidifferentiation(src::Dictionary, order::Int = 1) =
     ChebyshevAntidifferentiation(src, src, order)
@@ -92,7 +93,7 @@ string(op::ChebyshevAntidifferentiation) = "Chebyshev antidifferentiation matrix
 similar_operator(op::ChebyshevAntidifferentiation, src, dest) =
     ChebyshevAntidifferentiation(src, dest, order(op))
 
-wrap_operator(src, dest, op::ChebyshevAntidifferentiation) = similar_operator(op, src, dest)
+unsafe_wrap_operator(src, dest, op::ChebyshevAntidifferentiation) = similar_operator(op, src, dest)
 
 # TODO: this allocates lots of memory...
 function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
@@ -119,10 +120,20 @@ function apply!(op::ChebyshevAntidifferentiation, coef_dest, coef_src)
     coef_dest
 end
 
-differentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...) =
-    ChebyshevDifferentiation{T}(src, dest, order)
+function differentiation(::Type{T}, src::ChebyshevT, dest::ChebyshevT, order::Int; options...) where {T}
+	@assert order >= 0
+	if order == 0
+		IdentityOperator{T}(src, dest)
+	else
+		ChebyshevDifferentiation{T}(src, dest, order)
+	end
+end
 
-antidifferentiation_operator(src::ChebyshevT, dest::ChebyshevT, order::Int;
-			T = op_eltype(src, dest), options...) =
-    ChebyshevAntidifferentiation{T}(src, dest, order)
+function antidifferentiation(::Type{T}, src::ChebyshevT, dest::ChebyshevT, order::Int; options...) where {T}
+	@assert order >= 0
+	if order == 0
+		IdentityOperator{T}(src, dest)
+	else
+    	ChebyshevAntidifferentiation{T}(src, dest, order)
+	end
+end

@@ -4,7 +4,7 @@ A basis of the classicale Laguerre polynomials. These polynomials are orthogonal
 on the positive halfline `[0,∞)` with respect to the weight function
 `w(x)=exp(-x)`.
 """
-struct Laguerre{T} <: OPS{T,T}
+struct Laguerre{T} <: OPS{T}
     n       ::  Int
     α       ::  T
 
@@ -19,8 +19,6 @@ Laguerre(n::Int, α::T) where {T <: AbstractFloat} = Laguerre{T}(n, α)
 
 Laguerre(n::Int, α::Integer) = Laguerre(n, float(α))
 
-
-instantiate(::Type{Laguerre}, n, ::Type{T}) where {T} = Laguerre{T}(n)
 
 similar(b::Laguerre, ::Type{T}, n::Int) where {T} = Laguerre{T}(n, b.α)
 

@@ -69,7 +69,7 @@ dest(op::TensorProductOperator, j::Int) = dest(element(op, j))
 size(op::TensorProductOperator, j::Int) = j == 1 ? prod(map(length, elements(dest(op)))) : prod(map(length, elements(src(op))))
 size(op::TensorProductOperator) = (size(op,1), size(op,2))
 
-wrap_operator(dict1::Dictionary, dict2::Dictionary, op::TensorProductOperator{T}) where {T} =
+unsafe_wrap_operator(dict1::Dictionary, dict2::Dictionary, op::TensorProductOperator{T}) where {T} =
     TensorProductOperator{T}(dict1, dict2, map(wrap_operator, elements(dict1), elements(dict2), elements(op))...)
 #getindex(op::TensorProductOperator, j::Int) = element(op, j)
 adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)

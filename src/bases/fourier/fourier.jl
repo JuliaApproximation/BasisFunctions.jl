@@ -26,20 +26,19 @@ name(b::Fourier) = "Fourier series"
 Fourier(n::Int) = Fourier{Float64}(n)
 
 # Convenience constructor: map the Fourier series to the interval [a,b]
-Fourier{T}(n, a::Number, b::Number) where {T} = rescale(Fourier{T}(n), a, b)
-
-# We can deduce a candidate for T from a and b
 function Fourier(n, a::Number, b::Number)
-	T = float(promote_type(typeof(a),typeof(b)))
-	Fourier{T}(n, a, b)
+	@warn "The syntax Fourier(n, a, b) is deprecated. Please use Fourier(n) → a..b instead (the symbol → is \\Rightarrow)"
+	Fourier(n) → a..b
+end
+function Fourier{T}(n, a::Number, b::Number) where {T}
+	@warn "The syntax Fourier{T}(n, a, b) is deprecated. Please use Fourier{T}(n) → a..b instead (the symbol → is \\Rightarrow)"
+	Fourier(n) → a..b
 end
 
 size(b::Fourier) = (b.n,)
 
 oddlength(b::Fourier) = isodd(length(b))
 evenlength(b::Fourier) = iseven(length(b))
-
-instantiate(::Type{Fourier}, n, ::Type{T}) where {T} = Fourier{T}(n)
 
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 
@@ -57,11 +56,8 @@ isorthonormal(b::Fourier, ::FourierMeasure) = oddlength(b)
 isorthonormal(b::Fourier, measure::DiracCombProbabilityMeasure) = iscompatible(b, grid(measure)) || islooselycompatible(b, grid(measure)) && oddlength(b)
 isbiorthogonal(b::Fourier) = true
 
-# Methods for purposes of testing functionality.
 hasinterpolationgrid(b::Fourier) = true
-hasderivative(b::Fourier) = true
-# Until adapted for DC coefficient
-hasantiderivative(b::Fourier) = false
+
 hasextension(b::Fourier) = isodd(length(b))
 
 # For hastransform we introduce some more functionality:
@@ -92,8 +88,8 @@ const FFreq = FourierFrequency
 
 frequency(idxn::FourierFrequency) = value(idxn)
 
-Base.show(io::IO, idx::BasisFunctions.NativeIndex{:fourier}) =
-	print(io, "Fourier frequency: $(value(idx))")
+Base.show(io::IO, idx::NativeIndex{:fourier}) =
+	print(io, "Fourier frequency $(value(idx))")
 
 """
 `FFTIndexList` defines the map from native indices to linear indices
@@ -159,35 +155,32 @@ measure(b::Fourier{T}) where T = FourierMeasure{T}()
 
 period(b::Fourier{T}) where {T} = T(1)
 
-
 # One has to be careful here not to match Floats and BigFloats by accident.
-# Hence the conversions to S in the lines below.
-function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
-	S = domaintype(b)
-	k = frequency(idxn)
+# Hence the conversion of pi to T here:
+exponent(b::Fourier{T}, k::FourierFrequency) where {T} = 2*T(pi)*im*k
+exponent(b::Fourier, i::Int) = exponent(b, native_index(b, i))
 
-	# Even-length Fourier series have a cosine at the maximal frequency.
-	# We do a test to distinguish between the complex exponentials and the cosine
-	if oddlength(b) || k != maxfrequency(b)
-		exp(x * 2 * S(pi) * 1im  * k)
-	else
-		# We convert to a complex number for type safety here, because the
-		# exponentials above are complex-valued but the cosine is real
-		complex(cospi(2*S(x)*k))
+# Even-length Fourier series have a cosine at the maximal frequency.
+iscosine(b::Fourier, k::FourierFrequency) = iseven(length(b)) && (k==length(b)>>1)
+
+function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
+	z = exp(exponent(b, idxn)*x)
+	if iscosine(b, idxn)
+		# The cosine is the real part of the exponential, but we make it a complex
+		# number for type-stability
+		z = complex(real(z))
 	end
+	z
 end
 
-function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x)
-	# The structure for this reason is similar to the unsafe_eval_element routine above
-	S = domaintype(b)
-	k = frequency(idxn)
-	if oddlength(b) || k != maxfrequency(b)
-		arg = 2*S(pi)*1im*k
-		arg * exp(arg * x)
-	else
-		arg = 2*S(pi)*k
-		complex(-arg * sin(arg*x))
+function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x, order::Int = 1)
+	f = exponent(b, idxn)
+	z = f^order * exp(f * x)
+	if iscosine(b, idxn)
+		# We have to take the real part for the cosine, yet return a complex number
+		z = complex(real(z))
 	end
+	z
 end
 
 function unsafe_moment(b::Fourier, idxn::FourierFrequency)
@@ -195,10 +188,31 @@ function unsafe_moment(b::Fourier, idxn::FourierFrequency)
 	frequency(idx) == 0 ? T(1) : T(0)
 end
 
+twiddle(T, x) = exp(T(pi)*2im*x)
+
+# For large n, the routine below is slightly faster than evaluating all
+# the complex exponentials. It is based on the fact that the Fourier exponentials
+# are integer powers of an exponential.
+function unsafe_dict_eval!(result, dict::Fourier, x)
+	result[1] = 1
+	n1 = nhalf(dict)
+	w = twiddle(domaintype(dict), x)
+	z = one(w)
+	for i in 1:n1
+		z *= w
+		result[i+1] = z
+		result[end-i+1] = conj(z)
+	end
+	if evenlength(dict)
+		result[n1+1] = real(result[n1+1])
+	end
+	result
+end
+
 
 
 # By default, we preserve the odd/even property of the size when extending
-extension_size(b::Fourier) = evenlength(b) ? 2*length(b) : max(3,2*length(b)-1)
+extensionsize(b::Fourier) = evenlength(b) ? 2*length(b) : max(3,2*length(b)-1)
 
 approx_length(b::Fourier, n::Int) = n
 
@@ -217,27 +231,26 @@ function shift(b::Fourier, coefficients, delta)
 end
 
 
-function transform_from_grid(src::GridBasis, dest::Fourier, grid; T = op_eltype(src,dest), options...)
+function transform_from_grid(T, src::GridBasis, dest::Fourier, grid; options...)
 	@assert iscompatible(dest, grid)
 	forward_fourier_operator(src, dest, T; options...)
 end
 
-function transform_to_grid(src::Fourier, dest::GridBasis, grid; T = op_eltype(src,dest), options...)
+function transform_to_grid(T, src::Fourier, dest::GridBasis, grid; options...)
 	@assert iscompatible(src, grid)
 	inverse_fourier_operator(src, dest, T; options...)
 end
 
-grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::FourierGrid; options...) =
-	resize_and_transform(dict, gb, grid; options...)
+evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::FourierGrid; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; options...)
 
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis,
-			grid::PeriodicEquispacedGrid; options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquispacedGrid; options...) where {T}
 	if support(grid)≈support(dict)
-		resize_and_transform(dict, gb, grid; options...)
-	else 
+		resize_and_transform(T, dict, gb, grid; options...)
+	else
 		@debug "Periodic grid mismatch with Fourier basis"
-		dense_evaluation_operator(dict, gb; options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
@@ -245,26 +258,24 @@ to_periodic_grid(dict::Fourier, grid::AbstractGrid) = nothing
 to_periodic_grid(dict::Fourier, grid::PeriodicEquispacedGrid{T}) where {T} =
 	iscompatible(dict, grid) ? FourierGrid{T}(length(grid)) : nothing
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid;
-			options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; options...) where {T}
 	grid2 = to_periodic_grid(dict, grid)
 	if grid2 != nothing
-		gb2 = GridBasis{coefficienttype(gb)}(grid2)
-		evaluation_operator(dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
+		gb2 = GridBasis{T}(grid2)
+		evaluation(T, dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
 	else
 		@debug "Evaluation: could not convert $(string(grid)) to periodic grid"
-		dense_evaluation_operator(dict, gb; options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
-function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedGrid; T=op_eltype(fs, dgs), options...)
-
+function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid; options...) where {T}
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
 	if support(grid) ≈ support(fs)
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		return dense_evaluation_operator(fs, dgs; T=T, options...)
+		return dense_evaluation(T, fs, gb; options...)
 	elseif support(grid) ∈ support(fs)
 		a, b = endpoints(support(grid))
 		# We are dealing with a subgrid. The main question is: if we extend it
@@ -276,24 +287,23 @@ function grid_evaluation_operator(fs::Fourier, dgs::GridBasis, grid::EquispacedG
 			nleft_int = round(Int, nleft)
 			nright_int = round(Int, nright)
 			ntot = length(grid) + nleft_int + nright_int - 1
-			super_grid = FourierGrid(ntot)
-			super_dgs = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_dgs; T=T, options...)
-			R = IndexRestrictionOperator(super_dgs, dgs, nleft_int+1:nleft_int+length(grid); T=T)
+			super_grid = FourierGrid{domaintype(fs)}(ntot)
+			super_gb = GridBasis{coefficienttype(gb)}(super_grid)
+			E = evaluation(T, fs, super_gb; options...)
+			R = IndexRestriction{T}(super_gb, gb, nleft_int+1:nleft_int+length(grid))
 			R*E
 		else
-			dense_evaluation_operator(fs, dgs; T=T, options...)
+			dense_evaluation(T, fs, gb; options...)
 		end
 	else
-		dense_evaluation_operator(fs, dgs; T=T, options...)
+		dense_evaluation(T, fs, gb; options...)
 	end
 end
 
-function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid;
-			T=op_eltype(dict, gb), options...)
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid; options...) where {T}
 	if isodd(length(grid)) && support(grid)≈support(dict)
 		if length(grid) == length(dict)
-			A = evaluation_operator(dict, FourierGrid{domaintype(dict)}(length(dict)); T=T, options...)
+			A = evaluation(T, dict, FourierGrid{domaintype(dict)}(length(dict)); options...)
 			diag = zeros(T, length(dict))
 			delta = step(grid)/2
 			for i in 1:length(dict)
@@ -303,10 +313,10 @@ function grid_evaluation_operator(dict::Fourier, gb::GridBasis, grid::MidpointEq
 			wrap_operator(dict, gb, A*D)
 		else
 			dict2 = resize(dict, length(grid))
-			evaluation_operator(dict2, grid) * extension_operator(dict, dict2)
+			evaluation(T, dict2, grid) * extension(T, dict, dict2)
 		end
 	else
-		dense_evaluation_operator(dict, gb; T=T, options...)
+		dense_evaluation(T, dict, gb; options...)
 	end
 end
 
@@ -317,31 +327,36 @@ end
 
 # We make special-purpose operators for the extension of a Fourier series,
 # since we have to add zeros in the middle of the given Fourier coefficients.
-# This can not be achieved with a single IndexExtensionOperator.
+# This can not be achieved with a single IndexExtension.
 # It could be a composition of two, but this special case is widespread and hence
 # we make it more efficient.
-struct FourierIndexExtensionOperator{T} <: DictionaryOperator{T}
+struct FourierIndexExtension{T} <: DictionaryOperator{T}
 	src		::	Dictionary
 	dest	::	Dictionary
 	n1		::	Int
 	n2		::	Int
+
+	function FourierIndexExtension{T}(src::Dictionary, dest::Dictionary, n1::Int, n2::Int) where {T}
+		@assert n1 <= n2
+		new(src, dest, n1, n2)
+	end
 end
 
-FourierIndexExtensionOperator(src, dest, n1 = length(src), n2 = length(dest);
-			T=op_eltype(src,dest)) =
-	FourierIndexExtensionOperator{T}(src, dest, n1, n2)
+FourierIndexExtension(src::Dictionary, dest::Dictionary) =
+	FourierIndexExtension{operatoreltype(src, dest)}(src, dest)
 
-string(op::FourierIndexExtensionOperator) = "Fourier series extension from length $(op.n1) to length $(op.n2)"
+FourierIndexExtension{T}(src, dest) where {T} =
+	FourierIndexExtension{T}(src, dest, length(src), length(dest))
 
-wrap_operator(src, dest, op::FourierIndexExtensionOperator{T}) where {T} =
-	FourierIndexExtensionOperator{T}(src, dest, op.n1, op.n2)
+string(op::FourierIndexExtension) = "Fourier series extension from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-function extension_operator(b1::Fourier, b2::Fourier; T = op_eltype(b1,b2), options...)
-	@assert length(b1) <= length(b2)
-	FourierIndexExtensionOperator(b1, b2; T=T)
-end
+unsafe_wrap_operator(src, dest, op::FourierIndexExtension{T}) where {T} =
+	FourierIndexExtension{T}(src, dest, op.n1, op.n2)
 
-function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
+extension(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
+	FourierIndexExtension{T}(src, dest)
+
+function apply!(op::FourierIndexExtension, coef_dest, coef_src)
 	## @assert length(dest) > length(src)
 
 	nh = nhalf(length(coef_src))
@@ -374,28 +389,33 @@ function apply!(op::FourierIndexExtensionOperator, coef_dest, coef_src)
 end
 
 
-struct FourierIndexRestrictionOperator{T} <: DictionaryOperator{T}
+struct FourierIndexRestriction{T} <: DictionaryOperator{T}
 	src		::	Dictionary
 	dest	::	Dictionary
 	n1		::	Int
 	n2		::	Int
+
+	function FourierIndexRestriction{T}(src::Dictionary, dest::Dictionary, n1::Int, n2::Int) where {T}
+		@assert n1 >= n2
+		new(src, dest, n1, n2)
+	end
 end
 
-FourierIndexRestrictionOperator(src, dest, n1 = length(src), n2 = length(dest); T = op_eltype(src,dest), options...) =
-	FourierIndexRestrictionOperator{T}(src, dest, n1, n2)
+FourierIndexRestriction(src::Dictionary, dest::Dictionary) =
+	FourierIndexRestriction{operatoreltype(src, dest)}(src, dest)
 
-string(op::FourierIndexRestrictionOperator) = "Fourier series restriction from length $(op.n1) to length $(op.n2)"
+FourierIndexRestriction{T}(src, dest) where {T} =
+	FourierIndexRestriction{T}(src, dest, length(src), length(dest))
 
-wrap_operator(src, dest, op::FourierIndexRestrictionOperator{T}) where T =
-	FourierIndexRestrictionOperator{T}(src, dest, op.n1, op.n2)
+string(op::FourierIndexRestriction) = "Fourier series restriction from length $(op.n1) to length $(op.n2) (T=$(eltype(op)))"
 
-function restriction_operator(b1::Fourier, b2::Fourier; T=op_eltype(b1,b2), options...)
-	@assert length(b1) >= length(b2)
-	FourierIndexRestrictionOperator(b1, b2; T=T)
-end
+unsafe_wrap_operator(src, dest, op::FourierIndexRestriction{T}) where {T} =
+	FourierIndexRestriction{T}(src, dest, op.n1, op.n2)
 
+restriction(::Type{T}, src::Fourier, dest::Fourier; options...) where {T} =
+	FourierIndexRestriction{T}(src, dest)
 
-function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
+function apply!(op::FourierIndexRestriction, coef_dest, coef_src)
 	## @assert length(dest) < length(src)
 
 	nh = nhalf(length(coef_dest))
@@ -422,32 +442,39 @@ function apply!(op::FourierIndexRestrictionOperator, coef_dest, coef_src)
 	coef_dest
 end
 
-isdiag(::FourierIndexExtensionOperator) = true
-isdiag(::FourierIndexRestrictionOperator) = true
+isdiag(::FourierIndexExtension) = true
+isdiag(::FourierIndexRestriction) = true
 
-adjoint(op::FourierIndexExtensionOperator{T}) where {T} =
-	FourierIndexRestrictionOperator{T}(dest(op), src(op), op.n2, op.n1)
+adjoint(op::FourierIndexExtension{T}) where {T} =
+	FourierIndexRestriction{T}(dest(op), src(op), op.n2, op.n1)
 
-adjoint(op::FourierIndexRestrictionOperator{T}) where {T} =
-	FourierIndexExtensionOperator{T}(dest(op), src(op), op.n2, op.n1)::DictionaryOperator
+adjoint(op::FourierIndexRestriction{T}) where {T} =
+	FourierIndexExtension{T}(dest(op), src(op), op.n2, op.n1)::DictionaryOperator
 
-function derivative_dict(s::Fourier, order; options...)
-	if oddlength(s)
-		s
+
+###################
+# Differentiation
+###################
+
+# The Fourier series of odd length are closed under differentiation of any order.
+# Fourier series of even length contain a cosine and they must be extended to
+# the next odd length in order to exactly represent its derivative.
+
+# We have a derivative of any integer order
+hasderivative(b::Fourier) = true
+hasderivative(b::Fourier, order::Int) = order >= 0
+
+function derivative_dict(Φ::Fourier, order::Int; options...)
+	@assert order >= 0
+	if order == 0
+		Φ
 	else
-		T = domaintype(s)
-		basis2 = Fourier{T}(length(s)+1)
-		basis2
+		oddlength(Φ) ? Φ : resize(Φ, length(Φ)+1)
 	end
 end
 
 # Both differentiation and antidifferentiation are diagonal operations
-function diff_scaling_function(b::Fourier, idx, symbol)
-	T = domaintype(b)
-	k = idx2frequency(b,idx)
-	symbol(2 * T(pi) * im * k)
-end
-
+diff_scaling_function(b::Fourier, idx, symbol) = symbol(exponent(b, idx))
 diff_scaling_function(b::Fourier, idx, order::Int) = diff_scaling_function(b,idx,x->x^order)
 
 function antidiff_scaling_function(b::Fourier, idx, order::Int)
@@ -456,90 +483,64 @@ function antidiff_scaling_function(b::Fourier, idx, order::Int)
 	k==0 ? Complex{T}(0) : 1 / (k * 2 * T(pi) * im)^order
 end
 
-differentiation_operator(s1::Fourier{T}, s2::Fourier{T}, order = 1; options...) where {T} = pseudodifferential_operator(s1,s2,x->x^order;options...)
-
-pseudodifferential_operator(s::Fourier, symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
-
-function pseudodifferential_operator(s1::Fourier{T},s2::Fourier{T}, symbol::Function; options...) where {T}
-	if isodd(length(s1))
-		@assert s1 == s2
-		_pseudodifferential_operator(s2, symbol; options...)
-	else # The internal representation of Fourier is not closed under differentiation unless it is odd order
-		_pseudodifferential_operator(s2, symbol; options...) * extension_operator(s1, s2; options...)
-	end
-end
-
-_pseudodifferential_operator(s::Fourier, symbol::Function; T=coefficienttype(s), options...) =
-	DiagonalOperator(s, [diff_scaling_function(s, idx, symbol) for idx in eachindex(s)]; T=T)
-
-pseudodifferential_operator(s::TensorProductDict,symbol::Function; options...) = pseudodifferential_operator(s,s,symbol; options...)
-
-function pseudodifferential_operator(s1::TensorProductDict,s2::TensorProductDict,symbol::Function; T=op_eltype(s1,s2), options...)
-	#@assert length(first(methods(symbol)).sig.parameters) = dimension(s1) + 1
-	@assert s1 == s2 # There is currently no support for s1 != s2
-	# Build a vector of the first order differential operators in each spatial direction:
-	Diffs = map(x->differentiation_operator(x; T=T, options...),elements(s1))
-	@assert isdiag(Diffs[1]) #should probably also check others too. This is a temp hack.
-	# Build the diagonal from the symbol applied to the diagonals of these (diagonal) operators:
-	N = prod(size(s1))
-	diag = zeros(N)
-	for k = 1:N
-		vec = [diag(Diffs[i],native_index(s1, k)[i]) for i in 1:dimension(s1)]
-		diag[k] = symbol(vec)
-	end
-	DiagonalOperator(s1,diag; T=T)
-end
-
-
-
-
-# Try to efficiently evaluate a Fourier series on a regular equispaced grid
-# The case of a periodic grid is handled generically in generic/evaluation, because
-# it is the associated grid of the function set.
-function evaluation_operator(fs::Fourier, gb::GridBasis, grid::EquispacedGrid; T=op_eltype(fs,gb), options...)
-	# We can use the fft if the equispaced grid is a subset of the periodic grid
-	if support(grid) ∈ support(fs)
-		# We are dealing with a subgrid. The main question is: if we extend it
-		# to the full support, is it compatible with a periodic grid?
-		h = step(grid)
-		nleft = a/h
-		nright = (1-b)/h
-		if (nleft ≈ round(nleft)) && (nright ≈ round(nright))
-			nleft_int = round(Int, nleft)
-			nright_int = round(Int, nright)
-			ntot = length(grid) + nleft_int + nright_int - 1
-			T = domaintype(grid)
-			super_grid = FourierGrid(ntot)
-			super_gb = GridBasis(fs, super_grid)
-			E = evaluation_operator(fs, super_gb; T=T, options...)
-			R = IndexRestrictionOperator(super_gb, gb, nleft_int+1:nleft_int+length(grid); T=T)
-			R*E
-		else
-			dense_evaluation_operator(fs, gb; T=T, options...)
-		end
-	elseif a ≈ infimum(support(fs)) && b ≈ supremum(support(fs))
-		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
-		# but with the right endpoint added
-		dense_evaluation_operator(fs, gb; T=T, options...)
+function differentiation(::Type{T}, src::Fourier, dest::Fourier, order::Int; options...) where {T}
+	if orderiszero(order)
+		@assert src==dest
+		IdentityOperator{T}(src)
 	else
-		dense_evaluation_operator(fs, gb; T=T, options...)
+		if oddlength(src)
+			@assert src == dest
+			pseudodifferential_operator(T, src, dest, x->x^order; options...)
+		else
+			@assert length(dest) == length(src)+1
+			E = extension(T, src, dest)
+			D = differentiation(T, dest, dest, order; options...)
+			D*E
+		end
 	end
 end
+
+pseudodifferential_operator(src::Dictionary, args...; options...) =
+	pseudodifferential_operator(operatoreltype(src), src, args...; options...)
+
+pseudodifferential_operator(::Type{T}, src::Fourier, symbol::Function; options...) where {T} =
+	pseudodifferential_operator(T, src, derivative_dict(src; options...), symbol; options...)
+
+function pseudodifferential_operator(::Type{T}, src::Fourier, dest::Fourier, symbol::Function; options...) where {T}
+	if oddlength(src)
+		@assert src == dest
+		_pseudodifferential_operator(T, src, dest, symbol; options...)
+	else
+		@assert length(dest) == length(src)+1
+		_pseudodifferential_operator(T, src, dest, symbol; options...) * extension(T, src, dest; options...)
+	end
+end
+
+_pseudodifferential_operator(::Type{T}, src, dest, symbol::Function; options...) where {T} =
+	DiagonalOperator{T}([diff_scaling_function(src, idx, symbol) for idx in eachindex(src)], src, dest)
+
+
+
+##########################
+# Arithmetical operations
+##########################
+
 
 # Multiplication of Fourier Series
 function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
+	T = promote_type(eltype(coef_src1), eltype(coef_src2))
 	if oddlength(src1) && evenlength(src2)
 	    dsrc2 = resize(src2, length(src2)+1)
-	    (*)(src1, dsrc2, coef_src1, extension_operator(src2, dsrc2)*coef_src2)
+	    (*)(src1, dsrc2, coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	elseif evenlength(src1) && oddlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
-	    (*)(dsrc1, src2, extension_operator(src1,dsrc1)*coef_src1,coef_src2)
+	    (*)(dsrc1, src2, extension(T, src1,dsrc1)*coef_src1,coef_src2)
 	elseif evenlength(src1) && evenlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
 	    dsrc2 = resize(src2, length(src2)+1)
 		T1 = eltype(coef_src1)
 		T2 = eltype(coef_src2)
-	    (*)(dsrc1,dsrc2,extension_operator(src1, dsrc1)*coef_src1, extension_operator(src2, dsrc2)*coef_src2)
+	    (*)(dsrc1,dsrc2,extension(T, src1, dsrc1)*coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	else # they are both odd
 		@assert domaintype(src1) == domaintype(src2)
 	    dest = Fourier{domaintype(src1)}(length(src1)+length(src2)-1)
@@ -551,7 +552,6 @@ function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
 	end
 end
 
-iscosine(b::Fourier, i::FourierFrequency) = iseven(length(b)) && (i==length(b)>>1)
 
 
 ## Inner products
@@ -629,7 +629,7 @@ function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::Le
 	end
 end
 
-function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttype(dict), options...)
+function gram(::Type{T}, dict::Fourier, measure::FourierMeasure; options...) where {T}
 	@assert isorthogonal(dict, measure) # some robustness.
 	if iseven(length(dict))
 		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
@@ -639,19 +639,18 @@ function gramoperator(dict::Fourier, measure::FourierMeasure; T = coefficienttyp
 	end
 end
 
-function gramoperator(dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill;
-	T = promote_type(subdomaintype(measure), coefficienttype(dict)), options...)
+function gram(::Type{T}, dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill; options...) where {T}
 	if support(grid) ≈ support(dict) && isperiodic(grid)
 		if isorthonormal(dict, measure)
 			IdentityOperator{T}(dict)
 		elseif isorthogonal(dict, measure)
 			if isodd(length(dict)) || (length(dict)==length(grid))
-				ScalingOperator(dict, unsafe_discrete_weight(measure, 1)*length(grid); T=T)
+				ScalingOperator{T}(dict, unsafe_discrete_weight(measure, 1)*length(grid))
 			else
-				CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator(dict, weights[1]*length(grid); T=T)
+				CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator{T}(dict, weights[1]*length(grid))
 			end
 		end
 	else
-		default_mixedgramoperator_discretemeasure(dict, dict, measure, grid, weights; T=T, options...)
+		default_mixedgram_discretemeasure(T, dict, dict, measure, grid, weights; options...)
 	end
 end

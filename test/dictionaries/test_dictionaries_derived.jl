@@ -27,11 +27,11 @@ function test_derived_dicts(T)
         test_generic_dict_interface(b1[2:6]) end
 
     @testset "$(rpad("Operated dictionaries",80))" begin
-        D1 = DiagonalOperator(rand(length(b1)), src=b1)
+        D1 = DiagonalOperator(b1, rand(length(b1)))
         test_generic_dict_interface(D1*b1)
         D2 = ArrayOperator(rand(length(b1),length(b1)), b1, b1)
         test_generic_dict_interface(D2*b1)
-        D3 = differentiation_operator(b2)
+        D3 = differentiation(b2)
         test_generic_dict_interface(D3*b2)
     end
 
@@ -59,7 +59,9 @@ function test_derived_dicts(T)
         test_generic_dict_interface(s[1:5]) end
 
     @testset "$(rpad("Piecewise dictionaries",80))" begin
-        part = PiecewiseInterval(T(0), T(10), 10)
+        # Changed the number of partitions to 7 (from 10) in order to avoid alignment of a
+        # grid point in one of the tests with the boundary of a subinterval.
+        part = PiecewiseInterval(T(0), T(10), 7)
         pw = PiecewiseDict(b2, part)
         test_generic_dict_interface(pw) end
 

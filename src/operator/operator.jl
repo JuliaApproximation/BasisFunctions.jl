@@ -1,4 +1,6 @@
 
+export isefficient
+
 """
 An `AbstractOperator` is the supertype of all objects that map between function
 spaces.
@@ -48,9 +50,7 @@ The element type should be equal for src and dest.
 abstract type DictionaryOperator{T} <: AbstractOperator
 end
 
-eltype(::DictionaryOperator{T}) where {T} = T
-eltype(::Type{DictionaryOperator{T}}) where {T} = T
-eltype(::Type{OP}) where {OP <: DictionaryOperator} = eltype(supertype(OP))
+eltype(::Type{<:DictionaryOperator{T}}) where {T} = T
 
 # Default implementation of src and dest: assume they are fields
 src(op::DictionaryOperator) = op.src
@@ -62,33 +62,13 @@ dest_space(op::DictionaryOperator) = Span(dest(op))
 isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
 
 """
-True if the operator has a better computational complexity than the corresponding
-matrix-vector product.
+True if the action of the operator has a better computational complexity than
+the corresponding matrix-vector product.
 """
 isefficient(op::DictionaryOperator) = false
 
-"Return a suitable element type for an operator between the given dictionaries."
-op_eltype(src::Dictionary, dest::Dictionary) = _op_eltype(coefficienttype(src), coefficienttype(dest))
-_op_eltype(::Type{T}, ::Type{T}) where {T <: Number} = T
-_op_eltype(::Type{T}, ::Type{S}) where {T <: Number, S <: Number} = promote_type(T,S)
-_op_eltype(::Type{SVector{N,T}}, ::Type{SVector{M,S}}) where {M,N,S,T} = SMatrix{M,N,promote_type(T,S)}
-_op_eltype(::Type{T}, ::Type{S}) where {T,S} = promote_type(T,S)
-
-"""
-Return suitably promoted types such that `D = A*S` are the types of the multiplication.
-"""
-op_eltypes(src::Dictionary, dest::Dictionary, T = op_eltype(src, dest)) = _op_eltypes(coefficienttype(src), coefficienttype(dest), T)
-_op_eltypes(::Type{S}, ::Type{D}, ::Type{A}) where {S <: Number, D <: Number, A <: Number} =
-	(promote_type(S, D, A), promote_type(S, D, A), promote_type(S, D, A))
-_op_eltypes(::Type{SVector{N,S}}, ::Type{SVector{M,D}}, ::Type{SMatrix{M,N,A}}) where {N,M,S <: Number, D <: Number, A <: Number} =
-	(SVector{N,S}, SVector{M, promote_type(S, D, A)}, SMatrix{M,N,promote_type(S, D, A)})
-
-
-# The size of the operator as a linear map from source to destination.
-# It is equal to the size of its matrix representation.
 size(op::DictionaryOperator) = (length(dest(op)), length(src(op)))
 
-#+(op1::DictionaryOperator, op2::DictionaryOperator) = +(promote(op1,op2)...)
 
 "Is the action of the operator in-place?"
 isinplace(op::DictionaryOperator) = false
@@ -289,4 +269,17 @@ function ≈(op1::DictionaryOperator,op2::DictionaryOperator)
 		@debug "Approx gives difference of $(norm(op1*r-op2*r))"
 		return false
 	end
+end
+
+
+"""
+The function wrap_operator returns an operator with the given source and destination,
+and with the action of the given operator.
+"""
+function wrap_operator(w_src::Dictionary, w_dest::Dictionary, op::DictionaryOperator)
+    # We do some consistency checks
+    @assert size(w_src) == size(src(op))
+    @assert size(w_dest) == size(dest(op))
+    @assert promote_type(eltype(op),operatoreltype(w_src,w_dest)) == eltype(op)
+    unsafe_wrap_operator(w_src, w_dest, op)
 end

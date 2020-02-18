@@ -67,7 +67,7 @@ function test_generic_dict_indexing(basis)
     # is always the set that was indexed is false, e.g., for multidicts.
     #@test dictionary(bf) == basis
 
-    @test lastindex(basis) == length(basis)
+    @test linear_index(basis, lastindex(basis)) == length(basis)
 
     # Is a boundserror thrown when the index is too large?
     @test try
@@ -93,7 +93,7 @@ function test_generic_dict_evaluation(basis)
     x = fixed_point_in_domain(basis)
     @test bf(x) ≈ eval_element(basis, idx, x)
 
-    if ! (typeof(basis) <: Hermite)
+    if ! (support(basis) isa DomainSets.FullSpace)
         x_outside = point_outside_domain(basis)
         @test bf(x_outside) == 0
     end
@@ -110,6 +110,10 @@ function test_generic_dict_evaluation(basis)
     x_array = [random_point_in_domain(basis) for i in 1:10]
     z = map(e, x_array)
     @test  z ≈ ELT[ e(x_array[i]) for i in eachindex(x_array) ]
+
+    # Test dictionary evaluation
+    x = random_point_in_domain(basis)
+    @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
 end
 
 function test_generic_dict_coefficient_linearization(basis)
@@ -129,19 +133,19 @@ function test_generic_dict_grid(basis)
     z1 = e(grid1)
     z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
     @test z1 ≈ z2
-    E = evaluation_operator(basis, GridBasis(basis))
+    E = evaluation(basis, GridBasis(basis))
     z3 = E * coefficients(e)
     @test z1 ≈ z3
 end
 
 function test_generic_dict_codomaintype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     n = length(basis)
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, real(FT)(0.5))) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, FT(0.5))) ]
         if length(basis) > 1
             indices = [1 2 n>>1 n-1 n]
         else
@@ -157,7 +161,7 @@ function test_generic_dict_codomaintype(basis)
 end
 
 function test_generic_dict_approximation(basis)
-    A = approximation_operator(basis)
+    A = approximation(basis)
     f = suitable_function(basis)
     e = Expansion(basis, A*f)
 
@@ -170,7 +174,7 @@ end
 
 function test_gram_projection(basis)
     if hasmeasure(basis)
-        G = gramoperator(basis)
+        G = gram(basis)
         @test src(G) == basis
         @test dest(G) == basis
         n = length(basis)
@@ -197,7 +201,7 @@ end
 function test_generic_dict_interpolation(basis)
     ELT = coefficienttype(basis)
     g = suitable_interpolation_grid(basis)
-    I = interpolation_operator(basis, g)
+    I = interpolation(basis, g)
     x = rand(GridBasis{coefficienttype(basis)}(g))
     e = Expansion(basis, I*x)
     @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
@@ -206,10 +210,17 @@ end
 function test_generic_dict_domaintype(basis)
     T = domaintype(basis)
     # Test type promotion
-    @test domaintype(promote_domaintype(basis, T)) == T
-    T2 = widen_type(T)
-    basis2 = promote_domaintype(basis, T2)
-    @test domaintype(basis2) == T2
+    @test domaintype(ensure_domaintype(T,basis)) == T
+    try
+        # We attempt to widen the type. This will throw an exception if
+        # the dictionary does not implement `similar` for domain types different
+        # from its own. We just ignore that. Otherwise, if no exception is thrown,
+        # we test whether the promotion succeeded.
+        T2 = widen_type(T)
+        basis2 = ensure_domaintype(T2, basis)
+        @test domaintype(basis2) == T2
+    catch
+    end
 end
 
 function test_generic_dict_evaluation_different_grid(basis)
@@ -248,8 +259,8 @@ function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
     @test hastransform(basis, grid)
     @test hastransform(basis, tbasis)
 
-    t = transform_operator(tbasis, basis)
-    it = transform_operator(basis, tbasis)
+    t = transform(tbasis, basis)
+    it = transform(basis, tbasis)
 
     # - transform from grid
     x = random_expansion(tbasis)
@@ -270,7 +281,7 @@ function test_generic_dict_evaluation_operator(basis)
     ELT = coefficienttype(basis)
     ## Test evaluation operator
     g = suitable_interpolation_grid(basis)
-    E = evaluation_operator(basis, g)
+    E = evaluation(basis, g)
     e = random_expansion(basis)
     y = E*e
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < test_tolerance(ELT)
@@ -279,11 +290,17 @@ end
 function test_generic_dict_antiderivative(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     coef = coefficients(random_expansion(basis))
 
     for dim in 1:dimension(basis)
-        D = antidifferentiation_operator(basis; dim=dim)
+        if dimension(basis) == 1
+            D = antidifferentiation(basis)
+        else
+            N = dimension(basis)
+            order = dimension_tuple(Val{N}(), dim)
+            D = antidifferentiation(basis, order)
+        end
         @test basis == src(D)
         antidiff_dest = dest(D)
 
@@ -309,13 +326,20 @@ end
 function test_generic_dict_derivative(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     for dim in 1:dimension(basis)
         # TODO: Sort out problem with dim and multidict
-        if dimension(basis)>1
-            D = differentiation_operator(basis; dim=dim)
+        if dimension(basis) == 1
+            D = differentiation(basis)
         else
-            D = differentiation_operator(basis)
+            N = dimension(basis)
+            order = dimension_tuple(Val{N}(), dim)
+            D = differentiation(basis, order)
+        end
+        if dimension(basis)>1
+            D = differentiation(basis; dim=dim)
+        else
+            D = differentiation(basis)
         end
 #        @test basis == src(D)
         diff_dest = dest(D)
@@ -340,8 +364,10 @@ function test_generic_dict_derivative(basis)
     end
 
     if dimension(basis) == 1
+        @test derivative_dict(basis, 0) == basis
+
         x = fixed_point_in_domain(basis)
-        D = differentiation_operator(basis)
+        D = differentiation(basis)
         # Verify derivatives in three basis functions: the first, the last,
         # and the middle one
         i1 = 1
@@ -363,6 +389,16 @@ function test_generic_dict_derivative(basis)
         u3 = D*c3
         @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)
     end
+
+    # TODO: experiment with this test and enable
+    # if dimension(basis) == 1 && hasderivative(basis,2)
+    #     D2 = differentiation(basis, 2)
+    #     e = random_expansion(basis)
+    #     f = D2*e
+    #     x = fixed_point_in_domain(basis)
+    #     delta = sqrt(test_tolerance(ELT))
+    #     @test abs(f(x+delta) -2f(x)+f(x-delta))/delta^2 < 100sqrt(test_tolerance(ELT))
+    # end
 end
 
 
@@ -371,7 +407,7 @@ end
 function test_generic_dict_interface(basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
-    FT = float_type(T)
+    FT = prectype(T)
     RT = codomaintype(basis)
 
     n = length(basis)
@@ -424,9 +460,9 @@ function test_generic_dict_interface(basis)
 
     ## Test extensions
     if hasextension(basis)
-        n2 = extension_size(basis)
+        n2 = extensionsize(basis)
         basis2 = resize(basis, n2)
-        E = extension_operator(basis, basis2)
+        E = extension(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1
         x1 = point_in_domain(basis, 1/2)
@@ -434,7 +470,7 @@ function test_generic_dict_interface(basis)
         x2 = point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
-        R = restriction_operator(basis2, basis)
+        R = restriction(basis2, basis)
         e3 = R * e2
         @test e1(x1) ≈ e3(x1)
         @test e1(x2) ≈ e3(x2)
@@ -444,10 +480,10 @@ function test_generic_dict_interface(basis)
     if BF.hasextension(basis) && BF.hasinterpolationgrid(basis)
         basisext = extend(basis)
         grid_ext = interpolation_grid(basisext)
-        L = evaluation_operator(basis, grid_ext)
+        L = evaluation(basis, grid_ext)
         e = random_expansion(basis)
         z = L*e
-        L2 = evaluation_operator(basisext, grid_ext) * extension_operator(basis, basisext)
+        L2 = evaluation(basisext, grid_ext) * extension(basis, basisext)
         z2 = L2*e
         @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators

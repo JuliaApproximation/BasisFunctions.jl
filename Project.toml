@@ -1,6 +1,6 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
-version = "0.0.7"
+version = "0.1.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -30,9 +30,12 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 
 [compat]
-GridArrays = "≥ 0.1.0"
-julia = "1.0"
+BlockArrays = ">= 0.11"
+DomainSets = "< 0.3"
 FastTransforms = "0.6"
+GridArrays = "≥ 0.1.0"
+ToeplitzMatrices = "≥ 0.6.1"
+julia = "1.0"
 
 [extras]
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"

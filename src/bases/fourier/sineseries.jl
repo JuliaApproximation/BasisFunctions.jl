@@ -15,16 +15,6 @@ name(b::SineSeries) = "Sine series"
 
 SineSeries(n::Int) = SineSeries{Float64}(n)
 
-SineSeries{T}(n::Int, a::Number, b::Number) where {T} =
-    rescale(SineSeries{T}(n), a, b)
-
-function SineSeries(n::Int, a::Number, b::Number)
-    T = float(promote_type(typeof(a),typeof(b)))
-    SineSeries{T}(n, a, b)
-end
-
-instantiate(::Type{SineSeries}, n, ::Type{T}) where {T} = SineSeries{T}(n)
-
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
 
 isbasis(b::SineSeries) = true
@@ -36,6 +26,9 @@ hasderivative(b::SineSeries) = false #for now
 hasantiderivative(b::SineSeries) = false #for now
 hastransform(b::SineSeries, d::GridBasis{T,G}) where {T,G <: PeriodicEquispacedGrid} = false #for now
 hasextension(b::SineSeries) = true
+
+extension(::Type{T}, src::SineSeries, dest::SineSeries; options...) where {T} = IndexExtension{T}(src, dest, 1:length(src))
+restriction(::Type{T}, src::SineSeries, dest::SineSeries; options...) where {T} = IndexRestriction{T}(src, dest, 1:length(dest))
 
 size(b::SineSeries) = (b.n,)
 
@@ -51,20 +44,11 @@ const SineFrequency = NativeIndex{:sine}
 
 frequency(idxn::SineFrequency) = value(idxn)
 
-"""
-`SineIndices` defines the map from native indices to linear indices
-for a finite number of sines. It is merely the identity map.
-"""
-struct SineIndices <: IndexList{SineFrequency}
-	n	::	Int
-end
+Base.show(io::IO, idx::SineFrequency) =
+	print(io, "Sine frequency $(value(idx))")
 
-size(list::SineIndices) = (list.n,)
+ordering(b::SineSeries) = NativeIndexList{:sine}(length(b))
 
-getindex(list::SineIndices, idx::Int) = SineFrequency(idx)
-getindex(list::SineIndices, idxn::SineFrequency) = value(idxn)
-
-ordering(b::SineSeries) = SineIndices(length(b))
 
 ##################
 # Evaluation
@@ -80,15 +64,32 @@ function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x)
     arg * cos(arg * x)
 end
 
-function extension_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
-    @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
+##################
+# Differentiation
+##################
+
+derivative_dict(Φ::CosineSeries{T}, order::Int) where {T} =
+	iseven(order) ? Φ : SineSeries{T}(length(Φ)-1)
+
+diff_scaling_function(Φ::CosineSeries{T}, idx::Int, symbol) where {T} = symbol(T(π)*idx)
+
+function differentiation(::Type{T}, src::CosineSeries, dest::CosineSeries, order::Int; options...) where {T}
+	if orderiszero(order)
+		@assert src==dest
+		IdentityOperator{T}(src)
+	else
+		@assert iseven(order)
+		sign = (-1)^(order>>1)
+		_pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
+	end
 end
 
-function restriction_operator(s1::SineSeries, s2::SineSeries; T=op_eltype(s1,s2), options...)
-    @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
+function differentiation(::Type{T}, src::CosineSeries, dest::SineSeries, order::Int; options...) where {T}
+	@assert isodd(order)
+	sign = (-1)^((order-1)>>1)
+	_pseudodifferential_operator(T, src, dest, x->sign*x^order; options...)
 end
+
 
 
 ## Inner products
@@ -97,8 +98,7 @@ hasmeasure(dict::SineSeries) = true
 
 measure(dict::SineSeries{T}) where {T} = FourierMeasure{T}()
 
-gramoperator(dict::SineSeries, ::FourierMeasure; T = coefficienttype(dict), options...) =
-    ScalingOperator(dict, one(T)/2)
+gram(::Type{T}, dict::SineSeries, ::FourierMeasure; options...) where {T} = ScalingOperator(one(T)/2, dict)
 
 function innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierMeasure;
 			T = coefficienttype(b1), quad = :analytic, options...)
