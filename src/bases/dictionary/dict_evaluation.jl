@@ -204,8 +204,13 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; opti
 end
 
 # Evaluation of a dictionary means evaluation of all elements.
-(dict::Dictionary)(x) =
-    in_support(dict, x) ? unsafe_dict_eval(dict, x) : zeros(codomaintype(dict),size(dict))
+if VERSION >= v"1.3"
+    (dict::Dictionary)(x) =
+        in_support(dict, x) ? unsafe_dict_eval(dict, x) : zeros(codomaintype(dict),size(dict))
+else
+    dict_eval(dict::Dictionary, x) =
+        in_support(dict, x) ? unsafe_dict_eval(dict, x) : zeros(codomaintype(dict),size(dict))
+end
 
 # evaluation of the dictionary is "unsafe" because the routine can assume that the
 # support of x has already been checked
