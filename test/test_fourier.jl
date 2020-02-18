@@ -21,7 +21,7 @@ function test_fourier_series(T)
     n = 12
     a = -T(1.2)
     b = T(3.4)
-    fb = rescale(Fourier{T}(n), a, b)
+    fb = Fourier{T}(n) → a..b
     @test ~isreal(fb)
 
     @test infimum(support(fb)) ≈ a
@@ -69,8 +69,8 @@ function test_fourier_series(T)
     b1 = rescale(Fourier{T}(n), a, b)
     b2 = rescale(Fourier{T}(n+1), a, b)
     b3 = rescale(Fourier{T}(n+15), a, b)
-    E2 = extension_operator(b1, b2)
-    E3 = extension_operator(b1, b3)
+    E2 = extension(b1, b2)
+    E3 = extension(b1, b3)
     e1 = Expansion(b1, coef)
     e2 = Expansion(b2, E2*coef)
     e3 = Expansion(b3, E3*coef)
@@ -81,13 +81,10 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = rand(complex(T), size(fb))
-    D = differentiation_operator(fb)
+    D = differentiation(fb)
     coef2 = D*coef
     e1 = Expansion(fb, coef)
     e2 = Expansion(rescale(Fourier{T}(length(fb)+1),support(fb)), coef2)
-
-    zero_orderD = pseudodifferential_operator(fb,x->1)
-    pseudoD = pseudodifferential_operator(fb,x->x^2+x)
 
     x = T(2//10)
     delta = sqrt(eps(T))
@@ -114,7 +111,7 @@ function test_fourier_series(T)
 
     # Evaluate an expansion
     coef = [one(T)+im; 2*one(T)-im; 3*one(T)+2im]
-    e = Expansion(Fourier{T}(3, a, b), coef)
+    e = Expansion(Fourier{T}(3) → a..b, coef)
     x = T(2//10)
     y = (x-a)/(b-a)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
@@ -131,8 +128,8 @@ function test_fourier_series(T)
     b1 = Fourier{T}(n)
     b2 = Fourier{T}(n+1)
     b3 = Fourier{T}(n+15)
-    E2 = extension_operator(b1, b2)
-    E3 = extension_operator(b1, b3)
+    E2 = extension(b1, b2)
+    E3 = extension(b1, b3)
     e1 = Expansion(b1, coef)
     e2 = Expansion(b2, E2*coef)
     e3 = Expansion(b3, E3*coef)
@@ -145,8 +142,8 @@ function test_fourier_series(T)
     b1 = Fourier{T}(n)
     b2 = Fourier{T}(n-1)
     b3 = Fourier{T}(n-5)
-    E1 = restriction_operator(b1, b2)    # source has even length
-    E2 = restriction_operator(b2, b3)    # source has odd length
+    E1 = restriction(b1, b2)    # source has even length
+    E2 = restriction(b2, b3)    # source has odd length
     coef1 = rand(complex(T), length(b1))
     coef2 = E1*coef1
     coef3 = E2*coef2
@@ -157,7 +154,7 @@ function test_fourier_series(T)
 
     # Differentiation test
     coef = rand(complex(T), size(fbo))
-    D = differentiation_operator(fbo)
+    D = differentiation(fbo)
     coef2 = D*coef
     e1 = Expansion(fbo, coef)
     e2 = Expansion(fbo, coef2)
@@ -168,7 +165,7 @@ function test_fourier_series(T)
 
     # Transforms
     b1 = Fourier{T}(161)
-    A = approximation_operator(b1)
+    A = approximation(b1)
     f = x -> 1/(2+cos(2*T(pi)*x))
     e = approximate(b1, f)
     x0 = T(1//2)
@@ -216,11 +213,11 @@ end
     test_fourier_orthogonality()
     F = Fourier(10)
     P = ProjectionSampling(F)
-    @test (P')'*P' == gramoperator(F)
+    @test (P')'*P' == gram(F)
 
     for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
         D = dual(P, M)
-        @test Matrix(gramoperator(P, M)) ≈ Matrix(inv(gramoperator(D,M)))
+        @test Matrix(gram(P, M)) ≈ Matrix(inv(gram(D,M)))
         A = SynthesisOperator(P, M)
         Z = SynthesisOperator(D, M)
         Zt = Z'

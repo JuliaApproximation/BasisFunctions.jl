@@ -40,7 +40,7 @@ src_space(op::GridSampling) = op.src
 apply!(result, op::GridSampling, f; options...) = sample!(result, grid(op), f; options...)
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f, T = float_type(eltype(g))) = sample!(zeros(T, size(g)), g, f)
+sample(g::AbstractGrid, f, T = numtype(g)) = sample!(zeros(T, size(g)), g, f)
 
 broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 

@@ -3,13 +3,11 @@
 A basis of Legendre polynomials on the interval `[-1,1]`. These classical
 polynomials are orthogonal with respect to the weight function `w(x) = 1`.
 """
-struct Legendre{T} <: OPS{T,T}
+struct Legendre{T} <: OPS{T}
     n   ::  Int
 end
 
 Legendre(n::Int) = Legendre{Float64}(n)
-
-instantiate(::Type{Legendre}, n, ::Type{T}) where {T} = Legendre{T}(n)
 
 similar(b::Legendre, ::Type{T}, n::Int) where {T} = Legendre{T}(n)
 

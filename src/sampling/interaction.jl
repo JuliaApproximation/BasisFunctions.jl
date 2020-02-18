@@ -6,18 +6,22 @@ apply(op::SamplingOperator, dict::Dictionary; options...) =
 	apply(op, SynthesisOperator(dict); options...)
 
 (*)(op::SamplingOperator, object::SynthesisOperator) = apply(op, object)
-apply(sampling::SamplingOperator, op::SynthesisOperator; T = op_eltype(dictionary(op), dest(sampling)), options...) =
-    evaluation_operator(dictionary(op), grid(sampling); T=T, options...)
 
-function apply(analysis::ProjectionSampling, synthesis::SynthesisOperator; T=op_eltype(dictionary(synthesis), dest(analysis)), options...)
+function apply(sampling::SamplingOperator, op::SynthesisOperator; options...)
+	T = operatoreltype(dictionary(op), dest(sampling))
+    evaluation(T, dictionary(op), grid(sampling); options...)
+end
+
+function apply(analysis::ProjectionSampling, synthesis::SynthesisOperator; options...)
+	T = operatoreltype(dictionary(synthesis), dest(analysis))
 	synthesisdict = dictionary(synthesis)
 	analysismeasure = measure(analysis)
 	analysisdict = dictionary(analysis)
 	# Check whether we can just compute the gram matrix instead.
 	if isequal(analysisdict, synthesisdict) && size(analysisdict)==size(synthesisdict)
-		gramoperator(synthesisdict, analysismeasure; T=T, options...)
+		gram(T, synthesisdict, analysismeasure; options...)
 	else
-		mixedgramoperator(analysisdict, synthesisdict, analysismeasure; T=T, options...)
+		mixedgram(T, analysisdict, synthesisdict, analysismeasure; options...)
 	end
 end
 

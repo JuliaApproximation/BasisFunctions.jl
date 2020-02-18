@@ -2,7 +2,7 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevT{T} <: OPS{T,T}
+struct ChebyshevT{T} <: OPS{T}
     n			::	Int
 end
 
@@ -10,21 +10,17 @@ name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
-# Convenience constructor: map the Chebyshev basis to the interval [a,b]
-ChebyshevT{T}(n, a, b) where {T} = rescale(ChebyshevT{T}(n), a, b)
-
-function ChebyshevT(n::Int, a::Number, b::Number)
-    T = float(promote_type(typeof(a),typeof(b)))
-    ChebyshevT{T}(n, a, b)
+function ChebyshevT(n, a::Number, b::Number)
+	@warn "The syntax ChebyshevT(n, a, b) is deprecated. Please use ChebyshevT(n) → a..b instead (the symbol → is \\Rightarrow)"
+	ChebyshevT(n) → a..b
 end
-
-instantiate(::Type{ChebyshevT}, n, ::Type{T}) where {T} = ChebyshevT{T}(n)
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
 
 hasinterpolationgrid(b::ChebyshevT) = true
 hasderivative(b::ChebyshevT) = true
+hasderivative(b::ChebyshevT, order::Int) = true
 hasantiderivative(b::ChebyshevT) = true
 
 hasgrid_transform(b::ChebyshevT, gb, ::ChebyshevNodes) = length(b) == length(gb)
@@ -122,28 +118,17 @@ function innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT
 	(unsafe_moment(b1, PolynomialDegree(n1+n2), measure) + unsafe_moment(b1, PolynomialDegree(abs(n1-n2)), measure))/2
 end
 
-## Extension and restriction
-
-function extension_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
-    @assert length(s2) >= length(s1)
-    IndexExtensionOperator(s1, s2, 1:length(s1); T=T)
-end
-
-function restriction_operator(s1::ChebyshevT, s2::ChebyshevT; T = op_eltype(s1,s2), options...)
-    @assert length(s2) <= length(s1)
-    IndexRestrictionOperator(s1, s2, 1:length(s2); T=T)
-end
 
 
 ###################################################################################
 # Methods to transform from ChebyshevT to ChebyshevNodes and ChebyshevExtremae
 ###################################################################################
 
-grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; options...) =
-	resize_and_transform(dict, gb, grid; chebyshevpoints = :nodes, options...)
+evaluation(::Type{T}, dict::ChebyshevT, gb::GridBasis, grid::ChebyshevNodes; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; chebyshevpoints = :nodes, options...)
 
-grid_evaluation_operator(dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) =
-	resize_and_transform(dict, gb, grid; chebyshevpoints = :extremae, options...)
+evaluation(::Type{T}, dict::ChebyshevT, gb::GridBasis, grid::ChebyshevExtremae; options...) where {T} =
+	resize_and_transform(T, dict, gb, grid; chebyshevpoints = :extremae, options...)
 
 function chebyshev_transform_nodes(dict::ChebyshevT, T; options...)
 	grid = interpolation_grid(dict)
@@ -169,20 +154,18 @@ function chebyshev_transform_extremae(dict::ChebyshevT, T; options...)
 	F * DiagonalOperator(dict, d)
 end
 
-function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevNodes;
-			T = op_eltype(src, dest), options...)
+function transform_to_grid(T, src::ChebyshevT, dest::GridBasis, grid::ChebyshevNodes; options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_nodes(src, T; options...)
 end
 
-function transform_to_grid(src::ChebyshevT, dest::GridBasis, grid::ChebyshevExtremae;
-			T = op_eltype(src, dest), options...)
+function transform_to_grid(T, src::ChebyshevT, dest::GridBasis, grid::ChebyshevExtremae; options...)
 	@assert length(src) == length(grid)
 	chebyshev_transform_extremae(src, T; options...)
 end
 
-transform_from_grid(src::GridBasis, dest::ChebyshevT, grid; options...) =
-	inv(transform_to_grid(dest, src, grid; options...))
+transform_from_grid(T, src::GridBasis, dest::ChebyshevT, grid; options...) =
+	inv(transform_to_grid(T, dest, src, grid; options...))
 
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 
@@ -199,3 +182,23 @@ function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     end
     (dest,coef_dest)
 end
+
+
+struct ChebyshevTPolynomial{T} <: OrthogonalPolynomial{T}
+    degree  ::  Int
+end
+
+ChebyshevTPolynomial{T}(p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
+
+name(p::ChebyshevTPolynomial) = "T_$(degree(p))(x) (Chebyshev polynomial of the first kind)"
+
+convert(::Type{TypedFunction{T,T}}, p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
+
+support(::ChebyshevTPolynomial{T}) where {T} = ChebyshevInterval{T}()
+
+(p::ChebyshevTPolynomial{T})(x) where {T} = eval_element(ChebyshevT{T}(degree(p)+1), degree(p)+1, x)
+
+basisfunction(dict::ChebyshevT, idx) = basisfunction(dict, native_index(dict, idx))
+basisfunction(dict::ChebyshevT{T}, idx::PolynomialDegree) where {T} = ChebyshevTPolynomial{T}(degree(idx))
+
+dictionary(p::ChebyshevTPolynomial{T}) where {T} = ChebyshevT{T}(degree(p)+1)

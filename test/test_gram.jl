@@ -7,7 +7,7 @@ for T in (Float64,BigFloat)
             @test g ≈ grid(gr)
             @test isorthogonal(d, gr)
             @test iscompatible(d, g)
-            @test gramoperator(d, gr) isa DiagonalOperator
+            @test gram(d, gr) isa DiagonalOperator
 
             test_orthogonality_orthonormality(d, true, d isa Fourier, gr)
 
@@ -22,7 +22,7 @@ for T in (Float64,BigFloat)
         @test g ≈ grid(gr)
         @test isorthogonal(d, gr)
         @test iscompatible(d, g)
-        @test gramoperator(d, gr) isa TensorProductOperator && all(map(x->isa(x, DiagonalOperator), elements(gramoperator(d,gr))))
+        @test gram(d, gr) isa TensorProductOperator && all(map(x->isa(x, DiagonalOperator), elements(gram(d,gr))))
         @test BasisFunctions.gaussweights(gauss_rule(d),measure(d)) ≈ BasisFunctions.OuterProductArray(map(ones, axes(B^2))...)
 
     end

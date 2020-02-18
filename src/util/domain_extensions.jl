@@ -13,20 +13,6 @@ iscompatible(map1::AffineMap, map2::AffineMap) = (map1.a ≈ map2.a) && (map1.b 
 
 iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
 
-# We provide a fallback for approx_indomain, for domains that do not implement
-# approximate in, by simply dropping the tolerance.
-approx_indomain(x, domain::Domain, tolerance) = indomain(x, domain)
-
-
-dimension(::Type{T}) where {T <: Number} = 1
-dimension(::Type{SVector{N,T}}) where {N,T <: Number} = N
-dimension(::Type{NTuple{N,T}}) where {N,T <: Number} = N
-dimension(::Type{Tuple{A}}) where {A} = 1
-dimension(::Type{Tuple{A,B}}) where {A,B} = 2
-dimension(::Type{Tuple{A,B,C}}) where {A,B,C} = 3
-dimension(::Type{Tuple{A,B,C,D}}) where {A,B,C,D} = 4
-dimension(::Type{CartesianIndex{N}}) where {N} = N
-
 # Convenience functions to make some simple domains
 interval() = UnitInterval{Float64}()
 
@@ -47,6 +33,8 @@ ball(radius::Number) = radius * ball(typeof(radius))
 ball(radius::Number, center::AbstractVector) = ball(radius) + center
 
 simplex(::Type{Val{N}}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
+# TODO: this will become:
+# simplex(::Type{Val{N}}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
 
 cube(::Type{Val{N}}, ::Type{T} = Float64) where {N,T} = cartesianproduct(UnitInterval{T}(), Val{N})
 cube() = cube(Val{3})

@@ -1,24 +1,8 @@
 
 """
-The function wrap_operator returns an operator with the given source and destination,
-and with the action of the given operator. Depending on the operator, the result is
-a WrappedOperator, but sometimes that can be avoided.
-"""
-function wrap_operator(w_src, w_dest, op)
-    # We do some consistency checks
-    @assert size(w_src) == size(src(op))
-    @assert size(w_dest) == size(dest(op))
-    @assert promote_type(eltype(op),op_eltype(w_src,w_dest)) == eltype(op)
-    unsafe_wrap_operator(w_src, w_dest, op)
-end
-
-"""
 A MultiplicationOperator is defined by a (matrix-like) object that multiplies
 coefficients. The multiplication is in-place if type parameter INPLACE is true,
 otherwise it is not in-place.
-
-An alias MatrixOperator is provided, for which type parameter ARRAY equals
-Array{T,2}. In this case, multiplication is done using A_mul_B!.
 """
 struct MultiplicationOperator{T,ARRAY,INPLACE} <: DictionaryOperator{T}
     src     ::  Dictionary
@@ -34,27 +18,14 @@ end
 
 object(op::MultiplicationOperator) = op.object
 
-# An MatrixOperator is defined by an actual matrix, i.e. the parameter
-# ARRAY is Array{T,2}.
-# const MatrixOperator{T} = MultiplicationOperator{T,Array{T,2},false}
+MultiplicationOperator(args...; options...) =
+    MultiplicationOperator{deduce_eltype(args...)}(args...; options...)
 
 MultiplicationOperator{T}(src::Dictionary, dest::Dictionary, object; inplace = false) where {T} =
     MultiplicationOperator{T,typeof(object),inplace}(src, dest, object)
 
-MultiplicationOperator(src::Dictionary, dest::Dictionary, object; inplace = false, T=op_eltype(src,dest)) =
-    MultiplicationOperator{promote_eltype(T,op_eltype(src,dest))}(src::Dictionary, dest::Dictionary, object; inplace=inplace)
-
 MultiplicationOperator(matrix::AbstractMatrix{T}) where {T <: Number} =
     MultiplicationOperator(DiscreteVectorDictionary{T}(size(matrix, 2)), DiscreteVectorDictionary{T}(size(matrix, 1)), matrix)
-
-# Provide aliases for when the object is an actual matrix.
-# MatrixOperator(matrix::AbstractMatrix) = MultiplicationOperator(matrix)
-#
-# function MatrixOperator(src::Dictionary, dest::Dictionary, matrix::AbstractMatrix)
-#     @assert size(matrix, 1) == length(dest)
-#     @assert size(matrix, 2) == length(src)
-#     MultiplicationOperator(src, dest, matrix)
-# end
 
 similar_operator(op::MultiplicationOperator{S,ARRAY,INPLACE}, src, dest) where {S,ARRAY,INPLACE} =
     MultiplicationOperator(src, dest, object(op); inplace=INPLACE)
@@ -125,20 +96,19 @@ inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(
 A FunctionOperator applies a given function to the set of coefficients and
 returns the result.
 """
-struct FunctionOperator{F,T} <: DictionaryOperator{T}
+struct FunctionOperator{T,F} <: DictionaryOperator{T}
     src     ::  Dictionary
     dest    ::  Dictionary
     fun     ::  F
 end
 
+FunctionOperator(args...) = FunctionOperator{deduce_eltype(args...)}(args...)
+
 FunctionOperator{T}(src, dest, fun) where {T} =
-    FunctionOperator{typeof(fun),T}(src, dest, fun)
+    FunctionOperator{T,typeof(fun)}(src, dest, fun)
 
-FunctionOperator(src::Dictionary, dest::Dictionary, fun; T=op_eltype(src,dest)) =
-    FunctionOperator{T}(src, dest, fun)
-
-similar_operator(op::FunctionOperator{F,S}, src, dest) where {F,S} =
-    FunctionOperator{promote_type(S,op_eltype(src,dest))}(src, dest, op.fun)
+similar_operator(op::FunctionOperator{T,F}, src, dest) where {T,F} =
+    FunctionOperator{promote_type(T,operatoreltype(src,dest)),F}(src, dest, op.fun)
 
 unsafe_wrap_operator(src, dest, op::FunctionOperator) =
     similar_operator(op, src, dest)
@@ -160,7 +130,7 @@ inv(op::FunctionOperator) = inv_function(op, op.fun)
 # This can be overriden for types of functions that do not support inv
 inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
 
-string(op::FunctionOperator) = "Function "*string(op.fun)
+string(op::FunctionOperator) = "Function " * string(op.fun)
 
 
 
@@ -239,10 +209,10 @@ elements(op::OperatorSum) = (op.op1,op.op2)
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)
 
-(+)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (+)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
-(-)(I1::UniformScaling, op2::DictionaryOperator{T}) where T = (-)(ScalingOperator(src(op2), dest(op2),I1.λ; T=T), op2)
-(+)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (+)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
-(-)(op1::DictionaryOperator{T}, I2::UniformScaling) where T = (-)(op1, ScalingOperator(src(op), dest(op2),I2.λ; T=T))
+(+)(I1::UniformScaling, op2::DictionaryOperator) = (+)(ScalingOperator(I1.λ, src(op2), dest(op2)), op2)
+(-)(I1::UniformScaling, op2::DictionaryOperator) = (-)(ScalingOperator(I1.λ, src(op2), dest(op2)), op2)
+(+)(op1::DictionaryOperator, I2::UniformScaling) = (+)(op1, ScalingOperator(I2.λ, src(op1), dest(op1)))
+(-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(I2.λ, src(op1), dest(op1)))
 
 
 function stencilarray(op::OperatorSum)
@@ -279,19 +249,22 @@ struct LinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-LinearizationOperator(src::Dictionary, dest = DiscreteVectorDictionary{coefficienttype(src)}(length(src));
-            T=op_eltype(src, dest)) =
-    LinearizationOperator{T}(src, dest)
+LinearizationOperator(dicts::Dictionary...) =
+    LinearizationOperator{operatoreltype(dicts...)}(dicts...)
+
+LinearizationOperator{T}(src::Dictionary) where {T} =
+    LinearizationOperator{T}(src, DiscreteVectorDictionary{coefficienttype(src)}(length(src)))
 
 similar_operator(::LinearizationOperator{T}, src, dest) where {T} =
-    LinearizationOperator{promote_type(T,op_eltype(src,dest))}(src, dest)
+    LinearizationOperator{promote_type(T,operatoreltype(src,dest))}(src, dest)
 
 apply!(op::LinearizationOperator, coef_dest, coef_src) =
     linearize_coefficients!(coef_dest, coef_src)
 
 isdiag(op::LinearizationOperator) = true
 
-Base.adjoint(op::LinearizationOperator) = DelinearizationOperator(dest(op), src(op))
+Base.adjoint(op::LinearizationOperator{T}) where {T} =
+    DelinearizationOperator{T}(dest(op), src(op))
 
 
 "The inverse of a LinearizationOperator."
@@ -300,21 +273,24 @@ struct DelinearizationOperator{T} <: DictionaryOperator{T}
     dest        ::  Dictionary
 end
 
-DelinearizationOperator(dest::Dictionary; options...) =
-    DelinearizationOperator(DiscreteVectorDictionary{coefficienttype(dest)}(length(dest)), dest; options...)
+DelinearizationOperator(dicts::Dictionary...) =
+    DelinearizationOperator{operatoreltype(dicts...)}(dicts...)
 
-DelinearizationOperator(src::Dictionary, dest::Dictionary; T=op_eltype(src,dest)) =
-    DelinearizationOperator{T}(src, dest)
+DelinearizationOperator{T}(dest::Dictionary) where {T} =
+    DelinearizationOperator{T}(DiscreteVectorDictionary{T}(length(dest)), dest)
 
-similar_operator(::DelinearizationOperator, src, dest) =
-    DelinearizationOperator(src, dest)
+similar_operator(::DelinearizationOperator{T}, src, dest) where {T} =
+    DelinearizationOperator{promote_type(T,operatoreltype(src,dest))}(src, dest)
 
 apply!(op::DelinearizationOperator, coef_dest, coef_src) =
     delinearize_coefficients!(coef_dest, coef_src)
 
 isdiag(op::DelinearizationOperator) = true
 
-Base.adjoint(op::DelinearizationOperator) = LinearizationOperator(dest(op), src(op))
+Base.adjoint(op::DelinearizationOperator{T}) where {T} =
+    LinearizationOperator{T}(dest(op), src(op))
+
+
 
 function SparseOperator(op::DictionaryOperator; options...)
     A = sparse_matrix(op; options...)
@@ -324,17 +300,25 @@ end
 
 const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 
-AlternatingSignOperator(src; T=coefficienttype(src)) = AlternatingSignOperator{T}(src)
-AlternatingSignOperator{T}(src) where {T} = AlternatingSignOperator{T}(src, src, Diagonal(AlternatingSigns{T}(length(src))))
+AlternatingSignOperator(src::Dictionary) = AlternatingSignOperator{operatoreltype(src)}(src)
+
+function AlternatingSignOperator{T}(src::Dictionary) where {T}
+    diag = Diagonal(AlternatingSigns{T}(length(src)))
+    DiagonalOperator{T}(diag, src, src)
+end
 
 strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of length $(size(op,1))")
 
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
 
-CoefficientScalingOperator(src::Dictionary, index::Int, scalar; T=promote_type(coefficienttype(src),typeof(scalar))) =
-	CoefficientScalingOperator{T}(src, index, scalar)
-CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T} =
-	CoefficientScalingOperator{T}(src, src, Diagonal(ScaledEntry{T}(length(src), index, scalar)))
+CoefficientScalingOperator(src::Dictionary, index::Int, scalar) =
+	CoefficientScalingOperator{promote_type(typeof(scalar),operatoreltype(src))}(src, index, scalar)
 
-strings(op::CoefficientScalingOperator) = tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")
+function CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) where {T}
+    diag = Diagonal(ScaledEntry{T}(length(src), index, scalar))
+	DiagonalOperator{T}(diag, src, src)
+end
+
+strings(op::CoefficientScalingOperator) =
+    tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")

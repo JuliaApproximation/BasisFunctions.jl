@@ -9,7 +9,7 @@ p_{n+1}(x) = (A_n x + B_n) * p_n(x) - C_n * p_{n-1}(x).
 p_{-1} = 0, p_0 = p0
 ```
 """
-struct GenericOPS{T} <: BasisFunctions.OPS{T,T}
+struct GenericOPS{T} <: OPS{T}
     moment  ::  T
     p0      ::  T
     rec_a   ::  Vector{T}

@@ -21,9 +21,9 @@ DCT_FFTW_TYPES = Union{Float32,Float64,Complex{Float32},Complex{Float64}}
 #############################
 
 inverse_fourier_operator(src, dest; options...) =
-    inverse_fourier_operator(src, dest, op_eltype(src,dest); options...)
+    inverse_fourier_operator(src, dest, operatoreltype(src,dest); options...)
 forward_fourier_operator(src, dest; options...) =
-    forward_fourier_operator(src, dest, op_eltype(src,dest); options...)
+    forward_fourier_operator(src, dest, operatoreltype(src,dest); options...)
 
 
 # For any type but the FFTW types
@@ -79,10 +79,10 @@ inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
 
 
 adjoint_function(op::FunctionOperator, fun::typeof(fft)) =
-    FunctionOperator(dest(op), src(op), ifft) * ScalingOperator(dest(op), dest(op), length(dest(op)))
+    FunctionOperator(dest(op), src(op), ifft) * ScalingOperator(dest(op), length(dest(op)))
 
 adjoint_function(op::FunctionOperator, fun::typeof(ifft)) =
-    FunctionOperator(dest(op), src(op), fft) * ScalingOperator(dest(op), dest(op), 1/convert(eltype(op), length(dest(op))))
+    FunctionOperator(dest(op), src(op), fft) * ScalingOperator(dest(op), 1/convert(eltype(op), length(dest(op))))
 
 # The two functions below are used when computing the inv of a
 # FunctionOperator that uses fft/ifft:
@@ -103,14 +103,14 @@ inv(fun::typeof(ifft)) = fft
 # http://www-math.mit.edu/~gs/papers/dct.pdf
 
 inverse_chebyshev_operator(src, dest; options...) =
-    inverse_chebyshev_operator(src, dest, op_eltype(src,dest); options...)
+    inverse_chebyshev_operator(src, dest, operatoreltype(src,dest); options...)
 forward_chebyshev_operator(src, dest; options...) =
-    forward_chebyshev_operator(src, dest, op_eltype(src,dest); options...)
+    forward_chebyshev_operator(src, dest, operatoreltype(src,dest); options...)
 
 inverse_chebyshevI_operator(src, dest; options...) =
-    inverse_chebyshevI_operator(src, dest, op_eltype(src,dest); options...)
+    inverse_chebyshevI_operator(src, dest, operatoreltype(src,dest); options...)
 forward_chebyshevI_operator(src, dest; options...) =
-    forward_chebyshevI_operator(src, dest, op_eltype(src,dest); options...)
+    forward_chebyshevI_operator(src, dest, operatoreltype(src,dest); options...)
 
 # The generic routines for the DCTII. They rely on dct and idct being available for the
 # types of coefficients.

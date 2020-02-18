@@ -152,7 +152,7 @@ end
 @testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
     OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
     for ops in OPSs, n in (5,6), T in (Float64,BigFloat)
-        B = instantiate(ops, n, T)
+        B = ops{T}(n)
         test_orthogonality_orthonormality(B, gauss_rule(B))
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,2n)))
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,n-1)))
