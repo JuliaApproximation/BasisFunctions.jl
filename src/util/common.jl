@@ -161,3 +161,5 @@ numtype(::Type{T}) where {T} = eltype(T)
 numtype(T::Type{<:NTuple{N,Any}}) where {N} = promote_type(map(numtype, T.parameters)...)
 
 numtype(a...) = promote_type(map(numtype, a)...)
+
+numtype(::Type{G}) where {G<:AbstractGrid} = numtype(eltype(G))
