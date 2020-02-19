@@ -410,5 +410,5 @@ include("util/display/pgfplots.jl")
 
 include("test/Test.jl")
 
-
+include("examples/haar.jl")
 end # module

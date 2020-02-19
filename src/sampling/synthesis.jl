@@ -19,7 +19,7 @@ in the span of a dictionary.
 """
 struct SynthesisOperator <: AbstractOperator
     dictionary  ::  Dictionary
-    measure     ::  Union{Measure,Nothing}
+    measure     ::  Union{AbstractMeasure,Nothing}
 end
 
 SynthesisOperator(dict::Dictionary) = hasmeasure(dict) ?
@@ -48,7 +48,7 @@ hasstencil(op::SynthesisOperator) = true
 stencilarray(op::SynthesisOperator) = stencilarray(op, dictionary(op), op.measure)
 stencilarray(op::SynthesisOperator, dict::Dictionary, ::Nothing) =
     [modifiersymbol(op), "[", dict, "]"]
-stencilarray(op::SynthesisOperator, dict::Dictionary, measure::Measure) =
+stencilarray(op::SynthesisOperator, dict::Dictionary, measure::AbstractMeasure) =
     [modifiersymbol(op), "[", dict, ", ", measure, "]"]
 
 modifiersymbol(op::SynthesisOperator) = PrettyPrintSymbol{:𝒯}()#PrettyPrintSymbol{:ℙ}()

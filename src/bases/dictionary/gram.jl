@@ -52,11 +52,52 @@ innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; options...) =
 
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
-function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...)
+function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::AbstractMeasure; options...)
 	@boundscheck checkbounds(Φ1, i)
-	@boundscheck checkbounds(Φ2, i)
-    applymeasure(measure, x->conj(unsafe_eval_element(Φ1, i, x)) * unsafe_eval_element(Φ2, j, x); options...)
+	@boundscheck checkbounds(Φ2, j)
+    domain1 = support(Φ1, i)
+    domain2 = support(Φ2, j)
+    domain3 = support(measure)
+
+    domain = domain1 ∩ domain2 ∩ domain3
+    unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain; options...)
 end
+
+function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure; options...)
+	@boundscheck checkbounds(Φ1, i)
+	@boundscheck checkbounds(Φ2, j)
+    domain1 = support(Φ1, i)
+    domain2 = support(Φ2, j)
+    unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure, domain1 ∩ domain2; options...)
+end
+
+# unsafe for indexing
+function unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain; options...)
+    if d1 == d2 == d3
+        # -> domains are the same, don't convert the measure
+        unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
+    else
+        # -> do compute on the smaller domain and convert the measure
+        # TODO: use DomainIntegrals.jl code that enables both measures and domains
+        integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x)*unsafe_weight(measure,x), domain; options...)
+    end
+end
+
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::AbstractMeasure, d1, d2, d3, domain::IntersectionDomain; options...) =
+    # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
+    integral(x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure; options...)
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain::IntersectionDomain; options...) =
+    # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
+    integral(x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure; options...)
+
+# unsafe for indexing and for support of integral
+unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
+    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure; options...)
+unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure, domain; options...) =
+    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure, domain; options...)
+
+
+
 
 gramelement(dict::Dictionary, i, j, μ = measure(dict); options...) =
     innerproduct(dict, i, dict, j, μ; options...)
@@ -87,34 +128,34 @@ gram(Φ::Dictionary, args...; options...) = gram(operatoreltype(Φ), Φ, args...
 
 gram(::Type{T}, Φ::Dictionary; options...) where {T} = gram(T, Φ, measure(Φ); options...)
 
-gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T} =
+gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure; options...) where {T} =
 	gram1(T, Φ, μ; options...)
 
 gram1(T, Φ::Dictionary, μ; options...) =
 	gram2(T, Φ, μ; options...)
 
-gram2(T, Φ, μ::Measure; options...) =
+gram2(T, Φ, μ::AbstractMeasure; options...) =
 	default_gram(T, Φ, μ; options...)
 
 gram2(T, Φ, μ::DiscreteMeasure; options...) =
     gram(T, Φ, μ, grid(μ), weights(μ); options...)
 
 gram(::Type{T}, Φ, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) where {T} =
-    default_mixedgram_discretemeasure(Φ, Φ, μ, grid, weights; options...)
+    default_mixedgram_discretemeasure(T, Φ, Φ, μ, grid, weights; options...)
 
 default_gram(Φ::Dictionary, args...; options...) =
 	default_gram(operatoreltype(Φ), Φ, args...; options...)
 
-function default_gram(::Type{T}, Φ::Dictionary, μ::Measure = measure(Φ); options...) where {T}
+function default_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure = measure(Φ); options...) where {T}
     @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ) ."
     A = grammatrix(Φ, μ, T; options...)
     R = ArrayOperator(A, Φ, Φ)
 end
 
-default_diagonal_gram(Φ::Dictionary, μ::Measure = measure(Φ); options...) =
+default_diagonal_gram(Φ::Dictionary, μ::AbstractMeasure = measure(Φ); options...) =
 	default_diagonal_gram(operatoreltype(Φ), μ; options...)
 
-function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T}
+function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure; options...) where {T}
     @assert isorthogonal(Φ, μ)
 	n = length(Φ)
 	diag = zeros(T, n)
@@ -164,7 +205,7 @@ Compute the mixed Gram matrix corresponding to two dictionaries. The matrix
 has elements given by the inner products between the elements of the dictionaries,
 relative to the given measure.
 """
-mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ::Measure; options...) where {T} =
+mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ::AbstractMeasure; options...) where {T} =
     mixedgram1(T, Φ1, Φ2, μ; options...)
 
 # The routine mixedgram1 can be specialized by concrete subtypes of the
@@ -176,7 +217,7 @@ mixedgram1(T, Φ1::Dictionary, Φ2, μ; options...) =
 mixedgram2(T, Φ1, Φ2::Dictionary, μ; options...) =
     mixedgram3(T, Φ1, Φ2, μ; options...)
 
-mixedgram3(T, Φ1, Φ2, μ::Measure; options...) =
+mixedgram3(T, Φ1, Φ2, μ::AbstractMeasure; options...) =
     default_mixedgram(T, Φ1, Φ2, μ; options...)
 
 mixedgram3(T, Φ1, Φ2, μ::DiscreteMeasure; options...) =
@@ -185,7 +226,7 @@ mixedgram3(T, Φ1, Φ2, μ::DiscreteMeasure; options...) =
 mixedgram(T, Φ1, Φ2, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
     default_mixedgram_discretemeasure(T, Φ1, Φ2, μ, grid, weights; options...)
 
-function mixedgram(::Type{T}, Φ1::D, Φ2::D, μ::Measure; options...) where {T,D<:Dictionary}
+function mixedgram(::Type{T}, Φ1::D, Φ2::D, μ::AbstractMeasure; options...) where {T,D<:Dictionary}
     if Φ1 == Φ2
         gram(T, Φ1, μ; options...)
     else

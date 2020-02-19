@@ -205,11 +205,19 @@ end
 
 # Evaluation of a dictionary means evaluation of all elements.
 if VERSION >= v"1.3"
-    (dict::Dictionary)(x) =
-        in_support(dict, x) ? unsafe_dict_eval(dict, x) : zeros(codomaintype(dict),size(dict))
-else
-    dict_eval(dict::Dictionary, x) =
-        in_support(dict, x) ? unsafe_dict_eval(dict, x) : zeros(codomaintype(dict),size(dict))
+    (dict::Dictionary)(x) = dict_eval(dict, x)
+end
+
+function dict_eval(dict::Dictionary, x)
+    result = zeros(dict)
+    dict_eval!(result, dict, x)
+end
+
+function dict_eval!(result, dict, x)
+    for (idx,idxn) in enumerate(ordering(dict))
+        result[idx] = unsafe_eval_element1(dict, idxn, x)
+    end
+    result
 end
 
 # evaluation of the dictionary is "unsafe" because the routine can assume that the

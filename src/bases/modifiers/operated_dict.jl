@@ -192,7 +192,7 @@ hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
 measure(dict::OperatedDict) = measure(superdict(dict))
 
 for f in (:isorthogonal, :isorthonormal, :isbiorthogonal)
-    @eval $f(dict::OperatedDict, measure::Measure) =
+    @eval $f(dict::OperatedDict, measure::AbstractMeasure) =
         $f(superdict(dict), measure) && $f(operator(dict))
 end
 

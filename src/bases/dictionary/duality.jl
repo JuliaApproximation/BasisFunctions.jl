@@ -2,13 +2,13 @@
 # Duality
 ########################
 
-dual(dict::Dictionary, measure::BasisFunctions.Measure=measure(dict); dualtype=gramdual, options...) =
+dual(dict::Dictionary, measure::BasisFunctions.AbstractMeasure=measure(dict); dualtype=gramdual, options...) =
     dualtype(dict, measure; options...)
 
-gramdual(dict::Dictionary, measure::Measure; options...) =
+gramdual(dict::Dictionary, measure::AbstractMeasure; options...) =
     default_gramdual(dict, measure; options...)
 
-function default_gramdual(dict::Dictionary, measure::Measure; options...)
+function default_gramdual(dict::Dictionary, measure::AbstractMeasure; options...)
     try
         conj(inv(gram(dict, measure; options...))) * dict
     catch DimensionMismatch

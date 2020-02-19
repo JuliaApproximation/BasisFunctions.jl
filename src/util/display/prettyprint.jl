@@ -165,9 +165,9 @@ strings(g::AbstractGrid) = (name(g) * " of size $(size(g)),\tELT = $(eltype(g))"
 # Measure symbols and strings
 ####
 
-symbol(m::Measure) = "μ"
+symbol(m::AbstractMeasure) = "μ"
 
-strings(m::Measure) = (name(m), (string(support(m)),))
+strings(m::AbstractMeasure) = (name(m), (string(support(m)),))
 
 
 

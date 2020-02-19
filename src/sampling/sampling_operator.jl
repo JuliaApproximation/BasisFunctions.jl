@@ -127,7 +127,7 @@ with a projection basis.
 """
 struct ProjectionSampling <: SamplingOperator
     dict		::  Dictionary
-	measure		::	Measure
+	measure		::	AbstractMeasure
 	src_space	::	FunctionSpace
 end
 
@@ -137,7 +137,7 @@ space(dict::Dictionary) = space(measure(dict))
 
 ProjectionSampling(dict::Dictionary) = ProjectionSampling(dict, measure(dict), Span(dict))
 
-ProjectionSampling(dict::Dictionary, measure::Measure) = ProjectionSampling(dict, measure, space(measure))
+ProjectionSampling(dict::Dictionary, measure::AbstractMeasure) = ProjectionSampling(dict, measure, space(measure))
 
 ProjectionSampling(dict::Dictionary, space::FunctionSpace) = ProjectionSampling(dict, measure(space), space)
 
@@ -153,7 +153,7 @@ measure(op::ProjectionSampling) = op.measure
 
 apply!(result, op::ProjectionSampling, f; options...) = project!(result, f, dictionary(op), measure(op); options...)
 
-function project!(result, f, dict::Dictionary, measure::Measure; options...)
+function project!(result, f, dict::Dictionary, measure::AbstractMeasure; options...)
     for i in eachindex(result)
 		result[i] = innerproduct(dict[i], f, measure; options...)
 	end

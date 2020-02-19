@@ -81,15 +81,15 @@ isframe(d::Dictionary) = isbasis(d)
 
 "Property to indicate whether a dictionary is orthogonal."
 isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
-isorthogonal(d::Dictionary, measure::Measure) = isorthonormal(d, measure)
+isorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthonormal(d, measure)
 
 "Property to indicate whether a dictionary is orthonormal"
 isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
-isorthonormal(d::Dictionary, measure::Measure) = false
+isorthonormal(d::Dictionary, measure::AbstractMeasure) = false
 
 "Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
-isbiorthogonal(d::Dictionary, measure::Measure) = isorthogonal(d, measure)
+isbiorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthogonal(d, measure)
 
 size(d::Dictionary, j) = size(d)[j]
 
