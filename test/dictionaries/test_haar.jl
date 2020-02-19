@@ -4,7 +4,7 @@ using BasisFunctions, GridArrays
 @testset "Basic Haar tests" begin
     s = zeros(10);s[1]=1
     H = Haar(10)
-    @test H(0)≈s
+    @test BasisFunctions.dict_eval(H,0)≈s
     g = interpolation_grid(H)
     @test g≈MidpointEquispacedGrid(10,0,1)
     @test isorthogonal(H,discretemeasure(g))
