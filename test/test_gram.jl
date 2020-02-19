@@ -1,3 +1,11 @@
+using BasisFunctions, Test
+
+@testset "Prolate matrix"
+    F = Fourier(10)
+    @test @allocated(gram(F,BasisFunctions.GenericLebesgueMeasure(0.0..0.1))) < 40000
+end
+
+
 for T in (Float64,BigFloat)
 
     @testset "Discrete Gauss OPS Rule" begin
