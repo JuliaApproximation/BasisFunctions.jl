@@ -33,7 +33,7 @@ include("test_operators.jl")
 
 Delimit("Dictionaries")
 include("dictionaries/test_dictionaries.jl")
-include("dictionaries/test_haar.jl")
+include("dictionaries/test_pwconstants.jl")
 
 Delimit("Check evaluations, interpolations, extensions, expansions")
 include("test_fourier.jl")
