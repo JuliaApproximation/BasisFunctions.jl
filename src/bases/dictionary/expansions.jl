@@ -3,6 +3,7 @@
 compatible_coefficients(dict::Dictionary, coefficients) =
     length(dict) == length(coefficients)
 
+export Expansion
 """
 An `Expansion` describes a function using its expansion coefficients in a certain
 dictionary.
@@ -14,57 +15,55 @@ Parameters:
 - D is the dictionary.
 - C is the type of the expansion coefficients
 """
-struct Expansion{D,C}
+struct Expansion{S,T,D<:Dictionary{S,T},C}
     dictionary      ::  D
     coefficients    ::  C
 
-    function Expansion{D,C}(dict::D, coefficients::C) where {D,C}
+    function Expansion{S,T,D,C}(dict::D, coefficients::C) where {S,T,D<:Dictionary{S,T},C}
         @assert compatible_coefficients(dict, coefficients)
         new(dict, coefficients)
     end
 end
 
 Expansion(dict::Dictionary) = Expansion(dict, zeros(dict))
-Expansion(dict::Dictionary, coef) = Expansion{typeof(dict),typeof(coef)}(dict, coef)
+Expansion(dict::Dictionary, coef) =
+    Expansion{domaintype(dict),codomaintype(dict),typeof(dict),typeof(coef)}(dict, coef)
 
+export Expansion1d, Expansion2d, Expansion3d, Expansion4d
+# Warning: not all 2d function sets have SVector{2,T} type, they could have (S,T) type
+const Expansion1d{S <: Number,T,D,C} = Expansion{S,T,D,C}
+const Expansion2d{S <: Number,T,D,C} = Expansion{SVector{2,S},T,D,C}
+const Expansion3d{S <: Number,T,D,C} = Expansion{SVector{3,S},T,D,C}
+const Expansion4d{S <: Number,T,D,C} = Expansion{SVector{4,S},T,D,C}
+
+@forward Expansion.dictionary domaintype, prectype, dimension,
+                                size, Span, support, interpolation_grid, numtype,
+                                numelements
+
+@forward Expansion.coefficients length, eachindex, getindex, setindex!
+codomaintype(e::Expansion) = promote_type(codomaintype(dictionary(e)), eltype(coefficients(e)))
+isreal(e::Expansion) = isreal(e.dictionary) && isreal(eltype(coefficients(e)))
+
+export expansion
+"""
+    expansion(dict::Dictionary, coefficients)
+
+An expansion of a dictionary with given coefficients.
+"""
 expansion(dict::Dictionary, coefficients) =
     Expansion(dict, native_coefficients(dict, coefficients))
 
 similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 
-eltype(::Type{Expansion{D,C}}) where {D,C} = eltype(C)
-
 dictionary(e::Expansion) = e.dictionary
 coefficients(e::Expansion) = e.coefficients
 
-Span(e::Expansion) = Span(dictionary(e))
-
+export random_expansion
 random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
 
 # For expansions of composite types, return a Expansion of a subdict
 element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
-
 elements(e::Expansion) = map(Expansion, elements(e.dictionary), elements(e.coefficients))
-
-# Delegation of methods
-for op in (:length, :size, :support, :interpolation_grid)
-    @eval $op(e::Expansion) = $op(dictionary(e))
-end
-
-# Delegation of property methods
-for op in (:numtype, :dimension, :numelements)
-    @eval $op(s::Expansion) = $op(dictionary(s))
-end
-
-hasbasis(e::Expansion) = isbasis(dictionary(e))
-hasframe(e::Expansion) = isframe(dictionary(e))
-
-eachindex(e::Expansion) = eachindex(coefficients(e))
-
-getindex(e::Expansion, i...) = e.coefficients[i...]
-
-setindex!(e::Expansion, v, i...) = setindex!(e.coefficients, v, i...)
-
 
 # This indirect call enables dispatch on the type of the dict of the expansion
 (e::Expansion)(x) = call_expansion(e, dictionary(e), coefficients(e), x)
@@ -77,12 +76,12 @@ call_expansion(e::Expansion, dict::Dictionary, coefficients, x) =
     eval_expansion(dict, coefficients, x)
 
 function differentiate(e::Expansion, order = difforder(dictionary(e)); options...)
-    op = differentiation(eltype(e), dictionary(e), order; options...)
+    op = differentiation(codomaintype(e), dictionary(e), order; options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
 function antidifferentiate(e::Expansion, order = 1; options...)
-    op = antidifferentiation(eltype(e), dictionary(e); options...)
+    op = antidifferentiation(codomaintype(e), dictionary(e); options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
@@ -114,19 +113,18 @@ roots(f::Expansion) = roots(dictionary(f), coefficients(f))
 
 # Delegate generic operators
 for op in (:extension, :restriction, :evaluation, :approximation, :transform)
-    @eval $op(src::Expansion, dest::Expansion) = $op(promote_type(eltype(src),eltype(dest)), dictionary(src), dictionary(dest))
+    @eval $op(src::Expansion, dest::Expansion) = $op(promote_type(codomaintype(src),codomaintype(dest)), dictionary(src), dictionary(dest))
 end
 
 for op in (:interpolation, :approximation)
     @eval $op(s::Expansion) = $op(dictionary(s))
 end
 
-differentiation(e::Expansion; options...) = differentiation(eltype(e), dictionary(e); options...)
-differentiation(e::Expansion, order; options...) = differentiation(eltype(e), dictionary(e), order; options...)
+differentiation(e::Expansion; options...) = differentiation(codomaintype(e), dictionary(e); options...)
+differentiation(e::Expansion, order; options...) = differentiation(codomaintype(e), dictionary(e), order; options...)
 
 
 show(io::IO, fun::Expansion) = show_setexpansion(io, fun, dictionary(fun))
-
 function show_setexpansion(io::IO, fun::Expansion, fs::Dictionary)
     println(io, "A ", dimension(fun), "-dimensional Expansion with ", length(coefficients(fun)), " degrees of freedom.")
     println(io, "Basis: ", name(fs))
@@ -177,8 +175,10 @@ end
 
 (*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
 
-(*)(a::Number, e::Expansion) = Expansion(dictionary(e), a*coefficients(e))
-(*)(e::Expansion, a::Number) = a*e
+for op in (:+, :-, :*)
+    @eval Base.$op(a::Number, e::Expansion) = Expansion(dictionary(e), $op(a, coefficients(e)))
+    @eval Base.$op(e::Expansion, a::Number) = Expansion(dictionary(e), $op(coefficients(e), a))
+end
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 

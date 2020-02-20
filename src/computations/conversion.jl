@@ -28,6 +28,11 @@ conversion
 @deprecate restriction_operator restriction
 @deprecate differentiation_operator differentiation
 @deprecate antidifferentiation_operator antidifferentiation
+@deprecate DictFun Expansion
+@deprecate DictFun1d Expansion1d
+@deprecate DictFun2d Expansion2d
+@deprecate DictFun3d Expansion3d
+@deprecate DictFun4d Expansion4d
 
 operatoreltype(Φ::Dictionary...) = promote_type(map(coefficienttype, Φ)...)
 

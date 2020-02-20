@@ -35,8 +35,6 @@ of the features for a description of that interface and the syntax.
 abstract type Dictionary{S,T}
 end
 
-FunDict = Dictionary
-
 # Useful abstraction for special cases
 const Dictionary1d{S <: Number,T} = Dictionary{S,T}
 # Warning: not all 2d function sets have NTuple{2,S} type, they could have (S1,S2) type
