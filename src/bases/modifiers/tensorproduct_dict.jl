@@ -271,11 +271,8 @@ end
 stencil_parentheses(dict::TensorProductDict) = true
 object_parentheses(dict::TensorProductDict) = true
 
-
 evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
     tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), elements(dict), elements(grid))...)
-
-
 
 dual(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
     TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)

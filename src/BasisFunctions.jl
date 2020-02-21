@@ -410,5 +410,5 @@ include("util/display/pgfplots.jl")
 
 include("test/Test.jl")
 
-
+include("examples/pwconstants.jl")
 end # module

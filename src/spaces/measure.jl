@@ -2,20 +2,28 @@
 """
 The abstract supertype of all measures.
 """
-abstract type Measure{T}
+abstract type AbstractMeasure{T}
 end
 
-domaintype(m::Measure{T}) where {T} = T
-subdomaintype(m::Measure) = subeltype(domaintype(m))
-rangetype(m::Measure{T}) where {T} = T
+
+isprobabilitymeasure(m::AbstractMeasure; options...) = error("isprobabilitymeasure not implemented for measure $(typeof(m)).")
+applymeasure(m::AbstractMeasure, f::Function; options...) = default_applymeasure(m, f; options...)
+
+domaintype(m::AbstractMeasure{T}) where {T} = T
+subdomaintype(m::AbstractMeasure) = subeltype(domaintype(m))
+rangetype(m::AbstractMeasure{T}) where {T} = T
+codomaintype(m::AbstractMeasure{T}) where {T} = subeltype(T)
+
+"""
+The abstract supertype of all continuous measures.
+
+I.e., the `weight` is a function and the `support` has mass.
+"""
+abstract type Measure{T} <: AbstractMeasure{T}
+end
 
 weight(m::Measure{T}, x::T) where {T} = weight1(m, x)
-
 weight(m::Measure{T}, x) where {T} = weight1(m, convert(T, x))
-
-isprobabilitymeasure(m::Measure; options...) = error("isprobabilitymeasure not implemented for measure $(typeof(m)).")
-
-applymeasure(m::Measure, f::Function; options...) = default_applymeasure(m, f; options...)
 
 function default_applymeasure(measure::Measure, f::Function; options...)
     @debug  "Applying measure $(typeof(measure)) numerically" maxlog=3
@@ -28,23 +36,19 @@ end
 
 weightfunction(m::Measure) = x->weight(m, x)
 unsafe_weightfunction(m::Measure) = x->unsafe_weight(m, x)
-codomaintype(m::Measure{T}) where {T} = subeltype(T)
 iscomposite(m::Measure) = false
 
 
 """
 The abstract supertype of discrete measures.
-"""
-abstract type DiscreteMeasure{T} <: Measure{T}
-end
 
-function unsafe_weight(m::DiscreteMeasure{T}, x) where {T}
-    @warn "You might want to use `(unsafe_)discrete_weight`"
-    convert(T, NaN)
+I.e., the `weight` is a vector and the `support` contains a `grid`.
+"""
+abstract type DiscreteMeasure{T} <: AbstractMeasure{T}
 end
 
 grid(m::DiscreteMeasure) = m.grid
-support(m::DiscreteMeasure) = DomainSets.WrappedDomain(grid(m))
+support(m::DiscreteMeasure) = grid(m)#DomainSets.WrappedDomain(grid(m)) the support is no domain, but it is a set, i.e., a vector
 weights(m::DiscreteMeasure) = m.weights
 discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
 checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)

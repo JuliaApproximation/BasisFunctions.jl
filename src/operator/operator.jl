@@ -263,7 +263,12 @@ end#matrix related features
 
 function ≈(op1::DictionaryOperator,op2::DictionaryOperator)
     r = rand(src(op1))
-    op1*r≈op2*r
+    if op1*r≈op2*r
+		return true
+	else
+		@debug "Approx gives difference of $(norm(op1*r-op2*r))"
+		return false
+	end
 end
 
 

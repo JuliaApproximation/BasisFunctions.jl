@@ -1,7 +1,11 @@
 # Routines for evaluating integrals
 
-integral(f, domain::AbstractInterval; options...) =
+function integral(f, domain::AbstractInterval; options...)
+    if isempty(domain)
+        return zero(f(zero(eltype(domain))))
+    end
     numerical_integral(f, infimum(domain), supremum(domain); options...)
+end
 
 integral(f, domain::UnionDomain; options...) =
     sum([integral(f, d; options...) for d in elements(domain)])
@@ -54,6 +58,19 @@ function integral(f, measure::DiscreteMeasure; options...)
     g = grid(measure)
     for i in 1:length(g)
         r += w[i] * f(g[i])
+    end
+    r
+end
+
+function integral(f, measure::DiscreteMeasure, domain::Domain; options...)
+    T = subdomaintype(measure)
+    r = zero(T)
+    w = weights(measure)
+    g = grid(measure)
+    for i in 1:length(g)
+        if g[i] ∈ domain
+            r += w[i] * f(g[i])
+        end
     end
     r
 end

@@ -1,8 +1,8 @@
-test_orthogonality_orthonormality(dict::Dictionary, measure::BasisFunctions.Measure=measure(dict)) =
+test_orthogonality_orthonormality(dict::Dictionary, measure::BasisFunctions.AbstractMeasure=measure(dict)) =
     test_orthogonality_orthonormality(dict, isorthogonal(dict, measure), isorthonormal(dict, measure), measure)
 
 
-function test_orthogonality_orthonormality(dict::Dictionary, isorthog::Bool, isorthonorm::Bool, measure::BasisFunctions.Measure=measure(dict); atol=1e-6,rtol=1e-6, opts...)
+function test_orthogonality_orthonormality(dict::Dictionary, isorthog::Bool, isorthonorm::Bool, measure::BasisFunctions.AbstractMeasure=measure(dict); atol=1e-6,rtol=1e-6, opts...)
     isorthonormal(dict, measure) && (@test isorthogonal(dict, measure))
     @test isorthogonal(dict, measure) == isorthog
     @test isorthonormal(dict, measure) == isorthonorm

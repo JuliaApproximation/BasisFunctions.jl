@@ -142,30 +142,92 @@ SVD_solver(op::DictionaryOperator; options...) =
 regularized_SVD_solver(op::DictionaryOperator; options...) =
     GenericSolverOperator(op, regularized_svd_factorization(op; options...))
 
+for (damp, LS) in ((:λ, :LSMR), (:damp, :LSQR))
+    OPTIONS = Symbol(LS,"Options")
+    @eval begin
+        export $OPTIONS
+        mutable struct $OPTIONS{T}
+            atol::T
+            btol::T
+            conlim::T
+            $damp::T
+            maxiter::Int
+            verbose::Bool
+
+            function $OPTIONS{T}(;atol=T(1e-6), btol=T(1e-6), conlim=T(Inf), λ=T(0), maxiter=-1, verbose=false) where T
+                new{T}(atol, btol, conlim, λ, maxiter, verbose)
+            end
+            function $OPTIONS(;atol=1e-6, btol=1e-6, conlim=Inf, λ=0, maxiter=-1, verbose=false)
+                T = promote_type(map(typeof, (atol, btol, conlim, λ))...)
+                new{T}(T(atol), T(btol), T(conlim), T(λ), maxiter, verbose)
+            end
+            $OPTIONS{T}(itoptions::$OPTIONS{T}) where T =
+                itoptions
+            $OPTIONS{T}(itoptions::$OPTIONS) where T =
+                $OPTIONS{T}(;convert(NamedTuple, itoptions)...)
+        end
+
+        convert(::Type{<:NamedTuple}, opts::$OPTIONS) =
+            (atol=real(opts.atol), btol=real(opts.btol), conlim=real(opts.conlim), $damp=real(opts.$damp), verbose=real(opts.verbose), maxiter=real(opts.maxiter))
+    end
+end
+
+export ItOptions
+const ItOptions = LSMROptions
+LSQROptions{T}(options::LSMROptions) where T =
+    LSQROptions{T}(;convert(NamedTuple,options)...)
+
 struct LSQR_solver{T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator{T}
-    options ::  NamedTuple
+    options ::  LSQROptions{T}
 
     src_linear  ::  Vector{T}
     dest_linear ::  Vector{T}
-    LSQR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, maxiter=100*max(size(op)...),verbose=false, options...) where T =
-        new{T}(op, (damp=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
-            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op))))
+    LSQR_solver(op::DictionaryOperator{T}; itoptions=LSQROptions{T}(), options...) where T =
+        LSQR_solver(op, LSQROptions{T}(itoptions); options...)
+
+
+    function LSQR_solver(op::DictionaryOperator{T}, opts::LSQROptions{T}; verbose=false, options...) where T
+        if opts.maxiter == -1
+             opts.maxiter=100*max(size(op)...)
+        end
+        opts.verbose = verbose
+        new{T}(op, opts,
+            Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op)))
+        )
+    end
 end
 
-linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector) =
-    copy!(coef_dest, lsqr(op.op, coef_src; op.options...))
+function linearized_apply!(op::LSQR_solver, coef_dest::Vector, coef_src::Vector)
+    keys = convert(NamedTuple, op.options)
+    op.options.verbose && @info "LSQR with $keys"
+    copy!(coef_dest, lsqr(op.op, coef_src; keys...))
+end
+
 
 struct LSMR_solver{T} <: VectorizingSolverOperator{T}
     op      ::  DictionaryOperator{T}
-    options ::  NamedTuple
+    options ::  LSMROptions{T}
 
     src_linear  ::  Vector{T}
     dest_linear ::  Vector{T}
-    LSMR_solver(op::DictionaryOperator{T}; atol=1e-6, btol=1e-6, conlim=Inf, damp = 0, maxiter=100*max(size(op)...),verbose=false, options...) where T =
-        new{T}(op, (λ=damp, atol=atol, btol=btol, conlim=conlim, verbose=verbose),
+
+    LSMR_solver(op::DictionaryOperator{T}; itoptions=LSMROptions{T}(), options...) where T =
+        LSMR_solver(op, LSMROptions{T}(itoptions); options...)
+
+    function LSMR_solver(op::DictionaryOperator{T}, opts::LSMROptions{T}; verbose=false, options...) where T
+        if opts.maxiter == -1
+             opts.maxiter=100*max(size(op)...)
+        end
+        opts.verbose = verbose
+        new{T}(op, opts,
             Vector{T}(undef, length(dest(op))), Vector{T}(undef, length(src(op)))
         )
+    end
 end
 
-linearized_apply!(op::LSMR_solver, coef_dest::Vector, coef_src::Vector) = copy!(coef_dest, lsmr(op.op, coef_src; op.options...))
+function linearized_apply!(op::LSMR_solver, coef_dest::Vector, coef_src::Vector)
+    keys = convert(NamedTuple, op.options)
+    op.options.verbose && @info "LSMR with $keys"
+    copy!(coef_dest, lsmr(op.op, coef_src; keys...))
+end
