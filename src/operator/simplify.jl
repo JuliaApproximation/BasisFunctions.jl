@@ -78,8 +78,13 @@ unsafe_compose_and_simplify1(op1::IdentityOperator, op2) = op2
 unsafe_compose_and_simplify2(op1, op2::IdentityOperator) = op1
 
 # Move scalars to last place
-unsafe_compose_and_simplify1(op1::ScalingOperator{T}, op2) where {T} =
-    op2, ScalingOperator{T}(dest(op2), scalar(op1))
+function unsafe_compose_and_simplify1(op1::ScalingOperator{T}, op2) where {T}
+    if scalar(op1) == 1
+        op2
+    else
+        op2, ScalingOperator{T}(dest(op2), scalar(op1))
+    end
+end
 
 # Combine scalars to one / not type stable
 function unsafe_compose_and_simplify(op1::ScalingOperator, op2::ScalingOperator)
