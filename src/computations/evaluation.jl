@@ -37,7 +37,7 @@ evaluation(::Type{T}, Φ::Dictionary, grid::AbstractSubGrid; options...) where {
      restriction(T, supergrid(grid), grid; options...) * evaluation(T, Φ, supergrid(grid); options...)
 
 function evaluation(::Type{T}, Φ::Dictionary, gb::GridBasis, grid; options...) where {T}
-    @debug "No fast evaluation available in $grid, using dense evaluation matrix instead."
+    @debug "No fast evaluation available in $grid for dictionary $Φ, using dense evaluation matrix instead."
     dense_evaluation(T, Φ, gb; options...)
 end
 

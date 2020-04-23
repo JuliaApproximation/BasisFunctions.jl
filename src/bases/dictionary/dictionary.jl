@@ -35,8 +35,6 @@ of the features for a description of that interface and the syntax.
 abstract type Dictionary{S,T}
 end
 
-FunDict = Dictionary
-
 # Useful abstraction for special cases
 const Dictionary1d{S <: Number,T} = Dictionary{S,T}
 # Warning: not all 2d function sets have NTuple{2,S} type, they could have (S1,S2) type
@@ -81,15 +79,15 @@ isframe(d::Dictionary) = isbasis(d)
 
 "Property to indicate whether a dictionary is orthogonal."
 isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
-isorthogonal(d::Dictionary, measure::Measure) = isorthonormal(d, measure)
+isorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthonormal(d, measure)
 
 "Property to indicate whether a dictionary is orthonormal"
 isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
-isorthonormal(d::Dictionary, measure::Measure) = false
+isorthonormal(d::Dictionary, measure::AbstractMeasure) = false
 
 "Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
-isbiorthogonal(d::Dictionary, measure::Measure) = isorthogonal(d, measure)
+isbiorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthogonal(d, measure)
 
 size(d::Dictionary, j) = size(d)[j]
 

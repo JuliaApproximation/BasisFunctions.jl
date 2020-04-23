@@ -25,9 +25,7 @@ GridBasis(d::Dictionary, g::AbstractGrid = interpolation_grid(d)) = GridBasis{co
 
 grid(b::GridBasis) = b.grid
 
-for op in (:size, :eachindex)
-    @eval $op(b::GridBasis) = $op(grid(b))
-end
+@forward GridBasis.grid size, eachindex
 
 dimension(b::GridBasis) = GridArrays.dimension(grid(b))
 

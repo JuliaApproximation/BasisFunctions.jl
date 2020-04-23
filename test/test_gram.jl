@@ -1,3 +1,5 @@
+using BasisFunctions, Test
+
 for T in (Float64,BigFloat)
 
     @testset "Discrete Gauss OPS Rule" begin

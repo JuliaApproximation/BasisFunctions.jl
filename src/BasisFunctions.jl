@@ -23,6 +23,7 @@ using Base: IteratorSize
 using DSP: conv
 using IterativeSolvers: lsqr, lsmr
 using SpecialFunctions: gamma
+using MacroTools: @forward
 import Calculus: derivative
 
 
@@ -410,5 +411,5 @@ include("util/display/pgfplots.jl")
 
 include("test/Test.jl")
 
-
+include("examples/pwconstants.jl")
 end # module

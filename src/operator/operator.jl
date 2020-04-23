@@ -261,9 +261,14 @@ for f in (:eigvals, :svdvals, :norm, :rank)
     @eval $f(op::DictionaryOperator) = $f(Matrix(op))
 end#matrix related features
 
-function ≈(op1::DictionaryOperator,op2::DictionaryOperator)
+function ≈(op1::DictionaryOperator,op2::DictionaryOperator; options...)
     r = rand(src(op1))
-    op1*r≈op2*r
+    if isapprox(op1*r,op2*r; options...)
+		return true
+	else
+		@debug "Approx gives difference of $(norm(op1*r-op2*r))"
+		return false
+	end
 end
 
 

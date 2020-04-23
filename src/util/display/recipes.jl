@@ -4,7 +4,10 @@
 # - evaluate the expansion in the gridpoints (fast if possible)
 # - postprocess the data
 
-@recipe function f(S::Expansion; plot_complex = false, n=200)
+@recipe function f(S::Expansion; plot_complex = false, n=200, plot_ext=false)
+    if plot_ext
+        @warn "Deprecation warning: `plot_ext=true` not longer supported"
+    end
     legend --> false
     # title --> "Expansion"
     grid = plotgrid(dictionary(S), n)
@@ -17,7 +20,7 @@ end
 @recipe function f(S::Expansion, target::Function; n=200)
     grid = plotgrid(dictionary(S), n)
     # Determine the return type so we know where to sample
-    origvals = sample(grid, target, eltype(S))
+    origvals = sample(grid, target, codomaintype(S))
     vals = abs.(origvals - S(grid))
     dictionary(S), grid, postprocess(dictionary(S), grid, vals)
 end
@@ -117,4 +120,21 @@ end
         A,B,imag.(C)
     end
     nothing
+end
+
+
+@recipe function f(dom::Domain2d; n=300, distance=false, xlim=[-1,1], ylim=[-1,1])
+    seriescolor --> :tempo
+     seriestype --> :heatmap
+    aspect_ratio --> 1
+    cbar --> false
+    # xrange = linspace(xlim[1],xlim[2],n)
+    xrange = EquispacedGrid(n,xlim[1],xlim[2])
+    # yrange = linspace(ylim[1],ylim[2],n)
+    yrange = EquispacedGrid(n,ylim[1],ylim[2])
+    # grid = [SVector(i,j) for i in xrange , j in yrange]
+    grid = xrange×yrange
+
+    plotdata = distance ? dist.(grid, Ref(dom)) : in.(grid, Ref(dom))
+    collect(xrange),collect(yrange),plotdata
 end

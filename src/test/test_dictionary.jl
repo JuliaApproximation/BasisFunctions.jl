@@ -113,7 +113,11 @@ function test_generic_dict_evaluation(basis)
 
     # Test dictionary evaluation
     x = random_point_in_domain(basis)
-    @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
+    if VERSION >= v"1.3"
+        @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
+    else
+        @test norm(BasisFunctions.dict_eval(basis,x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
+    end
 end
 
 function test_generic_dict_coefficient_linearization(basis)

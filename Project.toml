@@ -1,6 +1,6 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
-version = "0.1.0"
+version = "0.1.2"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -17,6 +17,7 @@ GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
 GridArrays = "356ae075-8bc9-5ef9-a342-46c9ba26438c"
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
