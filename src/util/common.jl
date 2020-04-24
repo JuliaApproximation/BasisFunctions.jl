@@ -129,37 +129,3 @@ dimension(::Type{SVector{N,T}}) where {N,T} = N
 dimension(::Type{<:NTuple{N,Any}}) where {N} = N
 dimension(::Type{CartesianIndex{N}}) where {N} = N
 dimension(::Type{T}) where {T} = 1
-
-#################
-# Precision type
-#################
-
-"The floating point precision type associated with the argument."
-prectype(x) = prectype(typeof(x))
-prectype(::Type{<:Complex{T}}) where {T} = prectype(T)
-prectype(::Type{<:AbstractArray{T}}) where {T} = prectype(T)
-prectype(::Type{NTuple{N,T}}) where {N,T} = prectype(T)
-prectype(::Type{Tuple{A}}) where {A} = prectype(A)
-prectype(::Type{Tuple{A,B}}) where {A,B} = prectype(A,B)
-prectype(::Type{Tuple{A,B,C}}) where {A,B,C} = prectype(A,B,C)
-prectype(::Type{Tuple{A,B,C,D}}) where {A,B,C,D} = prectype(A,B,C,D)
-prectype(T::Type{<:NTuple{N,Any}}) where {N} = prectype(map(prectype, T.parameters)...)
-prectype(::Type{T}) where {T<:AbstractFloat} = T
-prectype(::Type{T}) where {T} = prectype(float(T))
-
-prectype(a, b) = promote_type(prectype(a), prectype(b))
-prectype(a, b, c...) = prectype(prectype(a, b), c...)
-
-#################
-# Numeric type
-#################
-
-"The numeric element type used in Euclidean spaces."
-numtype(x) = numtype(typeof(x))
-numtype(::Type{T}) where {T<:Number} = T
-numtype(::Type{T}) where {T} = eltype(T)
-numtype(T::Type{<:NTuple{N,Any}}) where {N} = promote_type(map(numtype, T.parameters)...)
-
-numtype(a...) = promote_type(map(numtype, a)...)
-
-numtype(::Type{G}) where {G<:AbstractGrid} = numtype(eltype(G))

@@ -76,7 +76,9 @@ import DomainSets:
     # composite types
     element, elements, numelements,
     # products
-    tensorproduct, cartesianproduct, ×
+    tensorproduct, cartesianproduct, ×,
+    # utils
+    prectype, numtype
 
 export .., numtype
 
@@ -94,7 +96,8 @@ import AbstractTrees: children
 export element, elements, numelements, iscomposite,
     ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
     Point,
-    leftendpoint, rightendpoint, range
+    leftendpoint, rightendpoint, range,
+    ×
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,

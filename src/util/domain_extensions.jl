@@ -44,5 +44,3 @@ cube(a, b, c, d, e, f) = (a..b) × (c..d) × (e..f)
 cube(a::NTuple{N,T}, b::NTuple{N,T}) where {N,T} = ProductDomain(map((ai,bi)->ClosedInterval{T}(ai,bi), a, b)...)
 # This one isn't either
 cube(a::AbstractVector{T}, b::AbstractVector{T}) where {T} = cube(tuple(a...), tuple(b...))
-
-convert(::Type{Domain{T}}, ::UnitInterval{S}) where{T,S} = UnitInterval{T}()
