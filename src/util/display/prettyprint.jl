@@ -106,18 +106,18 @@ function string(op::MultiplicationOperator, object::FFTW.DCTPlan)
     String(take!(io))
 end
 
-function string(v::AbstractVector)
-    io = IOBuffer()
-    if length(v) > 6
-       inds = axes(v,1)
-       Base.show_delim_array(io, v, "[", ",", "", false, inds[1], inds[1] + 2)
-       print(io, "  …  ")
-       Base.show_delim_array(io, v, "", ",", "]", false, inds[end - 2], inds[end])
-    else
-       Base.show_delim_array(io, v, "[", ",", "]", false)
-    end
-    String(take!(io))
-end
+# function string(v::AbstractVector)
+#     io = IOBuffer()
+#     if length(v) > 6
+#        inds = axes(v,1)
+#        Base.show_delim_array(io, v, "[", ",", "", false, inds[1], inds[1] + 2)
+#        print(io, "  …  ")
+#        Base.show_delim_array(io, v, "", ",", "]", false, inds[end - 2], inds[end])
+#     else
+#        Base.show_delim_array(io, v, "[", ",", "]", false)
+#     end
+#     String(take!(io))
+# end
 
 
 
