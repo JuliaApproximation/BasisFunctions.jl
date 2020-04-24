@@ -276,7 +276,7 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
 		return dense_evaluation(T, fs, gb; options...)
-	elseif support(grid) ⊂ support(fs)
+	elseif issubset(support(grid), support(fs))
 		a, b = endpoints(support(grid))
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
