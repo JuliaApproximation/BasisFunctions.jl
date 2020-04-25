@@ -14,6 +14,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: julia -e '
+                 using Pkg;
                  my_registries = [Pkg.RegistrySpec(name = "General",
                                     uuid = "23338594-aafe-5451-b93e-139f81909106",
                                     url = "https://github.com/JuliaRegistries/General.git"),
