@@ -20,7 +20,7 @@ jobs:
                                     url = "https://github.com/JuliaRegistries/General.git"),
                                   Pkg.RegistrySpec(name = "FrameFun General",
                                     uuid = "ba14b903-9d48-5ec9-93b4-2d38f0d10dc3",
-                                    url = "https://github.com/FrameFunVC/FrameFunGeneral.git")
+                                    url = "https://github.com/FrameFunVC/FrameFunRegistry.git")
                                   ];
                 using CompatHelper;
                 CompatHelper.main(; registries = my_registries);
