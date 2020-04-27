@@ -13,6 +13,7 @@ const ComplexifiedDict1d{D,S<:Number,T<:Number} = ComplexifiedDict{D,S,T}
 ComplexifiedDict(d::Dictionary{S,T}) where {S,T<:Real} = ComplexifiedDict{typeof(d),S,T}(d)
 
 Base.complex(dict::Dictionary) = ensure_coefficienttype(complex(coefficienttype(dict)), dict)
+Base.real(dict::ComplexifiedDict) = superdict(dict)
 
 similardictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
