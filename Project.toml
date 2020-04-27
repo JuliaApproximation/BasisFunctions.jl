@@ -32,6 +32,7 @@ ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 
 [compat]
 BlockArrays = ">= 0.11"
+Calculus = "0.5"
 DomainSets = ">= 0.3"
 FastTransforms = "0.6"
 GridArrays = ">= 0.1.4"
