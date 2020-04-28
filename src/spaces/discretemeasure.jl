@@ -1,4 +1,15 @@
 
+grid(m::DiscreteMeasure) = points(m::DiscreteMeasure)
+
+support(m::DiscreteMeasure) = grid(m)#DomainSets.WrappedDomain(grid(m)) the support is no domain, but it is a set, i.e., a vector
+discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
+checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)
+unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m.weights, i)
+isnormalized(m::DiscreteMeasure) = sum(weights(m)) ≈ 1
+function default_applymeasure(measure::DiscreteMeasure, f::Function; options...)
+    integral(f, measure; options...)
+end
+
 
 struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
     grid   ::  GRID
@@ -13,23 +24,18 @@ genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...
 genericweights(grid::ProductGrid{T,S,N}) where {T,S,N} =
     tensorproduct(ntuple(k->Ones{subeltype(eltype(grid))}(size(grid,k)) ,Val(N)))
 
+points(m::GenericDiscreteMeasure) = m.grid
+
 discretemeasure(grid::AbstractGrid, weights=genericweights(grid)) =
     GenericDiscreteMeasure(grid, weights)
 
-name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(grid(m)))"
-strings(m::GenericDiscreteMeasure) = (name(m), (string(grid(m)),), (string(string(weights(m))),))
-isprobabilitymeasure(m::GenericDiscreteMeasure) = weights(m) isa ProbabilityArray
+name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(points(m)))"
+strings(m::GenericDiscreteMeasure) = (name(m), (string(points(m)),), (string(string(weights(m))),))
+isnormalized(m::GenericDiscreteMeasure) = weights(m) isa ProbabilityArray
 
 
-"A Dirac function at a point `x`."
-struct DiracMeasure{T} <: DiscreteMeasure{T}
-    x   ::  T
-end
-
-support(m::DiracMeasure) = Point(m.x)
-name(m::DiracMeasure) = "Dirac measure at x = $(m.x)"
-grid(m::DiracMeasure) = ScatteredGrid([m.x])
-isprobabilitymeasure(::DiracMeasure) = true
+name(m::DiracMeasure) = "Dirac measure at x = $(m.point)"
+points(m::DiracMeasure) = ScatteredGrid([m.point])
 weights(::DiracMeasure{T}) where T = Ones{T}(1)
 
 
@@ -45,7 +51,7 @@ name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight"
 
 const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:ProbabilityArray
 DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, ProbabilityArray{eltype(eg)}(size(eg)))
-@inline isprobabilitymeasure(m::DiracCombProbabilityMeasure) = true
+@inline isnormalized(m::DiracCombProbabilityMeasure) = true
 name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weights"
 
 const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
@@ -53,12 +59,12 @@ const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:Ab
 
 const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
 mappedmeasure(map, measure::DiscreteMeasure) =
-discretemeasure(MappedGrid(grid(measure), map), weights(measure))
+discretemeasure(MappedGrid(points(measure), map), weights(measure))
 
 name(m::DiscreteMappedMeasure) = "Mapping of a "*name(supermeasure(m))
-mapping(measure::DiscreteMappedMeasure) = mapping(grid(measure))
-supermeasure(m::DiscreteMappedMeasure) = discretemeasure(supergrid(grid(m)), m.weights)
-apply_map(measure::DiscreteMeasure, map) = discretemeasure(apply_map(grid(measure),map), weights(measure))
+mapping(measure::DiscreteMappedMeasure) = mapping(points(measure))
+supermeasure(m::DiscreteMappedMeasure) = discretemeasure(supergrid(points(m)), m.weights)
+apply_map(measure::DiscreteMeasure, map) = discretemeasure(apply_map(points(measure),map), weights(measure))
 support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
 
 
@@ -70,8 +76,8 @@ productmeasure(measures::DiscreteMeasure...) =
     discretemeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
 
 iscomposite(m::DiscreteProductMeasure) = true
-elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(grid(m)), elements(weights(m)))
-element(m::DiscreteProductMeasure, i) = discretemeasure(element(grid(m), i), element(weights(m), i))
+elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(points(m)), elements(weights(m)))
+element(m::DiscreteProductMeasure, i) = discretemeasure(element(points(m), i), element(weights(m), i))
 
 function stencilarray(m::DiscreteProductMeasure)
     A = Any[]

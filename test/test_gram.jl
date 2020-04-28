@@ -13,7 +13,7 @@ for T in (Float64,BigFloat)
 
             test_orthogonality_orthonormality(d, true, d isa Fourier, gr)
 
-            @test BasisFunctions.gaussweights(gauss_rule(d),measure(d)) ≈ ones(T, 10)
+            @test BasisFunctions.quadweights(gauss_rule(d),measure(d)) ≈ ones(T, 10)
         end
 
 
@@ -25,7 +25,7 @@ for T in (Float64,BigFloat)
         @test isorthogonal(d, gr)
         @test iscompatible(d, g)
         @test gram(d, gr) isa TensorProductOperator && all(map(x->isa(x, DiagonalOperator), elements(gram(d,gr))))
-        @test BasisFunctions.gaussweights(gauss_rule(d),measure(d)) ≈ BasisFunctions.OuterProductArray(map(ones, axes(B^2))...)
+        @test BasisFunctions.quadweights(gauss_rule(d),measure(d)) ≈ BasisFunctions.OuterProductArray(map(ones, axes(B^2))...)
 
     end
 end

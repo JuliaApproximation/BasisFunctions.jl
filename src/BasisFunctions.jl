@@ -7,7 +7,7 @@ module BasisFunctions
 using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
 using FFTW, FastTransforms
-using DomainSets
+using DomainSets, DomainIntegrals
 
 using QuadGK, Base.Cartesian
 using RecipesBase
@@ -80,12 +80,25 @@ import DomainSets:
     # utils
     prectype, numtype
 
+import DomainIntegrals:
+    integral, quadrature,
+    AbstractMeasure, Measure, DiscreteMeasure,
+    support,
+    unsafe_weight, unsafe_weightfunction,
+    points, weights,
+    isnormalized, iscontinuous, isdiscrete
+
 export .., numtype
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:
-    iscomposite, support, apply_map, mapping
+    iscomposite, apply_map, mapping,
+    gridsupport
 
+function support(g::AbstractGrid)
+    @error "Using grid support!"
+    gridsupport(g)
+end
 
 import AbstractTrees: children
 
@@ -131,10 +144,10 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct,
-    FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure,ChebyshevUMeasure,
+    FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure, ChebyshevUMeasure,
     LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure, Measure,
     MappedMeasure, ProductMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
-    DiracMeasure, isprobabilitymeasure, UniformDiracCombMeasure, WeightedDiracCombMeasure,
+    DiracMeasure, isnormalized, UniformDiracCombMeasure, WeightedDiracCombMeasure,
     mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure,
     supermeasure, applymeasure
 
@@ -308,6 +321,7 @@ include("util/domain_extensions.jl")
 include("maps/partition.jl")
 
 include("spaces/measure.jl")
+include("spaces/discretemeasure.jl")
 include("spaces/spaces.jl")
 include("spaces/integral.jl")
 include("sampling/gaussweights.jl")

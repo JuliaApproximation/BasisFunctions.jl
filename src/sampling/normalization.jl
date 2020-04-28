@@ -12,4 +12,4 @@ weights of a quadrature rule on the grid that is exact on the span of the dictio
 in the space.
 """
 sampling_normalization(gb::GridBasis{T}, measure) where T =
-	DiagonalOperator(gb, gb, sqrt.(gaussweights(grid(gb), measure)))
+	DiagonalOperator(gb, gb, sqrt.(quadweights(grid(gb), measure)))

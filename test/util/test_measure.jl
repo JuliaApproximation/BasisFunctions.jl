@@ -5,34 +5,34 @@ using BasisFunctions.Test: generic_test_measure
 
 μ = BasisFunctions.GenericWeightMeasure(UnitInterval(),x->1.)
 generic_test_measure(μ)
-@test_throws ErrorException !(isprobabilitymeasure(μ))
+@test_throws ErrorException !(isnormalized(μ))
 
-μ = BasisFunctions.GenericLebesgueMeasure(UnitInterval())
+μ = BasisFunctions.DomainLebesgueMeasure(UnitInterval())
 generic_test_measure(μ)
 
 μ = BasisFunctions.LegendreMeasure()
 generic_test_measure(μ)
-@test !isprobabilitymeasure(μ)
+@test !isnormalized(μ)
 
 μ = BasisFunctions.FourierMeasure()
 generic_test_measure(μ)
-@test isprobabilitymeasure(μ)
+@test isnormalized(μ)
 
 @test lebesguemeasure(UnitInterval()) isa FourierMeasure
 @test lebesguemeasure(ChebyshevInterval()) isa LegendreMeasure
-@test lebesguemeasure(0.3..0.4) isa BasisFunctions.GenericLebesgueMeasure
+@test lebesguemeasure(0.3..0.4) isa BasisFunctions.DomainLebesgueMeasure
 
 μ = ChebyshevTMeasure()
 generic_test_measure(μ)
-@test !isprobabilitymeasure(μ)
+@test !isnormalized(μ)
 
 μ = ChebyshevUMeasure()
 generic_test_measure(μ)
-@test !isprobabilitymeasure(μ)
+@test !isnormalized(μ)
 
 μ = JacobiMeasure(rand(),rand())
 generic_test_measure(μ)
-@test !isprobabilitymeasure(μ)
+@test !isnormalized(μ)
 
 m = mapping(FourierGrid(10,-1,1))
 μ = mappedmeasure(m,FourierMeasure())

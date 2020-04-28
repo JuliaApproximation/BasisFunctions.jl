@@ -14,7 +14,7 @@ function _defaultmeasure(Φ1, Φ2, m1, m2)
         m1
     else
         if iscompatible(support(Φ1),support(Φ2))
-            GenericLebesgueMeasure(support(Φ1))
+            DomainLebesgueMeasure(support(Φ1))
         else
             error("Please specify which measure to use for the combination of $(Φ1) and $(Φ2).")
         end
@@ -94,7 +94,7 @@ unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measur
 unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
     integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure; options...)
 unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure, domain; options...) =
-    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure, domain; options...)
+    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), domain, measure; options...)
 
 
 
@@ -147,7 +147,7 @@ default_gram(Φ::Dictionary, args...; options...) =
 	default_gram(operatoreltype(Φ), Φ, args...; options...)
 
 function default_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure = measure(Φ); options...) where {T}
-    @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ) ."
+    @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ)."
     A = grammatrix(Φ, μ, T; options...)
     R = ArrayOperator(A, Φ, Φ)
 end

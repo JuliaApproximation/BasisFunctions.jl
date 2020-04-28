@@ -37,7 +37,7 @@ strings(dict::GridBasis) = (string(dict), strings(grid(dict)))
 
 tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,dicts)...)}(cartesianproduct(map(grid, dicts)...))
 
-support(b::GridBasis) = support(grid(b))
+support(b::GridBasis) = gridsupport(grid(b))
 
 # Convenience function: add grid as extra parameter to hastransform
 hastransform(s1::Dictionary, s2::GridBasis) =

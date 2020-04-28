@@ -73,7 +73,7 @@ iscompatible(dict::Fourier, grid::AbstractGrid) = false
 hasgrid_transform(dict::Fourier, gb, grid) = iscompatible(dict, grid)
 
 islooselycompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
-	isperiodic(grid) && support(dict) ≈ support(grid)
+	isperiodic(grid) && support(dict) ≈ gridsupport(grid)
 
 
 interpolation_grid(b::Fourier{T}) where {T} = FourierGrid{T}(length(b))
@@ -246,7 +246,7 @@ evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::FourierGrid; options..
 
 
 function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquispacedGrid; options...) where {T}
-	if support(grid)≈support(dict)
+	if gridsupport(grid)≈support(dict)
 		resize_and_transform(T, dict, gb, grid; options...)
 	else
 		@debug "Periodic grid mismatch with Fourier basis"
@@ -272,12 +272,12 @@ end
 # Try to efficiently evaluate a Fourier series on a regular equispaced grid
 function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid; options...) where {T}
 	# We can use the fft if the equispaced grid is a subset of the periodic grid
-	if support(grid) ≈ support(fs)
+	if gridsupport(grid) ≈ support(fs)
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
 		return dense_evaluation(T, fs, gb; options...)
-	elseif issubset(support(grid), support(fs))
-		a, b = endpoints(support(grid))
+	elseif issubset(gridsupport(grid), support(fs))
+		a, b = endpoints(gridsupport(grid))
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
 		h = step(grid)
@@ -301,7 +301,7 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 end
 
 function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::MidpointEquispacedGrid; options...) where {T}
-	if isodd(length(grid)) && support(grid)≈support(dict)
+	if isodd(length(grid)) && gridsupport(grid)≈support(dict)
 		if length(grid) == length(dict)
 			A = evaluation(T, dict, FourierGrid{domaintype(dict)}(length(dict)); options...)
 			diag = zeros(T, length(dict))
@@ -640,7 +640,7 @@ function gram(::Type{T}, dict::Fourier, measure::FourierMeasure; options...) whe
 end
 
 function gram(::Type{T}, dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill; options...) where {T}
-	if support(grid) ≈ support(dict) && isperiodic(grid)
+	if gridsupport(grid) ≈ support(dict) && isperiodic(grid)
 		if isorthonormal(dict, measure)
 			IdentityOperator{T}(dict)
 		elseif isorthogonal(dict, measure)
