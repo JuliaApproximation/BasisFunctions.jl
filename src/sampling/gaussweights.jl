@@ -40,26 +40,26 @@ function quadweights(grid::JacobiNodes{T}, measure::JacobiMeasure{T}) where {T}
 end
 
 quadweights(grid::FourierGrid{T}, measure::FourierMeasure{T}) where {T} =
-    ProbabilityArray{T}(length(grid))
+    NormalizedArray{T}(length(grid))
 
 function quadweights(grid::PeriodicEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
-	ProbabilityArray{T}(length(grid))
+	NormalizedArray{T}(length(grid))
 end
 
 function quadweights(grid::MidpointEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
-	ProbabilityArray{T}(length(grid))
+	NormalizedArray{T}(length(grid))
 end
 
 function quadweights(grid::PeriodicEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
-	DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid))
+	DomainSets.width(support(measure))*NormalizedArray{T}(length(grid))
 end
 
 function quadweights(grid::MidpointEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
-	DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid))
+	DomainSets.width(support(measure))*NormalizedArray{T}(length(grid))
 end
 
 function quadweights(grid::ChebyshevNodes{T}, ::LegendreMeasure{T}) where {T}

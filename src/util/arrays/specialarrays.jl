@@ -25,7 +25,7 @@ Base.print_array(io::IO,A::MyAbstractMatrix) = Base.print_array(io, Matrix(A))
 
 Base.show(io::IO,A::MyAbstractMatrix) = Base.show(io, Matrix(A))
 
-for (Tp,fun) in zip((:ProbabilityArray,), (:probabilityarray_fun,))
+for (Tp,fun) in zip((:NormalizedArray,), (:normalizedarray_fun,))
     @eval begin
         struct $Tp{T,N,Axes} <:FillArrays.AbstractFill{T,N,Axes}
             axes::Axes
@@ -77,7 +77,7 @@ for (Tp,fun) in zip((:ProbabilityArray,), (:probabilityarray_fun,))
     end
 end
 
-probabilityarray_fun(Z::ProbabilityArray{T}) where T = one(T) / convert(T,length(Z))
+normalizedarray_fun(Z::NormalizedArray{T}) where T = one(T) / convert(T,length(Z))
 
 
 "A vector of the form `[1,-1,1,-1,...]`."

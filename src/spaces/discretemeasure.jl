@@ -1,5 +1,5 @@
 
-grid(m::DiscreteMeasure) = error("Rename grid to points here")
+@deprecate grid(m::DiscreteMeasure) points(m)
 
 function default_applymeasure(measure::DiscreteMeasure, f::Function; options...)
     integral(f, measure; options...)
@@ -24,7 +24,7 @@ discretemeasure(grid::AbstractGrid, weights=genericweights(grid)) =
 
 name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(points(m)))"
 strings(m::GenericDiscreteMeasure) = (name(m), (string(points(m)),), (string(string(weights(m))),))
-isnormalized(m::GenericDiscreteMeasure) = weights(m) isa ProbabilityArray
+isnormalized(m::GenericDiscreteMeasure) = weights(m) isa NormalizedArray
 
 
 name(m::DiracMeasure) = "Dirac measure at x = $(m.point)"
@@ -42,10 +42,10 @@ WeightedDiracCombMeasure(eg::AbstractEquispacedGrid, weights) = discretemeasure(
 name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight"
 
 
-const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:ProbabilityArray
-DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, ProbabilityArray{eltype(eg)}(size(eg)))
+const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:NormalizedArray
+DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, NormalizedArray{eltype(eg)}(size(eg)))
 isnormalized(m::DiracCombProbabilityMeasure) = true
-name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weights"
+name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with normalized weights"
 
 const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
 
