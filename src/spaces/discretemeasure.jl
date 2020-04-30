@@ -1,30 +1,23 @@
 
-grid(m::DiscreteMeasure) = points(m::DiscreteMeasure)
+grid(m::DiscreteMeasure) = error("Rename grid to points here")
 
-support(m::DiscreteMeasure) = grid(m)#DomainSets.WrappedDomain(grid(m)) the support is no domain, but it is a set, i.e., a vector
-discrete_weight(m::DiscreteMeasure, i) = (@boundscheck checkbounds(m, i); unsafe_discrete_weight(m, i))
-checkbounds(m::DiscreteMeasure, i) = checkbounds(grid(m), i)
-unsafe_discrete_weight(m::DiscreteMeasure, i) where {T} = Base.unsafe_getindex(m.weights, i)
-isnormalized(m::DiscreteMeasure) = sum(weights(m)) ≈ 1
 function default_applymeasure(measure::DiscreteMeasure, f::Function; options...)
     integral(f, measure; options...)
 end
 
 
 struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
-    grid   ::  GRID
+    points    ::  GRID
     weights   ::  W
     function GenericDiscreteMeasure(grid::AbstractGrid, weights)
         grid isa Union{AbstractSubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
         new{eltype(grid),typeof(grid),typeof(weights)}(grid, weights)
     end
 end
-≈(m1::DiscreteMeasure, m2::DiscreteMeasure) = ≈(map(grid,(m1,m2))...) &&  ≈(map(weights,(m1,m2))...)
+≈(m1::DiscreteMeasure, m2::DiscreteMeasure) = ≈(map(points,(m1,m2))...) &&  ≈(map(weights,(m1,m2))...)
 genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...)
 genericweights(grid::ProductGrid{T,S,N}) where {T,S,N} =
     tensorproduct(ntuple(k->Ones{subeltype(eltype(grid))}(size(grid,k)) ,Val(N)))
-
-points(m::GenericDiscreteMeasure) = m.grid
 
 discretemeasure(grid::AbstractGrid, weights=genericweights(grid)) =
     GenericDiscreteMeasure(grid, weights)
@@ -51,7 +44,7 @@ name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight"
 
 const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:ProbabilityArray
 DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, ProbabilityArray{eltype(eg)}(size(eg)))
-@inline isnormalized(m::DiracCombProbabilityMeasure) = true
+isnormalized(m::DiracCombProbabilityMeasure) = true
 name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with probability weights"
 
 const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
@@ -73,7 +66,7 @@ const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:Pro
 
 name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 productmeasure(measures::DiscreteMeasure...) =
-    discretemeasure(ProductGrid(map(grid, measures)...), tensorproduct(map(weights, measures)...))
+    discretemeasure(ProductGrid(map(points, measures)...), tensorproduct(map(weights, measures)...))
 
 iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(points(m)), elements(weights(m)))
@@ -90,7 +83,7 @@ function stencilarray(m::DiscreteProductMeasure)
 end
 
 struct ChebyshevTGaussMeasure{T} <:DiscreteMeasure{T}
-    grid    :: GridArrays.ChebyshevTNodes{T}
+    points  :: GridArrays.ChebyshevTNodes{T}
     weights :: GridArrays.ChebyshevTWeights{T}
     function ChebyshevTGaussMeasure{T}(n::Int) where T
         x, w = GridArrays.gausschebyshev(T,n)
@@ -100,7 +93,7 @@ struct ChebyshevTGaussMeasure{T} <:DiscreteMeasure{T}
 end
 
 struct ChebyshevUGaussMeasure{T} <:DiscreteMeasure{T}
-    grid   :: GridArrays.ChebyshevUNodes{T}
+    points :: GridArrays.ChebyshevUNodes{T}
     weights:: GridArrays.ChebyshevUWeights{T}
     function ChebyshevUGaussMeasure{T}(n::Int) where T
         x, w = GridArrays.gausschebyshevu(T,n)
@@ -110,7 +103,7 @@ struct ChebyshevUGaussMeasure{T} <:DiscreteMeasure{T}
 end
 
 struct LegendreGaussMeasure{T} <: DiscreteMeasure{T}
-    grid    :: GridArrays.LegendreNodes{T}
+    points  :: GridArrays.LegendreNodes{T}
     weights :: GridArrays.LegendreWeights{T}
 
     function LegendreGaussMeasure{T}(n::Int) where T
@@ -122,7 +115,7 @@ end
 
 struct LaguerreGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
-    grid    :: GridArrays.LaguerreNodes{T}
+    points  :: GridArrays.LaguerreNodes{T}
     weights :: GridArrays.LaguerreWeights{T}
 
     function LaguerreGaussMeasure{T}(n::Int, α::T) where T
@@ -133,7 +126,7 @@ struct LaguerreGaussMeasure{T} <: DiscreteMeasure{T}
 end
 
 struct HermiteGaussMeasure{T} <: DiscreteMeasure{T}
-    grid    :: GridArrays.HermiteNodes{T}
+    points  :: GridArrays.HermiteNodes{T}
     weights :: GridArrays.HermiteWeights{T}
 
     function HermiteGaussMeasure{T}(n::Int) where T
@@ -146,7 +139,7 @@ end
 struct JacobiGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
     β       :: T
-    grid    :: GridArrays.JacobiNodes{T}
+    points  :: GridArrays.JacobiNodes{T}
     weights :: GridArrays.JacobiWeights{T}
 
     function JacobiGaussMeasure{T}(n::Int, α::T, β::T) where T

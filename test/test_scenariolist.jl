@@ -1,6 +1,9 @@
-using BasisFunctions, LinearAlgebra, DomainSets, GridArrays, Test, StaticArrays
-@testset begin
 
+using Test
+using LinearAlgebra, DomainSets, GridArrays, StaticArrays
+using BasisFunctions
+
+@testset begin
     F = Fourier(3) → -1..1
     S = SynthesisOperator(F)
     G = GridSampling(PeriodicEquispacedGrid(3,-1,1))

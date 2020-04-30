@@ -130,7 +130,7 @@ function test_ops_generic(ops)
         @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
 
         m = gauss_rule(ops)
-        x = grid(m)
+        x = points(m)
         w = BasisFunctions.weights(m)
         @test abs(sum(w) - first_moment(ops)) < tol
     end

@@ -1,6 +1,6 @@
 
 quadweights(dmeasure::DiscreteMeasure, measure::Measure) =
-    quadweights(grid(dmeasure), weights(dmeasure), measure)
+    quadweights(points(dmeasure), weights(dmeasure), measure)
 
 quadweights(grid::AbstractGrid, weights, measure::Measure) =
     quadweights(grid, measure) ./ weights
@@ -43,22 +43,22 @@ quadweights(grid::FourierGrid{T}, measure::FourierMeasure{T}) where {T} =
     ProbabilityArray{T}(length(grid))
 
 function quadweights(grid::PeriodicEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
-    @assert gridsupport(grid)≈support(measure)
+    @assert coverdomain(grid)≈support(measure)
 	ProbabilityArray{T}(length(grid))
 end
 
 function quadweights(grid::MidpointEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
-    @assert gridsupport(grid)≈support(measure)
+    @assert coverdomain(grid)≈support(measure)
 	ProbabilityArray{T}(length(grid))
 end
 
 function quadweights(grid::PeriodicEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T}
-    @assert gridsupport(grid)≈support(measure)
+    @assert coverdomain(grid)≈support(measure)
 	DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid))
 end
 
 function quadweights(grid::MidpointEquispacedGrid{T}, measure::LebesgueMeasure{T}) where {T}
-    @assert gridsupport(grid)≈support(measure)
+    @assert coverdomain(grid)≈support(measure)
 	DomainSets.width(support(measure))*ProbabilityArray{T}(length(grid))
 end
 
@@ -98,7 +98,7 @@ function riemann_normalization(grid::AbstractGrid1d, measure)
 	riemannsum_weights(grid, a, b) .*  measuresampling(grid, measure)
 end
 
-function riemannsum_weights(grid::AbstractGrid, a = leftendpoint(gridsupport(grid)), b = rightendpoint(gridsupport(grid)))
+function riemannsum_weights(grid::AbstractGrid, a = leftendpoint(coverdomain(grid)), b = rightendpoint(coverdomain(grid)))
 	M = length(grid)
 	L = b-a
 	t = [grid[end] - L; collect(grid); grid[1]+L]

@@ -29,38 +29,10 @@ name(m::LegendreMeasure) = "Legendre measure"
 name(m::JacobiMeasure) = "Jacobi measure (α = $(m.α), β = $(m.β))"
 name(m::LaguerreMeasure) = m.α == 0 ? "Laguerre measure" : "Generalized Laguerre measure (α = $(m.α))"
 name(m::HermiteMeasure) = "Hermite measure"
+name(m::ChebyshevTMeasure) = "Chebyshev measure of the first kind"
 
 const FourierMeasure = UnitLebesgueMeasure
 name(m::FourierMeasure) = "Fourier (Lebesgue) measure"
-
-
-"""
-The `Chebyshev` or `ChebyshevT` measure is the measure on `[-1,1]` with the
-Chebyshev weight `w(x) = 1/√(1-x^2)`.
-"""
-struct ChebyshevTMeasure{T} <: Measure{T}
-end
-ChebyshevTMeasure() = ChebyshevTMeasure{Float64}()
-
-const ChebyshevMeasure = ChebyshevTMeasure
-
-support(m::ChebyshevTMeasure{T}) where {T} = ChebyshevInterval{T}()
-unsafe_weight(m::ChebyshevTMeasure, x) = 1/sqrt(1-x^2)
-isnormalized(::ChebyshevTMeasure) = false# is pi
-
-name(m::ChebyshevTMeasure) = "Chebyshev measure of the first kind"
-
-"""
-The ChebyshevU measure is the measure on `[-1,1]` with the Chebyshev weight
-of the second kind `w(x) = √(1-x^2).`
-"""
-struct ChebyshevUMeasure{T} <: Measure{T}
-end
-ChebyshevUMeasure() = ChebyshevUMeasure{Float64}()
-
-support(m::ChebyshevUMeasure{T}) where {T} = ChebyshevInterval{T}()
-unsafe_weight(m::ChebyshevUMeasure, x) = sqrt(1-x^2)
-isnormalized(::ChebyshevUMeasure) = false # is pi/2
 
 name(m::ChebyshevUMeasure) = "Chebyshev measure of the second kind"
 

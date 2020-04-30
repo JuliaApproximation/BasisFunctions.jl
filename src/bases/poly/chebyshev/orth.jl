@@ -20,7 +20,7 @@ gram(::Type{T}, dict::ChebyshevU, ::ChebyshevUMeasure; options...) where {T} =
 
 function diagonal_gram(dict::ChebyshevT, measure::ChebyshevTGaussMeasure; options...) where {T}
     @assert isorthogonal(dict, measure)
-    if length(dict) == length(grid(measure))
+    if length(dict) == length(points(measure))
         CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator{T}(dict, convert(T,pi)/2)
     else
         default_diagonal_gram(T, dict, measure; options...)
@@ -29,4 +29,4 @@ end
 
 
 diagonal_gram(::Type{T}, dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure; options...) where {T} =
-    CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,length(grid(measure)))/2)
+    CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,length(points(measure)))/2)

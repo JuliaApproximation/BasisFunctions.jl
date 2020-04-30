@@ -29,8 +29,8 @@ function test_fourier_series(T)
 
     g = interpolation_grid(fb)
     @test typeof(g) <: GridArrays.MappedGrid
-    @test leftendpoint(gridsupport(g)) ≈ a
-    @test rightendpoint(gridsupport(g)) ≈ b
+    @test leftendpoint(coverdomain(g)) ≈ a
+    @test rightendpoint(coverdomain(g)) ≈ b
     @test length(g) == length(fb)
 
     # Take a random point in the domain

@@ -91,7 +91,7 @@ end
 
 interpolation_grid(b::OPS) = roots(b)
 hasinterpolationgrid(dict::OPS) = true
-opsorthogonal(dict, measure) = length(dict) -issymmetric(dict) <= length(grid(measure))
+opsorthogonal(dict, measure) = length(dict) -issymmetric(dict) <= length(points(measure))
 
 "Return the first moment, i.e., the integral of the weight function."
 function first_moment(b::OPS)

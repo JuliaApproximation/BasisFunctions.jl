@@ -36,6 +36,6 @@ using BasisFunctions: support
 
     x, w = rectangular_rule(10)
     μ = gauss_rule(Fourier(10))
-    @test grid(μ) ≈ x
+    @test points(μ) ≈ x
     @test weights(μ) ≈ w
 end

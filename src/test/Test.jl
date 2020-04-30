@@ -29,7 +29,7 @@ function generic_test_discrete_measure(measure)
     io = IOBuffer()
     show(io, measure)
     @test length(take!(io))>0
-    @test length(weights(measure)) == length(grid(measure))
+    @test length(weights(measure)) == length(points(measure))
 
 end
 

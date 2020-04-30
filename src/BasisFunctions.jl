@@ -84,7 +84,9 @@ import DomainIntegrals:
     integral, quadrature,
     AbstractMeasure, Measure, DiscreteMeasure,
     support,
+    weight, weightfunction,
     unsafe_weight, unsafe_weightfunction,
+    unsafe_discrete_weight,
     points, weights,
     isnormalized, iscontinuous, isdiscrete
 
@@ -93,11 +95,11 @@ export .., numtype
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:
     iscomposite, apply_map, mapping,
-    gridsupport
+    coverdomain
 
 function support(g::AbstractGrid)
     @error "Using grid support!"
-    gridsupport(g)
+    coverdomain(g)
 end
 
 import AbstractTrees: children
@@ -110,7 +112,8 @@ export element, elements, numelements, iscomposite,
     ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
-    ×
+    ×,
+    points, weights, discrete_weight
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,

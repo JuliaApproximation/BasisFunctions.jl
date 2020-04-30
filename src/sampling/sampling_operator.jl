@@ -25,7 +25,7 @@ GridSampling(grid::AbstractGrid{S}, ::Type{T} = subeltype(S)) where {S,T} =
 GridSampling(gridbasis::GridBasis{S,T}) where {S,T} =
 	GridSampling(GenericFunctionSpace{eltype(grid(gridbasis)),T}(), gridbasis)
 
-GridSampling(m::DiscreteMeasure, ::Type{T} = subeltype(grid(m))) where T = GridSampling(grid(m), T)
+GridSampling(m::DiscreteMeasure, ::Type{T} = numeltype(m)) where T = GridSampling(points(m), T)
 
 name(op::GridSampling) = "Discrete sampling operator in a grid"
 

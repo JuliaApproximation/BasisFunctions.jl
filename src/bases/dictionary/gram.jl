@@ -14,7 +14,7 @@ function _defaultmeasure(Φ1, Φ2, m1, m2)
         m1
     else
         if iscompatible(support(Φ1),support(Φ2))
-            DomainLebesgueMeasure(support(Φ1))
+            lebesguemeasure(support(Φ1))
         else
             error("Please specify which measure to use for the combination of $(Φ1) and $(Φ2).")
         end
@@ -50,6 +50,18 @@ innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; options...) =
     default_dict_innerproduct(Φ1, i, Φ2, j, measure; options...)
 
 
+# Make a quadrature strategy using user-supplied atol and rtol if they were given
+function quadstrategy(::Type{T}; atol = 0, rtol = -1, options...) where {T}
+	if (rtol > 0)
+		# rtol does not equal -1 so it must have been supplied
+		QuadAdaptive{T}(atol, rtol)
+	else
+		# use defaults
+		QuadAdaptive{T}()
+	end
+end
+
+
 # We make this a separate routine so that it can also be called directly, in
 # order to compare to the value reported by a dictionary overriding innerproduct
 function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::AbstractMeasure; options...)
@@ -60,7 +72,8 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
     domain3 = support(measure)
 
     domain = domain1 ∩ domain2 ∩ domain3
-    unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain; options...)
+	qs = quadstrategy(promote_type(prectype(Φ1), prectype(Φ2)); options...)
+    unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain, qs)
 end
 
 function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure; options...)
@@ -68,33 +81,33 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
 	@boundscheck checkbounds(Φ2, j)
     domain1 = support(Φ1, i)
     domain2 = support(Φ2, j)
-    unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure, domain1 ∩ domain2; options...)
+    unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure, domain1 ∩ domain2)
 end
 
 # unsafe for indexing
-function unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain; options...)
+function unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain, qs)
     if d1 == d2 == d3
         # -> domains are the same, don't convert the measure
-        unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
+        unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure, qs)
     else
         # -> do compute on the smaller domain and convert the measure
-        # TODO: use DomainIntegrals.jl code that enables both measures and domains
-        integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x)*unsafe_weight(measure,x), domain; options...)
+        integral(qs, x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x)*unsafe_weight(measure,x), domain)
     end
 end
 
-unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::AbstractMeasure, d1, d2, d3, domain::IntersectionDomain; options...) =
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::AbstractMeasure, d1, d2, d3, domain::IntersectionDomain, qs) =
     # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
-    integral(x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure; options...)
-unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain::IntersectionDomain; options...) =
+    integral(qs, x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure)
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain::IntersectionDomain, qs) =
     # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
-    integral(x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure; options...)
+    integral(qs, x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure)
 
 # unsafe for indexing and for support of integral
-unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
-    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure; options...)
-unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure, domain; options...) =
-    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), domain, measure; options...)
+unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, qs) =
+    integral(qs, x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure)
+
+unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteMeasure, domain) =
+    integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), domain, measure)
 
 
 
@@ -138,7 +151,7 @@ gram2(T, Φ, μ::AbstractMeasure; options...) =
 	default_gram(T, Φ, μ; options...)
 
 gram2(T, Φ, μ::DiscreteMeasure; options...) =
-    gram(T, Φ, μ, grid(μ), weights(μ); options...)
+    gram(T, Φ, μ, points(μ), weights(μ); options...)
 
 gram(::Type{T}, Φ, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) where {T} =
     default_mixedgram_discretemeasure(T, Φ, Φ, μ, grid, weights; options...)
@@ -221,7 +234,7 @@ mixedgram3(T, Φ1, Φ2, μ::AbstractMeasure; options...) =
     default_mixedgram(T, Φ1, Φ2, μ; options...)
 
 mixedgram3(T, Φ1, Φ2, μ::DiscreteMeasure; options...) =
-    mixedgram(T, Φ1, Φ2, μ, grid(μ), weights(μ); options...)
+    mixedgram(T, Φ1, Φ2, μ, points(μ), weights(μ); options...)
 
 mixedgram(T, Φ1, Φ2, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...) =
     default_mixedgram_discretemeasure(T, Φ1, Φ2, μ, grid, weights; options...)
