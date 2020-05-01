@@ -113,7 +113,8 @@ export element, elements, numelements, iscomposite,
     Point,
     leftendpoint, rightendpoint, range,
     ×,
-    points, weights, discrete_weight
+    points, weights, discrete_weight,
+    support
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,
@@ -149,8 +150,8 @@ export MappedGrid, mapped_grid, apply_map
 export innerproduct,
     FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure, ChebyshevUMeasure,
     LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure, Measure,
-    MappedMeasure, ProductMeasure, DiracCombMeasure, DiracCombProbabilityMeasure,
-    DiracMeasure, isnormalized, UniformDiracCombMeasure, WeightedDiracCombMeasure,
+    MappedMeasure, ProductMeasure, DiracComb, NormalizedDiracComb,
+    DiracMeasure, isnormalized, UniformDiracComb, WeightedDiracComb,
     mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure,
     supermeasure, applymeasure
 
@@ -163,7 +164,7 @@ export SparseOperator
 
 # from bases/dictionary/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
-    interpolation_grid, left, right, support, domain, codomain,
+    interpolation_grid, left, right, domain, codomain,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative,
     name,

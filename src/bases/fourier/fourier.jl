@@ -48,12 +48,12 @@ isreal(b::Fourier) = false
 
 isbasis(b::Fourier) = true
 isorthogonal(b::Fourier, ::FourierMeasure) = true
-isorthogonal(b::Fourier, measure::DiracCombMeasure) = islooselycompatible(b, points(measure))
-isorthogonal(b::Fourier, measure::DiracCombProbabilityMeasure) = islooselycompatible(b, points(measure))
+isorthogonal(b::Fourier, measure::DiracComb) = islooselycompatible(b, points(measure))
+isorthogonal(b::Fourier, measure::NormalizedDiracComb) = islooselycompatible(b, points(measure))
 
 
 isorthonormal(b::Fourier, ::FourierMeasure) = oddlength(b)
-isorthonormal(b::Fourier, measure::DiracCombProbabilityMeasure) = iscompatible(b, points(measure)) || islooselycompatible(b, points(measure)) && oddlength(b)
+isorthonormal(b::Fourier, measure::NormalizedDiracComb) = iscompatible(b, points(measure)) || islooselycompatible(b, points(measure)) && oddlength(b)
 isbiorthogonal(b::Fourier) = true
 
 hasinterpolationgrid(b::Fourier) = true

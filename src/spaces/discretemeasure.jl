@@ -32,22 +32,22 @@ points(m::DiracMeasure) = ScatteredGrid([m.point])
 weights(::DiracMeasure{T}) where T = Ones{T}(1)
 
 
-const DiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W <: Ones
-DiracCombMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg)
-name(m::DiracCombMeasure) = "Dirac comb measure with sampling weights"
+const DiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W <: Ones
+DiracComb(eg::AbstractEquispacedGrid) = discretemeasure(eg)
+name(m::DiracComb) = "Dirac comb measure with sampling weights"
 
 
-const WeightedDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid
-WeightedDiracCombMeasure(eg::AbstractEquispacedGrid, weights) = discretemeasure(eg, weights)
-name(m::WeightedDiracCombMeasure) = "Dirac comb measure with generic weight"
+const WeightedDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid
+WeightedDiracComb(eg::AbstractEquispacedGrid, weights) = discretemeasure(eg, weights)
+name(m::WeightedDiracComb) = "Dirac comb measure with generic weight"
 
 
-const DiracCombProbabilityMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:NormalizedArray
-DiracCombProbabilityMeasure(eg::AbstractEquispacedGrid) = discretemeasure(eg, NormalizedArray{eltype(eg)}(size(eg)))
-isnormalized(m::DiracCombProbabilityMeasure) = true
-name(m::DiracCombProbabilityMeasure) = "Dirac comb measure with normalized weights"
+const NormalizedDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:NormalizedArray
+NormalizedDiracComb(eg::AbstractEquispacedGrid) = discretemeasure(eg, NormalizedArray{eltype(eg)}(size(eg)))
+isnormalized(m::NormalizedDiracComb) = true
+name(m::NormalizedDiracComb) = "Dirac comb measure with normalized weights"
 
-const UniformDiracCombMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
+const UniformDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
 
 
 const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
@@ -99,8 +99,8 @@ struct ChebyshevUGaussMeasure{T} <:DiscreteMeasure{T}
         x, w = GridArrays.gausschebyshevu(T,n)
         new{T}(x, w)
     end
-    ChebyshevUGaussMeasure(n::Int) = ChebyshevUGaussMeasure{Float64}(n)
 end
+ChebyshevUGaussMeasure(n::Int) = ChebyshevUGaussMeasure{Float64}(n)
 
 struct LegendreGaussMeasure{T} <: DiscreteMeasure{T}
     points  :: GridArrays.LegendreNodes{T}
@@ -110,8 +110,8 @@ struct LegendreGaussMeasure{T} <: DiscreteMeasure{T}
         x, w = GridArrays.gausslegendre(T, n)
         new{T}(x, w)
     end
-    LegendreGaussMeasure(n::Int) = LegendreGaussMeasure{Float64}(n)
 end
+LegendreGaussMeasure(n::Int) = LegendreGaussMeasure{Float64}(n)
 
 struct LaguerreGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
@@ -122,8 +122,8 @@ struct LaguerreGaussMeasure{T} <: DiscreteMeasure{T}
         x, w = GridArrays.gausslaguerre(T, n, α)
         new{T}(α, x, w)
     end
-    LaguerreGaussMeasure(n::Int, α::T) where T = LaguerreGaussMeasure{T}(n, α)
 end
+LaguerreGaussMeasure(n::Int, α::T) where T = LaguerreGaussMeasure{T}(n, α)
 
 struct HermiteGaussMeasure{T} <: DiscreteMeasure{T}
     points  :: GridArrays.HermiteNodes{T}
@@ -133,8 +133,8 @@ struct HermiteGaussMeasure{T} <: DiscreteMeasure{T}
         x, w = GridArrays.gausshermite(T,n)
         new{T}(x, w)
     end
-    HermiteGaussMeasure(n::Int) = HermiteGaussMeasure{Float64}(n)
 end
+HermiteGaussMeasure(n::Int) = HermiteGaussMeasure{Float64}(n)
 
 struct JacobiGaussMeasure{T} <: DiscreteMeasure{T}
     α       :: T
@@ -146,5 +146,5 @@ struct JacobiGaussMeasure{T} <: DiscreteMeasure{T}
         x, w = GridArrays.gaussjacobi(T, n, α, β)
         new{T}(α, β, x, w)
     end
-    JacobiGaussMeasure(n::Int, α::T, β::T) where T = JacobiGaussMeasure{T}(n, α, β)
 end
+JacobiGaussMeasure(n::Int, α::T, β::T) where T = JacobiGaussMeasure{T}(n, α, β)

@@ -73,33 +73,29 @@ function analysis_integral(dict::Dictionary, idx, g, measure::AbstractMeasure; o
     @boundscheck checkbounds(dict, idx)
     domain1 = support(dict, idx)
     domain2 = support(measure)
-    unsafe_analysis_integral1(dict, idx, g, measure, domain1, domain2, domain1 ∩ domain2; options...)
+    qs = quadstrategy(promote_type(prectype(dict), prectype(measure)); options...)
+    unsafe_analysis_integral1(dict, idx, g, measure, domain1, domain2, domain1 ∩ domain2, qs)
 end
 
 function analysis_integral(dict::Dictionary, idx, g, measure::DiscreteMeasure; options...)
     @boundscheck checkbounds(dict, idx)
-    unsafe_analysis_integral2(dict, idx, g, measure, support(dict, idx); options...)
+    unsafe_analysis_integral2(dict, idx, g, measure, support(dict, idx))
 end
 
 # unsafe for indexing
-function unsafe_analysis_integral1(dict, idx, g, measure::Measure, d1, d2, domain; options...)
+function unsafe_analysis_integral1(dict, idx, g, measure::Measure, d1, d2, domain, qs)
     if d1 == d2
-        # -> domains are the same, don't convert the measure
-        unsafe_analysis_integral2(dict, idx, g, measure; options...)
+        integral(qs, x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure)
     else
         # -> do compute on the smaller domain and convert the measure
-        # TODO: use DomainIntegrals.jl code that enables both measures and domains
-        integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x)*unsafe_weight(measure,x), domain; options...)
+        integral(qs, x->conj(unsafe_eval_element(dict, idx, x))*g(x), domain, measure)
     end
 end
 
-@inbounds unsafe_analysis_integral1(dict, idx, g, measure, d1, d2, domain::IntersectionDomain; options...) =
+unsafe_analysis_integral1(dict, idx, g, measure, d1, d2, domain::IntersectionDomain, qs) =
     # -> disregard the intersection domain, but use eval_element to guarantee correctness
-    integral(x->conj(eval_element(dict, idx, x))*g(x), measure; options...)
+    integral(qs, x->conj(eval_element(dict, idx, x))*g(x), measure)
 
 # unsafe for indexing and for support of integral
-@inbounds unsafe_analysis_integral2(dict::Dictionary, idx, g, measure::AbstractMeasure; options...) =
-    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure; options...)
-
-@inbounds unsafe_analysis_integral2(dict::Dictionary, idx, g, measure::DiscreteMeasure, domain; options...) =
-    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure, domain; options...)
+unsafe_analysis_integral2(dict::Dictionary, idx, g, measure::DiscreteMeasure, domain) =
+    integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), domain, measure)

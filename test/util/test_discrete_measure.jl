@@ -25,19 +25,19 @@ using BasisFunctions.Test: generic_test_discrete_measure
     @test isnormalized(μ)
 
     μ = discretemeasure(PeriodicEquispacedGrid(3,0,1))
-    @test  μ isa DiracCombMeasure && μ isa UniformDiracCombMeasure
+    @test  μ isa DiracComb && μ isa UniformDiracComb
     generic_test_discrete_measure(μ)
     μ = discretemeasure(MidpointEquispacedGrid(3,0,1))
-    @test μ isa DiracCombMeasure
+    @test μ isa DiracComb
     generic_test_discrete_measure(μ)
     μ = discretemeasure(EquispacedGrid(3,0,1))
-    @test μ isa DiracCombMeasure
+    @test μ isa DiracComb
     generic_test_discrete_measure(μ)
-    μ = DiracCombProbabilityMeasure(EquispacedGrid(3,0,1))
-    @test μ isa DiracCombProbabilityMeasure
+    μ = NormalizedDiracComb(EquispacedGrid(3,0,1))
+    @test μ isa NormalizedDiracComb
     @test isnormalized(μ)
     generic_test_discrete_measure(μ)
-    μ = WeightedDiracCombMeasure(MidpointEquispacedGrid(3,0,1),rand(3))
+    μ = WeightedDiracComb(MidpointEquispacedGrid(3,0,1),rand(3))
     generic_test_discrete_measure(μ)
 
     g = FourierGrid(10)

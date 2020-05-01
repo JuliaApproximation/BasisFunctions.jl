@@ -1,9 +1,11 @@
 
+innerproduct(f, g, measure; options...) = integral(x->conj(f(x))*g(x), measure)
+
 applymeasure(m::AbstractMeasure, f::Function; options...) = default_applymeasure(m, f; options...)
 
 function default_applymeasure(measure::Measure, f::Function; options...)
     @debug  "Applying measure $(typeof(measure)) numerically" maxlog=3
-    integral(f, measure; options...)
+    integral(f, measure)
 end
 
 iscomposite(m::Measure) = false
@@ -87,9 +89,9 @@ elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 isnormalized(m::ProductMeasure) = reduce(&, map(isnormalized, elements(m)))
 
-support(m::ProductMeasure) = cartesianproduct(map(support, elements(m)))
+support(m::ProductMeasure{M,T}) where {M,T} = ProductDomain{T}(map(support, elements(m))...)
 
-weight1(m::ProductMeasure, x) = prod(map(weight1, elements(m), x))
+DomainIntegrals.weight1(m::ProductMeasure, x) = prod(map(DomainIntegrals.weight1, elements(m), x))
 
 function stencilarray(m::ProductMeasure)
     A = Any[]

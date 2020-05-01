@@ -4,9 +4,7 @@
 ############################################
 
 
-"""
-Sine series on the interval `[0,1]`.
-"""
+"Sine series on the interval `[0,1]`."
 struct SineSeries{T} <: Dictionary{T,T}
     n   ::  Int
 end

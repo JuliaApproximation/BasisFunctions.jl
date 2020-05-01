@@ -159,8 +159,8 @@ gram(::Type{T}, Φ, μ::DiscreteMeasure, grid::AbstractGrid, weights; options...
 default_gram(Φ::Dictionary, args...; options...) =
 	default_gram(operatoreltype(Φ), Φ, args...; options...)
 
-function default_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure = measure(Φ); options...) where {T}
-    @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ)."
+function default_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure = measure(Φ); warnslow = true, options...) where {T}
+    warnslow && @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ)."
     A = grammatrix(Φ, μ, T; options...)
     R = ArrayOperator(A, Φ, Φ)
 end

@@ -1,6 +1,6 @@
 using Test
 
-using DomainSets, DomainIntegrals, GridArrays
+using DomainSets, DomainIntegrals, GridArrays, StaticArrays
 
 using BasisFunctions
 using BasisFunctions.Test: generic_test_measure
