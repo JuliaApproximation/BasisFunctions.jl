@@ -70,18 +70,25 @@ unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(
 strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
 
-
-struct ProductMeasure{M,T} <: Measure{T}
+"The product measure"
+struct ProductMeasure{T,M} <: Measure{T}
     measures ::  M
 end
 
 
 product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
 
+function ProductMeasure(measures::Vararg{Measure{<:Number},N}) where {N}
+    T = promote_type(map(domaintype, measures)...)
+    ProductMeasure{SVector{N,T}}(measures...)
+end
 function ProductMeasure(measures::Measure...)
     T = product_domaintype(measures...)
-    ProductMeasure{typeof(measures),T}(measures)
+    ProductMeasure{T}(measures)
 end
+ProductMeasure{T}(measures::Measure...) where {T} =
+    ProductMeasure{T,typeof(measures)}(measures)
+
 productmeasure(measures::Measure...) = ProductMeasure(measures...)
 
 iscomposite(m::ProductMeasure) = true
@@ -89,9 +96,9 @@ elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 isnormalized(m::ProductMeasure) = reduce(&, map(isnormalized, elements(m)))
 
-support(m::ProductMeasure{M,T}) where {M,T} = ProductDomain{T}(map(support, elements(m))...)
+support(m::ProductMeasure{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
 
-DomainIntegrals.weight1(m::ProductMeasure, x) = prod(map(DomainIntegrals.weight1, elements(m), x))
+weight1(m::ProductMeasure, x) = prod(map(weight1, elements(m), x))
 
 function stencilarray(m::ProductMeasure)
     A = Any[]

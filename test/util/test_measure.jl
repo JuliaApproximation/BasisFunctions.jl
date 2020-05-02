@@ -48,6 +48,6 @@ using BasisFunctions.Test: generic_test_measure
     show(io, μ)
     @test length(take!(io))>0
     support(μ)
-    x = (rand(),rand())
+    x = SVector(rand(),rand())
     @test weight(μ,x)≈weightfunction(μ)(x)
 end
