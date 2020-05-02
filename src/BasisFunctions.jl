@@ -327,7 +327,6 @@ include("maps/partition.jl")
 include("spaces/measure.jl")
 include("spaces/discretemeasure.jl")
 include("spaces/spaces.jl")
-include("spaces/integral.jl")
 include("sampling/gaussweights.jl")
 
 include("bases/dictionary/indexing.jl")
