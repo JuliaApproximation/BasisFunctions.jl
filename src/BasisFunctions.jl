@@ -97,10 +97,7 @@ import GridArrays:
     iscomposite, apply_map, mapping,
     coverdomain
 
-function support(g::AbstractGrid)
-    @error "Using grid support!"
-    coverdomain(g)
-end
+@deprecate support(g::AbstractGrid) coverdomain(g)
 
 import AbstractTrees: children
 
