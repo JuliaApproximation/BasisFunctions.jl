@@ -319,10 +319,10 @@ function stencilarray(op::BlockDiagonalOperator)
     A
 end
 
-block_length(dict::Dictionary) = (length(dict),)
-
+# block_length(dict::Dictionary) = (length(dict),)
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
-    a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(block_length(dest(op))), collect(block_length(src(op))))
+    # a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(block_length(dest(op))), collect(block_length(src(op))))
+    a = BlockArray{eltype(op)}(undef_blocks, [dimensions(dest(op))...], [dimensions(src(op))...])
     matrix!(op, a)
     a
 end
