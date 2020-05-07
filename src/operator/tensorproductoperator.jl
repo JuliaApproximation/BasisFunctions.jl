@@ -21,8 +21,6 @@ productelements(op::TensorProductOperator) = elements(op)
 productelement(op::TensorProductOperator, j::Int) = element(op, j)
 numproductelements(op::TensorProductOperator) = numelements(op)
 
-iscomposite(op::TensorProductOperator) = true
-
 TensorProductOperator(operators::AbstractOperator...; T=promote_type(map(eltype, operators)...)) =
     TensorProductOperator{T}(operators...)
 

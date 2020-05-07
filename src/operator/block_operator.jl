@@ -36,8 +36,11 @@ function BlockOperator(operators::AbstractArray{OP,2},
     BlockOperator{T}(operators, op_src, op_dest)
 end
 
-ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T} =
-    BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements(dest)), (j,srcj) in enumerate(elements(src))], src, dest)
+function ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T}
+    elements_src = iscomposite(src) ? elements(src) : (src,)
+    elements_dest = iscomposite(dest) ? elements(dest) : (dest,)
+    BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements_dest), (j,srcj) in enumerate(elements_src)], src, dest)
+end
 
 
 # For legacy reasons
@@ -96,8 +99,6 @@ composite_size(op::BlockOperator) = size(op.operators)
 
 composite_size(op::BlockOperator, dim) = size(op.operators, dim)
 
-iscomposite(op::BlockOperator) = true
-
 isrowlike(op::BlockOperator) = size(op.operators,1) == 1
 
 iscolumnlike(op::BlockOperator) = size(op.operators,2) == 1
@@ -114,6 +115,9 @@ function apply!(op::BlockOperator, coef_dest, coef_src)
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::AbstractVector, scratch_src, scratch_dest)
+    @show typeof(scratch_src)
+    @show typeof(scratch_dest)
+    return coef_dest
     delinearize_coefficients!(scratch_src, coef_src)
     apply_block_operator!(op, scratch_dest, scratch_src, scratch_src, scratch_dest)
     linearize_coefficients!(coef_dest, scratch_dest)
@@ -218,7 +222,6 @@ end
 
 operators(op::BlockDiagonalOperator) = op.operators
 elements(op::BlockDiagonalOperator) = op.operators
-iscomposite(op::BlockDiagonalOperator) = true
 
 function block_operator(op::BlockDiagonalOperator)
     ops = Array(DictionaryOperator{eltype(op)}, numelements(op), numelements(op))

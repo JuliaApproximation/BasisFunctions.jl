@@ -1,6 +1,5 @@
 abstract type AbstractOuterProductArray{T,N} <: AbstractArray{T,N} end
 
-iscomposite(::AbstractOuterProductArray) = true
 elements(opa::AbstractOuterProductArray) = opa.vectors
 element(opa::AbstractOuterProductArray, i) = opa.vectors[i]
 size(A::AbstractOuterProductArray) = map(length, elements(A))
@@ -18,7 +17,7 @@ end
 
 @inline Base.unsafe_getindex(F::AbstractOuterProductArray{T,N}, kj::NTuple{N,Int}) where {T,N} =
     prod(map(getindex, elements(F), kj))
-    
+
 export OuterProductArray
 struct OuterProductArray{T,N,V} <: AbstractOuterProductArray{T,N}
     vectors   ::  V

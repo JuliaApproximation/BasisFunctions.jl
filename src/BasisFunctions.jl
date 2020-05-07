@@ -74,7 +74,7 @@ import DomainSets:
     matrix, vector,
     forward_map, inverse_map, image,
     # composite types
-    element, elements, numelements,
+    iscomposite, element, elements, numelements,
     # products
     tensorproduct, cartesianproduct, ×,
     # utils
@@ -94,8 +94,7 @@ export .., numtype
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:
-    iscomposite, apply_map, mapping,
-    coverdomain
+    apply_map, mapping, coverdomain
 
 @deprecate support(g::AbstractGrid) coverdomain(g)
 
@@ -120,7 +119,6 @@ export LinearIndex, NativeIndex,
 
 # from util/domain_extensions.jl
 export interval, circle, sphere, disk, ball, rectangle, cube, simplex
-# export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition,

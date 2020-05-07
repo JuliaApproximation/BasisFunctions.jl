@@ -39,7 +39,7 @@ end
 function suitable_function(dict::MappedDict)
     f = suitable_function(superdict(dict))
     m = inv(mapping(dict))
-    x -> f(m*x)
+    x -> f(m(x))
 end
 function suitable_function(dict::WeightedDict1d)
     f = suitable_function(superdict(dict))

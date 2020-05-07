@@ -104,10 +104,6 @@ length(d::Dictionary) = prod(size(d))
 firstindex(d::Dictionary) = first(eachindex(d))
 lastindex(d::Dictionary) = last(eachindex(d))
 
-"Is the dictionary composite, i.e. does it consist of several components?"
-iscomposite(d::Dictionary) = false
-
-
 
 #############################
 # Domain and codomain type

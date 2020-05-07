@@ -175,14 +175,11 @@ strings(m::AbstractMeasure) = (name(m), (string(support(m)),))
 # Map symbols and strings
 ####
 
-# This definition is missing from DomainSets
-iscomposite(m::AbstractMap) = false
-
 symbol(m::AbstractMap) = "M"
 
 strings(m::AbstractMap) = (string(m),)
 
-strings(m::AffineMap) = (string("Affine map y = ", m.a, " * x + ", m.b),)
+strings(m::AffineMap) = (string("Affine map y = ", matrix(m), " * x + ", vector(m)),)
 
 
 #### Actual printing methods.

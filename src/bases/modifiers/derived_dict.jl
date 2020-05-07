@@ -73,8 +73,8 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
-for op in (:length, :extensionsize, :size, :interpolation_grid, :iscomposite, :numelements,
-    :elements, :tail, :ordering, :support, :dimensions)
+for op in (:length, :extensionsize, :size, :interpolation_grid, :numelements,
+        :elements, :tail, :ordering, :support, :dimensions)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 

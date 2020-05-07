@@ -24,7 +24,6 @@ dest_space(op::GenericCompositeOperator) = dest_space(op.operators[end])
 # Generic functions for composite types:
 elements(op::GenericCompositeOperator) = op.operators
 element(op::GenericCompositeOperator, j::Int) = op.operators[j]
-iscomposite(op::GenericCompositeOperator) = true
 
 
 # If the GenericCompositeOperator happens to be a composite operator of
@@ -94,7 +93,6 @@ numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
 
 isinplace(op::CompositeOperator) = all(map(isinplace, op.operators))
 isdiag(op::CompositeOperator) = all(map(isdiag, op.operators))
-iscomposite(op::CompositeOperator) = true
 
 
 function compose_and_simplify(composite_src::Dictionary, composite_dest::Dictionary, operators::DictionaryOperator...; simplify = true)

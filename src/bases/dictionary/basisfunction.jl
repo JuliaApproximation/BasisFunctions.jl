@@ -17,7 +17,7 @@ eltype(::Type{<:Dictionary{S,T}}) where {S,T} = TypedFunction{S,T}
 promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) where {S1,T1,S2,T2} =
     TypedFunction{promote_type(S1,S2),promote_type(T1,T2)}
 
-iscomposite(f::TypedFunction) = false
+
 
 "The supertype of functions that can be associated with a dictionary or a family of basis functions."
 abstract type AbstractBasisFunction{S,T} <: TypedFunction{S,T} end

@@ -3,8 +3,6 @@ innerproduct(f, g, measure; options...) = integral(x->conj(f(x))*g(x), measure)
 
 applymeasure(μ::AbstractMeasure, f::Function; options...) = integral(f, μ)
 
-iscomposite(μ::Measure) = false
-
 
 "A measure on a general domain with a general weight function `dσ = w(x) dx`."
 struct GenericWeightMeasure{T} <: Measure{T}
@@ -59,11 +57,11 @@ mapping(m::MappedMeasure) = m.map
 supermeasure(m::MappedMeasure) = m.measure
 
 apply_map(measure::Measure, map) = MappedMeasure(map, measure)
-apply_map(measure::MappedMeasure, map) = MappedMeasure(map*mapping(measure), supermeasure(measure))
+apply_map(measure::MappedMeasure, map) = MappedMeasure(map ∘ mapping(measure), supermeasure(measure))
 
-support(m::MappedMeasure) = mapping(m) * support(supermeasure(m))
+support(m::MappedMeasure) = mapping(m).(support(supermeasure(m)))
 
-unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(m))*x) / (jacobian(mapping(m))*x)
+unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(m))(x)) / (jacobian(mapping(m))(x))
 
 strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
@@ -86,7 +84,7 @@ end
 function DomainIntegrals.quadrature_m(qs, integrand, domain, μ::MappedMeasure, sing)
     m = mapping(μ)
     integrand2 = x -> integrand(applymap(m, x))
-    DomainIntegrals.quadrature(qs, integrand2, inv(m)*domain, supermeasure(μ), sing)
+    DomainIntegrals.quadrature(qs, integrand2, inv(m).(domain), supermeasure(μ), sing)
 end
 
 
@@ -114,7 +112,6 @@ ProductMeasure{T}(measures::Measure...) where {T} =
 
 productmeasure(measures::Measure...) = ProductMeasure(measures...)
 
-iscomposite(m::ProductMeasure) = true
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
 isnormalized(m::ProductMeasure) = reduce(&, map(isnormalized, elements(m)))

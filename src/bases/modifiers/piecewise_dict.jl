@@ -56,8 +56,6 @@ dictionaries(set::PiecewiseDict) = set.dicts
 
 partition(set::PiecewiseDict) = set.partition
 
-iscomposite(set::PiecewiseDict) = true
-
 function stencilarray(dict::PiecewiseDict)
     A = Any[]
     push!(A, "(")

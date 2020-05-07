@@ -25,7 +25,6 @@ const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 
 # Generic functions for composite types:
-iscomposite(dict::TensorProductDict) = true
 elements(dict::TensorProductDict) = dict.dicts
 element(dict::TensorProductDict, j::Int) = dict.dicts[j]
 element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)

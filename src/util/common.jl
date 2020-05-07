@@ -107,7 +107,6 @@ PrettyPrintSymbol{S}() where {S} = PrettyPrintSymbol{S}(nothing)
 symbol(::PrettyPrintSymbol{S}) where {S} = string(S)
 string(s::PrettyPrintSymbol) = name(s)
 hasstencil(::PrettyPrintSymbol) = false
-iscomposite(::PrettyPrintSymbol) = false
 show(io::IO, x::PrettyPrintSymbol) = print(io, string(x))
 
 # TODO: move these definitions to DomainSets

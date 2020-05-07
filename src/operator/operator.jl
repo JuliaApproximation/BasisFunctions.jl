@@ -8,9 +8,6 @@ spaces.
 abstract type AbstractOperator
 end
 
-"Is the operator a combination of other operators"
-iscomposite(op::AbstractOperator) = false
-
 dest(op::AbstractOperator) = _dest(op, dest_space(op))
 _dest(op::AbstractOperator, span::Span) = dictionary(span)
 _dest(op::AbstractOperator, space) = error("Generic operator does not map to the span of a dictionary.")
