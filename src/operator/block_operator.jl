@@ -319,10 +319,11 @@ function stencilarray(op::BlockDiagonalOperator)
     A
 end
 
-# block_length(dict::Dictionary) = (length(dict),)
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
-    # a = BlockArray(undef_blocks, AbstractMatrix{eltype(op)}, collect(block_length(dest(op))), collect(block_length(src(op))))
-    a = BlockArray{eltype(op)}(undef_blocks, [dimensions(dest(op))...], [dimensions(src(op))...])
+    cs = composite_size(op)
+    dest_cs = cs[1] == 1 ? [length(dest(op))] :  [map(length, elements(dest(op)))...]
+    src_cs = cs[2] == 1 ? [length(src(op))] :  [map(length, elements(src(op)))...]
+    a = BlockArray{eltype(op)}(undef_blocks, dest_cs, src_cs)
     matrix!(op, a)
     a
 end
@@ -330,7 +331,7 @@ end
 function matrix!(op::Union{BlockOperator,BlockDiagonalOperator}, a)
     for i in 1:composite_size(op)[1]
         for j in 1:composite_size(op)[2]
-            a[Block(i,j)] = matrix(element(op, i, j))
+            a[Block(i,j)] = Matrix(element(op, i, j))
         end
     end
 end
