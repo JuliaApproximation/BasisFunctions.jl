@@ -61,7 +61,7 @@ apply_map(measure::MappedMeasure, map) = MappedMeasure(map ∘ mapping(measure),
 
 support(m::MappedMeasure) = mapping(m).(support(supermeasure(m)))
 
-unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inverse(mapping(m), x)) / (jacobian(mapping(m), x))
+unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inverse(mapping(m), x)) / jacdet(mapping(m), x)
 
 strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
