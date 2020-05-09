@@ -59,13 +59,11 @@ for (BaseType,TPType) in [(:DictionaryOperator,:TensorProductOperator),
     # Disallow tensor products with just one argument
     @eval tensorproduct(arg::$BaseType) = arg
 
-end 
+end
 
 function ishomogeneous(tp)
     T = typeof(element(tp, 1))
-    reduce(&, map(el->typeof(el)==T, elements(tp)))
+    mapreduce(el->typeof(el)==T, &, elements(tp))
 end
 
-function basetype(tp)
-    promote_type(map(typeof, elements(tp))...)
-end
+basetype(tp) = promote_type(map(typeof, elements(tp))...)

@@ -85,7 +85,7 @@ import DomainIntegrals:
     AbstractMeasure, Measure, DiscreteMeasure,
     support,
     weight, weightfunction,
-    unsafe_weight, unsafe_weightfunction, weight1,
+    unsafe_weight, unsafe_weightfunction,
     unsafe_discrete_weight,
     points, weights,
     isnormalized, iscontinuous, isdiscrete

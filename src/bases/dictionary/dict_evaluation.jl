@@ -29,12 +29,13 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
 @inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, axes(dict), I)
 
 "Return the support of the idx-th basis function. Default is support of the dictionary."
-support(dict::Dictionary, idx) = support(dict)
+function support(dict::Dictionary, idx)
+    checkbounds(dict, idx)
+    support(dict)
+end
 # Warning: the functions above and below may be wrong for certain concrete
 # dictionaries, for example for univariate functions with non-connected support.
 # Make sure to override, and make sure that the overridden version is called.
-
-tolerance(dict::Dictionary) = tolerance(codomaintype(dict))
 
 "Does the given point lie inside the support of the given function or dictionary?"
 in_support(dict::Dictionary, x) = dict_in_support(dict, x)
@@ -204,9 +205,7 @@ function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; opti
 end
 
 # Evaluation of a dictionary means evaluation of all elements.
-if VERSION >= v"1.3"
-    (dict::Dictionary)(x) = dict_eval(dict, x)
-end
+(dict::Dictionary)(x) = dict_eval(dict, x)
 
 function dict_eval(dict::Dictionary, x)
     result = zeros(dict)

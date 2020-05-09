@@ -41,7 +41,11 @@ function TensorProductDict(dict::Dictionary)
     dict
 end
 
-product_domaintype(dict::Dictionary...) = Tuple{map(domaintype, dict)...}
+product_domaintype(dicts::Dictionary...) = Tuple{map(domaintype, dicts)...}
+function product_domaintype(dicts::Vararg{Dictionary{<:Number},N}) where {N}
+    T = promote_type(map(domaintype, dicts)...)
+    SVector{N,T}
+end
 
 function TensorProductDict(dicts::Dictionary...)
     N = length(dicts)
@@ -71,19 +75,19 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 ## Properties
 
 for op in (:isreal, :isbasis, :isframe)
-    @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
+    @eval $op(s::TensorProductDict) = mapreduce($op, &, elements(s))
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval $op(s::TensorProductDict, m::ProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
+    @eval $op(s::TensorProductDict, m::ProductMeasure) = mapreduce($op, &, elements(s), elements(m))
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductMeasure) = reduce(&, map($op, elements(s), elements(m)))
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductMeasure) = mapreduce($op, &, elements(s), elements(m))
 end
 
 for op in (:isorthogonal, :iscompatible)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = reduce(&, map($op, elements(s), elements(m)))
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, elements(s), elements(m))
 end
 
 ## Native indices are of type ProductIndex
@@ -109,15 +113,15 @@ checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
 ## Feature methods
 
 for op in (:hasinterpolationgrid, :hasextension, :hasderivative, :hasantiderivative)
-    @eval $op(s::TensorProductDict) = reduce(&, map($op, elements(s)))
+    @eval $op(s::TensorProductDict) = mapreduce($op, &, elements(s))
 end
 hasderivative(Φ::TensorProductDict, order) =
-    reduce(&, map(hasderivative, elements(Φ), order))
+    mapreduce(hasderivative, &, elements(Φ), order)
 hasantiderivative(Φ::TensorProductDict, order) =
-    reduce(&, map(hasantiderivative, elements(Φ), order))
+    mapreduce(hasantiderivative, &, elements(Φ), order)
 
 hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
-    reduce(&, map(hastransform, elements(s), elements(grid)))
+    mapreduce(hastransform, &, elements(s), elements(grid))
 
 hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
@@ -146,21 +150,7 @@ dict_in_support(dict::TensorProductDict, idx, x) =
 dict_in_support(dict::TensorProductDict, idx::CartesianIndex, x) =
     _dict_in_support(dict, elements(dict), Tuple(idx), x)
 
-# This line is a bit slower than the lines below:
-_dict_in_support(::TensorProductDict, dicts, idx, x) = reduce(&, map(in_support, dicts, idx, x))
-
-# That is why we handcode a few cases:
-_dict_in_support(::TensorProductDict1, dicts, idx, x) =
-    in_support(dicts[1], idx[1], x[1])
-
-_dict_in_support(::TensorProductDict2, dicts, idx, x) =
-    in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2])
-
-_dict_in_support(::TensorProductDict3, dicts, idx, x) =
-    in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3])
-
-_dict_in_support(::TensorProductDict4, dicts, idx, x) =
-    in_support(dicts[1], idx[1], x[1]) && in_support(dicts[2], idx[2], x[2]) && in_support(dicts[3], idx[3], x[3]) && in_support(dicts[4], idx[4], x[4])
+_dict_in_support(::TensorProductDict, dicts, idx, x) = mapreduce(in_support, &, dicts, idx, x)
 
 
 function approx_length(s::TensorProductDict, n::Int)
@@ -207,27 +197,13 @@ support(s::TensorProductDict, idx::ProductIndex) = cartesianproduct(map(support,
 # unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
 unsafe_eval_element(set::TensorProductDict, idx::ProductIndex, x) = _unsafe_eval_element(set, elements(set), idx, x)
 
-# We assume that x has exactly as many components as the index i does
-# We can call unsafe_eval_element on the subsets because we have already done bounds checking
-_unsafe_eval_element(set::TensorProductDict1, dicts, i::ProductIndex, x) =
-    unsafe_eval_element(dicts[1], i[1], x[1])
-
-_unsafe_eval_element(set::TensorProductDict2, dicts, i::ProductIndex, x) =
-    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2])
-
-_unsafe_eval_element(set::TensorProductDict3, dicts, i::ProductIndex, x) =
-    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3])
-
-_unsafe_eval_element(set::TensorProductDict4, dicts, i::ProductIndex, x) =
-    unsafe_eval_element(dicts[1], i[1], x[1]) * unsafe_eval_element(dicts[2], i[2], x[2]) * unsafe_eval_element(dicts[3], i[3], x[3]) * unsafe_eval_element(dicts[4], i[4], x[4])
-
-# Generic implementation, slightly slower
 _unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
-    reduce(*, map(unsafe_eval_element, dicts, i, x))
+    mapreduce(unsafe_eval_element, *, dicts, i, x)
 _unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
-    reduce(*, map(unsafe_eval_element, dicts, Tuple(i), x))
+    mapreduce(unsafe_eval_element, *, dicts, Tuple(i), x)
 
 
+# hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
 
 

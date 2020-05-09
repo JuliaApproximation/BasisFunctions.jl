@@ -179,7 +179,8 @@ symbol(m::AbstractMap) = "M"
 
 strings(m::AbstractMap) = (string(m),)
 
-strings(m::AffineMap) = (string("Affine map y = ", matrix(m), " * x + ", vector(m)),)
+strings(m::DomainSets.AbstractAffineMap) = (string("Affine map: y = ", matrix(m), " * x + ", vector(m)),)
+strings(m::DomainSets.LinearMap) = (string("Linear map: y = ", matrix(m)),)
 
 
 #### Actual printing methods.

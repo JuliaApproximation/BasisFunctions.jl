@@ -25,11 +25,8 @@ const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
 MappedDict(dict::Dictionary{T1,T}, map::Map{T1}) where {T1,T} =
     MappedDict{typeof(dict),typeof(map),codomaintype(map,T1),T}(dict, map)
 
-# If the parameters don't match, we may have to promote the map.
-function MappedDict(dict::Dictionary{S1,T1}, map::Map{S2}) where {S1,S2,T1}
-    S = promote_type(S1,S2)
-    MappedDict(ensure_domaintype(S, dict), convert(Map{S}, map))
-end
+MappedDict(dict::Dictionary{S1,T1}, map::Map{S2}) where {S1,S2,T1} =
+    MappedDict(dict, convert(Map{S1}, map))
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 
@@ -65,29 +62,29 @@ unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inv(mapping(d
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
 unsafe_eval_element(s::MappedDict, idx, y) =
-    unsafe_eval_element(superdict(s), idx, leftinv(mapping(s))(y))
+    unsafe_eval_element(superdict(s), idx, leftinverse(mapping(s), y))
 
 function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
-    x = leftinv(mapping(s))(y)
+    x = leftinverse(mapping(s), y)
     d = unsafe_eval_element_derivative(superdict(s), idx, x)
     z = d / jacobian(mapping(s), y)
 end
 
 function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
     if in_support(s, first(eachindex(s)), y)
-        eval_expansion(superdict(s), coef, leftinv(mapping(s))(y))
+        eval_expansion(superdict(s), coef, leftinverse(mapping(s), y))
     else
         zero(codomaintype(s))
     end
 end
 
-support(dict::MappedDict) = mapping(dict).(support(superdict(dict)))
+support(dict::MappedDict) = DomainSets.map_domain(mapping(dict), support(superdict(dict)))
 
 support(dict::MappedDict, idx) = mapping(dict).(support(superdict(dict), idx))
 
 function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
-    x = leftinv(mapping(set))(y)
-    y1 = applymap(mapping(set), x)
+    x = leftinverse(mapping(set), y)
+    y1 = mapping(set)(x)
     if norm(y-y1) < threshold
         in_support(superdict(set), idx, x)
     else

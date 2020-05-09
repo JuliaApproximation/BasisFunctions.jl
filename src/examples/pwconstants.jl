@@ -33,7 +33,7 @@ support(h::PiecewiseConstants{T}) where {T} = Interval{:closed,:open,T}(0,1)
 # We also implement the support of each basis function. By default, this would
 # be the default of the dictionary itself.
 support(h::PiecewiseConstants{T}, idx::Int) where {T} =
-    Interval{:closed,:open,T}(0,one(T)/h.n) + (one(T)/h.n*(idx-1))
+    Interval{:closed,:open,T}(0,one(T)/h.n) .+ (one(T)/h.n*(idx-1))
 
 
 

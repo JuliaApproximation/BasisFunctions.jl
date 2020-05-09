@@ -57,6 +57,7 @@ coefficienttype(D::Type{<:Dictionary{S,T}}) where {S,T} = codomaintype(D)
 coefficienttype(dict::Dictionary) = coefficienttype(typeof(dict))
 
 prectype(D::Type{<:Dictionary}) = prectype(domaintype(D), codomaintype(D))
+numtype(D::Type{<:Dictionary}) = numtype(domaintype(D), codomaintype(D))
 
 # The dimension of a function set is the dimension of its domain type
 dimension(dict::Dictionary) = dimension(domaintype(dict))
@@ -67,25 +68,18 @@ dimension(dict::Dictionary, i) = dimension(element(dict, i))
 isreal(d::Dictionary) = isreal(codomaintype(d))
 
 
-# TODO: we need to properly define the semantics of the functions that follow
-
-# Is a given set a basis? In general, it is not. But it could be.
-# Hence, we need a property for it:
+"Is the dictionary a (truncation of a) basis?"
 isbasis(d::Dictionary) = false
 
-# Any basis is a frame
-isframe(d::Dictionary) = isbasis(d)
-
-
-"Property to indicate whether a dictionary is orthogonal."
+"Is the dictionary orthogonal (with respect to the given measure)?"
 isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
 isorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthonormal(d, measure)
 
-"Property to indicate whether a dictionary is orthonormal"
+"Is the dictionary orthonormal (with respect to the given measure)?"
 isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
 isorthonormal(d::Dictionary, measure::AbstractMeasure) = false
 
-"Property to indicate whether a dictionary is biorthogonal (or a Riesz basis)."
+"Is the dictionary biorthogonal (with respect to the given measure)?"
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
 isbiorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthogonal(d, measure)
 
@@ -137,17 +131,10 @@ ones(s::Dictionary) = ones(coefficienttype(s), s)
 zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
 ones(::Type{T}, s::Dictionary) where {T} = ones(T, size(s))
 
-"""
-Return the type of the coefficient vector of the dictionary.
-
-The implementation is efficient in many cases, but may allocate memory to hold
-one set of coefficients in some cases.
-"""
+"What is the type of the coefficient vector of the dictionary?"
 containertype(d::Dictionary) = typeof(zeros(d))
 
-"""
-Transforms the container of coefficients `a` to the native containertype of the dictionary `d`.
-"""
+"Transform `a` to a coefficient vector for the given dictionary."
 tocoefficientformat(a, d::Dictionary) = reshape(a, size(d))
 
 function rand(dict::Dictionary)

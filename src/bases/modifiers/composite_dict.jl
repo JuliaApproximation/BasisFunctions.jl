@@ -95,12 +95,12 @@ for op in (:isreal, )
 end
 
 for op in (:hasderivative, :hasantiderivative, :hasextension)
-    @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
+    @eval $op(set::CompositeDict) = mapreduce($op, &, elements(set))
 end
 hasderivative(Φ::CompositeDict, order) =
-    reduce(&, map(hasderivative, elements(Φ)))
+    mapreduce(hasderivative, &, elements(Φ))
 hasantiderivative(Φ::CompositeDict, order) =
-    reduce(&, map(hasantiderivative, elements(Φ)))
+    mapreduce(hasantiderivative, &, elements(Φ))
 
 coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 

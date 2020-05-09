@@ -75,13 +75,13 @@ similardictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(se
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isbasis, :isframe)
-    @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
+    @eval $op(s::PiecewiseDict) = mapreduce($op, &, elements(s))
 end
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
     @eval $op(s::PiecewiseDict, m::AbstractMeasure) =
-        (@warn "definition unclear";reduce(&, map(x->$op(x, m), elements(s))))# or take intersection of measure and support of dictpiece
+        (@warn "definition unclear"; mapreduce(x->$op(x, m), &, elements(s)))# or take intersection of measure and support of dictpiece
 end
 isorthonormal(s::PiecewiseDict, m::AbstractMeasure) = false
 
@@ -94,7 +94,7 @@ end
 # The set has a grid and a transform if all its subsets have it
 # Disable for now, until grids can be collected into a MultiGrid or something
 #for op in (:hasinterpolationgrid, :hastransform)
-#    @eval $op(s::PiecewiseDict) = reduce(&, map($op, elements(s)))
+#    @eval $op(s::PiecewiseDict) = mapreduce($op, &, elements(s))
 #end
 
 # We have to override getindex for CompositeDict's, because getindex for a

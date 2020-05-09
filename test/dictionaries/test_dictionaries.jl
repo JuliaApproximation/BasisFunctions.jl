@@ -7,9 +7,8 @@ import BasisFunctions.Test:
     suitable_function,
     suitable_interpolation_grid,
     dimension_tuple
-BF = BasisFunctions
 
-# types = [Float64,]
+BF = BasisFunctions
 
 domaintypes = (Float64, BigFloat)
 

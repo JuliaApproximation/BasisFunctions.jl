@@ -113,11 +113,7 @@ function test_generic_dict_evaluation(basis)
 
     # Test dictionary evaluation
     x = random_point_in_domain(basis)
-    if VERSION >= v"1.3"
-        @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
-    else
-        @test norm(BasisFunctions.dict_eval(basis,x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
-    end
+    @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
 end
 
 function test_generic_dict_coefficient_linearization(basis)
@@ -196,6 +192,12 @@ function test_gram_projection(basis)
             f = suitable_function(basis)
             e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
             x = random_point_in_domain(basis)
+            if basis isa MappedDict
+                @show e
+                @show x
+                @show f(x...)
+                @show e(x)
+            end
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end
@@ -415,9 +417,6 @@ function test_generic_dict_interface(basis)
     RT = codomaintype(basis)
 
     n = length(basis)
-    if isbasis(basis)
-        @test isframe(basis)
-    end
     if hasmeasure(basis)
         @test isorthogonal(basis) == isorthogonal(basis, measure(basis))
         @test isorthonormal(basis) == isorthonormal(basis, measure(basis))

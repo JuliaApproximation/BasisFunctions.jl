@@ -12,7 +12,7 @@ end
 
 name(m::GenericWeightMeasure) = "Measure with generic weight function"
 
-unsafe_weight(m::GenericWeightMeasure{T}, x) where {T} = m.weightfunction(x)
+unsafe_weight(m::GenericWeightMeasure, x) = m.weightfunction(x)
 
 support(m::GenericWeightMeasure) = m.support
 
@@ -61,7 +61,7 @@ apply_map(measure::MappedMeasure, map) = MappedMeasure(map ∘ mapping(measure),
 
 support(m::MappedMeasure) = mapping(m).(support(supermeasure(m)))
 
-unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inv(mapping(m))(x)) / (jacobian(mapping(m))(x))
+unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inverse(mapping(m), x)) / (jacobian(mapping(m), x))
 
 strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
@@ -72,9 +72,9 @@ function DomainIntegrals.quadrature_m(qs, integrand, domain::DomainSets.MappedDo
     # TODO: think about what to do with the singularity here
     # -> Move MappedMeasure into DomainIntegrals.jl and implement the logic there
     m1 = mapping(μ)
-    m2 = mapping(domain)
+    m2 = forward_map(domain)
     if iscompatible(m1,m2)
-        integrand2 = x -> integrand(applymap(m, x))
+        integrand2 = x -> integrand(m1(x))
         DomainIntegrals.quadrature(qs, integrand2, superdomain(domain), supermeasure(μ), sing)
     else
         DomainIntegrals.quadrature_d(qs, integrand, domain, μ, sing)
@@ -83,8 +83,8 @@ end
 
 function DomainIntegrals.quadrature_m(qs, integrand, domain, μ::MappedMeasure, sing)
     m = mapping(μ)
-    integrand2 = x -> integrand(applymap(m, x))
-    DomainIntegrals.quadrature(qs, integrand2, inv(m).(domain), supermeasure(μ), sing)
+    integrand2 = x -> integrand(m(x))
+    DomainIntegrals.quadrature(qs, integrand2, mapped_domain(m, domain), supermeasure(μ), sing)
 end
 
 
@@ -98,14 +98,14 @@ end
 
 
 product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
-
-function ProductMeasure(measures::Vararg{Measure{<:Number},N}) where {N}
+function product_domaintype(measures::Vararg{Measure{<:Number},N}) where {N}
     T = promote_type(map(domaintype, measures)...)
-    ProductMeasure{SVector{N,T}}(measures...)
+    SVector{N,T}
 end
+
 function ProductMeasure(measures::Measure...)
     T = product_domaintype(measures...)
-    ProductMeasure{T}(measures)
+    ProductMeasure{T}(measures...)
 end
 ProductMeasure{T}(measures::Measure...) where {T} =
     ProductMeasure{T,typeof(measures)}(measures)
@@ -114,11 +114,12 @@ productmeasure(measures::Measure...) = ProductMeasure(measures...)
 
 elements(m::ProductMeasure) = m.measures
 element(m::ProductMeasure, i) = m.measures[i]
-isnormalized(m::ProductMeasure) = reduce(&, map(isnormalized, elements(m)))
+
+isnormalized(m::ProductMeasure) = mapreduce(isnormalized, &, elements(m))
 
 support(m::ProductMeasure{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
 
-weight1(m::ProductMeasure, x) = prod(map(weight1, elements(m), x))
+unsafe_weight(m::ProductMeasure, x) = mapreduce(unsafe_weight, *, elements(m), x)
 
 function stencilarray(m::ProductMeasure)
     A = Any[]

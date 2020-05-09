@@ -6,7 +6,7 @@ supports_approximation(::Hermite{BigFloat}) = false
 supports_approximation(::Subdictionary) = false
 supports_approximation(::OperatedDict) = false
 supports_approximation(dict::TensorProductDict) =
-    reduce(&, map(supports_approximation, elements(dict)))
+    mapreduce(supports_approximation, &, elements(dict))
 # Monomials and rationals have no associated domain
 supports_approximation(::Monomials) = false
 supports_approximation(::Rationals) = false
