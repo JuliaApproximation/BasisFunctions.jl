@@ -23,7 +23,7 @@ For Julia 1.1 or higher, you can add the FrameFun registry.
 From the Julia REPL, type `]` to enter Pkg mode and run
 
 ```julia
-pkg> registry add https://github.com/vincentcp/FrameFunRegistry
+pkg> registry add https://github.com/FrameFunVC/FrameFunRegistry
 pkg> add BasisFunctions
 ```
 
