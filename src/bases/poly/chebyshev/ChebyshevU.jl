@@ -51,6 +51,7 @@ rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
 support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
 
 
+"A Chebyshev polynomial of the second kind"
 struct ChebyshevUPolynomial{T} <: OrthogonalPolynomial{T}
     degree  ::  Int
 end

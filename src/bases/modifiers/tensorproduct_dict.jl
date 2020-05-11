@@ -162,7 +162,8 @@ end
 
 extensionsize(s::TensorProductDict) = map(extensionsize, elements(s))
 
-name(dict::TensorProductDict) = "Tensor product dictionary"
+_names(dict::TensorProductDict) = reduce((u,v) -> name(u) * " ⊗ " * name(v), elements(dict))
+name(dict::TensorProductDict) = "Tensor product dictionary ($(_names(dict)))"
 
 
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
@@ -205,6 +206,11 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
 
 hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
+
+
+innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductMeasure; options...) =
+    mapreduce(innerproduct, *, elements(Φ1), Tuple(i), elements(Φ2), Tuple(j), elements(measure))
+
 
 
 "Return a list of all tensor product indices (1:s+1)^n."

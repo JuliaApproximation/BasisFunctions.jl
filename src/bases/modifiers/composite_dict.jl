@@ -23,9 +23,6 @@ end
 
 # We assume that every subset has an indexable field called dicts
 elements(set::CompositeDict) = set.dicts
-element(set::CompositeDict, j) = set.dicts[j]
-element(set::Dictionary, j) = (@assert j==1; (set,))
-numelements(set::CompositeDict) = length(elements(set))
 
 # For a generic implementation of range indexing, we need a 'similardictionary' function
 # to create a new set of the same type as the given set.

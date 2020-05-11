@@ -201,9 +201,9 @@ function test_generic_dict_approximation(basis)
 
     # We choose a fairly large error, because the ndof's can be very small.
     # We don't want to test convergence, only that something terrible did
-    # not happen, so an error of 1e-3 will do.
+    # not happen, so an error of 2e-3 will do.
     x = random_point_in_domain(basis)
-    @test abs(e(x)-f(x...)) < 1e-3
+    @test abs(e(x)-f(x...)) < 2e-3
 end
 
 truncate(d::Domain) = d
@@ -224,10 +224,10 @@ function test_gram_projection(basis)
                 z = max(z,abs(G[i,j] - innerproduct(basis, i, basis, j)))
             end
         end
-        @test z < 1000test_tolerance(domaintype(basis))
+        @test z < 1000test_tolerance(prectype(basis))
 
         # No efficient implementation for BigFloat to construct full gram matrix.
-        if !(domaintype(basis)==BigFloat)
+        if !(prectype(basis)==BigFloat)
             f = suitable_function(basis)
             μ = measure(basis)
             # Do we compute the projection integrals accurately?

@@ -14,8 +14,6 @@ using RecipesBase
 
 using Reexport, AbstractTrees
 
-@reexport using GridArrays
-import GridArrays: subindices, resize
 
 ## Some specific functions we merely use
 
@@ -92,9 +90,11 @@ import DomainIntegrals:
 
 export .., numtype, integral
 
-using GridArrays: AbstractSubGrid, IndexSubGrid
-import GridArrays:
+@reexport using GridArrays
+import GridArrays: subindices, resize, name,
     apply_map, mapping, coverdomain
+
+using GridArrays: AbstractSubGrid, IndexSubGrid
 
 @deprecate support(g::AbstractGrid) coverdomain(g)
 

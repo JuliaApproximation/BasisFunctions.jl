@@ -39,9 +39,9 @@ test_dictionaries = [Fourier,
 for T in domaintypes
     delimit("1D dictionaries ($(T))")
     for DICT in test_dictionaries
-        @testset "$(rpad(string(DICT),80))" begin
-            n = 9
-            basis = DICT{T}(n)
+        n = 9
+        basis = DICT{T}(n)
+        @testset "$(rpad(string(basis),80))" begin
             @test length(basis) == n
             @test domaintype(basis) == T
             test_generic_dict_interface(basis)
@@ -59,14 +59,13 @@ for T in domaintypes
     end
 
     delimit("Tensor product set interfaces ($(T))")
-    # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in
-                ( Fourier(5) ⊗ Fourier(7), # Two odd-length Fourier series
-                  Fourier(6) ⊗ ChebyshevT(4), # combination of Fourier and Chebyshev
-                  Fourier(5) ⊗ Fourier(6), # Odd and even-length Fourier series
-                  ChebyshevT(5) ⊗ ChebyshevT(6), # Two Chebyshev sets
-                  (Fourier(5) → 2..3) ⊗ (Fourier(7) → 4..5), # Two mapped Fourier series
-                  (ChebyshevT(5) → 2..3) ⊗ (ChebyshevT(6) → 4..5)) # Two mapped Chebyshev series
+                ( Fourier{T}(5) ⊗ Fourier{T}(7), # Two odd-length Fourier series
+                  Fourier{T}(6) ⊗ ChebyshevT{T}(4), # combination of Fourier and Chebyshev
+                  Fourier{T}(5) ⊗ Fourier{T}(6), # Odd and even-length Fourier series
+                  ChebyshevT{T}(5) ⊗ ChebyshevT{T}(6), # Two Chebyshev sets
+                  (Fourier{T}(5) → 2..3) ⊗ (Fourier{T}(7) → 4..5), # Two mapped Fourier series
+                  (ChebyshevT{T}(5) → 2..3) ⊗ (ChebyshevT{T}(6) → 4..5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
     end
 
