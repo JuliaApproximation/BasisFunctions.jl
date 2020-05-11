@@ -90,7 +90,7 @@ import DomainIntegrals:
     points, weights,
     isnormalized, iscontinuous, isdiscrete
 
-export .., numtype
+export .., numtype, integral
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
 import GridArrays:

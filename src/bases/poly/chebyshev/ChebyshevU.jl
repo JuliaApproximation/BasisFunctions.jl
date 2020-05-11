@@ -69,3 +69,4 @@ basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, id
 basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))
 
 dictionary(p::ChebyshevUPolynomial{T}) where {T} = ChebyshevU{T}(degree(p)+1)
+index(p::ChebyshevUPolynomial) = degree(p)+1

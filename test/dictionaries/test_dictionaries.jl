@@ -61,12 +61,12 @@ for T in domaintypes
     delimit("Tensor product set interfaces ($(T))")
     # TODO: all sets in the test below should use type T!
     @testset "$(rpad("$(name(basis))",80," "))" for basis in
-                ( Fourier(11) ⊗ Fourier(21), # Two odd-length Fourier series
-                  Fourier(10) ⊗ ChebyshevT(12), # combination of Fourier and Chebyshev
-                  Fourier(11) ⊗ Fourier(10), # Odd and even-length Fourier series
-                  ChebyshevT(11) ⊗ ChebyshevT(20), # Two Chebyshev sets
-                  (Fourier(11) → 2..3) ⊗ (Fourier(11) → 4..5), # Two mapped Fourier series
-                  (ChebyshevT(9) → 2..3) ⊗ (ChebyshevT(7) → 4..5)) # Two mapped Chebyshev series
+                ( Fourier(5) ⊗ Fourier(7), # Two odd-length Fourier series
+                  Fourier(6) ⊗ ChebyshevT(4), # combination of Fourier and Chebyshev
+                  Fourier(5) ⊗ Fourier(6), # Odd and even-length Fourier series
+                  ChebyshevT(5) ⊗ ChebyshevT(6), # Two Chebyshev sets
+                  (Fourier(5) → 2..3) ⊗ (Fourier(7) → 4..5), # Two mapped Fourier series
+                  (ChebyshevT(5) → 2..3) ⊗ (ChebyshevT(6) → 4..5)) # Two mapped Chebyshev series
         test_generic_dict_interface(basis)
     end
 

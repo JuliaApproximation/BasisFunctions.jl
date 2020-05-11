@@ -178,7 +178,7 @@ function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     (dest,coef_dest)
 end
 
-
+"A Chebyshev polynomial of the first kind."
 struct ChebyshevTPolynomial{T} <: OrthogonalPolynomial{T}
     degree  ::  Int
 end
@@ -197,3 +197,4 @@ basisfunction(dict::ChebyshevT, idx) = basisfunction(dict, native_index(dict, id
 basisfunction(dict::ChebyshevT{T}, idx::PolynomialDegree) where {T} = ChebyshevTPolynomial{T}(degree(idx))
 
 dictionary(p::ChebyshevTPolynomial{T}) where {T} = ChebyshevT{T}(degree(p)+1)
+index(p::ChebyshevTPolynomial) = degree(p)+1

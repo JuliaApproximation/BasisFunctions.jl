@@ -46,6 +46,9 @@ unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x) =
 
 hasmeasure(dict::OPS) = true
 
+
+measure(ϕ::OrthogonalPolynomial) = measure(dictionary(ϕ))
+
 weight(b::OPS, x) = weight(measure(b), x)
 
 

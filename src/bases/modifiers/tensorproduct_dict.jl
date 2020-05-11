@@ -203,7 +203,7 @@ _unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
     mapreduce(unsafe_eval_element, *, dicts, Tuple(i), x)
 
 
-# hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
+hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
 
 

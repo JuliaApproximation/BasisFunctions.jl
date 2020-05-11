@@ -73,6 +73,9 @@ isinplace(op::DictionaryOperator) = false
 "Is the operator diagonal?"
 isdiag(op::DictionaryOperator) = false
 
+"Is the operator (knowingly) an identity operator?"
+isidentity(op::DictionaryOperator) = false
+
 function apply(op::DictionaryOperator, coef_src)
 	coef_dest = zeros(eltype(op), dest(op))
 	apply!(op, coef_dest, coef_src)

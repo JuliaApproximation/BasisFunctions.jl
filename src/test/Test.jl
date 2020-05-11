@@ -1,6 +1,6 @@
 module Test
 
-using ..BasisFunctions, DomainSets, StaticArrays
+using ..BasisFunctions, DomainSets, DomainIntegrals, StaticArrays
 using FillArrays: Ones, Eye
 using Test, LinearAlgebra
 BF = BasisFunctions

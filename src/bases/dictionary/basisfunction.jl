@@ -52,17 +52,23 @@ getindex(dict::Dictionary, i, j, indices...) =
 
 
 # Inner product with a basis function: we choose the measure associated with the dictionary
-innerproduct(φ::BasisFunction, f; options...) =
-    innerproduct(φ, f, measure(φ); options...)
+innerproduct(φ::AbstractBasisFunction, g; options...) =
+    innerproduct(φ, g, measure(φ); options...)
+innerproduct(f, ψ::AbstractBasisFunction; options...) =
+    innerproduct(f, ψ, measure(ψ); options...)
+innerproduct(ϕ::AbstractBasisFunction, ψ::AbstractBasisFunction; options...) =
+    innerproduct(ϕ, ψ, defaultmeasure(dictionary(ϕ), dictionary(ψ)); options...)
 
 # The inner product between two basis functions: invoke the implementation of the dictionary
-innerproduct(φ::BasisFunction, ψ::BasisFunction, measure; options...) =
+innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; options...) =
     innerproduct(dictionary(φ), index(φ), dictionary(ψ), index(ψ), measure; options...)
 
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
-innerproduct(φ::BasisFunction, g, measure; options...) =
+innerproduct(φ::AbstractBasisFunction, g, measure; options...) =
     analysis_integral(dictionary(φ), index(φ), g, measure; options...)
+innerproduct(f, ψ::AbstractBasisFunction, measure; options...) =
+    conj(analysis_integral(dictionary(ψ), index(ψ), f, measure; options...))
 
 # We want to check whether the supports of the basis function and the measure differ.
 # The integral may be easier to evaluate by restricting to the intersection of these

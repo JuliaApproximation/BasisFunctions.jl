@@ -5,7 +5,41 @@ supports_approximation(s::Dictionary) = true
 supports_interpolation(s::Dictionary) = isbasis(s)
 # Pick a simple function to approximate
 suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
-suitable_function(s::Dictionary) = (x...) -> prod(x)
+suitable_function(s::Dictionary) = x -> prod(x)
+
+# Make a tensor product of suitable functions
+function suitable_function(dict::TensorProductDict)
+    if dimension(dict) == 2
+        f1 = suitable_function(element(dict,1))
+        f2 = suitable_function(element(dict,2))
+        (x,y) -> f1(x)*f2(y)
+    elseif dimension(dict) == 3
+        f1 = suitable_function(element(dict,1))
+        f2 = suitable_function(element(dict,2))
+        f3 = suitable_function(element(dict,3))
+        (x,y,z) -> f1(x)*f2(y)*f3(z)
+    end
+    # We should never get here
+end
+# Make a suitable function by undoing the map
+function suitable_function(dict::MappedDict)
+    f = suitable_function(superdict(dict))
+    m = inv(mapping(dict))
+    x -> f(m(x))
+end
+function suitable_function(dict::WeightedDict1d)
+    f = suitable_function(superdict(dict))
+    g = weightfunction(dict)
+    x -> g(x) * f(x)
+end
+function suitable_function(dict::WeightedDict2d)
+    f = suitable_function(superdict(dict))
+    g = weightfunction(dict)
+    (x,y) -> g(x, y) * f(x, y)
+end
+suitable_function(dict::OperatedDict) = suitable_function(src(dict))
+
+
 
 function suitable_interpolation_grid(basis::Dictionary)
     if BF.hasinterpolationgrid(basis)
@@ -172,6 +206,10 @@ function test_generic_dict_approximation(basis)
     @test abs(e(x)-f(x...)) < 1e-3
 end
 
+truncate(d::Domain) = d
+truncate(d::FullSpace{T}) where {T} = -T(10)..T(10)
+truncate(d::ProductDomain) = ProductDomain(map(truncate, elements(d))...)
+
 function test_gram_projection(basis)
     if hasmeasure(basis)
         G = gram(basis)
@@ -179,25 +217,25 @@ function test_gram_projection(basis)
         @test dest(G) == basis
         n = length(basis)
         @test size(G) == (n,n)
-        z = zero(coefficienttype(basis))
+        z = zero(prectype(basis))
         for i in 1:n
             for j in 1:n
-                z += abs(G[i,j] - innerproduct(basis, i, basis, j))
+                DD = abs(G[i,j] - innerproduct(basis, i, basis, j))
+                z = max(z,abs(G[i,j] - innerproduct(basis, i, basis, j)))
             end
         end
-        @test abs(z) < 1000test_tolerance(domaintype(basis))
+        @test z < 1000test_tolerance(domaintype(basis))
 
         # No efficient implementation for BigFloat to construct full gram matrix.
         if !(domaintype(basis)==BigFloat)
             f = suitable_function(basis)
-            e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
+            μ = measure(basis)
+            # Do we compute the projection integrals accurately?
+            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weight(μ,t), truncate(support(basis, 1)))
+            @test abs(innerproduct(t->f(t...), basis[1]) - Z)/abs(Z) < 1e-1
+            @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
+            e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)
             x = random_point_in_domain(basis)
-            if basis isa MappedDict
-                @show e
-                @show x
-                @show f(x...)
-                @show e(x)
-            end
             @test abs(e(x)-f(x...)) < 1e-3
         end
     end

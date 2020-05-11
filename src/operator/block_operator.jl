@@ -115,9 +115,6 @@ function apply!(op::BlockOperator, coef_dest, coef_src)
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::AbstractVector, coef_src::AbstractVector, scratch_src, scratch_dest)
-    @show typeof(scratch_src)
-    @show typeof(scratch_dest)
-    return coef_dest
     delinearize_coefficients!(scratch_src, coef_src)
     apply_block_operator!(op, scratch_dest, scratch_src, scratch_src, scratch_dest)
     linearize_coefficients!(coef_dest, scratch_dest)

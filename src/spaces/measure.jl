@@ -68,23 +68,37 @@ strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(
 # For mapped measures, we can undo the map and leave out the jacobian in the
 # weight function of the measure by going to the supermeasure
 
-function DomainIntegrals.quadrature_m(qs, integrand, domain::DomainSets.MappedDomain, μ::MappedMeasure, sing)
+using DomainIntegrals: Identity,
+    process_measure_default
+
+const id = Identity()
+
+import DomainIntegrals: islebesguemeasure,
+    process_measure
+
+
+
+function process_measure(qs, domain::DomainSets.MappedDomain, μ::MappedMeasure, sing)
     # TODO: think about what to do with the singularity here
     # -> Move MappedMeasure into DomainIntegrals.jl and implement the logic there
     m1 = mapping(μ)
     m2 = forward_map(domain)
     if iscompatible(m1,m2)
-        integrand2 = x -> integrand(m1(x))
-        DomainIntegrals.quadrature(qs, integrand2, superdomain(domain), supermeasure(μ), sing)
+        # f -> f(m1(x))
+        pre2, map2, domain2, μ2, sing =
+            process_measure(qs, superdomain(domain), supermeasure(μ), sing)
+        pre2, m1 ∘ map2, domain2, μ2, sing
     else
-        DomainIntegrals.quadrature_d(qs, integrand, domain, μ, sing)
+        id, id, domain, μ, sing
     end
 end
 
-function DomainIntegrals.quadrature_m(qs, integrand, domain, μ::MappedMeasure, sing)
-    m = mapping(μ)
-    integrand2 = x -> integrand(m(x))
-    DomainIntegrals.quadrature(qs, integrand2, mapped_domain(m, domain), supermeasure(μ), sing)
+function process_measure(qs, domain, μ::MappedMeasure, sing)
+    # f -> f(m(x))
+    map1 = mapping(μ)
+    pre2, map2, domain2, μ2, sing =
+        process_measure(qs, mapped_domain(map1, domain), supermeasure(μ), sing)
+    pre2, map1 ∘ map2, domain2, μ2, sing
 end
 
 
@@ -110,6 +124,9 @@ end
 ProductMeasure{T}(measures::Measure...) where {T} =
     ProductMeasure{T,typeof(measures)}(measures)
 
+
+islebesguemeasure(μ::ProductMeasure) = all(map(islebesguemeasure, elements(μ)))
+
 productmeasure(measures::Measure...) = ProductMeasure(measures...)
 
 elements(m::ProductMeasure) = m.measures
@@ -120,6 +137,31 @@ isnormalized(m::ProductMeasure) = mapreduce(isnormalized, &, elements(m))
 support(m::ProductMeasure{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
 
 unsafe_weight(m::ProductMeasure, x) = mapreduce(unsafe_weight, *, elements(m), x)
+
+# For product domains, process the measures dimension per dimension
+function process_measure(qs, domain::ProductDomain, μ::ProductMeasure, sing)
+    if numelements(domain) == numelements(μ)
+        if numelements(domain) == 2
+            pre1, map1, domain1, μ1, sing1 = process_measure(qs, element(domain, 1), element(μ, 1), sing)
+            pre2, map2, domain2, μ2, sing2 = process_measure(qs, element(domain, 2), element(μ, 2), sing)
+            prefactor = t -> pre1(t[1])*pre2(t[2])
+            map = t -> SA[map1(t[1]), map2(t[2])]
+            prefactor, map, ProductDomain(domain1, domain2), productmeasure(μ1, μ2), sing
+        elseif numelements(domain) == 3
+            pre1, map1, domain1, μ1, sing1 = process_measure(qs, element(domain, 1), element(μ, 1), sing)
+            pre2, map2, domain2, μ2, sing2 = process_measure(qs, element(domain, 2), element(μ, 2), sing)
+            pre3, map3, domain3, μ3, sing3 = process_measure(qs, element(domain, 3), element(μ, 3), sing)
+            prefactor = t -> pre1(t[1])*pre2(t[2])*pre3(t[3])
+            map = t -> SA[map1(t[1]), map2(t[2]), map3(t[3])]
+            prefactor, map, ProductDomain(domain1, domain2, domain3), productmeasure(μ1, μ2, μ3), sing
+        else
+            process_measure_default(qs, domain, μ, sing)
+        end
+    else
+        process_measure_default(qs, domain, μ, sing)
+    end
+end
+
 
 function stencilarray(m::ProductMeasure)
     A = Any[]

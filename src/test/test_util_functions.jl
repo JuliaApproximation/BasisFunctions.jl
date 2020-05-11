@@ -66,7 +66,7 @@ point_outside_domain(basis::Hermite) = one(domaintype(basis))+im
 function random_point_in_domain(basis::Dictionary)
     T = numtype(domaintype(basis))
     w = one(T) * rand()
-    p =  point_in_domain(basis, w)
+    p = point_in_domain(basis, w)
     in_support(basis, p) ? p : random_point_in_domain(basis)
 end
 
