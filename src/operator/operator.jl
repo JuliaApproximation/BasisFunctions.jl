@@ -209,10 +209,10 @@ end
 
 function getindex(op::DictionaryOperator, i, j)
 	checkbounds(op, i, j)
-	unsafe_getindex(op, i, j)
+	unsafe_op_getindex(op, i, j)
 end
 
-function unsafe_getindex(op::DictionaryOperator, i, j)
+function unsafe_op_getindex(op::DictionaryOperator, i, j)
 	T = eltype(op)
 	coef_src = zeros(T, src(op))
 	coef_dest = zeros(T, dest(op))
@@ -232,20 +232,20 @@ function diag(op::DictionaryOperator)
         # Convert to vector
         linearize_coefficients(dest(op), diagonal_native)
     else
-		# Compute the diagonal by calling unsafe_diag for each index
-        [unsafe_diag(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
+		# Compute the diagonal by calling unsafe_op_diag for each index
+        [unsafe_op_diag(op, i) for i in 1:min(length(src(op)),length(dest(op)))]
     end
 end
 
 "Return the diagonal element op[i,i] of the operator."
 function diag(op::DictionaryOperator, i)
-	# Perform bounds checking and call unsafe_diag
+	# Perform bounds checking and call unsafe_op_diag
 	checkbounds(op, i, i)
-	unsafe_diag(op, i)
+	unsafe_op_diag(op, i)
 end
 
-# Default behaviour: call unsafe_getindex
-unsafe_diag(op::DictionaryOperator, i) = unsafe_getindex(op, i, i)
+# Default behaviour: call unsafe_op_getindex
+unsafe_op_diag(op::DictionaryOperator, i) = unsafe_op_getindex(op, i, i)
 
 # We provide a default implementation for diagonal operators
 function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))

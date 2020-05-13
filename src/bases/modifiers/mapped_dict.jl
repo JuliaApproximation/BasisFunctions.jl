@@ -17,6 +17,7 @@ struct MappedDict{D,M,S,T} <: DerivedDict{S,T}
 end
 
 const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
+const MappedDict2d{D,M,S <: SVector{2},T <: Number} = MappedDict{D,M,S,T}
 
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
@@ -39,9 +40,12 @@ mapping(dict::MappedDict) = dict.map
 
 similardictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
-hasderivative(dict::MappedDict) =
+hasderivative(dict::MappedDict) = false
+hasantiderivative(dict::MappedDict) = false
+
+hasderivative(dict::MappedDict1d) =
     hasderivative(superdict(dict)) && isaffine(mapping(dict))
-hasantiderivative(dict::MappedDict) =
+hasantiderivative(dict::MappedDict1d) =
     hasantiderivative(superdict(dict)) && isaffine(mapping(dict))
 
 interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict))
@@ -64,10 +68,20 @@ isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 unsafe_eval_element(s::MappedDict, idx, y) =
     unsafe_eval_element(superdict(s), idx, leftinverse(mapping(s), y))
 
-function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
+function unsafe_eval_element_derivative(s::MappedDict1d, idx, y, order)
+    @assert order == 1
     x = leftinverse(mapping(s), y)
-    d = unsafe_eval_element_derivative(superdict(s), idx, x)
-    z = d / jacobian(mapping(s), y)
+    d = unsafe_eval_element_derivative(superdict(s), idx, x, order)
+    z = d / jacdet(mapping(s), y)
+end
+
+function unsafe_eval_element_derivative(dict::MappedDict, idx, y, order)
+    @assert maximum(order) <= 1
+    m = mapping(dict)
+    x = leftinverse(m, y)
+    J = jacobian(m, y)
+    g = eval_gradient(superdict(dict), idx, x)
+    sum(order .* (J' \ g))
 end
 
 function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
@@ -180,18 +194,47 @@ end
 # Differentiation
 ###################
 
+# TODO: enable derivative
 function derivative_dict(Φ::MappedDict, order; options...)
-    @assert isaffine(mapping(Φ))
-    similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
+    map = mapping(Φ)
+    superdiff = similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
+    if isaffine(map)
+        superdiff
+    elseif jacobian(map) isa ConstantMap
+        superdiff
+    else
+        (t -> 1/jacdet(map, t)) * superdiff
+    end
 end
 
 function antiderivative_dict(Φ::MappedDict, order; options...)
-    @assert isaffine(mapping(Φ))
-    similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    map = mapping(Φ)
+    if isaffine(map)
+        similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    elseif jacobian(map) isa ConstantMap
+        similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    else
+        error("Don't know the antiderivative of a dictionary mapped by $(map)")
+    end
 end
 
 # TODO: generalize to other orders
 function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
+    @assert isaffine(mapping(dsrc))
+    D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
+    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))
+    wrap_operator(dsrc, ddest, S*D)
+end
+
+function differentiation(::Type{T}, dsrc::MappedDict1d, ddest, order::Int; options...) where {T}
+    @assert order == 1
+    @assert ddest isa WeightedDict1d
+    @assert iscompatible(mapping(dsrc), mapping(superdict(ddest)))
+    D = differentiation(T, superdict(dsrc), superdict(superdict(ddest)), order; options...)
+    wrap_operator(dsrc, ddest, D)
+end
+
+function differentiation(::Type{T}, dsrc::MappedDict, ddest::MappedDict, order::Int; options...) where {T}
     @assert isaffine(mapping(dsrc))
     D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
     S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))

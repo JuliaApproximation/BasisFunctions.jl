@@ -24,6 +24,9 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::AbstractShiftedIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
+checkbounds(::Type{Bool}, dict::Dictionary, idx::NTuple{N,Int}) where {N} =
+    checkbounds(Bool, d, CartesianIndex(idx))
+
 
 # And here we call checkbounds_indices with indices(dict)
 @inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, axes(dict), I)
@@ -156,28 +159,57 @@ end
 This function is exactly like `eval_element`, but it evaluates the derivative
 of the element instead.
 """
-function eval_element_derivative(dict::Dictionary, idx, x, order...)
-    idxn = native_index(dict, idx)
-    @boundscheck checkbounds(dict, idxn)
-    unsafe_eval_element_derivative1(dict, idxn, x, order...)
+eval_element_derivative(dict::Dictionary, idx, x) =
+    eval_element_derivative(dict, idx, x, difforder(dict))
+
+function eval_element_derivative(dict::Dictionary, idx, x, order)
+    if orderiszero(order)
+        eval_element(dict, idx, x)
+    else
+        idxn = native_index(dict, idx)
+        @boundscheck checkbounds(dict, idxn)
+        unsafe_eval_element_derivative1(dict, idxn, x, order)
+    end
 end
 
-function eval_element_derivative(dict::Dictionary, idx::Int, x, order...)
+function eval_element_derivative(dict::Dictionary, idx::Int, x, order)
+    if orderiszero(order)
+        eval_element(dict, idx, x)
+    else
+        @boundscheck checkbounds(dict, idx)
+        unsafe_eval_element_derivative1(dict, native_index(dict, idx), x, order)
+    end
+end
+
+function eval_element_extension_derivative(dict::Dictionary, idx, x, order)
+    if orderiszero(order)
+        eval_element_extension(dict, idx, x)
+    else
+        @boundscheck checkbounds(dict, idx)
+        unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order)
+    end
+end
+
+function unsafe_eval_element_derivative1(dict::Dictionary, idx, x, order)
+    in_support(dict, idx, x) ? unsafe_eval_element_derivative(dict, idx, x, order) : zero(codomaintype(dict))
+end
+
+# Fallback, may throw StackOverFlowError if the method is not defined for native indices
+unsafe_eval_element_derivative(dict::Dictionary, idx, x, order) =
+    unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order)
+
+eval_gradient(dict::Dictionary, idx, x) = _eval_gradient(dict, idx, x, domaintype(dict))
+
+_eval_gradient(dict, idx, x, ::Type{<:Number}) = eval_element_derivative(dict, idx, x, 1)
+
+function _eval_gradient(dict, idx, x, ::Type{SVector{N,T}}) where {N,T}
     @boundscheck checkbounds(dict, idx)
-    unsafe_eval_element_derivative1(dict, native_index(dict, idx), x, order...)
+    if in_support(dict, x)
+        SVector{N,codomaintype(dict)}((unsafe_eval_element_derivative(dict, idx, x, dimension_tuple(Val{N}(), dim)) for dim in 1:N)...)
+    else
+        zero(SVector{N,codomaintype(dict)})
+    end
 end
-
-function eval_element_extension_derivative(dict::Dictionary, idx, x, order...)
-    @boundscheck checkbounds(dict, idx)
-    unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order...)
-end
-
-function unsafe_eval_element_derivative1(dict::Dictionary, idx, x, order...)
-    in_support(dict, idx, x) ? unsafe_eval_element_derivative(dict, idx, x, order...) : zero(codomaintype(dict))
-end
-
-unsafe_eval_element_derivative(dict::Dictionary, idx, x, order...) =
-    unsafe_eval_element_derivative(dict, native_index(dict, idx), x, order...)
 
 """
 Evaluate an expansion given by the set of coefficients in the point x.

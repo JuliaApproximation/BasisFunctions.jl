@@ -152,10 +152,10 @@ unsafe_eval_element(set::CompositeDict, idx::Int, x) = unsafe_eval_element(set, 
 unsafe_eval_element(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
     convert(T, unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x))
 
-unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x)
+unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x, order) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x, order)
 
-unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
-    convert(T, unsafe_eval_element_derivative( element(set, outerindex(idx)), innerindex(idx), x))
+unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x, order) where {S,T} =
+    convert(T, unsafe_eval_element_derivative( element(set, outerindex(idx)), innerindex(idx), x, order))
 
 
 derivative_dict(s::CompositeDict, order; options...) =

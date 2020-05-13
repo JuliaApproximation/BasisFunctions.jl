@@ -46,8 +46,10 @@ function getindex(dict::Dictionary, idx)
     @boundscheck checkbounds(dict, idx)
     basisfunction(dict, idx)
 end
-getindex(dict::Dictionary, i, j, indices...) =
-    getindex(dict, (i,j,indices...))
+function getindex(dict::Dictionary, i, j, indices...)
+    @boundscheck checkbounds(dict, i, j, indices...)
+    basisfunction(dict, (i,j,indices...))
+end
 
 
 

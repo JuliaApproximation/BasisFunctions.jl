@@ -168,7 +168,8 @@ function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
 	z
 end
 
-function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x, order::Int = 1)
+function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x, order)
+	@assert order >= 0
 	f = exponent(b, idxn)
 	z = f^order * exp(f * x)
 	if iscosine(b, idxn)

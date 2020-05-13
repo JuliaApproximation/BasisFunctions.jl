@@ -196,13 +196,21 @@ support(s::TensorProductDict, idx::ProductIndex) = cartesianproduct(map(support,
 # We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
 # unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
-unsafe_eval_element(set::TensorProductDict, idx::ProductIndex, x) = _unsafe_eval_element(set, elements(set), idx, x)
+unsafe_eval_element(dict::TensorProductDict, idx::ProductIndex, x) =
+    _unsafe_eval_element(dict, elements(dict), idx, x)
 
-_unsafe_eval_element(s::TensorProductDict, dicts, i, x) =
+_unsafe_eval_element(dict::TensorProductDict, dicts, i, x) =
     mapreduce(unsafe_eval_element, *, dicts, i, x)
-_unsafe_eval_element(s::TensorProductDict, dicts, i::CartesianIndex, x) =
+_unsafe_eval_element(dict::TensorProductDict, dicts, i::CartesianIndex, x) =
     mapreduce(unsafe_eval_element, *, dicts, Tuple(i), x)
 
+unsafe_eval_element_derivative(dict::TensorProductDict, idx::ProductIndex, x, order) =
+    _unsafe_eval_element_derivative(dict, elements(dict), idx, x, order)
+
+_unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i, x, order) =
+    mapreduce(unsafe_eval_element_derivative, *, dicts, i, x, order)
+_unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i::CartesianIndex, x, order) =
+    mapreduce(unsafe_eval_element_derivative, *, dicts, Tuple(i), x, order)
 
 hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)

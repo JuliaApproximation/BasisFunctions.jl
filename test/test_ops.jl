@@ -120,11 +120,11 @@ function test_ops_generic(ops)
     γ = leading_order_coefficient(ops, length(ops))
     @test abs(z1 - γ*z3) < tol
 
-    d1 = BasisFunctions.unsafe_eval_element_derivative(ops, length(ops), x)
+    d1 = BasisFunctions.unsafe_eval_element_derivative(ops, length(ops), x, 1)
     d2 = recurrence_eval_derivative(ops, length(ops), x)
     @test abs(d1-d2) < tol
 
-    if codomaintype(ops) == Float64
+    if prectype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
         r = roots(ops)
         @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol

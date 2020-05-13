@@ -94,6 +94,8 @@ dict_in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 # Indexing and iteration
 #########################
 
+IndexStyle(dict::DerivedDict) = IndexStyle(superdict(dict))
+
 native_index(dict::DerivedDict, idx) = native_index(superdict(dict), idx)
 
 linear_index(dict::DerivedDict, idxn) = linear_index(superdict(dict), idxn)
@@ -113,8 +115,8 @@ linear_size(s::DerivedDict, size_n) = linear_size(superdict(s), size_n)
 
 unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
 
-unsafe_eval_element_derivative(s::DerivedDict, idx, x) =
-    unsafe_eval_element_derivative(superdict(s), idx, x)
+unsafe_eval_element_derivative(s::DerivedDict, idx, x, order) =
+    unsafe_eval_element_derivative(superdict(s), idx, x, order)
 
 
 #########################

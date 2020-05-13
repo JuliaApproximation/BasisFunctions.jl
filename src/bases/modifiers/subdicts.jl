@@ -90,7 +90,7 @@ dict_in_support(d::Subdictionary, i, x) = in_support(superdict(d), superindices(
 
 unsafe_eval_element(d::Subdictionary, i, x) = unsafe_eval_element(superdict(d), superindices(d, i), x)
 
-unsafe_eval_element_derivative(d::Subdictionary, i, x) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x)
+unsafe_eval_element_derivative(d::Subdictionary, i, x, order) = unsafe_eval_element_derivative(superdict(d), superindices(d, i), x, order)
 
 hasmeasure(dict::Subdictionary) = hasmeasure(superdict(dict))
 measure(dict::Subdictionary) = measure(superdict(dict))

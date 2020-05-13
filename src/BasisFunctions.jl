@@ -39,7 +39,7 @@ import Base:
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
     first, last, copyto!,
     transpose, inv, hcat, vcat, hvcat,
-    getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
+    getindex, setindex!, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1,
     broadcast, similar,
     checkbounds, checkbounds_indices, checkindex,
@@ -71,6 +71,7 @@ import DomainSets:
     # maps
     matrix, vector,
     forward_map, inverse_map, image,
+    applymap, jacobian,
     # composite types
     iscomposite, element, elements, numelements,
     # products
@@ -131,14 +132,10 @@ export tensorproduct, ⊗,
 export ishomogeneous, basetype
 
 
-# from grid/productgrid.jl
+# from GridArrays
 export ProductGrid
-
-# from grid/subgrid.jl
 export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
     similar_subgrid
-
-# from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
@@ -161,7 +158,7 @@ export SparseOperator
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, domain, codomain,
     measure, hasmeasure,
-    eval_expansion, eval_element, eval_element_derivative,
+    eval_expansion, eval_element, eval_element_derivative, eval_gradient,
     name,
     resize,
     ordering,

@@ -27,6 +27,11 @@ function suitable_function(dict::MappedDict)
     m = inv(mapping(dict))
     x -> f(m(x))
 end
+function suitable_function(dict::BasisFunctions.MappedDict2d)
+    f = suitable_function(superdict(dict))
+    m = inv(mapping(dict))
+    (x,y) -> f(m(x,y)...)
+end
 function suitable_function(dict::WeightedDict1d)
     f = suitable_function(superdict(dict))
     g = weightfunction(dict)
@@ -47,7 +52,7 @@ function suitable_interpolation_grid(basis::Dictionary)
     else
         T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
-        MidpointEquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
+        MidpointEquispacedGrid(length(basis), affine_point_in_domain(basis, T(0)), affine_point_in_domain(basis, T(1)))
     end
 end
 
@@ -179,7 +184,7 @@ function test_generic_dict_codomaintype(basis)
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, FT(0.5))) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(affine_point_in_domain(basis, FT(0.5))) ]
         if length(basis) > 1
             indices = [1 2 n>>1 n-1 n]
         else
@@ -506,9 +511,9 @@ function test_generic_dict_interface(basis)
         E = extension(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1
-        x1 = point_in_domain(basis, 1/2)
+        x1 = affine_point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
-        x2 = point_in_domain(basis, 0.3)
+        x2 = affine_point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
         R = restriction(basis2, basis)

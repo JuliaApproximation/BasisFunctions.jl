@@ -8,7 +8,7 @@ BF = BasisFunctions
 using BasisFunctions: dimension_tuple
 
 export Delimit, delimit
-export point_in_domain, point_outside_domain, random_point_in_domain, fixed_point_in_domain
+export affine_point_in_domain, point_outside_domain, random_point_in_domain, fixed_point_in_domain
 export random_index
 export test_tolerance
 include("test_util_functions.jl")
