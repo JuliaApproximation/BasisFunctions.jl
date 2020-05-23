@@ -1,6 +1,8 @@
 module test_suite
 
-using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays
+using BasisFunctions, BasisFunctions.Test,
+    StaticArrays,
+    DomainSets, DomainIntegrals
 
 import BasisFunctions.Test:
     supports_approximation,

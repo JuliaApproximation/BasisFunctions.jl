@@ -171,7 +171,6 @@ adjoint(op::OperatorSum) = OperatorSum(adjoint(op.op1), adjoint(op.op2), conj(op
 
 pinv(op::OperatorSum) = OperatorSum(pinv(op.op1), pinv(op.op2), op.val1, op.val2)
 
-iscomposite(op::OperatorSum) = true
 isdiag(op::OperatorSum) = isdiag(op.op1) && isdiag(op.op2)
 
 

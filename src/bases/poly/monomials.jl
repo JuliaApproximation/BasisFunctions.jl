@@ -9,16 +9,24 @@ end
 
 Monomials(n) = Monomials{Float64}(n)
 
+name(dict::Monomials) = "Monomials"
+
 support(dict::Monomials{T}) where {T} = DomainSets.FullSpace{T}()
 
 size(dict::Monomials) = (dict.n,)
 
 unsafe_eval_element(b::Monomials, idxn::PolynomialDegree, x) = x^degree(idxn)
 
-function unsafe_eval_element_derivative(b::Monomials, idxn::PolynomialDegree, x)
+function unsafe_eval_element_derivative(b::Monomials{T}, idxn::PolynomialDegree, x, order) where {T}
+    @assert order > 0
     i = degree(idxn)
-    T = codomaintype(b)
-    i == 0 ? zero(T) : i*x^(i-1)
+    if order > i
+        zero(T)
+    elseif order == 1
+        i*x^(i-1)
+    else
+        factorial(i) / factorial(i-order) * x^(i-order)
+    end
 end
 
 similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)

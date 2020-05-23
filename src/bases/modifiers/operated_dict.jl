@@ -167,13 +167,15 @@ end
 differentiation(::Type{T}, dsrc::OperatedDict, ddest::Dictionary, order; options...) where {T} =
 	differentiation(T, dest(dsrc), ddest, order; options...) * operator(dsrc)
 
-unsafe_eval_element_derivative(dict::OperatedDict, i, x) =
-    _unsafe_eval_element_derivative(dict, i, x, operator(dict), dict.scratch_src, dict.scratch_dest)
+function unsafe_eval_element_derivative(dict::OperatedDict, i, x, order)
+	@assert order == 1
+    _unsafe_eval_element_derivative(dict, i, x, order, operator(dict), dict.scratch_src, dict.scratch_dest)
+end
 
-function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
+function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
     if isdiag(op)
-        diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x)
+        diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x, order)
     else
         scratch_src[idx] = 1
         apply!(op, scratch_dest, scratch_src)

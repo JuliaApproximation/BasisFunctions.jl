@@ -22,12 +22,7 @@ abstract type CompositeDict{S,T} <: Dictionary{S,T}
 end
 
 # We assume that every subset has an indexable field called dicts
-iscomposite(set::CompositeDict) = true
 elements(set::CompositeDict) = set.dicts
-elements(set::Dictionary) = (set,)
-element(set::CompositeDict, j) = set.dicts[j]
-element(set::Dictionary, j) = (@assert j==1; (set,))
-numelements(set::CompositeDict) = length(elements(set))
 
 # For a generic implementation of range indexing, we need a 'similardictionary' function
 # to create a new set of the same type as the given set.
@@ -97,12 +92,12 @@ for op in (:isreal, )
 end
 
 for op in (:hasderivative, :hasantiderivative, :hasextension)
-    @eval $op(set::CompositeDict) = reduce(&, map($op, elements(set)))
+    @eval $op(set::CompositeDict) = mapreduce($op, &, elements(set))
 end
 hasderivative(Φ::CompositeDict, order) =
-    reduce(&, map(hasderivative, elements(Φ)))
+    mapreduce(hasderivative, &, elements(Φ))
 hasantiderivative(Φ::CompositeDict, order) =
-    reduce(&, map(hasantiderivative, elements(Φ)))
+    mapreduce(hasantiderivative, &, elements(Φ))
 
 coefficienttype(dict::CompositeDict) = coefficienttype(element(dict,1))
 
@@ -157,10 +152,10 @@ unsafe_eval_element(set::CompositeDict, idx::Int, x) = unsafe_eval_element(set, 
 unsafe_eval_element(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
     convert(T, unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x))
 
-unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x)
+unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x, order) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x, order)
 
-unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
-    convert(T, unsafe_eval_element_derivative( element(set, outerindex(idx)), innerindex(idx), x))
+unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x, order) where {S,T} =
+    convert(T, unsafe_eval_element_derivative( element(set, outerindex(idx)), innerindex(idx), x, order))
 
 
 derivative_dict(s::CompositeDict, order; options...) =

@@ -14,8 +14,6 @@ using RecipesBase
 
 using Reexport, AbstractTrees
 
-@reexport using GridArrays
-import GridArrays: subindices, resize
 
 ## Some specific functions we merely use
 
@@ -41,7 +39,7 @@ import Base:
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
     first, last, copyto!,
     transpose, inv, hcat, vcat, hvcat,
-    getindex, setindex!, unsafe_getindex, eltype, @propagate_inbounds,
+    getindex, setindex!, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1,
     broadcast, similar,
     checkbounds, checkbounds_indices, checkindex,
@@ -73,8 +71,9 @@ import DomainSets:
     # maps
     matrix, vector,
     forward_map, inverse_map, image,
+    applymap, jacobian,
     # composite types
-    element, elements, numelements,
+    iscomposite, element, elements, numelements,
     # products
     tensorproduct, cartesianproduct, ×,
     # utils
@@ -85,17 +84,18 @@ import DomainIntegrals:
     AbstractMeasure, Measure, DiscreteMeasure,
     support,
     weight, weightfunction,
-    unsafe_weight, unsafe_weightfunction, weight1,
+    unsafe_weight, unsafe_weightfunction,
     unsafe_discrete_weight,
     points, weights,
     isnormalized, iscontinuous, isdiscrete
 
-export .., numtype
+export .., numtype, integral
+
+@reexport using GridArrays
+import GridArrays: subindices, resize, name,
+    apply_map, mapping, coverdomain
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
-import GridArrays:
-    iscomposite, apply_map, mapping,
-    coverdomain
 
 @deprecate support(g::AbstractGrid) coverdomain(g)
 
@@ -120,7 +120,6 @@ export LinearIndex, NativeIndex,
 
 # from util/domain_extensions.jl
 export interval, circle, sphere, disk, ball, rectangle, cube, simplex
-# export Domain1d, Domain2d, Domain3d, Domain4d
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition,
@@ -133,14 +132,10 @@ export tensorproduct, ⊗,
 export ishomogeneous, basetype
 
 
-# from grid/productgrid.jl
+# from GridArrays
 export ProductGrid
-
-# from grid/subgrid.jl
 export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
     similar_subgrid
-
-# from grid/mappedgrid.jl
 export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
@@ -163,7 +158,7 @@ export SparseOperator
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, domain, codomain,
     measure, hasmeasure,
-    eval_expansion, eval_element, eval_element_derivative,
+    eval_expansion, eval_element, eval_element_derivative, eval_gradient,
     name,
     resize,
     ordering,

@@ -319,49 +319,51 @@ copyto!(D1::IndexMatrix, D2::AbstractArray) = error("Not possible")
 
 isefficient(::IndexMatrix) = true
 
-Base.getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
-    (@boundscheck checkbounds(A,i,j);
-    Base.unsafe_getindex(A, i, j))
+@propagate_inbounds function getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T}
+    @boundscheck checkbounds(A,i,j)
+    unsafe_array_getindex(A, i, j)
+end
 
-Base.getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
-    Base.getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
+@propagate_inbounds getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
 
-function Base.getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N}
+@propagate_inbounds function Base.getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N}
     @boundscheck checkbounds(subindices(A), j)
     @boundscheck i∈CartesianIndices(CartesianIndex(_original_size(A))) || throw(BoundsError())
-    Base.unsafe_getindex(A, i, j)
+    unsafe_array_getindex(A, i, j)
 end
 
-Base.unsafe_getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
-    Base.unsafe_getindex(subindices(A),j) == i ? one(T) :  zero(T)
+unsafe_array_getindex(A::ExtensionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+     @inbounds getindex(subindices(A),j) == i ? one(T) :  zero(T)
 
-Base.unsafe_getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
-    Base.unsafe_getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
+unsafe_array_getindex(A::ExtensionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    unsafe_array_getindex(A, CartesianIndices(CartesianIndex(_original_size(A)))[i], j)
 
-Base.unsafe_getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N} =
-    Base.unsafe_getindex(subindices(A),j)==i ? one(T) :  zero(T)
+unsafe_array_getindex(A::ExtensionIndexMatrix{T,N}, i::CartesianIndex{N}, j::Int) where {T,N} =
+    @inbounds getindex(subindices(A),j)==i ? one(T) :  zero(T)
 
-Base.getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
-    (@boundscheck checkbounds(A,i,j);
-    Base.unsafe_getindex(A, i, j))
+@propagate_inbounds function getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T}
+    @boundscheck checkbounds(A,i,j)
+    unsafe_array_getindex(A, i, j)
+end
 
-Base.getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
-    Base.getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
+@propagate_inbounds getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
 
-function Base.getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,N}
+@propagate_inbounds function getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,N}
     @boundscheck checkbounds(subindices(A), i)
     @boundscheck j∈CartesianIndices(CartesianIndex(_original_size(A))) || throw(BoundsError())
-    Base.unsafe_getindex(A, i, j)
+    unsafe_array_getindex(A, i, j)
 end
 
-Base.unsafe_getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
-    Base.unsafe_getindex(subindices(A),i)==j ? one(T) :  zero(T)
+unsafe_array_getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} =
+    @inbounds getindex(subindices(A),i)==j ? one(T) :  zero(T)
 
-Base.unsafe_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
-    Base.unsafe_getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
+unsafe_array_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
+    unsafe_array_getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
 
-Base.unsafe_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,I,N} =
-    Base.unsafe_getindex(subindices(A),i)==j  ? one(T) :  zero(T)
+unsafe_array_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,I,N} =
+    @inbounds getindex(subindices(A),i)==j  ? one(T) :  zero(T)
 
 Base.eltype(::IndexMatrix{T}) where T = T
 

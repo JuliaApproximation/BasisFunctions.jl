@@ -61,7 +61,8 @@ ordering(b::CosineSeries) = ShiftedIndexList(length(b), CosineFrequency)
 unsafe_eval_element(b::CosineSeries{T}, idx::CosineFrequency, x) where {T} =
     cospi(T(x) * frequency(idx))
 
-function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency, x) where {T}
+function unsafe_eval_element_derivative(b::CosineSeries{T}, idx::CosineFrequency, x, order) where {T}
+	@assert order == 1
     arg = T(pi) * frequency(idx)
     -arg * sin(arg * x)
 end

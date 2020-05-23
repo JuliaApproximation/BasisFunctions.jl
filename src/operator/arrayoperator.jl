@@ -249,6 +249,8 @@ function IdentityOperator{T}(src::Dictionary, dest = src) where {T}
     DiagonalOperator{T,typeof(diag)}(Diagonal(diag), src, dest)
 end
 
+isidentity(op::IdentityOperator) = true
+
 broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Ones{S,N}) where {T<:Number,S,N} =
     Ones{T}(axes(a))
 broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Zeros{S,N}) where {T<:Number,S,N} =

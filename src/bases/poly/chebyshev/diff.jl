@@ -1,14 +1,21 @@
 ##################
 # Differentiation
 ##################
-function unsafe_eval_element_derivative(b::ChebyshevT, idx::PolynomialDegree, x)
-    T = codomaintype(b)
-    d = degree(idx)
-    if d == 0
-        T(0)
-    else
-        d * unsafe_eval_element(ChebyshevU(length(b)), idx-1, x)
-    end
+
+function unsafe_eval_element_derivative(b::ChebyshevT{T}, idx::PolynomialDegree, x, order) where {T}
+	@assert order >= 0
+	if order == 0
+		unsafe_eval_element(b, idx, x)
+	elseif order == 1
+	    d = degree(idx)
+	    if d == 0
+	        zero(T)
+	    else
+	        d * unsafe_eval_element(ChebyshevU{T}(length(b)), idx-1, x)
+	    end
+	else
+		error("Higher order derivatives of Chebyshev polynomials not implemented.")
+	end
 end
 
 # Chebyshev differentiation is so common that we make it its own type

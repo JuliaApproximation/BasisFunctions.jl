@@ -17,20 +17,17 @@ struct MappedDict{D,M,S,T} <: DerivedDict{S,T}
 end
 
 const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
+const MappedDict2d{D,M,S <: SVector{2},T <: Number} = MappedDict{D,M,S,T}
 
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
 # Hence, the domain type of the map has to equal the domain type of the dictionary.
-MappedDict(dict::Dictionary{T1,T}, map::AbstractMap{T1,S}) where {S,T1,T} =
-    MappedDict{typeof(dict),typeof(map),S,T}(dict, map)
+MappedDict(dict::Dictionary{T1,T}, map::Map{T1}) where {T1,T} =
+    MappedDict{typeof(dict),typeof(map),codomaintype(map,T1),T}(dict, map)
 
-# If the parameters don't match, we may have to promote the map.
-# This does not (currently) work for all maps.
-function MappedDict(dict::Dictionary{S1,T1}, map::AbstractMap{S2,T2}) where {S1,S2,T1,T2}
-    S = promote_type(S1,S2)
-    MappedDict(ensure_domaintype(S, dict), DomainSets.update_eltype(map, S))
-end
+MappedDict(dict::Dictionary{S1,T1}, map::Map{S2}) where {S1,S2,T1} =
+    MappedDict(dict, convert(Map{S1}, map))
 
 mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
 
@@ -43,10 +40,13 @@ mapping(dict::MappedDict) = dict.map
 
 similardictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
 
-hasderivative(dict::MappedDict) =
-    hasderivative(superdict(dict)) && islinear(mapping(dict))
-hasantiderivative(dict::MappedDict) =
-    hasantiderivative(superdict(dict)) && islinear(mapping(dict))
+hasderivative(dict::MappedDict) = false
+hasantiderivative(dict::MappedDict) = false
+
+hasderivative(dict::MappedDict1d) =
+    hasderivative(superdict(dict)) && isaffine(mapping(dict))
+hasantiderivative(dict::MappedDict1d) =
+    hasantiderivative(superdict(dict)) && isaffine(mapping(dict))
 
 interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict))
 _grid(dict::MappedDict, sdict, map) = mapped_grid(interpolation_grid(sdict), map)
@@ -66,29 +66,39 @@ unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inv(mapping(d
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
 
 unsafe_eval_element(s::MappedDict, idx, y) =
-    unsafe_eval_element(superdict(s), idx, apply_left_inverse(mapping(s),y))
+    unsafe_eval_element(superdict(s), idx, leftinverse(mapping(s), y))
 
-function unsafe_eval_element_derivative(s::MappedDict1d, idx, y)
-    x = apply_left_inverse(mapping(s), y)
-    d = unsafe_eval_element_derivative(superdict(s), idx, x)
-    z = d / jacobian(mapping(s), y)
+function unsafe_eval_element_derivative(s::MappedDict1d, idx, y, order)
+    @assert order == 1
+    x = leftinverse(mapping(s), y)
+    d = unsafe_eval_element_derivative(superdict(s), idx, x, order)
+    z = d / jacdet(mapping(s), y)
+end
+
+function unsafe_eval_element_derivative(dict::MappedDict, idx, y, order)
+    @assert maximum(order) <= 1
+    m = mapping(dict)
+    x = leftinverse(m, y)
+    J = jacobian(m, y)
+    g = eval_gradient(superdict(dict), idx, x)
+    sum(order .* (J' \ g))
 end
 
 function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
     if in_support(s, first(eachindex(s)), y)
-        eval_expansion(superdict(s), coef, apply_left_inverse(mapping(s),y))
+        eval_expansion(superdict(s), coef, leftinverse(mapping(s), y))
     else
         zero(codomaintype(s))
     end
 end
 
-support(dict::MappedDict) = mapping(dict)*support(superdict(dict))
+support(dict::MappedDict) = DomainSets.map_domain(mapping(dict), support(superdict(dict)))
 
-support(dict::MappedDict, idx) = mapping(dict)*support(superdict(dict), idx)
+support(dict::MappedDict, idx) = mapping(dict).(support(superdict(dict), idx))
 
 function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
-    x = apply_left_inverse(mapping(set), y)
-    y1 = applymap(mapping(set), x)
+    x = leftinverse(mapping(set), y)
+    y1 = mapping(set)(x)
     if norm(y-y1) < threshold
         in_support(superdict(set), idx, x)
     else
@@ -185,25 +195,49 @@ end
 ###################
 
 function derivative_dict(Φ::MappedDict, order; options...)
-    @assert islinear(mapping(Φ))
-    similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
+    map = mapping(Φ)
+    superdiff = similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
+    if isaffine(map)
+        superdiff
+    elseif jacobian(map) isa ConstantMap
+        superdiff
+    else
+        # TODO: this is only correct in 1D
+        @assert order == 1
+        mi = inverse(map)
+        (t -> 1/jacdet(map, mi(t))) * superdiff
+    end
 end
 
 function antiderivative_dict(Φ::MappedDict, order; options...)
-    @assert islinear(mapping(Φ))
-    similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    map = mapping(Φ)
+    if isaffine(map)
+        similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    elseif jacobian(map) isa ConstantMap
+        similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
+    else
+        error("Don't know the antiderivative of a dictionary mapped by $(map)")
+    end
 end
 
 # TODO: generalize to other orders
 function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert islinear(mapping(dsrc))
+    @assert isaffine(mapping(dsrc))
     D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
     S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))
     wrap_operator(dsrc, ddest, S*D)
 end
 
+function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::DerivedDict, order; options...) where {T}
+    @assert order == 1
+    @assert ddest isa WeightedDict1d
+    @assert iscompatible(mapping(dsrc), mapping(superdict(ddest)))
+    D = differentiation(T, superdict(dsrc), superdict(superdict(ddest)), order; options...)
+    wrap_operator(dsrc, ddest, D)
+end
+
 function antidifferentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert islinear(mapping(dsrc))
+    @assert isaffine(mapping(dsrc))
     D = antidifferentiation(T, superdict(dsrc), superdict(ddest), order; options...)
     S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(order))
     wrap_operator(dsrc, ddest, S*D)
@@ -215,7 +249,7 @@ end
 #################
 
 # TODO: check for promotions here
-mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map*mapping(s))
+mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map ∘ mapping(s))
 
 mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
 

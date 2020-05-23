@@ -51,6 +51,7 @@ rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
 support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
 
 
+"A Chebyshev polynomial of the second kind"
 struct ChebyshevUPolynomial{T} <: OrthogonalPolynomial{T}
     degree  ::  Int
 end
@@ -69,3 +70,4 @@ basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, id
 basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))
 
 dictionary(p::ChebyshevUPolynomial{T}) where {T} = ChebyshevU{T}(degree(p)+1)
+index(p::ChebyshevUPolynomial) = degree(p)+1

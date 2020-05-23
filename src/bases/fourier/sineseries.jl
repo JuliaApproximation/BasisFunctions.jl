@@ -57,7 +57,8 @@ support(b::SineSeries{T}) where {T} = UnitInterval{T}()
 unsafe_eval_element(b::SineSeries{T}, idx::SineFrequency, x) where {T} =
     sinpi(T(x) * frequency(idx))
 
-function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x) where {T}
+function unsafe_eval_element_derivative(b::SineSeries{T}, idx::SineFrequency, x, order) where {T}
+	@assert order == 1
     arg = T(pi) * frequency(idx)
     arg * cos(arg * x)
 end

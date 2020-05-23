@@ -17,7 +17,7 @@ eltype(::Type{<:Dictionary{S,T}}) where {S,T} = TypedFunction{S,T}
 promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) where {S1,T1,S2,T2} =
     TypedFunction{promote_type(S1,S2),promote_type(T1,T2)}
 
-iscomposite(f::TypedFunction) = false
+
 
 "The supertype of functions that can be associated with a dictionary or a family of basis functions."
 abstract type AbstractBasisFunction{S,T} <: TypedFunction{S,T} end
@@ -46,23 +46,31 @@ function getindex(dict::Dictionary, idx)
     @boundscheck checkbounds(dict, idx)
     basisfunction(dict, idx)
 end
-getindex(dict::Dictionary, i, j, indices...) =
-    getindex(dict, (i,j,indices...))
+function getindex(dict::Dictionary, i, j, indices...)
+    @boundscheck checkbounds(dict, i, j, indices...)
+    basisfunction(dict, (i,j,indices...))
+end
 
 
 
 # Inner product with a basis function: we choose the measure associated with the dictionary
-innerproduct(φ::BasisFunction, f; options...) =
-    innerproduct(φ, f, measure(φ); options...)
+innerproduct(φ::AbstractBasisFunction, g; options...) =
+    innerproduct(φ, g, measure(φ); options...)
+innerproduct(f, ψ::AbstractBasisFunction; options...) =
+    innerproduct(f, ψ, measure(ψ); options...)
+innerproduct(ϕ::AbstractBasisFunction, ψ::AbstractBasisFunction; options...) =
+    innerproduct(ϕ, ψ, defaultmeasure(dictionary(ϕ), dictionary(ψ)); options...)
 
 # The inner product between two basis functions: invoke the implementation of the dictionary
-innerproduct(φ::BasisFunction, ψ::BasisFunction, measure; options...) =
+innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; options...) =
     innerproduct(dictionary(φ), index(φ), dictionary(ψ), index(ψ), measure; options...)
 
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
-innerproduct(φ::BasisFunction, g, measure; options...) =
+innerproduct(φ::AbstractBasisFunction, g, measure; options...) =
     analysis_integral(dictionary(φ), index(φ), g, measure; options...)
+innerproduct(f, ψ::AbstractBasisFunction, measure; options...) =
+    conj(analysis_integral(dictionary(ψ), index(ψ), f, measure; options...))
 
 # We want to check whether the supports of the basis function and the measure differ.
 # The integral may be easier to evaluate by restricting to the intersection of these

@@ -11,6 +11,8 @@ Rationals(n::Int) = Rationals{Float64}(n)
 
 Rationals{T}(n::Int) where {T} = Rationals(rand(T, n))
 
+name(dict::Rationals) = "Rational functions"
+
 size(dict::Rationals) = (length(dict.poles),)
 
 pole(dict::Rationals, idx) = dict.poles[idx]
@@ -19,7 +21,10 @@ unsafe_eval_element(dict::Rationals, idx::Int, x) = 1/(x-dict.poles[idx])
 
 support(dict::Rationals{T}) where {T} = DomainSets.FullSpace{T}()
 
-unsafe_eval_element_derivative(dict::Rationals, idx, x) = -1/(x-dict.poles[idx])^2
+function unsafe_eval_element_derivative(dict::Rationals, idx, x, order)
+    @assert order == 1
+    -1/(x-dict.poles[idx])^2
+end
 
 function similar(dict::Rationals, ::Type{T}, n::Int) where {T}
     @assert n == length(dict)

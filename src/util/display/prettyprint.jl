@@ -175,14 +175,12 @@ strings(m::AbstractMeasure) = (name(m), (string(support(m)),))
 # Map symbols and strings
 ####
 
-# This definition is missing from DomainSets
-iscomposite(m::AbstractMap) = false
-
 symbol(m::AbstractMap) = "M"
 
 strings(m::AbstractMap) = (string(m),)
 
-strings(m::AffineMap) = (string("Affine map y = ", m.a, " * x + ", m.b),)
+strings(m::DomainSets.AbstractAffineMap) = (string("Affine map: y = ", matrix(m), " * x + ", vector(m)),)
+strings(m::DomainSets.LinearMap) = (string("Linear map: y = ", matrix(m), " * x"),)
 
 
 #### Actual printing methods.
@@ -317,7 +315,7 @@ end
 
 function show_composite(io::IO, map::AbstractMap)
     print(io, "Map ")
-    show_composite_object(io, g)
+    show_composite_object(io, map)
 end
 
 
@@ -394,6 +392,19 @@ end
 object_parentheses(grid::ProductGrid) = true
 stencil_parentheses(grid::ProductGrid) = true
 
+
+function stencilarray(map::ProductMap)
+	A = Any[]
+    push!(A, element(map, 1))
+    for i in 2:numelements(map)
+        push!(A, " × ")
+        push!(A, element(map, i))
+    end
+    A
+end
+
+object_parentheses(map::ProductMap) = true
+stencil_parentheses(map::ProductMap) = true
 
 ## Printing
 

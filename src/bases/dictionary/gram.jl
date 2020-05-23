@@ -72,7 +72,7 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
     domain3 = support(measure)
 
     domain = domain1 ∩ domain2 ∩ domain3
-	qs = quadstrategy(promote_type(prectype(Φ1), prectype(Φ2)); options...)
+	qs = quadstrategy(prectype(Φ1, Φ2); options...)
     unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain, qs)
 end
 

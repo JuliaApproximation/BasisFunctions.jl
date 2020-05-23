@@ -18,7 +18,7 @@ end
 # In the constructor we check the domain and codomain types.
 # - The domain of the ParamDict is the same as the domain of the map.
 # - The map maps to the same type as elements of the domain
-ParamDict(dict::Dictionary{S,T}, map::AbstractMap{S,U}, image::Domain{U}) where {S,T,U} =
+ParamDict(dict::Dictionary{S,T}, map::Map{S}, image::Domain) where {S,T} =
     ParamDict{typeof(dict),typeof(map),S,T}(dict, map, image)
 
 param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)

@@ -5,7 +5,46 @@ supports_approximation(s::Dictionary) = true
 supports_interpolation(s::Dictionary) = isbasis(s)
 # Pick a simple function to approximate
 suitable_function(s::Dictionary1d) = x->exp(x/supremum(support(s)))
-suitable_function(s::Dictionary) = (x...) -> prod(x)
+suitable_function(s::Dictionary) = x -> prod(x)
+
+# Make a tensor product of suitable functions
+function suitable_function(dict::TensorProductDict)
+    if dimension(dict) == 2
+        f1 = suitable_function(element(dict,1))
+        f2 = suitable_function(element(dict,2))
+        (x,y) -> f1(x)*f2(y)
+    elseif dimension(dict) == 3
+        f1 = suitable_function(element(dict,1))
+        f2 = suitable_function(element(dict,2))
+        f3 = suitable_function(element(dict,3))
+        (x,y,z) -> f1(x)*f2(y)*f3(z)
+    end
+    # We should never get here
+end
+# Make a suitable function by undoing the map
+function suitable_function(dict::MappedDict)
+    f = suitable_function(superdict(dict))
+    m = inv(mapping(dict))
+    x -> f(m(x))
+end
+function suitable_function(dict::BasisFunctions.MappedDict2d)
+    f = suitable_function(superdict(dict))
+    m = inv(mapping(dict))
+    (x,y) -> f(m(x,y)...)
+end
+function suitable_function(dict::WeightedDict1d)
+    f = suitable_function(superdict(dict))
+    g = weightfunction(dict)
+    x -> g(x) * f(x)
+end
+function suitable_function(dict::WeightedDict2d)
+    f = suitable_function(superdict(dict))
+    g = weightfunction(dict)
+    (x,y) -> g(x, y) * f(x, y)
+end
+suitable_function(dict::OperatedDict) = suitable_function(src(dict))
+
+
 
 function suitable_interpolation_grid(basis::Dictionary)
     if BF.hasinterpolationgrid(basis)
@@ -13,7 +52,7 @@ function suitable_interpolation_grid(basis::Dictionary)
     else
         T = domaintype(basis)
         # A midpoint grid avoids duplication of the endpoints for a periodic basis
-        MidpointEquispacedGrid(length(basis), point_in_domain(basis, T(0)), point_in_domain(basis, T(1)))
+        MidpointEquispacedGrid(length(basis), affine_point_in_domain(basis, T(0)), affine_point_in_domain(basis, T(1)))
     end
 end
 
@@ -113,11 +152,7 @@ function test_generic_dict_evaluation(basis)
 
     # Test dictionary evaluation
     x = random_point_in_domain(basis)
-    if VERSION >= v"1.3"
-        @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
-    else
-        @test norm(BasisFunctions.dict_eval(basis,x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
-    end
+    @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
 end
 
 function test_generic_dict_coefficient_linearization(basis)
@@ -149,7 +184,7 @@ function test_generic_dict_codomaintype(basis)
     types_correct = true
     # The comma in the line below is important, otherwise the two static vectors
     # are combined into a statix matrix.
-    for x in [ fixed_point_in_domain(basis), rationalize(point_in_domain(basis, FT(0.5))) ]
+    for x in [ fixed_point_in_domain(basis), rationalize(affine_point_in_domain(basis, FT(0.5))) ]
         if length(basis) > 1
             indices = [1 2 n>>1 n-1 n]
         else
@@ -171,10 +206,14 @@ function test_generic_dict_approximation(basis)
 
     # We choose a fairly large error, because the ndof's can be very small.
     # We don't want to test convergence, only that something terrible did
-    # not happen, so an error of 1e-3 will do.
+    # not happen, so an error of 2e-3 will do.
     x = random_point_in_domain(basis)
-    @test abs(e(x)-f(x...)) < 1e-3
+    @test abs(e(x)-f(x...)) < 2e-3
 end
+
+truncate(d::Domain) = d
+truncate(d::FullSpace{T}) where {T} = -T(10)..T(10)
+truncate(d::ProductDomain) = ProductDomain(map(truncate, elements(d))...)
 
 function test_gram_projection(basis)
     if hasmeasure(basis)
@@ -183,18 +222,24 @@ function test_gram_projection(basis)
         @test dest(G) == basis
         n = length(basis)
         @test size(G) == (n,n)
-        z = zero(coefficienttype(basis))
+        z = zero(prectype(basis))
         for i in 1:n
             for j in 1:n
-                z += abs(G[i,j] - innerproduct(basis, i, basis, j))
+                DD = abs(G[i,j] - innerproduct(basis, i, basis, j))
+                z = max(z,abs(G[i,j] - innerproduct(basis, i, basis, j)))
             end
         end
-        @test abs(z) < 1000test_tolerance(domaintype(basis))
+        @test z < 1000test_tolerance(prectype(basis))
 
         # No efficient implementation for BigFloat to construct full gram matrix.
-        if !(domaintype(basis)==BigFloat)
+        if !(prectype(basis)==BigFloat)
             f = suitable_function(basis)
-            e = approximate(basis, f; discrete=false, rtol=1e-6, atol=1e-6)
+            μ = measure(basis)
+            # Do we compute the projection integrals accurately?
+            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weight(μ,t), truncate(support(basis, 1)))
+            @test abs(innerproduct(t->f(t...), basis[1]) - Z)/abs(Z) < 1e-1
+            @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
+            e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)
             x = random_point_in_domain(basis)
             @test abs(e(x)-f(x...)) < 1e-3
         end
@@ -415,9 +460,6 @@ function test_generic_dict_interface(basis)
     RT = codomaintype(basis)
 
     n = length(basis)
-    if isbasis(basis)
-        @test isframe(basis)
-    end
     if hasmeasure(basis)
         @test isorthogonal(basis) == isorthogonal(basis, measure(basis))
         @test isorthonormal(basis) == isorthonormal(basis, measure(basis))
@@ -469,9 +511,9 @@ function test_generic_dict_interface(basis)
         E = extension(basis, basis2)
         e1 = random_expansion(basis)
         e2 = E * e1
-        x1 = point_in_domain(basis, 1/2)
+        x1 = affine_point_in_domain(basis, 1/2)
         @test e1(x1) ≈ e2(x1)
-        x2 = point_in_domain(basis, 0.3)
+        x2 = affine_point_in_domain(basis, 0.3)
         @test e1(x2) ≈ e2(x2)
 
         R = restriction(basis2, basis)

@@ -18,9 +18,9 @@ function test_orthogonality_orthonormality(dict::Dictionary, isorthog::Bool, iso
         @test norm(M - Diagonal(diag(M))) > 1e-3 || any(abs.(diag(M)).< 1e-5)
     end
     if isorthonorm
-        @test G isa IdentityOperator
+        @test BasisFunctions.isidentity(G)
     else
-        @test !(G isa IdentityOperator)
+        @test !BasisFunctions.isidentity(G)
         @test !(diag(M) ≈ Ones(length(dict)))
     end
 

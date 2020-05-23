@@ -64,7 +64,6 @@ name(m::DiscreteProductMeasure) = "Discrete Product Measure"
 productmeasure(measures::DiscreteMeasure...) =
     discretemeasure(ProductGrid(map(points, measures)...), tensorproduct(map(weights, measures)...))
 
-iscomposite(m::DiscreteProductMeasure) = true
 elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(points(m)), elements(weights(m)))
 element(m::DiscreteProductMeasure, i) = discretemeasure(element(points(m), i), element(weights(m), i))
 

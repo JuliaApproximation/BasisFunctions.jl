@@ -73,8 +73,8 @@ zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
 tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
-for op in (:length, :extensionsize, :size, :interpolation_grid, :iscomposite, :numelements,
-    :elements, :tail, :ordering, :support, :dimensions)
+for op in (:length, :extensionsize, :size, :interpolation_grid, :numelements,
+        :elements, :tail, :ordering, :support, :dimensions)
     @eval $op(s::DerivedDict) = $op(superdict(s))
 end
 
@@ -93,6 +93,8 @@ dict_in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
 #########################
 # Indexing and iteration
 #########################
+
+IndexStyle(dict::DerivedDict) = IndexStyle(superdict(dict))
 
 native_index(dict::DerivedDict, idx) = native_index(superdict(dict), idx)
 
@@ -113,8 +115,8 @@ linear_size(s::DerivedDict, size_n) = linear_size(superdict(s), size_n)
 
 unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
 
-unsafe_eval_element_derivative(s::DerivedDict, idx, x) =
-    unsafe_eval_element_derivative(superdict(s), idx, x)
+unsafe_eval_element_derivative(s::DerivedDict, idx, x, order) =
+    unsafe_eval_element_derivative(superdict(s), idx, x, order)
 
 
 #########################
