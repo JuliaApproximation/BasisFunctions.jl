@@ -37,10 +37,10 @@ end
 
 # Useful abstraction for special cases
 const Dictionary1d{S <: Number,T} = Dictionary{S,T}
-# Warning: not all 2d function sets have NTuple{2,S} type, they could have (S1,S2) type
-const Dictionary2d{S <: Number,T} = Dictionary{NTuple{2,S},T}
-const Dictionary3d{S <: Number,T} = Dictionary{NTuple{3,S},T}
-const Dictionary4d{S <: Number,T} = Dictionary{NTuple{4,S},T}
+# Warning: this is a shaky definition of a 2D function
+const Dictionary2d{S <: Number,T} = Union{Dictionary{NTuple{2,S},T},Dictionary{SVector{2,S},T}}
+const Dictionary3d{S <: Number,T} = Union{Dictionary{NTuple{3,S},T},Dictionary{SVector{3,S},T}}
+const Dictionary4d{S <: Number,T} = Union{Dictionary{NTuple{4,S},T},Dictionary{SVector{4,S},T}}
 
 
 "The type of the elements of the domain of the dictionary."
