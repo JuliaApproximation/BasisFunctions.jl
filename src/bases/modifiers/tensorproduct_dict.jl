@@ -162,9 +162,10 @@ end
 
 extensionsize(s::TensorProductDict) = map(extensionsize, elements(s))
 
-_names(dict::TensorProductDict) = reduce((u,v) -> name(u) * " ⊗ " * name(v), elements(dict))
+_names(dict::TensorProductDict) = join(map(name, elements(dict)), " ⊗ ")
 name(dict::TensorProductDict) = "Tensor product dictionary ($(_names(dict)))"
 
+shortname(dict::TensorProductDict) = "Tensor product dictionary"
 
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
 getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert numelements(s)==2; element(s,2))

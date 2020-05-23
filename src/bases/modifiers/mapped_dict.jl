@@ -194,7 +194,6 @@ end
 # Differentiation
 ###################
 
-# TODO: enable derivative
 function derivative_dict(Φ::MappedDict, order; options...)
     map = mapping(Φ)
     superdiff = similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
@@ -203,7 +202,10 @@ function derivative_dict(Φ::MappedDict, order; options...)
     elseif jacobian(map) isa ConstantMap
         superdiff
     else
-        (t -> 1/jacdet(map, t)) * superdiff
+        # TODO: this is only correct in 1D
+        @assert order == 1
+        mi = inverse(map)
+        (t -> 1/jacdet(map, mi(t))) * superdiff
     end
 end
 
@@ -226,19 +228,12 @@ function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, ord
     wrap_operator(dsrc, ddest, S*D)
 end
 
-function differentiation(::Type{T}, dsrc::MappedDict1d, ddest, order::Int; options...) where {T}
+function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::DerivedDict, order; options...) where {T}
     @assert order == 1
     @assert ddest isa WeightedDict1d
     @assert iscompatible(mapping(dsrc), mapping(superdict(ddest)))
     D = differentiation(T, superdict(dsrc), superdict(superdict(ddest)), order; options...)
     wrap_operator(dsrc, ddest, D)
-end
-
-function differentiation(::Type{T}, dsrc::MappedDict, ddest::MappedDict, order::Int; options...) where {T}
-    @assert isaffine(mapping(dsrc))
-    D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
-    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))
-    wrap_operator(dsrc, ddest, S*D)
 end
 
 function antidifferentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
