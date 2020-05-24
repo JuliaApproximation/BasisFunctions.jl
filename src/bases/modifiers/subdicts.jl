@@ -29,7 +29,7 @@ function similar(d::Subdictionary, ::Type{T}, n::Int) where {T}
     similar_subdict(d, similar(superdict(d), T), superindices(d))
 end
 
-apply_map(s::Subdictionary, map) = similar_subdict(s, apply_map(superdict(s), map), superindices(s))
+mapped_dict(s::Subdictionary, map) = similar_subdict(s, mapped_dict(superdict(s), map), superindices(s))
 
 
 hasstencil(dict::Subdictionary) = true

@@ -11,34 +11,55 @@ mapped to a different one. Evaluating the `MappedDict` in a point uses the
 inverse map to evaluate the underlying dictionary element in the corresponding
 point.
 """
-struct MappedDict{D,M,S,T} <: DerivedDict{S,T}
-    superdict   ::  D
-    map         ::  M
-end
+abstract type MappedDict{S,T} <: DerivedDict{S,T} end
 
-const MappedDict1d{D,M,S <: Number,T <: Number} = MappedDict{D,M,S,T}
-const MappedDict2d{D,M,S <: SVector{2},T <: Number} = MappedDict{D,M,S,T}
+const MappedDict1d{S <: Number,T <: Number} = MappedDict{S,T}
+const MappedDict2d{S <: SVector{2},T <: Number} = MappedDict{S,T}
+
+mapped_dict(dict::Dictionary, map) = MappedDict(dict, map)
+mapped_dict(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ mapping(dict))
+
+# Convenience function, similar to apply_map for grids etcetera
+@deprecate apply_map(dict::Dictionary, map) mapped_dict(dict, map)
 
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
 # Hence, the domain type of the map has to equal the domain type of the dictionary.
 MappedDict(dict::Dictionary{T1,T}, map::Map{T1}) where {T1,T} =
-    MappedDict{typeof(dict),typeof(map),codomaintype(map,T1),T}(dict, map)
-
+    MappedDict{codomaintype(map,T1),T}(dict, map)
 MappedDict(dict::Dictionary{S1,T1}, map::Map{S2}) where {S1,S2,T1} =
     MappedDict(dict, convert(Map{S1}, map))
 
-mapped_dict(dict::Dictionary, map::AbstractMap) = MappedDict(dict, map)
+MappedDict{S,T}(dict::Dictionary, map) where {S,T} = GenericMappedDict{S,T}(dict, map)
 
-# Convenience function, similar to apply_map for grids etcetera
-apply_map(dict::Dictionary, map) = mapped_dict(dict, map)
+MappedDict{S,T}(dict::Dictionary, map::ScalarAffineMap{S}) where {S,T} =
+    ScalarMappedDict{S,T}(dict, map)
 
-apply_map(dict::MappedDict, map) = apply_map(superdict(dict), map ∘ mapping(dict))
+"Concrete mapped dictionary for any dictionary and any map."
+struct GenericMappedDict{S,T,D,M} <: MappedDict{S,T}
+    superdict   ::  D
+    map         ::  M
+end
+
+GenericMappedDict{S,T}(dict::Dictionary, map) where {S,T} =
+    GenericMappedDict{S,T,typeof(dict),typeof(map)}(dict, map)
+
+
+"Concrete mapped dictionary for any dictionary with a scalar map."
+struct ScalarMappedDict{S,T,D} <: MappedDict{S,T}
+    superdict   ::  D
+    map         ::  ScalarAffineMap{S}
+end
+
+ScalarMappedDict{S,T}(dict::Dictionary, map) where {S,T} =
+    GenericMappedDict{S,T,typeof(dict),typeof(map)}(dict, map)
+
+
 
 mapping(dict::MappedDict) = dict.map
 
-similardictionary(s::MappedDict, s2::Dictionary) = MappedDict(s2, mapping(s))
+similardictionary(dict::MappedDict, dict2::Dictionary) = mapped_dict(dict2, mapping(dict))
 
 hasderivative(dict::MappedDict) = false
 hasantiderivative(dict::MappedDict) = false
@@ -84,7 +105,7 @@ function unsafe_eval_element_derivative(dict::MappedDict, idx, y, order)
     sum(order .* (J' \ g))
 end
 
-function eval_expansion(s::MappedDict{D,M,S,T}, coef, y::S) where {D,M,S,T}
+function eval_expansion(s::MappedDict{S,T}, coef, y::S) where {S,T}
     if in_support(s, first(eachindex(s)), y)
         eval_expansion(superdict(s), coef, leftinverse(mapping(s), y))
     else
@@ -156,7 +177,7 @@ end
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_dict(s::MappedDict; options...) = apply_map(transform_dict(superdict(s); options...), mapping(s))
+transform_dict(s::MappedDict; options...) = mapped_dict(transform_dict(superdict(s); options...), mapping(s))
 
 function hasgrid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
     sgrid = unmap_grid(dict, grid)
@@ -248,10 +269,7 @@ end
 # Special cases
 #################
 
-# TODO: check for promotions here
-mapped_dict(s::MappedDict, map::AbstractMap) = MappedDict(superdict(s), map ∘ mapping(s))
-
-mapped_dict(s::GridBasis, map::AbstractMap) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
+mapped_dict(dict::GridBasis, map) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a::Number, b::Number)
@@ -260,7 +278,7 @@ function rescale(s::Dictionary1d, a::Number, b::Number)
         s
     else
         m = interval_map(infimum(support(s)), supremum(support(s)), T(a), T(b))
-        apply_map(s, m)
+        mapped_dict(s, m)
     end
 end
 
@@ -285,10 +303,10 @@ plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), mapping(S))
 # Arithmetic
 #################
 
-function (*)(s1::MappedDict, s2::MappedDict, coef_src1, coef_src2)
-    @assert iscompatible(superdict(s1),superdict(s2))
-    (mset,mcoef) = (*)(superdict(s1),superdict(s2),coef_src1, coef_src2)
-    (MappedDict(mset, mapping(s1)), mcoef)
+function (*)(dict1::MappedDict, dict2::MappedDict, coef_src1, coef_src2)
+    @assert iscompatible(superdict(dict1),superdict(dict2))
+    mset,mcoef = (*)(superdict(dict1),superdict(dict2),coef_src1,coef_src2)
+    mapped_dict(mset, mapping(dict1)), mcoef
 end
 
 

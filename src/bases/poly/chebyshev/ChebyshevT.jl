@@ -14,6 +14,14 @@ ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
+"Mapped Chebyshev polynomials."
+struct MappedChebyshev{T} <: MappedDict{T,T}
+	superdict	::	ChebyshevT{T}
+	map			::	ScalarAffineMap{T}
+end
+
+mapped_dict(dict::ChebyshevT{T}, map::ScalarAffineMap{S}) where {S,T} =
+	MappedChebyshev{promote_type(S,T)}(dict, map)
 
 hasinterpolationgrid(b::ChebyshevT) = true
 hasderivative(b::ChebyshevT) = true

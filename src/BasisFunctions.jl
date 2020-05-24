@@ -72,6 +72,7 @@ import DomainSets:
     matrix, vector,
     forward_map, inverse_map, image,
     applymap, jacobian,
+    ScalarAffineMap,
     # composite types
     iscomposite, element, elements, numelements,
     # products

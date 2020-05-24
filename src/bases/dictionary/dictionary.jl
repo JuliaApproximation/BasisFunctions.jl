@@ -37,7 +37,7 @@ end
 
 # Useful abstraction for special cases
 const Dictionary1d{S <: Number,T} = Dictionary{S,T}
-# Warning: this is a shaky definition of a 2D function
+# Warning: these are shaky definitions of multivariate functions
 const Dictionary2d{S <: Number,T} = Union{Dictionary{NTuple{2,S},T},Dictionary{SVector{2,S},T}}
 const Dictionary3d{S <: Number,T} = Union{Dictionary{NTuple{3,S},T},Dictionary{SVector{3,S},T}}
 const Dictionary4d{S <: Number,T} = Union{Dictionary{NTuple{4,S},T},Dictionary{SVector{4,S},T}}
@@ -73,15 +73,15 @@ isbasis(d::Dictionary) = false
 
 "Is the dictionary orthogonal (with respect to the given measure)?"
 isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
-isorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthonormal(d, measure)
+isorthogonal(d::Dictionary, μ::AbstractMeasure) = isorthonormal(d, μ)
 
 "Is the dictionary orthonormal (with respect to the given measure)?"
 isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
-isorthonormal(d::Dictionary, measure::AbstractMeasure) = false
+isorthonormal(d::Dictionary, μ::AbstractMeasure) = false
 
 "Is the dictionary biorthogonal (with respect to the given measure)?"
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
-isbiorthogonal(d::Dictionary, measure::AbstractMeasure) = isorthogonal(d, measure)
+isbiorthogonal(d::Dictionary, μ::AbstractMeasure) = isorthogonal(d, μ)
 
 size(d::Dictionary, j) = size(d)[j]
 

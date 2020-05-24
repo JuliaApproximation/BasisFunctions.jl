@@ -18,12 +18,12 @@ end
 # override any functionality that is changed by it.
 ###########################################################################
 
-# Assume the concrete set has a field called set -- override if it doesn't
-superdict(s::DerivedDict) = s.superdict
+# Assume the concrete set has a field called superdict -- override if it doesn't
+superdict(d::DerivedDict) = d.superdict
 
 # The concrete subset should implement similardictionary, as follows:
 #
-# similardictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
+# similardictionary(d::ConcreteDerivedDict, d2::Dictionary) = ConcreteDerivedDict(d2)
 #
 # This function calls the constructor of the concrete set. We can then
 # generically implement other methods that would otherwise call a constructor,
@@ -35,16 +35,16 @@ similar(d::DerivedDict, ::Type{T}, dims::Int...) where {T} =
 resize(d::DerivedDict, dims) = similardictionary(d, resize(superdict(d), dims))
 
 for op in (:coefficienttype,)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
+    @eval $op(d::DerivedDict) = $op(superdict(d))
 end
 
 # Delegation of properties
 for op in (:isreal, :isbasis, :isframe, :isdiscrete, :measure)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
+    @eval $op(d::DerivedDict) = $op(superdict(d))
 end
 
 for op in (:isorthogonal, :isbiorthogonal, :isorthonormal)
-    @eval $op(s::DerivedDict, m::AbstractMeasure) = $op(superdict(s), m)
+    @eval $op(d::DerivedDict, μ::AbstractMeasure) = $op(superdict(d), μ)
 end
 
 
@@ -58,36 +58,36 @@ for op in (:hasderivative, :hasantiderivative)
 end
 
 # hastransform has extra arguments
-hasgrid_transform(s::DerivedDict, gs, grid) = hasgrid_transform(superdict(s), gs, grid)
+hasgrid_transform(d::DerivedDict, gb, grid) = hasgrid_transform(superdict(d), gb, grid)
 
-# When getting started with a discrete set, you may want to write:
-# hasderivative(s::ConcreteSet) = false
-# hasantiderivative(s::ConcreteSet) = false
-# hasinterpolationgrid(s::ConcreteSet) = false
-# hastransform(s::ConcreteSet) = false
-# hastransform(s::ConcreteSet, dgs::GridBasis) = false
-# hasextension(s::ConcreteSet) = false
+# When getting started with a discrete dictionary, you may want to write:
+# hasderivative(d::ConcreteDict) = false
+# hasantiderivative(d::ConcreteDict) = false
+# hasinterpolationgrid(d::ConcreteDict) = false
+# hastransform(d::ConcreteDict) = false
+# hastransform(d::ConcreteDict, gb::GridBasis) = false
+# hasextension(d::ConcreteDict) = false
 # ... and then implement those operations one by one and remove the definitions.
 
-zeros(::Type{T}, s::DerivedDict) where {T} = zeros(T, superdict(s))
+zeros(::Type{T}, d::DerivedDict) where {T} = zeros(T, superdict(d))
 tocoefficientformat(a, d::DerivedDict) = tocoefficientformat(a, superdict(d))
 
 # Delegation of methods
 for op in (:length, :extensionsize, :size, :interpolation_grid, :numelements,
         :elements, :tail, :ordering, :support, :dimensions)
-    @eval $op(s::DerivedDict) = $op(superdict(s))
+    @eval $op(d::DerivedDict) = $op(superdict(d))
 end
 
 # Delegation of methods with an index parameter
 for op in (:size, :element, :support)
-    @eval $op(s::DerivedDict, i) = $op(superdict(s), i)
+    @eval $op(d::DerivedDict, i) = $op(superdict(d), i)
 end
 
-approx_length(s::DerivedDict, n::Int) = approx_length(superdict(s), n)
+approx_length(d::DerivedDict, n::Int) = approx_length(superdict(d), n)
 
-apply_map(s::DerivedDict, map) = similardictionary(s, apply_map(superdict(s), map))
+mapped_dict(d::DerivedDict, map) = similardictionary(d, mapped_dict(superdict(d), map))
 
-dict_in_support(set::DerivedDict, i, x) = in_support(superdict(set), i, x)
+dict_in_support(d::DerivedDict, i, x) = in_support(superdict(d), i, x)
 
 
 #########################
@@ -102,21 +102,21 @@ linear_index(dict::DerivedDict, idxn) = linear_index(superdict(dict), idxn)
 
 eachindex(dict::DerivedDict) = eachindex(superdict(dict))
 
-linearize_coefficients!(s::DerivedDict, coef_linear::Vector, coef_native) =
-    linearize_coefficients!(superdict(s), coef_linear, coef_native)
+linearize_coefficients!(d::DerivedDict, coef_linear::Vector, coef_native) =
+    linearize_coefficients!(superdict(d), coef_linear, coef_native)
 
-delinearize_coefficients!(s::DerivedDict, coef_native, coef_linear::Vector) =
-    delinearize_coefficients!(superdict(s), coef_native, coef_linear)
+delinearize_coefficients!(d::DerivedDict, coef_native, coef_linear::Vector) =
+    delinearize_coefficients!(superdict(d), coef_native, coef_linear)
 
-approximate_native_size(s::DerivedDict, size_l) = approximate_native_size(superdict(s), size_l)
+approximate_native_size(d::DerivedDict, size_l) = approximate_native_size(superdict(d), size_l)
 
-linear_size(s::DerivedDict, size_n) = linear_size(superdict(s), size_n)
+linear_size(d::DerivedDict, size_n) = linear_size(superdict(d), size_n)
 
 
-unsafe_eval_element(s::DerivedDict, idx, x) = unsafe_eval_element(superdict(s), idx, x)
+unsafe_eval_element(d::DerivedDict, idx, x) = unsafe_eval_element(superdict(d), idx, x)
 
-unsafe_eval_element_derivative(s::DerivedDict, idx, x, order) =
-    unsafe_eval_element_derivative(superdict(s), idx, x, order)
+unsafe_eval_element_derivative(d::DerivedDict, idx, x, order) =
+    unsafe_eval_element_derivative(superdict(d), idx, x, order)
 
 
 #########################
@@ -124,7 +124,7 @@ unsafe_eval_element_derivative(s::DerivedDict, idx, x, order) =
 #########################
 
 for op in (:transform_dict,)
-    @eval $op(s::DerivedDict; options...) = $op(superdict(s); options...)
+    @eval $op(d::DerivedDict; options...) = $op(superdict(d); options...)
 end
 
 for op in (:derivative_dict, :antiderivative_dict)
@@ -138,20 +138,20 @@ for op in (:extension, :restriction)
         wrap_operator(src, dest, $op(T, superdict(src), superdict(dest); options...))
 end
 
-function transform_from_grid(T, s1::GridBasis, s2::DerivedDict, grid; options...)
-    op = transform_from_grid(T, s1, superdict(s2), grid; options...)
-    wrap_operator(s1, s2, op)
+function transform_from_grid(T, d1::GridBasis, d2::DerivedDict, grid; options...)
+    op = transform_from_grid(T, d1, superdict(d2), grid; options...)
+    wrap_operator(d1, d2, op)
 end
 
-function transform_to_grid(T, s1::DerivedDict, s2::GridBasis, grid; options...)
-    op = transform_to_grid(T, superdict(s1), s2, grid; options...)
-    wrap_operator(s1, s2, op)
+function transform_to_grid(T, d1::DerivedDict, d2::GridBasis, grid; options...)
+    op = transform_to_grid(T, superdict(d1), d2, grid; options...)
+    wrap_operator(d1, d2, op)
 end
 
 
 for op in (:differentiation, :antidifferentiation)
-    @eval $op(::Type{T}, s1::DerivedDict, s2::DerivedDict, order; options...) where {T} =
-        wrap_operator(s1, s2, $op(T, superdict(s1), superdict(s2), order; options...))
+    @eval $op(::Type{T}, d1::DerivedDict, d2::DerivedDict, order; options...) where {T} =
+        wrap_operator(d1, d2, $op(T, superdict(d1), superdict(d2), order; options...))
 end
 
 
@@ -181,4 +181,4 @@ end
 
 # Implementing similardictionary is all it takes.
 
-similardictionary(s::ConcreteDerivedDict, s2::Dictionary) = ConcreteDerivedDict(s2)
+similardictionary(dict::ConcreteDerivedDict, dict2::Dictionary) = ConcreteDerivedDict(dict2)

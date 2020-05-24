@@ -169,7 +169,7 @@ end
 
 ## Rescaling
 
-apply_map(s::MultiDict, m) = multidict(map( t-> apply_map(t, m), elements(s)))
+mapped_dict(s::MultiDict, m) = multidict(map( t-> mapped_dict(t, m), elements(s)))
 
 ## Projecting
 function project(s::MultiDict, f::Function; options...)

@@ -25,6 +25,9 @@ name(b::Fourier) = "Fourier series"
 # The default numeric type is Float64
 Fourier(n::Int) = Fourier{Float64}(n)
 
+convert(::Type{Fourier{T}}, d::Fourier{T}) where {T} = d
+convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
+
 @deprecate Fourier(n, a::Number, b::Number) Fourier(n)→a..b
 @deprecate Fourier{T}(n, a::Number, b::Number) where {T} Fourier(n)→a..b
 
@@ -72,6 +75,15 @@ islooselycompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
 interpolation_grid(b::Fourier{T}) where {T} = FourierGrid{T}(length(b))
 
 gauss_rule(dict::Fourier) = NormalizedDiracComb(interpolation_grid(dict))
+
+
+struct MappedFourier{T} <: MappedDict{T,Complex{T}}
+	superdict	::	Fourier{T}
+	map			::	ScalarAffineMap{T}
+end
+
+mapped_dict(dict::Fourier{T}, map::ScalarAffineMap{S}) where {S,T} =
+	MappedFourier{promote_type(S,T)}(dict, map)
 
 
 ##################

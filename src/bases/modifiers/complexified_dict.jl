@@ -24,8 +24,6 @@ element(dict::ComplexifiedDict, i) = ComplexifiedDict(element(superdict(dict), i
 _ensure_coefficienttype(dict::Dictionary, ::Type{Complex{T}}, ::Type{T}) where {T} =
     ComplexifiedDict(dict)
 
-apply_map(dict::ComplexifiedDict, map) = mapped_dict(dict, map)
-
 coefficienttype(dict::ComplexifiedDict) = complex(coefficienttype(superdict(dict)))
 
 transform_dict(dict::ComplexifiedDict) = complex(transform_dict(superdict(dict)))
