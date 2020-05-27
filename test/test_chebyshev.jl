@@ -8,6 +8,7 @@ function test_chebyshev_expansions(T)
         g = BasisFunctions.secondgrid(b)
         BasisFunctions.Test.test_generic_dict_transform(b, g)
         BasisFunctions.Test.test_generic_dict_transform(complex(b), g)
+        @test convert(ChebyshevT{BigFloat}, ChebyshevT{T}(10)) isa ChebyshevT{BigFloat}
     end
 
     @test support(b) == ChebyshevInterval{T}()

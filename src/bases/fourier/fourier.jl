@@ -25,7 +25,6 @@ name(b::Fourier) = "Fourier series"
 # The default numeric type is Float64
 Fourier(n::Int) = Fourier{Float64}(n)
 
-convert(::Type{Fourier{T}}, d::Fourier{T}) where {T} = d
 convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
 
 @deprecate Fourier(n, a::Number, b::Number) Fourier(n)→a..b

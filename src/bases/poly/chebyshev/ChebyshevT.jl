@@ -14,6 +14,8 @@ ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
+convert(::Type{ChebyshevT{T}}, d::ChebyshevT) where {T} = ChebyshevT{T}(d.n)
+
 "Mapped Chebyshev polynomials."
 struct MappedChebyshev{T} <: MappedDict{T,T}
 	superdict	::	ChebyshevT{T}

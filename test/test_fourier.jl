@@ -17,6 +17,8 @@ function test_fourier_series(T)
 
     @test support(fb0) == UnitInterval{T}()
 
+    @test convert(Fourier{BigFloat}, Fourier{Float64}(10)) isa Fourier{BigFloat}
+
     ## Even length
     n = 12
     a = -T(1.2)
