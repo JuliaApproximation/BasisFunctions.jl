@@ -1,11 +1,7 @@
 # Functionality for the promotion of dictionaries.
 
 export promote_domaintype,
-    ensure_domaintype,
-    promote_coefficienttype,
-    ensure_coefficienttype,
-    promote_prectype,
-    ensure_prectype
+    promote_coefficienttype
 
 promote(d1::Dictionary, d2::Dictionary) =
     promote_coefficienttype(promote_domaintype(d1, d2)...)
@@ -33,16 +29,10 @@ _promote_domaintype(d1, d2, ::Type{S}, ::Type{T}) where {S,T} =
 _promote_domaintype(d1, d2, ::Type{S}, ::Type{T}, ::Type{U}) where {S,T,U} =
     similar(d1, U), similar(d2, U)
 
-"Ensure that the dictionary (or dictionaries) have domain type `T` or wider."
-ensure_domaintype(::Type{T}, dict::Dictionary) where {T} =
-    _ensure_domaintype(T, ensure_prectype(prectype(T), dict))
-_ensure_domaintype(::Type{T}, dict::Dictionary) where {T} =
-    _ensure_domaintype(dict, T, domaintype(dict))
-_ensure_domaintype(dict, ::Type{T}, ::Type{T}) where {T} = dict
-_ensure_domaintype(dict, ::Type{S}, ::Type{T}) where {S,T} =
-    _ensure_domaintype(dict, S, T, promote_type(S,T))
-_ensure_domaintype(dict, ::Type{S}, ::Type{T}, ::Type{U}) where {S,T,U} =
-    similar(dict, U)
+
+# Convert the domaintype of the dictionary to `S`
+convert(::Type{Dictionary{S}}, dict::Dictionary{S}) where {S} = dict
+convert(::Type{Dictionary{S}}, dict::Dictionary) where {S} = similar(dict, S)
 
 ## Coefficient type
 
@@ -80,27 +70,6 @@ ensure_coefficienttype(::Type{T}, dicts::Dictionary...) where {T} =
     ensure_coefficienttype.(T, dicts)
 
 ## Precision type
-
-"Promote the precision type of the dictionaries to a common type."
-promote_prectype(dict::Dictionary) = (dict,)
-
-function promote_prectype(d1::Dictionary, d2::Dictionary, d3::Dictionary...)
-    d1b, d2b = promote_prectype(d1, d2)
-    (d1b, promote_prectype(d2b, d3...))
-end
-
-promote_prectype(d1::Dictionary, d2::Dictionary) =
-    _promote_prectype(d1, d2, prectype(d1), prectype(d2))
-
-
-# Types are the same
-_promote_prectype(d1::Dictionary, d2::Dictionary, ::Type{T}, ::Type{T}) where {T} = (d1,d2)
-# Types differ: compute a joined supertype
-_promote_prectype(d1::Dictionary, d2::Dictionary, ::Type{S}, ::Type{T}) where {S,T} =
-    _promote_prectype(d1, d2, S, T, promote_type(S,T))
-# Update prectype to the joined supertype
-_promote_prectype(d1::Dictionary, d2::Dictionary, S, T, ::Type{U}) where {U} =
-    ensure_prectype(U, d1), ensure_prectype(U, d2)
 
 "Ensure that the dictionary has precision type `T` or a wider type."
 ensure_prectype(::Type{T}, dict::Dictionary) where {T} =

@@ -23,11 +23,11 @@ ordering(b::PolynomialBasis) = ShiftedIndexList(length(b), PolynomialDegree)
 
 isbasis(b::PolynomialBasis) = true
 
-function subdict(b::PolynomialBasis, idx::OrdinalRange)
+function sub(b::PolynomialBasis, idx::OrdinalRange)
     if (step(idx) == 1) && (first(idx) == 1) && (last(idx) <= length(b))
         resize(b, last(idx))
     else
-        DenseSubdict(b, idx)
+        defaultsub(b, idx)
     end
 end
 

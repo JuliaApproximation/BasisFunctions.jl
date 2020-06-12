@@ -239,7 +239,8 @@ getindex(dict::Dictionary, idx::AbstractArray) = sub(dict, idx)
 getindex(dict::Dictionary, idx::Colon) = sub(dict, idx)
 
 # By default we generate a large subdict
-sub(dict::Dictionary, superindices) = DenseSubdict(dict, superindices)
+sub(dict::Dictionary, superindices) = defaultsub(dict, superindices)
+defaultsub(dict::Dictionary, superindices) = DenseSubdict(dict, superindices)
 
 # For an array, which as far as we know has no additional structure, we create
 # a small subdict by default. For large arrays, a large subdict may be more efficient.
@@ -248,10 +249,7 @@ sub(dict::Dictionary, superindices::Array) = SparseSubdict(dict, superindices)
 sub(dict::Dictionary, ::Colon) = dict
 
 # Avoid creating nested subdicts
-getindex(dict::Subdictionary, idx) =
-    getindex(superdict(dict), superindices(dict)[idx])
-sub(dict::Subdictionary, idx) =
-    sub(superdict(dict), superindices(dict)[idx])
+sub(dict::Subdictionary, idx) = sub(superdict(dict), superindices(dict)[idx])
 
 
 

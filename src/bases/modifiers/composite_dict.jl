@@ -115,7 +115,7 @@ linear_index(dict::CompositeDict, idx::MultilinearIndex) =
     offsets_linear_index(unsafe_offsets(dict), idx)
 
 
-# The native index is a MultilinearIndex, defined in util/indexing.jl
+# The native index is a MultilinearIndex, defined in basis/dictionary/indexing.jl
 ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
 
 # # We have to amend the boundscheck ecosystem to catch some cases:

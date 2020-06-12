@@ -103,7 +103,7 @@ end
 # that is outside its support. In order to get that behaviour, we need to retain
 # the PiecewiseDict.
 # Perhaps this should change, and any function should be zero outside its support.
-getindex(set::PiecewiseDict, i, j) = subdict(set, (i,j))
+getindex(set::PiecewiseDict, i, j) = sub(set, (i,j))
 
 unsafe_eval_element(set::PiecewiseDict, idx::MultilinearIndex, x) =
     x ∈ set.partition[outerindex(idx)] ? unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x) : zero(eltype(x))

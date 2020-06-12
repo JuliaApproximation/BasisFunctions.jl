@@ -100,25 +100,24 @@ end
 
 
 # Try to return ranges of an underlying set, if possible
-function subdict(dict::MultiDict, idx::OrdinalRange{Int})
+function sub(dict::MultiDict, idx::OrdinalRange{Int})
     i1 = multilinear_index(dict, first(idx))
     i2 = multilinear_index(dict, last(idx))
     # Check whether the range lies fully in one set
-    if i1[1] == i2[1]
-        subdict(element(dict, i1[1]), i1[2]:step(idx):i2[2])
+    if outerindex(i1) == outerindex(i2)
+        sub(element(dict, outerindex(i1)), innerindex(i1):step(idx):innerindex(i2))
     else
-        DenseSubdict(dict, idx)
+        defaultsub(dict, idx)
     end
 end
 
 
 
-for op in [:support, :moment, :norm]
+for op in (:support, :moment, :norm)
     @eval $op(set::MultiDict, idx::Int) = $op(set, multilinear_index(set, idx))
     # Pass along a linear or a native index to the subset
     @eval function $op(set::MultiDict, idx::Union{MultilinearIndex,Tuple{Int,Any}})
-        i,j = idx
-        $op(set.dicts[i], j)
+        $op(set.dicts[outerindex(idx)], innerindex(idx))
     end
 end
 
