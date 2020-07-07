@@ -61,13 +61,15 @@ function iterate(iter::OPSValueIterator, state)
 	z0, z1, degree = state
 	dict = dictionary(iter)
 	x = point(iter)
-	if degree == 0
-		# We avoid evaluating rec_Cn with degree=0
-		z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1
-		(degree+2,z), (z1, z, degree+1)
-	elseif degree < length(dict)-1
-		z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1 - rec_Cn(dict, degree) * z0
-		(degree+2,z), (z1, z, degree+1)
+	if degree < length(dict)-1
+		if degree == 0
+			# We avoid evaluating rec_Cn with degree=0
+			z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1
+			(degree+2,z), (z1, z, degree+1)
+		else
+			z = (rec_An(dict, degree)*x + rec_Bn(dict, degree)) * z1 - rec_Cn(dict, degree) * z0
+			(degree+2,z), (z1, z, degree+1)
+		end
 	else
 		nothing
 	end

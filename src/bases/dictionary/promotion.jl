@@ -3,6 +3,11 @@
 export promote_domaintype,
     promote_coefficienttype
 
+# Convert the domaintype of the dictionary to `S`
+convert(::Type{Dictionary{S}}, dict::Dictionary{S}) where {S} = dict
+convert(::Type{Dictionary{S}}, dict::Dictionary) where {S} = similar(dict, S)
+
+
 promote(d1::Dictionary, d2::Dictionary) =
     promote_coefficienttype(promote_domaintype(d1, d2)...)
 
@@ -18,21 +23,10 @@ function promote_domaintype(d1::Dictionary, d2::Dictionary, d3::Dictionary...)
 end
 
 promote_domaintype(d1::Dictionary, d2::Dictionary) =
-    _promote_domaintype(d1, d2, domaintype(d1), domaintype(d2))
+    _promote_domaintype(d1, d2, promote_type(domaintype(d1), domaintype(d2)))
+_promote_domaintype(d1, d2, ::Type{S}) where {S} =
+    convert(Dictionary{S}, d1), convert(Dictionary{S}, d2)
 
-# Types are the same
-_promote_domaintype(d1, d2, ::Type{S}, ::Type{S}) where {S} = (d1,d2)
-# Types differ: compute a joined supertype
-_promote_domaintype(d1, d2, ::Type{S}, ::Type{T}) where {S,T} =
-    _promote_domaintype(d1, d2, S, T, promote_type(S,T))
-# Update domaintype to the joined supertype
-_promote_domaintype(d1, d2, ::Type{S}, ::Type{T}, ::Type{U}) where {S,T,U} =
-    similar(d1, U), similar(d2, U)
-
-
-# Convert the domaintype of the dictionary to `S`
-convert(::Type{Dictionary{S}}, dict::Dictionary{S}) where {S} = dict
-convert(::Type{Dictionary{S}}, dict::Dictionary) where {S} = similar(dict, S)
 
 ## Coefficient type
 

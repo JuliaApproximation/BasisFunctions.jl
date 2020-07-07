@@ -28,7 +28,7 @@ disk(radius::Number, center::AbstractVector) = disk(radius) .+ center
 
 ball(::Type{T} = Float64) where {T} = UnitBall{T}()
 ball(radius::Number) = radius .* ball(typeof(radius))
-ball(radius::Number, center::AbstractVector) = ball(radius) + center
+ball(radius::Number, center::AbstractVector) = ball(radius) .+ center
 
 simplex(::Type{Val{N}}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
 
