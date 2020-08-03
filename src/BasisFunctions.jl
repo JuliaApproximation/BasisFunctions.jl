@@ -6,7 +6,7 @@ module BasisFunctions
 
 using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
-using FFTW, FastTransforms
+using FFTW#, FastTransforms
 using DomainSets, DomainIntegrals
 
 using QuadGK, Base.Cartesian
@@ -22,7 +22,6 @@ using DSP: conv
 using IterativeSolvers: lsqr, lsmr
 using SpecialFunctions: gamma
 using MacroTools: @forward
-import Calculus: derivative
 
 
 ## Imports
@@ -37,7 +36,7 @@ import Base:
     promote, promote_rule, convert, promote_eltype, widen, convert,
     # array methods
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
-    first, last, copyto!,
+    first, last, copyto!, tail,
     transpose, inv, hcat, vcat, hvcat,
     getindex, setindex!, eltype, @propagate_inbounds,
     IndexStyle, axes, axes1,
@@ -47,7 +46,7 @@ import Base:
     # math functions
     cos, sin, exp, log, sqrt,
     # numbers
-    isreal, iseven, isodd, real, complex, conj,
+    isreal, iseven, isodd, real, complex, conj, diff,
     # io
     show, string
 
@@ -57,6 +56,8 @@ import Base.Broadcast: broadcasted, DefaultArrayStyle, broadcast_shape
 import LinearAlgebra:
     norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank,
     diag, isdiag, eigvals, issymmetric, svdvals
+import SparseArrays: sparse
+@deprecate sparse_matrix sparse
 
 
 import BlockArrays.BlockVector
@@ -200,7 +201,7 @@ export Expansion, TensorProductExpansion,
 export AbstractOperator, DictionaryOperator,
     src, dest, src_space, dest_space,
     apply!, apply, apply_multiple, apply_inplace!,
-    matrix, diag, isdiag, isinplace, sparse_matrix
+    matrix, diag, isdiag, isinplace
 
 # from operator/composite_operator.jl
 export CompositeOperator, compose

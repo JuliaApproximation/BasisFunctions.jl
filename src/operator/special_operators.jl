@@ -290,13 +290,6 @@ Base.adjoint(op::DelinearizationOperator{T}) where {T} =
     LinearizationOperator{T}(dest(op), src(op))
 
 
-
-function SparseOperator(op::DictionaryOperator; options...)
-    A = sparse_matrix(op; options...)
-    MultiplicationOperator(src(op), dest(op), A, inplace=false)
-end
-
-
 const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
 
 AlternatingSignOperator(src::Dictionary) = AlternatingSignOperator{operatoreltype(src)}(src)

@@ -23,7 +23,7 @@ for f in (:size, :isefficient)
     @eval $f(op::ArrayOperator) = $f(op.A)
 end#object related features
 
-for f in (:isdiag, :diag, :eigvals, :Matrix, :svdvals, :norm, :rank)
+for f in (:isdiag, :diag, :eigvals, :Matrix, :svdvals, :norm, :rank, :sparse)
     @eval $f(op::ArrayOperator) = $f(unsafe_matrix(op))
 end#matrix related features
 
@@ -224,7 +224,7 @@ DiagonalOperator{T}(src::Dictionary, A::AbstractArray) where {T} =
 DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {T} =
     DiagonalOperator{T}(A, src, dest)
 
-DiagonalOperator(src::Dictionary, dest::Dictionary, A::OuterProductArray) =
+DiagonalOperator(src::Dictionary, dest::Dictionary, A::AbstractOuterProductArray) =
     tensorproduct(map(DiagonalOperator, elements(src), elements(dest), elements(A))...)
 
 
@@ -386,3 +386,9 @@ ArrayOperator{T}(A::Zeros, src::Dictionary, dest::Dictionary) where {T} =
 
 ArrayOperator{T}(A::AbstractMatrix, src::Dictionary, dest::Dictionary) where {T} =
     MatrixOperator{T}(A, src, dest)
+
+
+function SparseOperator(op; options...)
+    A = sparse(op; options...)
+    MatrixOperator(A, src(op), dest(op))
+end

@@ -151,7 +151,7 @@ end
 
 collect(op::DictionaryOperator) = matrix(op)
 
-function sparse_matrix(op::DictionaryOperator; sparse_tol = 1e-14, options...)
+function sparse(op::DictionaryOperator; sparse_tol = 1e-14, options...)
 	T = eltype(op)
 	coef_src  = zeros(T, src(op))
     coef_dest = zeros(T, dest(op))
@@ -161,7 +161,7 @@ function sparse_matrix(op::DictionaryOperator; sparse_tol = 1e-14, options...)
         apply!(op, coef_dest, coef_src)
         coef_src[si] = 0
         coef_dest[abs.(coef_dest).<sparse_tol] .= 0
-        R = hcat(R,sparse(coef_dest))
+        R = hcat(R,reshape(sparse(coef_dest),length(coef_dest)))
     end
     R
 end

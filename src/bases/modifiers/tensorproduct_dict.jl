@@ -138,6 +138,9 @@ for op in (:differentiation, :antidifferentiation)
     end
 end
 
+diff(dict::TensorProductDict, order; options...) =
+    TensorProductDict( (diff(e,o) for (e,o) in zip(elements(dict),order))...)
+
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
 resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, elements(d), dims)...)
 

@@ -61,10 +61,36 @@ _difforder(Φ::Dictionary, order::Nothing, dim::Int) = _difforder(Φ, 1, dim)
 _difforder(Φ::Dictionary, order, dim) = error("Supplied derivative order and dimension not understood.")
 
 # Assign a default order if none is given
+"A dictionary in the same span as the differentiated dictionary"
 derivative_dict(Φ::Dictionary; options...) =
     derivative_dict(Φ, difforder(Φ; options...); options...)
 antiderivative_dict(Φ::Dictionary; options...) =
     antiderivative_dict(Φ, difforder(Φ; options...); options...)
+"""
+    A dictionary that evaluates in the same way as the diffentiated dictionary,
+    but constructed using the `derivative_dict` and a transformation matrix that maps the coefficients.
+"""
+function differentiation_dict(dict::Dictionary, args...; options...)
+	@assert hasderivative(dict)
+	differentiation(dict, args...; options...) * dict
+end
+
+# If a set has a differentiation operator, then we can represent the set of derivatives
+# by an OperatedDict.
+@deprecate derivative(dict::Dictionary, args...; options...) diff(dict, args...; options...)
+"""
+The diffentiated dictionary
+"""
+diff(dict::Dictionary; options...) =
+    diff(dict, difforder(dict; options...); options...)
+function diff(dict::Dictionary, args...; options...)
+	if hasderivative(dict)
+        differentiation_dict(dict, args...; options...)
+    else
+        differentiation_dict(dict, args...; options...)
+        # error("Default not yet implemented")
+    end
+end
 
 # Insert the operator eltype if it is not given
 differentiation(dict::Dictionary, args...; options...) =

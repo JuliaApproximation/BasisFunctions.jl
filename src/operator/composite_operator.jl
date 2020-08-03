@@ -225,7 +225,7 @@ compose(op::AbstractOperator) = op
 compose(ops::DictionaryOperator...) = compose_and_simplify(src(ops[1]), dest(ops[end]), ops...)
 compose(ops::AbstractOperator...) = GenericCompositeOperator(flatten(GenericCompositeOperator, ops...)...)
 
-sparse_matrix(op::CompositeOperator; options...) = *([sparse_matrix(opi; options...) for opi in elements(op)[end:-1:1]]...)
+sparse(op::CompositeOperator; options...) = *([sparse(opi; options...) for opi in elements(op)[end:-1:1]]...)
 
 CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 

@@ -136,5 +136,5 @@ end
     grid = xrange×yrange
 
     plotdata = distance ? dist.(grid, Ref(dom)) : in.(grid, Ref(dom))
-    collect(xrange),collect(yrange),plotdata
+    collect(xrange),collect(yrange),plotdata'
 end

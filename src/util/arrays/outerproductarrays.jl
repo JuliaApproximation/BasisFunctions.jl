@@ -1,3 +1,13 @@
+# using LazyArrays
+# const AbstractOuterProductArray{T,N} = BroadcastArray{T,N,typeof(*),I} where {T,N,I}
+
+# OuterProductArray(arrays::Vararg{<:AbstractVector{T},N}) where {T,N} =
+#                  BroadcastArray(*,ntuple(k->reshape(arrays[k],ntuple(k1-> k==k1 ? length(arrays[k]) : 1,Val(N)))  ,Val(N))...)
+
+tensorproduct(v::AbstractVector...)  =
+    OuterProductArray(v...)
+tensorproduct(v::GridArrays.AbstractIntervalGrid...)  =
+    ProductGrid(v...)
 abstract type AbstractOuterProductArray{T,N} <: AbstractArray{T,N} end
 
 elements(opa::AbstractOuterProductArray) = opa.vectors
@@ -26,10 +36,7 @@ struct OuterProductArray{T,N,V} <: AbstractOuterProductArray{T,N}
 end
 
 
-tensorproduct(v::AbstractVector...)  =
-    OuterProductArray(v...)
-tensorproduct(v::GridArrays.AbstractIntervalGrid...)  =
-    ProductGrid(v...)
+
 
 struct OPArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end
 Broadcast.BroadcastStyle(::Type{<:OuterProductArray{T,N}}) where {T,N} = OPArrayStyle{N}()

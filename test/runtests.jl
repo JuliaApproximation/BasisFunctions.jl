@@ -1,6 +1,6 @@
 module test_suite
 
-using BasisFunctions, BasisFunctions.Test,
+using BasisFunctions, FastTransforms, BasisFunctions.Test,
     StaticArrays,
     DomainSets, DomainIntegrals
 

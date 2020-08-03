@@ -319,6 +319,9 @@ function stencilarray(op::BlockDiagonalOperator)
     A
 end
 
+Matrix(op::Union{BlockOperator,BlockDiagonalOperator}) = 
+    Matrix(matrix(op))
+
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
     cs = composite_size(op)
     dest_cs = cs[1] == 1 ? [length(dest(op))] :  [map(length, elements(dest(op)))...]

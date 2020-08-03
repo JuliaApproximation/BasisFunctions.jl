@@ -82,6 +82,9 @@ isdiag(op::TensorProductOperator) = all(map(isdiag, op.operators))
 
 isidentity(op::TensorProductOperator) = all(map(isidentity, op.operators))
 
+Matrix(op::TensorProductOperator) = kron((Matrix(op) for op in elements(op))...)
+sparse(op::TensorProductOperator) = kron((sparse(op) for op in elements(op))...)
+
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 

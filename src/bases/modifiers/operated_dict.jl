@@ -150,6 +150,8 @@ function transform_from_grid(T, src::GridBasis, dest::OperatedDict, grid; option
 # Differentiation
 #################
 
+diff(dict::OperatedDict, args...; options...) = differentiation(dest(dict), args...; options...) * dict
+
 hasderivative(dict::OperatedDict) = hasderivative(superdict(dict))
 hasderivative(dict::OperatedDict, order) = hasderivative(superdict(dict), order)
 
@@ -234,18 +236,8 @@ end
 #################
 # Special cases
 #################
-
-# If a set has a differentiation operator, then we can represent the set of derivatives
-# by an OperatedDict.
-function derivative(dict::Dictionary; options...)
-	@assert hasderivative(dict)
-	differentiation(dict; options...) * dict
-end
-
-derivative(dict::OperatedDict; options...) = differentiation(dest(dict); options...) * dict
-
 (*)(a::Number, s::Dictionary) = ScalingOperator(s, a) * s
-(*)(a::Number, s::OperatedDict) = (ScalingOperator(s, a) * operator(s)) * superdict(s)
+(*)(a::Number, s::OperatedDict) = (ScalingOperator(dest(s), a) * operator(s)) * superdict(s)
 
 function (*)(op::DictionaryOperator, dict::Dictionary)
     @assert src(op) == dict
