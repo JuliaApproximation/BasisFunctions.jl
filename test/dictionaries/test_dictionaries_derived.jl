@@ -1,4 +1,4 @@
-
+using Calculus
 function test_derived_dicts(T)
     b1 = Fourier{T}(11)
     b2 = ChebyshevT{T}(12)

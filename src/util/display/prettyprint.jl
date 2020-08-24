@@ -132,7 +132,7 @@ subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in re
 ####
 
 
-symbol(dict::Dictionary) = string(dict)[1]
+symbol(dict::Dictionary) = string(string(dict)[1])
 
 # Default string is a brief structured representation of the dictionary
 strings(d::Dictionary) = (string(d),
@@ -213,7 +213,7 @@ function symbollist(op)
     # find the unique elements in ops
     U = sort(unique(ops);by=string)
     # Create a dictionary that maps the unique elements to their Symbols
-    S = OrderedCollections.OrderedDict(u => symbol(u) for u in U)
+    S = OrderedCollections.OrderedDict(u => string(symbol(u)) for u in U)
 
     # Get a list of the unique symbols
     Sym = sort(unique(values(S)), by=string)
@@ -227,7 +227,6 @@ function symbollist(op)
         end
         Sf = OrderedCollections.OrderedDict(Sf...)
         # Sf = filter(u->u.second==Sym[i],S)
-
         if length(Sf)>1
             j=1
             for k in keys(Sf)
