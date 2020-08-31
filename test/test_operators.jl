@@ -182,9 +182,10 @@ function test_multidiagonal_operators(T)
 end
 
 function test_sparse_operator(ELT)
-    S = SparseOperator(ArrayOperator(rand(ELT,4,4)))
+    S = SparseMatrixOperator(ArrayOperator(rand(ELT,4,4)))
     test_generic_operator_interface(S, ELT)
 end
+
 function test_banded_operator(ELT)
     a = [ELT(1),ELT(2),ELT(3)]
     H = HorizontalBandedOperator(Fourier{ELT}(6), Fourier{ELT}(3),a,3,2)

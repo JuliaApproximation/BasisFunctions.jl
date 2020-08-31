@@ -210,7 +210,7 @@ for T in fourier_types
         test_fourier_series(T)
     end
 end
-
+using LinearAlgebra
 @testset "$(rpad("Fourier orthogonality, gram functionality",80))" begin
     test_fourier_orthogonality()
     F = Fourier(10)

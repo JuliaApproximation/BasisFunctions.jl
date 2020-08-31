@@ -319,7 +319,7 @@ function stencilarray(op::BlockDiagonalOperator)
     A
 end
 
-Matrix(op::Union{BlockOperator,BlockDiagonalOperator}) = 
+Matrix(op::Union{BlockOperator,BlockDiagonalOperator}) =
     Matrix(matrix(op))
 
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})

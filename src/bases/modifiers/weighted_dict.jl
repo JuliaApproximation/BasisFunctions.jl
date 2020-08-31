@@ -58,7 +58,7 @@ _unsafe_eval_element(dict::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_elem
 # Evaluate the derivative of 1d weighted sets
 function unsafe_eval_element_derivative(dict::WeightedDict1d, idx, x, order)
 	@assert order == 1
-    derivative(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
+    diff(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
 		weightfunction(dict)(x) * unsafe_eval_element_derivative(superdict(dict), idx, x, order)
 end
 

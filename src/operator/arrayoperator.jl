@@ -387,6 +387,7 @@ ArrayOperator{T}(A::Zeros, src::Dictionary, dest::Dictionary) where {T} =
 ArrayOperator{T}(A::AbstractMatrix, src::Dictionary, dest::Dictionary) where {T} =
     MatrixOperator{T}(A, src, dest)
 
+export SparseMatrixOperator
 "A sparse matrix operator"
 const SparseMatrixOperator{T} = MatrixOperator{T,SparseMatrixCSC{T,Int}}
 function SparseMatrixOperator(op; options...)

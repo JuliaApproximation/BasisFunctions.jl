@@ -1,4 +1,7 @@
-using Calculus
+
+import BasisFunctions: diff
+using Calculus: derivative
+diff(f::typeof(cos),args...) = derivative(f,args...)
 function test_derived_dicts(T)
     b1 = Fourier{T}(11)
     b2 = ChebyshevT{T}(12)
@@ -41,6 +44,7 @@ function test_derived_dicts(T)
         test_generic_dict_interface(multidict(b1,rescale(b2, 0, 1)))
         #test_generic_dict_interface(MultiDict((b1,rescale(b2, 0, 1)))) end
         end
+
 
     @testset "$(rpad("Weighted dictionaries",80))" begin
         # as well as a regular function

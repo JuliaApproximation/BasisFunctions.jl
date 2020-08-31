@@ -294,9 +294,6 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C}, src_sc
     coef_srcdest
 end
 
-SparseOperator(op::TensorProductOperator; options...) =
-    TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
-
 function stencilarray(op::TensorProductOperator)
     A = Any[]
     push!(A, element(op,1))

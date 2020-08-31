@@ -131,6 +131,8 @@ approx_length(d::MultiDict, n::Int) = ceil(Int, n/numelements(d)) * ones(Int,num
 
 ## Differentiation
 
+diff(Φ::MultiDict, order; options...) =
+    multidict([diff(dict, order; options...) for dict in elements(Φ)]...)
 derivative_dict(Φ::MultiDict, order; options...) =
     MultiDict(map(d-> derivative_dict(d, order; options...), elements(Φ)))
 
