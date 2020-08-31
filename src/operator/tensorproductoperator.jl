@@ -82,8 +82,8 @@ isdiag(op::TensorProductOperator) = all(map(isdiag, op.operators))
 
 isidentity(op::TensorProductOperator) = all(map(isidentity, op.operators))
 
-Matrix(op::TensorProductOperator) = kron((Matrix(op) for op in elements(op))...)
-sparse(op::TensorProductOperator) = kron((sparse(op) for op in elements(op))...)
+# Matrix(op::TensorProductOperator) = kron((Matrix(op) for op in reverse(elements(op)))...)
+sparse(op::TensorProductOperator) = kron((sparse(op) for op in reverse(elements(op)))...)
 
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
@@ -293,9 +293,6 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C}, src_sc
     end
     coef_srcdest
 end
-
-SparseOperator(op::TensorProductOperator; options...) =
-    TensorProductOperator([SparseOperator(opi) for opi in elements(op)]...)
 
 function stencilarray(op::TensorProductOperator)
     A = Any[]

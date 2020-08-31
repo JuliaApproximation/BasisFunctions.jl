@@ -96,14 +96,11 @@ unsafe_eval_element(dict::OperatedDict, i, x) =
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
-    if isdiag(op)
-        diag(op, idx) * unsafe_eval_element(src(dict), idxn, x)
-    else
-        scratch_src[idx] = 1
-        apply!(op, scratch_dest, scratch_src)
-        scratch_src[idx] = 0
-        eval_expansion(dest(dict), scratch_dest, x)
-    end
+
+    scratch_src[idx] = 1
+    apply!(op, scratch_dest, scratch_src)
+    scratch_src[idx] = 0
+    eval_expansion(dest(dict), scratch_dest, x)
 end
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, scratch_src, scratch_dest)

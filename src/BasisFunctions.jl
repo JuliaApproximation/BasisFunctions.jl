@@ -153,9 +153,6 @@ export innerproduct,
 export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace,
     ChebyshevSpace, L2
 
-
-export SparseOperator
-
 # from bases/dictionary/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, domain, codomain,
@@ -258,7 +255,6 @@ export VectorvaluedDict
 
 # from bases/modifiers/operated_dict.jl
 export OperatedDict
-export derivative
 
 # from bases/dictionary/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,
