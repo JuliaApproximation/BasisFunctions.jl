@@ -81,6 +81,7 @@ plotgrid(S::MultiDict, n) = plotgrid(element(S,1), n)
 plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)
 # NOTE: This only supoorts multi-dimensional tensor product dicts.
 plotgrid(F::TensorProductDict2, n) = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
+plotgrid(F::OperatedDict, n) = plotgrid(superdict(F), n)
 plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
 plotgrid(φ::AbstractBasisFunction, n) = plotgrid(dictionary(φ), n)
 ## Split complex plots in real and imaginary parts
@@ -127,7 +128,7 @@ end
     seriescolor --> :tempo
      seriestype --> :heatmap
     aspect_ratio --> 1
-    cbar --> false
+    colorbar --> false
     # xrange = linspace(xlim[1],xlim[2],n)
     xrange = EquispacedGrid(n,xlim[1],xlim[2])
     # yrange = linspace(ylim[1],ylim[2],n)

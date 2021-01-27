@@ -16,7 +16,8 @@ const WeightedDict2d{S <: Number,T} = WeightedDict{SVector{2,S},T}
 const WeightedDict3d{S <: Number,T} = WeightedDict{SVector{3,S},T}
 const WeightedDict4d{S <: Number,T} = WeightedDict{SVector{4,S},T}
 
-
+==(dict1::WeightedDict,dict2::WeightedDict) =
+    superdict(dict1)==superdict(dict2) && weightfunction(dict1)==weightfunction(dict2)
 
 weightfunction(dict::WeightedDict) = dict.weightfun
 
@@ -57,13 +58,13 @@ _unsafe_eval_element(dict::WeightedDict, w, idx, x) = w(x...) * unsafe_eval_elem
 # Evaluate the derivative of 1d weighted sets
 function unsafe_eval_element_derivative(dict::WeightedDict1d, idx, x, order)
 	@assert order == 1
-    derivative(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
+    diff(weightfunction(dict), x) * unsafe_eval_element(superdict(dict), idx, x) +
 		weightfunction(dict)(x) * unsafe_eval_element_derivative(superdict(dict), idx, x, order)
 end
 
 # Special case for log, since it is not precise at 0.
-derivative(::typeof(log)) = x->1/x
-derivative(::typeof(log), x::T) where T<:Number= convert(T,1)/x
+diff(::typeof(log)) = x->1/x
+diff(::typeof(log), x::T) where T<:Number= convert(T,1)/x
 
 # Evaluate an expansion: same story
 eval_expansion(dict::WeightedDict, coefficients, x) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
@@ -109,25 +110,43 @@ transform_from_grid(T, src::GridBasis, dest::WeightedDict, grid; options...) =
 function derivative_dict(src::WeightedDict, order; options...)
 	if order == 0
 		src
-	else
-    	@assert order == 1
+	elseif order == 1
 	    s = superdict(src)
 	    f = weightfunction(src)
-	    f_prime = derivative(f)
+	    f_prime = diff(f)
 	    s_prime = derivative_dict(s, order)
 	    (f_prime * s) ⊕ (f * s_prime)
-	end
+    else
+        @assert order>1
+        s = superdict(src)
+        f = weightfunction(src)
+        dfs = Any[]
+        push!(dfs,f)
+        for k in 1:order
+            push!(dfs,diff(dfs[k]))
+        end
+        ⊕([dfs[k+1]*(derivative_dict(s, order-k))  for k in order:-1:0]...)
+    end
 end
 
 # Assume order = 1...
 function differentiation(::Type{T}, src::WeightedDict, dest::MultiDict, order; options...) where {T}
-    @assert order == 1
-    @assert dest == derivative_dict(src, order)
-
-    I = IdentityOperator{T}(src, element(dest, 1))
-    D = differentiation(T, superdict(src), order)
-    DW = wrap_operator(src, element(dest, 2), D)
-    block_column_operator([I,DW])
+    @assert size(dest) == size(derivative_dict(src, order))
+    if order==0
+        return IdentityOperator{T}(src, element(dest, 1))
+    end
+    if order == 1
+        I = IdentityOperator{T}(src, element(dest, 1))
+        D = differentiation(T, superdict(src), order)
+        DW = wrap_operator(src, element(dest, 2), D)
+        block_column_operator([I,DW])
+    elseif order > 1
+        Ds = [wrap_operator(src,e,binomial(order,k)*differentiation(T, superdict(src), k))
+            for (e,k) in zip(elements(dest),0:order)]
+        block_column_operator(Ds)
+    else
+        error("differentiation of order $order not implemented")
+    end
 end
 
 function evaluation(::Type{T}, dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T}

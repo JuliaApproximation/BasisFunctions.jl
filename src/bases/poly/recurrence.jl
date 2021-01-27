@@ -41,6 +41,8 @@ struct OPSValueIterator{T,O<:OPS{T}} <: DictionaryValueIterator{T}
 	x		::	T
 end
 
+OPSValueIterator(O::OPS{T}, x) where {T} = OPSValueIterator(O, convert(T, x))
+
 pointvalues(ops::OPS, x) = OPSValueIterator(ops, x)
 
 # The state vector is (z0,z1,d) as follows:

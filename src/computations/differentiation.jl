@@ -77,7 +77,7 @@ end
 
 # If a set has a differentiation operator, then we can represent the set of derivatives
 # by an OperatedDict.
-@deprecate derivative(dict::Dictionary, args...; options...) diff(dict, args...; options...)
+# @deprecate derivative(dict::Dictionary, args...; options...) diff(dict, args...; options...)
 """
 The diffentiated dictionary
 """

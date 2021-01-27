@@ -60,8 +60,8 @@ end
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # adjoint and inv.
-FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N}
-IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N}
+const FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N} where {T,N}
+const IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N} where {T,N,S}
 
 # We define adjoints ourselves, since FFTW doesn't
 adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
@@ -166,9 +166,9 @@ end
 
 # We have to know the precise type of the DCT plans in order to intercept calls to
 # adjoint and inv.
-DCTII_PLAN{T} = FFTW.DCTPlan{T,5,true}
-INV_DCTII_PLAN{T} = FFTW.DCTPlan{T,4,true}
-DCTI_PLAN{T} = FFTW.r2rFFTWPlan{T,(3,),true,1}
+const DCTII_PLAN{T} = FFTW.DCTPlan{T,5,true} where {T}
+const INV_DCTII_PLAN{T} = FFTW.DCTPlan{T,4,true} where {T}
+const DCTI_PLAN{T} = FFTW.r2rFFTWPlan{T,(3,),true,1} where {T}
 
 const DCTPLANS = Union{DCTII_PLAN,INV_DCTII_PLAN,DCTI_PLAN}
 

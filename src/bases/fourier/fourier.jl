@@ -285,6 +285,9 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 		return dense_evaluation(T, fs, gb; options...)
 	elseif issubset(coverdomain(grid), support(fs))
 		a, b = endpoints(coverdomain(grid))
+		if a==b
+			return dense_evaluation(T, fs, gb; options...)
+		end
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
 		h = step(grid)
@@ -298,10 +301,9 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 			super_gb = GridBasis{coefficienttype(gb)}(super_grid)
 			E = evaluation(T, fs, super_gb; options...)
 			R = IndexRestriction{T}(super_gb, gb, nleft_int+1:nleft_int+length(grid))
-			R*E
-		else
-			dense_evaluation(T, fs, gb; options...)
+			return R*E
 		end
+		dense_evaluation(T, fs, gb; options...)
 	else
 		dense_evaluation(T, fs, gb; options...)
 	end
