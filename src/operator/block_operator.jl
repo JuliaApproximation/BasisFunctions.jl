@@ -39,7 +39,7 @@ end
 function ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T}
     elements_src = iscomposite(src) ? elements(src) : (src,)
     elements_dest = iscomposite(dest) ? elements(dest) : (dest,)
-    BlockOperator{T}([ArrayOperator(getblock(A, i, j), srcj, desti) for (i,desti) in enumerate(elements_dest), (j,srcj) in enumerate(elements_src)], src, dest)
+    BlockOperator{T}([ArrayOperator(view(A, Block(i, j)), srcj, desti) for (i,desti) in enumerate(elements_dest), (j,srcj) in enumerate(elements_src)], src, dest)
 end
 
 

@@ -4,13 +4,13 @@ using Test, FFTW, BasisFunctions, LinearAlgebra, SparseArrays
 # Verify types of FFT and DCT plans by FFTW
 # If anything changes here, the aliases in fouriertransforms.jl have to change as well
 d1 = FFTW.plan_fft!(zeros(Complex{Float64}, 10), 1:1)
-@test typeof(d1) == FFTW.cFFTWPlan{Complex{Float64},-1,true,1}
+@test typeof(d1) == FFTW.cFFTWPlan{Complex{Float64},-1,true,1,UnitRange{Int64}}
 d2 = FFTW.plan_fft!(zeros(Complex{Float64}, 10, 10), 1:2)
-@test typeof(d2) == FFTW.cFFTWPlan{Complex{Float64},-1,true,2}
+@test typeof(d2) == FFTW.cFFTWPlan{Complex{Float64},-1,true,2,UnitRange{Int64}}
 d3 = FFTW.plan_bfft!(zeros(Complex{Float64}, 10), 1:1)
-@test typeof(d3) == FFTW.cFFTWPlan{Complex{Float64},1,true,1}
+@test typeof(d3) == FFTW.cFFTWPlan{Complex{Float64},1,true,1,UnitRange{Int64}}
 d4 = FFTW.plan_bfft!(zeros(Complex{Float64}, 10, 10), 1:2)
-@test typeof(d4) == FFTW.cFFTWPlan{Complex{Float64},1,true,2}
+@test typeof(d4) == FFTW.cFFTWPlan{Complex{Float64},1,true,2,UnitRange{Int64}}
 
 d5 = FFTW.plan_dct!(zeros(10), 1:1)
 @test typeof(d5) == FFTW.DCTPlan{Float64,5,true}

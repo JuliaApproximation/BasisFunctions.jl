@@ -177,7 +177,7 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector,
     part = partition(set)
     i = partition_index(part, x)
     set_i = element(set, i)
-    coef_i = getblock(coefficients, i)
+    coef_i = view(coefficients, Block(i))
     split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
     # We compute the types of the individual sets and their coefficients
     # in a hacky way to help inference further on. TODO: fix, because this

@@ -60,8 +60,8 @@ end
 
 # We have to know the precise type of the FFT plans in order to intercept calls to
 # adjoint and inv.
-const FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N} where {T,N}
-const IFFTPLAN{T,N,S} = FFTW.cFFTWPlan{T,1,true,N} where {T,N,S}
+const FFTPLAN{T,N} = FFTW.cFFTWPlan{T,-1,true,N,UnitRange{Int64}} where {T,N}
+const IFFTPLAN{T,N} = FFTW.cFFTWPlan{T,1,true,N,UnitRange{Int64}} where {T,N}
 
 # We define adjoints ourselves, since FFTW doesn't
 adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
