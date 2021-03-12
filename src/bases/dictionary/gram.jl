@@ -51,10 +51,10 @@ innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; options...) =
 
 
 # Make a quadrature strategy using user-supplied atol and rtol if they were given
-function quadstrategy(::Type{T}; atol = 0, rtol = -1, options...) where {T}
+function quadstrategy(::Type{T}; atol = 0, rtol = -1, maxeval=1e4 , options...) where {T}
 	if (rtol > 0)
 		# rtol does not equal -1 so it must have been supplied
-		QuadAdaptive{T}(atol, rtol)
+		QuadAdaptive{T}(atol, rtol, maxeval)
 	else
 		# use defaults
 		QuadAdaptive{T}()
