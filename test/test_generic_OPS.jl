@@ -1,6 +1,7 @@
-# test_half_range_chebyshev
 
-using BasisFunctions, FastGaussQuadrature, DomainSets
+using BasisFunctions, FastGaussQuadrature, DomainSets, DoubleFloats
+⊕ = BasisFunctions.:⊕
+
 using Test
 linspace(a,b,c) = range(a, stop=b, length=c)
 
@@ -123,20 +124,20 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
 end
 
 function test_gaussjacobi()
-    w0 = BigFloat(128//225)
-    w1 = (sqrt(BigFloat(70))*13+322)/900
-    w2 = (-sqrt(BigFloat(70))*13+322)/900
+    w0 = Double64(128//225)
+    w1 = (sqrt(Double64(70))*13+322)/900
+    w2 = (-sqrt(Double64(70))*13+322)/900
     weights_test = [w2,w1,w0,w1,w2]
-    n0 = BigFloat(0)
-    n1 = BigFloat(1)/3*sqrt(5-2sqrt(BigFloat(10)/7))
-    n2 = BigFloat(1)/3*sqrt(5+2sqrt(BigFloat(10)/7))
+    n0 = Double64(0)
+    n1 = Double64(1)/3*sqrt(5-2sqrt(Double64(10)/7))
+    n2 = Double64(1)/3*sqrt(5+2sqrt(Double64(10)/7))
     nodes_test = [-n2,-n1,n0,n1,n2]
 
     gjnodes, gjweights = gaussjacobi(5,0,0)
     @test Float64.(norm(gjweights-weights_test))+1≈1
     @test Float64.(norm(gjnodes-nodes_test))+1≈1
 
-    gjnodes, gjweights = gaussjacobi(5,BigFloat(0),BigFloat(0))
+    gjnodes, gjweights = gaussjacobi(5,Double64(0),Double64(0))
     @test norm(gjweights-weights_test)+1≈1
     @test norm(gjnodes-nodes_test)+1≈1
 end
@@ -147,14 +148,20 @@ function test_roots_of_legendre_halfrangechebyshev()
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = Legendre(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = Legendre{BigFloat}(N)
+    B = Legendre{Double64}(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    # B = HalfRangeChebyshevIkind(N,BigFloat(2))
+    # B = HalfRangeChebyshevIkind(N,Double64(2))
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
 end
 
-@testset "$(rpad("Generic OPS",80))" begin test_generic_ops_from_quadrature() end
-@testset "$(rpad("Half Range Chebyshev",80))" begin test_half_range_chebyshev() end
+@testset "$(rpad("Generic OPS",80))" begin
+    test_generic_ops_from_quadrature()
+end
+
+@testset "$(rpad("Half Range Chebyshev",80))" begin
+    test_half_range_chebyshev()
+end
+
 @testset "$(rpad("Gauss jacobi quadrature",80))"    begin
     test_gaussjacobi()
     test_roots_of_legendre_halfrangechebyshev()

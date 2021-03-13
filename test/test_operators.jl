@@ -1,8 +1,10 @@
-using BasisFunctions, BasisFunctions.Test
+using BasisFunctions, BasisFunctions.Test, DoubleFloats
 
 using Test
+⊕ = BasisFunctions.:⊕
+⊗ = BasisFunctions.:⊗
 
-types = [Float64,BigFloat,]
+types = (Float64,Double64)
 
 function test_operators(T)
     @testset "$(rpad("test identity operator",80))" begin

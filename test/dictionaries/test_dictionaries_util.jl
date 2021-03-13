@@ -1,7 +1,9 @@
 
 # Laguerre and Hermite fail due to linear algebra problems in BigFloat
 supports_approximation(::Laguerre{BigFloat}) = false
+supports_approximation(::Laguerre{Double64}) = false
 supports_approximation(::Hermite{BigFloat}) = false
+supports_approximation(::Hermite{Double64}) = false
 # It is difficult to do approximation in subsets and operated sets generically
 supports_approximation(::Subdictionary) = false
 supports_approximation(::OperatedDict) = false

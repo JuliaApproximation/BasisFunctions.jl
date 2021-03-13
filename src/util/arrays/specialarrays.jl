@@ -403,7 +403,7 @@ function _sparse_res_mul(A::IndexMatrix, B::AbstractArray)
     TS = Base.promote_op(LinearAlgebra.matprod, eltype(A), eltype(B))
     C = similar(B, TS, (size(A,1),size(B,2)))
     @assert C isa AbstractSparseArray
-    @warn "Creation of sparse array is not yet efficient."
+    # @warn "Creation of sparse array is not yet efficient."
     mul!(C,A,B)
 end
 

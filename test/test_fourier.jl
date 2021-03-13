@@ -1,5 +1,5 @@
 
-fourier_types = (Float32, Float64, BigFloat)
+fourier_types = (Float32, Float64, Double64)
 
 #####
 # Fourier series

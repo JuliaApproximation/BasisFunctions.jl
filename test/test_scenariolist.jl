@@ -8,7 +8,7 @@ using BasisFunctions
     S = SynthesisOperator(F)
     G = GridSampling(PeriodicEquispacedGrid(3,-1,1))
     @test Matrix(G*S)≈Matrix(G*F)
-    @test_throws MethodError SynthesisOperator(F,nothing)''
+    # @test_throws MethodError SynthesisOperator(F,nothing)''
 
     g = interpolation_grid(Fourier(3) → -1..1)
     g1 = gram(Fourier(3) → -1..1,discretemeasure(mapped_grid(FourierGrid(6),mapping(g))))

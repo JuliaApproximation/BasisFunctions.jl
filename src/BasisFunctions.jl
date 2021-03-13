@@ -6,7 +6,7 @@ module BasisFunctions
 
 using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
-using FFTW#, FastTransforms
+using FFTW
 using DomainSets, DomainIntegrals
 
 using QuadGK, Base.Cartesian

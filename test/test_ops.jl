@@ -1,9 +1,9 @@
 
-using BasisFunctions, BasisFunctions.Test, DomainSets
+using BasisFunctions, BasisFunctions.Test, DomainSets, DoubleFloats
 
 using Test
 
-types = (Float64, BigFloat)
+types = (Float64, Double64)
 
 #####
 # Orthogonal polynomials
@@ -124,7 +124,7 @@ function test_ops_generic(ops)
     d2 = recurrence_eval_derivative(ops, length(ops), x)
     @test abs(d1-d2) < tol
 
-    if prectype(ops) == Float64
+    # if prectype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
         r = roots(ops)
         @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
@@ -133,7 +133,7 @@ function test_ops_generic(ops)
         x = points(m)
         w = BasisFunctions.weights(m)
         @test abs(sum(w) - first_moment(ops)) < tol
-    end
+    # end
 end
 
 for T in types
@@ -151,7 +151,7 @@ end
 
 @testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
     OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
-    for ops in OPSs, n in (5,6), T in (Float64,BigFloat)
+    for ops in OPSs, n in (5,6), T in (Float64,Double64)
         B = ops{T}(n)
         test_orthogonality_orthonormality(B, gauss_rule(B))
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,2n)))

@@ -1,5 +1,8 @@
 
-using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays, Test
+using BasisFunctions, BasisFunctions.Test, DomainSets, StaticArrays,
+    DoubleFloats, GaussQuadrature, SpecialFunctions
+
+using Test
 
 import BasisFunctions.Test:
     supports_approximation,
@@ -10,7 +13,11 @@ import BasisFunctions.Test:
 
 BF = BasisFunctions
 
-domaintypes = (Float64, BigFloat)
+domaintypes = (Float64, Double64)
+
+GaussQuadrature.maxiterations[Double64] = 50
+SpecialFunctions.logabsgamma(x::Double64) = Double64.(logabsgamma(BigFloat(x)))
+Base.rationalize(x::SVector{N,Double64}) where {N} = SVector{N,Rational{Int}}([rationalize(x_i) for x_i in x])
 
 include("test_dictionaries_util.jl")
 include("test_dictionaries_derived.jl")

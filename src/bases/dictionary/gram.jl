@@ -154,7 +154,7 @@ default_gram(Φ::Dictionary, args...; options...) =
 	default_gram(operatoreltype(Φ), Φ, args...; options...)
 
 function default_gram(::Type{T}, Φ::Dictionary, μ::AbstractMeasure = measure(Φ); warnslow = true, options...) where {T}
-    warnslow && @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ)."
+    # warnslow && @debug "Slow computation of Gram matrix entrywise of $Φ with measure $μ)."
     A = grammatrix(Φ, μ, T; options...)
     R = ArrayOperator(A, Φ, Φ)
 end
@@ -244,8 +244,8 @@ end
 default_mixedgram(Φ1::Dictionary, Φ2::Dictionary, args...; options...) =
 	default_mixedgram(operatoreltype(Φ1, Φ2), Φ1, Φ2, args...; options...)
 
-function default_mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ; options...) where {T}
-    @debug "Slow computation of mixed Gram matrix entrywise."
+function default_mixedgram(::Type{T}, Φ1::Dictionary, Φ2::Dictionary, μ; warnslow = true, options...) where {T}
+    # warnslow && @debug "Slow computation of mixed Gram matrix entrywise."
     A = mixedgrammatrix(Φ1, Φ2, μ, T; options...)
     ArrayOperator(A, Φ2, Φ1)
 end

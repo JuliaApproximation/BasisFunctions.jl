@@ -52,7 +52,6 @@ end
 Base.rationalize(x::SVector{N,Float64}) where {N} = SVector{N,Rational{Int}}([rationalize(x_i) for x_i in x])
 Base.rationalize(x::SVector{N,BigFloat}) where {N} = SVector{N,Rational{BigInt}}([rationalize(x_i) for x_i in x])
 
-
 function Delimit(s::AbstractString)
     println()
     println("############")

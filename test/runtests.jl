@@ -10,7 +10,9 @@ import BasisFunctions.Test:
     suitable_function,
     suitable_interpolation_grid
 
-using Test, Random, FFTW, LinearAlgebra
+using Test, Random, FFTW, LinearAlgebra, DoubleFloats
+
+⊕ = BasisFunctions.:⊕
 
 linspace(a,b,c) = range(a, stop=b, length=c)
 

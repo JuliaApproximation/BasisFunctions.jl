@@ -1,6 +1,6 @@
-using BasisFunctions, Test
+using BasisFunctions, Test, DoubleFloats
 
-for T in (Float64,BigFloat)
+for T in (Float64,Double64)
 
     @testset "Discrete Gauss OPS Rule" begin
         for d in (Legendre{T}(10), Laguerre(10,rand(T)), Hermite{T}(10), ChebyshevT{T}(10),ChebyshevU{T}(10),Jacobi(10,rand(T),rand(T)),Fourier{T}(10))

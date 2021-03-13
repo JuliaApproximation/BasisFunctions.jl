@@ -63,10 +63,26 @@ computations with the indices or construct ranges.
 """
 abstract type AbstractIntegerIndex <: Integer end
 
+# Convert to or back from other integers
 convert(I::Type{<:AbstractIntegerIndex}, value::Int) = I(value)
-convert(::Type{T}, idx::AbstractIntegerIndex) where {T <: Number} = convert(T, value(idx))
+convert(::Type{T}, idx::AbstractIntegerIndex) where {T<:Integer} = convert(T, value(idx))
+
+# Some functionality of numbers that one might encounter in other conversions:
+# - These lines support conversion to BigFloat
+Base.div(idx::AbstractIntegerIndex, x::Integer, r::RoundingMode) = div(value(idx), x, r)
+Base.div(x::Integer, idx::AbstractIntegerIndex, r::RoundingMode) = div(x, value(idx), r)
+Base.div(i::AbstractIntegerIndex, j::AbstractIntegerIndex, r::RoundingMode) = div(value(i), value(j), r)
+# - These lines support conversion to Double64 (among other things)
+convert(::Type{Float32}, idx::AbstractIntegerIndex) = convert(Float32, value(idx))
+convert(::Type{Float64}, idx::AbstractIntegerIndex) = convert(Float64, value(idx))
+# Float32(idx::AbstractIntegerIndex) = Float32(value(idx))
+Float64(idx::AbstractIntegerIndex) = Float64(value(idx))
+
+
+# convert(::Type{T}, idx::AbstractIntegerIndex) where {T} = convert(T, value(idx))
 # Resolve an ambiguity with mpfr code...
-convert(::Type{BigFloat}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
+# convert(::Type{BigFloat}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
+# convert(::Type{Double64}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
 
 # With this line we inherit binary operations involving integers and native indices
 Base.promote_rule(I::Type{<:AbstractIntegerIndex}, ::Type{Int}) = I
