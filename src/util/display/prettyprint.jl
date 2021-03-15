@@ -165,9 +165,9 @@ strings(g::AbstractGrid) = (name(g) * " of size $(size(g)),\tELT = $(eltype(g))"
 # Measure symbols and strings
 ####
 
-symbol(m::AbstractMeasure) = "μ"
+symbol(m::Measure) = "μ"
 
-strings(m::AbstractMeasure) = (name(m), (string(support(m)),))
+strings(m::Measure) = (name(m), (string(support(m)),))
 
 
 
@@ -302,7 +302,7 @@ function show_composite(io::IO, dict::Dictionary)
     show_composite_object(io, dict)
 end
 
-function show_composite(io::IO, measure::Measure)
+function show_composite(io::IO, measure::Weight)
     print(io, "Measure ")
     show_composite_object(io, measure)
 end

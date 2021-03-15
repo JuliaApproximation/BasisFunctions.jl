@@ -1,35 +1,35 @@
 
 innerproduct(f, g, measure; options...) = integral(x->conj(f(x))*g(x), measure)
 
-applymeasure(μ::AbstractMeasure, f::Function; options...) = integral(f, μ)
+applymeasure(μ::Measure, f::Function; options...) = integral(f, μ)
 
 
 "A measure on a general domain with a general weight function `dσ = w(x) dx`."
-struct GenericWeightMeasure{T} <: Measure{T}
+struct GenericWeight{T} <: Weight{T}
     support          ::  Domain{T}
     weightfunction
 end
 
-name(m::GenericWeightMeasure) = "Measure with generic weight function"
+name(m::GenericWeight) = "Measure with generic weight function"
 
-unsafe_weight(m::GenericWeightMeasure, x) = m.weightfunction(x)
+unsafe_weightfun(m::GenericWeight, x) = m.weightfunction(x)
 
-support(m::GenericWeightMeasure) = m.support
+support(m::GenericWeight) = m.support
 
-strings(m::GenericWeightMeasure) = (name(m), (string(m.support),), (string(m.weightfunction),))
+strings(m::GenericWeight) = (name(m), (string(m.support),), (string(m.weightfunction),))
 
 
-name(m::DomainLebesgueMeasure) = "Lebesgue measure"
-name(m::LegendreMeasure) = "Legendre measure"
-name(m::JacobiMeasure) = "Jacobi measure (α = $(m.α), β = $(m.β))"
-name(m::LaguerreMeasure) = m.α == 0 ? "Laguerre measure" : "Generalized Laguerre measure (α = $(m.α))"
-name(m::HermiteMeasure) = "Hermite measure"
-name(m::ChebyshevTMeasure) = "Chebyshev measure of the first kind"
+name(m::LebesgueDomain) = "Lebesgue measure"
+name(m::LegendreWeight) = "Legendre weight"
+name(m::JacobiWeight) = "Jacobi weight (α = $(m.α), β = $(m.β))"
+name(m::LaguerreWeight) = m.α == 0 ? "Laguerre weight" : "Generalized Laguerre measure (α = $(m.α))"
+name(m::HermiteWeight) = "Hermite weight"
+name(m::ChebyshevTWeight) = "Chebyshev weight of the first kind"
+name(m::ChebyshevUWeight) = "Chebyshev weight of the second kind"
 
-const FourierMeasure = UnitLebesgueMeasure
-name(m::FourierMeasure) = "Fourier (Lebesgue) measure"
+const FourierWeight = LebesgueUnit
+name(m::FourierWeight) = "Fourier (Lebesgue) measure"
 
-name(m::ChebyshevUMeasure) = "Chebyshev measure of the second kind"
 
 
 
@@ -39,31 +39,31 @@ name(m::ChebyshevUMeasure) = "Chebyshev measure of the second kind"
 
 ## Mapped measure
 
-"A mapped measure"
-struct MappedMeasure{MAP,M,T} <: Measure{T}
+"A mapped weight function"
+struct MappedWeight{MAP,M,T} <: Weight{T}
     map     ::  MAP
     measure ::  M
 end
 
-MappedMeasure(map, measure::Measure{T}) where {T} =
-    MappedMeasure{typeof(map),typeof(measure),T}(map, measure)
-mappedmeasure(map, measure::Measure) =
-    MappedMeasure(map, measure)
+MappedWeight(map, measure::Weight{T}) where {T} =
+    MappedWeight{typeof(map),typeof(measure),T}(map, measure)
+mappedmeasure(map, measure::Weight) =
+    MappedWeight(map, measure)
 
-name(m::MappedMeasure) = "Mapped measure"
+name(m::MappedWeight) = "Mapped measure"
 
-mapping(m::MappedMeasure) = m.map
+mapping(m::MappedWeight) = m.map
 
-supermeasure(m::MappedMeasure) = m.measure
+supermeasure(m::MappedWeight) = m.measure
 
-apply_map(measure::Measure, map) = MappedMeasure(map, measure)
-apply_map(measure::MappedMeasure, map) = MappedMeasure(map ∘ mapping(measure), supermeasure(measure))
+apply_map(measure::Weight, map) = MappedWeight(map, measure)
+apply_map(measure::MappedWeight, map) = MappedWeight(map ∘ mapping(measure), supermeasure(measure))
 
-support(m::MappedMeasure) = mapping(m).(support(supermeasure(m)))
+support(m::MappedWeight) = mapping(m).(support(supermeasure(m)))
 
-unsafe_weight(m::MappedMeasure, x) = unsafe_weight(supermeasure(m), inverse(mapping(m), x)) / jacdet(mapping(m), x)
+unsafe_weightfun(m::MappedWeight, x) = unsafe_weightfun(supermeasure(m), inverse(mapping(m), x)) / jacdet(mapping(m), x)
 
-strings(m::MappedMeasure) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
+strings(m::MappedWeight) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
 
 # For mapped measures, we can undo the map and leave out the jacobian in the
 # weight function of the measure by going to the supermeasure
@@ -78,9 +78,9 @@ import DomainIntegrals: islebesguemeasure,
 
 
 
-function process_measure(qs, domain::DomainSets.MappedDomain, μ::MappedMeasure, sing)
+function process_measure(qs, domain::DomainSets.MappedDomain, μ::MappedWeight, sing)
     # TODO: think about what to do with the singularity here
-    # -> Move MappedMeasure into DomainIntegrals.jl and implement the logic there
+    # -> Move MappedWeight into DomainIntegrals.jl and implement the logic there
     m1 = mapping(μ)
     m2 = forward_map(domain)
     if iscompatible(m1,m2)
@@ -93,7 +93,7 @@ function process_measure(qs, domain::DomainSets.MappedDomain, μ::MappedMeasure,
     end
 end
 
-function process_measure(qs, domain, μ::MappedMeasure, sing)
+function process_measure(qs, domain, μ::MappedWeight, sing)
     # f -> f(m(x))
     map1 = mapping(μ)
     pre2, map2, domain2, μ2, sing =
@@ -105,41 +105,41 @@ end
 
 ## Product measure
 
-"The product measure"
-struct ProductMeasure{T,M} <: Measure{T}
+"A product weight."
+struct ProductWeight{T,M} <: Weight{T}
     measures ::  M
 end
 
 
-product_domaintype(measures::Measure...) = Tuple{map(domaintype, measures)...}
-function product_domaintype(measures::Vararg{Measure{<:Number},N}) where {N}
+product_domaintype(measures::Weight...) = Tuple{map(domaintype, measures)...}
+function product_domaintype(measures::Vararg{Weight{<:Number},N}) where {N}
     T = promote_type(map(domaintype, measures)...)
     SVector{N,T}
 end
 
-function ProductMeasure(measures::Measure...)
+function ProductWeight(measures::Weight...)
     T = product_domaintype(measures...)
-    ProductMeasure{T}(measures...)
+    ProductWeight{T}(measures...)
 end
-ProductMeasure{T}(measures::Measure...) where {T} =
-    ProductMeasure{T,typeof(measures)}(measures)
+ProductWeight{T}(measures::Weight...) where {T} =
+    ProductWeight{T,typeof(measures)}(measures)
 
 
-islebesguemeasure(μ::ProductMeasure) = all(map(islebesguemeasure, elements(μ)))
+islebesguemeasure(μ::ProductWeight) = all(map(islebesguemeasure, elements(μ)))
 
-productmeasure(measures::Measure...) = ProductMeasure(measures...)
+productmeasure(measures::Weight...) = ProductWeight(measures...)
 
-elements(m::ProductMeasure) = m.measures
-element(m::ProductMeasure, i) = m.measures[i]
+elements(m::ProductWeight) = m.measures
+element(m::ProductWeight, i) = m.measures[i]
 
-isnormalized(m::ProductMeasure) = mapreduce(isnormalized, &, elements(m))
+isnormalized(m::ProductWeight) = mapreduce(isnormalized, &, elements(m))
 
-support(m::ProductMeasure{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
+support(m::ProductWeight{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
 
-unsafe_weight(m::ProductMeasure, x) = mapreduce(unsafe_weight, *, elements(m), x)
+unsafe_weightfun(m::ProductWeight, x) = mapreduce(unsafe_weightfun, *, elements(m), x)
 
 # For product domains, process the measures dimension per dimension
-function process_measure(qs, domain::ProductDomain, μ::ProductMeasure, sing)
+function process_measure(qs, domain::ProductDomain, μ::ProductWeight, sing)
     if numelements(domain) == numelements(μ)
         if numelements(domain) == 2
             pre1, map1, domain1, μ1, sing1 = process_measure(qs, element(domain, 1), element(μ, 1), sing)
@@ -163,7 +163,7 @@ function process_measure(qs, domain::ProductDomain, μ::ProductMeasure, sing)
 end
 
 
-function stencilarray(m::ProductMeasure)
+function stencilarray(m::ProductWeight)
     A = Any[]
     push!(A, element(m,1))
     for i = 2:length(elements(m))
@@ -179,4 +179,4 @@ end
 
 # By default, measures are compatible only when they are equal.
 iscompatible(m1::M, m2::M) where {M <: Measure} = m1==m2
-iscompatible(m1::Measure, m2::Measure) = false
+iscompatible(m1::Weight, m2::Weight) = false

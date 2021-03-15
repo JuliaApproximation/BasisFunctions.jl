@@ -19,32 +19,32 @@ using BasisFunctions.Test: generic_test_discrete_measure
     @test !isnormalized(μ)
 
 
-    μ = DiracMeasure(rand())
+    μ = DiracWeight(rand())
     generic_test_discrete_measure(μ)
     @test weights(μ) isa FillArrays.Ones
     @test isnormalized(μ)
 
     μ = discretemeasure(PeriodicEquispacedGrid(3,0,1))
-    @test  μ isa DiracComb && μ isa UniformDiracComb
+    @test isuniform(μ)
     generic_test_discrete_measure(μ)
     μ = discretemeasure(MidpointEquispacedGrid(3,0,1))
-    @test μ isa DiracComb
+    @test isuniform(μ)
     generic_test_discrete_measure(μ)
     μ = discretemeasure(EquispacedGrid(3,0,1))
-    @test μ isa DiracComb
+    @test isuniform(μ)
     generic_test_discrete_measure(μ)
-    μ = NormalizedDiracComb(EquispacedGrid(3,0,1))
-    @test μ isa NormalizedDiracComb
+    μ = BasisFunctions.NormalizedDiracComb(EquispacedGrid(3,0,1))
+    @test μ isa BasisFunctions.UniformGridWeight
     @test isnormalized(μ)
     generic_test_discrete_measure(μ)
-    μ = WeightedDiracComb(MidpointEquispacedGrid(3,0,1),rand(3))
+    μ = discretemeasure(MidpointEquispacedGrid(3,0,1),rand(3))
     generic_test_discrete_measure(μ)
 
     g = FourierGrid(10)
     mg = FourierGrid(10,-1,1)
     m = mapping(mg)
     μ = discretemeasure(mg)
-    @test μ isa BasisFunctions.DiscreteMappedMeasure
+    @test μ isa BasisFunctions.MappedGridWeight
     generic_test_discrete_measure(μ)
     @test mapping(μ) == m
     @test supermeasure(μ) == discretemeasure(g)
@@ -55,6 +55,6 @@ using BasisFunctions.Test: generic_test_discrete_measure
     g = PeriodicEquispacedGrid(3,-1,1)×PeriodicEquispacedGrid(4,-1,1)
     μ = discretemeasure(g)
     generic_test_discrete_measure(μ)
-    @test μ isa BasisFunctions.DiscreteProductMeasure
+    @test μ isa BasisFunctions.DiscreteProductWeight
     @test elements(μ) == (element(μ,1),element(μ,2))
 end

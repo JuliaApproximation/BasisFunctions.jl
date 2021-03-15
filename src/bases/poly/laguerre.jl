@@ -24,22 +24,22 @@ first_moment(b::Laguerre{T}) where {T} = gamma(b.α+1)
 laguerre_α(b::Laguerre) = b.α
 
 
-measure(b::Laguerre) = LaguerreMeasure(b.α)
+measure(b::Laguerre) = LaguerreWeight(b.α)
 
 iscompatible(d1::Laguerre, d2::Laguerre) = d1.α == d2.α
 interpolation_grid(dict::Laguerre) = LaguerreNodes(length(dict), dict.α)
 iscompatible(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(grid) && dict.α ≈ grid.α
 isorthogonal(dict::Laguerre, measure::GaussLaguerre) = laguerre_α(dict) ≈ laguerre_α(measure) && opsorthogonal(dict, measure)
 
-isorthonormal(dict::Laguerre, measure::LaguerreMeasure) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
+isorthonormal(dict::Laguerre, measure::LaguerreWeight) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
 isorthonormal(dict::Laguerre, measure::GaussLaguerre) where T = isorthogonal(dict, measure) && laguerre_α(dict) == 0
 issymmetric(::Laguerre) = false
 
-isorthogonal(dict::Laguerre, measure::LaguerreMeasure) = dict.α == measure.α
+isorthogonal(dict::Laguerre, measure::LaguerreWeight) = dict.α == measure.α
 
 gauss_rule(dict::Laguerre) = GaussLaguerre(length(dict), dict.α)
 
-function innerproduct_native(d1::Laguerre, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreMeasure; options...)
+function innerproduct_native(d1::Laguerre, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...)
 	T = coefficienttype(d1)
 	if iscompatible(d1, d2) && isorthogonal(d1, measure)
 		if i == j

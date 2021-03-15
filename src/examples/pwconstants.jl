@@ -41,12 +41,12 @@ support(h::PiecewiseConstants{T}, idx::Int) where {T} =
 
 # The measure of a dictionary is used when computing projections (inner products
 # of a function with a basis function)
-measure(h::PiecewiseConstants{T}) where {T} = FourierMeasure{T}()
+measure(h::PiecewiseConstants{T}) where {T} = FourierWeight{T}()
 
-isorthogonal(h::PiecewiseConstants, measure::FourierMeasure) = true
+isorthogonal(h::PiecewiseConstants, measure::FourierWeight) = true
 
 # Is our dictionary orthogonal with respect to a discrete measure? We check all points.
-function isorthogonal(h::PiecewiseConstants, μ::DiscreteMeasure)
+function isorthogonal(h::PiecewiseConstants, μ::DiscreteWeight)
     for (i,xi) in zip(ordering(h),points(μ))
         if xi ∉ support(h, i)
             return false

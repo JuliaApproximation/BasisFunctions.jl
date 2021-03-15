@@ -135,13 +135,13 @@ measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
 hasmeasure(dict::MappedDict) = hasmeasure(superdict(dict))
 
 for f in (:isorthonormal, :isorthogonal, :isbiorthogonal)
-    @eval $f(dict::MappedDict, measure::MappedMeasure) =
+    @eval $f(dict::MappedDict, measure::MappedWeight) =
         iscompatible(mapping(dict),mapping(measure)) && $f(superdict(dict), supermeasure(measure))
 end
 
 
 
-function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedMeasure; options...)
+function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedWeight; options...)
     if iscompatible(d1,d2) && iscompatible(mapping(d1),mapping(measure))
         innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
     else
@@ -149,7 +149,7 @@ function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Mapp
     end
 end
 
-function gram(::Type{T}, dict::MappedDict, m::MappedMeasure; options...) where {T}
+function gram(::Type{T}, dict::MappedDict, m::MappedWeight; options...) where {T}
     if iscompatible(mapping(dict), mapping(m))
         wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else
@@ -157,7 +157,7 @@ function gram(::Type{T}, dict::MappedDict, m::MappedMeasure; options...) where {
     end
 end
 
-function gram(::Type{T}, dict::MappedDict, m::DiscreteMeasure, grid::MappedGrid, weights; options...) where {T}
+function gram(::Type{T}, dict::MappedDict, m::DiscreteWeight, grid::MappedGrid, weights; options...) where {T}
     if iscompatible(mapping(grid), mapping(dict))
         wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else

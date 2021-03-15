@@ -77,7 +77,7 @@ innerproduct(f, ψ::AbstractBasisFunction, measure; options...) =
 # supports. However, we only perform this optimization if the intersection does not
 # lead to an IntersectionDomain (i.e., the intersection is not recognized) since
 # that leads to incomputable integrals.
-function analysis_integral(dict::Dictionary, idx, g, measure::AbstractMeasure; options...)
+function analysis_integral(dict::Dictionary, idx, g, measure::Measure; options...)
     @boundscheck checkbounds(dict, idx)
     domain1 = support(dict, idx)
     domain2 = support(measure)
@@ -85,13 +85,13 @@ function analysis_integral(dict::Dictionary, idx, g, measure::AbstractMeasure; o
     unsafe_analysis_integral1(dict, idx, g, measure, domain1, domain2, domain1 ∩ domain2, qs)
 end
 
-function analysis_integral(dict::Dictionary, idx, g, measure::DiscreteMeasure; options...)
+function analysis_integral(dict::Dictionary, idx, g, measure::DiscreteWeight; options...)
     @boundscheck checkbounds(dict, idx)
     unsafe_analysis_integral2(dict, idx, g, measure, support(dict, idx))
 end
 
 # unsafe for indexing
-function unsafe_analysis_integral1(dict, idx, g, measure::Measure, d1, d2, domain, qs)
+function unsafe_analysis_integral1(dict, idx, g, measure::Weight, d1, d2, domain, qs)
     if d1 == d2
         integral(qs, x->conj(unsafe_eval_element(dict, idx, x))*g(x), measure)
     else
@@ -105,5 +105,5 @@ unsafe_analysis_integral1(dict, idx, g, measure, d1, d2, domain::IntersectionDom
     integral(qs, x->conj(eval_element(dict, idx, x))*g(x), measure)
 
 # unsafe for indexing and for support of integral
-unsafe_analysis_integral2(dict::Dictionary, idx, g, measure::DiscreteMeasure, domain) =
+unsafe_analysis_integral2(dict::Dictionary, idx, g, measure::DiscreteWeight, domain) =
     integral(x->conj(unsafe_eval_element(dict, idx, x))*g(x), domain, measure)

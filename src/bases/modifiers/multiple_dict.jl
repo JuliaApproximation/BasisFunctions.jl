@@ -87,9 +87,9 @@ for op in (:isorthogonal, :isbiorthogonal)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
-    @eval $op(s::MultiDict, m::AbstractMeasure) = ($fname)(s, m, elements(s)...)
+    @eval $op(s::MultiDict, m::Measure) = ($fname)(s, m, elements(s)...)
     # By default, multidicts do not have these properties:
-    @eval ($fname)(s, m::AbstractMeasure, elements...) = false
+    @eval ($fname)(s, m::Measure, elements...) = false
 end
 
 for op in (:hasinterpolationgrid, :hastransform)
@@ -163,7 +163,7 @@ evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; option
 
 
 
-function gramdual(dict::MultiDict, measure::AbstractMeasure; options...)
+function gramdual(dict::MultiDict, measure::Measure; options...)
     @debug "Are you sure you want `dualtype=gramdual` and not `weightedsumdual`"
     default_gramdual(dict, measure; options...)
 end

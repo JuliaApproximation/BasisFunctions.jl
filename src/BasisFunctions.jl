@@ -82,14 +82,14 @@ import DomainSets:
     prectype, numtype
 
 import DomainIntegrals:
-    integral, quadrature,
-    AbstractMeasure, Measure, DiscreteMeasure,
+    integral, integrate,
     support,
-    weight, weightfunction,
-    unsafe_weight, unsafe_weightfunction,
-    unsafe_discrete_weight,
+    weightfun, weightfunction,
+    unsafe_weightfun, unsafe_weightfunction,
+    weight, unsafe_weight,
     points, weights,
-    isnormalized, iscontinuous, isdiscrete
+    iscontinuous, isdiscrete,
+    isnormalized, isuniform
 
 export .., numtype, integral
 
@@ -142,10 +142,10 @@ export MappedGrid, mapped_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct,
-    FourierMeasure, ChebyshevTMeasure, ChebyshevMeasure, ChebyshevUMeasure,
-    LegendreMeasure, JacobiMeasure, OPSNodesMeasure, discretemeasure, Measure,
-    MappedMeasure, ProductMeasure, DiracComb, NormalizedDiracComb,
-    DiracMeasure, isnormalized, UniformDiracComb, WeightedDiracComb,
+    FourierWeight, ChebyshevTWeight, ChebyshevWeight, ChebyshevUWeight,
+    LegendreWeight, JacobiWeight, OPSNodesMeasure, discretemeasure,
+    MappedWeight, ProductWeight,
+    isnormalized,
     mappedmeasure, productmeasure, submeasure, weight, lebesguemeasure,
     supermeasure, applymeasure
 

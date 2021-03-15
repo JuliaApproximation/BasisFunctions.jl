@@ -185,13 +185,13 @@ function test_fourier_series(T)
 end
 
 function test_fourier_orthogonality()
-    test_orthogonality_orthonormality(Fourier(10), true, false, FourierMeasure())
+    test_orthogonality_orthonormality(Fourier(10), true, false, FourierWeight())
     test_orthogonality_orthonormality(Fourier(10), true, false, DiracComb(interpolation_grid(Fourier(10))))
     test_orthogonality_orthonormality(Fourier(10), true, true, NormalizedDiracComb(interpolation_grid(Fourier(10))))
     test_orthogonality_orthonormality(Fourier(10), true, false, DiracComb(interpolation_grid(Fourier(20))))
     test_orthogonality_orthonormality(Fourier(10), true, false, NormalizedDiracComb(interpolation_grid(Fourier(20))))
 
-    test_orthogonality_orthonormality(Fourier(11), true, true, FourierMeasure())
+    test_orthogonality_orthonormality(Fourier(11), true, true, FourierWeight())
     test_orthogonality_orthonormality(Fourier(11), true, false, DiracComb(interpolation_grid(Fourier(11))))
     test_orthogonality_orthonormality(Fourier(11), true, true, NormalizedDiracComb(interpolation_grid(Fourier(11))))
     test_orthogonality_orthonormality(Fourier(11), true, false, DiracComb(interpolation_grid(Fourier(22))))
@@ -217,7 +217,7 @@ using LinearAlgebra
     P = ProjectionSampling(F)
     @test (P')'*P' == gram(F)
 
-    for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierMeasure())
+    for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierWeight())
         D = dual(P, M)
         @test Matrix(gram(P, M)) ≈ Matrix(inv(gram(D,M)))
         A = SynthesisOperator(P, M)

@@ -86,7 +86,7 @@ unsafe_moment(dict::ChebyshevT, idx; measure = lebesguemeasure(support(dict)), o
 unsafe_moment(dict::ChebyshevT, idx, measure; options...) =
 	innerproduct(dict, idx, dict, PolynomialDegree(0), measure; options...)
 
-function unsafe_moment(dict::ChebyshevT{T}, idx, ::LegendreMeasure; options...) where {T}
+function unsafe_moment(dict::ChebyshevT{T}, idx, ::LegendreWeight; options...) where {T}
     n = degree(idx)
     if n == 0
         T(2)
@@ -98,10 +98,10 @@ end
 ## Inner products
 
 hasmeasure(dict::ChebyshevT) = true
-measure(dict::ChebyshevT{T}) where T = ChebyshevMeasure{T}()
+measure(dict::ChebyshevT{T}) where T = ChebyshevTWeight{T}()
 issymmetric(::ChebyshevT) = true
 
-innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTMeasure;
+innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTWeight;
 			T = coefficienttype(b1), options...) =
 	innerproduct_chebyshev_full(i, j, T)
 
@@ -117,7 +117,7 @@ function innerproduct_chebyshev_full(i, j, T)
 	end
 end
 
-function innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, measure::LegendreMeasure; options...)
+function innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, measure::LegendreWeight; options...)
 	n1 = degree(i)
 	n2 = degree(j)
 	(unsafe_moment(b1, PolynomialDegree(n1+n2), measure) + unsafe_moment(b1, PolynomialDegree(abs(n1-n2)), measure))/2

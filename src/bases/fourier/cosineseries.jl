@@ -18,7 +18,7 @@ CosineSeries(n::Int) = CosineSeries{Float64}(n)
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
 isbasis(b::CosineSeries) = true
-isorthogonal(b::CosineSeries, ::FourierMeasure) = true
+isorthogonal(b::CosineSeries, ::FourierWeight) = true
 
 
 hasinterpolationgrid(b::CosineSeries) = true
@@ -76,15 +76,15 @@ restriction(::Type{T}, src::CosineSeries, dest::CosineSeries; options...) where 
 ## Inner products
 
 hasmeasure(dict::CosineSeries) = true
-measure(dict::CosineSeries{T}) where {T} = FourierMeasure{T}()
+measure(dict::CosineSeries{T}) where {T} = FourierWeight{T}()
 
-function gram(::Type{T}, dict::CosineSeries, ::FourierMeasure; options...) where {T}
+function gram(::Type{T}, dict::CosineSeries, ::FourierWeight; options...) where {T}
     diag = ones(T,length(dict))/2
     diag[1] = 1
     DiagonalOperator(dict, diag)
 end
 
-innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierMeasure;
+innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierWeight;
 			T = coefficienttype(b1), options...) =
 	innerproduct_cosine_full(i, j, T)
 

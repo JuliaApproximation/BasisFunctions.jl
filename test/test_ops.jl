@@ -49,7 +49,7 @@ function test_chebyshevU(T)
     @test support(b1) == ChebyshevInterval{T}()
     @test BasisFunctions.jacobi_α(b1) ≈ .5 ≈ BasisFunctions.jacobi_β(b1)
 
-    test_orthogonality_orthonormality(b1, true, false, BasisFunctions.ChebyshevUMeasure{T}())
+    test_orthogonality_orthonormality(b1, true, false, BasisFunctions.ChebyshevUWeight{T}())
     test_orthogonality_orthonormality(b1, true, false, gauss_rule(b1))
     test_orthogonality_orthonormality(b1, true, false, gauss_rule(resize(b1,length(b1)+1)))
 end
@@ -62,7 +62,7 @@ function test_legendre(T)
     @test abs(bl[6](x1) - 0.27064) < 1e-5
 
 
-    test_orthogonality_orthonormality(bl, true, false, BasisFunctions.LegendreMeasure{T}())
+    test_orthogonality_orthonormality(bl, true, false, BasisFunctions.LegendreWeight{T}())
     test_orthogonality_orthonormality(bl, true, false, gauss_rule(bl))
     test_orthogonality_orthonormality(bl, true, false, gauss_rule(resize(bl,length(bl)+1)))
 end
@@ -74,8 +74,8 @@ function test_laguerre(T)
     x1 = T(4//10)
     @test abs(bl[6](x1) + 0.08912346) < 1e-5
 
-    test_orthogonality_orthonormality(bl, true, false, BasisFunctions.LaguerreMeasure(T(1//3)))
-    test_orthogonality_orthonormality(Laguerre(10,T(0)), true, true, BasisFunctions.LaguerreMeasure(T(0)))
+    test_orthogonality_orthonormality(bl, true, false, BasisFunctions.LaguerreWeight(T(1//3)))
+    test_orthogonality_orthonormality(Laguerre(10,T(0)), true, true, BasisFunctions.LaguerreWeight(T(0)))
     test_orthogonality_orthonormality(bl, true, false, gauss_rule(bl))
     test_orthogonality_orthonormality(bl, true, false, gauss_rule(resize(bl,length(bl)+1)))
 end
@@ -87,7 +87,7 @@ function test_hermite(T)
     x1 = T(4//10)
     @test abs(bh[6](x1) - 38.08768) < 1e-5
 
-    test_orthogonality_orthonormality(bh, true, false, BasisFunctions.HermiteMeasure{T}())
+    test_orthogonality_orthonormality(bh, true, false, BasisFunctions.HermiteWeight{T}())
     test_orthogonality_orthonormality(bh, true, false, gauss_rule(bh))
     test_orthogonality_orthonormality(bh, true, false, gauss_rule(resize(bh,length(bh)+1)))
 end
@@ -101,7 +101,7 @@ function test_jacobi(T)
     @test BasisFunctions.jacobi_α(bj) ≈ T(2//3)
     @test BasisFunctions.jacobi_β(bj) ≈ T(3//4)
 
-    test_orthogonality_orthonormality(bj, true, false, BasisFunctions.JacobiMeasure(T(2//3), T(3//4)))
+    test_orthogonality_orthonormality(bj, true, false, BasisFunctions.JacobiWeight(T(2//3), T(3//4)))
     test_orthogonality_orthonormality(bj, true, false, gauss_rule(bj))
     test_orthogonality_orthonormality(bj, true, false, gauss_rule(resize(bj,length(bj)+1)))
 end

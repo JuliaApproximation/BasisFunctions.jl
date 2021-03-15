@@ -236,7 +236,7 @@ function test_gram_projection(basis)
             f = suitable_function(basis)
             μ = measure(basis)
             # Do we compute the projection integrals accurately?
-            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weight(μ,t), truncate(support(basis, 1)))
+            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weightfun(μ,t), truncate(support(basis, 1)))
             @test abs(innerproduct(t->f(t...), basis[1]) - Z)/abs(Z) < 1e-1
             @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
             e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)

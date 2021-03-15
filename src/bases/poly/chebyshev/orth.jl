@@ -1,24 +1,24 @@
 
-isorthogonal(::ChebyshevU, ::ChebyshevUMeasure) = true
-isorthogonal(::ChebyshevT, ::ChebyshevTMeasure) = true
+isorthogonal(::ChebyshevU, ::ChebyshevUWeight) = true
+isorthogonal(::ChebyshevT, ::ChebyshevTWeight) = true
 
 isorthogonal(dict::ChebyshevU, measure::GaussChebyshevU) = opsorthogonal(dict, measure)
 isorthogonal(dict::ChebyshevT, measure::GaussChebyshevT) = opsorthogonal(dict, measure)
 
-const UniformDiscreteChebyshevTMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G <: ChebyshevNodes where W <:FillArrays.AbstractFill
-isorthogonal(dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure) = BasisFunctions.opsorthogonal(dict, measure)
+const UniformDiscreteChebyshevTWeight{T,G,W} = GenericGridWeight{T,G,W} where G <: ChebyshevNodes where W <:FillArrays.AbstractFill
+isorthogonal(dict::ChebyshevT, measure::UniformDiscreteChebyshevTWeight) = BasisFunctions.opsorthogonal(dict, measure)
 
 gauss_rule(dict::ChebyshevT{T}) where T = GaussChebyshevT{T}(length(dict))
 gauss_rule(dict::ChebyshevU{T}) where T = GaussChebyshevU{T}(length(dict))
 
-function gram(::Type{T}, dict::ChebyshevT, ::ChebyshevMeasure; options...) where {T}
+function gram(::Type{T}, dict::ChebyshevT, ::ChebyshevTWeight; options...) where {T}
 	diag = zeros(T, length(dict))
 	fill!(diag, convert(T, pi)/2)
 	diag[1] = convert(T,pi)
 	DiagonalOperator(dict, diag)
 end
 
-gram(::Type{T}, dict::ChebyshevU, ::ChebyshevUMeasure; options...) where {T} =
+gram(::Type{T}, dict::ChebyshevU, ::ChebyshevUWeight; options...) where {T} =
 	ScalingOperator(convert(T, pi)/2, dict)
 
 function diagonal_gram(::Type{T}, dict::ChebyshevT, measure::GaussChebyshevT; options...) where {T}
@@ -31,5 +31,5 @@ function diagonal_gram(::Type{T}, dict::ChebyshevT, measure::GaussChebyshevT; op
 end
 
 
-diagonal_gram(::Type{T}, dict::ChebyshevT, measure::UniformDiscreteChebyshevTMeasure; options...) where {T} =
+diagonal_gram(::Type{T}, dict::ChebyshevT, measure::UniformDiscreteChebyshevTWeight; options...) where {T} =
     CoefficientScalingOperator{T}(dict, 1, convert(T,2))*ScalingOperator(dict, convert(T,length(points(measure)))/2)

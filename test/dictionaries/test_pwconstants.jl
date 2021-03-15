@@ -8,7 +8,7 @@ using BasisFunctions, GridArrays
     g = interpolation_grid(H)
     @test g≈MidpointEquispacedGrid(10,0,1)
     @test isorthogonal(H,discretemeasure(g))
-    @test isorthogonal(H,FourierMeasure())
+    @test isorthogonal(H,FourierWeight())
     @test isorthogonal(H,discretemeasure(MidpointEquispacedGrid(10,0,1)))
 
     @test support(H) ≈ 0.0..1.0
@@ -23,5 +23,5 @@ using BasisFunctions, GridArrays
     @test gram(H,discretemeasure(g)) ≈ IdentityOperator(H)
     @test evaluation(H,g)≈IdentityOperator(H)
 
-    @test gram(H,FourierMeasure())≈.1IdentityOperator(H)
+    @test gram(H,FourierWeight())≈.1IdentityOperator(H)
 end

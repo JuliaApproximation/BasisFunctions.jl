@@ -79,7 +79,7 @@ for op in (:isreal, :isbasis)
 end
 
 for op in (:isreal, :isbiorthogonal, :isorthonormal, :isorthogonal)
-    @eval $op(dict::Subdictionary, measure::Measure) = $op(superdict(dict), measure::Measure)
+    @eval $op(dict::Subdictionary, measure::Weight) = $op(superdict(dict), measure::Weight)
 end
 
 for op in (:moment, :norm)

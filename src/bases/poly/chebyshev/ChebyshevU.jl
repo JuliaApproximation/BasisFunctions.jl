@@ -22,10 +22,10 @@ interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevUNodes{T}(b.n)
 
 iscompatible(dict::ChebyshevU, grid::ChebyshevUNodes) = length(dict) == length(grid)
 issymmetric(::ChebyshevU) = true
-measure(dict::ChebyshevU{T}) where {T} = ChebyshevUMeasure{T}()
+measure(dict::ChebyshevU{T}) where {T} = ChebyshevUWeight{T}()
 hasmeasure(::ChebyshevU) = true
 
-function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUMeasure;
+function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight;
 			T = coefficienttype(b1), options...)
 	if i == j
 		convert(T, pi)/2

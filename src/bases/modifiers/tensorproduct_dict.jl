@@ -79,11 +79,11 @@ for op in (:isreal, :isbasis, :isframe)
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval $op(s::TensorProductDict, m::ProductMeasure) = mapreduce($op, &, elements(s), elements(m))
+    @eval $op(s::TensorProductDict, m::ProductWeight) = mapreduce($op, &, elements(s), elements(m))
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductMeasure) = mapreduce($op, &, elements(s), elements(m))
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductWeight) = mapreduce($op, &, elements(s), elements(m))
 end
 
 for op in (:isorthogonal, :iscompatible)
@@ -220,7 +220,7 @@ hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
 
 
-innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductMeasure; options...) =
+innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductWeight; options...) =
     mapreduce(innerproduct, *, elements(Φ1), Tuple(i), elements(Φ2), Tuple(j), elements(measure))
 
 
@@ -267,10 +267,10 @@ object_parentheses(dict::TensorProductDict) = true
 evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
     tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), elements(dict), elements(grid))...)
 
-dual(dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}=measure(dict); options...) =
+dual(dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}=measure(dict); options...) =
     TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
 
-gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}; options...) where {T} =
+gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
     TensorProductOperator(map((x,y)->gram(T, x,y; options...), elements(dict), elements(measure))...)
-mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductMeasure,DiscreteProductMeasure}; options...) where {T} =
+mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
     TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), elements(dict1), elements(dict2), elements(measure))...)

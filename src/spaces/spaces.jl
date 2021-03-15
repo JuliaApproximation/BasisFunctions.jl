@@ -32,36 +32,38 @@ one(space::GenericFunctionSpace{S,T}) where {S,T} = x::S -> one(T)
 
 
 """
-The Hilbert space of all functions for which the inner product induced by a
-measure is bounded.
+A function space equipped with a measure.
+
+The measure `μ` induces a bilinear form `(f,g) = int(f, g, dμ)` and possibly a
+(semi)norm or inner product. This depends on the properties of the measure.
 """
 struct MeasureSpace{M <: Measure,S,T} <: FunctionSpace{S,T}
     measure     ::  M
 
     # Ensure that the domain types of the space and the measure are the same
-    MeasureSpace{M,S,T}(measure::Measure{S}) where {M,S,T} = new(measure)
+    MeasureSpace{M,S,T}(measure::Weight{S}) where {M,S,T} = new(measure)
 end
 
-MeasureSpace(measure::Measure{T}) where {T} =
+MeasureSpace(measure::Weight{T}) where {T} =
     MeasureSpace{typeof(measure),T,codomaintype(measure)}(measure)
 
 measure(s::MeasureSpace) = s.measure
 
 domain(s::MeasureSpace) = support(measure(s))
 
-space(m::Measure) = MeasureSpace(m)
+space(m::Weight) = MeasureSpace(m)
 
 
-const FourierSpace{T} = MeasureSpace{FourierMeasure{T},T,T}
+const FourierSpace{T} = MeasureSpace{FourierWeight{T},T,T}
 
 FourierSpace() = FourierSpace{Float64}()
-FourierSpace{T}() where {T} = MeasureSpace(FourierMeasure{T}())
+FourierSpace{T}() where {T} = MeasureSpace(FourierWeight{T}())
 
 
-const ChebyshevTSpace{T} = MeasureSpace{ChebyshevMeasure{T},T,T}
+const ChebyshevTSpace{T} = MeasureSpace{ChebyshevTWeight{T},T,T}
 
 ChebyshevTSpace() = ChebyshevTSpace{Float64}()
-ChebyshevTSpace{T}() where {T} = MeasureSpace(ChebyshevTMeasure{T}())
+ChebyshevTSpace{T}() where {T} = MeasureSpace(ChebyshevTWeight{T}())
 
 
 

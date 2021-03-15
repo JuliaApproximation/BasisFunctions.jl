@@ -80,10 +80,10 @@ end
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
-    @eval $op(s::PiecewiseDict, m::AbstractMeasure) =
+    @eval $op(s::PiecewiseDict, m::Measure) =
         (@warn "definition unclear"; mapreduce(x->$op(x, m), &, elements(s)))# or take intersection of measure and support of dictpiece
 end
-isorthonormal(s::PiecewiseDict, m::AbstractMeasure) = false
+isorthonormal(s::PiecewiseDict, m::Measure) = false
 
 for op in (:support,)
     @eval $op(set::PiecewiseDict) = $op(partition(set))

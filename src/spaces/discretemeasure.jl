@@ -1,73 +1,80 @@
 
-@deprecate grid(m::DiscreteMeasure) points(m)
+"Discrete weights associated with a grid."
+abstract type GridWeight{T} <: DiscreteWeight{T} end
+
+grid(μ::GridWeight) = points(μ)
+
+DomainIntegrals._isnormalized(μ, points, weights::NormalizedArray) = true
+DomainIntegrals.allequal(A::FillArrays.AbstractFill) = true
+
+# A supermeasure might exist if the grid has a supergrid
+supermeasure(μ::GridWeight) = discretemeasure(supergrid(points(μ)), weights(μ))
+
+name(μ::GridWeight) = _name(μ, points(μ), weights(μ))
+_name(μ::GridWeight, points, weights) = "Weighted discrete measure on grid $(typeof(points))"
+
+_name(μ::GridWeight, points::AbstractEquispacedGrid, weights::Ones) = "Uniform Dirac comb measure"
+_name(μ::GridWeight, points::AbstractEquispacedGrid, weights::NormalizedArray) = "Dirac comb measure with normalized weights"
+_name(μ::GridWeight, points::AbstractEquispacedGrid, weights) = "Weighted Dirac comb measure"
+_name(μ::GridWeight, points::ProductGrid, weights) = "Discrete product measure"
+_name(μ::GridWeight, points::MappedGrid, weights) = "Mapping of a $(name(supermeasure(μ)))"
+
+strings(μ::GridWeight) = (name(μ), (string(points(μ)),), (string(string(weights(μ))),))
+
+support(μ::GridWeight) = _support(μ, points(μ))
+_support(μ::GridWeight, points::MappedGrid) = mapping(points) * support(supermeasure(μ))
+_support(μ::GridWeight, points) = support(points)
 
 
-struct GenericDiscreteMeasure{T,GRID<:AbstractGrid,W} <: DiscreteMeasure{T}
-    points    ::  GRID
-    weights   ::  W
-    function GenericDiscreteMeasure(grid::AbstractGrid, weights)
+
+"A discrete measure with all weights equal to one."
+struct UniformGridWeight{T,G} <: GridWeight{T}
+    points  ::  G
+end
+
+UniformGridWeight(points) = UniformGridWeight{eltype(points)}(points)
+UniformGridWeight{T}(points::G) where {T,G} = UniformGridWeight{T,G}(points)
+
+weights(μ::UniformGridWeight) = uniformweights(points(μ))
+
+"Generate uniform weights for the given grid."
+uniformweights(grid::AbstractGrid) = uniformweights(grid, numtype(grid))
+uniformweights(grid::AbstractGrid, ::Type{T}) where {T} = Ones{T}(size(grid))
+uniformweights(grid::ProductGrid{T,S,N}, ::Type{V}) where {T,S,N,V} =
+    tensorproduct(ntuple(k->Ones{V}(size(grid,k)) ,Val(N)))
+
+
+
+"A typed grid weight knows the types of the grid and the points, which may be helpful in dispatch."
+abstract type TypedGridWeight{T,G,W} <: GridWeight{T} end
+
+"A generic weighted discrete measure, associated with a set of points and weights."
+struct GenericGridWeight{T,G,W} <: TypedGridWeight{T,G,W}
+    points  ::  G
+    weights ::  W
+
+    function GenericGridWeight{T,G,W}(grid, weights) where {T,G,W}
+        # @assert size(grid) == size(weights)
         grid isa Union{AbstractSubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
-        new{eltype(grid),typeof(grid),typeof(weights)}(grid, weights)
+        new(grid, weights)
     end
 end
-≈(m1::DiscreteMeasure, m2::DiscreteMeasure) = ≈(map(points,(m1,m2))...) &&  ≈(map(weights,(m1,m2))...)
-genericweights(grid::AbstractGrid) = Ones{subeltype(eltype(grid))}(size(grid)...)
-genericweights(grid::ProductGrid{T,S,N}) where {T,S,N} =
-    tensorproduct(ntuple(k->Ones{subeltype(eltype(grid))}(size(grid,k)) ,Val(N)))
 
-discretemeasure(grid::AbstractGrid, weights=genericweights(grid)) =
-    GenericDiscreteMeasure(grid, weights)
-
-name(m::GenericDiscreteMeasure) = "Generic discrete measure on grid $(typeof(points(m)))"
-strings(m::GenericDiscreteMeasure) = (name(m), (string(points(m)),), (string(string(weights(m))),))
-isnormalized(m::GenericDiscreteMeasure) = weights(m) isa NormalizedArray
-
-
-name(m::DiracMeasure) = "Dirac measure at x = $(m.point)"
-points(m::DiracMeasure) = ScatteredGrid([m.point])
-weights(::DiracMeasure{T}) where T = Ones{T}(1)
-
-
-const DiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W <: Ones
-DiracComb(eg::AbstractEquispacedGrid) = discretemeasure(eg)
-name(m::DiracComb) = "Dirac comb measure with sampling weights"
-
-
-const WeightedDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid
-WeightedDiracComb(eg::AbstractEquispacedGrid, weights) = discretemeasure(eg, weights)
-name(m::WeightedDiracComb) = "Dirac comb measure with generic weight"
-
-
-const NormalizedDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:NormalizedArray
-NormalizedDiracComb(eg::AbstractEquispacedGrid) = discretemeasure(eg, NormalizedArray{eltype(eg)}(size(eg)))
-isnormalized(m::NormalizedDiracComb) = true
-name(m::NormalizedDiracComb) = "Dirac comb measure with normalized weights"
-
-const UniformDiracComb{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:AbstractEquispacedGrid where W<:FillArrays.AbstractFill
-
-
-const DiscreteMappedMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:MappedGrid
-mappedmeasure(map, measure::DiscreteMeasure) =
-discretemeasure(MappedGrid(points(measure), map), weights(measure))
-
-name(m::DiscreteMappedMeasure) = "Mapping of a "*name(supermeasure(m))
-mapping(measure::DiscreteMappedMeasure) = mapping(points(measure))
-supermeasure(m::DiscreteMappedMeasure) = discretemeasure(supergrid(points(m)), m.weights)
-apply_map(measure::DiscreteMeasure, map) = discretemeasure(apply_map(points(measure),map), weights(measure))
-support(m::DiscreteMappedMeasure) = mapping(m) * support(supermeasure(m))
+GenericGridWeight(grid::AbstractGrid, weights) =
+    GenericGridWeight{eltype(grid)}(grid, weights)
+GenericGridWeight{T}(grid::G, weights::W) where {T,G,W} =
+    GenericGridWeight{T,G,W}(grid, weights)
 
 
 
-const DiscreteProductMeasure{T,G,W} = GenericDiscreteMeasure{T,G,W} where G<:ProductGrid where  W<:AbstractOuterProductArray
+const DiscreteProductWeight{T,G,W} = TypedGridWeight{T,G,W} where G<:ProductGrid where W<:AbstractOuterProductArray
 
-name(m::DiscreteProductMeasure) = "Discrete Product Measure"
-productmeasure(measures::DiscreteMeasure...) =
+productmeasure(measures::DiscreteWeight...) =
     discretemeasure(ProductGrid(map(points, measures)...), tensorproduct(map(weights, measures)...))
+elements(m::DiscreteProductWeight) = map(discretemeasure, elements(points(m)), elements(weights(m)))
+element(m::DiscreteProductWeight, i) = discretemeasure(element(points(m), i), element(weights(m), i))
 
-elements(m::DiscreteProductMeasure) = map(discretemeasure, elements(points(m)), elements(weights(m)))
-element(m::DiscreteProductMeasure, i) = discretemeasure(element(points(m), i), element(weights(m), i))
-
-function stencilarray(m::DiscreteProductMeasure)
+function stencilarray(m::DiscreteProductWeight)
     A = Any[]
     push!(A, element(m,1))
     for i = 2:length(elements(m))
@@ -78,8 +85,40 @@ function stencilarray(m::DiscreteProductMeasure)
 end
 
 
+
+"Construct a discrete measure with the given points (and optionally weights)."
+discretemeasure(grid::AbstractGrid) = discretemeasure(grid, uniformweights(grid))
+
+function discretemeasure(grid::AbstractGrid, weights::Ones)
+    @assert size(grid) == size(weights)
+    uniformdiscretemeasure(grid)
+end
+uniformdiscretemeasure(grid::AbstractGrid) = UniformGridWeight(grid)
+
+discretemeasure(grid::AbstractGrid, weights) = GenericGridWeight(grid, weights)
+
+
+name(m::DiracWeight) = "Dirac measure at x = $(m.point)"
+points(m::DiracWeight) = ScatteredGrid([m.point])
+weights(::DiracWeight{T}) where T = Ones{T}(1)
+
+
+## Some special cases
+
+DiracComb(grid::AbstractEquispacedGrid) = UniformGridWeight(grid)
+NormalizedDiracComb(grid::AbstractEquispacedGrid) =
+    discretemeasure(grid, NormalizedArray{prectype(grid)}(size(grid)))
+
+mappedmeasure(map, measure::DiscreteWeight) =
+    discretemeasure(MappedGrid(points(measure), map), weights(measure))
+mapping(μ::GridWeight) = mapping(points(μ))
+apply_map(measure::DiscreteWeight, map) =
+    discretemeasure(apply_map(points(measure),map), weights(measure))
+
+
+
 "A discrete measure that represents a quadrature rule."
-struct QuadratureMeasure{T,P,W} <: DiscreteMeasure{T}
+struct QuadratureMeasure{T,P,W} <: DiscreteWeight{T}
     points  ::  P
     weights ::  W
 end

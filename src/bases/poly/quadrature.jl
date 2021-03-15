@@ -41,10 +41,3 @@ GaussJacobi{T}(n, α, β) where {T} = QuadratureMeasure{T}(GridArrays.gaussjacob
 
 jacobi_α(μ::GaussJacobi) = μ.points.α
 jacobi_β(μ::GaussJacobi) = μ.points.β
-
-@deprecate ChebyshevTGaussMeasure GaussChebyshevT
-@deprecate ChebyshevUGaussMeasure GaussChebyshevU
-@deprecate LegendreGaussMeasure GaussLegendre
-@deprecate LaguerreGaussMeasure GaussLaguerre
-@deprecate HermiteGaussMeasure GaussHermite
-@deprecate JacobiGaussMeasure GaussJacobi

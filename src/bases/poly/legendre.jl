@@ -18,8 +18,8 @@ first_moment(b::Legendre{T}) where {T} = T(2)
 jacobi_α(b::Legendre{T}) where {T} = T(0)
 jacobi_β(b::Legendre{T}) where {T} = T(0)
 
-measure(b::Legendre{T}) where {T} = LegendreMeasure{T}()
-isorthogonal(::Legendre, ::LegendreMeasure) = true
+measure(b::Legendre{T}) where {T} = LegendreWeight{T}()
+isorthogonal(::Legendre, ::LegendreWeight) = true
 issymmetric(::Legendre) = true
 interpolation_grid(dict::Legendre{T}) where T = LegendreNodes{T}(length(dict))
 iscompatible(dict::Legendre, grid::LegendreNodes) = length(dict) == length(grid)
@@ -27,7 +27,7 @@ isorthogonal(dict::Legendre, measure::GaussLegendre) = opsorthogonal(dict, measu
 
 gauss_rule(dict::Legendre{T}) where T = GaussLegendre{T}(length(dict))
 
-function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreMeasure; options...)
+function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
 	T = coefficienttype(d1)
 	if i == j
 		2 / convert(T, 2*value(i)+1)

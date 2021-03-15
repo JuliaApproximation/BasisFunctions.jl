@@ -31,11 +31,11 @@ first_moment(b::Jacobi{T}) where {T} = (b.α+b.β+1≈0) ?
 jacobi_α(b::Jacobi) = b.α
 jacobi_β(b::Jacobi) = b.β
 
-measure(b::Jacobi) = JacobiMeasure(b.α, b.β)
+measure(b::Jacobi) = JacobiWeight(b.α, b.β)
 
 iscompatible(d1::Jacobi, d2::Jacobi) = d1.α == d2.α && d1.β == d2.β
 
-isorthogonal(dict::Jacobi, measure::JacobiMeasure) =
+isorthogonal(dict::Jacobi, measure::JacobiWeight) =
 	dict.α == measure.α && dict.β == measure.β
 
 gauss_rule(dict::Jacobi) = GaussJacobi(length(dict), dict.α, dict.β)
@@ -67,7 +67,7 @@ end
 rec_Cn(b::Jacobi{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 
-function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::PolynomialDegree, measure::JacobiMeasure; options...)
+function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::PolynomialDegree, measure::JacobiWeight; options...)
 	T = coefficienttype(d1)
 	if iscompatible(d1, d2) && isorthogonal(d1, measure)
 		if i == j

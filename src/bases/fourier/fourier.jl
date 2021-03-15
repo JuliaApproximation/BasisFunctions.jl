@@ -15,6 +15,9 @@ for odd length and
 0 1 2 3 ... N -N+1 ... -2 -1,
 ```
 for even length.
+
+The Fourier basis is orthonormal if it has odd length (due to the cosine for
+even length).
 """
 struct Fourier{T <: Real} <: Dictionary{T,Complex{T}}
 	n	::	Int
@@ -22,7 +25,6 @@ end
 
 name(b::Fourier) = "Fourier series"
 
-# The default numeric type is Float64
 Fourier(n::Int) = Fourier{Float64}(n)
 
 convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
@@ -42,13 +44,15 @@ similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 isreal(b::Fourier) = false
 
 isbasis(b::Fourier) = true
-isorthogonal(b::Fourier, ::FourierMeasure) = true
-isorthogonal(b::Fourier, measure::DiracComb) = islooselycompatible(b, points(measure))
-isorthogonal(b::Fourier, measure::NormalizedDiracComb) = islooselycompatible(b, points(measure))
 
+isorthogonal(b::Fourier, μ::FourierWeight) = true
+isorthogonal(b::Fourier, μ::Weight) = islebesguemeasure(μ) && support(μ) == support(b)
+isorthogonal(b::Fourier, μ::DiscreteWeight) = isuniform(μ) && compatible_domains(b, points(μ))
 
-isorthonormal(b::Fourier, ::FourierMeasure) = oddlength(b)
-isorthonormal(b::Fourier, measure::NormalizedDiracComb) = iscompatible(b, points(measure)) || islooselycompatible(b, points(measure)) && oddlength(b)
+isorthonormal(b::Fourier, μ::FourierWeight) = oddlength(b)
+isorthonormal(b::Fourier, μ::Weight) = isorthogonal(b, μ) && oddlength(b)
+isorthonormal(b::Fourier, μ::DiscreteWeight) = isorthogonal(b, μ) && oddlength(b) && weight(μ, 1) == 1
+
 isbiorthogonal(b::Fourier) = true
 
 hasinterpolationgrid(b::Fourier) = true
@@ -57,9 +61,8 @@ hasextension(b::Fourier) = isodd(length(b))
 
 # For hastransform we introduce some more functionality:
 # - Check whether the given periodic equispaced grid is compatible with the FFT operators
-# 1+ because 0!≅eps()
 iscompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
-	islooselycompatible(dict, grid) && (length(dict)==length(grid))
+	compatible_domains(dict, grid) && length(dict)==length(grid)
 # - Fourier grids are of course okay
 iscompatible(dict::Fourier, grid::FourierGrid) = length(dict)==length(grid)
 # - Any non-periodic grid is not compatible
@@ -67,7 +70,8 @@ iscompatible(dict::Fourier, grid::AbstractGrid) = false
 # - We have a transform if the grid is compatible
 hasgrid_transform(dict::Fourier, gb, grid) = iscompatible(dict, grid)
 
-islooselycompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
+compatible_domains(dict::Fourier, grid) = false
+compatible_domains(dict::Fourier, grid::AbstractEquispacedGrid) =
 	isperiodic(grid) && support(dict) ≈ coverdomain(grid)
 
 
@@ -157,7 +161,7 @@ minfrequency(b::Fourier) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 support(b::Fourier{T}) where T = UnitInterval{T}()
 
 hasmeasure(b::Fourier) = true
-measure(b::Fourier{T}) where T = FourierMeasure{T}()
+measure(b::Fourier{T}) where T = FourierWeight{T}()
 
 period(b::Fourier{T}) where {T} = T(1)
 
@@ -622,7 +626,7 @@ end
 
 
 # For the uniform measure on [0,1], invoke innerproduct_fourier_full
-innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::FourierMeasure; options...) =
+innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::FourierWeight; options...) =
 	innerproduct_fourier_full(b1, i, b2, j)
 
 function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::LebesgueMeasure; options...)
@@ -638,7 +642,7 @@ function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::Le
 	end
 end
 
-function gram(::Type{T}, dict::Fourier, measure::FourierMeasure; options...) where {T}
+function gram(::Type{T}, dict::Fourier, measure::FourierWeight; options...) where {T}
 	@assert isorthogonal(dict, measure) # some robustness.
 	if iseven(length(dict))
 		CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)
@@ -648,13 +652,13 @@ function gram(::Type{T}, dict::Fourier, measure::FourierMeasure; options...) whe
 	end
 end
 
-function gram(::Type{T}, dict::Fourier, measure::DiscreteMeasure, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill; options...) where {T}
+function gram(::Type{T}, dict::Fourier, measure::DiscreteWeight, grid::AbstractEquispacedGrid, weights::FillArrays.AbstractFill; options...) where {T}
 	if coverdomain(grid) ≈ support(dict) && isperiodic(grid)
 		if isorthonormal(dict, measure)
 			IdentityOperator{T}(dict)
 		elseif isorthogonal(dict, measure)
 			if isodd(length(dict)) || (length(dict)==length(grid))
-				ScalingOperator{T}(dict, unsafe_discrete_weight(measure, 1)*length(grid))
+				ScalingOperator{T}(dict, unsafe_weight(measure, 1)*length(grid))
 			else
 				CoefficientScalingOperator{T}(dict, (length(dict)>>1)+1, one(T)/2)*ScalingOperator{T}(dict, weights[1]*length(grid))
 			end

@@ -73,15 +73,18 @@ isbasis(d::Dictionary) = false
 
 "Is the dictionary orthogonal (with respect to the given measure)?"
 isorthogonal(d::Dictionary) = hasmeasure(d) && isorthogonal(d, measure(d))
-isorthogonal(d::Dictionary, μ::AbstractMeasure) = isorthonormal(d, μ)
+isorthogonal(d::Dictionary, μ::Measure) = isorthonormal(d, μ)
 
 "Is the dictionary orthonormal (with respect to the given measure)?"
 isorthonormal(d::Dictionary) = hasmeasure(d) && isorthonormal(d, measure(d))
-isorthonormal(d::Dictionary, μ::AbstractMeasure) = false
+isorthonormal(d::Dictionary, μ::Measure) = false
+
+isorthogonal(d::Dictionary, grid::AbstractGrid) = isorthogonal(d, discretemeasure(grid))
+isorthonormal(d::Dictionary, grid::AbstractGrid) = isorthonormal(d, discretemeasure(grid))
 
 "Is the dictionary biorthogonal (with respect to the given measure)?"
 isbiorthogonal(d::Dictionary) = hasmeasure(d) && isbiorthogonal(d, measure(d))
-isbiorthogonal(d::Dictionary, μ::AbstractMeasure) = isorthogonal(d, μ)
+isbiorthogonal(d::Dictionary, μ::Measure) = isorthogonal(d, μ)
 
 size(d::Dictionary, j) = size(d)[j]
 

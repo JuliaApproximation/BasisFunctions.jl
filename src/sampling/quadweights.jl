@@ -1,55 +1,55 @@
 
 @deprecate gaussweights quadweights
 
-quadweights(dmeasure::DiscreteMeasure, measure::Measure) =
+quadweights(dmeasure::DiscreteWeight, measure::Weight) =
     quadweights(points(dmeasure), weights(dmeasure), measure)
 
-quadweights(grid::AbstractGrid, weights, measure::Measure) =
+quadweights(grid::AbstractGrid, weights, measure::Weight) =
     quadweights(grid, measure) ./ weights
 
-quadweights(grid::AbstractGrid, ::Ones, measure::Measure) =
+quadweights(grid::AbstractGrid, ::Ones, measure::Weight) =
     quadweights(grid, measure)
 
-function quadweights(grid::MappedGrid, measure::MappedMeasure)
+function quadweights(grid::MappedGrid, measure::MappedWeight)
     @assert iscompatible(mapping(grid), mapping(measure))
     sgrid = supergrid(grid)
     quadweights(sgrid, supermeasure(measure))
 end
 
-quadweights(grid::ProductGrid, measure::ProductMeasure) =
+quadweights(grid::ProductGrid, measure::ProductWeight) =
     OuterProductArray(map(quadweights, elements(grid), elements(measure))...)
 
-quadweights(grid::ChebyshevTNodes{T}, ::ChebyshevTMeasure{T}) where {T} =
+quadweights(grid::ChebyshevTNodes{T}, ::ChebyshevTWeight{T}) where {T} =
     GridArrays.ChebyshevTWeights{T}(length(grid))
 
-quadweights(grid::ChebyshevUNodes{T}, ::ChebyshevUMeasure{T}) where {T} =
+quadweights(grid::ChebyshevUNodes{T}, ::ChebyshevUWeight{T}) where {T} =
     GridArrays.ChebyshevUWeights{T}(length(grid))
 
-quadweights(grid::LegendreNodes{T}, ::LegendreMeasure{T}) where {T} =
+quadweights(grid::LegendreNodes{T}, ::LegendreWeight{T}) where {T} =
     weights(GaussLegendre{T}(length(grid)))
 
-function quadweights(grid::LaguerreNodes{T}, measure::LaguerreMeasure{T}) where {T}
+function quadweights(grid::LaguerreNodes{T}, measure::LaguerreWeight{T}) where {T}
 	@assert grid.α ≈ measure.α
     weights(GaussLaguerre(length(grid),grid.α))
 end
 
-quadweights(grid::HermiteNodes{T}, ::HermiteMeasure{T}) where {T} =
+quadweights(grid::HermiteNodes{T}, ::HermiteWeight{T}) where {T} =
     weights(GaussHermite{T}(length(grid)))
 
-function quadweights(grid::JacobiNodes{T}, measure::JacobiMeasure{T}) where {T}
+function quadweights(grid::JacobiNodes{T}, measure::JacobiWeight{T}) where {T}
     @assert (grid.α ≈ measure.α) & (grid.β ≈ measure.β)
 	weights(GaussJacobi(length(grid), grid.α, grid.β))
 end
 
-quadweights(grid::FourierGrid{T}, measure::FourierMeasure{T}) where {T} =
+quadweights(grid::FourierGrid{T}, measure::FourierWeight{T}) where {T} =
     NormalizedArray{T}(length(grid))
 
-function quadweights(grid::PeriodicEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
+function quadweights(grid::PeriodicEquispacedGrid{T}, measure::FourierWeight{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
 	NormalizedArray{T}(length(grid))
 end
 
-function quadweights(grid::MidpointEquispacedGrid{T}, measure::FourierMeasure{T}) where {T}
+function quadweights(grid::MidpointEquispacedGrid{T}, measure::FourierWeight{T}) where {T}
     @assert coverdomain(grid)≈support(measure)
 	NormalizedArray{T}(length(grid))
 end
@@ -64,27 +64,27 @@ function quadweights(grid::MidpointEquispacedGrid{T}, measure::LebesgueMeasure{T
 	DomainSets.width(support(measure))*NormalizedArray{T}(length(grid))
 end
 
-function quadweights(grid::ChebyshevNodes{T}, ::LegendreMeasure{T}) where {T}
+function quadweights(grid::ChebyshevNodes{T}, ::LegendreWeight{T}) where {T}
 	x, w = fejer_first_rule(length(grid), T)
 	w
 end
 
-function quadweights(grid::ChebyshevExtremae{T}, ::LegendreMeasure{T}) where {T}
+function quadweights(grid::ChebyshevExtremae{T}, ::LegendreWeight{T}) where {T}
 	x, w = clenshaw_curtis(length(grid)-1, T)
 	w
 end
 
 function quadweights(grid::ChebyshevNodes{T}, measure::LebesgueMeasure{T}) where {T}
     @assert ≈(map(support, (grid,measure))...)
-	quadweights(grid, LegendreMeasure{T}())
+	quadweights(grid, LegendreWeight{T}())
 end
 
 function quadweights(grid::ChebyshevExtremae{T}, measure::LebesgueMeasure{T}) where {T}
     @assert ≈(map(support, (grid,measure))...)
-	quadweights(grid, LegendreMeasure{T}())
+	quadweights(grid, LegendreWeight{T}())
 end
 
-quadweights(grid::AbstractGrid, measure::Measure) =
+quadweights(grid::AbstractGrid, measure::Weight) =
 	default_quadratureweights(grid, measure)
 
 function default_quadratureweights(grid, measure)
@@ -114,13 +114,13 @@ end
 
 
 # For any Lebesgue measure this will be the identity operator
-measuresampling(grid::AbstractGrid, measure::AbstractLebesgueMeasure) =
+measuresampling(grid::AbstractGrid, measure::LebesgueMeasure) =
 	Ones{prectype(grid)}(size(grid))
 
 """
-	measuresampling(grid::AbstractGrid, ::Array, measure::Measure)
+	measuresampling(grid::AbstractGrid, ::Array, measure::Weight)
 
 Return an array with a weight function of a measure evaluated on a grid.
 """
-measuresampling(grid::AbstractGrid, measure::Measure) =
-    [unsafe_weight(measure, xi) for xi in grid]
+measuresampling(grid::AbstractGrid, measure::Weight) =
+    [unsafe_weightfun(measure, xi) for xi in grid]

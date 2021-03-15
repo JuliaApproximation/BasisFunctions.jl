@@ -19,7 +19,7 @@ in the span of a dictionary.
 """
 struct SynthesisOperator <: AbstractOperator
     dictionary  ::  Dictionary
-    measure     ::  Union{AbstractMeasure,Nothing}
+    measure     ::  Union{Measure,Nothing}
 end
 
 SynthesisOperator(dict::Dictionary) = hasmeasure(dict) ?
@@ -48,7 +48,7 @@ hasstencil(op::SynthesisOperator) = true
 stencilarray(op::SynthesisOperator) = stencilarray(op, dictionary(op), op.measure)
 stencilarray(op::SynthesisOperator, dict::Dictionary, ::Nothing) =
     [modifiersymbol(op), "[", dict, "]"]
-stencilarray(op::SynthesisOperator, dict::Dictionary, measure::AbstractMeasure) =
+stencilarray(op::SynthesisOperator, dict::Dictionary, measure::Measure) =
     [modifiersymbol(op), "[", dict, ", ", measure, "]"]
 
 modifiersymbol(op::SynthesisOperator) = PrettyPrintSymbol{:𝒯}()#PrettyPrintSymbol{:ℙ}()
@@ -56,7 +56,7 @@ name(::PrettyPrintSymbol{:𝒯}) = "Synthesis operator of a dictionary"
 name(op::SynthesisOperator) = "Synthesis operator of a dictionary"
 strings(op::SynthesisOperator) = strings(op, dictionary(op), op.measure)
 strings(op::SynthesisOperator, dict::Dictionary, ::Nothing) = (strings(dict),)
-strings(op::SynthesisOperator, dict::Dictionary, measure::Measure) = (strings(dict),strings(measure))
+strings(op::SynthesisOperator, dict::Dictionary, measure::Weight) = (strings(dict),strings(measure))
 
 
 """
