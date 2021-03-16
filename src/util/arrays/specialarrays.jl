@@ -281,7 +281,7 @@ struct IndexMatrix{T,EXTENSION,N,I} <: MyAbstractMatrix{T}
         @assert (N==1) ? eltype(subindices) == Int : eltype(subindices) == CartesianIndex{N}
         n = length(subindices)
         m = prod(original_size)
-        m == n && (@warn "IndexMatrix contains all elements, consider identity or (De)LinearizationOperator instead.")
+        # m == n && (@warn "IndexMatrix contains all elements, consider identity or (De)LinearizationOperator instead.")
         new{T,EXTENSION,N,I}(n, original_size, subindices)
     end
 end
