@@ -113,7 +113,8 @@ export element, elements, numelements, iscomposite,
     leftendpoint, rightendpoint, range,
     ×,
     points, weights, discrete_weight,
-    support
+    support,
+    Measure, Weight, DiscreteWeight
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,

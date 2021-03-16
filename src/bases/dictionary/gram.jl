@@ -100,8 +100,12 @@ unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measur
 unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, qs) =
     integral(qs, x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure)
 
-unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteWeight, domain) =
+function unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteWeight, domain)
+	F = x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x)
+	# Note: using "unsafe_eval" here is slightly dangerous: we rely on "integral"
+	# not evaluating the integrand outside the given domain
     integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), domain, measure)
+end
 
 
 
