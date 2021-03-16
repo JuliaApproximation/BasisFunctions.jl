@@ -51,7 +51,7 @@ hasmeasure(dict::OPS) = true
 
 measure(ϕ::OrthogonalPolynomial) = measure(dictionary(ϕ))
 
-weight(b::OPS, x) = weight(measure(b), x)
+weightfun(b::OPS, x) = weightfun(measure(b), x)
 
 
 function gram1(T, dict::OPS, m; options...)

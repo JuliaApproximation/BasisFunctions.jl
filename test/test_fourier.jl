@@ -184,6 +184,8 @@ function test_fourier_series(T)
     @test abs((3*e-e2)(T(x0))-(3*f(x0)-f2(x0))) < sqrt(eps(T))
 end
 
+using BasisFunctions: DiracComb, NormalizedDiracComb
+
 function test_fourier_orthogonality()
     test_orthogonality_orthonormality(Fourier(10), true, false, FourierWeight())
     test_orthogonality_orthonormality(Fourier(10), true, false, DiracComb(interpolation_grid(Fourier(10))))

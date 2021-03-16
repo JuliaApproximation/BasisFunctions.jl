@@ -115,7 +115,7 @@ mapping(μ::GridWeight) = mapping(points(μ))
 apply_map(measure::DiscreteWeight, map) =
     discretemeasure(apply_map(points(measure),map), weights(measure))
 
-
+ismappedmeasure(μ::GridWeight) = points(μ) isa MappedGrid
 
 "A discrete measure that represents a quadrature rule."
 struct QuadratureMeasure{T,P,W} <: DiscreteWeight{T}

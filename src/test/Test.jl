@@ -39,6 +39,6 @@ function generic_test_measure(measure)
     @test length(take!(io))>0
     support(measure)
     x = rand()
-    @test weight(measure,x) ≈ weightfunction(measure)(x)
+    @test weightfun(measure,x) ≈ weightfunction(measure)(x)
 end
 end

@@ -16,8 +16,8 @@ for odd length and
 ```
 for even length.
 
-The Fourier basis is orthonormal if it has odd length (due to the cosine for
-even length).
+The Fourier basis is orthonormal with respect to a continuous measure (for odd
+length Fourier bases only) and a discrete measure.
 """
 struct Fourier{T <: Real} <: Dictionary{T,Complex{T}}
 	n	::	Int
@@ -51,7 +51,8 @@ isorthogonal(b::Fourier, μ::DiscreteWeight) = isuniform(μ) && compatible_domai
 
 isorthonormal(b::Fourier, μ::FourierWeight) = oddlength(b)
 isorthonormal(b::Fourier, μ::Weight) = isorthogonal(b, μ) && oddlength(b)
-isorthonormal(b::Fourier, μ::DiscreteWeight) = isorthogonal(b, μ) && oddlength(b) && weight(μ, 1) == 1
+isorthonormal(b::Fourier, μ::DiscreteWeight) =
+	isorthogonal(b, μ) && isnormalized(μ) && (length(b)==length(μ) || oddlength(b))
 
 isbiorthogonal(b::Fourier) = true
 

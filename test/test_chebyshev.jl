@@ -16,10 +16,10 @@ end
 
 function test_chebyshev_orthogonality()
     B = ChebyshevT(10)
-    test_orthogonality_orthonormality(B, true, false, BasisFunctions.ChebyshevTWeight{Float64}())
+    test_orthogonality_orthonormality(B, true, false, ChebyshevTWeight{Float64}())
     test_orthogonality_orthonormality(B, true, false, gauss_rule(B))
-    test_orthogonality_orthonormality(B, true, false, BasisFunctions.discretemeasure(interpolation_grid(B)))
-    test_orthogonality_orthonormality(B, true, false, BasisFunctions.discretemeasure(interpolation_grid(resize(B,length(B)+1))))
+    test_orthogonality_orthonormality(B, true, false, discretemeasure(interpolation_grid(B)))
+    test_orthogonality_orthonormality(B, true, false, discretemeasure(interpolation_grid(resize(B,length(B)+1))))
 end
 
 

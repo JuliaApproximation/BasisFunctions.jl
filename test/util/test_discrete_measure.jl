@@ -34,7 +34,6 @@ using BasisFunctions.Test: generic_test_discrete_measure
     @test isuniform(μ)
     generic_test_discrete_measure(μ)
     μ = BasisFunctions.NormalizedDiracComb(EquispacedGrid(3,0,1))
-    @test μ isa BasisFunctions.UniformGridWeight
     @test isnormalized(μ)
     generic_test_discrete_measure(μ)
     μ = discretemeasure(MidpointEquispacedGrid(3,0,1),rand(3))
@@ -44,7 +43,6 @@ using BasisFunctions.Test: generic_test_discrete_measure
     mg = FourierGrid(10,-1,1)
     m = mapping(mg)
     μ = discretemeasure(mg)
-    @test μ isa BasisFunctions.MappedGridWeight
     generic_test_discrete_measure(μ)
     @test mapping(μ) == m
     @test supermeasure(μ) == discretemeasure(g)

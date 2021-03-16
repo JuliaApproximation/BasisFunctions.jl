@@ -49,5 +49,5 @@ using BasisFunctions.Test: generic_test_measure
     @test length(take!(io))>0
     support(μ)
     x = SVector(rand(),rand())
-    @test weight(μ,x)≈weightfunction(μ)(x)
+    @test weightfun(μ,x)≈weightfunction(μ)(x)
 end

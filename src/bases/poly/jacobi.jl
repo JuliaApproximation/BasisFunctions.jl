@@ -93,6 +93,6 @@ end
 jacobi_α(b::UltrasphericalBasis) = b.α
 jacobi_β(b::UltrasphericalBasis) = b.α
 
-weight(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
+weightfun(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
 
 name(dict::Jacobi) = "Jacobi polynomials  (α = $(dict.α), β = $(dict.β))"

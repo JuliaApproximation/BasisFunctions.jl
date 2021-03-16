@@ -54,7 +54,7 @@ size(b::GenericOPS) = (length(b.rec_a),)
 
 name(b::GenericOPS) = "Generic OPS"
 
-weight(b::GenericOPS, x) = (b.weight==nothing) ? error("weight not defined for this Generic OPS") : b.weight(x)
+weightfun(b::GenericOPS, x) = (b.weight==nothing) ? error("weight not defined for this Generic OPS") : b.weight(x)
 
 function similar(b::GenericOPS, ::Type{T}, n::Int) where {T}
     @assert n <= length(b)

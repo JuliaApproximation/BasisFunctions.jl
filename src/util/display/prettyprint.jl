@@ -11,7 +11,7 @@ pretty_object_types = (
     AbstractGrid,
     AbstractOperator,
     Dictionary,
-    Measure,
+    Weight,
     TypedFunction
 )
 

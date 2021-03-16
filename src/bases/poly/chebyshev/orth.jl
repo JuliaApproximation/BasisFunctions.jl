@@ -1,12 +1,20 @@
 
+const BothChebyshevs = Union{ChebyshevT,ChebyshevU}
+
 isorthogonal(::ChebyshevU, ::ChebyshevUWeight) = true
 isorthogonal(::ChebyshevT, ::ChebyshevTWeight) = true
 
-isorthogonal(dict::ChebyshevU, measure::GaussChebyshevU) = opsorthogonal(dict, measure)
-isorthogonal(dict::ChebyshevT, measure::GaussChebyshevT) = opsorthogonal(dict, measure)
+isorthogonal(b::BothChebyshevs, μ::DiscreteWeight) =
+	_isorthogonal(b, μ, points(μ), weights(μ))
+_isorthogonal(b::BothChebyshevs, μ, points, weights) = false
+_isorthogonal(b::ChebyshevT, μ, points::ChebyshevTNodes, weights::GridArrays.ChebyshevTWeights) = opsorthogonal(b, μ)
+_isorthogonal(b::ChebyshevU, μ, points::ChebyshevUNodes, weights::GridArrays.ChebyshevUWeights) = opsorthogonal(b, μ)
+_isorthogonal(b::ChebyshevT, μ, points::ChebyshevTNodes, weights) =
+	DomainIntegrals.allequal(weights) && opsorthogonal(b, μ)
+
 
 const UniformDiscreteChebyshevTWeight{T,G,W} = GenericGridWeight{T,G,W} where G <: ChebyshevNodes where W <:FillArrays.AbstractFill
-isorthogonal(dict::ChebyshevT, measure::UniformDiscreteChebyshevTWeight) = BasisFunctions.opsorthogonal(dict, measure)
+isorthogonal(dict::ChebyshevT, measure::UniformDiscreteChebyshevTWeight) = opsorthogonal(dict, measure)
 
 gauss_rule(dict::ChebyshevT{T}) where T = GaussChebyshevT{T}(length(dict))
 gauss_rule(dict::ChebyshevU{T}) where T = GaussChebyshevU{T}(length(dict))
