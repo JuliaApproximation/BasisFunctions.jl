@@ -75,7 +75,7 @@ innerproduct(f, ψ::AbstractBasisFunction, measure; options...) =
 # We want to check whether the supports of the basis function and the measure differ.
 # The integral may be easier to evaluate by restricting to the intersection of these
 # supports. However, we only perform this optimization if the intersection does not
-# lead to an IntersectionDomain (i.e., the intersection is not recognized) since
+# lead to an IntersectDomain (i.e., the intersection is not recognized) since
 # that leads to incomputable integrals.
 function analysis_integral(dict::Dictionary, idx, g, measure::Measure; options...)
     @boundscheck checkbounds(dict, idx)
@@ -100,7 +100,7 @@ function unsafe_analysis_integral1(dict, idx, g, measure::Weight, d1, d2, domain
     end
 end
 
-unsafe_analysis_integral1(dict, idx, g, measure, d1, d2, domain::IntersectionDomain, qs) =
+unsafe_analysis_integral1(dict, idx, g, measure, d1, d2, domain::IntersectDomain, qs) =
     # -> disregard the intersection domain, but use eval_element to guarantee correctness
     integral(qs, x->conj(eval_element(dict, idx, x))*g(x), measure)
 

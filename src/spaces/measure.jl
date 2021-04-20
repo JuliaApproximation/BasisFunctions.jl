@@ -125,32 +125,32 @@ ProductWeight{T}(measures::Weight...) where {T} =
     ProductWeight{T,typeof(measures)}(measures)
 
 
-islebesguemeasure(μ::ProductWeight) = all(map(islebesguemeasure, elements(μ)))
+islebesguemeasure(μ::ProductWeight) = all(map(islebesguemeasure, components(μ)))
 
 productmeasure(measures::Weight...) = ProductWeight(measures...)
 
-elements(m::ProductWeight) = m.measures
-element(m::ProductWeight, i) = m.measures[i]
+components(m::ProductWeight) = m.measures
+component(m::ProductWeight, i) = m.measures[i]
 
-isnormalized(m::ProductWeight) = mapreduce(isnormalized, &, elements(m))
+isnormalized(m::ProductWeight) = mapreduce(isnormalized, &, components(m))
 
-support(m::ProductWeight{T,M}) where {T,M} = ProductDomain{T}(map(support, elements(m))...)
+support(m::ProductWeight{T,M}) where {T,M} = ProductDomain{T}(map(support, components(m))...)
 
-unsafe_weightfun(m::ProductWeight, x) = mapreduce(unsafe_weightfun, *, elements(m), x)
+unsafe_weightfun(m::ProductWeight, x) = mapreduce(unsafe_weightfun, *, components(m), x)
 
 # For product domains, process the measures dimension per dimension
 function process_measure(qs, domain::ProductDomain, μ::ProductWeight, sing)
-    if numelements(domain) == numelements(μ)
-        if numelements(domain) == 2
-            pre1, map1, domain1, μ1, sing1 = process_measure(qs, element(domain, 1), element(μ, 1), sing)
-            pre2, map2, domain2, μ2, sing2 = process_measure(qs, element(domain, 2), element(μ, 2), sing)
+    if ncomponents(domain) == ncomponents(μ)
+        if ncomponents(domain) == 2
+            pre1, map1, domain1, μ1, sing1 = process_measure(qs, component(domain, 1), component(μ, 1), sing)
+            pre2, map2, domain2, μ2, sing2 = process_measure(qs, component(domain, 2), component(μ, 2), sing)
             prefactor = t -> pre1(t[1])*pre2(t[2])
             map = t -> SA[map1(t[1]), map2(t[2])]
             prefactor, map, ProductDomain(domain1, domain2), productmeasure(μ1, μ2), sing
-        elseif numelements(domain) == 3
-            pre1, map1, domain1, μ1, sing1 = process_measure(qs, element(domain, 1), element(μ, 1), sing)
-            pre2, map2, domain2, μ2, sing2 = process_measure(qs, element(domain, 2), element(μ, 2), sing)
-            pre3, map3, domain3, μ3, sing3 = process_measure(qs, element(domain, 3), element(μ, 3), sing)
+        elseif ncomponents(domain) == 3
+            pre1, map1, domain1, μ1, sing1 = process_measure(qs, component(domain, 1), component(μ, 1), sing)
+            pre2, map2, domain2, μ2, sing2 = process_measure(qs, component(domain, 2), component(μ, 2), sing)
+            pre3, map3, domain3, μ3, sing3 = process_measure(qs, component(domain, 3), component(μ, 3), sing)
             prefactor = t -> pre1(t[1])*pre2(t[2])*pre3(t[3])
             map = t -> SA[map1(t[1]), map2(t[2]), map3(t[3])]
             prefactor, map, ProductDomain(domain1, domain2, domain3), productmeasure(μ1, μ2, μ3), sing
@@ -165,10 +165,10 @@ end
 
 function stencilarray(m::ProductWeight)
     A = Any[]
-    push!(A, element(m,1))
-    for i = 2:length(elements(m))
+    push!(A, component(m,1))
+    for i = 2:length(components(m))
         push!(A," ⊗ ")
-        push!(A, element(m,i))
+        push!(A, component(m,i))
     end
     A
 end

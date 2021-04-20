@@ -33,12 +33,13 @@ delinearize_coefficients!(dest::AbstractArray{T,N}, src::AbstractVector{T}) wher
 linearize_coefficients!(dest::AbstractVector{T}, src::AbstractArray{T,N}) where {T,N} =
     dest[:] .= src[:]
 
-elements(bv::BlockVector) = [view(bv, Block(i)) for i in 1:blocklength(bv)]
+components(bv::BlockVector) = [view(bv, Block(i)) for i in 1:blocklength(bv)]
 
 function BlockArrays.BlockVector(arrays::AbstractVector{T}...) where {T}
     A = BlockArray{T}(undef_blocks, [length(array) for array in arrays])
     for (i,a) in enumerate(arrays)
-        setblock!(A, a, i)
+        A[Block(i)] = a
+        # setblock!(A, a, i)
     end
     A
 end
@@ -46,7 +47,8 @@ end
 function BlockArrays.BlockMatrix(arrays::AbstractMatrix{T}...) where {T}
     A = BlockArray{T}(undef_blocks, [length(array) for array in arrays])
     for (i,a) in enumerate(arrays)
-        setblock!(A, a, i)
+        A[Block(i)] = a
+        # setblock!(A, a, i)
     end
     A
 end

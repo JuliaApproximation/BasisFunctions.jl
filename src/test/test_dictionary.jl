@@ -10,13 +10,13 @@ suitable_function(s::Dictionary) = x -> prod(x)
 # Make a tensor product of suitable functions
 function suitable_function(dict::TensorProductDict)
     if dimension(dict) == 2
-        f1 = suitable_function(element(dict,1))
-        f2 = suitable_function(element(dict,2))
+        f1 = suitable_function(component(dict,1))
+        f2 = suitable_function(component(dict,2))
         (x,y) -> f1(x)*f2(y)
     elseif dimension(dict) == 3
-        f1 = suitable_function(element(dict,1))
-        f2 = suitable_function(element(dict,2))
-        f3 = suitable_function(element(dict,3))
+        f1 = suitable_function(component(dict,1))
+        f2 = suitable_function(component(dict,2))
+        f3 = suitable_function(component(dict,3))
         (x,y,z) -> f1(x)*f2(y)*f3(z)
     end
     # We should never get here
@@ -213,7 +213,7 @@ end
 
 truncate(d::Domain) = d
 truncate(d::FullSpace{T}) where {T} = -T(10)..T(10)
-truncate(d::ProductDomain) = ProductDomain(map(truncate, elements(d))...)
+truncate(d::ProductDomain) = ProductDomain(map(truncate, components(d))...)
 
 function test_gram_projection(basis)
     if hasmeasure(basis)

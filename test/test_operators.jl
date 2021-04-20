@@ -4,7 +4,7 @@ using Test
 ⊕ = BasisFunctions.:⊕
 ⊗ = BasisFunctions.:⊗
 
-types = (Float64,Double64)
+types = (Float64,LargeFloat)
 
 function test_operators(T)
     @testset "$(rpad("test identity operator",80))" begin

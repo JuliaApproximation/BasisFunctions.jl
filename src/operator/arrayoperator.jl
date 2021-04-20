@@ -225,7 +225,7 @@ DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {
     DiagonalOperator{T}(A, src, dest)
 
 DiagonalOperator(src::Dictionary, dest::Dictionary, A::AbstractOuterProductArray) =
-    tensorproduct(map(DiagonalOperator, elements(src), elements(dest), elements(A))...)
+    tensorproduct(map(DiagonalOperator, components(src), components(dest), components(A))...)
 
 
 isinplace(op::DiagonalOperator) = true

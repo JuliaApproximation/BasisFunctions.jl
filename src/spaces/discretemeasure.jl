@@ -71,15 +71,15 @@ const DiscreteProductWeight{T,G,W} = TypedGridWeight{T,G,W} where G<:ProductGrid
 
 productmeasure(measures::DiscreteWeight...) =
     discretemeasure(ProductGrid(map(points, measures)...), tensorproduct(map(weights, measures)...))
-elements(m::DiscreteProductWeight) = map(discretemeasure, elements(points(m)), elements(weights(m)))
-element(m::DiscreteProductWeight, i) = discretemeasure(element(points(m), i), element(weights(m), i))
+components(m::DiscreteProductWeight) = map(discretemeasure, components(points(m)), components(weights(m)))
+component(m::DiscreteProductWeight, i) = discretemeasure(component(points(m), i), component(weights(m), i))
 
 function stencilarray(m::DiscreteProductWeight)
     A = Any[]
-    push!(A, element(m,1))
-    for i = 2:length(elements(m))
+    push!(A, component(m,1))
+    for i = 2:length(components(m))
         push!(A," ⊗ ")
-        push!(A, element(m,i))
+        push!(A, component(m,i))
     end
     A
 end

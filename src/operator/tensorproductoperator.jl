@@ -14,12 +14,12 @@ struct TensorProductOperator{T} <: DictionaryOperator{T}
 end
 
 # Generic functions for composite types:
-elements(op::TensorProductOperator) = op.operators
-element(op::TensorProductOperator, j::Int) = op.operators[j]
+components(op::TensorProductOperator) = op.operators
+component(op::TensorProductOperator, j::Int) = op.operators[j]
 
-productelements(op::TensorProductOperator) = elements(op)
-productelement(op::TensorProductOperator, j::Int) = element(op, j)
-numproductelements(op::TensorProductOperator) = numelements(op)
+productcomponents(op::TensorProductOperator) = components(op)
+productcomponent(op::TensorProductOperator, j::Int) = component(op, j)
+numproductcomponents(op::TensorProductOperator) = ncomponents(op)
 
 TensorProductOperator(operators::AbstractOperator...; T=promote_type(map(eltype, operators)...)) =
     TensorProductOperator{T}(operators...)
@@ -59,31 +59,31 @@ function tensorproduct(ops::IdentityOperator...)
 end
 
 # Element-wise src and dest functions
-src(op::TensorProductOperator, j::Int) = src(element(op, j))
-dest(op::TensorProductOperator, j::Int) = dest(element(op, j))
+src(op::TensorProductOperator, j::Int) = src(component(op, j))
+dest(op::TensorProductOperator, j::Int) = dest(component(op, j))
 
 
 unsafe_wrap_operator(dict1::TensorProductDict, dict2::TensorProductDict, op::TensorProductOperator{T}) where {T} =
-    TensorProductOperator{T}(dict1, dict2, map(wrap_operator, elements(dict1), elements(dict2), elements(op))...)
+    TensorProductOperator{T}(dict1, dict2, map(wrap_operator, components(dict1), components(dict2), components(op))...)
 unsafe_wrap_operator(dict1::Dictionary, dict2::Dictionary, op::TensorProductOperator{T}) where {T} =
     TensorProductOperator{T}(dict1, dict2, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
 
 
-#getindex(op::TensorProductOperator, j::Int) = element(op, j)
-adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, elements(op))...)
-conj(op::TensorProductOperator) = TensorProductOperator(map(conj, elements(op))...)
+#getindex(op::TensorProductOperator, j::Int) = component(op, j)
+adjoint(op::TensorProductOperator) = TensorProductOperator(map(adjoint, components(op))...)
+conj(op::TensorProductOperator) = TensorProductOperator(map(conj, components(op))...)
 
-pinv(op::TensorProductOperator) = TensorProductOperator(map(pinv, elements(op))...)
+pinv(op::TensorProductOperator) = TensorProductOperator(map(pinv, components(op))...)
 
-inv(op::TensorProductOperator) = TensorProductOperator(map(inv, elements(op))...)
+inv(op::TensorProductOperator) = TensorProductOperator(map(inv, components(op))...)
 
 isinplace(op::TensorProductOperator) = all(map(isinplace, op.operators))
 isdiag(op::TensorProductOperator) = all(map(isdiag, op.operators))
 
 isidentity(op::TensorProductOperator) = all(map(isidentity, op.operators))
 
-# Matrix(op::TensorProductOperator) = kron((Matrix(op) for op in reverse(elements(op)))...)
-sparse(op::TensorProductOperator) = kron((sparse(op) for op in reverse(elements(op)))...)
+# Matrix(op::TensorProductOperator) = kron((Matrix(op) for op in reverse(components(op)))...)
+sparse(op::TensorProductOperator) = kron((sparse(op) for op in reverse(components(op)))...)
 
 unsafe_wrap_operator(src, dest, op::TensorProductOperator{T}) where T =
     TensorProductOperator{T}(src, dest, op.operators, op.scratch, op.src_scratch, op.dest_scratch)
@@ -296,10 +296,10 @@ end
 
 function stencilarray(op::TensorProductOperator)
     A = Any[]
-    push!(A, element(op,1))
-    for i in 2:numelements(op)
+    push!(A, component(op,1))
+    for i in 2:ncomponents(op)
         push!(A, " ⊗ ")
-        push!(A, element(op,i))
+        push!(A, component(op,i))
     end
     A
 end

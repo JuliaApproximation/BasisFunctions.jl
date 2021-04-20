@@ -1,5 +1,5 @@
 
-chebyshev_types = (Float32, Float64, Double64)
+chebyshev_types = (Float32, Float64, LargeFloat)
 
 function test_chebyshev_expansions(T)
     n = 10

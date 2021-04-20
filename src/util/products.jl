@@ -39,7 +39,7 @@ end
 flatten(T, elements...) = tuple(flatten(T, [el for el in elements])...)
 
 function append_flattened!(::Type{T}, flattened::Vector, element::T) where {T}
-    for el in elements(element)
+    for el in components(element)
         append_flattened!(T, flattened, el)
     end
 end
@@ -62,8 +62,8 @@ for (BaseType,TPType) in [(:DictionaryOperator,:TensorProductOperator),
 end
 
 function ishomogeneous(tp)
-    T = typeof(element(tp, 1))
-    mapreduce(el->typeof(el)==T, &, elements(tp))
+    T = typeof(component(tp, 1))
+    mapreduce(el->typeof(el)==T, &, components(tp))
 end
 
-basetype(tp) = promote_type(map(typeof, elements(tp))...)
+basetype(tp) = promote_type(map(typeof, components(tp))...)

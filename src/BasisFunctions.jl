@@ -65,19 +65,19 @@ export BlockVector
 
 
 import DomainSets:
-    domaintype, codomaintype, dimension, domain,
+    domaintype, codomaintype, dimension,
     indomain, approx_indomain,
     # intervals
     leftendpoint, rightendpoint, endpoints,
     # maps
     matrix, vector,
-    forward_map, inverse_map, image,
+    forward_map, inverse_map,
     applymap, jacobian,
     ScalarAffineMap,
     # composite types
-    iscomposite, element, elements, numelements,
+    iscomposite, component, components, ncomponents,
     # products
-    tensorproduct, cartesianproduct, ×,
+    ×,
     # utils
     prectype, numtype
 
@@ -95,11 +95,9 @@ export .., numtype, integral
 
 @reexport using GridArrays
 import GridArrays: subindices, resize, name,
-    apply_map, mapping, coverdomain
+    apply_map, mapping, covering
 
 using GridArrays: AbstractSubGrid, IndexSubGrid
-
-@deprecate support(g::AbstractGrid) coverdomain(g)
 
 import AbstractTrees: children
 
@@ -107,7 +105,7 @@ import AbstractTrees: children
 ## Exports
 
 # Re-exports
-export element, elements, numelements, iscomposite,
+export component, components, ncomponents, iscomposite,
     ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
@@ -130,8 +128,7 @@ export PiecewiseInterval, Partition,
     split_interval
 
 # from src/util/products.jl
-export tensorproduct, ⊗,
-    element, elements, numelements
+export tensorproduct, ⊗
 export ishomogeneous, basetype
 
 
@@ -243,7 +240,7 @@ export WeightedDict, WeightedDict1d, WeightedDict2d, WeightedDict3d,
 
 
 # from bases/modifiers/composite_dict.jl
-export tail, numelements
+export tail
 
 # from bases/modifiers/multiple_dict.jl
 export MultiDict, multidict, ⊕

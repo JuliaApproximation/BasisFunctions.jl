@@ -37,9 +37,9 @@ function BlockOperator(operators::AbstractArray{OP,2},
 end
 
 function ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T}
-    elements_src = iscomposite(src) ? elements(src) : (src,)
-    elements_dest = iscomposite(dest) ? elements(dest) : (dest,)
-    BlockOperator{T}([ArrayOperator(view(A, Block(i, j)), srcj, desti) for (i,desti) in enumerate(elements_dest), (j,srcj) in enumerate(elements_src)], src, dest)
+    components_src = iscomposite(src) ? components(src) : (src,)
+    components_dest = iscomposite(dest) ? components(dest) : (dest,)
+    BlockOperator{T}([ArrayOperator(view(A, Block(i, j)), srcj, desti) for (i,desti) in enumerate(components_dest), (j,srcj) in enumerate(components_src)], src, dest)
 end
 
 
@@ -87,13 +87,13 @@ function zeros(op::BlockOperator)
 end
 
 # Return the source of the i-th column
-src(op::BlockOperator, j) = j==1 && iscolumnlike(op) ? src(op) : element(src(op), j)
+src(op::BlockOperator, j) = j==1 && iscolumnlike(op) ? src(op) : component(src(op), j)
 
 # Return the destination of the i-th row
-dest(op::BlockOperator, i) = i==1 && isrowlike(op) ? dest(op) : element(dest(op), i)
+dest(op::BlockOperator, i) = i==1 && isrowlike(op) ? dest(op) : component(dest(op), i)
 
-element(op::BlockOperator, i::Int, j::Int) = op.operators[i,j]
-elements(op::BlockOperator) = op.operators
+component(op::BlockOperator, i::Int, j::Int) = op.operators[i,j]
+components(op::BlockOperator) = op.operators
 
 composite_size(op::BlockOperator) = size(op.operators)
 
@@ -131,11 +131,11 @@ function apply_block_operator!(op::BlockOperator, coef_dest::BlockVector, coef_s
 end
 
 function apply_block_operator!(op::BlockOperator, coef_dest::BlockVector, coef_src::BlockVector, scratch_src, scratch_dest)
-    for m in 1:numelements(coef_dest)
-        fill!(element(coef_dest, m), 0)
-        for n in 1:numelements(coef_src)
-            apply_block_element!(element(op, m, n), element(coef_dest, m),
-                element(coef_src,n), element(op.scratch_dest, m))
+    for m in 1:ncomponents(coef_dest)
+        fill!(component(coef_dest, m), 0)
+        for n in 1:ncomponents(coef_src)
+            apply_block_element!(component(op, m, n), component(coef_dest, m),
+                component(coef_src,n), component(op.scratch_dest, m))
         end
     end
     coef_dest
@@ -150,8 +150,8 @@ end
 
 function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::BlockVector, scratch_src, scratch_dest)
     fill!(coef_dest, 0)
-    for n in 1:numelements(coef_src)
-        apply!(op.operators[1,n], scratch_dest, element(coef_src,n))
+    for n in 1:ncomponents(coef_src)
+        apply!(op.operators[1,n], scratch_dest, component(coef_src,n))
         for i in eachindex(coef_dest)
             coef_dest[i] += scratch_dest[i]
         end
@@ -164,8 +164,8 @@ function apply_rowoperator!(op::BlockOperator, coef_dest, coef_src::AbstractVect
 end
 
 function apply_columnoperator!(op::BlockOperator, coef_dest::BlockVector, coef_src, scratch_src, scratch_dest)
-    for m in 1:numelements(coef_dest)
-        apply!(op.operators[m,1], element(coef_dest, m), coef_src)
+    for m in 1:ncomponents(coef_dest)
+        apply!(op.operators[m,1], component(coef_dest, m), coef_src)
     end
 end
 
@@ -218,13 +218,13 @@ function BlockDiagonalOperator(operators::AbstractArray{O,1}) where {O<:Dictiona
 end
 
 operators(op::BlockDiagonalOperator) = op.operators
-elements(op::BlockDiagonalOperator) = op.operators
+components(op::BlockDiagonalOperator) = op.operators
 
 function block_operator(op::BlockDiagonalOperator)
-    ops = Array(DictionaryOperator{eltype(op)}, numelements(op), numelements(op))
+    ops = Array(DictionaryOperator{eltype(op)}, ncomponents(op), ncomponents(op))
     n = length(op.operators)
     for i in 1:n,j in 1:n
-        ops[i,j] = element(op, i, j)
+        ops[i,j] = component(op, i, j)
     end
     BlockOperator(ops)
 end
@@ -234,11 +234,11 @@ composite_size(op::BlockDiagonalOperator) = (l = length(op.operators); (l,l))
 block_diagonal_operator(op1::DictionaryOperator, op2::DictionaryOperator) =
     BlockDiagonalOperator([op1,op2])
 block_diagonal_operator(op1::BlockDiagonalOperator, op2::BlockDiagonalOperator) =
-    BlockDiagonalOperator(vcat(elements(op1),elements(op2)))
+    BlockDiagonalOperator(vcat(components(op1),components(op2)))
 block_diagonal_operator(op1::BlockDiagonalOperator, op2::DictionaryOperator) =
-    BlockDiagonalOperator(vcat(elements(op1), op2))
+    BlockDiagonalOperator(vcat(components(op1), op2))
 block_diagonal_operator(op1::DictionaryOperator, op2::BlockDiagonalOperator) =
-    BlockDiagonalOperator(vcat(op1,elements(op2)))
+    BlockDiagonalOperator(vcat(op1,components(op2)))
 
 function block_diagonal_operator(op1::DictionaryOperator, op2::BlockOperator)
     ops = Array(DictionaryOperator{eltype(op1)}, 1+composite_size(op2,1), 1+composite_size(op2,2))
@@ -264,11 +264,11 @@ end
 
 ⊕(op1::DictionaryOperator, op2::DictionaryOperator) = block_diagonal_operator(op1, op2)
 
-function element(op::BlockDiagonalOperator{T}, i::Int, j::Int) where {T}
+function component(op::BlockDiagonalOperator{T}, i::Int, j::Int) where {T}
     if i == j
         op.operators[i]
     else
-        ZeroOperator{T}(element(op.src, j), element(op.dest, i))
+        ZeroOperator{T}(component(op.src, j), component(op.dest, i))
     end
 end
 
@@ -276,8 +276,8 @@ apply!(op::BlockDiagonalOperator, coef_dest::BlockVector, coef_src::Array{T,1}) 
     apply!(op, coef_dest, delinearize_coefficients(coef_dest, coef_src))
 
 function apply!(op::BlockDiagonalOperator, coef_dest::BlockVector, coef_src::BlockVector)
-    for i in 1:numelements(coef_src)
-        apply!(op.operators[i], element(coef_dest, i), element(coef_src, i))
+    for i in 1:ncomponents(coef_src)
+        apply!(op.operators[i], component(coef_dest, i), component(coef_src, i))
     end
     coef_dest
 end
@@ -291,12 +291,12 @@ inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), 
 function stencilarray(op::BlockOperator)
     A = Any[]
     push!(A,"[")
-    for i=1:size(elements(op),1)
+    for i=1:size(components(op),1)
         i!=1 && push!(A,";\t")
-        push!(A,element(op,i,1))
-        for j=2:size(elements(op),2)
+        push!(A,component(op,i,1))
+        for j=2:size(components(op),2)
             push!(A,", \t")
-            push!(A,element(op,i,j))
+            push!(A,component(op,i,j))
         end
     end
     push!(A,"]")
@@ -308,10 +308,10 @@ function stencilarray(op::BlockDiagonalOperator)
     push!(A,"[")
     for i=1:composite_size(op)[1]
         i!=1 && push!(A,";\t 0")
-        i==1 && push!(A,element(op,1,1))
+        i==1 && push!(A,component(op,1,1))
         for j=2:composite_size(op)[2]
             push!(A,", \t")
-            i==j && push!(A,element(op,i,j))
+            i==j && push!(A,component(op,i,j))
             i!=j && push!(A,"0")
         end
     end
@@ -324,8 +324,8 @@ Matrix(op::Union{BlockOperator,BlockDiagonalOperator}) =
 
 function matrix(op::Union{BlockOperator,BlockDiagonalOperator})
     cs = composite_size(op)
-    dest_cs = cs[1] == 1 ? [length(dest(op))] :  [map(length, elements(dest(op)))...]
-    src_cs = cs[2] == 1 ? [length(src(op))] :  [map(length, elements(src(op)))...]
+    dest_cs = cs[1] == 1 ? [length(dest(op))] :  [map(length, components(dest(op)))...]
+    src_cs = cs[2] == 1 ? [length(src(op))] :  [map(length, components(src(op)))...]
     a = BlockArray{eltype(op)}(undef_blocks, dest_cs, src_cs)
     matrix!(op, a)
     a
@@ -334,7 +334,7 @@ end
 function matrix!(op::Union{BlockOperator,BlockDiagonalOperator}, a)
     for i in 1:composite_size(op)[1]
         for j in 1:composite_size(op)[2]
-            a[Block(i,j)] = Matrix(element(op, i, j))
+            a[Block(i,j)] = Matrix(component(op, i, j))
         end
     end
 end

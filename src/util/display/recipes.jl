@@ -77,10 +77,10 @@ postprocess(φ::AbstractBasisFunction, grid, vals) = postprocess(dictionary(φ),
 # Always plot on equispaced grids for the best plotting resolution
 plotgrid(S::Dictionary1d, n) = PeriodicEquispacedGrid(n, support(S))
 # look at first element by default
-plotgrid(S::MultiDict, n) = plotgrid(element(S,1), n)
+plotgrid(S::MultiDict, n) = plotgrid(component(S,1), n)
 plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)
 # NOTE: This only supoorts multi-dimensional tensor product dicts.
-plotgrid(F::TensorProductDict2, n) = plotgrid(element(F,1),n)×plotgrid(element(F,2),n)
+plotgrid(F::TensorProductDict2, n) = plotgrid(component(F,1),n)×plotgrid(component(F,2),n)
 plotgrid(F::OperatedDict, n) = plotgrid(superdict(F), n)
 plotgrid(F::Subdictionary, n) = plotgrid(superdict(F), n)
 plotgrid(φ::AbstractBasisFunction, n) = plotgrid(dictionary(φ), n)

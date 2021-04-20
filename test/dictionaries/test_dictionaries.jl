@@ -13,7 +13,7 @@ import BasisFunctions.Test:
 
 BF = BasisFunctions
 
-domaintypes = (Float64, Double64)
+domaintypes = (Float64, LargeFloat)
 
 GaussQuadrature.maxiterations[Double64] = 50
 SpecialFunctions.logabsgamma(x::Double64) = Double64.(logabsgamma(BigFloat(x)))

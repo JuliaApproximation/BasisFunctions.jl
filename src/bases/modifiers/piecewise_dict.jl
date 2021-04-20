@@ -75,26 +75,26 @@ similardictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(se
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isbasis, :isframe)
-    @eval $op(s::PiecewiseDict) = mapreduce($op, &, elements(s))
+    @eval $op(s::PiecewiseDict) = mapreduce($op, &, components(s))
 end
 
 # The set is orthogonal, biorthogonal, etcetera, if all its subsets are.
 for op in (:isorthogonal, :isbiorthogonal, :isbasis, :isframe)
     @eval $op(s::PiecewiseDict, m::Measure) =
-        (@warn "definition unclear"; mapreduce(x->$op(x, m), &, elements(s)))# or take intersection of measure and support of dictpiece
+        (@warn "definition unclear"; mapreduce(x->$op(x, m), &, components(s)))# or take intersection of measure and support of dictpiece
 end
 isorthonormal(s::PiecewiseDict, m::Measure) = false
 
 for op in (:support,)
     @eval $op(set::PiecewiseDict) = $op(partition(set))
     @eval $op(set::PiecewiseDict, idx::Int) = $op(set, multilinear_index(set, idx))
-    @eval $op(set::PiecewiseDict, idx) = $op(element(set, outerindex(idx)), innerindex(idx))
+    @eval $op(set::PiecewiseDict, idx) = $op(component(set, outerindex(idx)), innerindex(idx))
 end
 
 # The set has a grid and a transform if all its subsets have it
 # Disable for now, until grids can be collected into a MultiGrid or something
 #for op in (:hasinterpolationgrid, :hastransform)
-#    @eval $op(s::PiecewiseDict) = mapreduce($op, &, elements(s))
+#    @eval $op(s::PiecewiseDict) = mapreduce($op, &, components(s))
 #end
 
 # We have to override getindex for CompositeDict's, because getindex for a
@@ -106,11 +106,11 @@ end
 getindex(set::PiecewiseDict, i, j) = sub(set, (i,j))
 
 unsafe_eval_element(set::PiecewiseDict, idx::MultilinearIndex, x) =
-    x ∈ set.partition[outerindex(idx)] ? unsafe_eval_element( element(set, outerindex(idx)), innerindex(idx), x) : zero(eltype(x))
+    x ∈ set.partition[outerindex(idx)] ? unsafe_eval_element( component(set, outerindex(idx)), innerindex(idx), x) : zero(eltype(x))
 
 function eval_expansion(set::PiecewiseDict, x)
     i = partition_index(set, x)
-    eval_expansion(element(set, i), x)
+    eval_expansion(component(set, i), x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
@@ -120,9 +120,9 @@ evaluation(::Type{T}, dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; op
 
 for op in (:differentiation, :antidifferentiation)
     @eval function $op(::Type{T}, src::PiecewiseDict, dest::PiecewiseDict, order; options...) where {T}
-        @assert numelements(src) == numelements(dest)
+        @assert ncomponents(src) == ncomponents(dest)
         # TODO: improve the type of the array elements below
-        BlockDiagonalOperator{T}(map( (el_s,el_d) -> $op(T, el_s, el_d, order; options...), elements(src), elements(dest)), src, dest)
+        BlockDiagonalOperator{T}(map( (el_s,el_d) -> $op(T, el_s, el_d, order; options...), components(src), components(dest)), src, dest)
     end
 end
 
@@ -146,8 +146,8 @@ function split_interval(set::PiecewiseDict, i::Int, x)
     @assert infimum(support(part, i)) < x < supremum(support(part, i))
 
     part2 = split_interval(part, i, x)
-    two_sets = split_interval(element(set, i), x)
-    PiecewiseDict(insert_at(elements(set), i, elements(two_sets)), part2)
+    two_sets = split_interval(component(set, i), x)
+    PiecewiseDict(insert_at(components(set), i, components(two_sets)), part2)
 end
 
 # Compute the coefficients in an expansion that results from splitting the given
@@ -156,8 +156,8 @@ function split_interval_expansion(set::Dictionary1d, coefficients, x)
     T = eltype(coefficients)
     pset = split_interval(set, x)
     z = zeros(pset)
-    pset1 = element(pset, 1)
-    pset2 = element(pset, 2)
+    pset1 = component(pset, 1)
+    pset2 = component(pset, 2)
     # We will manually evaluate the current function at the approximation grids
     # of the newly created sets with smaller support, and use those function values
     # to reconstruct the original function on each subinterval.
@@ -176,7 +176,7 @@ end
 function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector, x)
     part = partition(set)
     i = partition_index(part, x)
-    set_i = element(set, i)
+    set_i = component(set, i)
     coef_i = view(coefficients, Block(i))
     split_set, split_coef = split_interval_expansion(set_i, coef_i, x)
     # We compute the types of the individual sets and their coefficients
@@ -186,28 +186,28 @@ function split_interval_expansion(set::PiecewiseDict, coefficients::BlockVector,
     C = eltype(coefficients)
 
     # Now we want to replace the i-th set by the two new sets, and same for the coefficients
-    # Technicalities arise when i is 1 or i equals the numelements of the set
+    # Technicalities arise when i is 1 or i equals the ncomponents of the set
     local dicts, coefs
-    old_dicts = elements(set)
-    old_coef = elements(coefficients)
+    old_dicts = components(set)
+    old_coef = components(coefficients)
     if i > 1
-        if i < numelements(set)
+        if i < ncomponents(set)
             # We retain the old elements before and after the new ones
-            dicts = S[old_dicts[1:i-1]..., element(split_set, 1), element(split_set, 2), old_dicts[i+1:end]...]
-            coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+            dicts = S[old_dicts[1:i-1]..., component(split_set, 1), component(split_set, 2), old_dicts[i+1:end]...]
+            coefs = C[old_coef[1:i-1]..., component(split_coef, 1), component(split_coef, 2), old_coef[i+1:end]...]
         else
             # We replace the last element, so no elements come after the new ones
-            dicts = S[old_dicts[1:i-1]..., element(split_set, 1), element(split_set, 2)]
-            coefs = C[old_coef[1:i-1]..., element(split_coef, 1), element(split_coef, 2)]
+            dicts = S[old_dicts[1:i-1]..., component(split_set, 1), component(split_set, 2)]
+            coefs = C[old_coef[1:i-1]..., component(split_coef, 1), component(split_coef, 2)]
         end
     else
         # Here i==1, so there are no elements before the new ones
-        dicts = S[element(split_set, 1), element(split_set, 2), old_dicts[i+1:end]...]
-        coefs = C[element(split_coef, 1), element(split_coef, 2), old_coef[i+1:end]...]
+        dicts = S[component(split_set, 1), component(split_set, 2), old_dicts[i+1:end]...]
+        coefs = C[component(split_coef, 1), component(split_coef, 2), old_coef[i+1:end]...]
     end
     PiecewiseDict(dicts), BlockVector(coefs)
 end
 
 # TODO: add the measure argument here
 gram(::Type{T}, dict::PiecewiseDict; options...) where {T} =
-    BlockDiagonalOperator(DictionaryOperator{T}[gram(T, element(dict,i); options...) for i in 1:numelements(dict)], dict, dict)
+    BlockDiagonalOperator(DictionaryOperator{T}[gram(T, component(dict,i); options...) for i in 1:ncomponents(dict)], dict, dict)

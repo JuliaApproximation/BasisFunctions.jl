@@ -1,6 +1,6 @@
 
 """
-A `MultiDict` is the concatenation of several dictionaries. The elements are contained
+A `MultiDict` is the concatenation of several dictionaries. The components are contained
 in an indexable set, such as a tuple or an array. In case of an array, the number
 of dictionaries may be large.
 
@@ -46,9 +46,9 @@ multidict(dict::Dictionary) = dict
 
 # When manipulating multidicts, we create Array's of dicts by default
 multidict(d1::Dictionary, d2::Dictionary) = MultiDict([d1,d2])
-multidict(d1::MultiDict, d2::MultiDict) = MultiDict(vcat(elements(d1), elements(d2)))
-multidict(d1::MultiDict, d2::Dictionary) = MultiDict(vcat(elements(d1), d2))
-multidict(d1::Dictionary, d2::MultiDict) = MultiDict(vcat(d1, elements(d2)))
+multidict(d1::MultiDict, d2::MultiDict) = MultiDict(vcat(components(d1), components(d2)))
+multidict(d1::MultiDict, d2::Dictionary) = MultiDict(vcat(components(d1), d2))
+multidict(d1::Dictionary, d2::MultiDict) = MultiDict(vcat(d1, components(d2)))
 
 multidict(d1::Dictionary, d2::Dictionary, dicts::Dictionary...) =
     multidict(multidict(d1,d2), dicts...)
@@ -78,24 +78,24 @@ for op in (:isbasis, :isframe)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
-    @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
+    @eval $op(s::MultiDict) = ($fname)(s, components(s)...)
     # By default, multidicts do not have these properties:
-    @eval ($fname)(s, elements...) = false
+    @eval ($fname)(s, components...) = false
 end
 
 for op in (:isorthogonal, :isbiorthogonal)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
     fname = Symbol("multiple_$(op)")
-    @eval $op(s::MultiDict, m::Measure) = ($fname)(s, m, elements(s)...)
+    @eval $op(s::MultiDict, m::Measure) = ($fname)(s, m, components(s)...)
     # By default, multidicts do not have these properties:
-    @eval ($fname)(s, m::Measure, elements...) = false
+    @eval ($fname)(s, m::Measure, components...) = false
 end
 
 for op in (:hasinterpolationgrid, :hastransform)
     fname = Symbol("multiple_$(op)")
-    @eval $op(s::MultiDict) = ($fname)(s, elements(s)...)
-    @eval ($fname)(s, elements...) = false
+    @eval $op(s::MultiDict) = ($fname)(s, components(s)...)
+    @eval ($fname)(s, components...) = false
 end
 
 
@@ -105,7 +105,7 @@ function sub(dict::MultiDict, idx::OrdinalRange{Int})
     i2 = multilinear_index(dict, last(idx))
     # Check whether the range lies fully in one set
     if outerindex(i1) == outerindex(i2)
-        sub(element(dict, outerindex(i1)), innerindex(i1):step(idx):innerindex(i2))
+        sub(component(dict, outerindex(i1)), innerindex(i1):step(idx):innerindex(i2))
     else
         defaultsub(dict, idx)
     end
@@ -121,28 +121,28 @@ for op in (:support, :moment, :norm)
     end
 end
 
-support(set::MultiDict) = union(map(support,elements(set))...)
+support(set::MultiDict) = union(map(support,components(set))...)
 
-measure(dict::MultiDict) = measure(element(dict, 1))
+measure(dict::MultiDict) = measure(component(dict, 1))
 
 resize(d::MultiDict, n::Int) = resize(d, approx_length(d, n))
 
-approx_length(d::MultiDict, n::Int) = ceil(Int, n/numelements(d)) * ones(Int,numelements(d))
+approx_length(d::MultiDict, n::Int) = ceil(Int, n/ncomponents(d)) * ones(Int,ncomponents(d))
 
 ## Differentiation
 
 diff(Φ::MultiDict, order; options...) =
-    multidict([diff(dict, order; options...) for dict in elements(Φ)]...)
+    multidict([diff(dict, order; options...) for dict in components(Φ)]...)
 derivative_dict(Φ::MultiDict, order; options...) =
-    MultiDict(map(d-> derivative_dict(d, order; options...), elements(Φ)))
+    MultiDict(map(d-> derivative_dict(d, order; options...), components(Φ)))
 
 antiderivative_dict(Φ::MultiDict, order; options...) =
-    MultiDict(map(d-> antiderivative_dict(d, order; options...), elements(Φ)))
+    MultiDict(map(d-> antiderivative_dict(d, order; options...), components(Φ)))
 
 for op in (:differentiation, :antidifferentiation)
     @eval function $op(::Type{T}, src::MultiDict, dest::MultiDict, order; options...) where {T}
-        if numelements(src) == numelements(dest)
-            BlockDiagonalOperator{T}([$op(element(src,i), element(dest, i), order; options...) for i in 1:numelements(src)], src, dest)
+        if ncomponents(src) == ncomponents(dest)
+            BlockDiagonalOperator{T}([$op(component(src,i), component(dest, i), order; options...) for i in 1:ncomponents(src)], src, dest)
         else
             # We have a situation because the sizes of the multidicts don't match.
             # The derivative set may have been a nested multidict that was flattened. This
@@ -152,14 +152,14 @@ for op in (:differentiation, :antidifferentiation)
             # Resolve the situation by looking at the standard derivative sets of each element of src.
             # This may not be correct if one of the elements has multiple derivative sets, and
             # the user had chosen a non-standard one.
-            ops = DictionaryOperator{T}[$op(el, order; options...) for el in elements(src)]
+            ops = DictionaryOperator{T}[$op(el, order; options...) for el in components(src)]
             BlockDiagonalOperator{T}(ops, src, dest)
         end
     end
 end
 
 evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
-    block_row_operator( DictionaryOperator{T}[evaluation(T, el, gb, grid; options...) for el in elements(dict)], dict, gb)
+    block_row_operator( DictionaryOperator{T}[evaluation(T, el, gb, grid; options...) for el in components(dict)], dict, gb)
 
 
 
@@ -170,13 +170,14 @@ end
 
 ## Rescaling
 
-mapped_dict(s::MultiDict, m) = multidict(map( t-> mapped_dict(t, m), elements(s)))
+mapped_dict(s::MultiDict, m) = multidict(map( t-> mapped_dict(t, m), components(s)))
 
 ## Projecting
 function project(s::MultiDict, f::Function; options...)
-    Z = BlockArray{T}(undef,[length(e) for e in elements(s)])
-    for (i,el) in enumerate(elements(s))
-        setblock!(Z, project(el, f; options...), i)
+    Z = BlockArray{T}(undef,[length(e) for e in components(s)])
+    for (i,el) in enumerate(components(s))
+        Z[Block(i)] = project(el, f; options...)
+        # setblock!(Z, project(el, f; options...), i)
     end
     Z
 end
@@ -184,14 +185,14 @@ end
 
 ## Printing
 
-string(dict::MultiDict) = "Union of $(numelements(dict)) dictionaries"
+string(dict::MultiDict) = "Union of $(ncomponents(dict)) dictionaries"
 
 function stencilarray(dict::MultiDict)
     A = Any[]
-    push!(A, element(dict, 1))
-    for i = 2:numelements(dict)
+    push!(A, component(dict, 1))
+    for i = 2:ncomponents(dict)
         push!(A, " ⊕ ")
-        push!(A, element(dict, i))
+        push!(A, component(dict, i))
     end
     A
 end

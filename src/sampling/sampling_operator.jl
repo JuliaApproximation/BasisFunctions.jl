@@ -44,12 +44,12 @@ sample(g::AbstractGrid, f, T = numtype(g)) = sample!(zeros(T, size(g)), g, f)
 
 broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
-element(op::GridSampling, i) = GridSampling(element(dest(op),i))
-elements(op::GridSampling) = map( s -> GridSampling(s), elements(dest(op)))
-numproductelements(op::GridSampling) = numelements(dest(op))
+component(op::GridSampling, i) = GridSampling(component(dest(op),i))
+components(op::GridSampling) = map( s -> GridSampling(s), components(dest(op)))
+numproductcomponents(op::GridSampling) = ncomponents(dest(op))
 
-productelement(op::GridSampling, i) = element(op, i)
-productelements(op::GridSampling) = elements(op)
+productcomponent(op::GridSampling, i) = component(op, i)
+productcomponents(op::GridSampling) = components(op)
 
 
 function tensorproduct(op1::GridSampling, op2::GridSampling)
@@ -61,8 +61,8 @@ end
 
 function tensorproduct(op1::GridSampling, op2::AbstractOperator)
 	@assert dest(op2) isa GridBasis
-	@assert numelements(op2) == 2
-	tensorproduct(IdentityOperator(dest(op1)), element(op2,2)) * tensorproduct(op1, element(op2,1))
+	@assert ncomponents(op2) == 2
+	tensorproduct(IdentityOperator(dest(op1)), component(op2,2)) * tensorproduct(op1, component(op2,1))
 end
 
 function tensorproduct(ops::GridSampling...)
@@ -76,13 +76,13 @@ end
 function tensorproduct(op1::AbstractOperator, op2::AbstractOperator)
 	@assert dest(op1) isa GridBasis
 	@assert dest(op2) isa GridBasis
-	@assert numelements(op1) == 2
-	@assert numelements(op2) == 2
+	@assert ncomponents(op1) == 2
+	@assert ncomponents(op2) == 2
 	T = promote_type(coefficienttype(dest(op1)),coefficienttype(dest(op2)))
 	grid1 = grid(dest(op1))
 	grid2 = grid(dest(op2))
 	g = grid1 × grid2
-	tensorproduct(element(op1,2),element(op2,2)) * tensorproduct(element(op1,1),element(op2,1))
+	tensorproduct(component(op1,2),component(op2,2)) * tensorproduct(component(op1,1),component(op2,1))
 end
 
 function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::AbstractOperator)
@@ -90,10 +90,10 @@ function tensorproduct(op1::AbstractOperator, op2::AbstractOperator, op3::Abstra
 	@assert dest(op2) isa GridBasis
 	@assert dest(op3) isa GridBasis
 	# TODO: generalize to longer operators
-	@assert numelements(op1) == 2
-	@assert numelements(op2) == 2
-	@assert numelements(op3) == 2
-	tensorproduct(element(op1,2),element(op2,2),element(op3,2)) * tensorproduct(element(op1,1),element(op2,1),element(op3,1))
+	@assert ncomponents(op1) == 2
+	@assert ncomponents(op2) == 2
+	@assert ncomponents(op3) == 2
+	tensorproduct(component(op1,2),component(op2,2),component(op3,2)) * tensorproduct(component(op1,1),component(op2,1),component(op3,1))
 end
 
 

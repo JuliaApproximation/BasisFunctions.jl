@@ -3,6 +3,8 @@ include("ChebyshevU.jl")
 include("diff.jl")
 include("orth.jl")
 
+using DomainSets: WrappedMap
+
 const CosineMap{T} = WrappedMap{T,typeof(cos)}
 const SineMap{T} = WrappedMap{T,typeof(sin)}
 const ArcCosineMap{T} = WrappedMap{T,typeof(acos)}

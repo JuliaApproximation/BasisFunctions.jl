@@ -62,7 +62,7 @@ numtype(D::Type{<:Dictionary}) = numtype(domaintype(D), codomaintype(D))
 # The dimension of a function set is the dimension of its domain type
 dimension(dict::Dictionary) = dimension(domaintype(dict))
 
-dimension(dict::Dictionary, i) = dimension(element(dict, i))
+dimension(dict::Dictionary, i) = dimension(component(dict, i))
 
 "Are the functions in the dictionary real-valued?"
 isreal(d::Dictionary) = isreal(codomaintype(d))

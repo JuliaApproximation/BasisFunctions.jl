@@ -124,20 +124,20 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
 end
 
 function test_gaussjacobi()
-    w0 = Double64(128//225)
-    w1 = (sqrt(Double64(70))*13+322)/900
-    w2 = (-sqrt(Double64(70))*13+322)/900
+    w0 = LargeFloat(128//225)
+    w1 = (sqrt(LargeFloat(70))*13+322)/900
+    w2 = (-sqrt(LargeFloat(70))*13+322)/900
     weights_test = [w2,w1,w0,w1,w2]
-    n0 = Double64(0)
-    n1 = Double64(1)/3*sqrt(5-2sqrt(Double64(10)/7))
-    n2 = Double64(1)/3*sqrt(5+2sqrt(Double64(10)/7))
+    n0 = LargeFloat(0)
+    n1 = LargeFloat(1)/3*sqrt(5-2sqrt(LargeFloat(10)/7))
+    n2 = LargeFloat(1)/3*sqrt(5+2sqrt(LargeFloat(10)/7))
     nodes_test = [-n2,-n1,n0,n1,n2]
 
     gjnodes, gjweights = gaussjacobi(5,0,0)
     @test Float64.(norm(gjweights-weights_test))+1≈1
     @test Float64.(norm(gjnodes-nodes_test))+1≈1
 
-    gjnodes, gjweights = gaussjacobi(5,Double64(0),Double64(0))
+    gjnodes, gjweights = gaussjacobi(5,LargeFloat(0),LargeFloat(0))
     @test norm(gjweights-weights_test)+1≈1
     @test norm(gjnodes-nodes_test)+1≈1
 end
@@ -148,9 +148,9 @@ function test_roots_of_legendre_halfrangechebyshev()
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = Legendre(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    B = Legendre{Double64}(N)
+    B = Legendre{LargeFloat}(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
-    # B = HalfRangeChebyshevIkind(N,Double64(2))
+    # B = HalfRangeChebyshevIkind(N,LargeFloat(2))
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
 end
 

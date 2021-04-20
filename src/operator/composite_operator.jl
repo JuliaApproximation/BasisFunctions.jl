@@ -22,22 +22,22 @@ src_space(op::GenericCompositeOperator) = src_space(op.operators[1])
 dest_space(op::GenericCompositeOperator) = dest_space(op.operators[end])
 
 # Generic functions for composite types:
-elements(op::GenericCompositeOperator) = op.operators
-element(op::GenericCompositeOperator, j::Int) = op.operators[j]
+components(op::GenericCompositeOperator) = op.operators
+component(op::GenericCompositeOperator, j::Int) = op.operators[j]
 
 
 # If the GenericCompositeOperator happens to be a composite operator of
 # product operators, then the result is a product operator too. You can select
 # its elements with the productelement routine.
-function productelement(op::GenericCompositeOperator, j::Int)
-    GenericCompositeOperator(map(t -> element(t, j), elements(op))...)
+function productcomponent(op::GenericCompositeOperator, j::Int)
+    GenericCompositeOperator(map(t -> component(t, j), components(op))...)
 end
-productelements(op::GenericCompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
-numproductelements(op::GenericCompositeOperator) = numproductelements(element(op,1))
+productcomponents(op::GenericCompositeOperator) = tuple([productcomponent(op, j) for j in 1:numproductcomponents(op)]...)
+numproductcomponents(op::GenericCompositeOperator) = numproductcomponents(component(op,1))
 
 function apply(comp::GenericCompositeOperator, fun; options...)
     output = fun
-    for op in elements(comp)
+    for op in components(comp)
         input = output
         # TODO: clean this op. The apply of a generic operator can accept options,
         # but the apply of a DictionaryOperator can not.
@@ -82,14 +82,14 @@ struct CompositeOperator{T} <: DictionaryOperator{T}
 end
 
 # Generic functions for composite types:
-elements(op::CompositeOperator) = op.operators
-element(op::CompositeOperator, j::Int) = op.operators[j]
+components(op::CompositeOperator) = op.operators
+component(op::CompositeOperator, j::Int) = op.operators[j]
 
-function productelement(op::CompositeOperator, j::Int)
-    compose(map(t -> element(t, j), elements(op))...)
+function productcomponent(op::CompositeOperator, j::Int)
+    compose(map(t -> component(t, j), components(op))...)
 end
-productelements(op::CompositeOperator) = tuple([productelement(op, j) for j in 1:numproductelements(op)]...)
-numproductelements(op::CompositeOperator) = numproductelements(element(op,1))
+productcomponents(op::CompositeOperator) = tuple([productcomponent(op, j) for j in 1:numproductcomponents(op)]...)
+numproductcomponents(op::CompositeOperator) = numproductcomponents(component(op,1))
 
 isinplace(op::CompositeOperator) = all(map(isinplace, op.operators))
 isdiag(op::CompositeOperator) = all(map(isdiag, op.operators))
@@ -225,16 +225,16 @@ compose(op::AbstractOperator) = op
 compose(ops::DictionaryOperator...) = compose_and_simplify(src(ops[1]), dest(ops[end]), ops...)
 compose(ops::AbstractOperator...) = GenericCompositeOperator(flatten(GenericCompositeOperator, ops...)...)
 
-sparse(op::CompositeOperator; options...) = *([sparse(opi; options...) for opi in elements(op)[end:-1:1]]...)
+sparse(op::CompositeOperator; options...) = *([sparse(opi; options...) for opi in components(op)[end:-1:1]]...)
 
 CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 
 function stencilarray(op::CompositeOperators)
     A = Any[]
-    push!(A,element(op,numelements(op)))
-    for i in numelements(op)-1:-1:1
+    push!(A,component(op,ncomponents(op)))
+    for i in ncomponents(op)-1:-1:1
         push!(A, " * ")
-        push!(A, element(op,i))
+        push!(A, component(op,i))
     end
     A
 end

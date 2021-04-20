@@ -65,10 +65,19 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
     domain2 = support(Φ2, j)
     domain3 = support(measure)
 
-    domain = domain1 ∩ domain2 ∩ domain3
-	qs = quadstrategy(prectype(Φ1, Φ2); options...)
-    unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain, qs)
+	try
+    	domain = domain1 ∩ (domain2 ∩ domain3)
+		qs = quadstrategy(prectype(Φ1, Φ2); options...)
+    	unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure, domain1, domain2, domain3, domain, qs)
+	catch
+		# Intersection failed, use safe evaluation
+		safe_default_dict_innerproduct(Φ1, i, Φ2, j, measure, qs)
+	end
 end
+
+# Routine below is safe because it uses eval_element, and not unsafe_eval_element
+safe_default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, qs) =
+	integral(qs, x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure)
 
 function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteWeight; options...)
 	@boundscheck checkbounds(Φ1, i)
@@ -89,10 +98,10 @@ function unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, 
     end
 end
 
-unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain::IntersectionDomain, qs) =
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure, d1, d2, d3, domain::IntersectDomain, qs) =
     # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
     integral(qs, x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure)
-unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Weight, d1, d2, d3, domain::IntersectionDomain, qs) =
+unsafe_default_dict_innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Weight, d1, d2, d3, domain::IntersectDomain, qs) =
     # -> disregard the intersection domain, but use the safe eval instead to guarantee correctness
     integral(qs, x->conj(eval_element(Φ1, i, x))*eval_element(Φ2, j, x), measure)
 
@@ -101,9 +110,8 @@ unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measur
     integral(qs, x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), measure)
 
 function unsafe_default_dict_innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteWeight, domain)
-	F = x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x)
-	# Note: using "unsafe_eval" here is slightly dangerous: we rely on "integral"
-	# not evaluating the integrand outside the given domain
+	# Note: using "unsafe_eval" here is still slightly dangerous: we rely on "integral"
+	# not evaluating the integrand outside the given domain for discrete weights
     integral(x->conj(unsafe_eval_element(Φ1, i, x))*unsafe_eval_element(Φ2, j, x), domain, measure)
 end
 

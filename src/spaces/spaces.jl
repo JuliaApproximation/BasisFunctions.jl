@@ -101,4 +101,4 @@ function tensorproduct(spaces::FunctionSpace...)
     ProductSpace{S,T}(spaces)
 end
 
-elements(space::ProductSpace) = space.spaces
+components(space::ProductSpace) = space.spaces

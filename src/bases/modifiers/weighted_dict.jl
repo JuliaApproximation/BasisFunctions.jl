@@ -133,16 +133,16 @@ end
 function differentiation(::Type{T}, src::WeightedDict, dest::MultiDict, order; options...) where {T}
     @assert size(dest) == size(derivative_dict(src, order))
     if order==0
-        return IdentityOperator{T}(src, element(dest, 1))
+        return IdentityOperator{T}(src, component(dest, 1))
     end
     if order == 1
-        I = IdentityOperator{T}(src, element(dest, 1))
+        I = IdentityOperator{T}(src, component(dest, 1))
         D = differentiation(T, superdict(src), order)
-        DW = wrap_operator(src, element(dest, 2), D)
+        DW = wrap_operator(src, component(dest, 2), D)
         block_column_operator([I,DW])
     elseif order > 1
         Ds = [wrap_operator(src,e,binomial(order,k)*differentiation(T, superdict(src), k))
-            for (e,k) in zip(elements(dest),0:order)]
+            for (e,k) in zip(components(dest),0:order)]
         block_column_operator(Ds)
     else
         error("differentiation of order $order not implemented")

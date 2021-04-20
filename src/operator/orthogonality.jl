@@ -9,11 +9,11 @@ isorthonormal(::IndexExtension) = true
 isorthonormal(::IndexRestriction) = true
 function isorthonormal(op::CompositeOperator)
     @warn "just a rough estimate on orthonormality"
-    mapreduce(isorthonormal, &, elements(op))
+    mapreduce(isorthonormal, &, components(op))
 end
 
 
 function isorthogonal(op::CompositeOperator)
     @warn "just a rough estimate on orthonormality"
-    mapreduce(isorthogonal, &, elements(op))
+    mapreduce(isorthogonal, &, components(op))
 end

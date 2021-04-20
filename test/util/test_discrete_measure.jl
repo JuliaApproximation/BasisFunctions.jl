@@ -54,5 +54,5 @@ using BasisFunctions.Test: generic_test_discrete_measure
     μ = discretemeasure(g)
     generic_test_discrete_measure(μ)
     @test μ isa BasisFunctions.DiscreteProductWeight
-    @test elements(μ) == (element(μ,1),element(μ,2))
+    @test components(μ) == (component(μ,1),component(μ,2))
 end

@@ -8,7 +8,7 @@ supports_approximation(::Hermite{Double64}) = false
 supports_approximation(::Subdictionary) = false
 supports_approximation(::OperatedDict) = false
 supports_approximation(dict::TensorProductDict) =
-    mapreduce(supports_approximation, &, elements(dict))
+    mapreduce(supports_approximation, &, components(dict))
 # Monomials and rationals have no associated domain
 supports_approximation(::Monomials) = false
 supports_approximation(::Rationals) = false
@@ -25,7 +25,7 @@ suitable_function(::Hermite) = x -> 1/(1000+(2x)^2)
 
 
 suitable_interpolation_grid(basis::TensorProductDict) =
-    ProductGrid(map(suitable_interpolation_grid, elements(basis))...)
+    ProductGrid(map(suitable_interpolation_grid, components(basis))...)
 suitable_interpolation_grid(basis::SineSeries) = MidpointEquispacedGrid{domaintype(basis)}(length(basis), 0, 1)
 suitable_interpolation_grid(basis::WeightedDict) = suitable_interpolation_grid(superdict(basis))
 suitable_interpolation_grid(basis::OperatedDict) = suitable_interpolation_grid(src(basis))

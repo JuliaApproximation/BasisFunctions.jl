@@ -3,7 +3,7 @@ using BasisFunctions, BasisFunctions.Test, DomainSets, DoubleFloats
 
 using Test
 
-types = (Float64, Double64)
+types = (Float64, LargeFloat)
 
 #####
 # Orthogonal polynomials
@@ -136,7 +136,8 @@ function test_ops_generic(ops)
     # end
 end
 
-for T in types
+# for T in types
+for T in (Float64, LargeFloat)
     @testset "$(rpad("Orthogonal polynomials ($T)",80))" begin
         println("Classical orthogonal polynomials ($T):")
         test_chebyshevT(T)
@@ -151,7 +152,7 @@ end
 
 @testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
     OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
-    for ops in OPSs, n in (5,6), T in (Float64,Double64)
+    for ops in OPSs, n in (5,6), T in (Float64,LargeFloat)
         B = ops{T}(n)
         test_orthogonality_orthonormality(B, gauss_rule(B))
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,2n)))

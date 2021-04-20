@@ -17,7 +17,7 @@ function quadweights(grid::MappedGrid, measure::MappedWeight)
 end
 
 quadweights(grid::ProductGrid, measure::ProductWeight) =
-    OuterProductArray(map(quadweights, elements(grid), elements(measure))...)
+    OuterProductArray(map(quadweights, components(grid), components(measure))...)
 
 quadweights(grid::ChebyshevTNodes{T}, ::ChebyshevTWeight{T}) where {T} =
     GridArrays.ChebyshevTWeights{T}(length(grid))

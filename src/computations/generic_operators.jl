@@ -18,26 +18,26 @@ include("differentiation.jl")
 
 
 transform_from_grid(T, s1::GridBasis, s2::TensorProductDict, grid::ProductGrid; options...) =
-    tensorproduct(map( (u,v,w) -> transform_from_grid(T, u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
+    tensorproduct(map( (u,v,w) -> transform_from_grid(T, u,v,w; options...), components(s1), components(s2), components(grid))...)
 
 transform_to_grid(T, s1::TensorProductDict, s2::GridBasis, grid::ProductGrid; options...) =
-    tensorproduct(map( (u,v,w) -> transform_to_grid(T, u,v,w; options...), elements(s1), elements(s2), elements(grid))...)
+    tensorproduct(map( (u,v,w) -> transform_to_grid(T, u,v,w; options...), components(s1), components(s2), components(grid))...)
 
 for op in (:extension, :restriction, :conversion)
     @eval $op(::Type{T}, src::TensorProductDict, dest::TensorProductDict; options...) where {T} =
-        tensorproduct(map( (u,v) -> $op(T, u, v; options...), elements(src), elements(dest))...)
+        tensorproduct(map( (u,v) -> $op(T, u, v; options...), components(src), components(dest))...)
 end
 
 
 for op in (:interpolation, :leastsquares)
     @eval $op(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
-        tensorproduct(map( (u,v) -> $op(T, u, v; options...), elements(s1), elements(s2))...)
+        tensorproduct(map( (u,v) -> $op(T, u, v; options...), components(s1), components(s2))...)
 end
 
 dense_evaluation(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
-    tensorproduct(map( (u,v) -> dense_evaluation(T, u, v; options...), elements(s1), elements(s2))...)
+    tensorproduct(map( (u,v) -> dense_evaluation(T, u, v; options...), components(s1), components(s2))...)
 
 for op in (:approximation, )
     @eval $op(s::TensorProductDict; options...) =
-        tensorproduct(map( u -> $op(u; options...), elements(s))...)
+        tensorproduct(map( u -> $op(u; options...), components(s))...)
 end

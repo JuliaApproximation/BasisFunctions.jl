@@ -1,16 +1,22 @@
 module test_suite
 
-using BasisFunctions, FastTransforms, BasisFunctions.Test,
+using Test,
+    BasisFunctions, BasisFunctions.Test
+
+using DoubleFloats,
+    FastTransforms,
+    FFTW,
+    LinearAlgebra,
+    Random,
     StaticArrays,
-    DomainSets, DomainIntegrals
+    DomainSets,
+    DomainIntegrals
 
 import BasisFunctions.Test:
     supports_approximation,
     supports_interpolation,
     suitable_function,
     suitable_interpolation_grid
-
-using Test, Random, FFTW, LinearAlgebra, DoubleFloats
 
 ⊕ = BasisFunctions.:⊕
 
@@ -21,6 +27,9 @@ Random.seed!(1234)
 
 BF = BasisFunctions
 const show_timings = false
+
+# const LargeFloat = Double64
+const LargeFloat = BigFloat
 
 ##########
 # Testing

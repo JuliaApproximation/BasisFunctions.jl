@@ -43,7 +43,7 @@ using BasisFunctions.Test: generic_test_measure
 
     m = FourierWeight()
     μ = productmeasure(m,m)
-    @test elements(μ) == (element(μ,1),element(μ,2))
+    @test components(μ) == (component(μ,1),component(μ,2))
     io = IOBuffer()
     show(io, μ)
     @test length(take!(io))>0

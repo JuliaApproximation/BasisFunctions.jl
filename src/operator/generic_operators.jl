@@ -40,7 +40,7 @@ end
 src_space(op::GenericSumOperator) = src_space(op.op1)
 dest_space(op::GenericSumOperator) = dest_space(op.op1)
 
-elements(op::GenericSumOperator) = (op1,op2)
+components(op::GenericSumOperator) = (op1,op2)
 
 apply(op::GenericSumOperator, fun; opts...) = apply(op.op1,fun; opts...) + apply(op.op2,fun; opts...)
 +(f1::Function, f2::Function) = (x->f1(x)+f2(x))

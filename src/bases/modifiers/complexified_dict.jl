@@ -17,8 +17,8 @@ Base.real(dict::ComplexifiedDict) = superdict(dict)
 
 similardictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
-elements(dict::ComplexifiedDict) = map(ComplexifiedDict, elements(superdict(dict)))
-element(dict::ComplexifiedDict, i) = ComplexifiedDict(element(superdict(dict), i))
+components(dict::ComplexifiedDict) = map(ComplexifiedDict, components(superdict(dict)))
+component(dict::ComplexifiedDict, i) = ComplexifiedDict(component(superdict(dict), i))
 
 # This is the general rule to complexify a dictionary
 _ensure_coefficienttype(dict::Dictionary, ::Type{Complex{T}}, ::Type{T}) where {T} =

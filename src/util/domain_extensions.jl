@@ -26,17 +26,17 @@ disk(::Type{T} = Float64) where {T} = UnitDisk{T}()
 disk(radius::Number) = radius .* disk(typeof(radius))
 disk(radius::Number, center::AbstractVector) = disk(radius) .+ center
 
-ball(::Type{T} = Float64) where {T} = UnitBall{T}()
+ball(::Type{T} = Float64) where {T} = UnitBall{SVector{3,T}}()
 ball(radius::Number) = radius .* ball(typeof(radius))
 ball(radius::Number, center::AbstractVector) = ball(radius) .+ center
 
-simplex(::Type{Val{N}}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
+simplex(::Val{N}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
 
-cube(::Type{Val{N}}, ::Type{T} = Float64) where {N,T} = cartesianproduct(UnitInterval{T}(), Val{N})
-cube() = cube(Val{3})
+cube(::Val{N}, ::Type{T} = Float64) where {N,T} = UnitInterval{T}()^N
+cube() = cube(Val(3))
 rectangle(a, b, c, d) = (a..b) × (c..d)
 cube(a, b, c, d, e, f) = (a..b) × (c..d) × (e..f)
 # This one is not type-stable
-cube(a::NTuple{N,T}, b::NTuple{N,T}) where {N,T} = ProductDomain(map((ai,bi)->ClosedInterval{T}(ai,bi), a, b)...)
+cube(a::NTuple{N,T}, b::NTuple{N,T}) where {N,T} = productdomain(map(ClosedInterval, a, b)...)
 # This one isn't either
 cube(a::AbstractVector{T}, b::AbstractVector{T}) where {T} = cube(tuple(a...), tuple(b...))

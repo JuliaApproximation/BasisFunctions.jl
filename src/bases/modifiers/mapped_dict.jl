@@ -277,7 +277,7 @@ function rescale(s::Dictionary1d, a::Number, b::Number)
     if abs(a-infimum(support(s))) < 10eps(T) && abs(b-supremum(support(s))) < 10eps(T)
         s
     else
-        m = interval_map(infimum(support(s)), supremum(support(s)), T(a), T(b))
+        m = mapto(support(s), T(a)..T(b))
         mapped_dict(s, m)
     end
 end
@@ -292,7 +292,7 @@ rescale(s::Dictionary, d::AbstractInterval) = rescale(s, infimum(d), supremum(d)
 
 # "Preserve Tensor Product Structure"
 function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
-    scaled_sets = [ rescale(element(s,i), a[i], b[i]) for i in 1:N]
+    scaled_sets = [ rescale(component(s,i), a[i], b[i]) for i in 1:N]
     tensorproduct(scaled_sets...)
 end
 

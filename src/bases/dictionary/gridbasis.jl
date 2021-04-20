@@ -35,7 +35,7 @@ string(dict::GridBasis) = name(dict) * " for coefficient type $(coefficienttype(
 strings(dict::GridBasis) = (string(dict), strings(grid(dict)))
 
 
-tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,dicts)...)}(cartesianproduct(map(grid, dicts)...))
+tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,dicts)...)}(productgrid(map(grid, dicts)...))
 
 support(b::GridBasis) = coverdomain(grid(b))
 
@@ -47,8 +47,8 @@ hastransform(s1::GridBasis, s2::Dictionary) =
 # and provide a default
 hasgrid_transform(s1::Dictionary, s2, grid) = false
 
-elements(s::ProductGridBasis) = map(GridBasis{coefficienttype(s)}, elements(grid(s)))
-element(s::ProductGridBasis, i) = GridBasis{coefficienttype(s)}(element(grid(s), i))
+components(s::ProductGridBasis) = map(GridBasis{coefficienttype(s)}, components(grid(s)))
+component(s::ProductGridBasis, i) = GridBasis{coefficienttype(s)}(component(grid(s), i))
 
 apply_map(s::GridBasis, map) = GridBasis{coefficienttype(s)}(apply_map(grid(s), map))
 

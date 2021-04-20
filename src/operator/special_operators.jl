@@ -203,7 +203,7 @@ function apply_sum!(op::OperatorSum, op1::DictionaryOperator, op2::DictionaryOpe
     coef_dest
 end
 
-elements(op::OperatorSum) = (op.op1,op.op2)
+components(op::OperatorSum) = (op.op1,op.op2)
 
 (+)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, 1)
 (-)(op1::DictionaryOperator, op2::DictionaryOperator) = OperatorSum(op1, op2, 1, -1)

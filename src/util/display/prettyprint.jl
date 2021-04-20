@@ -69,7 +69,7 @@ end
 "Does the object require parentheses around the composite elements of its stencil?"
 stencil_parentheses(object) = false
 
-"Does the object require parentheses if part of a composite stencil?"
+"Does the object require parentheses around part of a composite stencil?"
 object_parentheses(object) = false
 
 
@@ -188,7 +188,7 @@ strings(m::DomainSets.LinearMap) = (string("Linear map: y = ", matrix(m), " * x"
 # extend children method from AbstractTrees
 
 for OT in pretty_object_types
-    @eval children(object::$OT) = iscomposite(object) ? elements(object) : ()
+    @eval children(object::$OT) = iscomposite(object) ? components(object) : ()
 end
 
 function symbol_leaves(object)
@@ -205,6 +205,7 @@ function symbol_leaves(object)
         return S
     end
 end
+
 using OrderedCollections
 # Collect all symbols used
 function symbollist(op)
@@ -380,10 +381,10 @@ end
 
 function stencilarray(grid::ProductGrid)
 	A = Any[]
-    push!(A, element(grid, 1))
-    for i in 2:numelements(grid)
+    push!(A, component(grid, 1))
+    for i in 2:ncomponents(grid)
         push!(A, " × ")
-        push!(A, element(grid, i))
+        push!(A, component(grid, i))
     end
     A
 end
@@ -394,10 +395,10 @@ stencil_parentheses(grid::ProductGrid) = true
 
 function stencilarray(map::ProductMap)
 	A = Any[]
-    push!(A, element(map, 1))
-    for i in 2:numelements(map)
+    push!(A, component(map, 1))
+    for i in 2:ncomponents(map)
         push!(A, " × ")
-        push!(A, element(map, i))
+        push!(A, component(map, i))
     end
     A
 end

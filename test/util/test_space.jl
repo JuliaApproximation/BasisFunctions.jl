@@ -17,5 +17,5 @@ s = MeasureSpace(FourierWeight())
 
 s1 = GenericFunctionSpace{Float64,ComplexF64}()
 s2 = MeasureSpace(FourierWeight())
-@test elements(tensorproduct(s1,s2)) == (s1,s2)
+@test components(tensorproduct(s1,s2)) == (s1,s2)
 end

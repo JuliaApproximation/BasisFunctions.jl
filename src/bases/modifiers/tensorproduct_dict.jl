@@ -25,16 +25,16 @@ const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
 
 
 # Generic functions for composite types:
-elements(dict::TensorProductDict) = dict.dicts
-element(dict::TensorProductDict, j::Int) = dict.dicts[j]
-element(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
-numelements(dict::TensorProductDict{N}) where {N} = N
+components(dict::TensorProductDict) = dict.dicts
+component(dict::TensorProductDict, j::Int) = dict.dicts[j]
+component(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
+ncomponents(dict::TensorProductDict{N}) where {N} = N
 
-productelements(dict::TensorProductDict) = elements(dict)
-productelement(dict::TensorProductDict, j::Int) = element(dict, j)
-numproductelements(dict::TensorProductDict) = numelements(dict)
+productcomponents(dict::TensorProductDict) = components(dict)
+productcomponent(dict::TensorProductDict, j::Int) = component(dict, j)
+numproductcomponents(dict::TensorProductDict) = ncomponents(dict)
 
-tolerance(dict::TensorProductDict)=minimum(map(tolerance,elements(dict)))
+tolerance(dict::TensorProductDict)=minimum(map(tolerance,components(dict)))
 
 function TensorProductDict(dict::Dictionary)
     @warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductDict.")
@@ -59,14 +59,14 @@ end
 
 size(d::TensorProductDict) = d.size
 
-dimensions(d::TensorProductDict) = map(dimensions, elements(d))
+dimensions(d::TensorProductDict) = map(dimensions, components(d))
 
 similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} = similar(dict, T, approx_length(dict, size))
 
 similar(dict::TensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
-    TensorProductDict(map(similar, elements(dict), T.parameters, size)...)
+    TensorProductDict(map(similar, components(dict), T.parameters, size)...)
 
-coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,elements(s))...)
+coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,components(s))...)
 
 IndexStyle(d::TensorProductDict) = IndexCartesian()
 
@@ -75,19 +75,19 @@ IndexStyle(d::TensorProductDict) = IndexCartesian()
 ## Properties
 
 for op in (:isreal, :isbasis, :isframe)
-    @eval $op(s::TensorProductDict) = mapreduce($op, &, elements(s))
+    @eval $op(s::TensorProductDict) = mapreduce($op, &, components(s))
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval $op(s::TensorProductDict, m::ProductWeight) = mapreduce($op, &, elements(s), elements(m))
+    @eval $op(s::TensorProductDict, m::ProductWeight) = mapreduce($op, &, components(s), components(m))
 end
 
 for op in (:isorthogonal, :isorthonormal)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductWeight) = mapreduce($op, &, elements(s), elements(m))
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductWeight) = mapreduce($op, &, components(s), components(m))
 end
 
 for op in (:isorthogonal, :iscompatible)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, elements(s), elements(m))
+    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, components(s), components(m))
 end
 
 ## Native indices are of type ProductIndex
@@ -107,51 +107,51 @@ checkbounds(::Type{Bool}, d::TensorProductDict{2}, idx::NTuple{2,Int}) =
 # - Any other tuple we assume is a recursive native index, which we convert
 #   elementwise to a tuple of linear indices
 checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
-    checkbounds(Bool, d, map(linear_index, elements(d), idx))
+    checkbounds(Bool, d, map(linear_index, components(d), idx))
 
 
 ## Feature methods
 
 for op in (:hasinterpolationgrid, :hasextension, :hasderivative, :hasantiderivative)
-    @eval $op(s::TensorProductDict) = mapreduce($op, &, elements(s))
+    @eval $op(s::TensorProductDict) = mapreduce($op, &, components(s))
 end
 hasderivative(Φ::TensorProductDict, order) =
-    mapreduce(hasderivative, &, elements(Φ), order)
+    mapreduce(hasderivative, &, components(Φ), order)
 hasantiderivative(Φ::TensorProductDict, order) =
-    mapreduce(hasantiderivative, &, elements(Φ), order)
+    mapreduce(hasantiderivative, &, components(Φ), order)
 
 hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
-    mapreduce(hastransform, &, elements(s), elements(grid))
+    mapreduce(hastransform, &, components(s), components(grid))
 
 hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
 for op in (:derivative_dict, :antiderivative_dict)
     @eval $op(s::TensorProductDict, order; options...) =
-        tensorproduct( map( (el,ord) -> $op(el, ord; options...), elements(s), order)... )
+        tensorproduct( map( (el,ord) -> $op(el, ord; options...), components(s), order)... )
 end
 
 for op in (:differentiation, :antidifferentiation)
     @eval function $op(::Type{T}, src::TensorProductDict, dest::TensorProductDict, order; options...) where {T}
         @assert length(order) == dimension(src)
         @assert length(order) == dimension(dest)
-        tensorproduct(map( (el_s,el_d,ord) -> $op(T, el_s, el_d, ord; options...), elements(src), elements(dest), order)...)
+        tensorproduct(map( (el_s,el_d,ord) -> $op(T, el_s, el_d, ord; options...), components(src), components(dest), order)...)
     end
 end
 
 diff(dict::TensorProductDict, order; options...) =
-    TensorProductDict( (diff(e,o) for (e,o) in zip(elements(dict),order))...)
+    TensorProductDict( (diff(e,o) for (e,o) in zip(components(dict),order))...)
 
 resize(d::TensorProductDict, n::Int) = resize(d, approx_length(d, n))
-resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, elements(d), dims)...)
+resize(d::TensorProductDict, dims) = TensorProductDict(map(resize, components(d), dims)...)
 
 
 # Delegate dict_in_support to _dict_in_support with the composing dicts as extra arguments,
 # in order to avoid extra memory allocation.
 dict_in_support(dict::TensorProductDict, idx, x) =
-    _dict_in_support(dict, elements(dict), idx, x)
+    _dict_in_support(dict, components(dict), idx, x)
 # catch CartesianIndex, convert to tuple, so that iteration works
 dict_in_support(dict::TensorProductDict, idx::CartesianIndex, x) =
-    _dict_in_support(dict, elements(dict), Tuple(idx), x)
+    _dict_in_support(dict, components(dict), Tuple(idx), x)
 
 _dict_in_support(::TensorProductDict, dicts, idx, x) = mapreduce(in_support, &, dicts, idx, x)
 
@@ -160,48 +160,48 @@ function approx_length(s::TensorProductDict, n::Int)
     # Rough approximation: distribute n among all dimensions evenly, rounded upwards
     N = dimension(s)
     m = ceil(Int, n^(1/N))
-    tuple([approx_length(element(s, j), m^dimension(s, j)) for j in 1:numelements(s)]...)
+    tuple([approx_length(component(s, j), m^dimension(s, j)) for j in 1:ncomponents(s)]...)
 end
 
-extensionsize(s::TensorProductDict) = map(extensionsize, elements(s))
+extensionsize(s::TensorProductDict) = map(extensionsize, components(s))
 
-_names(dict::TensorProductDict) = join(map(name, elements(dict)), " ⊗ ")
+_names(dict::TensorProductDict) = join(map(name, components(dict)), " ⊗ ")
 name(dict::TensorProductDict) = "Tensor product dictionary ($(_names(dict)))"
 
 shortname(dict::TensorProductDict) = "Tensor product dictionary"
 
-getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert numelements(s)==2; element(s,1))
-getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert numelements(s)==2; element(s,2))
-getindex(s::TensorProductDict, ::Colon, ::Colon) = (@assert numelements(s)==2; s)
+getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert ncomponents(s)==2; component(s,1))
+getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert ncomponents(s)==2; component(s,2))
+getindex(s::TensorProductDict, ::Colon, ::Colon) = (@assert ncomponents(s)==2; s)
 
-getindex(s::TensorProductDict, ::Colon, i::Int, j::Int) = (@assert numelements(s)==3; element(s,1))
-getindex(s::TensorProductDict, i::Int, ::Colon, j::Int) = (@assert numelements(s)==3; element(s,2))
-getindex(s::TensorProductDict, i::Int, j::Int, ::Colon) = (@assert numelements(s)==3; element(s,3))
+getindex(s::TensorProductDict, ::Colon, i::Int, j::Int) = (@assert ncomponents(s)==3; component(s,1))
+getindex(s::TensorProductDict, i::Int, ::Colon, j::Int) = (@assert ncomponents(s)==3; component(s,2))
+getindex(s::TensorProductDict, i::Int, j::Int, ::Colon) = (@assert ncomponents(s)==3; component(s,3))
 getindex(s::TensorProductDict, ::Colon, ::Colon, i::Int) =
-    (@assert numelements(s)==3; TensorProductDict(element(s,1),element(s,2)))
+    (@assert ncomponents(s)==3; TensorProductDict(component(s,1),component(s,2)))
 getindex(s::TensorProductDict, ::Colon, i::Int, ::Colon) =
-    (@assert numelements(s)==3; TensorProductDict(element(s,1),element(s,3)))
+    (@assert ncomponents(s)==3; TensorProductDict(component(s,1),component(s,3)))
 getindex(s::TensorProductDict, i::Int, ::Colon, ::Colon) =
-    (@assert numelements(s)==3; TensorProductDict(element(s,2),element(s,3)))
-getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert numelements(s)==3; s)
+    (@assert ncomponents(s)==3; TensorProductDict(component(s,2),component(s,3)))
+getindex(s::TensorProductDict, ::Colon, ::Colon, ::Colon) = (@assert ncomponents(s)==3; s)
 
 
 interpolation_grid(s::TensorProductDict) =
-    ProductGrid(map(interpolation_grid, elements(s))...)
+    ProductGrid(map(interpolation_grid, components(s))...)
 gauss_rule(s::TensorProductDict) =
-    productmeasure(map(gauss_rule, elements(s))...)
+    productmeasure(map(gauss_rule, components(s))...)
 
 
-support(s::TensorProductDict) = cartesianproduct(map(support, elements(s)))
+support(s::TensorProductDict) = productdomain(map(support, components(s))...)
 support(s::TensorProductDict, idx::LinearIndex) = support(s, native_index(s,idx))
-support(s::TensorProductDict, idx::ProductIndex) = cartesianproduct(map(support, elements(s), indextuple(idx)))
+support(s::TensorProductDict, idx::ProductIndex) = productdomain(map(support, components(s), indextuple(idx))...)
 
 
 # We pass on the elements of s as an extra argument in order to avoid
 # memory allocations in the lines below
-# unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, elements(set), indexable_index(set, idx), x)
+# unsafe_eval_element(set::TensorProductDict, idx, x) = _unsafe_eval_element(set, components(set), indexable_index(set, idx), x)
 unsafe_eval_element(dict::TensorProductDict, idx::ProductIndex, x) =
-    _unsafe_eval_element(dict, elements(dict), idx, x)
+    _unsafe_eval_element(dict, components(dict), idx, x)
 
 _unsafe_eval_element(dict::TensorProductDict, dicts, i, x) =
     mapreduce(unsafe_eval_element, *, dicts, i, x)
@@ -209,19 +209,19 @@ _unsafe_eval_element(dict::TensorProductDict, dicts, i::CartesianIndex, x) =
     mapreduce(unsafe_eval_element, *, dicts, Tuple(i), x)
 
 unsafe_eval_element_derivative(dict::TensorProductDict, idx::ProductIndex, x, order) =
-    _unsafe_eval_element_derivative(dict, elements(dict), idx, x, order)
+    _unsafe_eval_element_derivative(dict, components(dict), idx, x, order)
 
 _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i, x, order) =
     mapreduce(unsafe_eval_element_derivative, *, dicts, i, x, order)
 _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i::CartesianIndex, x, order) =
     mapreduce(unsafe_eval_element_derivative, *, dicts, Tuple(i), x, order)
 
-hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, elements(dict))
-measure(dict::TensorProductDict) = productmeasure(map(measure, elements(dict))...)
+hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, components(dict))
+measure(dict::TensorProductDict) = productmeasure(map(measure, components(dict))...)
 
 
 innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductWeight; options...) =
-    mapreduce(innerproduct, *, elements(Φ1), Tuple(i), elements(Φ2), Tuple(j), elements(measure))
+    mapreduce(innerproduct, *, components(Φ1), Tuple(i), components(Φ2), Tuple(j), components(measure))
 
 
 
@@ -253,10 +253,10 @@ end
 
 function stencilarray(dict::TensorProductDict)
     A = Any[]
-    push!(A, element(dict,1))
-    for i=2:numelements(dict)
+    push!(A, component(dict,1))
+    for i=2:ncomponents(dict)
         push!(A, " ⊗ ")
-        push!(A, element(dict,i))
+        push!(A, component(dict,i))
     end
     A
 end
@@ -265,12 +265,12 @@ stencil_parentheses(dict::TensorProductDict) = true
 object_parentheses(dict::TensorProductDict) = true
 
 evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
-    tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), elements(dict), elements(grid))...)
+    tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), components(dict), components(grid))...)
 
 dual(dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}=measure(dict); options...) =
-    TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(elements(dict),elements(measure))]...)
+    TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(components(dict),components(measure))]...)
 
 gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
-    TensorProductOperator(map((x,y)->gram(T, x,y; options...), elements(dict), elements(measure))...)
+    TensorProductOperator(map((x,y)->gram(T, x,y; options...), components(dict), components(measure))...)
 mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
-    TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), elements(dict1), elements(dict2), elements(measure))...)
+    TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), components(dict1), components(dict2), components(measure))...)

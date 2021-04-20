@@ -38,7 +38,7 @@ const Expansion4d{S <: Number,T,D,C} = Expansion{SVector{4,S},T,D,C}
 
 @forward Expansion.dictionary domaintype, prectype, dimension,
                                 size, Span, support, interpolation_grid, numtype,
-                                numelements
+                                ncomponents
 
 @forward Expansion.coefficients length, eachindex, getindex, setindex!
 codomaintype(e::Expansion) = promote_type(codomaintype(dictionary(e)), eltype(coefficients(e)))
@@ -62,8 +62,8 @@ export random_expansion
 random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
 
 # For expansions of composite types, return a Expansion of a subdict
-element(e::Expansion, i) = Expansion(element(e.dictionary, i), element(e.coefficients, i))
-elements(e::Expansion) = map(Expansion, elements(e.dictionary), elements(e.coefficients))
+component(e::Expansion, i) = Expansion(component(e.dictionary, i), component(e.coefficients, i))
+components(e::Expansion) = map(Expansion, components(e.dictionary), components(e.coefficients))
 
 # This indirect call enables dispatch on the type of the dict of the expansion
 (e::Expansion)(x; options...) =
