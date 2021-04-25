@@ -95,9 +95,10 @@ export .., numtype, integral
 
 @reexport using GridArrays
 import GridArrays: subindices, resize, name,
-    apply_map, mapping, covering
+    apply_map, mapping, covering,
+    →, rescale
 
-using GridArrays: AbstractSubGrid, IndexSubGrid
+using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
 
 import AbstractTrees: children
 
@@ -134,9 +135,9 @@ export ishomogeneous, basetype
 
 # from GridArrays
 export ProductGrid
-export AbstractSubGrid, IndexSubGrid, subindices, supergrid, issubindex,
+export SubGrid, IndexSubGrid, subindices, supergrid, issubindex,
     similar_subgrid
-export MappedGrid, mapped_grid, apply_map
+export MappedGrid, map_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct,

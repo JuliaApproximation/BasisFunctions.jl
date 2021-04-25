@@ -22,7 +22,7 @@ _name(μ::GridWeight, points::MappedGrid, weights) = "Mapping of a $(name(superm
 strings(μ::GridWeight) = (name(μ), (string(points(μ)),), (string(string(weights(μ))),))
 
 support(μ::GridWeight) = _support(μ, points(μ))
-_support(μ::GridWeight, points::MappedGrid) = mapping(points) * support(supermeasure(μ))
+_support(μ::GridWeight, points::MappedGrid) = forward_map(points) * support(supermeasure(μ))
 _support(μ::GridWeight, points) = support(points)
 
 
@@ -40,7 +40,7 @@ weights(μ::UniformGridWeight) = uniformweights(points(μ))
 "Generate uniform weights for the given grid."
 uniformweights(grid::AbstractGrid) = uniformweights(grid, numtype(grid))
 uniformweights(grid::AbstractGrid, ::Type{T}) where {T} = Ones{T}(size(grid))
-uniformweights(grid::ProductGrid{T,S,N}, ::Type{V}) where {T,S,N,V} =
+uniformweights(grid::ProductGrid{T,N}, ::Type{V}) where {T,N,V} =
     tensorproduct(ntuple(k->Ones{V}(size(grid,k)) ,Val(N)))
 
 
@@ -55,7 +55,7 @@ struct GenericGridWeight{T,G,W} <: TypedGridWeight{T,G,W}
 
     function GenericGridWeight{T,G,W}(grid, weights) where {T,G,W}
         # @assert size(grid) == size(weights)
-        grid isa Union{AbstractSubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
+        grid isa Union{SubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
         new(grid, weights)
     end
 end
@@ -111,7 +111,7 @@ NormalizedDiracComb(grid::AbstractEquispacedGrid) =
 
 mappedmeasure(map, measure::DiscreteWeight) =
     discretemeasure(MappedGrid(points(measure), map), weights(measure))
-mapping(μ::GridWeight) = mapping(points(μ))
+forward_map(μ::GridWeight) = forward_map(points(μ))
 apply_map(measure::DiscreteWeight, map) =
     discretemeasure(apply_map(points(measure),map), weights(measure))
 

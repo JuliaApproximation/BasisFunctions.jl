@@ -154,15 +154,15 @@ function test_roots_of_legendre_halfrangechebyshev()
     # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
 end
 
-@testset "$(rpad("Generic OPS",80))" begin
+@testset "Generic OPS" begin
     test_generic_ops_from_quadrature()
 end
 
-@testset "$(rpad("Half Range Chebyshev",80))" begin
+@testset "Half Range Chebyshev" begin
     test_half_range_chebyshev()
 end
 
-@testset "$(rpad("Gauss jacobi quadrature",80))"    begin
+@testset "Gauss jacobi quadrature" begin
     test_gaussjacobi()
     test_roots_of_legendre_halfrangechebyshev()
 end

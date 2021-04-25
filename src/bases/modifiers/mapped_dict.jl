@@ -3,7 +3,7 @@ export →,
     rescale,
     MappedDict,
     mapped_dict,
-    mapping
+    forward_map
 
 """
 A `MappedDict` has a dictionary and a map. The domain of the dictionary is
@@ -17,7 +17,7 @@ const MappedDict1d{S <: Number,T <: Number} = MappedDict{S,T}
 const MappedDict2d{S <: SVector{2},T <: Number} = MappedDict{S,T}
 
 mapped_dict(dict::Dictionary, map) = MappedDict(dict, map)
-mapped_dict(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ mapping(dict))
+mapped_dict(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ forward_map(dict))
 
 # Convenience function, similar to apply_map for grids etcetera
 @deprecate apply_map(dict::Dictionary, map) mapped_dict(dict, map)
@@ -57,48 +57,49 @@ ScalarMappedDict{S,T}(dict::Dictionary, map) where {S,T} =
 
 
 
-mapping(dict::MappedDict) = dict.map
+forward_map(dict::MappedDict) = dict.map
+inverse_map(dict::MappedDict) = inverse(forward_map(dict))
 
-similardictionary(dict::MappedDict, dict2::Dictionary) = mapped_dict(dict2, mapping(dict))
+similardictionary(dict::MappedDict, dict2::Dictionary) = mapped_dict(dict2, forward_map(dict))
 
 hasderivative(dict::MappedDict) = false
 hasantiderivative(dict::MappedDict) = false
 
 hasderivative(dict::MappedDict1d) =
-    hasderivative(superdict(dict)) && isaffine(mapping(dict))
+    hasderivative(superdict(dict)) && isaffine(forward_map(dict))
 hasantiderivative(dict::MappedDict1d) =
-    hasantiderivative(superdict(dict)) && isaffine(mapping(dict))
+    hasantiderivative(superdict(dict)) && isaffine(forward_map(dict))
 
-interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), mapping(dict))
-_grid(dict::MappedDict, sdict, map) = mapped_grid(interpolation_grid(sdict), map)
+interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), forward_map(dict))
+_grid(dict::MappedDict, sdict, map) = map_grid(interpolation_grid(sdict), map)
 
 
 function unmap_grid(dict::MappedDict, grid::MappedGrid)
-    if iscompatible(mapping(dict), mapping(grid))
+    if iscompatible(forward_map(dict), forward_map(grid))
         supergrid(grid)
     else
-        apply_map(grid, inv(mapping(dict)))
+        apply_map(grid, inverse_map(dict))
     end
 end
 
-unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inv(mapping(dict)))
+unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inverse_map(dict))
 
 
-isreal(s::MappedDict) = isreal(superdict(s)) && isreal(mapping(s))
+isreal(s::MappedDict) = isreal(superdict(s)) && isreal(forward_map(s))
 
 unsafe_eval_element(s::MappedDict, idx, y) =
-    unsafe_eval_element(superdict(s), idx, leftinverse(mapping(s), y))
+    unsafe_eval_element(superdict(s), idx, leftinverse(forward_map(s), y))
 
 function unsafe_eval_element_derivative(s::MappedDict1d, idx, y, order)
     @assert order == 1
-    x = leftinverse(mapping(s), y)
+    x = leftinverse(forward_map(s), y)
     d = unsafe_eval_element_derivative(superdict(s), idx, x, order)
-    z = d / jacdet(mapping(s), y)
+    z = d / jacdet(forward_map(s), y)
 end
 
 function unsafe_eval_element_derivative(dict::MappedDict, idx, y, order)
     @assert maximum(order) <= 1
-    m = mapping(dict)
+    m = forward_map(dict)
     x = leftinverse(m, y)
     J = jacobian(m, y)
     g = eval_gradient(superdict(dict), idx, x)
@@ -107,19 +108,19 @@ end
 
 function eval_expansion(s::MappedDict{S,T}, coef, y::S) where {S,T}
     if in_support(s, first(eachindex(s)), y)
-        eval_expansion(superdict(s), coef, leftinverse(mapping(s), y))
+        eval_expansion(superdict(s), coef, leftinverse(forward_map(s), y))
     else
         zero(codomaintype(s))
     end
 end
 
-support(dict::MappedDict) = DomainSets.map_domain(mapping(dict), support(superdict(dict)))
+support(dict::MappedDict) = DomainSets.map_domain(forward_map(dict), support(superdict(dict)))
 
-support(dict::MappedDict, idx) = mapping(dict).(support(superdict(dict), idx))
+support(dict::MappedDict, idx) = forward_map(dict).(support(superdict(dict), idx))
 
 function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
-    x = leftinverse(mapping(set), y)
-    y1 = mapping(set)(x)
+    x = leftinverse(forward_map(set), y)
+    y1 = forward_map(set)(x)
     if norm(y-y1) < threshold
         in_support(superdict(set), idx, x)
     else
@@ -128,21 +129,21 @@ function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(
 end
 
 iscompatible(s1::MappedDict, s2::MappedDict) =
-    iscompatible(mapping(s1),mapping(s2)) && iscompatible(superdict(s1),superdict(s2))
+    iscompatible(forward_map(s1),forward_map(s2)) && iscompatible(superdict(s1),superdict(s2))
 
-measure(dict::MappedDict) = apply_map(measure(superdict(dict)), mapping(dict))
+measure(dict::MappedDict) = apply_map(measure(superdict(dict)), forward_map(dict))
 
 hasmeasure(dict::MappedDict) = hasmeasure(superdict(dict))
 
 for f in (:isorthonormal, :isorthogonal, :isbiorthogonal)
     @eval $f(dict::MappedDict, measure::MappedWeight) =
-        iscompatible(mapping(dict),mapping(measure)) && $f(superdict(dict), supermeasure(measure))
+        iscompatible(forward_map(dict),forward_map(measure)) && $f(superdict(dict), supermeasure(measure))
 end
 
 
 
 function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedWeight; options...)
-    if iscompatible(d1,d2) && iscompatible(mapping(d1),mapping(measure))
+    if iscompatible(d1,d2) && iscompatible(forward_map(d1),forward_map(measure))
         innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
     else
         innerproduct1(d1, i, d2, j, measure; options...)
@@ -150,7 +151,7 @@ function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Mapp
 end
 
 function gram(::Type{T}, dict::MappedDict, m::MappedWeight; options...) where {T}
-    if iscompatible(mapping(dict), mapping(m))
+    if iscompatible(forward_map(dict), forward_map(m))
         wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else
         default_gram(T, dict, m; options...)
@@ -158,7 +159,7 @@ function gram(::Type{T}, dict::MappedDict, m::MappedWeight; options...) where {T
 end
 
 function gram(::Type{T}, dict::MappedDict, m::DiscreteWeight, grid::MappedGrid, weights; options...) where {T}
-    if iscompatible(mapping(grid), mapping(dict))
+    if iscompatible(forward_map(grid), forward_map(dict))
         wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))
     else
         default_gram(T, dict, m; options...)
@@ -177,7 +178,7 @@ end
 # For example, a mapped Fourier basis may have a PeriodicEquispacedGrid on a
 # general interval. It is not necessarily a mapped grid.
 
-transform_dict(s::MappedDict; options...) = mapped_dict(transform_dict(superdict(s); options...), mapping(s))
+transform_dict(s::MappedDict; options...) = mapped_dict(transform_dict(superdict(s); options...), forward_map(s))
 
 function hasgrid_transform(dict::MappedDict, gb::GridBasis, grid::AbstractGrid)
     sgrid = unmap_grid(dict, grid)
@@ -216,7 +217,7 @@ end
 ###################
 
 function derivative_dict(Φ::MappedDict, order; options...)
-    map = mapping(Φ)
+    map = forward_map(Φ)
     superdiff = similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
     if isaffine(map)
         superdiff
@@ -231,7 +232,7 @@ function derivative_dict(Φ::MappedDict, order; options...)
 end
 
 function antiderivative_dict(Φ::MappedDict, order; options...)
-    map = mapping(Φ)
+    map = forward_map(Φ)
     if isaffine(map)
         similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
     elseif jacobian(map) isa ConstantMap
@@ -243,24 +244,24 @@ end
 
 # TODO: generalize to other orders
 function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert isaffine(mapping(dsrc))
+    @assert isaffine(forward_map(dsrc))
     D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
-    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(-order))
+    S = ScalingOperator{T}(dest(D), jacobian(forward_map(dsrc),1)^(-order))
     wrap_operator(dsrc, ddest, S*D)
 end
 
 function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::DerivedDict, order; options...) where {T}
     @assert order == 1
     @assert ddest isa WeightedDict1d
-    @assert iscompatible(mapping(dsrc), mapping(superdict(ddest)))
+    @assert iscompatible(forward_map(dsrc), forward_map(superdict(ddest)))
     D = differentiation(T, superdict(dsrc), superdict(superdict(ddest)), order; options...)
     wrap_operator(dsrc, ddest, D)
 end
 
 function antidifferentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert isaffine(mapping(dsrc))
+    @assert isaffine(forward_map(dsrc))
     D = antidifferentiation(T, superdict(dsrc), superdict(ddest), order; options...)
-    S = ScalingOperator{T}(dest(D), jacobian(mapping(dsrc),1)^(order))
+    S = ScalingOperator{T}(dest(D), jacobian(forward_map(dsrc),1)^(order))
     wrap_operator(dsrc, ddest, S*D)
 end
 
@@ -269,7 +270,7 @@ end
 # Special cases
 #################
 
-mapped_dict(dict::GridBasis, map) = GridBasis(mapped_grid(grid(s), map), coefficienttype(s))
+mapped_dict(dict::GridBasis, map) = GridBasis(map_grid(grid(s), map), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a::Number, b::Number)
@@ -296,7 +297,7 @@ function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
     tensorproduct(scaled_sets...)
 end
 
-plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), mapping(S))
+plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), forward_map(S))
 
 
 #################
@@ -306,7 +307,7 @@ plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), mapping(S))
 function (*)(dict1::MappedDict, dict2::MappedDict, coef_src1, coef_src2)
     @assert iscompatible(superdict(dict1),superdict(dict2))
     mset,mcoef = (*)(superdict(dict1),superdict(dict2),coef_src1,coef_src2)
-    mapped_dict(mset, mapping(dict1)), mcoef
+    mapped_dict(mset, forward_map(dict1)), mcoef
 end
 
 

@@ -7,31 +7,31 @@ using Test
 types = (Float64,LargeFloat)
 
 function test_operators(T)
-    @testset "$(rpad("test identity operator",80))" begin
+    @testset "identity operator" begin
         test_identity_operator(T) end
 
-    @testset "$(rpad("test diagonal operators",80))" begin
+    @testset "diagonal operators" begin
         test_diagonal_operators(T) end
 
-    @testset "$(rpad("test multidiagonal operators",80))" begin
+    @testset "multidiagonal operators" begin
         test_multidiagonal_operators(T) end
 
-    @testset "$(rpad("test invertible operators",80))" begin
+    @testset "test invertible operators" begin
         test_invertible_operators(T) end
 
-    @testset "$(rpad("test noninvertible operators",80))" begin
+    @testset "noninvertible operators" begin
         test_noninvertible_operators(T) end
 
-    @testset "$(rpad("test tensor operators",80))" begin
+    @testset "tensor operators" begin
         test_tensor_operators(T) end
 
-    @testset "$(rpad("test circulant operator",80))" begin
+    @testset "circulant operator" begin
         test_circulant_operator(T) end
 
-    @testset "$(rpad("test banded operators",80))" begin
+    @testset "banded operators" begin
         test_banded_operator(T) end
 
-    @testset "$(rpad("test sparse operator",80))" begin
+    @testset "sparse operator" begin
         test_sparse_operator(T) end
 end
 
@@ -57,7 +57,7 @@ function test_generic_operators(T)
     ]
 
     for ops in operators
-        @testset "$(rpad("$(ops[1])", 80))" begin
+        @testset "$(ops[1])" begin
             test_generic_operator_interface(ops[2], T)
         end
     end

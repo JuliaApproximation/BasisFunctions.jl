@@ -123,7 +123,7 @@ function gridrestriction(::Type{T}, src::Dictionary, dest::Dictionary, src_grid:
 end
 
 
-hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.AbstractSubGrid} = true
+hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.SubGrid} = true
 hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.TensorSubGrid} = true
 
 

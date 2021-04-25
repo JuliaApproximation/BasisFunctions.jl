@@ -40,11 +40,11 @@ using BasisFunctions.Test: generic_test_discrete_measure
     generic_test_discrete_measure(μ)
 
     g = FourierGrid(10)
-    mg = FourierGrid(10,-1,1)
-    m = mapping(mg)
+    mg = rescale(FourierGrid(10),-1, 1)
+    m = forward_map(mg)
     μ = discretemeasure(mg)
     generic_test_discrete_measure(μ)
-    @test mapping(μ) == m
+    @test forward_map(μ) == m
     @test supermeasure(μ) == discretemeasure(g)
     @test BasisFunctions.apply_map(discretemeasure(g),m) ≈ μ
     @test BasisFunctions.apply_map(μ,inv(m))≈discretemeasure(g)

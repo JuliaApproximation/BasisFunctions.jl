@@ -11,7 +11,7 @@ using BasisFunctions
     # @test_throws MethodError SynthesisOperator(F,nothing)''
 
     g = interpolation_grid(Fourier(3) → -1..1)
-    g1 = gram(Fourier(3) → -1..1,discretemeasure(mapped_grid(FourierGrid(6),mapping(g))))
+    g1 = gram(Fourier(3) → -1..1,discretemeasure(map_grid(FourierGrid(6),forward_map(g))))
     g2 = gram(Fourier(3),discretemeasure(FourierGrid(6)))
     g3 = BasisFunctions.default_gram(Fourier(3),discretemeasure(FourierGrid(6)); warnslow=false)
 

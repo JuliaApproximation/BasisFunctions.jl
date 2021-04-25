@@ -6,7 +6,7 @@ If `Ω` is a domain, parameterized by the function `κ : P → Ω`, then the `Pa
 is a dictionary defined on `P`, with each point `t ∈ P` identified with
 `x = κ(t) ∈ Ω`. The `ParamDict` acts like any other dictionary on `P`.
 
-Note the difference with a `MapppedDict`, which is defined on `Ω`. Operations
+Note the difference with a `MappedDict`, which is defined on `Ω`. Operations
 on mapped dictionaries require an easily invertible map.
 """
 struct ParamDict{D,M,S,T} <: DerivedDict{S,T}
@@ -23,15 +23,15 @@ ParamDict(dict::Dictionary{S,T}, map::Map{S}, image::Domain) where {S,T} =
 
 param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
 
-mapping(dict::ParamDict) = dict.map
+forward_map(dict::ParamDict) = dict.map
 image(dict::ParamDict) = dict.image
 
 similardictionary(dict::ParamDict, dict2::Dictionary) =
-    ParamDict(dict2, mapping(dict), image(dict))
+    ParamDict(dict2, forward_map(dict), image(dict))
 
 
 iscompatible(dict1::ParamDict, dict2::ParamDict) =
-    iscompatible(mapping(dict1),mapping(dict2)) && iscompatible(superdict(dict1),superdict(dict2))
+    iscompatible(forward_map(dict1),forward_map(dict2)) && iscompatible(superdict(dict1),superdict(dict2))
 
 
 ## Printing

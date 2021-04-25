@@ -23,14 +23,14 @@ sphere(radius::Number) = radius .* sphere(float(typeof(radius)))
 sphere(radius::Number, center::AbstractVector) = sphere(radius) .+ center
 
 disk(::Type{T} = Float64) where {T} = UnitDisk{T}()
-disk(radius::Number) = radius .* disk(typeof(radius))
+disk(radius::Number) = radius * disk(typeof(radius))
 disk(radius::Number, center::AbstractVector) = disk(radius) .+ center
 
 ball(::Type{T} = Float64) where {T} = UnitBall{SVector{3,T}}()
-ball(radius::Number) = radius .* ball(typeof(radius))
+ball(radius::Number) = radius * ball(typeof(radius))
 ball(radius::Number, center::AbstractVector) = ball(radius) .+ center
 
-simplex(::Val{N}, ::Type{T} = Float64) where {T,N} = UnitSimplex{N,T}()
+simplex(::Val{N}, ::Type{T} = Float64) where {T,N} = EuclideanUnitSimplex{N,T}()
 
 cube(::Val{N}, ::Type{T} = Float64) where {N,T} = UnitInterval{T}()^N
 cube() = cube(Val(3))

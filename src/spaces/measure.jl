@@ -52,18 +52,18 @@ mappedmeasure(map, measure::Weight) =
 
 name(m::MappedWeight) = "Mapped measure"
 
-mapping(m::MappedWeight) = m.map
+forward_map(m::MappedWeight) = m.map
 
 supermeasure(m::MappedWeight) = m.measure
 
 apply_map(measure::Weight, map) = MappedWeight(map, measure)
-apply_map(measure::MappedWeight, map) = MappedWeight(map ∘ mapping(measure), supermeasure(measure))
+apply_map(measure::MappedWeight, map) = MappedWeight(map ∘ forward_map(measure), supermeasure(measure))
 
-support(m::MappedWeight) = mapping(m).(support(supermeasure(m)))
+support(m::MappedWeight) = forward_map(m).(support(supermeasure(m)))
 
-unsafe_weightfun(m::MappedWeight, x) = unsafe_weightfun(supermeasure(m), inverse(mapping(m), x)) / jacdet(mapping(m), x)
+unsafe_weightfun(m::MappedWeight, x) = unsafe_weightfun(supermeasure(m), inverse(forward_map(m), x)) / jacdet(forward_map(m), x)
 
-strings(m::MappedWeight) = (name(m), strings(mapping(m)), strings(supermeasure(m)))
+strings(m::MappedWeight) = (name(m), strings(forward_map(m)), strings(supermeasure(m)))
 
 # For mapped measures, we can undo the map and leave out the jacobian in the
 # weight function of the measure by going to the supermeasure
@@ -81,7 +81,7 @@ import DomainIntegrals: islebesguemeasure,
 function process_measure(qs, domain::DomainSets.MappedDomain, μ::MappedWeight, sing)
     # TODO: think about what to do with the singularity here
     # -> Move MappedWeight into DomainIntegrals.jl and implement the logic there
-    m1 = mapping(μ)
+    m1 = forward_map(μ)
     m2 = forward_map(domain)
     if iscompatible(m1,m2)
         # f -> f(m1(x))
@@ -95,7 +95,7 @@ end
 
 function process_measure(qs, domain, μ::MappedWeight, sing)
     # f -> f(m(x))
-    map1 = mapping(μ)
+    map1 = forward_map(μ)
     pre2, map2, domain2, μ2, sing =
         process_measure(qs, mapped_domain(map1, domain), supermeasure(μ), sing)
     pre2, map1 ∘ map2, domain2, μ2, sing

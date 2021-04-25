@@ -24,11 +24,11 @@ end
 
 
 for T in chebyshev_types
-    @testset "$(rpad("Chebyshev expansions ($T)",80))" begin
+    @testset "Chebyshev expansions ($T)" begin
         test_chebyshev_expansions(T)
     end
 end
 
-@testset "$(rpad("ChebyshevT orthogonality",80))" begin
+@testset "ChebyshevT orthogonality" begin
     test_chebyshev_orthogonality()
 end

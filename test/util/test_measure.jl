@@ -37,7 +37,7 @@ using BasisFunctions.Test: generic_test_measure
     generic_test_measure(μ)
     @test !isnormalized(μ)
 
-    m = mapping(FourierGrid(10,-1,1))
+    m = mapto(0..1, -1..1)
     μ = mappedmeasure(m,FourierWeight())
     generic_test_measure(μ)
 

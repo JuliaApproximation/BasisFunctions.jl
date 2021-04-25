@@ -409,15 +409,15 @@ stencil_parentheses(map::ProductMap) = true
 ## Printing
 
 hasstencil(grid::MappedGrid) = true
-stencilarray(grid::MappedGrid) = [ mapping(grid), "(", supergrid(grid), ")" ]
+stencilarray(grid::MappedGrid) = [ forward_map(grid), "(", supergrid(grid), ")" ]
 
 
 
 ## Printing
 
-hasstencil(grid::AbstractSubGrid) = true
+hasstencil(grid::SubGrid) = true
 
-stencilarray(grid::AbstractSubGrid) = [ supergrid(grid), "[", setsymbol(subindices(grid)), "]" ]
+stencilarray(grid::SubGrid) = [ supergrid(grid), "[", setsymbol(subindices(grid)), "]" ]
 
 setsymbol(indices) = PrettyPrintSymbol{:𝕀}(indices)
 setsymbol(indices::UnitRange) = repr(indices)

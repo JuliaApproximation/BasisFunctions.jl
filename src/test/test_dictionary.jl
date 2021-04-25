@@ -24,12 +24,12 @@ end
 # Make a suitable function by undoing the map
 function suitable_function(dict::MappedDict)
     f = suitable_function(superdict(dict))
-    m = inv(mapping(dict))
+    m = inverse_map(dict)
     x -> f(m(x))
 end
 function suitable_function(dict::BasisFunctions.MappedDict2d)
     f = suitable_function(superdict(dict))
-    m = inv(mapping(dict))
+    m = inverse_map(dict)
     (x,y) -> f(m(x,y)...)
 end
 function suitable_function(dict::WeightedDict1d)

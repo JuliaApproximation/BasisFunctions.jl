@@ -25,7 +25,7 @@ include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
 
-@testset "$(rpad("test custom dictionary",80))" begin
+@testset "test custom dictionary" begin
     mydict = BasisFunctions.MyDictionary()
     test_generic_dict_interface(mydict)
 end
@@ -48,7 +48,7 @@ for T in domaintypes
     for DICT in test_dictionaries
         n = 9
         basis = DICT{T}(n)
-        @testset "$(rpad(string(basis),80))" begin
+        @testset "$(string(basis))" begin
             @test length(basis) == n
             @test domaintype(basis) == T
             test_generic_dict_interface(basis)
@@ -61,12 +61,12 @@ for T in domaintypes
     test_derived_dicts(T)
 
     delimit("Tensor specific tests ($(T))")
-    @testset "$(rpad("test iteration",80))" begin
+    @testset "test iteration" begin
         test_tensor_sets(T)
     end
 
     delimit("Tensor product set interfaces ($(T))")
-    @testset "$(rpad("$(name(basis))",80," "))" for basis in
+    @testset "$(name(basis))" for basis in
                 ( Fourier{T}(5) ⊗ Fourier{T}(7), # Two odd-length Fourier series
                   Fourier{T}(6) ⊗ ChebyshevT{T}(4), # combination of Fourier and Chebyshev
                   Fourier{T}(5) ⊗ Fourier{T}(6), # Odd and even-length Fourier series
@@ -78,7 +78,7 @@ for T in domaintypes
     end
 
     delimit("Discrete sets ($(T))")
-    @testset "$(rpad("discrete sets",80))" begin
+    @testset "discrete sets" begin
         test_discrete_sets(T)
     end
 end

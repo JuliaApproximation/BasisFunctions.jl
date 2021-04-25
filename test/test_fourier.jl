@@ -208,12 +208,12 @@ function test_fourier_orthogonality()
 end
 
 for T in fourier_types
-    @testset "$(rpad("Fourier expansions ($T)",80))" begin
+    @testset "Fourier expansions ($T)" begin
         test_fourier_series(T)
     end
 end
 using LinearAlgebra
-@testset "$(rpad("Fourier orthogonality, gram functionality",80))" begin
+@testset "Fourier orthogonality, gram functionality" begin
     test_fourier_orthogonality()
     F = Fourier(10)
     P = ProjectionSampling(F)

@@ -11,7 +11,7 @@ quadweights(grid::AbstractGrid, ::Ones, measure::Weight) =
     quadweights(grid, measure)
 
 function quadweights(grid::MappedGrid, measure::MappedWeight)
-    @assert iscompatible(mapping(grid), mapping(measure))
+    @assert iscompatible(forward_map(grid), forward_map(measure))
     sgrid = supergrid(grid)
     quadweights(sgrid, supermeasure(measure))
 end

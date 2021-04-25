@@ -138,7 +138,7 @@ end
 
 # for T in types
 for T in (Float64, LargeFloat)
-    @testset "$(rpad("Orthogonal polynomials ($T)",80))" begin
+    @testset "Orthogonal polynomials ($T)" begin
         println("Classical orthogonal polynomials ($T):")
         test_chebyshevT(T)
         test_chebyshevU(T)
@@ -150,7 +150,7 @@ for T in (Float64, LargeFloat)
     println()
 end
 
-@testset "$(rpad("Orthogonality of orthogonal polynomials",80))" begin
+@testset "Orthogonality of orthogonal polynomials" begin
     OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
     for ops in OPSs, n in (5,6), T in (Float64,LargeFloat)
         B = ops{T}(n)

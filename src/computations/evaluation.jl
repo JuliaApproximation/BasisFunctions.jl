@@ -31,7 +31,7 @@ evaluation(Φ::Dictionary, grid::AbstractGrid; options...) =
 evaluation(::Type{T}, Φ::Dictionary, grid::AbstractGrid; options...) where {T} =
     evaluation(T, Φ, GridBasis{T}(grid); options...)
 
-evaluation(::Type{T}, Φ::Dictionary, grid::AbstractSubGrid; options...) where {T} =
+evaluation(::Type{T}, Φ::Dictionary, grid::SubGrid; options...) where {T} =
      restriction(T, supergrid(grid), grid; options...) * evaluation(T, Φ, supergrid(grid); options...)
 
 function evaluation(::Type{T}, Φ::Dictionary, gb::GridBasis, grid; warnslow = true, options...) where {T}
