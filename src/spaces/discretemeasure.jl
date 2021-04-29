@@ -69,7 +69,7 @@ GenericGridWeight{T}(grid::G, weights::W) where {T,G,W} =
 
 const DiscreteProductWeight{T,G,W} = TypedGridWeight{T,G,W} where G<:ProductGrid where W<:AbstractOuterProductArray
 
-productmeasure(measures::DiscreteWeight...) =
+DomainIntegrals.productmeasure(measures::DiscreteWeight...) =
     discretemeasure(ProductGrid(map(points, measures)...), tensorproduct(map(weights, measures)...))
 components(m::DiscreteProductWeight) = map(discretemeasure, components(points(m)), components(weights(m)))
 component(m::DiscreteProductWeight, i) = discretemeasure(component(points(m), i), component(weights(m), i))

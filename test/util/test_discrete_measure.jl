@@ -47,7 +47,7 @@ using BasisFunctions.Test: generic_test_discrete_measure
     @test forward_map(μ) == m
     @test supermeasure(μ) == discretemeasure(g)
     @test BasisFunctions.apply_map(discretemeasure(g),m) ≈ μ
-    @test BasisFunctions.apply_map(μ,inv(m))≈discretemeasure(g)
+    @test BasisFunctions.apply_map(μ,inverse(m))≈discretemeasure(g)
 
 
     g = PeriodicEquispacedGrid(3,-1,1)×PeriodicEquispacedGrid(4,-1,1)

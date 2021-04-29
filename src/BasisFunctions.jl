@@ -90,6 +90,7 @@ import DomainIntegrals:
     points, weights,
     iscontinuous, isdiscrete,
     isnormalized, isuniform
+using DomainIntegrals: ProductWeight
 
 export .., numtype, integral
 
