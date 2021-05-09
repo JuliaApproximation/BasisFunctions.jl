@@ -10,7 +10,7 @@ dest_space(op::GenericIdentityOperator) = src_space(op)
 
 apply(op::GenericIdentityOperator, fun; opts...) = fun
 
-"The generic identity operator does nothing to the function it is applied to."
+
 struct GenericScalingOperator <: AbstractOperator
     src_space   ::  FunctionSpace
     scalar      ::  Number
@@ -31,7 +31,7 @@ apply(a::Number, f) = a*f
 (*)(I::GenericIdentityOperator, op::GenericScalingOperator) = op
 (-)(op::AbstractOperator) = (-1)*op
 
-"The generic identity operator does nothing to the function it is applied to."
+
 struct GenericSumOperator <: AbstractOperator
     op1   ::    AbstractOperator
     op2   ::    AbstractOperator
@@ -43,7 +43,6 @@ dest_space(op::GenericSumOperator) = dest_space(op.op1)
 components(op::GenericSumOperator) = (op1,op2)
 
 apply(op::GenericSumOperator, fun; opts...) = apply(op.op1,fun; opts...) + apply(op.op2,fun; opts...)
-+(f1::Function, f2::Function) = (x->f1(x)+f2(x))
 
 
 scalar(U::UniformScaling) = scalar(U,U.λ)
@@ -52,7 +51,7 @@ scalar(::UniformScaling, a) = a
 
 (+)(op1::AbstractOperator, op2::AbstractOperator) = GenericSumOperator(op1,op2)
 (-)(op1::AbstractOperator, op2::AbstractOperator) = GenericSumOperator(op1,-op2)
-(+)(I1::UniformScaling, op2::BasisFunctions.AbstractOperator) = (+)(GenericScalingOperator(dest_space(op2),scalar(I1)), op2)
-(-)(I1::UniformScaling, op2::BasisFunctions.AbstractOperator) = (-)(GenericScalingOperator(dest_space(op2),scalar(I1)), op2)
+(+)(I1::UniformScaling, op2::AbstractOperator) = (+)(GenericScalingOperator(dest_space(op2),scalar(I1)), op2)
+(-)(I1::UniformScaling, op2::AbstractOperator) = (-)(GenericScalingOperator(dest_space(op2),scalar(I1)), op2)
 (+)(op1::BasisFunctions.AbstractOperator, I2::UniformScaling) = (+)(op1, GenericScalingOperator(dest_space(op1),scalar(I2)))
 (-)(op1::BasisFunctions.AbstractOperator, I2::UniformScaling) = (-)(op1, GenericScalingOperator(dest_space(op1),scalar(I2)))
