@@ -17,6 +17,10 @@ codomaintype(::FunctionSpace{S,T}) where {S,T} = T
 
 length(s::FunctionSpace) = Inf
 
+show(io::IO, s::FunctionSpace) = print(io, "Space : $(domaintype(s)) → $(codomaintype(s))")
+Display.object_parentheses(s::FunctionSpace) = true
+
+
 """
 `GenericFunctionSpace` is a generic function space for functions about which we
 have no additional information apart from their domain and codomain types.
@@ -53,11 +57,15 @@ domain(s::MeasureSpace) = support(measure(s))
 
 space(m::Weight) = MeasureSpace(m)
 
+show(io::IO, s::MeasureSpace) = print(io, "Function space with measure: $(measure(s))")
+Display.object_parentheses(s::MeasureSpace) = true
+
 
 const FourierSpace{T} = MeasureSpace{FourierWeight{T},T,T}
 
 FourierSpace() = FourierSpace{Float64}()
 FourierSpace{T}() where {T} = MeasureSpace(FourierWeight{T}())
+show(io::IO, s::FourierSpace) = print(io, "Fourier space : $(domaintype(s)) → $(codomaintype(s))")
 
 
 const ChebyshevTSpace{T} = MeasureSpace{ChebyshevTWeight{T},T,T}

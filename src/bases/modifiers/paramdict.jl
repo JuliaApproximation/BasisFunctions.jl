@@ -36,11 +36,7 @@ iscompatible(dict1::ParamDict, dict2::ParamDict) =
 
 ## Printing
 
-name(dict::ParamDict) = "Parametric " * name(superdict(dict))
-
-modifiersymbol(dict::ParamDict) = PrettyPrintSymbol{:L}(dict)
-
-name(::PrettyPrintSymbol{:P}) = "Lifting"
-string(s::PrettyPrintSymbol{:L}) = _string(s, s.object)
-_string(s::PrettyPrintSymbol{:L}, dict::ParamDict) =
-    "Lifting from $(support(superdict(dict))) to $(image(dict))"
+show(io::IO, mime::MIME"text/plain", d::ParamDict) = composite_show(io, mime, d)
+Display.object_parentheses(d::ParamDict) = false
+Display.stencil_parentheses(d::ParamDict) = false
+Display.displaystencil(d::ParamDict) = ["ParamDict(", superdict(d), ", ", forward_map(d), ", ", image(d), ")"]

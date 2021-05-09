@@ -23,8 +23,6 @@ struct Fourier{T <: Real} <: Dictionary{T,Complex{T}}
 	n	::	Int
 end
 
-name(b::Fourier) = "Fourier series"
-
 Fourier(n::Int) = Fourier{Float64}(n)
 
 convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
@@ -38,6 +36,9 @@ oddlength(b::Fourier) = isodd(length(b))
 evenlength(b::Fourier) = iseven(length(b))
 
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
+
+show(io::IO, b::Fourier{Float64}) = print(io, "Fourier($(length(b)))")
+name(::Fourier) = "Fourier series"
 
 # Properties
 

@@ -1,45 +1,18 @@
 
-"""
-A `TensorProductDict` is itself a dictionary: the tensor product of a number of
-dictionaries.
+"Supertype of tensor product dictionaries."
+abstract type TensorProductDict{S,T} <: Dictionary{S,T} end
 
-struct TensorProductDict{N,DT,S,T} <: Dictionary{S,T}
 
-Parameters:
-- DT is a tuple of types, representing the (possibly different) types of the dicts.
-- N is the dimension of the product (equal to the length of the DT tuple)
-- S is the domain type
-- T is the codomain type.
-"""
-struct TensorProductDict{N,DT,S,T} <: Dictionary{S,T}
-    dicts   ::  DT
-    size    ::  NTuple{N,Int}
-
-    TensorProductDict{N,DT,S,T}(dicts::DT) where {N,DT,S,T} = new(dicts, map(length, dicts))
+# component(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
+function component(dict::TensorProductDict, range::AbstractRange)
+    # TODO: remove this method in the future
+    @warn "Range selection of product dictionaries now simply returns the components"
+    [component(dict,i) for i in range]
 end
-
-const TensorProductDict1{DT,S,T} = TensorProductDict{1,DT,S,T}
-const TensorProductDict2{DT,S,T} = TensorProductDict{2,DT,S,T}
-const TensorProductDict3{DT,S,T} = TensorProductDict{3,DT,S,T}
-const TensorProductDict4{DT,S,T} = TensorProductDict{4,DT,S,T}
-
-
-# Generic functions for composite types:
-components(dict::TensorProductDict) = dict.dicts
-component(dict::TensorProductDict, j::Int) = dict.dicts[j]
-component(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
-ncomponents(dict::TensorProductDict{N}) where {N} = N
 
 productcomponents(dict::TensorProductDict) = components(dict)
 productcomponent(dict::TensorProductDict, j::Int) = component(dict, j)
 numproductcomponents(dict::TensorProductDict) = ncomponents(dict)
-
-tolerance(dict::TensorProductDict)=minimum(map(tolerance,components(dict)))
-
-function TensorProductDict(dict::Dictionary)
-    @warn("A one element tensor product function set should not exist, use tensorproduct instead of TensorProductDict.")
-    dict
-end
 
 product_domaintype(dicts::Dictionary...) = Tuple{map(domaintype, dicts)...}
 function product_domaintype(dicts::Vararg{Dictionary{<:Number},N}) where {N}
@@ -54,23 +27,24 @@ function TensorProductDict(dicts::Dictionary...)
     C = promote_type(map(coefficienttype, dicts)...)
     dicts2 = map(dict->ensure_coefficienttype(C,dict),dicts)
     DT = typeof(dicts2)
-    TensorProductDict{N,DT,S,T}(dicts2)
+    TupleProductDict{N,DT,S,T}(dicts2)
 end
 
-size(d::TensorProductDict) = d.size
+
+
+tolerance(dict::TensorProductDict) = minimum(map(tolerance,components(dict)))
 
 dimensions(d::TensorProductDict) = map(dimensions, components(d))
 
-similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} = similar(dict, T, approx_length(dict, size))
-
-similar(dict::TensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
-    TensorProductDict(map(similar, components(dict), T.parameters, size)...)
-
-coefficienttype(s::TensorProductDict) = promote_type(map(coefficienttype,components(s))...)
+coefficienttype(d::TensorProductDict) = promote_type(map(coefficienttype,components(d))...)
 
 IndexStyle(d::TensorProductDict) = IndexCartesian()
 
-^(s::Dictionary, n::Int) = tensorproduct(s, n)
+^(d::Dictionary, n::Int) = tensorproduct(d, n)
+
+similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} =
+    similar(dict, T, approx_length(dict, size))
+
 
 ## Properties
 
@@ -89,25 +63,6 @@ end
 for op in (:isorthogonal, :iscompatible)
     @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, components(s), components(m))
 end
-
-## Native indices are of type ProductIndex
-
-# The native indices of a tensor product dict are of type ProductIndex
-ordering(d::TensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
-
-native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
-
-# We have to amend the boundscheck ecosystem to catch some cases:
-# - This line will catch indexing with tuples of integers, and we assume
-#   the user wanted to use a CartesianIndex
-checkbounds(::Type{Bool}, d::TensorProductDict{N}, idx::NTuple{N,Int}) where {N} =
-    checkbounds(Bool, d, CartesianIndex(idx))
-checkbounds(::Type{Bool}, d::TensorProductDict{2}, idx::NTuple{2,Int}) =
-    checkbounds(Bool, d, CartesianIndex(idx))
-# - Any other tuple we assume is a recursive native index, which we convert
-#   elementwise to a tuple of linear indices
-checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
-    checkbounds(Bool, d, map(linear_index, components(d), idx))
 
 
 ## Feature methods
@@ -165,11 +120,6 @@ end
 
 extensionsize(s::TensorProductDict) = map(extensionsize, components(s))
 
-_names(dict::TensorProductDict) = join(map(name, components(dict)), " ⊗ ")
-name(dict::TensorProductDict) = "Tensor product dictionary ($(_names(dict)))"
-
-shortname(dict::TensorProductDict) = "Tensor product dictionary"
-
 getindex(s::TensorProductDict, ::Colon, i::Int) = (@assert ncomponents(s)==2; component(s,1))
 getindex(s::TensorProductDict, i::Int, ::Colon) = (@assert ncomponents(s)==2; component(s,2))
 getindex(s::TensorProductDict, ::Colon, ::Colon) = (@assert ncomponents(s)==2; s)
@@ -223,6 +173,82 @@ measure(dict::TensorProductDict) = productmeasure(map(measure, components(dict))
 innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductWeight; options...) =
     mapreduce(innerproduct, *, components(Φ1), Tuple(i), components(Φ2), Tuple(j), components(measure))
 
+evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
+    tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), components(dict), components(grid))...)
+
+dual(dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}=measure(dict); options...) =
+    TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(components(dict),components(measure))]...)
+
+gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
+    TensorProductOperator(map((x,y)->gram(T, x,y; options...), components(dict), components(measure))...)
+mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
+    TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), components(dict1), components(dict2), components(measure))...)
+
+
+Display.combinationsymbol(d::TensorProductDict) = Display.Symbol('⊗')
+Display.displaystencil(d::TensorProductDict) = composite_displaystencil(d)
+show(io::IO, mime::MIME"text/plain", d::TensorProductDict) = composite_show(io, mime, d)
+show(io::IO, d::TensorProductDict) = composite_show_compact(io, d)
+
+name(d::TensorProductDict) = "Tensor product dictionary"
+
+
+"A flat tensor product dict has `N` scalar components."
+abstract type FlatTensorProductDict{N,S,T} <: TensorProductDict{S,T}
+end
+
+const TensorProductDict1{DT,S,T} = FlatTensorProductDict{1,S,T}
+const TensorProductDict2{DT,S,T} = FlatTensorProductDict{2,S,T}
+const TensorProductDict3{DT,S,T} = FlatTensorProductDict{3,S,T}
+const TensorProductDict4{DT,S,T} = FlatTensorProductDict{4,S,T}
+
+
+similar(dict::FlatTensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
+    TensorProductDict(map(similar, components(dict), T.parameters, size)...)
+
+## Native indices are of type ProductIndex
+
+# The native indices of a tensor product dict are of type ProductIndex
+ordering(d::FlatTensorProductDict{N}) where {N} = ProductIndexList{N}(size(d))
+
+native_index(d::TensorProductDict, idx) = product_native_index(size(d), idx)
+
+# We have to amend the boundscheck ecosystem to catch some cases:
+# - This line will catch indexing with tuples of integers, and we assume
+#   the user wanted to use a CartesianIndex
+checkbounds(::Type{Bool}, d::FlatTensorProductDict{N}, idx::NTuple{N,Int}) where {N} =
+    checkbounds(Bool, d, CartesianIndex(idx))
+checkbounds(::Type{Bool}, d::FlatTensorProductDict{2}, idx::NTuple{2,Int}) =
+    checkbounds(Bool, d, CartesianIndex(idx))
+# - Any other tuple we assume is a recursive native index, which we convert
+#   elementwise to a tuple of linear indices
+checkbounds(::Type{Bool}, d::TensorProductDict, idx::Tuple) =
+    checkbounds(Bool, d, map(linear_index, components(d), idx))
+
+
+
+"""
+    struct TupleProductDict{N,DT,S,T} <: Dictionary{S,T}
+
+Parameters:
+- DT is a tuple of types, representing the (possibly different) types of the dicts.
+- N is the dimension of the product (equal to the length of the DT tuple)
+- S is the domain type
+- T is the codomain type.
+"""
+struct TupleProductDict{N,DT,S,T} <: FlatTensorProductDict{N,S,T}
+    dicts   ::  DT
+    size    ::  NTuple{N,Int}
+
+    TupleProductDict{N,DT,S,T}(dicts::DT) where {N,DT,S,T} = new(dicts, map(length, dicts))
+end
+
+# Generic functions for composite types:
+components(d::TupleProductDict) = d.dicts
+
+size(d::TupleProductDict) = d.size
+
+
 
 
 "Return a list of all tensor product indices (1:s+1)^n."
@@ -250,27 +276,3 @@ function _index_set_total_degree(s, n)
         I
     end
 end
-
-function stencilarray(dict::TensorProductDict)
-    A = Any[]
-    push!(A, component(dict,1))
-    for i=2:ncomponents(dict)
-        push!(A, " ⊗ ")
-        push!(A, component(dict,i))
-    end
-    A
-end
-
-stencil_parentheses(dict::TensorProductDict) = true
-object_parentheses(dict::TensorProductDict) = true
-
-evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
-    tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), components(dict), components(grid))...)
-
-dual(dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}=measure(dict); options...) =
-    TensorProductDict([dual(dicti, measurei; options...) for (dicti, measurei) in zip(components(dict),components(measure))]...)
-
-gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
-    TensorProductOperator(map((x,y)->gram(T, x,y; options...), components(dict), components(measure))...)
-mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
-    TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), components(dict1), components(dict2), components(measure))...)

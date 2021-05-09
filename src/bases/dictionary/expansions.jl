@@ -129,10 +129,10 @@ differentiation(e::Expansion; options...) = differentiation(codomaintype(e), dic
 differentiation(e::Expansion, order; options...) = differentiation(codomaintype(e), dictionary(e), order; options...)
 
 
-show(io::IO, fun::Expansion) = show_setexpansion(io, fun, dictionary(fun))
+show(io::IO, ::MIME"text/plain", fun::Expansion) = show_setexpansion(io, fun, dictionary(fun))
 function show_setexpansion(io::IO, fun::Expansion, fs::Dictionary)
     println(io, "A ", dimension(fun), "-dimensional Expansion with ", length(coefficients(fun)), " degrees of freedom.")
-    println(io, "Basis: ", name(fs))
+    println(io, "Basis: ", repr(fs))
 end
 
 

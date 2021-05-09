@@ -71,7 +71,7 @@ hasantiderivative(dict::MappedDict1d) =
     hasantiderivative(superdict(dict)) && isaffine(forward_map(dict))
 
 interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), forward_map(dict))
-_grid(dict::MappedDict, sdict, map) = map_grid(interpolation_grid(sdict), map)
+_grid(dict::MappedDict, sdict, map) = map_grid(map, interpolation_grid(sdict))
 
 
 function unmap_grid(dict::MappedDict, grid::MappedGrid)
@@ -270,7 +270,7 @@ end
 # Special cases
 #################
 
-mapped_dict(dict::GridBasis, map) = GridBasis(map_grid(grid(s), map), coefficienttype(s))
+mapped_dict(dict::GridBasis, map) = GridBasis(map_grid(map, grid(s)), coefficienttype(s))
 
 "Rescale a function set to an interval [a,b]."
 function rescale(s::Dictionary1d, a::Number, b::Number)
@@ -313,11 +313,10 @@ end
 
 ## Printing
 
-name(dict::MappedDict) = "Mapped " * name(superdict(dict))
+show(io::IO, mime::MIME"text/plain", d::MappedDict) = composite_show(io, mime, d)
 
-modifiersymbol(dict::MappedDict) = PrettyPrintSymbol{:M}(dict)
-
-name(::PrettyPrintSymbol{:M}) = "Mapping"
-string(s::PrettyPrintSymbol{:M}) = _string(s, s.object)
-_string(s::PrettyPrintSymbol{:M}, dict::MappedDict) =
-    "Mapping from $(support(superdict(dict))) to $(support(dict))"
+Display.object_parentheses(d::MappedDict) = true
+Display.stencil_parentheses(d::MappedDict) = true
+Display.displaystencil(d::MappedDict) = _stencil(d, superdict(d), forward_map(d))
+_stencil(d::MappedDict, dict, map) = [dict, " ∘ ", map]
+_stencil(d::MappedDict, dict, map::ScalarAffineMap) = [dict, " → ", map_domain(map, support(dict))]

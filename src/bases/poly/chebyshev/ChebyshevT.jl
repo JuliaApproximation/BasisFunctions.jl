@@ -6,6 +6,7 @@ struct ChebyshevT{T} <: OPS{T}
     n			::	Int
 end
 
+show(io::IO, d::ChebyshevT{Float64}) = print(io, "ChebyshevT($(length(d)))")
 name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
@@ -195,7 +196,7 @@ end
 
 ChebyshevTPolynomial{T}(p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
 
-name(p::ChebyshevTPolynomial) = "T_$(degree(p))(x) (Chebyshev polynomial of the first kind)"
+show(io::IO, p::ChebyshevTPolynomial{Float64}) = print(io, "ChebyshevTPolynomial($(p.degree))")
 
 convert(::Type{TypedFunction{T,T}}, p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
 

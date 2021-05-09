@@ -47,7 +47,5 @@ innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
 
 ## Printing
 
-name(dict::ComplexifiedDict) = "Complex " * name(superdict(dict))
-
-modifiersymbol(dict::ComplexifiedDict) = PrettyPrintSymbol{:ℂ}()
-name(::PrettyPrintSymbol{:ℂ}) = "Complexification"
+show(io::IO, mime::MIME"text/plain", d::ComplexifiedDict) = composite_show(io, mime, d)
+Display.displaystencil(d::ComplexifiedDict) = ["complex(", superdict(d), ')']

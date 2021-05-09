@@ -8,6 +8,7 @@ using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
 using FFTW
 using DomainSets, DomainIntegrals
+using CompositeTypes.Display
 
 using QuadGK, Base.Cartesian
 using RecipesBase
@@ -178,8 +179,7 @@ export Subdictionary, DenseSubdict, SparseSubdict,
     subdict, superindices
 
 # from bases/modifiers/tensorproduct_dict.jl
-export TensorProductDict, TensorProductDict1, TensorProductDict2,
-    TensorProductDict3, ProductIndex,
+export TensorProductDict, ProductIndex,
     recursive_native_index
 
 # from bases/modifiers/derived_dict.jl

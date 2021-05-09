@@ -34,6 +34,10 @@ index(φ::BasisFunction) = φ.index
 support(φ::BasisFunction) = support(dictionary(φ), index(φ))
 measure(φ::BasisFunction) = measure(dictionary(φ))
 
+show(io::IO, mime::MIME"text/plain", φ::BasisFunction) = composite_show(io, mime, φ)
+Display.stencil_parentheses(φ::BasisFunction) = true
+Display.displaystencil(φ::BasisFunction) = [dictionary(φ), '[', index(φ), ']']
+
 name(φ::BasisFunction) = _name(φ, dictionary(φ))
 _name(φ::BasisFunction, dict::Dictionary) = "φ(x)   (dictionary element of $(name(dict)))"
 

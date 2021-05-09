@@ -233,9 +233,8 @@ isinplace(op::DiagonalOperator) = true
 _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
 
-strings(op::DiagonalOperator) = ("Diagonal operator with element type $(eltype(op))", strings(diag(op)))
-
-symbol(op::DiagonalOperator) = "D"
+# show(io::IO, ::MIME"text/plain", op::DiagonalOperator) = print(io, "DiagonalOperator with element type $(eltype(op))")
+Display.displaystencil(op::DiagonalOperator) = ["DiagonalOperator(", diag(op.A), ')']
 
 
 "The identity operator"

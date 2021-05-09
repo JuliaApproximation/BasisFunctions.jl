@@ -19,17 +19,17 @@ pretty_object_types = (
 do_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = true; nothing))
 no_pretty_printing() = Base.eval(BasisFunctions, :(DO_PRETTYPRINTING = false; nothing))
 
-for OT in pretty_object_types
-    @eval begin
-        function show(io::IO, object::$OT)
-            if DO_PRETTYPRINTING
-                pretty_show(io, object)
-            else
-                Base.show_default(io, object)
-            end
-        end
-    end
-end
+# for OT in pretty_object_types
+#     @eval begin
+#         function show(io::IO, object::$OT)
+#             if DO_PRETTYPRINTING
+#                 pretty_show(io, object)
+#             else
+#                 Base.show_default(io, object)
+#             end
+#         end
+#     end
+# end
 
 ## Convention
 #

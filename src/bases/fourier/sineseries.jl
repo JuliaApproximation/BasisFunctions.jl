@@ -9,7 +9,8 @@ struct SineSeries{T} <: Dictionary{T,T}
     n   ::  Int
 end
 
-name(b::SineSeries) = "Sine series"
+show(io::IO, d::SineSeries{Float64}) = print(io, "SineSeries($(length(d)))")
+name(::SineSeries) = "Sine series"
 
 SineSeries(n::Int) = SineSeries{Float64}(n)
 

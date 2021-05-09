@@ -28,7 +28,7 @@ component(op::GenericCompositeOperator, j::Int) = op.operators[j]
 
 # If the GenericCompositeOperator happens to be a composite operator of
 # product operators, then the result is a product operator too. You can select
-# its elements with the productelement routine.
+# its elements with the productcomponent routine.
 function productcomponent(op::GenericCompositeOperator, j::Int)
     GenericCompositeOperator(map(t -> component(t, j), components(op))...)
 end
@@ -61,6 +61,14 @@ _can_allocate_output(op, span::Span) = true
 _can_allocate_output(op, space::FunctionSpace) = false
 
 allocate_output(op::DictionaryOperator{T}) where {T} = zeros(T, dest(op))
+
+
+Display.combinationsymbol(op::GenericCompositeOperator) = Display.Symbol('∘')
+Display.displaystencil(op::GenericCompositeOperator) =
+    composite_displaystencil(op; reversecomponents=true)
+show(io::IO, mime::MIME"text/plain", op::GenericCompositeOperator) =
+    composite_show(io, mime, op)
+
 
 """
 A `CompositeOperator` consists of a sequence of operators that are applied
