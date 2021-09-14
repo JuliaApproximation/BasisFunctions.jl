@@ -1,34 +1,34 @@
 
-export Rationals,
+export RationalFunctions,
     RationalBasisFunction
 
 "A basis of functions of the form `1/(z-z_j)` where `z_j` are the poles."
-struct Rationals{T} <: Dictionary{T,T}
+struct RationalFunctions{T} <: Dictionary{T,T}
     poles   :: Vector{T}
 end
 
-Rationals(n::Int) = Rationals{Float64}(n)
+RationalFunctions(n::Int) = RationalFunctions{Float64}(n)
 
-Rationals{T}(n::Int) where {T} = Rationals(rand(T, n))
+RationalFunctions{T}(n::Int) where {T} = RationalFunctions(rand(T, n))
 
-name(dict::Rationals) = "Rational functions"
+name(dict::RationalFunctions) = "Rational functions"
 
-size(dict::Rationals) = (length(dict.poles),)
+size(dict::RationalFunctions) = (length(dict.poles),)
 
-pole(dict::Rationals, idx) = dict.poles[idx]
+pole(dict::RationalFunctions, idx) = dict.poles[idx]
 
-unsafe_eval_element(dict::Rationals, idx::Int, x) = 1/(x-dict.poles[idx])
+unsafe_eval_element(dict::RationalFunctions, idx::Int, x) = 1/(x-dict.poles[idx])
 
-support(dict::Rationals{T}) where {T} = DomainSets.FullSpace{T}()
+support(dict::RationalFunctions{T}) where {T} = DomainSets.FullSpace{T}()
 
-function unsafe_eval_element_derivative(dict::Rationals, idx, x, order)
+function unsafe_eval_element_derivative(dict::RationalFunctions, idx, x, order)
     @assert order == 1
     -1/(x-dict.poles[idx])^2
 end
 
-function similar(dict::Rationals, ::Type{T}, n::Int) where {T}
+function similar(dict::RationalFunctions, ::Type{T}, n::Int) where {T}
     @assert n == length(dict)
-    Rationals{T}(dict.poles)
+    RationalFunctions{T}(dict.poles)
 end
 
 
@@ -48,4 +48,4 @@ convert(::Type{TypedFunction{T,T}}, r::RationalBasisFunction) where {T} = Ration
 
 (r::RationalBasisFunction)(x) = 1/(x-pole(r))
 
-basisfunction(dict::Rationals{T}, idx) where {T} = RationalBasisFunction{T}(pole(dict, idx))
+basisfunction(dict::RationalFunctions{T}, idx) where {T} = RationalBasisFunction{T}(pole(dict, idx))
