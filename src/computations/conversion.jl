@@ -124,7 +124,7 @@ end
 
 
 hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.SubGrid} = true
-hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.TensorSubGrid} = true
+hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.ProductSubGrid} = true
 
 
 ###############################

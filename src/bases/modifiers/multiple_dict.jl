@@ -164,7 +164,7 @@ evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; option
 
 
 function gramdual(dict::MultiDict, measure::Measure; options...)
-    @debug "Are you sure you want `dualtype=gramdual` and not `weightedsumdual`"
+    @debug "Are you sure you want `gramdual` and not `weightedsumdual`?"
     default_gramdual(dict, measure; options...)
 end
 

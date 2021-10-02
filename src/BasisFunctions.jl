@@ -77,6 +77,7 @@ import DomainSets:
     ScalarAffineMap,
     # composite types
     iscomposite, component, components, ncomponents,
+    factors, factor, nfactors,
     # products
     ×,
     # utils
@@ -109,6 +110,7 @@ import AbstractTrees: children
 
 # Re-exports
 export component, components, ncomponents, iscomposite,
+    factors, factor, nfactors,
     ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
@@ -272,6 +274,9 @@ export GridSampling, ProjectionSampling, AnalysisOperator, SynthesisOperator,
 export clenshaw_curtis, fejer_first_rule, fejer_second_rule,
     trapezoidal_rule, rectangular_rule
 
+# from sampling/normalization.jl
+export sampling_normalization
+
 # from bases/fourier/fourier.jl
 export Fourier,
     FastFourierTransform, InverseFastFourierTransform,
@@ -380,7 +385,6 @@ include("bases/dictionary/custom_dictionary.jl")
 include("sampling/synthesis.jl")
 include("sampling/sampling_operator.jl")
 include("sampling/quadrature.jl")
-export sampling_normalization
 include("sampling/normalization.jl")
 include("sampling/interaction.jl")
 

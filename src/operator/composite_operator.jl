@@ -28,12 +28,12 @@ component(op::GenericCompositeOperator, j::Int) = op.operators[j]
 
 # If the GenericCompositeOperator happens to be a composite operator of
 # product operators, then the result is a product operator too. You can select
-# its elements with the productcomponent routine.
-function productcomponent(op::GenericCompositeOperator, j::Int)
-    GenericCompositeOperator(map(t -> component(t, j), components(op))...)
+# its components with the factor routine.
+function factor(op::GenericCompositeOperator, j::Int)
+    GenericCompositeOperator(map(t -> factor(t, j), components(op))...)
 end
-productcomponents(op::GenericCompositeOperator) = tuple([productcomponent(op, j) for j in 1:numproductcomponents(op)]...)
-numproductcomponents(op::GenericCompositeOperator) = numproductcomponents(component(op,1))
+factors(op::GenericCompositeOperator) = tuple([factor(op, j) for j in 1:nfactors(op)]...)
+nfactors(op::GenericCompositeOperator) = nfactors(component(op,1))
 
 function apply(comp::GenericCompositeOperator, fun; options...)
     output = fun
@@ -93,11 +93,11 @@ end
 components(op::CompositeOperator) = op.operators
 component(op::CompositeOperator, j::Int) = op.operators[j]
 
-function productcomponent(op::CompositeOperator, j::Int)
-    compose(map(t -> component(t, j), components(op))...)
+function factor(op::CompositeOperator, j::Int)
+    compose(map(t -> factor(t, j), components(op))...)
 end
-productcomponents(op::CompositeOperator) = tuple([productcomponent(op, j) for j in 1:numproductcomponents(op)]...)
-numproductcomponents(op::CompositeOperator) = numproductcomponents(component(op,1))
+factors(op::CompositeOperator) = tuple([factor(op, j) for j in 1:nfactors(op)]...)
+nfactors(op::CompositeOperator) = nfactors(component(op,1))
 
 isinplace(op::CompositeOperator) = all(map(isinplace, op.operators))
 isdiag(op::CompositeOperator) = all(map(isdiag, op.operators))

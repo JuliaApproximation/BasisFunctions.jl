@@ -46,10 +46,8 @@ broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
 
 component(op::GridSampling, i) = GridSampling(component(dest(op),i))
 components(op::GridSampling) = map( s -> GridSampling(s), components(dest(op)))
-numproductcomponents(op::GridSampling) = ncomponents(dest(op))
 
-productcomponent(op::GridSampling, i) = component(op, i)
-productcomponents(op::GridSampling) = components(op)
+factors(op::GridSampling) = components(op)
 
 
 function tensorproduct(op1::GridSampling, op2::GridSampling)

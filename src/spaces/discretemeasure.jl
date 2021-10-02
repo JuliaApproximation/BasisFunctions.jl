@@ -8,7 +8,9 @@ DomainIntegrals._isnormalized(μ, points, weights::NormalizedArray) = true
 DomainIntegrals.allequal(A::FillArrays.AbstractFill) = true
 
 # A supermeasure might exist if the grid has a supergrid
-supermeasure(μ::GridWeight) = discretemeasure(supergrid(points(μ)), weights(μ))
+supermeasure(μ::GridWeight) = _supermeasure(points(μ), weights(μ))
+_supermeasure(points::AbstractGrid, weights::SubArray) = discretemeasure(supergrid(points), parent(weights))
+_supermeasure(points::AbstractGrid, weights) = discretemeasure(supergrid(points), weights)
 
 name(μ::GridWeight) = _name(μ, points(μ), weights(μ))
 _name(μ::GridWeight, points, weights) = "Weighted discrete measure on grid $(typeof(points))"
@@ -42,6 +44,8 @@ uniformweights(grid::AbstractGrid) = uniformweights(grid, numtype(grid))
 uniformweights(grid::AbstractGrid, ::Type{T}) where {T} = Ones{T}(size(grid))
 uniformweights(grid::ProductGrid{T,N}, ::Type{V}) where {T,N,V} =
     tensorproduct(ntuple(k->Ones{V}(size(grid,k)) ,Val(N)))
+uniformweights(grid::SubGrid, ::Type{T}) where {T} =
+    view(uniformweights(supergrid(grid), T), subindices(grid))
 
 
 
@@ -55,7 +59,7 @@ struct GenericGridWeight{T,G,W} <: TypedGridWeight{T,G,W}
 
     function GenericGridWeight{T,G,W}(grid, weights) where {T,G,W}
         # @assert size(grid) == size(weights)
-        grid isa Union{SubGrid,TensorSubGrid} || @assert size(grid) == size(weights)
+        grid isa Union{SubGrid,ProductSubGrid} || @assert size(grid) == size(weights)
         new(grid, weights)
     end
 end

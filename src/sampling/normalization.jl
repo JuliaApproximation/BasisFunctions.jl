@@ -2,6 +2,8 @@
 # Routines having to do with the normalizing function values on a grid with respect
 # to a given measure.
 
+normalizing_weights(grid, measure) = sqrt.(quadweights(grid, measure))
+
 """
 Return a normalization for a sampling operator on a grid. The normalization ensures
 a norm equivalence between the continuous norm of the function space associated

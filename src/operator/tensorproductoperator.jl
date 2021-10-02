@@ -17,9 +17,7 @@ end
 components(op::TensorProductOperator) = op.operators
 component(op::TensorProductOperator, j::Int) = op.operators[j]
 
-productcomponents(op::TensorProductOperator) = components(op)
-productcomponent(op::TensorProductOperator, j::Int) = component(op, j)
-numproductcomponents(op::TensorProductOperator) = ncomponents(op)
+factors(op::TensorProductOperator) = components(op)
 
 TensorProductOperator(operators::AbstractOperator...; T=promote_type(map(eltype, operators)...)) =
     TensorProductOperator{T}(operators...)

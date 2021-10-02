@@ -2,8 +2,20 @@
 # Duality
 ########################
 
-dual(dict::Dictionary, measure::BasisFunctions.Measure=measure(dict); dualtype=gramdual, options...) =
-    dualtype(dict, measure; options...)
+"Supertype of trait types which define a kind of duality."
+abstract type DualType end
+
+"Orthogonal dual type."
+struct OrthogonalDual <: DualType end
+
+"Return the dictionary dual to the given dictionary with the given measure."
+dual(dict::Dictionary, measure = measure(dict); options...) =
+    dual(OrthogonalDual(), dict, measure; options...)
+
+# dual(dict::Dictionary, measure::Measure=measure(dict); dualtype=gramdual, options...) =
+    # dualtype(dict, measure; options...)
+
+dual(::OrthogonalDual, dict, measure; options...) = gramdual(dict, measure; options...)
 
 gramdual(dict::Dictionary, measure::Measure; options...) =
     default_gramdual(dict, measure; options...)

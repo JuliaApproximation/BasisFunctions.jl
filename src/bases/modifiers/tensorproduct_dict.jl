@@ -10,9 +10,7 @@ function component(dict::TensorProductDict, range::AbstractRange)
     [component(dict,i) for i in range]
 end
 
-productcomponents(dict::TensorProductDict) = components(dict)
-productcomponent(dict::TensorProductDict, j::Int) = component(dict, j)
-numproductcomponents(dict::TensorProductDict) = ncomponents(dict)
+factors(dict::TensorProductDict) = components(dict)
 
 product_domaintype(dicts::Dictionary...) = Tuple{map(domaintype, dicts)...}
 function product_domaintype(dicts::Vararg{Dictionary{<:Number},N}) where {N}
