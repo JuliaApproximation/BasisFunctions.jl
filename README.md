@@ -2,8 +2,9 @@
 
 *A flexible and extensible Julia package for function approximation using various basis functions.*
 
-[![Build Status]((https://github.com/JuliaApproximation/BasisFunctions.jl.svg?branch=master)](https://github.com/JuliaApproximation/BasisFunctions.jl/actions/workflows/CI.yml)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaApproximation/BasisFunctions.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaApproximation/BasisFunctions.jl?branch=master)
+| **Build Status** | **Coverage** |
+|------------------|--------------|
+| [![Build Status](https://github.com/JuliaApproximation/BasisFunctions.jl.svg?branch=master)](https://github.com/JuliaApproximation/BasisFunctions.jl/actions/workflows/CI.yml) | [![Coverage Status](https://coveralls.io/repos/github/JuliaApproximation/BasisFunctions.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaApproximation/BasisFunctions.jl?branch=master) |
 
 This package provides a framework for a number of standard basis functions to perform function approximation. The most developed examples are Chebyshev polynomials and Fourier series. This package was developed mainly for use in the package FrameFun, which centers around the numerical approximation of functions using approximation-theoretical frames. It can be used separately as well, yet by far this code is not fully featured and it is not intended to be so. For more complete software packages to manipulate numerical function approximations, please consider [Chebfun](http://www.chebfun.org) (in Matlab) or [ApproxFun](https://github.com/JuliaApproximation/ApproxFun.jl) (in Julia).
 
