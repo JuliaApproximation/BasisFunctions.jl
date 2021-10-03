@@ -53,7 +53,7 @@ RecipesBase = "1.0"
 Reexport = "1.0"
 SpecialFunctions = "1.0"
 StaticArrays = "1.0"
-ToeplitzMatrices = "0.6.3"
+ToeplitzMatrices = "0.6.3, 0.7"
 julia = "1.5"
 
 [extras]
