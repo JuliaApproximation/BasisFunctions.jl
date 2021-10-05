@@ -241,7 +241,7 @@ function test_gram_projection(basis)
             @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
             e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)
             x = random_point_in_domain(basis)
-            @test abs(e(x)-f(x...)) < 1e-3
+            @test abs(e(x)-f(x...)) < 2e-3
         end
     end
 end

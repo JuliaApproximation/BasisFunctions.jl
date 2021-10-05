@@ -1,7 +1,7 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
 authors = ["Daan Huybrechs <daan.huybrechs@kuleuven.be>"]
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
