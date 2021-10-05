@@ -18,8 +18,8 @@ Some examples of how to use this code can be found in the [FrameFun](https://git
 
 ## Installation
 
-The package can be installed by cloning its git repository. From the Julia REPL, type `]` to enter Pkg mode and run
+The package can be installed with the package manager. You typically want to combine the BasisFunctions package with DomainSets. From the Julia REPL, type `]` to enter Pkg mode and run
 
 ```julia
-pkg> add https://github.com/JuliaApproximation/BasisFunctions.jl
+pkg> add DomainSets, BasisFunctions
 ```
