@@ -27,8 +27,6 @@ GridSampling(gridbasis::GridBasis{S,T}) where {S,T} =
 
 GridSampling(m::DiscreteWeight, ::Type{T} = numeltype(m)) where T = GridSampling(points(m), T)
 
-name(op::GridSampling) = "Discrete sampling operator in a grid"
-
 grid(op::GridSampling) = grid(dest(op))
 
 (op::GridSampling)(f) = apply(op, f)
@@ -112,11 +110,10 @@ function sample!(result, grid, f; options...)
 	result
 end
 
-hasstencil(op::GridSampling) = true
-stencilarray(op::GridSampling) = [modifiersymbol(op), "[", grid(dest(op)), "]"]
-
-modifiersymbol(op::GridSampling) = PrettyPrintSymbol{:𝕊}()
-name(::PrettyPrintSymbol{:𝕊}) = "Discrete sampling operator"
+show(io::IO, mime::MIME"text/plain", op::GridSampling) = composite_show(io, mime, op)
+Display.object_parentheses(op::GridSampling) = false
+Display.stencil_parentheses(op::GridSampling) = false
+Display.displaystencil(op::GridSampling) = ["GridSampling(", src_space(op), ", ", grid(op), ")"]
 
 
 """
@@ -158,9 +155,7 @@ function project!(result, f, dict::Dictionary, measure::Measure; options...)
 	result
 end
 
-hasstencil(op::ProjectionSampling) = true
-stencilarray(op::ProjectionSampling) = [modifiersymbol(op), "[", dictionary(op), ", ", measure(op), "]"]
-
-modifiersymbol(op::ProjectionSampling) = PrettyPrintSymbol{:(𝒯⃰)}() #PrettyPrintSymbol{:ℙ}()
-name(::PrettyPrintSymbol{:ℙ}) = "Projection operator onto a dictionary"
-name(::PrettyPrintSymbol{:(𝒯⃰)}) = "Analysis operator of a dictionary"
+show(io::IO, mime::MIME"text/plain", op::ProjectionSampling) = composite_show(io, mime, op)
+Display.object_parentheses(op::ProjectionSampling) = false
+Display.stencil_parentheses(op::ProjectionSampling) = false
+Display.displaystencil(op::ProjectionSampling) = ["ProjectionSampling(", dictionary(op), ", ", measure(op), ")"]

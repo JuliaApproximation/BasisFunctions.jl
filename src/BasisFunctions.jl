@@ -8,12 +8,12 @@ using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
 using FFTW
 using DomainSets, DomainIntegrals
-using CompositeTypes.Display
+using CompositeTypes, CompositeTypes.Display
 
 using QuadGK, Base.Cartesian
 using RecipesBase
 
-using Reexport, AbstractTrees
+using Reexport
 
 
 ## Some specific functions we merely use
@@ -64,6 +64,8 @@ import SparseArrays: sparse
 import BlockArrays.BlockVector
 export BlockVector
 
+import CompositeTypes:
+    iscomposite, component, components, ncomponents
 
 import DomainSets:
     domaintype, codomaintype, dimension,
@@ -76,7 +78,6 @@ import DomainSets:
     applymap, jacobian,
     ScalarAffineMap,
     # composite types
-    iscomposite, component, components, ncomponents,
     factors, factor, nfactors,
     # products
     ×,
@@ -102,8 +103,6 @@ import GridArrays: subindices, resize, name,
     →, rescale
 
 using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
-
-import AbstractTrees: children
 
 
 ## Exports
@@ -415,10 +414,6 @@ include("bases/poly/hermite.jl")
 include("bases/poly/generic_op.jl")
 include("bases/poly/specialOPS.jl")
 include("bases/poly/rational.jl")
-
-
-include("util/display/prettyprint.jl")
-include("util/display/syntax.jl")
 
 include("util/display/recipes.jl")
 include("util/display/pgfplots.jl")

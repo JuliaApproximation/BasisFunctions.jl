@@ -36,6 +36,8 @@ hasantiderivative(dict::WeightedDict) = false
 
 hasmeasure(dict::WeightedDict) = false
 
+mapped_dict(d::WeightedDict, map) = MappedDict(d, map)
+
 # We have to distinguish between 1d and higher-dimensional grids, since we
 # have to splat the arguments to the weightfunction
 eval_weight_on_grid(w, grid::AbstractGrid1d) = [w(x) for x in grid]
@@ -157,7 +159,7 @@ end
 
 ## Printing
 
-string(dict::WeightedDict) = name(dict) * ", weighted by " * string(weightfunction(dict))
-
-modifiersymbol(dict::WeightedDict) = PrettyPrintSymbol{:ω}(weightfunction(dict))
-name(s::PrettyPrintSymbol{:ω}) = "Weight function: " * string(s.object)
+Display.object_parentheses(d::WeightedDict) = true
+Display.stencil_parentheses(d::WeightedDict) = true
+Display.displaystencil(d::WeightedDict) = _stencil(d, superdict(d), weightfunction(d))
+_stencil(d::WeightedDict, dict, weight) = [weight, " * ", dict]

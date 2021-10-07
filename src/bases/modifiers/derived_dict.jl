@@ -85,6 +85,7 @@ end
 
 approx_length(d::DerivedDict, n::Int) = approx_length(superdict(d), n)
 
+# TODO: this is dangerous as a default because it might be wrong
 mapped_dict(d::DerivedDict, map) = similardictionary(d, mapped_dict(superdict(d), map))
 
 dict_in_support(d::DerivedDict, i, x) = in_support(superdict(d), i, x)
@@ -162,10 +163,11 @@ end
 
 ## Printing
 
-hasstencil(dict::DerivedDict) = true
-stencilarray(dict::DerivedDict) = [modifiersymbol(dict), "(", superdict(dict), ")"]
-modifiersymbol(dict::DerivedDict) = PrettyPrintSymbol{:DefDerive}(dict)
-name(::PrettyPrintSymbol{:DefDerive}) = "Derived"
+show(io::IO, mime::MIME"text/plain", d::DerivedDict) = composite_show(io, mime, d)
+
+Display.object_parentheses(d::DerivedDict) = false
+Display.stencil_parentheses(d::DerivedDict) = false
+Display.displaystencil(d::DerivedDict) = [modifiersymbol(d), "(", superdict(d), ")"]
 
 #########################
 # Concrete dict

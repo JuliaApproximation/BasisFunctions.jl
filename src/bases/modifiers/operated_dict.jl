@@ -37,11 +37,10 @@ OperatedDict(op::IdentityOperator) = src(op)
 
 ## Printing
 
-modifiersymbol(dict::OperatedDict) = operator(dict)
-
-stencilarray(dict::OperatedDict) = [operator(dict), " * ", superdict(dict)]
 stencil_parentheses(dict::OperatedDict) = true
 object_parentheses(dict::OperatedDict) = true
+Display.displaystencil(d::OperatedDict) = _stencil(d, superdict(d), operator(d))
+_stencil(d::OperatedDict, dict, op) = [op, " * ", dict]
 
 src(s::OperatedDict) = src(s.op)
 

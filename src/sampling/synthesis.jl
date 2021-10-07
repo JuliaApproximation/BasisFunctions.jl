@@ -27,6 +27,7 @@ SynthesisOperator(dict::Dictionary) = hasmeasure(dict) ?
     SynthesisOperator(dict, nothing)
 
 dictionary(op::SynthesisOperator) = op.dictionary
+measure(op::SynthesisOperator) = op.measure
 
 src(op::SynthesisOperator) = discrete_set(dictionary(op))
 src_space(op::SynthesisOperator) = Span(src(op))
@@ -44,19 +45,13 @@ apply(op::SynthesisOperator, coef::Expansion; opts...) =
     error("A synthesis operator applies only to coefficients or expansions in discrete sets.")
 
 
-hasstencil(op::SynthesisOperator) = true
-stencilarray(op::SynthesisOperator) = stencilarray(op, dictionary(op), op.measure)
-stencilarray(op::SynthesisOperator, dict::Dictionary, ::Nothing) =
-    [modifiersymbol(op), "[", dict, "]"]
-stencilarray(op::SynthesisOperator, dict::Dictionary, measure::Measure) =
-    [modifiersymbol(op), "[", dict, ", ", measure, "]"]
+show(io::IO, mime::MIME"text/plain", op::SynthesisOperator) = composite_show(io, mime, op)
+Display.object_parentheses(op::SynthesisOperator) = false
+Display.stencil_parentheses(op::SynthesisOperator) = false
+Display.displaystencil(op::SynthesisOperator) = _stencil(op, dictionary(op), measure(op))
+_stencil(op::SynthesisOperator, dict, ::Nothing) = ["SynthesisOperator(", dict, ")"]
+_stencil(op::SynthesisOperator, dict, measure::Measure) = ["SynthesisOperator(", dict, ", ", measure, ")"]
 
-modifiersymbol(op::SynthesisOperator) = PrettyPrintSymbol{:𝒯}()#PrettyPrintSymbol{:ℙ}()
-name(::PrettyPrintSymbol{:𝒯}) = "Synthesis operator of a dictionary"
-name(op::SynthesisOperator) = "Synthesis operator of a dictionary"
-strings(op::SynthesisOperator) = strings(op, dictionary(op), op.measure)
-strings(op::SynthesisOperator, dict::Dictionary, ::Nothing) = (strings(dict),)
-strings(op::SynthesisOperator, dict::Dictionary, measure::Weight) = (strings(dict),strings(measure))
 
 
 """

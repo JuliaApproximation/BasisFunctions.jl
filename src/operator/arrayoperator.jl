@@ -154,11 +154,10 @@ end
 
 subindices(op::IndexRestriction) = subindices(op.A)
 
-hasstencil(op::IndexRestriction) = true
-stencilarray(op::IndexRestriction) = [restrictionsymbol(op), "[", setsymbol(subindices(op.A)), " → 𝕀]"]
-
-restrictionsymbol(op::IndexRestriction) = PrettyPrintSymbol{:R}()
-name(::PrettyPrintSymbol{:R}) = "Restriction of coefficients to subset"
+show(io::IO, mime::MIME"text/plain", op::IndexRestriction) = composite_show(io, mime, op)
+Display.object_parentheses(op::IndexRestriction) = false
+Display.stencil_parentheses(op::IndexRestriction) = false
+Display.displaystencil(op::IndexRestriction) = ["Restrict[𝕀 → ", subindices(op.A), "]"]
 
 
 "An `IndexExtension` embeds coefficients in a larger set based on their indices."
@@ -170,25 +169,19 @@ IndexExtension(src::Dictionary, dest::Dictionary, args...) = IndexExtension{oper
 
 IndexExtension{T}(A::ExtensionIndexMatrix{T,N,I}, src::Dictionary, dest::Dictionary) where {T,N,I} =
     IndexExtension{T,N,I}(A, src, dest)
-
 IndexExtension{T}(dest::Dictionary, subindices::AbstractVector) where {T} =
     IndexExtension{T}(dest[subindices], dest, subindices)
-
 function IndexExtension{T}(src::Dictionary, dest::Dictionary, subindices::AbstractVector) where {T}
     @assert length(src)==length(subindices) && length(dest)>=length(src)
     IndexExtension{T}(ExtensionIndexMatrix{T}(size(dest), subindices), src, dest)
 end
 
-
 subindices(op::IndexExtension) = subindices(op.A)
 
-string(op::IndexExtension) = "Zero padding, original elements in "*string(subindices(op.A))
-
-hasstencil(op::IndexExtension) = true
-stencilarray(op::IndexExtension) = [extensionsymbol(op), "[ 𝕀 → ", setsymbol(subindices(op.A)), "]"]
-
-extensionsymbol(op::IndexExtension) = PrettyPrintSymbol{:E}()
-name(::PrettyPrintSymbol{:E}) = "Extending coefficients by zero padding"
+show(io::IO, mime::MIME"text/plain", op::IndexExtension) = composite_show(io, mime, op)
+Display.object_parentheses(op::IndexExtension) = false
+Display.stencil_parentheses(op::IndexExtension) = false
+Display.displaystencil(op::IndexExtension) = ["Extend[", subindices(op.A), " → 𝕀]"]
 
 
 

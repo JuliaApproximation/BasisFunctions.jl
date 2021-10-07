@@ -315,8 +315,6 @@ end
 
 ## Printing
 
-show(io::IO, mime::MIME"text/plain", d::MappedDict) = composite_show(io, mime, d)
-
 Display.object_parentheses(d::MappedDict) = true
 Display.stencil_parentheses(d::MappedDict) = true
 Display.displaystencil(d::MappedDict) = _stencil(d, superdict(d), forward_map(d))

@@ -7,7 +7,6 @@ struct ChebyshevT{T} <: OPS{T}
 end
 
 show(io::IO, d::ChebyshevT{Float64}) = print(io, "ChebyshevT($(length(d)))")
-name(b::ChebyshevT) = "Chebyshev polynomials (first kind)"
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
