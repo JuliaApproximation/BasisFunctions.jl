@@ -31,11 +31,10 @@ end
 
 mapped_dict(s::Subdictionary, map) = similar_subdict(s, mapped_dict(superdict(s), map), superindices(s))
 
-
-hasstencil(dict::Subdictionary) = true
-stencilarray(dict::Subdictionary) = [ superdict(dict), "(", string(superindices(dict)), ")" ]
-
-stencil_parentheses(dict::Subdictionary) = true
+show(io::IO, mime::MIME"text/plain", d::Subdictionary) = composite_show(io, mime, d)
+Display.object_parentheses(d::Subdictionary) = false
+Display.stencil_parentheses(d::Subdictionary) = false
+Display.displaystencil(d::Subdictionary) = [superdict(d), "[", superindices(d), "]"]
 
 support(s::Subdictionary) = support(superdict(s))
 

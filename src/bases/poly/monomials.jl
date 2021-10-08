@@ -9,7 +9,8 @@ end
 
 Monomials(n) = Monomials{Float64}(n)
 
-name(dict::Monomials) = "Monomials"
+show(io::IO, b::Monomials{Float64}) = print(io, "Monomials($(length(b)))")
+show(io::IO, b::Monomials{T}) where T = print(io, "Monomials{$(T)}($(length(b)))")
 
 support(dict::Monomials{T}) where {T} = DomainSets.FullSpace{T}()
 
@@ -45,7 +46,7 @@ end
 
 Monomial{T}(p::Monomial) where {T} = Monomial{T}(p.degree)
 
-name(p::Monomial) = "x^$(degree(p)) (monomial)"
+show(io::IO, p::Monomial) = print(io, "x^$(degree(p)) (monomial)")
 
 convert(::Type{TypedFunction{T,T}}, p::Monomial) where {T} = Monomial{T}(p.degree)
 

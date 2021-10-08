@@ -188,7 +188,6 @@ Display.displaystencil(d::TensorProductDict) = composite_displaystencil(d)
 show(io::IO, mime::MIME"text/plain", d::TensorProductDict) = composite_show(io, mime, d)
 show(io::IO, d::TensorProductDict) = composite_show_compact(io, d)
 
-name(d::TensorProductDict) = "Tensor product dictionary"
 
 
 "A flat tensor product dict has `N` scalar components."

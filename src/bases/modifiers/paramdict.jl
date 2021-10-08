@@ -36,7 +36,4 @@ iscompatible(dict1::ParamDict, dict2::ParamDict) =
 
 ## Printing
 
-show(io::IO, mime::MIME"text/plain", d::ParamDict) = composite_show(io, mime, d)
-Display.object_parentheses(d::ParamDict) = false
-Display.stencil_parentheses(d::ParamDict) = false
 Display.displaystencil(d::ParamDict) = ["ParamDict(", superdict(d), ", ", forward_map(d), ", ", image(d), ")"]

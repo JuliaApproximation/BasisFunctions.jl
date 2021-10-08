@@ -40,4 +40,5 @@ function innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::P
 	end
 end
 
-name(dict::Hermite) = "Hermite polynomials"
+show(io::IO, b::Hermite{Float64}) = print(io, "Hermite($(length(b)))")
+show(io::IO, b::Hermite{T}) where T = print(io, "Hermite{$(T)}($(length(b)))")

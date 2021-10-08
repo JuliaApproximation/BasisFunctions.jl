@@ -13,7 +13,8 @@ end
 
 CosineSeries(n::Int) = CosineSeries{Float64}(n)
 
-name(::CosineSeries) = "Cosine series"
+show(io::IO, b::CosineSeries{Float64}) = print(io, "CosineSeries($(length(b)))")
+show(io::IO, b::CosineSeries{T}) where T = print(io, "CosineSeries{$(T)}($(length(b)))")
 
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
 
@@ -37,7 +38,6 @@ period(b::CosineSeries{T}, idx) where {T} = T(2)
 interpolation_grid(b::CosineSeries{T}) where {T} =
 	MidpointEquispacedGrid(b.n, zero(T), one(T))
 
-show(io::IO, b::CosineSeries{Float64}) = print(io, "CosineSeries($(length(b)))")
 
 ##################
 # Native indices

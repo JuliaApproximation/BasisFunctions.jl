@@ -7,6 +7,7 @@ struct ChebyshevT{T} <: OPS{T}
 end
 
 show(io::IO, d::ChebyshevT{Float64}) = print(io, "ChebyshevT($(length(d)))")
+show(io::IO, d::ChebyshevT{T}) where T = print(io, "ChebyshevT{$(T)}($(length(d)))")
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 

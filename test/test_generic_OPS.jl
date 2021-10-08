@@ -95,7 +95,6 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
 
     @test support(c1,1) == Interval(left_point,right_point)
     @test length(c1) == N
-    @test name(c1) == "Generic OPS"
 
     @test first_moment(c1) ≈ firstmoment
     @test BasisFunctions.p0(c1) ≈ 1/sqrt(firstmoment)

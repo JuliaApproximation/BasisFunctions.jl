@@ -173,3 +173,10 @@ innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
     innerproduct(component(d1, outerindex(i)), innerindex(i), d2, j, measure; options...)
 innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
     innerproduct(d1, i, component(d2, outerindex(j)), innerindex(j), measure; options...)
+
+
+## Printing
+
+Display.displaystencil(d::CompositeDict) = composite_displaystencil(d)
+show(io::IO, mime::MIME"text/plain", d::CompositeDict) = composite_show(io, mime, d)
+show(io::IO, d::CompositeDict) = composite_show_compact(io, d)

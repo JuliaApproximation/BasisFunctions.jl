@@ -1,16 +1,15 @@
 
-############################################
+##################
 # Sine series
-############################################
-
+##################
 
 "Sine series on the interval `[0,1]`."
 struct SineSeries{T} <: Dictionary{T,T}
     n   ::  Int
 end
 
-show(io::IO, d::SineSeries{Float64}) = print(io, "SineSeries($(length(d)))")
-name(::SineSeries) = "Sine series"
+show(io::IO, b::SineSeries{Float64}) = print(io, "SineSeries($(length(b)))")
+show(io::IO, b::SineSeries{T}) where T = print(io, "SineSeries{$(T)}($(length(b)))")
 
 SineSeries(n::Int) = SineSeries{Float64}(n)
 

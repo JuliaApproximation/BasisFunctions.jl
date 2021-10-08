@@ -11,9 +11,10 @@ struct Laguerre{T} <: OPS{T}
 	Laguerre{T}(n::Int, α = 0) where {T} = new{T}(n, α)
 end
 
-Laguerre(n::Int) = Laguerre{Float64}(n)
+Laguerre(n::Int; α = 0) = Laguerre(n, α)
 Laguerre(n::Int, α::T) where {T <: AbstractFloat} = Laguerre{T}(n, α)
-Laguerre(n::Int, α::S) where {S} = Laguerre{float(S)}(n, α)
+Laguerre(n::Int, α::S) where {S} = Laguerre(n, float(α))
+
 
 similar(b::Laguerre, ::Type{T}, n::Int) where {T} = Laguerre{T}(n, b.α)
 
@@ -65,10 +66,18 @@ rec_Cn(b::Laguerre{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
 
 ## Printing
 
-function name(dict::Laguerre)
-	if dict.α == 0
-		"Laguerre polynomials"
+function show(io::IO, b::Laguerre{Float64})
+	if laguerre_α(b) == 0
+		print(io, "Laguerre($(length(b)))")
 	else
-		"Generalized Laguerre polynomials (α = $(dict.α))"
+		print(io, "Laguerre($(length(b)); α = $(laguerre_α(b)))")
+	end
+end
+
+function show(io::IO, b::Laguerre{T}) where {T}
+	if laguerre_α(b) == 0
+		print(io, "Laguerre{$(T)}($(length(b)))")
+	else
+		print(io, "Laguerre{$(T)}($(length(b)); α = $(laguerre_α(b)))")
 	end
 end

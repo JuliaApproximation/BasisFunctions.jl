@@ -14,7 +14,7 @@ struct Jacobi{T} <: OPS{T}
     Jacobi{T}(n, α = 0, β = 0) where {T} = new{T}(n, α, β)
 end
 
-Jacobi(n::Int) = Jacobi{Float64}(n)
+Jacobi(n::Int; α = 0, β = 0) = Jacobi(n, α, β)
 Jacobi(n::Int, α, β) = Jacobi(n, promote(α, β)...)
 Jacobi(n::Int, α::T, β::T) where {T <: AbstractFloat} = Jacobi{T}(n, α, β)
 Jacobi(n::Int, α::S, β::S) where {S} = Jacobi(n, float(α), float(β))
@@ -83,6 +83,23 @@ function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::Pol
 	end
 end
 
+## Printing
+function show(io::IO, b::Jacobi{Float64})
+	if jacobi_α(b) == 0 && jacobi_β(b) == 0
+		print(io, "Jacobi($(length(b)))")
+	else
+		print(io, "Jacobi($(length(b)); α = $(jacobi_α(b)), β = $(jacobi_β(b)))")
+	end
+end
+
+function show(io::IO, b::Jacobi{T}) where T
+	if jacobi_α(b) == 0 && jacobi_β(b) == 0
+		print(io, "Jacobi{$(T)}($(length(b)))")
+	else
+		print(io, "Jacobi{$(T)}($(length(b)); α = $(jacobi_α(b)), β = $(jacobi_β(b)))")
+	end
+end
+
 # TODO: move to its own file and make more complete
 # Or better yet: implement in terms of Jacobi polynomials
 struct UltrasphericalBasis{T} <: OPS{T}
@@ -94,5 +111,3 @@ jacobi_α(b::UltrasphericalBasis) = b.α
 jacobi_β(b::UltrasphericalBasis) = b.α
 
 weightfun(b::UltrasphericalBasis, x) = (1-x)^(b.α) * (1+x)^(b.α)
-
-name(dict::Jacobi) = "Jacobi polynomials  (α = $(dict.α), β = $(dict.β))"

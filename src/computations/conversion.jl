@@ -63,7 +63,7 @@ function extension_restriction(T, src::Dictionary, dest::Dictionary; options...)
         restriction(T, src, dest; options...)
     else
         # lengths are equal but dimensions are not
-        error("Don't know how to convert between two `$(name(src))` dictionaries with different structure.")
+        error("Don't know how to convert between two `$(repr(src))` dictionaries with different structure.")
         # Perhaps we can do something elementwise
     end
 end

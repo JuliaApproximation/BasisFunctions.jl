@@ -72,8 +72,6 @@ multispan(spans::AbstractArray) = Span(multidict(map(dictionary, spans)))
 vcat(dicts::Dictionary...) = multidict(dicts...)
 ⊕(dicts::Dictionary...) = multidict(dicts...)
 
-name(dict::MultiDict) = "Union of dictionaries"
-
 for op in (:isbasis, :isframe)
     # Redirect the calls to multiple_isbasis with the elements as extra arguments,
     # and that method can decide whether the property holds for the multidict.
@@ -185,17 +183,4 @@ end
 
 ## Printing
 
-string(dict::MultiDict) = "Union of $(ncomponents(dict)) dictionaries"
-
-function stencilarray(dict::MultiDict)
-    A = Any[]
-    push!(A, component(dict, 1))
-    for i = 2:ncomponents(dict)
-        push!(A, " ⊕ ")
-        push!(A, component(dict, i))
-    end
-    A
-end
-
-stencil_parentheses(dict::MultiDict) = true
-object_parentheses(dict::MultiDict) = true
+Display.combinationsymbol(d::MultiDict) = Display.Symbol('⊕')

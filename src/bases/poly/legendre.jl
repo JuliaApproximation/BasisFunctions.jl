@@ -39,9 +39,8 @@ end
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
 rec_An(b::Legendre{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
-
 rec_Bn(b::Legendre{T}, n::Int) where {T} = zero(T)
-
 rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
 
-name(dict::Legendre) = "Legendre polynomials"
+show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
+show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")

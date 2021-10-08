@@ -45,4 +45,6 @@ tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionar
 size(span::Span) = size(dictionary(span))
 length(span::Span) = length(dictionary(span))
 
-name(span::Span) = "Span of a dictionary"
+show(io::IO, mime::MIME"text/plain", s::Span) = composite_show(io, mime, s)
+Display.displaystencil(s::Span) = ["Span(", dictionary(s), ")"]
+show(io::IO, s::Span) = print(io, "Space : $(domaintype(s)) → $(codomaintype(s)) (span of $(repr(dictionary(s))))")

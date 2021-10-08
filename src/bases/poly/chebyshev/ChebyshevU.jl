@@ -8,7 +8,8 @@ ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
 
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
 
-name(b::ChebyshevU) = "Chebyshev polynomials (second kind)"
+show(io::IO, d::ChebyshevU{Float64}) = print(io, "ChebyshevU($(length(d)))")
+show(io::IO, d::ChebyshevU{T}) where T = print(io, "ChebyshevU{$(T)}($(length(d)))")
 
 function unsafe_eval_element(b::ChebyshevU, idx::PolynomialDegree, x::Real)
     # Don't use the formula when |x|=1, because it will generate NaN's
@@ -58,7 +59,7 @@ end
 
 ChebyshevUPolynomial{T}(p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
 
-name(p::ChebyshevUPolynomial) = "U_$(degree(p))(x) (Chebyshev polynomial of the second kind)"
+show(io::IO, p::ChebyshevUPolynomial) = print(io, "U_$(degree(p))(x) (Chebyshev polynomial of the second kind)")
 
 convert(::Type{TypedFunction{T,T}}, p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
 

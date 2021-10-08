@@ -38,7 +38,7 @@ evenlength(b::Fourier) = iseven(length(b))
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 
 show(io::IO, b::Fourier{Float64}) = print(io, "Fourier($(length(b)))")
-name(::Fourier) = "Fourier series"
+show(io::IO, b::Fourier{T}) where T = print(io, "Fourier{$(T)}($(length(b)))")
 
 # Properties
 

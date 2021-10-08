@@ -66,7 +66,7 @@ for T in domaintypes
     end
 
     delimit("Tensor product set interfaces ($(T))")
-    @testset "$(name(basis))" for basis in
+    @testset "$(repr(basis))" for basis in
                 ( Fourier{T}(5) ⊗ Fourier{T}(7), # Two odd-length Fourier series
                   Fourier{T}(6) ⊗ ChebyshevT{T}(4), # combination of Fourier and Chebyshev
                   Fourier{T}(5) ⊗ Fourier{T}(6), # Odd and even-length Fourier series

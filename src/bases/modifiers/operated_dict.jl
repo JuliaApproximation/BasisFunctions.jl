@@ -10,7 +10,7 @@ underlying dictionary with coefficients `Dc`. If `D` represents differentiation,
 then the `OperatedDict` effectively represents the dictionary of derivatives of
 the underlying dictionary elements.
 """
-struct OperatedDict{S,T} <: DerivedDict{S,T}
+struct OperatedDict{S,T} <: HighlySimilarDerivedDict{S,T}
     "The operator that acts on the set"
     op          ::  DictionaryOperator{T}
 
@@ -23,8 +23,6 @@ struct OperatedDict{S,T} <: DerivedDict{S,T}
         new(op, scratch_src, scratch_dest)
     end
 end
-
-name(dict::OperatedDict) = "Dictionary modified by a linear operator"
 
 superdict(dict::OperatedDict) = src(dict)
 

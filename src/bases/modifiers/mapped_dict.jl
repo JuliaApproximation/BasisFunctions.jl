@@ -13,8 +13,6 @@ point.
 """
 abstract type MappedDict{S,T} <: DerivedDict{S,T} end
 
-name(::MappedDict) = "A mapped dictionary"
-
 const MappedDict1d{S <: Number,T <: Number} = MappedDict{S,T}
 const MappedDict2d{S <: SVector{2},T <: Number} = MappedDict{S,T}
 

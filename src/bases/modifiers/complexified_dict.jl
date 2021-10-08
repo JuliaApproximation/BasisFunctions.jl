@@ -4,7 +4,7 @@ A 'ComplexifiedDict' is a dictionary for which the coefficient type is the compl
 version of the original dictionary. It is obtained by calling `promote` or
 `ensure_coefficienttype` on a dictionary or dictionaries.
 """
-struct ComplexifiedDict{D,S,T} <: DerivedDict{S,T}
+struct ComplexifiedDict{D,S,T} <: HighlySimilarDerivedDict{S,T}
     superdict   :: D
 end
 
@@ -47,4 +47,5 @@ innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
 
 ## Printing
 
+show(io::IO, d::ComplexifiedDict) = print(io, "complex($(repr(superdict(d))))")
 modifiersymbol(d::ComplexifiedDict) = "complex"

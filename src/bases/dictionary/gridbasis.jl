@@ -29,11 +29,8 @@ grid(b::GridBasis) = b.grid
 
 dimension(b::GridBasis) = GridArrays.dimension(grid(b))
 
-name(dict::GridBasis) = "Discrete grid basis"
-
-string(dict::GridBasis) = name(dict) * " for coefficient type $(coefficienttype(dict))"
-strings(dict::GridBasis) = (string(dict), strings(grid(dict)))
-
+show(io::IO, mime::MIME"text/plain", d::GridBasis) = composite_show(io, mime, d)
+Display.displaystencil(d::GridBasis{T}) where T = ["GridBasis{$(T)}(", grid(d), ")"]
 
 tensorproduct(dicts::GridBasis...) = GridBasis{promote_type(map(coefficienttype,dicts)...)}(productgrid(map(grid, dicts)...))
 

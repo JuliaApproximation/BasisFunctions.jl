@@ -8,14 +8,17 @@ dictionary using composition and delegation. Concrete derived dictionaries
 may override functions to specialize behaviour. For example, a mapped dictionary
 may override the evaluation routine to apply the map first.
 """
-abstract type DerivedDict{S,T} <: Dictionary{S,T}
-end
+abstract type DerivedDict{S,T} <: Dictionary{S,T} end
+
+abstract type HighlySimilarDerivedDict{S,T} <: DerivedDict{S,T} end
 
 ###########################################################################
 # Warning: derived sets implements all functionality by delegating to the
 # underlying set, as if the derived set does not want to change any of that
 # behaviour. This may result in incorrect defaults. The concrete set should
 # override any functionality that is changed by it.
+# Update: more functionality is copied for HighlySimilarDerivedDict, less
+# for the derived dictionaries.
 ###########################################################################
 
 # Assume the concrete set has a field called superdict -- override if it doesn't
@@ -85,8 +88,7 @@ end
 
 approx_length(d::DerivedDict, n::Int) = approx_length(superdict(d), n)
 
-# TODO: this is dangerous as a default because it might be wrong
-mapped_dict(d::DerivedDict, map) = similardictionary(d, mapped_dict(superdict(d), map))
+mapped_dict(d::HighlySimilarDerivedDict, map) = similardictionary(d, mapped_dict(superdict(d), map))
 
 dict_in_support(d::DerivedDict, i, x) = in_support(superdict(d), i, x)
 
@@ -177,7 +179,7 @@ Display.displaystencil(d::DerivedDict) = [modifiersymbol(d), "(", superdict(d), 
 For testing purposes we define a concrete subset of DerivedDict. This set should
 pass all interface tests and be functionally equivalent to the underlying set.
 """
-struct ConcreteDerivedDict{S,T} <: DerivedDict{S,T}
+struct ConcreteDerivedDict{S,T} <: HighlySimilarDerivedDict{S,T}
     superdict   ::  Dictionary{S,T}
 end
 

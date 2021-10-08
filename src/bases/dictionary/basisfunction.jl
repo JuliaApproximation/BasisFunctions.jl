@@ -38,9 +38,6 @@ show(io::IO, mime::MIME"text/plain", φ::BasisFunction) = composite_show(io, mim
 Display.stencil_parentheses(φ::BasisFunction) = true
 Display.displaystencil(φ::BasisFunction) = [dictionary(φ), '[', index(φ), ']']
 
-name(φ::BasisFunction) = _name(φ, dictionary(φ))
-_name(φ::BasisFunction, dict::Dictionary) = "φ(x)   (dictionary element of $(name(dict)))"
-
 (φ::BasisFunction)(x) = unsafe_eval_element1(dictionary(φ), index(φ), x)
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))
 

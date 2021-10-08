@@ -44,7 +44,6 @@ unsafe_eval_element(set::DiscreteDictionary, idx, x) =
 isdiscrete(dict::Dictionary) = false
 isdiscrete(dict::DiscreteDictionary) = true
 
-name(d::DiscreteDictionary) = "Discrete set"
 
 
 #########################

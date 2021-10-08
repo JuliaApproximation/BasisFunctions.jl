@@ -136,8 +136,6 @@ ProjectionSampling(dict::Dictionary, measure::Measure) = ProjectionSampling(dict
 
 ProjectionSampling(dict::Dictionary, space::FunctionSpace) = ProjectionSampling(dict, measure(space), space)
 
-name(op::ProjectionSampling) = "Projection operator"
-
 dictionary(op::ProjectionSampling) = op.dict
 
 dest(op::ProjectionSampling) = dictionary(op)
