@@ -100,7 +100,11 @@ end
 
 adjoint(op::GenericSolverOperator) = @warn("not implemented")
 
-qr_factorization(op::DictionaryOperator) = qr(matrix(op), Val(true))
+if VERSION ≥ v"1.7-"
+    qr_factorization(op::DictionaryOperator) = qr(matrix(op), ColumnNorm())
+else
+    qr_factorization(op::DictionaryOperator) = qr(matrix(op), Val(true))
+end
 
 function svd_factorization(op::DictionaryOperator)
     local F
