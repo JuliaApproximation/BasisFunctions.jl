@@ -4,10 +4,7 @@
 # - evaluate the expansion in the gridpoints (fast if possible)
 # - postprocess the data
 
-@recipe function f(S::Expansion; plot_complex = false, n=200, plot_ext=false)
-    if plot_ext
-        @warn "Deprecation warning: `plot_ext=true` not longer supported"
-    end
+@recipe function f(S::Expansion; plot_complex = false, n=200)
     legend --> false
     # title --> "Expansion"
     grid = plotgrid(dictionary(S), n)

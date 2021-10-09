@@ -16,8 +16,14 @@ abstract type MappedDict{S,T} <: DerivedDict{S,T} end
 const MappedDict1d{S <: Number,T <: Number} = MappedDict{S,T}
 const MappedDict2d{S <: SVector{2},T <: Number} = MappedDict{S,T}
 
-mapped_dict(dict::Dictionary, map) = MappedDict(dict, map)
-mapped_dict(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ forward_map(dict))
+mapped_dict(dict::Dictionary, map) = mapped_dict1(dict, map)
+# Allow dispatch on first argument (dict)
+mapped_dict1(dict, map) = mapped_dict2(dict, map)
+# Allow dispatch on second argument (map)
+mapped_dict2(dict, map) = MappedDict(dict, map)
+
+mapped_dict1(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ forward_map(dict))
+mapped_dict2(dict, map::IdentityMap) = dict
 
 # Convenience function, similar to apply_map for grids etcetera
 @deprecate apply_map(dict::Dictionary, map) mapped_dict(dict, map)
@@ -318,3 +324,9 @@ Display.stencil_parentheses(d::MappedDict) = true
 Display.displaystencil(d::MappedDict) = _stencil(d, superdict(d), forward_map(d))
 _stencil(d::MappedDict, dict, map) = [dict, " ∘ ", map]
 _stencil(d::MappedDict, dict, map::ScalarAffineMap) = [dict, " → ", map_domain(map, support(dict))]
+
+show(io::IO, d::MappedDict) = _do_show(io, d, superdict(d), forward_map(d))
+_do_show(io::IO, d::MappedDict, dict, map::ScalarAffineMap) =
+    print(io, repr(dict), " → ", repr(map_domain(map, support(dict))))
+_do_show(io::IO, d::MappedDict, dict, map) =
+    print(io, "MappedDict(", repr(dict), ", ", repr(map), ")")

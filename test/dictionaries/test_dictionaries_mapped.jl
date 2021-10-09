@@ -16,7 +16,7 @@ function test_mapped_dicts()
     # z = 1/3*x1+2/3*x2
     # @test abs(u(z)-exp(z)) < 0.2
 
-    d = circle()
+    d = UnitCircle()
     m = parameterization(d)
     b = Fourier(20)
     c = mapped_dict(b, m)

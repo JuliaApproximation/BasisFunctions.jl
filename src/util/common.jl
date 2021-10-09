@@ -120,3 +120,14 @@ dimension(::Type{SVector{N,T}}) where {N,T} = N
 dimension(::Type{<:NTuple{N,Any}}) where {N} = N
 dimension(::Type{CartesianIndex{N}}) where {N} = N
 dimension(::Type{T}) where {T} = 1
+
+
+const Domain1d{T <: Number} = Domain{T}
+const Domain2d{T} = EuclideanDomain{2,T}
+const Domain3d{T} = EuclideanDomain{3,T}
+const Domain4d{T} = EuclideanDomain{4,T}
+export Domain1d, Domain2d, Domain3d, Domain4d
+
+iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
+iscompatible(map1::AffineMap, map2::AffineMap) = (map1.A ≈ map2.A) && (map1.b ≈ map2.b)
+iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2

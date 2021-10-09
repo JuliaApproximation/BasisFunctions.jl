@@ -116,15 +116,13 @@ export component, components, ncomponents, iscomposite,
     ×,
     points, weights, discrete_weight,
     support,
-    Measure, Weight, DiscreteWeight
+    Measure, Weight, DiscreteWeight,
+    dimension
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, NativeIndex,
     DefaultNativeIndex, DefaultIndexList,
     value
-
-# from util/domain_extensions.jl
-export interval, circle, sphere, disk, ball, rectangle, cube, simplex
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition,
@@ -294,9 +292,6 @@ export ChebyshevT, ChebyshevU,
 # from util/recipes.jl
 export plotgrid, postprocess
 
-# from util/domain_extensions.jl
-export dimension
-
 # from bases/poly/orthopoly.jl and friends
 export Legendre, Jacobi, Laguerre, Hermite,
     Monomials, RationalBasis, GenericOPS,
@@ -314,7 +309,6 @@ export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS,
 include("util/common.jl")
 include("util/arrays/specialarrays.jl")
 include("util/arrays/outerproductarrays.jl")
-include("util/domain_extensions.jl")
 
 include("maps/partition.jl")
 

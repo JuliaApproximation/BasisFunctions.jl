@@ -8,10 +8,7 @@ struct RationalFunctions{T} <: Dictionary{T,T}
 end
 
 RationalFunctions(n::Int) = RationalFunctions{Float64}(n)
-
 RationalFunctions{T}(n::Int) where {T} = RationalFunctions(rand(T, n))
-
-name(dict::RationalFunctions) = "Rational functions"
 
 size(dict::RationalFunctions) = (length(dict.poles),)
 
@@ -40,9 +37,10 @@ pole(r::RationalBasisFunction) = r.pole
 
 RationalBasisFunction{T}(r::RationalBasisFunction) where {T} = RationalBasisFunction{T}(r.pole)
 
-name(r::RationalBasisFunction) = _name(r, domaintype(r))
-_name(r::RationalBasisFunction, ::Type{<:Real}) = "1/(x-$(pole(r)))  (rational function)"
-_name(r::RationalBasisFunction, ::Type{<:Complex}) = "1/(z-$(pole(r)))  (rational function)"
+show(io::IO, d::RationalBasisFunction{T}) where {T<:Real} =
+    print(io, "1/(x-$(pole(r)))  (rational function)")
+show(io::IO, d::RationalBasisFunction{T}) where {T<:Complex} =
+    print(io, "1/(z-$(pole(r)))  (rational function)")
 
 convert(::Type{TypedFunction{T,T}}, r::RationalBasisFunction) where {T} = RationalBasisFunction{T}(r.pole)
 

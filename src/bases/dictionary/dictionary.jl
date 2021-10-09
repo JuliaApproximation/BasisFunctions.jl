@@ -280,11 +280,6 @@ end
 "Does the dictionary have an associated interpolation grid?"
 hasinterpolationgrid(d::Dictionary) = false
 
-function grid(d::Dictionary)
-    error("replace grid(dict) by interpolation_grid(dict)")
-    interpolation_grid(d)
-end
-
 "Does the dictionary have a transform associated with some space?"
 hastransform(d1::Dictionary, d2) = false
 
