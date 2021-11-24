@@ -6,8 +6,8 @@ abstract type TensorProductDict{S,T} <: Dictionary{S,T} end
 # component(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
 function component(dict::TensorProductDict, range::AbstractRange)
     # TODO: remove this method in the future
-    @warn "Range selection of product dictionaries now simply returns the components"
-    [component(dict,i) for i in range]
+    error("Range selection of product dictionaries now simply returns the components")
+    # [component(dict,i) for i in range]
 end
 
 factors(dict::TensorProductDict) = components(dict)

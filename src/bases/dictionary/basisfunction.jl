@@ -66,6 +66,8 @@ innerproduct(ϕ::AbstractBasisFunction, ψ::AbstractBasisFunction; options...) =
 innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; options...) =
     innerproduct(dictionary(φ), index(φ), dictionary(ψ), index(ψ), measure; options...)
 
+norm(φ::AbstractBasisFunction, μ = measure(φ)) = sqrt(innerproduct(φ, φ, μ))
+
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
 innerproduct(φ::AbstractBasisFunction, g, measure; options...) =

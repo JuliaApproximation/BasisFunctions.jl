@@ -220,7 +220,8 @@ using LinearAlgebra
     @test (P')'*P' == gram(F)
 
     for P in (Fourier(4),Fourier(5)), M in (BasisFunctions.discretemeasure(PeriodicEquispacedGrid(11,0,1)),FourierWeight())
-        D = dual(P, M)
+        @test gramdual(P, M) ≈ dual(BasisFunctions.GramDual(), P; measure=M)
+        D = gramdual(P, M)
         @test Matrix(gram(P, M)) ≈ Matrix(inv(gram(D,M)))
         A = SynthesisOperator(P, M)
         Z = SynthesisOperator(D, M)

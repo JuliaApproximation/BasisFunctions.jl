@@ -65,6 +65,12 @@ function similardictionary(d::OperatedDict, dict::Dictionary)
     end
 end
 
+==(op1::OperatedDict, op2::OperatedDict) =
+	operator(op1) == operator(op2) && src(op1) == src(op2)
+
+≈(op1::OperatedDict, op2::OperatedDict) =
+	operator(op1) ≈ operator(op2) && src(op1) == src(op2)
+
 for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src(s))
 end

@@ -101,6 +101,7 @@ length(d::Dictionary) = prod(size(d))
 firstindex(d::Dictionary) = first(eachindex(d))
 lastindex(d::Dictionary) = last(eachindex(d))
 
+≈(d1::Dictionary, d2::Dictionary) = d1==d2
 
 #############################
 # Domain and codomain type

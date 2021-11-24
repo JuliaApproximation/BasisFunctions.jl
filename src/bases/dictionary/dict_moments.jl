@@ -21,3 +21,8 @@ unsafe_moment(dict::Dictionary, idx; options...) = default_moment(dict, idx; opt
 # Default to numerical integration
 default_moment(dict::Dictionary, idx; measure = lebesguemeasure(support(dict)), options...) =
     innerproduct(dict[idx], x->1, measure; options...)
+
+function dict_norm(dict, idx, μ = measure(dict))
+    @boundscheck checkbounds(dict, idx)
+    sqrt(innerproduct(dict, idx, dict, idx, μ))
+end
