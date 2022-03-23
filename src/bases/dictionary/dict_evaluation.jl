@@ -140,20 +140,6 @@ function eval_element_extension(dict::Dictionary, idx, x)
     unsafe_eval_element(dict, native_index(dict, idx), x)
 end
 
-# Convenience function: evaluate a function on a grid.
-# We implement unsafe_eval_element1, so the bounds check on idx has already happened
-# TODO: implement using broadcast instead, because evaluation in a grid is like vectorization
-unsafe_eval_element1(dict::Dictionary, idx, grid::AbstractGrid) =
-    BasisFunctions._default_unsafe_eval_element_in_grid(dict, idx, grid)
-
-function _default_unsafe_eval_element_in_grid(dict::Dictionary, idx, grid::AbstractGrid)
-    result = zeros(GridBasis(dict, grid))
-    for k in eachindex(grid)
-        @inbounds result[k] = eval_element(dict, idx, grid[k])
-    end
-    result
-end
-
 
 """
 This function is exactly like `eval_element`, but it evaluates the derivative

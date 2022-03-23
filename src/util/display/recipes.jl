@@ -8,7 +8,7 @@
     legend --> false
     # title --> "Expansion"
     grid = plotgrid(dictionary(S), n)
-    vals = plot_complex ? S(grid) : real.(S(grid))
+    vals = plot_complex ? S.(grid) : real(S.(grid))
     grid, postprocess(dictionary(S), grid, vals)
 end
 
@@ -43,7 +43,7 @@ end
     for i in eachindex(F)
         @series begin
             grid = plotgrid(F[i],n)
-            z = F[i](grid)
+            z = F[i].(grid)
             vals = plot_complex ? z : real(z)
             grid, postprocess(F[i],grid,vals)
         end
@@ -55,7 +55,7 @@ end
 @recipe function f(φ::AbstractBasisFunction; plot_complex = false, n=200)
     @series begin
         grid = plotgrid(φ,n)
-        z = φ(grid)
+        z = φ.(grid)
         vals = plot_complex ? z : real(z)
         grid, postprocess(φ,grid,vals)
     end
@@ -110,12 +110,12 @@ end
     @series begin
         subplot := 1
         title := "Real"
-        A,B,real.(C)
+        A,B,real(C)
     end
     @series begin
         subplot :=2
         title := "Imaginary"
-        A,B,imag.(C)
+        A,B,imag(C)
     end
     nothing
 end

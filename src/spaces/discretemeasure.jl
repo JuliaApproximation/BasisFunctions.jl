@@ -11,6 +11,10 @@ DomainIntegrals.allequal(A::FillArrays.AbstractFill) = true
 supermeasure(μ::GridWeight) = _supermeasure(points(μ), weights(μ))
 _supermeasure(points::AbstractGrid, weights::SubArray) = discretemeasure(supergrid(points), parent(weights))
 _supermeasure(points::AbstractGrid, weights::Ones) = discretemeasure(supergrid(points))
+function _supermeasure(points::AbstractGrid, weights::Fill)
+    super = supergrid(points)
+    discretemeasure(super, Fill(weights[1], size(super)))
+end
 _supermeasure(points::AbstractGrid, weights) = discretemeasure(supergrid(points), weights)
 _supermeasure(points::ProductGrid, weights::AbstractOuterProductArray) =
     productmeasure(map(_supermeasure, components(points), components(weights))...)
