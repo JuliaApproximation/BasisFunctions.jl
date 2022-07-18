@@ -178,7 +178,7 @@ function default_gram(::Type{T}, Φ::Dictionary, μ::Measure = measure(Φ); warn
 end
 
 default_diagonal_gram(Φ::Dictionary, μ::Measure = measure(Φ); options...) =
-	default_diagonal_gram(operatoreltype(Φ), μ; options...)
+	default_diagonal_gram(operatoreltype(Φ), Φ, μ; options...)
 
 function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T}
     @assert isorthogonal(Φ, μ)

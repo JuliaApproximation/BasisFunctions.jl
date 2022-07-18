@@ -73,7 +73,7 @@ function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::Pol
 		if i == j
 			a = d1.α
 			b = d1.β
-			n = convert(T, value(i))
+			n = value(i)
 			2^(a+b+1)/(2n+a+b+1) * gamma(n+a+1)*gamma(n+b+1)/factorial(n)/gamma(n+a+b+1)
 		else
 			zero(T)
