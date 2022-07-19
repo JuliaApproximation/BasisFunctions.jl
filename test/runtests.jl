@@ -4,8 +4,8 @@ using Test,
     BasisFunctions, BasisFunctions.Test
 
 using DoubleFloats,
-    FastTransforms,
     FFTW,
+    GenericFFT,
     LinearAlgebra,
     Random,
     StaticArrays,

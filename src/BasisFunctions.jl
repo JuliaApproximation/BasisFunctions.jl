@@ -6,7 +6,7 @@ module BasisFunctions
 
 using StaticArrays, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
-using FFTW
+using FFTW, GenericFFT
 using DomainSets, DomainIntegrals
 using CompositeTypes, CompositeTypes.Display
 
@@ -19,11 +19,19 @@ using Reexport
 ## Some specific functions we merely use
 
 using Base: IteratorSize
-using DSP: conv
 using IterativeSolvers: lsqr, lsmr
 using SpecialFunctions: gamma
 using MacroTools: @forward
 
+import DSP: conv
+conv(u::AbstractArray{T, N}, v::AbstractArray{T, N}) where {T<:AbstractFloat, N} =
+    GenericFFT._conv!(deepcopy(u), deepcopy(v))
+conv(u::AbstractArray{T, N}, v::AbstractArray{Complex{T}, N}) where {T<:AbstractFloat, N} =
+    GenericFFT._conv!(complex(deepcopy(u)), deepcopy(v))
+conv(u::AbstractArray{Complex{T}, N}, v::AbstractArray{T, N}) where {T<:AbstractFloat, N} =
+    GenericFFT._conv!(deepcopy(u), complex(deepcopy(v)))
+conv(u::AbstractArray{Complex{T}, N}, v::AbstractArray{Complex{T}, N}) where {T<:AbstractFloat, N} =
+    GenericFFT._conv!(deepcopy(u), deepcopy(v))
 
 ## Imports
 

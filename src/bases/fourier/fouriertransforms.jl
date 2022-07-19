@@ -4,7 +4,7 @@
 # support multiplication, and hence we can store them in a MultiplicationOperator.
 #
 # For other types (like BigFloat) we have to resort to a different implementation.
-# We make specific operator types that call fft and dct from FastTransforms.jl
+# We make specific operator types that call fft and dct from GenericFFT.jl
 # (dct moved there from this code).
 #
 # This situation will improve once the pure-julia implementation of FFT lands (#6193).
