@@ -284,6 +284,9 @@ export Fourier,
 # from bases/fourier/(co)sineseries.jl
 export CosineSeries, SineSeries
 
+# from bases/fourier/sinc.jl
+export PeriodicSincFunctions
+
 
 # from bases/poly/chebyshev.jl
 export ChebyshevT, ChebyshevU,
@@ -391,6 +394,7 @@ include("bases/fourier/fouriertransforms.jl")
 include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
+include("bases/fourier/sinc.jl")
 
 
 ################################################################
