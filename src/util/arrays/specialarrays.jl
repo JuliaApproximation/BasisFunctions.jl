@@ -442,43 +442,9 @@ function _tensor_mul!(dest, A::ExtensionIndexMatrix, src, subindices)
     dest
 end
 
-# function Base.inv(C::Circulant{T}) where T<:Real
-#     vdft = 1 ./ C.vcvr_dft
-#     cvdft = copy(vdft)
-#     return Circulant(real(C.dft \ vdft), cvdft, similar(vdft), C.dft)
-# end
-# function Base.inv(C::Circulant)C
-#     vdft = 1 ./ C.vcvr_dft
-#     cvdft = copy(vdft)
-#     return Circulant(C.dft \ vdft, cvdft, similar(vdft), C.dft)
-# end
-
-function mul!(out::StridedVector{T}, A::Circulant{T}, in::StridedVector, α::T, β::T) where T<:Number
-    fill!(A.tmp, 0)
-    copyto!(A.tmp, in)
-    mul!(A.tmp, A.dft, A.tmp)
-    for i in 1:length(A.tmp)
-        A.tmp[i] *= A.vcvr_dft[i]
-    end
-    A.dft \ A.tmp
-    copyto!(out, A.tmp)
-end
-
-function mul!(out::StridedVector{T}, A::Circulant{T}, in::StridedVector{T}, _::T, _::T) where {T<:Real}
-    fill!(A.tmp, 0)
-    copyto!(A.tmp, in)
-    mul!(A.tmp, A.dft, A.tmp)
-    for i in 1:length(A.tmp)
-        A.tmp[i] *= A.vcvr_dft[i]
-    end
-    A.dft \ A.tmp
-    A.tmp .= real.(A.tmp)
-    copyto!(out, A.tmp)
-end
-
 Base.adjoint(C::Circulant{T}) where T<:Real  =
-    Circulant{T}(real(ifft(conj.(C.vcvr_dft))))
+    Circulant{T}(real(ifft(conj.(fft(C.vc)))))
 Base.adjoint(C::Circulant{T}) where T  =
-    Circulant{T}(ifft(conj.(C.vcvr_dft)))
+    Circulant{T}(ifft(conj.(fft(C.vc))))
 Base.conj(C::Circulant{T}) where {T<:Complex} =
-    Circulant{T}(conj(ifft(C.vcvr_dft)))
+    Circulant{T}(conj(C.vc))

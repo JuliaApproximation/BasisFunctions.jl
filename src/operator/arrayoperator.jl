@@ -299,7 +299,7 @@ symbol(op::ZeroOperator) = "0"
 
 
 "A circulant operator."
-const CirculantOperator{T,S} = MatrixOperator{T,Circulant{T,S}}
+const CirculantOperator{T} = MatrixOperator{T,Circulant{T}}
 
 CirculantOperator(args...) = CirculantOperator{deduce_eltype(args...)}(args...)
 
@@ -309,17 +309,13 @@ to_circulant(::Type{T}, v::AbstractVector{T}) where {T} = Circulant(v)
 to_circulant(::Type{T}, A::Circulant{T}) where {T} = A
 
 CirculantOperator{T}(v::AbstractVector) where {T} = CirculantOperator{T}(to_circulant(T, v))
-CirculantOperator{T}(A::AbstractMatrix) where {T} = CirculantOperator{T}(A, Asrc(A), Adest(A))
+CirculantOperator{T}(A::AbstractMatrix) where {T} =
+    CirculantOperator{T}(to_circulant(T, A))
+CirculantOperator{T}(A::Circulant{T}) where {T} = CirculantOperator{T}(A, Asrc(A), Adest(A))
 CirculantOperator{T}(A::AbstractArray, src::Dictionary) where {T} =
     CirculantOperator{T}(A, src, src)
-CirculantOperator{T}(A::AbstractArray, src::Dictionary, dest::Dictionary) where {T} =
+CirculantOperator{T}(A::AbstractVector, src::Dictionary, dest::Dictionary) where {T} =
     CirculantOperator{T}(to_circulant(T, A), src, dest)
-CirculantOperator{T}(A::Circulant{T,S}, src::Dictionary, dest::Dictionary) where {T,S} =
-    CirculantOperator{T,S}(A, src, dest)
-
-# Temporary fix for ToeplitzMatrices issue #47
-inv(C::CirculantOperator{T}) where {T} = CirculantOperator{T}(Circulant(ifft(1 ./ C.A.vcvr_dft)), dest(C), src(C))
-inv(C::CirculantOperator{T}) where {T<:Real} = CirculantOperator{T}(Circulant(real(ifft(1 ./ C.A.vcvr_dft))), dest(C), src(C))
 
 # Support other order of arguments
 CirculantOperator{T}(src::Dictionary, A::AbstractArray) where {T} =
