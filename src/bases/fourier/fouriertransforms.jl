@@ -33,12 +33,10 @@ forward_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T} =
     inv(inverse_fourier_operator(dest, src, Complex{T}; options...))
 
 
-inverse_fourier_operator(src, dest, ::Type{Complex{T}};
-            fftwflags = FFTW.MEASURE, options...) where {T <: FFTW_TYPES} =
+inverse_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T <: FFTW_TYPES} =
     bfftw_operator(src, dest, Complex{T}; options...)
 
-function forward_fourier_operator(src, dest, ::Type{Complex{T}};
-            fftwflags = FFTW.MEASURE, options...) where {T <: FFTW_TYPES}
+function forward_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T <: FFTW_TYPES}
     t_op = fftw_operator(src, dest, Complex{T}; options...)
     1/convert(T, length(src)) * t_op
 end

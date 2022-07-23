@@ -74,8 +74,8 @@ _apply_inplace!(op::MultiplicationOperator{T,ARRAY,true}, coef_srcdest, object) 
 
 adjoint(op::MultiplicationOperator) = adjoint_multiplication(op, object(op))
 # This can be overriden for types of objects that do not support adjoint
-adjoint_multiplication(op::MultiplicationOperator, object) =
-    MultiplicationOperator(dest(op), src(op), adjoint(object))
+adjoint_multiplication(op::MultiplicationOperator{T,A,INPLACE}, object) where {T,A,INPLACE} =
+    MultiplicationOperator(dest(op), src(op), adjoint(object); inplace=INPLACE)
 
 adjoint_multiplication(op::MultiplicationOperator, object::Array{T,2}) where {T} =
     # We copy the adjoint in order to avoid storing an Adjoint type
@@ -84,7 +84,8 @@ adjoint_multiplication(op::MultiplicationOperator, object::Array{T,2}) where {T}
 inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 
 # This can be overriden for types of objects that do not support inv
-inv_multiplication(op::MultiplicationOperator, object) = MultiplicationOperator(dest(op), src(op), inv(object))
+inv_multiplication(op::MultiplicationOperator{T,A,INPLACE}, object) where {T,A,INPLACE} =
+    MultiplicationOperator(dest(op), src(op), inv(object); inplace=INPLACE)
 
 # Use QR for matrices by default
 # inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
