@@ -1,10 +1,10 @@
 
 """
 The span of a dictionary is the set of all possible expansions in that
-dictionary, with coefficient eltype determined uniquely by the Dictionary.
+dictionary, with coefficient eltype determined uniquely by the dictionary.
 
 The span of a dictionary is a function space, mapping `S` to `T`. Here, `S` is
-the domain type of the dictionary. The `T` is the codomain type.
+the domain type of the dictionary and `T` is the codomain type.
 """
 struct Span{S,T} <: FunctionSpace{S,T}
     dictionary  ::  Dictionary{S}
@@ -41,6 +41,11 @@ random_expansion(span::Span) = Expansion(dictionary(span), rand(dictionary(span)
 zero(span::Span) = Expansion(dictionary(span), zeros(dictionary(span)))
 
 tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionary(s2)))
+
+==(s1::Span, s2::Span) = false
+==(s1::Span{S,T}, s2::Span{S,T}) where {S,T} =
+    equalspan(s1, s2, dictionary(s1), dictionary(s2))
+equalspan(s1, s2, dict1, dict2) = dict1 == dict2
 
 size(span::Span) = size(dictionary(span))
 length(span::Span) = length(dictionary(span))

@@ -3,6 +3,7 @@
 abstract type PolynomialBasis{T} <: Dictionary{T,T}
 end
 
+equalspan(s1, s2, dict1::PolynomialBasis, dict2::PolynomialBasis) = true
 
 ##################
 # Native indices

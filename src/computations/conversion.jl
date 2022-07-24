@@ -131,6 +131,7 @@ hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.ProductSubGrid} = true
 # Generic conversion
 ###############################
 
+compatiblespan(src, dest) = Span(src) == Span(dest)
 
 conversion(::Type{T}, src, dest; options...) where {T} =
     conversion1(T, src, dest; options...)
@@ -138,14 +139,22 @@ conversion(::Type{T}, src, dest; options...) where {T} =
 conversion1(T, src::Dictionary, dest; options...) =
     conversion2(T, src, dest; options...)
 # enable dispatch on dest
-conversion2(T, src, dest::Dictionary; options...) =
-    default_conversion(T, src, dest; options...)
+function conversion2(T, src, dest::Dictionary; options...)
+    if compatiblespan(src, dest)
+        default_conversion(T, src, dest; options...)
+    else
+        error("No known conversion from $(src) to $(dest)")
+    end
+end
 
 function default_conversion(T, src, dest; options...)
-    @assert size(src) == size(dest)
-    G = mixedgram(T, dest, src, measure(dest); options...)
-    D = Diagonal([1/norm(bf)^2 for bf in dest])
-    ArrayOperator(D*matrix(G), src, dest)
+    if src == dest
+        IdentityOperator{T}(src, dest)
+    else
+        G = mixedgram(T, dest, src, measure(dest); options...)
+        D = Diagonal([1/norm(bf)^2 for bf in dest])
+        ArrayOperator(D*matrix(G), src, dest)
+    end
 end
 
 # Convert to and from grids.
