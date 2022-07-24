@@ -156,8 +156,17 @@ gram(::Type{T}, Φ::Dictionary; options...) where {T} = gram(T, Φ, measure(Φ);
 gram(::Type{T}, Φ::Dictionary, μ::Measure; options...) where {T} =
 	gram1(T, Φ, μ; options...)
 
-gram1(T, Φ::Dictionary, μ; options...) =
-	gram2(T, Φ, μ; options...)
+function gram1(T, Φ::Dictionary, μ; options...)
+	if isorthogonal(Φ, μ)
+		if isorthonormal(Φ, μ)
+			IdentityOperator(Φ)
+		else
+			default_diagonal_gram(T, Φ, μ; options...)
+		end
+	else
+		gram2(T, Φ, μ; options...)
+	end
+end
 
 gram2(T, Φ, μ::Measure; options...) =
 	default_gram(T, Φ, μ; options...)

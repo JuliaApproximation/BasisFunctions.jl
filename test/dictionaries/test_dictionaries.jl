@@ -40,6 +40,7 @@ test_dictionaries = [Fourier,
     Jacobi,
     CosineSeries,
     SineSeries,
+    PeriodicSincFunctions,
     Monomials,
     RationalFunctions]
 
@@ -47,6 +48,9 @@ for T in domaintypes
     delimit("1D dictionaries ($(T))")
     for DICT in test_dictionaries
         n = 9
+        if DICT isa PeriodicSincFunctions
+            n = 18
+        end
         basis = DICT{T}(n)
         @testset "$(string(basis))" begin
             @test length(basis) == n

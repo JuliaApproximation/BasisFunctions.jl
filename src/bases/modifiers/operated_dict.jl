@@ -10,28 +10,40 @@ underlying dictionary with coefficients `Dc`. If `D` represents differentiation,
 then the `OperatedDict` effectively represents the dictionary of derivatives of
 the underlying dictionary elements.
 """
-struct OperatedDict{S,T} <: HighlySimilarDerivedDict{S,T}
-    "The operator that acts on the set"
-    op          ::  DictionaryOperator{T}
-
-    scratch_src
-    scratch_dest
-
-    function OperatedDict{S,T}(op::DictionaryOperator) where {S,T}
-        scratch_src = zeros(src(op))
-        scratch_dest = zeros(dest(op))
-        new(op, scratch_src, scratch_dest)
-    end
-end
+abstract type OperatedDict{S,T} <: HighlySimilarDerivedDict{S,T} end
 
 superdict(dict::OperatedDict) = src(dict)
+
+OperatedDict(op::IdentityOperator) = src(op)
 
 function OperatedDict(op::DictionaryOperator{T}) where {T}
     S = domaintype(src(op))
     OperatedDict{S,T}(op)
 end
 
-OperatedDict(op::IdentityOperator) = src(op)
+
+## Concrete subtypes
+
+"A concrete operated dict with a generic operator."
+struct OpDict{S,T} <: OperatedDict{S,T}
+    "The operator that acts on the set"
+    op          ::  DictionaryOperator{T}
+
+    scratch_src
+    scratch_dest
+
+    function OpDict{S,T}(op::DictionaryOperator) where {S,T}
+        scratch_src = zeros(src(op))
+        scratch_dest = zeros(dest(op))
+        new(op, scratch_src, scratch_dest)
+    end
+end
+
+OperatedDict{S,T}(op::DictionaryOperator) where {S,T} = OpDict{S,T}(op)
+
+operator(op::OpDict) = op.op
+
+
 
 ## Printing
 
@@ -40,13 +52,11 @@ object_parentheses(dict::OperatedDict) = true
 Display.displaystencil(d::OperatedDict) = _stencil(d, superdict(d), operator(d))
 _stencil(d::OperatedDict, dict, op) = [op, " * ", dict]
 
-src(s::OperatedDict) = src(s.op)
+## Main functionality
 
-dest(s::OperatedDict) = dest(s.op)
-
+src(s::OperatedDict) = src(operator(s))
+dest(s::OperatedDict) = dest(operator(s))
 domaintype(s::OperatedDict) = domaintype(src(s))
-
-operator(set::OperatedDict) = set.op
 
 function similar(d::OperatedDict, ::Type{T}, dims::Int...) where {T}
     # We enforce an equal length since we may be able to resize dictionaries,
@@ -248,3 +258,33 @@ function (*)(op::DictionaryOperator, dict::OperatedDict)
     @assert src(op) == dest(dict)
     OperatedDict(op*operator(dict))
 end
+
+
+## A simple scaling
+
+"A scaled dictionary (by a diagonal operator)."
+struct ScaledDict{S,T,D} <: OperatedDict{S,T}
+	dict		::	D
+	diag		::	Vector{T}
+end
+
+ScaledDict(dict::Dictionary{S,T}, diag) where {S,T} = ScaledDict{S,T}(dict, diag)
+ScaledDict{S,T}(dict::Dictionary, diagop::DiagonalOperator) where {S,T} =
+ 	ScaledDict{S,T}(dict, diag(matrix(diagop)))
+ScaledDict{S,T}(dict::D, diag::AbstractVector) where {D,S,T} =
+ 	ScaledDict{S,T,D}(dict, diag)
+
+OperatedDict{S,T}(op::DiagonalOperator) where {S,T} = ScaledDict{S,T}(src(op),op)
+
+operator(d::ScaledDict) = DiagonalOperator(d.diag, d.dict, d.dict)
+
+src(d::ScaledDict) = d.dict
+dest(d::ScaledDict) = src(d)
+
+normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
+
+unsafe_eval_element(dict::ScaledDict, i, x) =
+	dict.diag[i] * unsafe_eval_element(superdict(dict), i, x)
+
+unsafe_eval_element_derivative(dict::ScaledDict, i, x, order) =
+	dict.diag[i] * unsafe_eval_element_derivative(superdict(dict), i, x, order)

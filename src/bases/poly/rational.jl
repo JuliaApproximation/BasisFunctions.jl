@@ -10,9 +10,14 @@ end
 RationalFunctions(n::Int) = RationalFunctions{Float64}(n)
 RationalFunctions{T}(n::Int) where {T} = RationalFunctions(rand(T, n))
 
+show(io::IO, b::RationalFunctions{Float64}) = print(io, "RationalFunctions([poles...])")
+show(io::IO, b::RationalFunctions{T}) where T =
+    print(io, "RationalFunctions{$(T)}([poles...])")
+
 size(dict::RationalFunctions) = (length(dict.poles),)
 
 pole(dict::RationalFunctions, idx) = dict.poles[idx]
+poles(dict::RationalFunctions) = copy(dict.poles)
 
 unsafe_eval_element(dict::RationalFunctions, idx::Int, x) = 1/(x-dict.poles[idx])
 
