@@ -128,14 +128,30 @@ hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.ProductSubGrid} = true
 
 
 ###############################
-# Converting to grids and back
+# Generic conversion
 ###############################
+
+
+conversion(::Type{T}, src, dest; options...) where {T} =
+    conversion1(T, src, dest; options...)
+# enable dispatch on src
+conversion1(T, src::Dictionary, dest; options...) =
+    conversion2(T, src, dest; options...)
+# enable dispatch on dest
+conversion2(T, src, dest::Dictionary; options...) =
+    default_conversion(T, src, dest; options...)
+
+function default_conversion(T, src, dest; options...)
+    @assert size(src) == size(dest)
+    G = mixedgram(T, dest, src, measure(dest); options...)
+    D = Diagonal([1/norm(bf)^2 for bf in dest])
+    ArrayOperator(D*matrix(G), src, dest)
+end
 
 # Convert to and from grids.
 # To grid: we invoke `evaluation`
 # From grid: we invoke `approximation`. This defaults to inverting the corresponding
 #  `evaluation` operator.
-
 conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest; options...)
 

@@ -288,3 +288,8 @@ unsafe_eval_element(dict::ScaledDict, i, x) =
 
 unsafe_eval_element_derivative(dict::ScaledDict, i, x, order) =
 	dict.diag[i] * unsafe_eval_element_derivative(superdict(dict), i, x, order)
+
+innerproduct1(d1::ScaledDict, i, d2, j, measure; options...) =
+	conj(d1.diag[i]) * innerproduct(superdict(d1), i, d2, j, measure; options...)
+innerproduct2(d1, i, d2::ScaledDict, j, measure; options...) =
+	d2.diag[j] * innerproduct(d1, i, superdict(d2), j, measure; options...)
