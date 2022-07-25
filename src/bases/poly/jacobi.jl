@@ -41,7 +41,7 @@ isorthogonal(dict::Jacobi, measure::JacobiWeight) =
 gauss_rule(dict::Jacobi) = GaussJacobi(length(dict), dict.α, dict.β)
 
 interpolation_grid(dict::Jacobi) = JacobiNodes(length(dict), dict.α, dict.β)
-iscompatible(dict::Jacobi, grid::JacobiNodes) =  length(dict) == length(grid) && dict.α ≈ grid.α && dict.β ≈ grid.β
+iscompatiblegrid(dict::Jacobi, grid::JacobiNodes) =  length(dict) == length(grid) && dict.α ≈ grid.α && dict.β ≈ grid.β
 isorthogonal(dict::Jacobi, measure::GaussJacobi) = jacobi_α(dict) ≈ jacobi_α(measure) && jacobi_β(dict) ≈ jacobi_β(measure) && opsorthogonal(dict, measure)
 
 issymmetric(dict::Jacobi) = jacobi_α(dict)≈jacobi_β(dict)

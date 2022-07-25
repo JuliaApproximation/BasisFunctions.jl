@@ -21,7 +21,7 @@ first_moment(b::ChebyshevU{T}) where {T} = convert(T, pi)/2
 
 interpolation_grid(b::ChebyshevU{T}) where {T} = ChebyshevUNodes{T}(b.n)
 
-iscompatible(dict::ChebyshevU, grid::ChebyshevUNodes) = length(dict) == length(grid)
+iscompatiblegrid(dict::ChebyshevU, grid::ChebyshevUNodes) = length(dict) == length(grid)
 issymmetric(::ChebyshevU) = true
 measure(dict::ChebyshevU{T}) where {T} = ChebyshevUWeight{T}()
 hasmeasure(::ChebyshevU) = true

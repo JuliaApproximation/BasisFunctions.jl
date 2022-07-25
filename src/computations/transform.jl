@@ -1,4 +1,6 @@
 
+# TODO: do away with the distinction between transform and conversion
+
 #####################
 # Generic transforms
 #####################

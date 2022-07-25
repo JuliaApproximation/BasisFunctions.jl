@@ -15,7 +15,8 @@ conversion(::Type{T}, src::Dictionary, dest::Dictionary; options...)
 ```
 
 Construct an operator with element type `T` that converts coefficients from the
-source dictionary to coefficients of the destination dictionary.
+source dictionary to coefficients of the destination dictionary. The conversion
+should be exact - otherwise use a projection.
 """
 conversion
 
@@ -127,49 +128,63 @@ hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.SubGrid} = true
 hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.ProductSubGrid} = true
 
 
-###############################
-# Generic conversion
-###############################
+###############
+# Projection
+###############
 
-compatiblespan(src, dest) = Span(src) == Span(dest)
+projection(src::Dictionary, dest::Dictionary, args...; options...) =
+    projection(operatoreltype(src,dest), src, dest, args...; options...)
 
-conversion(::Type{T}, src, dest; options...) where {T} =
-    conversion1(T, src, dest; options...)
-# enable dispatch on src
-conversion1(T, src::Dictionary, dest; options...) =
-    conversion2(T, src, dest; options...)
-# enable dispatch on dest
-function conversion2(T, src, dest::Dictionary; options...)
-    if compatiblespan(src, dest)
-        default_conversion(T, src, dest; options...)
-    else
-        error("No known conversion from $(src) to $(dest)")
-    end
-end
+projection(::Type{T}, src, dest, μ = measure(dest); options...) where {T} =
+    projection1(T, src, dest, μ; options...)
+projection1(T, src::Dictionary, dest, μ; options...) =
+    projection2(T, src, dest, μ; options...)
+projection2(T, src, dest::Dictionary, μ; options...) =
+    projection3(T, src, dest, μ; options...)
+projection3(T, src, dest, μ::Measure; options...) =
+    default_projection(T, src, dest, μ; options...)
 
-function default_conversion(T, src, dest; options...)
+default_projection(src::Dictionary, dest::Dictionary, μ = measure(dest); options...) =
+    default_projection(operatoreltype(src,dest), src, dest, μ; options...)
+function default_projection(T, src, dest, μ = measure(dest); options...)
     if src == dest
         IdentityOperator{T}(src, dest)
     else
-        G = mixedgram(T, dest, src, measure(dest); options...)
+        G = mixedgram(T, dest, src, μ; options...)
         D = Diagonal([1/norm(bf)^2 for bf in dest])
         ArrayOperator(D*matrix(G), src, dest)
     end
 end
 
+
+###############################
+# Generic conversion
+###############################
+
+conversion(::Type{T}, src, dest; options...) where {T} =
+    conversion1(T, src, dest; options...)
+conversion1(T, src::Dictionary, dest; options...) =
+    conversion2(T, src, dest; options...)
+function conversion2(T, src, dest::Dictionary; options...)
+    if issubset(Span(src), Span(dest))
+        default_conversion(T, src, dest; options...)
+    else
+        error("No known exact conversion from $(src) to $(dest)")
+    end
+end
+
+default_conversion(T, src, dest; options...) =
+    default_projection(T, src, dest; options...)
+
 # Convert to and from grids.
 # To grid: we invoke `evaluation`
-# From grid: we invoke `approximation`. This defaults to inverting the corresponding
-#  `evaluation` operator.
+# From grid: we invoke `interpolation`.
 conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest; options...)
 
 conversion(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
-    approximation(T, src, dest; options...)
+    interpolation(T, src, dest; options...)
 
 # Resolve ambiguity by the above methods
 conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     extension_restriction(T, src, dest; options...)
-
-evaluation(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
-    evaluation(T, src, dest, grid(dest); options...)

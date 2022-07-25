@@ -1,4 +1,61 @@
 
+"Supertype of various Fourier-like basis functions."
+abstract type FourierLike{S,T} <: Dictionary{S,T} end
+
+support(d::FourierLike{T}) where T = UnitInterval{T}()
+period(d::FourierLike{T}) where {T} = T(1)
+
+oddlength(d::FourierLike) = isodd(length(d))
+evenlength(d::FourierLike) = iseven(length(d))
+nhalf(d::FourierLike) = nhalf(length(d))
+nhalf(n::Int) = n>>1
+
+isbasis(d::FourierLike) = true
+isreal(d::FourierLike{S,T}) where {S,T} = isreal(S) && isreal(T)
+
+## Grids
+
+hasinterpolationgrid(d::FourierLike) = true
+interpolation_grid(d::FourierLike{T}) where {T} = FourierGrid{T}(length(d))
+
+# - Check whether the given periodic equispaced grid is compatible with the FFT operators
+iscompatiblegrid(dict::FourierLike, grid::AbstractEquispacedGrid) =
+	compatible_domains(dict, grid) && length(dict)==length(grid)
+# - Fourier grids are of course okay
+iscompatiblegrid(dict::FourierLike, grid::FourierGrid) = length(dict)==length(grid)
+# - Any non-periodic grid is not compatible
+iscompatiblegrid(dict::FourierLike, grid::AbstractGrid) = false
+# - We have a transform if the grid is compatible
+hasgrid_transform(dict::FourierLike, gb, grid) = iscompatiblegrid(dict, grid)
+
+compatible_domains(dict::FourierLike, grid) = false
+compatible_domains(dict::FourierLike, grid::AbstractEquispacedGrid) =
+	isperiodic(grid) && support(dict) ≈ coverdomain(grid)
+
+to_periodic_grid(dict::FourierLike, grid::AbstractGrid) = nothing
+to_periodic_grid(dict::FourierLike, grid::PeriodicEquispacedGrid{T}) where {T} =
+	iscompatiblegrid(dict, grid) ? FourierGrid{T}(length(grid)) : error("Grid not Fourier compatible")
+
+## Orthogonality
+
+hasmeasure(d::FourierLike) = true
+measure(d::FourierLike{T}) where T = FourierWeight{T}()
+
+isorthogonal(d::FourierLike, μ::FourierWeight) = true
+isorthogonal(d::FourierLike, μ::Weight) =
+	islebesguemeasure(μ) && support(μ) == support(d)
+isorthogonal(d::FourierLike, μ::DiscreteWeight) =
+	isuniform(μ) && compatible_domains(d, points(μ))
+
+gauss_rule(d::FourierLike) = NormalizedDiracComb(interpolation_grid(d))
+
+
+
+###################################
+# An FFT compatible Fourier basis
+###################################
+
+
 """
 A Fourier basis on the interval `[0,1]`. The basis functions are given by
 `exp(2 π i k)`, with `k` ranging from `-N` to `N` for Fourier series of odd
@@ -19,21 +76,19 @@ for even length.
 The Fourier basis is orthonormal with respect to a continuous measure (for odd
 length Fourier bases only) and a discrete measure.
 """
-struct Fourier{T <: Real} <: Dictionary{T,Complex{T}}
+struct Fourier{T <: Real} <: FourierLike{T,Complex{T}}
 	n	::	Int
 end
 
 Fourier(n::Int) = Fourier{Float64}(n)
 
 convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
+tofourier(d::FourierLike{T}) where {T} = convert(Fourier{T}, d)
 
 @deprecate Fourier(n, a::Number, b::Number) Fourier(n)→a..b
 @deprecate Fourier{T}(n, a::Number, b::Number) where {T} Fourier(n)→a..b
 
 size(b::Fourier) = (b.n,)
-
-oddlength(b::Fourier) = isodd(length(b))
-evenlength(b::Fourier) = iseven(length(b))
 
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
 
@@ -42,46 +97,15 @@ show(io::IO, b::Fourier{T}) where T = print(io, "Fourier{$(T)}($(length(b)))")
 
 # Properties
 
-isreal(b::Fourier) = false
-
-isbasis(b::Fourier) = true
-
-isorthogonal(b::Fourier, μ::FourierWeight) = true
-isorthogonal(b::Fourier, μ::Weight) = islebesguemeasure(μ) && support(μ) == support(b)
-isorthogonal(b::Fourier, μ::DiscreteWeight) = isuniform(μ) && compatible_domains(b, points(μ))
-
 isorthonormal(b::Fourier, μ::FourierWeight) = oddlength(b)
 isorthonormal(b::Fourier, μ::Weight) = isorthogonal(b, μ) && oddlength(b)
 isorthonormal(b::Fourier, μ::DiscreteWeight) =
 	isorthogonal(b, μ) && isnormalized(μ) && (length(b)==length(μ) || oddlength(b))
 
-isbiorthogonal(b::Fourier) = true
-
-hasinterpolationgrid(b::Fourier) = true
-
 hasextension(b::Fourier) = isodd(length(b))
 
-# For hastransform we introduce some more functionality:
-# - Check whether the given periodic equispaced grid is compatible with the FFT operators
-iscompatible(dict::Fourier, grid::AbstractEquispacedGrid) =
-	compatible_domains(dict, grid) && length(dict)==length(grid)
-# - Fourier grids are of course okay
-iscompatible(dict::Fourier, grid::FourierGrid) = length(dict)==length(grid)
-# - Any non-periodic grid is not compatible
-iscompatible(dict::Fourier, grid::AbstractGrid) = false
-# - We have a transform if the grid is compatible
-hasgrid_transform(dict::Fourier, gb, grid) = iscompatible(dict, grid)
 
-compatible_domains(dict::Fourier, grid) = false
-compatible_domains(dict::Fourier, grid::AbstractEquispacedGrid) =
-	isperiodic(grid) && support(dict) ≈ coverdomain(grid)
-
-
-interpolation_grid(b::Fourier{T}) where {T} = FourierGrid{T}(length(b))
-
-gauss_rule(dict::Fourier) = NormalizedDiracComb(interpolation_grid(dict))
-
-
+"Specific type for affinely mapped Fourier functions."
 struct MappedFourier{T} <: MappedDict{T,Complex{T}}
 	superdict	::	Fourier{T}
 	map			::	ScalarAffineMap{T}
@@ -120,14 +144,14 @@ size(list::FFTIndexList) = (list.n,)
 # This makes for a small difference in the ordering.
 function getindex(m::FFTIndexList, idx::Int)
 	n = length(m)
-	nhalf = n >> 1
-	if idx <= nhalf+1
+	nh = nhalf(n)
+	if idx <= nh+1
 		FourierFrequency(idx-1)
 	else
 		if iseven(n)
-			FourierFrequency(idx-2*nhalf-1)
+			FourierFrequency(idx-2*nh-1)
 		else
-			FourierFrequency(idx-2*nhalf-2)
+			FourierFrequency(idx-2*nh-2)
 		end
 	end
 end
@@ -147,9 +171,6 @@ linear_index(idxn::FourierFrequency, size::Tuple{Int}, T) = FFTIndexList(size[1]
 idx2frequency(b::Fourier, idx) = frequency(native_index(b, idx))
 frequency2idx(b::Fourier, k) = linear_index(b, FourierFrequency(k))
 
-nhalf(b::Fourier) = nhalf(length(b))
-nhalf(n::Int) = n>>1
-
 maxfrequency(b::Fourier) = nhalf(b)
 minfrequency(b::Fourier) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 
@@ -159,13 +180,6 @@ minfrequency(b::Fourier) = oddlength(b) ? -nhalf(b) : -nhalf(b)+1
 #############
 # Evaluation
 #############
-
-support(b::Fourier{T}) where T = UnitInterval{T}()
-
-hasmeasure(b::Fourier) = true
-measure(b::Fourier{T}) where T = FourierWeight{T}()
-
-period(b::Fourier{T}) where {T} = T(1)
 
 # One has to be careful here not to match Floats and BigFloats by accident.
 # Hence the conversion of pi to T here:
@@ -245,12 +259,12 @@ end
 
 
 function transform_from_grid(T, src::GridBasis, dest::Fourier, grid; options...)
-	@assert iscompatible(dest, grid)
+	@assert iscompatiblegrid(dest, grid)
 	forward_fourier_operator(src, dest, T; options...)
 end
 
 function transform_to_grid(T, src::Fourier, dest::GridBasis, grid; options...)
-	@assert iscompatible(src, grid)
+	@assert iscompatiblegrid(src, grid)
 	inverse_fourier_operator(src, dest, T; options...)
 end
 
@@ -263,13 +277,9 @@ function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquis
 		resize_and_transform(T, dict, gb, grid; options...)
 	else
 		@debug "Periodic grid mismatch with Fourier basis"
-		dense_evaluation(T, dict, gb; options...)
+		default_evaluation(T, dict, gb; options...)
 	end
 end
-
-to_periodic_grid(dict::Fourier, grid::AbstractGrid) = nothing
-to_periodic_grid(dict::Fourier, grid::PeriodicEquispacedGrid{T}) where {T} =
-	iscompatible(dict, grid) ? FourierGrid{T}(length(grid)) : nothing
 
 function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; options...) where {T}
 	grid2 = to_periodic_grid(dict, grid)
@@ -278,7 +288,7 @@ function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; options...) w
 		evaluation(T, dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
 	else
 		@debug "Evaluation: could not convert $(string(grid)) to periodic grid"
-		dense_evaluation(T, dict, gb; options...)
+		default_evaluation(T, dict, gb; options...)
 	end
 end
 
@@ -288,11 +298,11 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 	if coverdomain(grid) ≈ support(fs)
 		# TODO: cover the case where the EquispacedGrid is like a PeriodicEquispacedGrid
 		# but with the right endpoint added
-		return dense_evaluation(T, fs, gb; options...)
+		return default_evaluation(T, fs, gb; options...)
 	elseif issubset(coverdomain(grid), support(fs))
 		a, b = endpoints(coverdomain(grid))
 		if a==b
-			return dense_evaluation(T, fs, gb; options...)
+			return default_evaluation(T, fs, gb; options...)
 		end
 		# We are dealing with a subgrid. The main question is: if we extend it
 		# to the full support, is it compatible with a periodic grid?
@@ -309,9 +319,9 @@ function evaluation(::Type{T}, fs::Fourier, gb::GridBasis, grid::EquispacedGrid;
 			R = IndexRestriction{T}(super_gb, gb, nleft_int+1:nleft_int+length(grid))
 			return R*E
 		end
-		dense_evaluation(T, fs, gb; options...)
+		default_evaluation(T, fs, gb; options...)
 	else
-		dense_evaluation(T, fs, gb; options...)
+		default_evaluation(T, fs, gb; options...)
 	end
 end
 
@@ -331,7 +341,7 @@ function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::MidpointEquis
 			evaluation(T, dict2, grid) * extension(T, dict, dict2)
 		end
 	else
-		dense_evaluation(T, dict, gb; options...)
+		default_evaluation(T, dict, gb; options...)
 	end
 end
 

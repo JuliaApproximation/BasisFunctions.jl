@@ -34,8 +34,8 @@ for op in (:interpolation, :leastsquares)
         tensorproduct(map( (u,v) -> $op(T, u, v; options...), components(s1), components(s2))...)
 end
 
-dense_evaluation(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
-    tensorproduct(map( (u,v) -> dense_evaluation(T, u, v; options...), components(s1), components(s2))...)
+default_evaluation(::Type{T}, s1::TensorProductDict, s2::TensorProductDict; options...) where {T} =
+    tensorproduct(map( (u,v) -> default_evaluation(T, u, v; options...), components(s1), components(s2))...)
 
 for op in (:approximation, )
     @eval $op(s::TensorProductDict; options...) =

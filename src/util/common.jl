@@ -16,6 +16,12 @@ default_threshold(x) = default_threshold(typeof(x))
 default_threshold(T::Type{<:AbstractFloat}) = 100eps(T)
 default_threshold(::Type{T}) where {T} = default_threshold(prectype(T))
 
+iswidertype(::Type{T}, ::Type{T}) where {T} = true
+iswidertype(::Type{Float32}, ::Type{Float64}) = true
+iswidertype(::Type{Float32}, ::Type{BigFloat}) = true
+iswidertype(::Type{Float64}, ::Type{BigFloat}) = true
+iswidertype(::Type{S}, ::Type{Complex{T}}) where {S<:AbstractFloat,T<:AbstractFloat} =
+    iswidertype(S,T)
 
 
 linspace(a, b, n=100) = range(a, stop=b, length=n)

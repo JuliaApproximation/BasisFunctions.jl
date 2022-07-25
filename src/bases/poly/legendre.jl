@@ -22,7 +22,7 @@ measure(b::Legendre{T}) where {T} = LegendreWeight{T}()
 isorthogonal(::Legendre, ::LegendreWeight) = true
 issymmetric(::Legendre) = true
 interpolation_grid(dict::Legendre{T}) where T = LegendreNodes{T}(length(dict))
-iscompatible(dict::Legendre, grid::LegendreNodes) = length(dict) == length(grid)
+iscompatiblegrid(dict::Legendre, grid::LegendreNodes) = length(dict) == length(grid)
 isorthogonal(dict::Legendre, measure::GaussLegendre) = opsorthogonal(dict, measure)
 
 gauss_rule(dict::Legendre{T}) where T = GaussLegendre{T}(length(dict))

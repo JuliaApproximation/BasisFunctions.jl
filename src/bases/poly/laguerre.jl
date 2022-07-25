@@ -29,7 +29,7 @@ measure(b::Laguerre) = LaguerreWeight(b.α)
 
 iscompatible(d1::Laguerre, d2::Laguerre) = d1.α == d2.α
 interpolation_grid(dict::Laguerre) = LaguerreNodes(length(dict), dict.α)
-iscompatible(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(grid) && dict.α ≈ grid.α
+iscompatiblegrid(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(grid) && dict.α ≈ grid.α
 isorthogonal(dict::Laguerre, measure::GaussLaguerre) = laguerre_α(dict) ≈ laguerre_α(measure) && opsorthogonal(dict, measure)
 
 isorthonormal(dict::Laguerre, measure::LaguerreWeight) = isorthogonal(dict, measure) && laguerre_α(dict) == 0

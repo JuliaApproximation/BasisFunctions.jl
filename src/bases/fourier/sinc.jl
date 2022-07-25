@@ -1,9 +1,10 @@
 """
-A basis of periodic sinc functions on [0,1].
+A basis of shifted periodic sinc functions on `[0,1]`.
 
-The space of this basis is the same as that of Fourier series.
+The space of this basis is the same as that of Fourier series, except that
+expansions are real-valued by default.
 """
-struct PeriodicSincFunctions{T} <: Dictionary{T,T}
+struct PeriodicSincFunctions{T} <: FourierLike{T,T}
     n   ::  Int
 end
 
@@ -17,47 +18,42 @@ show(io::IO, b::PeriodicSincFunctions{T}) where T =
 similar(b::PeriodicSincFunctions, ::Type{T}, n::Int) where {T} = PeriodicSincFunctions{T}(n)
 
 size(b::PeriodicSincFunctions) = (b.n,)
-support(b::PeriodicSincFunctions{T}) where {T} = UnitInterval{T}()
 
-hasmeasure(b::PeriodicSincFunctions) = true
-measure(b::PeriodicSincFunctions{T}) where T = FourierWeight{T}()
-
-isbasis(b::PeriodicSincFunctions) = true
-isorthogonal(b::PeriodicSincFunctions, ::FourierWeight) = true
-
-
-hasinterpolationgrid(b::PeriodicSincFunctions) = true
 hasderivative(b::PeriodicSincFunctions) = false #for now
 hasantiderivative(b::PeriodicSincFunctions) = false #for now
 
+"Indices of translated sinc functions start at 0."
+struct SincIndex <: AbstractShiftedIndex{1}
+	value	::	Int
+end
 
-period(b::PeriodicSincFunctions{T}, idx) where {T} = T(2)
-
-interpolation_grid(b::PeriodicSincFunctions{T}) where {T} = FourierGrid{T}(b.n)
+ordering(d::PeriodicSincFunctions) = ShiftedIndexList(length(d), SincIndex)
 
 ## Evaluation
 
+"The Dirichlet kernel is the periodic sinc function."
 dirichlet_kernel(n, x) = (abs(x) < 100eps(x)) || (abs(1-x) < 100eps(x)) ? one(x) : one(x)/n*sin( n*(pi*x)) / sin(pi*x)
+"Shifts of the Dirichlet kernel."
 dirichlet_kernel(n, x, k) = dirichlet_kernel(n, (n*x-k)/n)
 
-unsafe_eval_element(dict::PeriodicSincFunctions{T}, idx, x) where {T} =
-    dirichlet_kernel(dict.n, T(x), idx-1)
-
-iscompatible(dict::PeriodicSincFunctions, grid) = iscompatible(Fourier(length(dict)), grid)
-
-hasgrid_transform(dict::PeriodicSincFunctions, gb, grid) =
-    iscompatible(dict, grid)
+unsafe_eval_element(dict::PeriodicSincFunctions{T}, idx::SincIndex, x) where {T} =
+    dirichlet_kernel(dict.n, T(x), value(idx))
 
 transform_from_grid(T, src::GridBasis, dest::PeriodicSincFunctions, grid; options...) =
     IdentityOperator{T}(src, dest)
-
 transform_to_grid(T, src::PeriodicSincFunctions, dest::GridBasis, grid; options...) =
     IdentityOperator{T}(src, dest)
 
 function evaluation(::Type{T}, dict::PeriodicSincFunctions, gb::GridBasis, grid; options...) where {T}
-	if iscompatible(dict, grid)
+	if iscompatiblegrid(dict, grid)
 		transform_to_grid(T, dict, gb, grid; options...)
 	else
-		dense_evaluation(T, dict, gb; options...)
+		default_evaluation(T, dict, gb; options...)
 	end
 end
+
+innerproduct_native(d1::PeriodicSincFunctions{T}, idx1, d2::PeriodicSincFunctions, idx2, μ::FourierWeight; options...) where {T} =
+	idx1 == idx2 ? one(T)/length(d1) : zero(T)
+
+span_issubset(d1::PeriodicSincFunctions{T}, d2::Fourier{T}) where {T} =
+	length(d1) < length(d2) || (length(d1)==length(d2) && oddlength(d2))

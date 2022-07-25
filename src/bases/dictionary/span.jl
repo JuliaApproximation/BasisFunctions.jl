@@ -42,10 +42,20 @@ zero(span::Span) = Expansion(dictionary(span), zeros(dictionary(span)))
 
 tensorproduct(s1::Span, s2::Span) = Span(tensorproduct(dictionary(s1), dictionary(s2)))
 
-==(s1::Span, s2::Span) = false
-==(s1::Span{S,T}, s2::Span{S,T}) where {S,T} =
-    equalspan(s1, s2, dictionary(s1), dictionary(s2))
-equalspan(s1, s2, dict1, dict2) = dict1 == dict2
+==(s1::Span, s2::Span) = span_isequal(dictionary(s1), dictionary(s2))
+span_isequal(d1, d2) = span_isequal1(d1, d2)
+span_isequal1(d1::Dictionary, d2) = span_isequal2(d1, d2)
+span_isequal2(d1, d2::Dictionary) = d1 == d2
+
+issubset(s1::Span, s2::Span) = false
+issubset(s1::Span{S,T}, s2::Span{S,T}) where {S,T} =
+    span_issubset(dictionary(s1), dictionary(s2))
+issubset(s1::Span{S,T}, s2::Span{S,Complex{T}}) where {S,T} =
+    span_issubset(dictionary(s1), dictionary(s2))
+span_issubset(d1, d2) = span_issubset1(d1, d2)
+span_issubset1(d1::Dictionary, d2) = span_issubset2(d1, d2)
+span_issubset2(d1, d2::Dictionary) = span_isequal(d1, d2)
+
 
 size(span::Span) = size(dictionary(span))
 length(span::Span) = length(dictionary(span))

@@ -42,7 +42,7 @@ function approximation(A::Dictionary, B::Dictionary, options...)
     if hastransform(A, B)
         return transform(A, B; options...)
     else
-        error("Don't know a transformation from ", A, " to ", B)
+        error("Don't know a transform from ", A, " to ", B)
     end
 end
 

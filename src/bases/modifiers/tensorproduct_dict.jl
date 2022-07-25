@@ -58,7 +58,7 @@ for op in (:isorthogonal, :isorthonormal)
     @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductWeight) = mapreduce($op, &, components(s), components(m))
 end
 
-for op in (:isorthogonal, :iscompatible)
+for op in (:isorthogonal, :iscompatiblegrid)
     @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, components(s), components(m))
 end
 

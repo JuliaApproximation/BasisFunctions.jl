@@ -44,6 +44,17 @@ innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
 innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
     innerproduct(d1, i, superdict(d2), j, measure; options...)
 
+span_isequal(d1::ComplexifiedDict, d2::ComplexifiedDict) =
+    span_isequal(superdict(d1), superdict(d2))
+
+span_issubset(d1::ComplexifiedDict, d2::ComplexifiedDict) =
+    span_issubset(superdict(d1), superdict(d2))
+span_issubset2(d1, d2::ComplexifiedDict) = span_issubset(d1, superdict(d2))
+
+function conversion2(T, d1, d2::ComplexifiedDict; options...)
+    @assert !isreal(T)
+    conversion2(T, d1, superdict(d2); options...)
+end
 
 ## Printing
 

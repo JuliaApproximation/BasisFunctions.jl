@@ -45,6 +45,7 @@ import Base:
     promote, promote_rule, convert, promote_eltype, widen, convert,
     # array methods
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
+    issubset,
     first, last, copyto!, tail,
     transpose, inv, hcat, vcat, hvcat,
     getindex, setindex!, eltype, @propagate_inbounds,
@@ -200,7 +201,7 @@ export param_dict, ParamDict, image
 export Expansion, TensorProductExpansion,
     expansion, coefficients, dictionary, roots,
     random_expansion, differentiate, antidifferentiate,
-    ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫, iscompatible
+    ∂x, ∂y, ∂z, ∫∂x, ∫∂y, ∫∂z, ∫
 
 # from operator/operator.jl
 export AbstractOperator, DictionaryOperator,

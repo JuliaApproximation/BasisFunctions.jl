@@ -18,7 +18,7 @@ first_moment(b::Hermite{T}) where {T} = sqrt(T(pi))
 
 measure(b::Hermite{T}) where {T} = HermiteWeight{T}()
 interpolation_grid(b::Hermite{T}) where T = HermiteNodes{T}(length(b))
-iscompatible(b::Hermite,grid::HermiteNodes) = length(b) == length(grid)
+iscompatiblegrid(b::Hermite,grid::HermiteNodes) = length(b) == length(grid)
 isorthogonal(dict::Hermite, measure::GaussHermite) = opsorthogonal(dict, measure)
 isorthogonal(::Hermite, ::HermiteWeight) = true
 issymmetric(::Hermite) = true

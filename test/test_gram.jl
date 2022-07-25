@@ -1,5 +1,7 @@
 using BasisFunctions, Test, DoubleFloats
 
+using BasisFunctions: iscompatiblegrid
+
 for T in (Float64,LargeFloat)
 
     @testset "Discrete Gauss OPS Rule" begin
@@ -8,7 +10,7 @@ for T in (Float64,LargeFloat)
             gr = gauss_rule(d)
             @test g ≈ points(gr)
             @test isorthogonal(d, gr)
-            @test iscompatible(d, g)
+            @test iscompatiblegrid(d, g)
             @test gram(d, gr) isa DiagonalOperator
 
             test_orthogonality_orthonormality(d, true, d isa Fourier, gr)
@@ -23,7 +25,7 @@ for T in (Float64,LargeFloat)
         gr = gauss_rule(d)
         @test g ≈ points(gr)
         @test isorthogonal(d, gr)
-        @test iscompatible(d, g)
+        @test iscompatiblegrid(d, g)
         @test gram(d, gr) isa TensorProductOperator && all(map(x->isa(x, DiagonalOperator), components(gram(d,gr))))
         @test BasisFunctions.quadweights(gauss_rule(d),measure(d)) ≈ BasisFunctions.OuterProductArray(map(ones, axes(B^2))...)
 

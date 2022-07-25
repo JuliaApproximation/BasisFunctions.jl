@@ -41,6 +41,7 @@ B = rand(400,2)
 B = rand(2,400)
 @test B*E == Matrix(B)*Matrix(E)
 
+include("test_common.jl")
 include("test_normalization.jl")
 include("test_space.jl")
 include("test_discrete_measure.jl")

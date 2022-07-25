@@ -39,7 +39,7 @@ hasgrid_transform(b::ChebyshevT, gb, ::AbstractGrid) = false
 first_moment(b::ChebyshevT{T}) where {T} = convert(T, pi)
 
 interpolation_grid(b::ChebyshevT{T}) where {T} = ChebyshevNodes{T}(length(b))
-iscompatible(dict::ChebyshevT, grid::ChebyshevNodes) = length(dict) == length(grid)
+iscompatiblegrid(dict::ChebyshevT, grid::ChebyshevNodes) = length(dict) == length(grid)
 secondgrid(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
 transformgrid_extremae(b::ChebyshevT{T}) where {T} = ChebyshevExtremae{T}(length(b))
 

@@ -3,14 +3,18 @@
 abstract type PolynomialBasis{T} <: Dictionary{T,T}
 end
 
-equalspan(s1, s2, dict1::PolynomialBasis, dict2::PolynomialBasis) = true
+span_isequal(d1::PolynomialBasis, d2::PolynomialBasis) = length(d1) == length(d2)
+span_issubset(d1::PolynomialBasis, d2::PolynomialBasis) = length(d1) <= length(d2)
+
 
 ##################
 # Native indices
 ##################
 
-# The native index of a polynomial basis is the degree, which starts from 0 rather
-# than from 1.
+"""
+The native index of a polynomial basis is the degree, which starts from 0 rather
+than from 1.
+"""
 struct PolynomialDegree <: AbstractShiftedIndex{1}
 	value	::	Int
 end
@@ -32,6 +36,7 @@ function sub(b::PolynomialBasis, idx::OrdinalRange)
     end
 end
 
+"Supertype of polynomial basis functions."
 abstract type Polynomial{T} <: AbstractBasisFunction{T,T} end
 
 degree(p::Polynomial) = p.degree
