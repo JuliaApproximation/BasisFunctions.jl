@@ -176,21 +176,18 @@ axes1(d::Dictionary) = Base.OneTo(length(d))
 axes(d::Dictionary) = map(Base.OneTo, size(d))
 
 "Compute the native index corresponding to the given index."
-native_index(dict::Dictionary, idx) = _native_index(dict, idx)
-# We redirect to a fallback _native_index in case the concrete dictionary
-# did not implement native_index.  We explicitly convert a linear index using the ordering.
-# Anything else we throw an error because the index looks invalid
-_native_index(dict::Dictionary, idx::Int) = ordering(dict)[idx]
-_native_index(dict::Dictionary, idx::NativeIndex) = idx
-_native_index(dict::Dictionary, idx::AbstractShiftedIndex) = idx
-_native_index(dict::Dictionary, idx) = throw(ArgumentError("invalid index: $idx"))
+native_index(d::Dictionary, idx) = _native_index(d, idx)
+_native_index(d::Dictionary, idx) = ordering(d)[idx]
 
 "Compute the linear index corresponding to the given index."
-linear_index(dict::Dictionary, idx) = _linear_index(dict, idx)
-# We can accept an integer unchanged, anything else we pass to the ordering
-_linear_index(dict::Dictionary, idx::Int) = idx
-_linear_index(dict::Dictionary, idxn) = ordering(dict)[idxn]
+linear_index(d::Dictionary, idx) = _linear_index(d, idx)
+_linear_index(d::Dictionary, idx::LinearIndex) = idx
+_linear_index(d::Dictionary, idx) = linear_index(ordering(d), idx)
 
+"Compute the multilinear index corresponding to the given index."
+multilinear_index(d::Dictionary, idx) = _multilinear_index(d, idx)
+_multilinear_index(d::Dictionary, idx::MultilinearIndex) = idx
+_multilinear_index(d::Dictionary, idx) = multilinear_index(ordering(d), idx)
 
 ##################################################
 ## Conversion between coefficient representations

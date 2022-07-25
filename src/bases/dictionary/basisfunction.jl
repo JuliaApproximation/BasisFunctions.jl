@@ -42,14 +42,11 @@ Display.displaystencil(φ::BasisFunction) = [dictionary(φ), '[', index(φ), ']'
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))
 
 basisfunction(dict::Dictionary, idx) = BasisFunction(dict, idx)
+basisfunction(dict::Dictionary, I...) = BasisFunction(dict, I)
 
-function getindex(dict::Dictionary, idx)
-    @boundscheck checkbounds(dict, idx)
-    basisfunction(dict, idx)
-end
-function getindex(dict::Dictionary, i, j, indices...)
-    @boundscheck checkbounds(dict, i, j, indices...)
-    basisfunction(dict, (i,j,indices...))
+function getindex(dict::Dictionary, I...)
+    @boundscheck checkbounds(dict, I...)
+    basisfunction(dict, I...)
 end
 
 

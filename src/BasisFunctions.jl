@@ -130,9 +130,7 @@ export component, components, ncomponents, iscomposite,
     dimension
 
 # from bases/dictionary/indexing.jl
-export LinearIndex, NativeIndex,
-    DefaultNativeIndex, DefaultIndexList,
-    value
+export LinearIndex, value
 
 # from maps/partition.jl
 export PiecewiseInterval, Partition,
@@ -296,6 +294,8 @@ export CosineSeries, SineSeries
 # from bases/fourier/sinc.jl
 export PeriodicSincFunctions
 
+# from bases/fourier/trig.jl
+export TrigSeries
 
 # from bases/poly/chebyshev.jl
 export ChebyshevT, ChebyshevU,
@@ -404,6 +404,7 @@ include("bases/fourier/fourier.jl")
 include("bases/fourier/cosineseries.jl")
 include("bases/fourier/sineseries.jl")
 include("bases/fourier/sinc.jl")
+include("bases/fourier/trig.jl")
 
 
 ################################################################

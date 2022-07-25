@@ -12,11 +12,6 @@ export BlockIndex,
 # - an index set is mathematically a set, i.e., it has no duplicates
 # - in addition to being a set, the elements can be ordered and the ordering
 #   is defined by the iterator of the set.
-#
-# The functionality in this file includes:
-# - bounds checking: see `checkbounds` function
-# - conversion between indices of different types
-# - efficient iterators
 
 
 
@@ -32,7 +27,7 @@ in several cases one may index the list with other kinds of indices.
 Concrete subtypes should implement:
 - `getindex(l::MyIndexList, idx::Int)` -> this is the map from linear indices
   to native indices
-- `getindex(l::MyIndexList, idxn::MyIndex)` -> this is the inverse map
+- `linear_index(l::MyIndexList, idxn::MyIndex)` -> this is the inverse map
 - `size(l::MyIndexList)`
 """
 abstract type IndexList{T} <: AbstractVector{T}
@@ -53,6 +48,9 @@ Base.IndexStyle(list::IndexList) = Base.IndexLinear()
 # of the index is determined by its type and, moreover, that linear indices
 # are always Int's. This means that no other index can have type Int.
 const LinearIndex = Int
+
+linear_index(a::AbstractArray, idx::Int) = idx
+
 
 """
 An `AbstractIntegerIndex` represents an integer that is being used as an index
@@ -99,14 +97,14 @@ end
 
 (-)(a::AbstractIntegerIndex) = typeof(a)(-value(a))
 
-# Convenience: make a vector indexable using native indices, if possible
-# It is possible whenever the size and element type of the vector completely
-# determine the index map from native to linear indices
-getindex(v::Array, idxn::AbstractIntegerIndex) =
-    getindex(v, linear_index(idxn, size(v), eltype(v)))
+# Convenience, thoug potentially dangerous: make a vector indexable using
+# native indices. This is possible whenever the size and element type of the
+# vector completely determine the index map from native to linear indices
+getindex(v::AbstractVector, idx::AbstractIntegerIndex) =
+    getindex(v, to_linear_index(idx, size(v), eltype(v)))
 
-setindex!(v::Array, val, idxn::AbstractIntegerIndex) =
-    setindex!(v, val, linear_index(idxn, size(v), eltype(v)))
+setindex!(v::AbstractVector, val, idx::AbstractIntegerIndex) =
+    setindex!(v, val, to_linear_index(idx, size(v), eltype(v)))
 
 
 """
@@ -121,6 +119,8 @@ NativeIndex{S}(a::NativeIndex{S}) where {S} = a
 
 value(idx::NativeIndex) = idx.value
 
+to_linear_index(idx::NativeIndex) = value(idx)
+to_linear_index(idx::NativeIndex, size, T) = linear_index(idx)
 
 
 
@@ -135,14 +135,9 @@ end
 size(list::NativeIndexList) = (list.n,)
 
 getindex(list::NativeIndexList{S}, idx::Int) where {S} = NativeIndex{S}(idx)
-getindex(list::NativeIndexList{S}, idxn::NativeIndex{S}) where {S} = value(idxn)
+getindex(list::NativeIndexList{S}, idx::NativeIndex{S}) where {S} = idx
 
-# In this case, we can compute the linear index without reference to
-# any dictionary or list:
-linear_index(idx::NativeIndex) = value(idx)
-# The line below may be called with the size and eltype of an array when indexing
-# into an array using a native index.
-linear_index(idx::NativeIndex, size, T) = linear_index(idx)
+linear_index(list::NativeIndexList{S}, idxn::NativeIndex{S}) where {S} = value(idxn)
 
 
 """
@@ -164,10 +159,8 @@ abstract type AbstractShiftedIndex{S} <: AbstractIntegerIndex end
 shift(idx::AbstractShiftedIndex{S}) where {S} = S
 value(idx::AbstractShiftedIndex) = idx.value
 
-# Here too, as with the DefaultIndex above, we can compute the linear index
-# without reference to any dictionary or list
-linear_index(idx::AbstractShiftedIndex) = value(idx) + shift(idx)
-linear_index(idx::AbstractShiftedIndex, size, T) = linear_index(idx)
+to_linear_index(idx::AbstractShiftedIndex) = value(idx) + shift(idx)
+to_linear_index(idx::AbstractShiftedIndex, size, T) = linear_index(idx)
 
 
 struct ShiftedIndex{S} <: AbstractShiftedIndex{S}
@@ -187,8 +180,11 @@ ShiftedIndexList(n, T::Type{<:AbstractShiftedIndex{S}}) where {S} =
 size(list::ShiftedIndexList) = (list.n,)
 shift(list::ShiftedIndexList{S,T}) where {S,T} = S
 
-getindex(list::ShiftedIndexList{S,T}, idx::Int) where {S,T} = T(idx-S)
-getindex(list::ShiftedIndexList{S,T}, idxn::AbstractShiftedIndex) where {S,T} = value(idxn)+S
+getindex(list::ShiftedIndexList{S,T}, idx::LinearIndex) where {S,T} = T(idx-S)
+getindex(list::ShiftedIndexList{S}, idx::ShiftedIndex{S}) where {S} = idx
+
+linear_index(list::ShiftedIndexList{S,T}, idxn::AbstractShiftedIndex) where {S,T} =
+	value(idxn)+S
 
 
 
@@ -203,6 +199,10 @@ const ProductIndex{N} = CartesianIndex{N}
 index(idx::ProductIndex) = value(idx)
 # Return the index as a tuple
 indextuple(idx::ProductIndex) = idx.I
+
+"Known types of product indices."
+ProductIndices = Union{NTuple,ProductIndex}
+
 
 
 """
@@ -229,33 +229,26 @@ Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 # the most efficient iteration over product dictionaries is using cartesian indices.
 eachindex(list::ProductIndexList) = CartesianIndices(axes(list))
 
-# We convert between integers and product indices using ind2sub and sub2ind
 product_native_index(size, idx::Int) = ProductIndex(CartesianIndices(size)[idx])
-product_linear_index(size, idxn::ProductIndex) = LinearIndices(size)[indextuple(idxn)...]
-
-
-# We also know how to convert a tuple
 product_native_index(size::NTuple{N,Int}, idx::NTuple{N,Int}) where {N} = ProductIndex(idx)
 product_native_index(size::NTuple{N,Int}, idx::ProductIndex{N}) where {N} = idx
+product_native_index(size::NTuple, idx1::Int, idx2::Int, indices::Int...) =
+	product_native_index(size, (idx1,idx2,indices...))
 
-getindex(list::ProductIndexList, idx::Int) =
-    product_native_index(size(list), idx)
-getindex(list::ProductIndexList, idxn::ProductIndex) =
-    product_linear_index(size(list), idxn)
+getindex(list::ProductIndexList, idx...) = product_native_index(size(list), idx...)
 
-# Convert a tuple of int's or a list of int's to a linear index
-getindex(list::ProductIndexList{N}, idx::NTuple{N,Int}) where {N} =
-    getindex(list, ProductIndex(idx))
-getindex(list::ProductIndexList{N}, idx1::Int, idx2::Int, idx::Int...) where {N} =
-    getindex(list, ProductIndex{N}(idx1, idx2, idx...))
+product_linear_index(size, idx::ProductIndex) = LinearIndices(size)[indextuple(idx)...]
+product_linear_index(list::ProductIndexList, idx::Int) = idx
+product_linear_index(list::ProductIndexList, I...) =
+	product_linear_index(list, product_native_index(I...))
+
+linear_index(list::ProductIndexList, I...) = product_linear_index(size(list), I...)
+
 
 
 ## We implement a promotion system for two indices.
 # The goal is to convert both indices to the Cartesian{N} type, if possible.
 # We leave the indices unchanged if it is not possible.
-
-# This is an exhaustive list of types we know how to convert
-ProductIndices = Union{NTuple,ProductIndex}
 
 # - Both indices are fine:
 promote_product_indices(size::NTuple{N,Int}, idx1::ProductIndex{N}, idx2::ProductIndex{N}) where N = (idx1,idx2)
@@ -301,7 +294,7 @@ const MLIndexList = MultilinearIndexList
 
 size(list::MLIndexList) = (list.offsets[end],)
 
-# Convert a linear index into a multilinear index using the offsets information
+"Convert a linear index into a multilinear index using the offsets information"
 function offsets_multilinear_index(offsets, idx::Int)
     i = 0
     while idx > offsets[i+1]
@@ -310,11 +303,20 @@ function offsets_multilinear_index(offsets, idx::Int)
     BlockIndex(i, idx-offsets[i])
 end
 
-# and vice-versa
-offsets_linear_index(offsets, idx::MultilinearIndices) = offsets[outerindex(idx)] + innerindex(idx)
+getindex(list::MLIndexList, idx::Int) =
+	offsets_multilinear_index(list.offsets, idx)
+getindex(list::MLIndexList, idx::MultilinearIndex) = idx
+getindex(list::MLIndexList, idx::MultilinearIndices) =
+	BlockIndex(outerindex(idx),innerindex(idx))
 
-getindex(list::MLIndexList, idx::Int) = offsets_multilinear_index(list.offsets, idx)
-getindex(list::MLIndexList, idx::MultilinearIndices) = offsets_linear_index(list.offsets, idx)
+multilinear_index(list::MLIndexList, idx) = getindex(list, idx)
+
+"Convert the given index into a multilinear index based on offsets."
+offsets_linear_index(offsets, idx::MultilinearIndices) =
+	offsets[outerindex(idx)] + innerindex(idx)
+offsets_linear_index(offsets, idx::Int) = idx
+
+linear_index(list::MLIndexList, idx) = offsets_linear_index(list.offsets, idx)
 
 
 
@@ -340,7 +342,6 @@ end
 length(it::MultilinearIndexIterator) = sum(it.lengths)
 
 iterate(it::MultilinearIndexIterator) = BlockIndex(1,1), (1,1)
-
 function iterate(it::MultilinearIndexIterator, state)
     i, j = state
     if j == it.lengths[i]
@@ -354,5 +355,4 @@ function iterate(it::MultilinearIndexIterator, state)
 end
 
 Base.eltype(::Type{MultilinearIndexIterator}) = Tuple{Vararg{Int}}
-
 last(iter::MultilinearIndexIterator) = BlockIndex(length(iter.lengths), iter.lengths[end])

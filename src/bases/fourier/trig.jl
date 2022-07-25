@@ -35,5 +35,29 @@ show(io::IO, d::TrigSeries{T}) where T = print(io, "TrigSeries{$(T)}($(length(d)
 
 hasextension(d::TrigSeries) = false
 
-unsafe_eval_element(dict::TrigSeries{T}, idx::SincIndex, x) where {T} =
-    dirichlet_kernel(dict.n, T(x), value(idx))
+hasgrid_transform(d::TrigSeries, gb, grid) = false
+
+## Evaluation and indexing
+
+trig_offsets(d::TrigSeries) = trig_offsets(length(d))
+trig_offsets(n::Int) = (0,coshalf(n),n)
+
+ordering(d::TrigSeries) = MultilinearIndexList(trig_offsets(d))
+
+function unsafe_eval_element(d::TrigSeries{T}, idx::MultilinearIndex, x) where {T}
+	i,j = outerindex(idx), innerindex(idx)
+	if i == 1
+		cospi(T(2)*(j-1)*x)
+	else
+		sinpi(T(2)*j*x)
+	end
+end
+
+## Coefficients
+
+function zeros(::Type{T}, d::TrigSeries) where {T}
+    Z = BlockArray{T}(undef,[coshalf(d),sinhalf(d)])
+    fill!(Z, 0)
+    Z
+end
+tocoefficientformat(a, d::TrigSeries) = BlockVector(a, [coshalf(d),sinhalf(d)])

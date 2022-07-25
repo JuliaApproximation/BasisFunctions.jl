@@ -100,41 +100,26 @@ hasantiderivative(Φ::CompositeDict, order) =
 
 coefficienttype(dict::CompositeDict) = coefficienttype(component(dict,1))
 
+
 ##################
 # Indexing
 ##################
 
-
-native_index(dict::CompositeDict, idx::MultilinearIndex) = idx
-
-multilinear_index(dict::CompositeDict, idx::LinearIndex) =
-    offsets_multilinear_index(unsafe_offsets(dict), idx)
-
-linear_index(dict::CompositeDict, idx::MultilinearIndex) =
-    offsets_linear_index(unsafe_offsets(dict), idx)
-
-
 # The native index is a MultilinearIndex, defined in basis/dictionary/indexing.jl
 ordering(d::CompositeDict) = MultilinearIndexList(unsafe_offsets(d))
 
-# # We have to amend the boundscheck ecosystem to catch some cases:
-# # - This line will catch indexing with tuples of integers, and we assume
-# #   the user wanted to use a CartesianIndex
-# checkbounds(::Type{Bool}, d::CompositeDict, idx::MultilinearIndices) =
-#     checkbounds(Bool, d, (outerindex(idx), linear_index(component(d,innerindex(idx)), outerindex(idx))))
-# # - and this line to avoid an ambiguity
-# checkbounds(::Type{Bool}, d::CompositeDict, idx::Tuple{Int,Int}) =
-#     checkbounds(Bool, d, linear_index(d, idx))
-
 # For getindex: return indexed basis function of the underlying set
-getindex(dict::CompositeDict, idx::LinearIndex) = getindex(dict, native_index(dict, idx))
-getindex(dict::CompositeDict, idx::MultilinearIndices) = dict.dicts[outerindex(idx)][innerindex(idx)]
+basisfunction(dict::CompositeDict, idx::LinearIndex) =
+    basisfunction(dict, native_index(dict, idx))
+basisfunction(dict::CompositeDict, idx::MultilinearIndices) =
+    dict.dicts[outerindex(idx)][innerindex(idx)]
 
 
 dict_in_support(set::CompositeDict, idx, x) = _dict_in_support(set, components(set), idx, x)
 _dict_in_support(set::CompositeDict, dicts, idx, x) = in_support(dicts[outerindex(idx)], innerindex(idx), x)
 
 eachindex(set::CompositeDict) = MultilinearIndexIterator(map(length, components(set)))
+
 
 ## Extension and restriction
 
@@ -146,16 +131,12 @@ for op in [:extension, :restriction]
 end
 
 # Calling and evaluation
-unsafe_eval_element(set::CompositeDict, idx::Int, x) = unsafe_eval_element(set, multilinear_index(set,idx), x)
 
 unsafe_eval_element(set::CompositeDict{S,T}, idx::MultilinearIndices, x) where {S,T} =
     convert(T, unsafe_eval_element( component(set, outerindex(idx)), innerindex(idx), x))
 
-unsafe_eval_element_derivative(set::CompositeDict, idx::Int, x, order) = unsafe_eval_element_derivative(set, multilinear_index(set,idx), x, order)
-
 unsafe_eval_element_derivative(set::CompositeDict{S,T}, idx::MultilinearIndices, x, order) where {S,T} =
     convert(T, unsafe_eval_element_derivative( component(set, outerindex(idx)), innerindex(idx), x, order))
-
 
 derivative_dict(s::CompositeDict, order; options...) =
     similardictionary(s,map(u->derivative_dict(u, order; options...), components(s)))

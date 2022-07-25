@@ -156,8 +156,11 @@ function getindex(m::FFTIndexList, idx::Int)
 	end
 end
 
-function getindex(list::FFTIndexList, idxn::FourierFrequency)
-	k = value(idxn)
+getindex(m::FFTIndexList, idx::FourierFrequency) = idx
+
+linear_index(list::FFTIndexList, idx::LinearIndex) = idx
+function linear_index(list::FFTIndexList, idx::FourierFrequency)
+	k = value(idx)
 	k >= 0 ? k+1 : length(list)+k+1
 end
 
@@ -165,7 +168,8 @@ ordering(b::Fourier) = FFTIndexList(length(b))
 
 # Shorthand: compute the linear index based on the size and element type
 # of an array only
-linear_index(idxn::FourierFrequency, size::Tuple{Int}, T) = FFTIndexList(size[1])[idxn]
+to_linear_index(idxn::FourierFrequency, size::Tuple{Int}, T) =
+	linear_index(FFTIndexList(size[1]),idxn)
 
 # Convenience: compute with integer frequencies, rather than FourierFrequency types
 idx2frequency(b::Fourier, idx) = frequency(native_index(b, idx))

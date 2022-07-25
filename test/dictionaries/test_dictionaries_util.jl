@@ -14,7 +14,7 @@ supports_approximation(::Monomials) = false
 supports_approximation(::RationalFunctions) = false
 
 # Make a simple periodic function for Fourier and other periodic sets
-suitable_function(::Fourier) =  x -> 1/(10+cos(2*pi*x))
+suitable_function(::BasisFunctions.FourierLike) =  x -> 1/(10+cos(2*pi*x))
 suitable_function(::PeriodicSincFunctions) =  x -> cos(2*pi*x)
 # The function has to be periodic and even symmetric
 suitable_function(::CosineSeries) =  x -> 1/(10+cos(2*pi*x))

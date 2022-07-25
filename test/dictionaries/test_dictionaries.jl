@@ -41,6 +41,7 @@ test_dictionaries = [Fourier,
     CosineSeries,
     SineSeries,
     PeriodicSincFunctions,
+    TrigSeries,
     Monomials,
     RationalFunctions]
 
