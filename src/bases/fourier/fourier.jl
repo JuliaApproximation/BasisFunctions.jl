@@ -193,9 +193,9 @@ exponent(b::Fourier, i::Int) = exponent(b, native_index(b, i))
 # Even-length Fourier series have a cosine at the maximal frequency.
 iscosine(b::Fourier, k::FourierFrequency) = iseven(length(b)) && (k==length(b)>>1)
 
-function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
-	z = exp(exponent(b, idxn)*x)
-	if iscosine(b, idxn)
+function unsafe_eval_element(b::Fourier, idx::FourierFrequency, x)
+	z = exp(exponent(b, idx)*x)
+	if iscosine(b, idx)
 		# The cosine is the real part of the exponential, but we make it a complex
 		# number for type-stability
 		z = complex(real(z))
@@ -203,11 +203,11 @@ function unsafe_eval_element(b::Fourier, idxn::FourierFrequency, x)
 	z
 end
 
-function unsafe_eval_element_derivative(b::Fourier, idxn::FourierFrequency, x, order)
+function unsafe_eval_element_derivative(b::Fourier, idx::FourierFrequency, x, order)
 	@assert order >= 0
-	f = exponent(b, idxn)
+	f = exponent(b, idx)
 	z = f^order * exp(f * x)
-	if iscosine(b, idxn)
+	if iscosine(b, idx)
 		# We have to take the real part for the cosine, yet return a complex number
 		z = complex(real(z))
 	end

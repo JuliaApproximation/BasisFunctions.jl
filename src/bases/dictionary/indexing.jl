@@ -57,49 +57,43 @@ An `AbstractIntegerIndex` represents an integer that is being used as an index
 in the BasisFunctions package.
 
 The type implements basic functionality of integers such that one can do
-computations with the indices or construct ranges.
+computations with the indices.
 """
-abstract type AbstractIntegerIndex <: Integer end
+abstract type AbstractIntegerIndex end
 
-# Convert to or back from other integers
-convert(I::Type{<:AbstractIntegerIndex}, value::Int) = I(value)
 convert(::Type{T}, idx::AbstractIntegerIndex) where {T<:Integer} = convert(T, value(idx))
+convert(::Type{T}, idx::AbstractIntegerIndex) where {T <: AbstractFloat} = convert(T, value(idx))
 
-# Some functionality of numbers that one might encounter in other conversions:
-# - These lines support conversion to BigFloat
-Base.div(idx::AbstractIntegerIndex, x::Integer, r::RoundingMode) = div(value(idx), x, r)
-Base.div(x::Integer, idx::AbstractIntegerIndex, r::RoundingMode) = div(x, value(idx), r)
-Base.div(i::AbstractIntegerIndex, j::AbstractIntegerIndex, r::RoundingMode) = div(value(i), value(j), r)
-# - These lines support conversion to Double64 (among other things)
-convert(::Type{Float32}, idx::AbstractIntegerIndex) = convert(Float32, value(idx))
-convert(::Type{Float64}, idx::AbstractIntegerIndex) = convert(Float64, value(idx))
-# Float32(idx::AbstractIntegerIndex) = Float32(value(idx))
-Float64(idx::AbstractIntegerIndex) = Float64(value(idx))
-
-
-# convert(::Type{T}, idx::AbstractIntegerIndex) where {T} = convert(T, value(idx))
-# Resolve an ambiguity with mpfr code...
-# convert(::Type{BigFloat}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
-# convert(::Type{Double64}, idx::AbstractIntegerIndex) = convert(BigFloat, value(idx))
-
-# With this line we inherit binary operations involving integers and native indices
 Base.promote_rule(I::Type{<:AbstractIntegerIndex}, ::Type{Int}) = I
-# For floating points, we choose to convert to the numeric value
 Base.promote_rule(I::Type{<:AbstractIntegerIndex}, F::Type{<:AbstractFloat}) = F
 
-for op in (:+, :-, :*)
-    @eval $op(a::I, b::I) where {I<:AbstractIntegerIndex} = I($op(value(a),value(b)))
+# do basic arithmetics while preserving index type
+for op in (:+, :-)
+	@eval $op(a::I, b::Integer) where {I <: AbstractIntegerIndex} = I($op(value(a),b))
+	@eval $op(a::Integer, b::I) where {I <: AbstractIntegerIndex} = I($op(a,value(b)))
+	@eval $op(a::I, b::I) where {I <: AbstractIntegerIndex} = I($op(value(a),b))
+	@eval $op(a::I, b::I) where {I <: AbstractIntegerIndex} = I($op(a,value(b)))
+	@eval $op(a::I, b::Number) where {I <: AbstractIntegerIndex} = $op(value(a),b)
+	@eval $op(a::Number, b::I) where {I <: AbstractIntegerIndex} = $op(a,value(b))
 end
 
-for op in (:<, :<=, :>, :>=)
-    @eval $op(a::I, b::I) where {I<:AbstractIntegerIndex} = $op(value(a),value(b))
+for op in (:*, :/, :<, :<=, :>, :>=)
+	@eval $op(a::AbstractIntegerIndex, b::Number) = $op(value(a),b)
+	@eval $op(a::Number, b::AbstractIntegerIndex) = $op(a,value(b))
 end
 
-(-)(a::AbstractIntegerIndex) = typeof(a)(-value(a))
+==(a::AbstractIntegerIndex, b::Number) = value(a) == b
+==(a::Number, b::AbstractIntegerIndex) = a == value(b)
+Base.abs(a::AbstractIntegerIndex) = typeof(a)(abs(value(a)))
 
-# Convenience, thoug potentially dangerous: make a vector indexable using
-# native indices. This is possible whenever the size and element type of the
+(-)(a::AbstractIntegerIndex) = -value(a)
+
+# Convenience, make a vector indexable using native indices.
+# This is possible whenever the size and element type of the
 # vector completely determine the index map from native to linear indices
+# Note: this is potentially dangerous because the index also behaves like
+# an integer, but the index and the integer do not point to the same element
+# in the vector v.
 getindex(v::AbstractVector, idx::AbstractIntegerIndex) =
     getindex(v, to_linear_index(idx, size(v), eltype(v)))
 
@@ -160,7 +154,7 @@ shift(idx::AbstractShiftedIndex{S}) where {S} = S
 value(idx::AbstractShiftedIndex) = idx.value
 
 to_linear_index(idx::AbstractShiftedIndex) = value(idx) + shift(idx)
-to_linear_index(idx::AbstractShiftedIndex, size, T) = linear_index(idx)
+to_linear_index(idx::AbstractShiftedIndex, size, T) = to_linear_index(idx)
 
 
 struct ShiftedIndex{S} <: AbstractShiftedIndex{S}
@@ -181,10 +175,10 @@ size(list::ShiftedIndexList) = (list.n,)
 shift(list::ShiftedIndexList{S,T}) where {S,T} = S
 
 getindex(list::ShiftedIndexList{S,T}, idx::LinearIndex) where {S,T} = T(idx-S)
-getindex(list::ShiftedIndexList{S}, idx::ShiftedIndex{S}) where {S} = idx
+getindex(list::ShiftedIndexList{S}, idx::AbstractShiftedIndex{S}) where {S} = idx
 
-linear_index(list::ShiftedIndexList{S,T}, idxn::AbstractShiftedIndex) where {S,T} =
-	value(idxn)+S
+linear_index(list::ShiftedIndexList{S}, idx::AbstractShiftedIndex{S}) where {S} =
+	to_linear_index(idx)
 
 
 
