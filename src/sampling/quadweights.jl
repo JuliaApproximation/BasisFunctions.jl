@@ -87,10 +87,7 @@ end
 quadweights(grid::AbstractGrid, measure::Weight) =
 	default_quadratureweights(grid, measure)
 
-function default_quadratureweights(grid, measure)
-	@debug "No known quadrature normalization available for grid $(typeof(grid)) with measure $(typeof(measure)) \n choosing Riemann sum normalization"
-	riemann_normalization(grid, measure)
-end
+default_quadratureweights(grid, measure) = riemann_normalization(grid, measure)
 
 # Fall back in 1d. We don't know any special properties of the grid: we use a
 # Riemann sum and multiply by the weight function of the measure on the grid.

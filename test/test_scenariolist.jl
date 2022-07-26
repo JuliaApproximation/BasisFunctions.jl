@@ -13,14 +13,14 @@ using BasisFunctions
     g = interpolation_grid(Fourier(3) → -1..1)
     g1 = gram(Fourier(3) → -1..1,discretemeasure(map_grid(forward_map(g),FourierGrid(6))))
     g2 = gram(Fourier(3),discretemeasure(FourierGrid(6)))
-    g3 = BasisFunctions.default_gram(Fourier(3),discretemeasure(FourierGrid(6)); warnslow=false)
+    g3 = BasisFunctions.default_gram(Fourier(3),discretemeasure(FourierGrid(6)))
 
     @test g1≈g2≈g3
 
 
     g1 = gram(Fourier(3) → -1..1)
     g2 = gram(Fourier(3))
-    g3 = BasisFunctions.default_gram(Fourier(3); warnslow=false)
+    g3 = BasisFunctions.default_gram(Fourier(3))
 
     @test g1≈g2≈g3
 

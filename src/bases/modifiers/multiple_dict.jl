@@ -161,9 +161,9 @@ evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; option
 
 
 
-function gramdual(dict::MultiDict, measure::Measure; options...)
-    @debug "Are you sure you want `gramdual` and not `weightedsumdual`?"
-    default_gramdual(dict, measure; options...)
+function gramdual(dict::MultiDict, measure::Measure; verbose=false, options...)
+    verbose && println("WARN: Are you sure you want `gramdual` and not `weightedsumdual`?")
+    default_gramdual(dict, measure; verbose, options...)
 end
 
 ## Rescaling

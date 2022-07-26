@@ -277,23 +277,24 @@ evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::FourierGrid; options..
 	resize_and_transform(T, dict, gb, grid; options...)
 
 
-function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquispacedGrid; options...) where {T}
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquispacedGrid; verbose=false, options...) where {T}
 	if coverdomain(grid)≈support(dict)
-		resize_and_transform(T, dict, gb, grid; options...)
+		resize_and_transform(T, dict, gb, grid; verbose, options...)
 	else
-		@debug "Periodic grid mismatch with Fourier basis"
-		default_evaluation(T, dict, gb; options...)
+		verbose && println("WARN: Periodic grid mismatch with Fourier basis")
+		default_evaluation(T, dict, gb; verbose, options...)
 	end
 end
 
-function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; options...) where {T}
+function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; verbose=false, options...) where {T}
 	grid2 = to_periodic_grid(dict, grid)
 	if grid2 != nothing
 		gb2 = GridBasis{T}(grid2)
-		evaluation(T, dict, gb2, grid2; options...) * gridconversion(gb, gb2; options...)
+		evaluation(T, dict, gb2, grid2; verbose, options...) *
+			gridconversion(gb, gb2; verbose, options...)
 	else
-		@debug "Evaluation: could not convert $(string(grid)) to periodic grid"
-		default_evaluation(T, dict, gb; options...)
+		verbose && println("WARN: Evaluation: could not convert $(string(grid)) to periodic grid")
+		default_evaluation(T, dict, gb; verbose, options...)
 	end
 end
 

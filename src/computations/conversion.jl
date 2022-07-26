@@ -165,9 +165,10 @@ conversion(::Type{T}, src, dest; options...) where {T} =
     conversion1(T, src, dest; options...)
 conversion1(T, src::Dictionary, dest; options...) =
     conversion2(T, src, dest; options...)
-function conversion2(T, src, dest::Dictionary; options...)
+function conversion2(T, src, dest::Dictionary; verbose=false, options...)
     if issubset(Span(src), Span(dest))
-        default_conversion(T, src, dest; options...)
+        verbose && println("WARN: using default conversion from $(src) to $(dest)")
+        default_conversion(T, src, dest; verbose, options...)
     else
         error("No known exact conversion from $(src) to $(dest)")
     end

@@ -120,7 +120,7 @@ function svd_factorization(op::DictionaryOperator)
 end
 
 function regularized_svd_factorization(op::DictionaryOperator;
-            verbose = false, threshold = 1000*eps(real(eltype(op))), options...)
+            verbose=false, threshold = 1000*eps(real(eltype(op))), options...)
     F = svd_factorization(op)
     U = F.U
     S = F.S

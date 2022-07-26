@@ -40,10 +40,8 @@ similar_operator(op::ChebyshevDifferentiation, src, dest) =
 
 unsafe_wrap_operator(src, dest, op::ChebyshevDifferentiation) = similar_operator(op, src, dest)
 
-function adjoint(op::ChebyshevDifferentiation)
-    @warn "Inefficient adjoint of `ChebyshevDifferentiation`"
-    ArrayOperator(adjoint(Matrix(op)), dest(op), src(op))
-end
+adjoint(op::ChebyshevDifferentiation) =
+    ArrayOperator(adjoint(matrix(op)), dest(op), src(op))
 
 conj(op::ChebyshevDifferentiation) = op
 

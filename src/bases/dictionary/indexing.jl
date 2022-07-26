@@ -72,7 +72,6 @@ for op in (:+, :-)
 	@eval $op(a::I, b::Integer) where {I <: AbstractIntegerIndex} = I($op(value(a),b))
 	@eval $op(a::Integer, b::I) where {I <: AbstractIntegerIndex} = I($op(a,value(b)))
 	@eval $op(a::I, b::I) where {I <: AbstractIntegerIndex} = I($op(value(a),b))
-	@eval $op(a::I, b::I) where {I <: AbstractIntegerIndex} = I($op(a,value(b)))
 	@eval $op(a::I, b::Number) where {I <: AbstractIntegerIndex} = $op(value(a),b)
 	@eval $op(a::Number, b::I) where {I <: AbstractIntegerIndex} = $op(a,value(b))
 end
