@@ -191,7 +191,8 @@ exponent(b::Fourier{T}, k::FourierFrequency) where {T} = 2*T(pi)*im*k
 exponent(b::Fourier, i::Int) = exponent(b, native_index(b, i))
 
 # Even-length Fourier series have a cosine at the maximal frequency.
-iscosine(b::Fourier, k::FourierFrequency) = iseven(length(b)) && (k==length(b)>>1)
+iscosine(b::Fourier, k::FourierFrequency) = iscosine(b, value(k))
+iscosine(b::Fourier, idx::Int) = iseven(length(b)) && (idx==length(b)>>1)
 
 function unsafe_eval_element(b::Fourier, idx::FourierFrequency, x)
 	z = exp(exponent(b, idx)*x)
@@ -609,18 +610,19 @@ function innerproduct_fourier_part(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq,
 	# convert 2π to type S and 2πi to type T
 	twopi = 2*S(pi)
 	tpi = 2im*T(pi)
+	vali, valj = value(i), value(j)
 	if iscosine(b1, i)
 		if iscosine(b2, j)
 			if abs(i) == abs(j)
 				T(-cos(twopi*i*a)*sin(twopi*i*a)+cos(twopi*i*b)*sin(twopi*i*b)-twopi*i*(a-b))/(2*twopi*i)
 			else
-				T((-i-j)*sin(twopi*(i-j)*a)+(i+j)*sin(twopi*(i-j)*b)-(sin(twopi*(i+j)*a)-sin(twopi*(i+j)*b))*(i-j))/(2*i^2*twopi-2*j^2*twopi)
+				T((-i-j)*sin(twopi*(i-j)*a)+(i+j)*sin(twopi*(i-j)*b)-(sin(twopi*(i+j)*a)-sin(twopi*(i+j)*b))*(i-j))/(2*vali^2*twopi-2*valj^2*twopi)
 			end
 		else
 			if i == j
 				((-cos(twopi*i*a)-sin(twopi*i*a))*exp(tpi*a)+exp(tpi*b)*(sin(twopi*i*b)+cos(twopi*i*b)))/(2*twopi*i)
 			else
-				(-T(im)*j*exp(tpi*j*a)*cos(twopi*i*a)+T(im)*j*exp(tpi*j*b)*cos(twopi*i*b)-i*exp(tpi*j*a)*sin(twopi*i*a)+i*exp(tpi*j*b)*sin(twopi*i*b))/((2*i^2-2*j^2)*S(pi))
+				(-T(im)*j*exp(tpi*j*a)*cos(twopi*i*a)+T(im)*j*exp(tpi*j*b)*cos(twopi*i*b)-i*exp(tpi*j*a)*sin(twopi*i*a)+i*exp(tpi*j*b)*sin(twopi*i*b))/((2*vali^2-2*valj^2)*S(pi))
 			end
 		end
 	else
@@ -628,7 +630,7 @@ function innerproduct_fourier_part(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq,
 			if abs(i) == abs(j)
 				(-T(im)*cos(twopi*i*a)^2-cos(twopi*i*a)*sin(twopi*i*a)+T(im)*cos(twopi*i*b)^2+cos(twopi*i*b)*sin(twopi*i*b)-twopi*i*(a-b))/(2*twopi*i)
 			else
-				(-T(im)*i*exp(-tpi*i*a)*cos(twopi*j*a)+T(im)*i*exp(-tpi*i*b)*cos(twopi*j*b)+j*exp(-tpi*i*a)*sin(twopi*j*a)-j*exp(-tpi*i*b)*sin(twopi*j*b))/((2*i^2-2*j^2)*pi)
+				(-T(im)*i*exp(-tpi*i*a)*cos(twopi*j*a)+T(im)*i*exp(-tpi*i*b)*cos(twopi*j*b)+j*exp(-tpi*i*a)*sin(twopi*j*a)-j*exp(-tpi*i*b)*sin(twopi*j*b))/((2*vali^2-2*valj^2)*pi)
 			end
 		else
 			if i == j
