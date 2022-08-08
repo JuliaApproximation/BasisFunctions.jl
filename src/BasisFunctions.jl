@@ -112,7 +112,8 @@ import GridArrays: subindices, resize, name,
     apply_map, mapping, covering,
     →, rescale
 
-using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
+using GridArrays: SubGrid, MaskedGrid, IndexSubGrid,
+    ChebyshevPoints2
 
 
 ## Exports

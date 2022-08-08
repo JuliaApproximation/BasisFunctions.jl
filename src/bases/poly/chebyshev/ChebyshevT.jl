@@ -11,8 +11,6 @@ show(io::IO, d::ChebyshevT{T}) where T = print(io, "ChebyshevT{$(T)}($(length(d)
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
-@deprecate ChebyshevT(n, a::Number, b::Number) ChebyshevT(n)→a..b
-
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
 
 convert(::Type{ChebyshevT{T}}, d::ChebyshevT) where {T} = ChebyshevT{T}(d.n)

@@ -85,9 +85,6 @@ Fourier(n::Int) = Fourier{Float64}(n)
 convert(::Type{Fourier{T}}, d::Fourier) where {T} = Fourier{T}(d.n)
 tofourier(d::FourierLike{T}) where {T} = convert(Fourier{T}, d)
 
-@deprecate Fourier(n, a::Number, b::Number) Fourier(n)→a..b
-@deprecate Fourier{T}(n, a::Number, b::Number) where {T} Fourier(n)→a..b
-
 size(b::Fourier) = (b.n,)
 
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)

@@ -1,6 +1,4 @@
 
-@deprecate gaussweights quadweights
-
 quadweights(dmeasure::DiscreteWeight, measure::Weight) =
     quadweights(points(dmeasure), weights(dmeasure), measure)
 

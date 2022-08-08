@@ -1,6 +1,4 @@
 
-@deprecate point_in_domain(basis::Dictionary, scalar) affine_point_in_domain(basis, scalar) false
-
 # Interpolate linearly between the extrema of the support, using the value 0 <= scalar <= 1
 affine_point_in_domain(basis::Dictionary, scalar) = affine_point_in_domain(support(basis), scalar)
 

@@ -20,21 +20,6 @@ should be exact - otherwise use a projection.
 """
 conversion
 
-@deprecate op_eltype operatoreltype
-@deprecate evaluation_operator evaluation
-@deprecate interpolation_operator evaluation
-@deprecate approximation_operator approximation
-@deprecate transform_operator transform
-@deprecate extension_operator extension
-@deprecate restriction_operator restriction
-@deprecate differentiation_operator differentiation
-@deprecate antidifferentiation_operator antidifferentiation
-@deprecate DictFun Expansion
-@deprecate DictFun1d Expansion1d
-@deprecate DictFun2d Expansion2d
-@deprecate DictFun3d Expansion3d
-@deprecate DictFun4d Expansion4d
-
 operatoreltype(Φ::Dictionary...) = promote_type(map(coefficienttype, Φ)...)
 
 for op in (:conversion, :extension, :restriction, :evaluation)
