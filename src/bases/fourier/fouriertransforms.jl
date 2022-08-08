@@ -34,21 +34,31 @@ forward_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T} =
 
 
 inverse_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T <: FFTW_TYPES} =
-    bfftw_operator(src, dest, Complex{T}; options...)
+    bfft_operator(src, dest, Complex{T}; options...)
 
 function forward_fourier_operator(src, dest, ::Type{Complex{T}}; options...) where {T <: FFTW_TYPES}
-    t_op = fftw_operator(src, dest, Complex{T}; options...)
+    t_op = fft_operator(src, dest, Complex{T}; options...)
     1/convert(T, length(src)) * t_op
 end
 
+# TODO: this is the goal
+# function bfft_operator(src, dest, ::Type{T}; fftwflags=nothing, options...) where {T}
+#     dims = 1:dimension(src)
+#     if fftwflags == nothing
+#         plan = plan_bfft!(zeros(T, dest), dims)
+#     else
+#         plan = plan_bfft!(zeros(T, dest), dims; flags = fftwflags)
+#     end
+#     MultiplicationOperator{T}(src, dest, plan; inplace = true)
+# end
 
-function bfftw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+function bfft_operator(src, dest, ::Type{T}; fftwflags=FFTW.MEASURE, options...) where {T}
     dims = 1:dimension(src)
     plan = plan_bfft!(zeros(T, dest), dims; flags = fftwflags)
     MultiplicationOperator{T}(src, dest, plan; inplace = true)
 end
 
-function fftw_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
+function fft_operator(src, dest, ::Type{T}; fftwflags = FFTW.MEASURE, options...) where {T}
     dims = 1:dimension(src)
     plan = plan_fft!(zeros(T, dest), dims; flags = fftwflags)
     MultiplicationOperator{T}(src, dest, plan; inplace = true)
@@ -63,17 +73,17 @@ const IFFTPLAN{T,N} = FFTW.cFFTWPlan{T,1,true,N,UnitRange{Int64}} where {T,N}
 
 # We define adjoints ourselves, since FFTW doesn't
 adjoint_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    bfftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
+    bfft_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 adjoint_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    fftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
+    fft_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 # Explicitly return an inverse in order to avoid creating a scaled FFT plan.
 inv_multiplication(op::MultiplicationOperator, object::FFTPLAN) =
-    1/convert(eltype(object), length(src(op))) * bfftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
+    1/convert(eltype(object), length(src(op))) * bfft_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 inv_multiplication(op::MultiplicationOperator, object::IFFTPLAN) =
-    1/convert(eltype(object), length(src(op))) * fftw_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
+    1/convert(eltype(object), length(src(op))) * fft_operator(dest(op), src(op), eltype(object); fftwflags=object.flags)
 
 
 adjoint_function(op::FunctionOperator, fun::typeof(fft)) =

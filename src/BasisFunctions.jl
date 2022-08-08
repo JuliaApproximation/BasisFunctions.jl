@@ -120,7 +120,7 @@ using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
 # Re-exports
 export component, components, ncomponents, iscomposite,
     factors, factor, nfactors,
-    ChebyshevNodes, ChebyshevGrid, ChebyshevPoints, ChebyshevExtremae,
+    ChebyshevNodes, ChebyshevPoints, ChebyshevPoints2, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
     ×,
