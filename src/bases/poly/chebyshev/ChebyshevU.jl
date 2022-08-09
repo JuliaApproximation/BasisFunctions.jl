@@ -26,7 +26,7 @@ issymmetric(::ChebyshevU) = true
 measure(dict::ChebyshevU{T}) where {T} = ChebyshevUWeight{T}()
 hasmeasure(::ChebyshevU) = true
 
-function innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight;
+function dict_innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight;
 			T = coefficienttype(b1), options...)
 	if i == j
 		convert(T, pi)/2
@@ -57,7 +57,9 @@ struct ChebyshevUPolynomial{T} <: OrthogonalPolynomial{T}
     degree  ::  Int
 end
 
+ChebyshevUPolynomial(args...; options...) = ChebyshevUPolynomial{Float64}(args...; options...)
 ChebyshevUPolynomial{T}(p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
+ChebyshevUPolynomial{T}(; degree) where {T} = ChebyshevUPolynomial(degree)
 
 show(io::IO, p::ChebyshevUPolynomial) = print(io, "U_$(degree(p))(x) (Chebyshev polynomial of the second kind)")
 

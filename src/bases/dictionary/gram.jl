@@ -24,30 +24,37 @@ end
 # Shortcut: Dictionaries of the same type have just one measure
 defaultmeasure(Φ1::D, Φ2::D) where {D <: Dictionary} = measure(Φ1)
 
+@deprecate innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) dict_innerproduct(Φ1, i, Φ2, j; options...)
+@deprecate innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct(Φ1, i, Φ2, j, measure; options...)
+@deprecate innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct_native(Φ1, i, Φ2, j, measure; options...)
+@deprecate innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct1(Φ1, i, Φ2, j, measure; options...)
+@deprecate innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
 
-innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) =
-    innerproduct(Φ1, i, Φ2, j, defaultmeasure(Φ1, Φ2); options...)
+dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) =
+    dict_innerproduct(Φ1, i, Φ2, j, defaultmeasure(Φ1, Φ2); options...)
 
 # Convert linear indices to native indices, then call innerproduct_native
-innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j::Int, measure; options...) =
-    innerproduct_native(Φ1, native_index(Φ1, i), Φ2, native_index(Φ2, j), measure; options...)
-innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j::Int, measure; options...) =
-    innerproduct_native(Φ1, i, Φ2, native_index(Φ2, j), measure; options...)
-innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j, measure; options...) =
-    innerproduct_native(Φ1, native_index(Φ1, i), Φ2, j, measure; options...)
-innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
-    innerproduct_native(Φ1, i, Φ2, j, measure; options...)
+dict_innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j::Int, measure; options...) =
+    dict_innerproduct_native(Φ1, native_index(Φ1, i), Φ2, native_index(Φ2, j), measure; options...)
+dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j::Int, measure; options...) =
+    dict_innerproduct_native(Φ1, i, Φ2, native_index(Φ2, j), measure; options...)
+dict_innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j, measure; options...) =
+    dict_innerproduct_native(Φ1, native_index(Φ1, i), Φ2, j, measure; options...)
+dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
+    dict_innerproduct_native(Φ1, i, Φ2, j, measure; options...)
 
 # - innerproduct_native: if not specialized, called innerproduct1
-innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
-    innerproduct1(Φ1, i,  Φ2, j, measure; options...)
+dict_innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
+    dict_innerproduct1(Φ1, i, Φ2, j, measure; options...)
 # - innerproduct1: possibility to dispatch on the first dictionary without ambiguity.
 #                  If not specialized, we call innerproduct2
-innerproduct1(Φ1::Dictionary, i, Φ2, j, measure; options...) =
-    innerproduct2(Φ1, i, Φ2, j, measure; options...)
+dict_innerproduct1(Φ1::Dictionary, i, Φ2, j, measure; options...) =
+    dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
 # - innerproduct2: possibility to dispatch on the second dictionary without ambiguity
-innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; options...) =
+function dict_innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; verbose=false, options...)
+	verbose && println("Invoking default inner product")
     default_dict_innerproduct(Φ1, i, Φ2, j, measure; options...)
+end
 
 
 # Make a quadrature strategy using user-supplied atol and rtol if they were given
@@ -125,7 +132,7 @@ end
 
 
 gramelement(dict::Dictionary, i, j, μ = measure(dict); options...) =
-    innerproduct(dict, i, dict, j, μ; options...)
+    dict_innerproduct(dict, i, dict, j, μ; options...)
 
 # Call this routine in order to evaluate the Gram matrix entry numerically
 default_gramelement(dict::Dictionary, i, j, μ = measure(dict); options...) =
@@ -194,7 +201,7 @@ function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::Measure; options..
 	n = length(Φ)
 	diag = zeros(T, n)
 	for i in 1:n
-		diag[i] = innerproduct(Φ, i, Φ, i, μ; options...)
+		diag[i] = dict_innerproduct(Φ, i, Φ, i, μ; options...)
 	end
 	DiagonalOperator(Φ, diag)
 end
@@ -287,7 +294,7 @@ function mixedgrammatrix!(G, Φ1::Dictionary, Φ2::Dictionary, μ; options...)
     n = length(Φ2)
     for i in 1:m
         for j in 1:n
-            G[i,j] = innerproduct(Φ1, i, Φ2, j, μ; options...)
+            G[i,j] = dict_innerproduct(Φ1, i, Φ2, j, μ; options...)
         end
     end
     G

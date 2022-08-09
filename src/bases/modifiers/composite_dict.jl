@@ -150,10 +150,10 @@ function evaluation_matrix(::Type{T}, dict::CompositeDict, pts) where {T}
 end
 
 
-innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
-    innerproduct(component(d1, outerindex(i)), innerindex(i), d2, j, measure; options...)
-innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
-    innerproduct(d1, i, component(d2, outerindex(j)), innerindex(j), measure; options...)
+dict_innerproduct1(d1::CompositeDict, i, d2, j, measure; options...) =
+    dict_innerproduct(component(d1, outerindex(i)), innerindex(i), d2, j, measure; options...)
+dict_innerproduct2(d1, i, d2::CompositeDict, j, measure; options...) =
+    dict_innerproduct(d1, i, component(d2, outerindex(j)), innerindex(j), measure; options...)
 
 
 ## Printing

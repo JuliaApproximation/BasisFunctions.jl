@@ -39,10 +39,10 @@ measure(dict::ComplexifiedDict) = measure(superdict(dict))
 gram1(T, dict::BasisFunctions.ComplexifiedDict, measure; options...) =
     wrap_operator(dict, dict, gram(T, superdict(dict), measure; options...))
 
-innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
-    innerproduct(superdict(d1), i, d2, j, measure; options...)
-innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
-    innerproduct(d1, i, superdict(d2), j, measure; options...)
+dict_innerproduct1(d1::ComplexifiedDict, i, d2, j, measure; options...) =
+    dict_innerproduct(superdict(d1), i, d2, j, measure; options...)
+dict_innerproduct2(d1, i, d2::ComplexifiedDict, j, measure; options...) =
+    dict_innerproduct(d1, i, superdict(d2), j, measure; options...)
 
 span_isequal(d1::ComplexifiedDict, d2::ComplexifiedDict) =
     span_isequal(superdict(d1), superdict(d2))

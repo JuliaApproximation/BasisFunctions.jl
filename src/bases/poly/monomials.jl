@@ -45,6 +45,8 @@ struct Monomial{T} <: Polynomial{T}
 end
 
 Monomial{T}(p::Monomial) where {T} = Monomial{T}(p.degree)
+Monomial(args...) = Monomial{Float64}(args...)
+Monomial{T}(i::PolynomialDegree) where {T} = Monomial{T}(value(i))
 
 show(io::IO, p::Monomial) = print(io, "x^$(degree(p)) (monomial)")
 

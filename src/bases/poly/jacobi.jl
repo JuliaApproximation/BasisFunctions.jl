@@ -67,7 +67,7 @@ end
 rec_Cn(b::Jacobi{T}, n::Int) where {T} =
     T(n + b.α) * (n + b.β) * (2*n + b.α + b.β + 2) / T((n+1) * (n + b.α + b.β + 1) * (2*n + b.α + b.β))
 
-function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::PolynomialDegree, measure::JacobiWeight; options...)
+function dict_innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::PolynomialDegree, measure::JacobiWeight; options...)
 	T = coefficienttype(d1)
 	if iscompatible(d1, d2) && isorthogonal(d1, measure)
 		if i == j
@@ -79,7 +79,7 @@ function innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j::Pol
 			zero(T)
 		end
 	else
-		innerproduct1(d1, i, d2, j, measure; options...)
+		dict_innerproduct1(d1, i, d2, j, measure; options...)
 	end
 end
 

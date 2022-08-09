@@ -86,7 +86,7 @@ function gram(::Type{T}, dict::CosineSeries, ::FourierWeight; options...) where 
     DiagonalOperator(dict, diag)
 end
 
-innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierWeight;
+dict_innerproduct_native(b1::CosineSeries, i::CosineFrequency, b2::CosineSeries, j::CosineFrequency, m::FourierWeight;
 			T = coefficienttype(b1), options...) =
 	innerproduct_cosine_full(i, j, T)
 

@@ -99,12 +99,12 @@ measure(dict::SineSeries{T}) where {T} = FourierWeight{T}()
 
 gram(::Type{T}, dict::SineSeries, ::FourierWeight; options...) where {T} = ScalingOperator(one(T)/2, dict)
 
-function innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierWeight;
+function dict_innerproduct_native(b1::SineSeries, i::SineFrequency, b2::SineSeries, j::SineFrequency, m::FourierWeight;
 			T = coefficienttype(b1), quad = :analytic, options...)
 	if quad == :analytic
 		innerproduct_sine_full(i, j, T)
 	else
-		innerproduct1(b1, i, b2, j, m)
+		dict_innerproduct1(b1, i, b2, j, m)
 	end
 end
 

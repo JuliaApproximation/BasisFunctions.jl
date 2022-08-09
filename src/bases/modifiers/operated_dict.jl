@@ -213,21 +213,21 @@ end
 gram1(T, dict::OperatedDict, measure; options...) =
 	adjoint(operator(dict)) * gram(T, dest(operator(dict)), measure; options...) * operator(dict)
 
-function innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
+function dict_innerproduct1(d1::OperatedDict, i, d2, j, measure; options...)
 	op = operator(d1)
 	if isdiag(op)
 		idx = linear_index(d1, i)
-		conj(diag(op, idx)) * innerproduct(superdict(d1), i, d2, j, measure; options...)
+		conj(diag(op, idx)) * dict_innerproduct(superdict(d1), i, d2, j, measure; options...)
 	else
-		innerproduct2(d1, i, d2, j, measure; options...)
+		dict_innerproduct2(d1, i, d2, j, measure; options...)
 	end
 end
 
-function innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
+function dict_innerproduct2(d1, i, d2::OperatedDict, j, measure; options...)
 	op = operator(d2)
 	if isdiag(op)
 		idx = linear_index(d2, j)
-		diag(op, idx) * innerproduct(d1, i, superdict(d2), j, measure; options...)
+		diag(op, idx) * dict_innerproduct(d1, i, superdict(d2), j, measure; options...)
 	else
 		default_dict_innerproduct(d1, i, d2, j, measure; options...)
 	end
@@ -282,6 +282,7 @@ src(d::ScaledDict) = d.dict
 dest(d::ScaledDict) = src(d)
 
 normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
+normalize(d::Dictionary, μ) = ScaledDict(d, [1/norm(bf, μ) for bf in d])
 
 unsafe_eval_element(dict::ScaledDict, i, x) =
 	dict.diag[i] * unsafe_eval_element(superdict(dict), i, x)
@@ -289,7 +290,7 @@ unsafe_eval_element(dict::ScaledDict, i, x) =
 unsafe_eval_element_derivative(dict::ScaledDict, i, x, order) =
 	dict.diag[i] * unsafe_eval_element_derivative(superdict(dict), i, x, order)
 
-innerproduct1(d1::ScaledDict, i, d2, j, measure; options...) =
-	conj(d1.diag[i]) * innerproduct(superdict(d1), i, d2, j, measure; options...)
-innerproduct2(d1, i, d2::ScaledDict, j, measure; options...) =
-	d2.diag[j] * innerproduct(d1, i, superdict(d2), j, measure; options...)
+dict_innerproduct1(d1::ScaledDict, i, d2, j, measure; options...) =
+	conj(d1.diag[i]) * dict_innerproduct(superdict(d1), i, d2, j, measure; options...)
+dict_innerproduct2(d1, i, d2::ScaledDict, j, measure; options...) =
+	d2.diag[j] * dict_innerproduct(d1, i, superdict(d2), j, measure; options...)

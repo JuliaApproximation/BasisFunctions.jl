@@ -184,7 +184,7 @@ accompanying code `https://www.cs.purdue.edu/archives/2002/wxg/codes/OPQ.html`
 Note: The vectors used have indices starting at `1` (such that `a_n` above is
 given by `a[n+1]`). The last value is `a_{n-1} = a[n]`.
 """
-function stieltjes(N, x::Array{RT},w::Array{T}) where {T,RT}
+function stieltjes(N, x::AbstractArray{RT}, w::AbstractArray{T}) where {T,RT}
     @assert real(T) == RT
     # ####
     # Remove data with zero weights done in, e.g, Gautschi's book, "Orthogonal Polynomials and Computation".
@@ -235,7 +235,8 @@ see `stieltjes`
 
 `p0`, `p1`, `p2`, and `scratch` are vectors of size `N`
 """
-function stieltjes!(a::Array{T},b::Array{T},N,x::Array{RT},w::Array{T},p0::Array{T},p1::Array{T},p2::Array{T},scratch::Array{T}) where {T, RT}
+function stieltjes!(a::Array{T}, b::Array{T},N,
+		x::AbstractArray{RT}, w::AbstractArray{T}, p0::Array{T},p1::Array{T},p2::Array{T},scratch::Array{T}) where {T, RT}
     @assert real(T) == RT
     tiny = 10*typemin(real(T))
     huge = .1*typemax(real(T))

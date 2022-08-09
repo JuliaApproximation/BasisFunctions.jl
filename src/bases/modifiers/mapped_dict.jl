@@ -148,11 +148,11 @@ end
 
 
 
-function innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedWeight; options...)
+function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedWeight; options...)
     if iscompatible(d1,d2) && iscompatible(forward_map(d1),forward_map(measure))
-        innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
+        dict_innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
     else
-        innerproduct1(d1, i, d2, j, measure; options...)
+        dict_innerproduct1(d1, i, d2, j, measure; options...)
     end
 end
 

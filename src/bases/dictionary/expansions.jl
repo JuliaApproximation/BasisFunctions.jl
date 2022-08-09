@@ -63,7 +63,9 @@ random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
 
 # For expansions of composite types, return a Expansion of a subdict
 component(e::Expansion, i) = Expansion(component(e.dictionary, i), component(e.coefficients, i))
-components(e::Expansion) = map(Expansion, components(e.dictionary), components(e.coefficients))
+components(e::Expansion) = iscomposite(e.dictionary) && iscomposite(e.coefficients) ?
+    map(Expansion, components(e.dictionary), components(e.coefficients)) :
+    ()
 
 # This indirect call enables dispatch on the type of the dict of the expansion
 (e::Expansion)(x; options...) =

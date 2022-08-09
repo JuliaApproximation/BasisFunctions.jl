@@ -27,7 +27,7 @@ isorthogonal(dict::Legendre, measure::GaussLegendre) = opsorthogonal(dict, measu
 
 gauss_rule(dict::Legendre{T}) where T = GaussLegendre{T}(length(dict))
 
-function innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
+function dict_innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
 	T = coefficienttype(d1)
 	if i == j
 		2 / convert(T, 2*value(i)+1)

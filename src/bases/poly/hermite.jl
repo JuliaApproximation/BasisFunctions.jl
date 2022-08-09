@@ -31,7 +31,7 @@ rec_An(b::Hermite, n::Int) = 2
 rec_Bn(b::Hermite, n::Int) = 0
 rec_Cn(b::Hermite, n::Int) = 2*n
 
-function innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::PolynomialDegree, measure::HermiteWeight; options...)
+function dict_innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::PolynomialDegree, measure::HermiteWeight; options...)
 	T = coefficienttype(d1)
 	if i == j
 		sqrt(convert(T, pi)) * (1<<value(i)) * factorial(value(i))

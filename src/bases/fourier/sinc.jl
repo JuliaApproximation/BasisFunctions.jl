@@ -52,7 +52,7 @@ function evaluation(::Type{T}, dict::PeriodicSincFunctions, gb::GridBasis, grid;
 	end
 end
 
-innerproduct_native(d1::PeriodicSincFunctions{T}, idx1, d2::PeriodicSincFunctions, idx2, μ::FourierWeight; options...) where {T} =
+dict_innerproduct_native(d1::PeriodicSincFunctions{T}, idx1, d2::PeriodicSincFunctions, idx2, μ::FourierWeight; options...) where {T} =
 	idx1 == idx2 ? one(T)/length(d1) : zero(T)
 
 span_issubset(d1::PeriodicSincFunctions{T}, d2::Fourier{T}) where {T} =

@@ -236,7 +236,8 @@ export evaluation_matrix
 # from computations/approximation.jl
 export approximation, default_approximation, approximate,
     discrete_approximation, continuous_approximation, project,
-    interpolation, default_interpolation, interpolation_matrix
+    interpolation, interpolation_fun, default_interpolation,
+    interpolation_matrix
 
 # from operator/tensorproductoperator.jl
 export TensorProductOperator

@@ -642,10 +642,10 @@ end
 
 
 # For the uniform measure on [0,1], invoke innerproduct_fourier_full
-innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::FourierWeight; options...) =
+dict_innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::FourierWeight; options...) =
 	innerproduct_fourier_full(b1, i, b2, j)
 
-function innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::LebesgueMeasure; options...)
+function dict_innerproduct_native(b1::Fourier, i::FFreq, b2::Fourier, j::FFreq, m::LebesgueMeasure; options...)
 	d = support(m)
 	if d isa AbstractInterval
 		if infimum(d) == 0 && supremum(d) == 1

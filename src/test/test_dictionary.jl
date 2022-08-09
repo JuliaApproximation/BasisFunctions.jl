@@ -225,7 +225,7 @@ function test_gram_projection(basis)
         z = zero(prectype(basis))
         for i in 1:n
             for j in 1:n
-                z = max(z, abs(G[i,j] - innerproduct(basis, i, basis, j)))
+                z = max(z, abs(G[i,j] - BasisFunctions.dict_innerproduct(basis, i, basis, j)))
             end
         end
         @test z < 1000test_tolerance(prectype(basis))

@@ -168,8 +168,8 @@ hasmeasure(dict::TensorProductDict) = mapreduce(hasmeasure, &, components(dict))
 measure(dict::TensorProductDict) = productmeasure(map(measure, components(dict))...)
 
 
-innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductWeight; options...) =
-    mapreduce(innerproduct, *, components(Φ1), Tuple(i), components(Φ2), Tuple(j), components(measure))
+dict_innerproduct_native(Φ1::TensorProductDict, i, Φ2::TensorProductDict, j, measure::ProductWeight; options...) =
+    mapreduce(dict_innerproduct, *, components(Φ1), Tuple(i), components(Φ2), Tuple(j), components(measure))
 
 evaluation(::Type{T}, dict::TensorProductDict, gb::GridBasis, grid::ProductGrid; options...) where {T} =
     tensorproduct(map( (d,g) -> evaluation(T, d, g; options...), components(dict), components(grid))...)
