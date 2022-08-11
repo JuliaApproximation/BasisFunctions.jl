@@ -41,6 +41,9 @@ Display.displaystencil(φ::BasisFunction) = [dictionary(φ), '[', index(φ), ']'
 (φ::BasisFunction)(x) = unsafe_eval_element1(dictionary(φ), index(φ), x)
 (φ::BasisFunction)(x, y...) = φ(SVector(x, y...))
 
+unsafe_eval_element(φ::BasisFunction, x) =
+    unsafe_eval_element(dictionary(φ), index(φ), x)
+
 basisfunction(dict::Dictionary, idx) = BasisFunction(dict, idx)
 basisfunction(dict::Dictionary, I...) = BasisFunction(dict, I)
 
