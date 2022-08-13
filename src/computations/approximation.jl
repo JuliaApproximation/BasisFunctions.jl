@@ -64,6 +64,9 @@ interpolation(Φ::Dictionary, args...; options...) =
 interpolation(::Type{T}, Φ::Dictionary; options...) where {T} =
     interpolation(T, Φ, interpolation_grid(Φ); options...)
 
+interpolation(::Type{T}, Φ::Dictionary, points::AbstractArray; options...) where {T} =
+    interpolation(T, Φ, ScatteredGrid(points); options...)
+
 interpolation(::Type{T}, Φ::Dictionary, grid::AbstractGrid; options...) where {T} =
     interpolation(T, Φ, GridBasis{T}(grid); options...)
 

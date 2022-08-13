@@ -160,7 +160,7 @@ function conversion2(T, src, dest::Dictionary; verbose=false, options...)
 end
 
 default_conversion(T, src, dest; options...) =
-    default_projection(T, src, dest; options...)
+    projection(T, src, dest; options...)
 
 # Convert to and from grids.
 # To grid: we invoke `evaluation`

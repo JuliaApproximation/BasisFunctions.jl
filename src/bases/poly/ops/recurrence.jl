@@ -11,7 +11,7 @@ functions and with the initial value implemented with the `p0` function.
 This is the convention followed by the DLMF, see `http://dlmf.nist.gov/18.9#i`.
 """
 function recurrence_eval(b::OPS, idx::PolynomialDegree, x)
-	T = codomaintype(b)
+	T = promote_type(codomaintype(b),typeof(x))
     z0 = T(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
 

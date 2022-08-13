@@ -26,7 +26,7 @@ function unsafe_eval_element_derivative(b::Monomials{T}, idxn::PolynomialDegree,
     elseif order == 1
         i*x^(i-1)
     else
-        factorial(i) / factorial(i-order) * x^(i-order)
+        factorial(i) / T(factorial(i-order)) * x^(i-order)
     end
 end
 

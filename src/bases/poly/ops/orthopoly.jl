@@ -152,13 +152,12 @@ function gauss_weights_from_points(b::OPS, roots)
     w
 end
 
-function leading_order_coefficient(b::OPS{T}, idx) where {T}
+leading_order_coefficient(b::OPS, idx::PolynomialDegree) =
+	leading_order_coefficient(b, value(idx))
+
+function leading_order_coefficient(b::OPS, idx::Int)
     @assert 1 <= idx <= length(b)
-    γ = one(T)
-    for k in 0:idx-2
-        γ *= rec_An(b, k)
-    end
-    γ
+	prod(rec_An(b, k) for k in 0:idx-2)
 end
 
 """
