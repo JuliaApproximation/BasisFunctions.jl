@@ -28,6 +28,8 @@ mapped_dict2(dict, map::IdentityMap) = dict
 # Convenience function, similar to apply_map for grids etcetera
 @deprecate apply_map(dict::Dictionary, map) mapped_dict(dict, map)
 
+components(dict::MappedDict) = map(d->mapped_dict(d, forward_map(dict)), components(superdict(dict)))
+
 # In the constructor we check the domain and codomain types.
 # The domain of the MappedDict is defined by the range of the map, because the
 # domain of the underlying dict is mapped to the domain of the MappedDict.
