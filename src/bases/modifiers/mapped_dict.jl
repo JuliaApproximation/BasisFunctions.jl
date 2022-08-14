@@ -102,7 +102,7 @@ function unsafe_eval_element_derivative(s::MappedDict1d, idx, y, order)
     @assert order == 1
     x = leftinverse(forward_map(s), y)
     d = unsafe_eval_element_derivative(superdict(s), idx, x, order)
-    z = d / jacdet(forward_map(s), y)
+    z = d / jacdet(forward_map(s), x)
 end
 
 function unsafe_eval_element_derivative(dict::MappedDict, idx, y, order)
