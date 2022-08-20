@@ -2,6 +2,7 @@
 export BasisFunction,
     index
 
+"A typed function is a function that maps an argument of type `S` to type `T`."
 abstract type TypedFunction{S,T} end
 
 domaintype(::Type{<:TypedFunction{S,T}}) where {S,T} = S
