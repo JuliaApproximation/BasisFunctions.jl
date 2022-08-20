@@ -80,7 +80,7 @@ function symmetric_jacobi_matrix(b::OPS)
             J[k,k+1] = sqrt(β[k+1])
         end
     end
-    J
+    SymTridiagonal(J)
 end
 
 function roots(b::OPS{T}) where {T<:Number}
@@ -88,7 +88,7 @@ function roots(b::OPS{T}) where {T<:Number}
     eigen(J).values
 end
 
-function roots(b::OPS{T}) where {T<:Union{BigFloat}}
+function roots(b::OPS{T}) where {T<:BigFloat}
     J = symmetric_jacobi_matrix(b)
     # assuming the user has imported GenericLinearAlgebra.jl
     sort(real(eigvals!(J)))
@@ -406,8 +406,8 @@ end
 See `monic_to_orthonormal_recurrence_coefficients`
 """
 function monic_to_orthonormal_recurrence_coefficients!(a::Array{T},b::Array{T},c::Array{T},α::Array{T},β::Array{T}) where {T}
-    a .= 1 ./ sqrt.(view(β,2:length(β)))
-    b .= -1.0.*view(α,1:length(α)-1)./sqrt.(view(β,2:length(β)))
-    c .= sqrt.(view(β,1:length(β)-1)./view(β,2:length(β)))
+    a .= 1 ./ sqrt.(β[2:length(β)])
+    b .= -one(T).*α[1:length(α)-1]./sqrt.(β[2:length(β)])
+    c .= sqrt.(β[1:length(β)-1]./β[2:length(β)])
     a,b,c
 end

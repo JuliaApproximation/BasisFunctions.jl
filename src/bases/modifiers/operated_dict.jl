@@ -189,11 +189,17 @@ function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order, op,
     if isdiag(op)
         diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x, order)
     else
-        scratch_src[idx] = 1
-        apply!(op, scratch_dest, scratch_src)
-        scratch_src[idx] = 0
-		D = differentiation(superdict(dict))
-        eval_expansion(dest(D), D*scratch_dest, x)
+		if hasderivative(superdict(dict))
+		    scratch_src[idx] = 1
+		    apply!(op, scratch_dest, scratch_src)
+		    scratch_src[idx] = 0
+			D = differentiation(superdict(dict))
+		    eval_expansion(dest(D), D*scratch_dest, x)
+		else
+			A = matrix(op)
+			w = [unsafe_eval_element_derivative(src(dict), native_index(src(dict),k), x, order) for k in eachindex(src(dict))]
+			sum(A[k,idx] * w[k] for k in eachindex(dict))
+		end
     end
 end
 

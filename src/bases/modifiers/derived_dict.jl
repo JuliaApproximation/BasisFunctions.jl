@@ -186,3 +186,5 @@ end
 # Implementing similardictionary is all it takes.
 
 similardictionary(dict::ConcreteDerivedDict, dict2::Dictionary) = ConcreteDerivedDict(dict2)
+
+modifiersymbol(d::ConcreteDerivedDict) = "alias"
