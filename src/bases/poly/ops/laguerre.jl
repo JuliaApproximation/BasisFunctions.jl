@@ -40,19 +40,13 @@ isorthogonal(dict::Laguerre, measure::LaguerreWeight) = dict.α == measure.α
 
 gauss_rule(dict::Laguerre) = GaussLaguerre(length(dict), dict.α)
 
-function dict_innerproduct_native(d1::Laguerre, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...)
-	T = coefficienttype(d1)
-	if iscompatible(d1, d2) && isorthogonal(d1, measure)
-		if i == j
-			gamma(convert(T, value(i)+1+laguerre_α(d1))) / convert(T, factorial(value(i)))
-		else
-			zero(T)
-		end
+function dict_innerproduct_native(d1::Laguerre{T}, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...) where {T}
+	if i == j
+		gamma(value(i)+1+laguerre_α(d1)) / gamma(one(T)+value(i))
 	else
-		dict_innerproduct1(d1, i, d2, j, measure; options...)
+		zero(T)
 	end
 end
-
 
 
 # See DLMF, Table 18.9.1

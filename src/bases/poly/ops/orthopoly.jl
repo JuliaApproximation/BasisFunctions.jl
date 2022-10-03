@@ -153,11 +153,15 @@ function gauss_weights_from_points(b::OPS, roots)
 end
 
 leading_order_coefficient(b::OPS, idx::PolynomialDegree) =
-	leading_order_coefficient(b, value(idx))
+	leading_order_coefficient(b, value(idx)+1)
 
 function leading_order_coefficient(b::OPS, idx::Int)
     @assert 1 <= idx <= length(b)
-	prod(rec_An(b, k) for k in 0:idx-2)
+	if idx == 1
+		unsafe_eval_element(b, idx, 0)
+	else
+		prod(rec_An(b, k) for k in 0:idx-2)
+	end
 end
 
 """
