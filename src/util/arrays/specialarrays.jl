@@ -362,7 +362,7 @@ unsafe_array_getindex(A::RestrictionIndexMatrix{T,1}, i::Int, j::Int) where {T} 
 unsafe_array_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::Int) where {T,N} =
     unsafe_array_getindex(A, i, CartesianIndices(CartesianIndex(_original_size(A)))[j])
 
-unsafe_array_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,I,N} =
+unsafe_array_getindex(A::RestrictionIndexMatrix{T,N}, i::Int, j::CartesianIndex{N}) where {T,N} =
     @inbounds getindex(subindices(A),i)==j  ? one(T) :  zero(T)
 
 Base.eltype(::IndexMatrix{T}) where T = T

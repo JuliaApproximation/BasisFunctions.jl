@@ -33,7 +33,7 @@ iscompatiblegrid(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(g
 isorthogonal(dict::Laguerre, measure::GaussLaguerre) = laguerre_α(dict) ≈ laguerre_α(measure) && opsorthogonal(dict, measure)
 
 isorthonormal(dict::Laguerre, measure::LaguerreWeight) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
-isorthonormal(dict::Laguerre, measure::GaussLaguerre) where T = isorthogonal(dict, measure) && laguerre_α(dict) == 0
+isorthonormal(dict::Laguerre, measure::GaussLaguerre) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
 issymmetric(::Laguerre) = false
 
 isorthogonal(dict::Laguerre, measure::LaguerreWeight) = dict.α == measure.α

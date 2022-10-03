@@ -131,16 +131,6 @@ function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A,B}, scratch, 
     op2 = operators[2]
     intermediate = scratch[1]
 
-    # println("coef_src: ", size(coef_src))
-    # println("coef_dest: ", size(coef_dest))
-    # println("src1: ", size(src1))
-    # println("src2: ", size(src2))
-    # println("dest1: ", size(dest1))
-    # println("dest2: ", size(dest2))
-    # println("op1: ", size(op1))
-    # println("op2: ", size(op2))
-    # println("intermediate: ", size(intermediate))
-    #
     for j in eachindex(src2)
         for i in eachindex(src1)
             src1[i] = coef_src[i,j]
@@ -201,16 +191,6 @@ function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A,B,C}, scratch
     op3 = operators[3]
     intermediate1 = scratch[1]
     intermediate2 = scratch[2]
-
-    # println("coef_src: ", size(coef_src))
-    # println("coef_dest: ", size(coef_dest))
-    # println("src1: ", size(src1))
-    # println("src2: ", size(src2))
-    # println("dest1: ", size(dest1))
-    # println("dest2: ", size(dest2))
-    # println("op1: ", size(op1))
-    # println("op2: ", size(op2))
-    # println("intermediate: ", size(intermediate))
 
     for k in eachindex(src3)
         for j in eachindex(src2)
@@ -286,6 +266,143 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C}, src_sc
             apply!(op3, src3)
             for k in eachindex(src3)
                 coef_srcdest[i,j,k] = src3[k]
+            end
+        end
+    end
+    coef_srcdest
+end
+
+function apply_tensor!(op, coef_dest, coef_src, operators::Tuple{A,B,C,D}, scratch, src_scratch, dest_scratch) where {A,B,C,D}
+    src1 = src_scratch[1]
+    src2 = src_scratch[2]
+    src3 = src_scratch[3]
+    src4 = src_scratch[4]
+    dest1 = dest_scratch[1]
+    dest2 = dest_scratch[2]
+    dest3 = dest_scratch[3]
+    dest4 = dest_scratch[4]
+    op1 = operators[1]
+    op2 = operators[2]
+    op3 = operators[3]
+    op4 = operators[4]
+    intermediate1 = scratch[1]
+    intermediate2 = scratch[2]
+    intermediate3 = scratch[3]
+
+    for l in eachindex(src4)
+        for k in eachindex(src3)
+            for j in eachindex(src2)
+                for i in eachindex(src1)
+                    src1[i] = coef_src[i,j,k,l]
+                end
+                apply!(op1, dest1, src1)
+                for i in eachindex(dest1)
+                    intermediate1[i,j,k,l] = dest1[i]
+                end
+            end
+        end
+    end
+    for l in eachindex(src4)
+        for k in eachindex(src3)
+            for i in eachindex(dest1)
+                for j in eachindex(src2)
+                    src2[j] = intermediate1[i,j,k,l]
+                end
+                apply!(op2, dest2, src2)
+                for j in eachindex(dest2)
+                    intermediate2[i,j,k,l] = dest2[j]
+                end
+            end
+        end
+    end
+    for l in eachindex(src4)
+        for i in eachindex(dest1)
+            for j in eachindex(dest2)
+                for k in eachindex(src3)
+                    src3[k] = intermediate2[i,j,k,l]
+                end
+                apply!(op3, dest3, src3)
+                for k in eachindex(dest3)
+                    intermediate3[i,j,k,l] = dest3[k]
+                end
+            end
+        end
+    end
+    for i in eachindex(dest1)
+        for j in eachindex(dest2)
+            for k in eachindex(dest3)
+                for l in eachindex(src4)
+                    src4[l] = intermediate3[i,j,k,l]
+                end
+                apply!(op4, dest4, src4)
+                for l in eachindex(dest4)
+                    coef_dest[i,j,k,l] = dest4[l]
+                end
+            end
+        end
+    end
+    coef_dest
+end
+
+function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C,D}, src_scratch) where {A,B,C,D}
+    src1 = src_scratch[1]
+    src2 = src_scratch[2]
+    src3 = src_scratch[3]
+    src4 = src_scratch[4]
+    op1 = operators[1]
+    op2 = operators[2]
+    op3 = operators[3]
+    op4 = operators[4]
+
+    for l in eachindex(src4)
+        for k in eachindex(src3)
+            for j in eachindex(src2)
+                for i in eachindex(src1)
+                    src1[i] = coef_srcdest[i,j,k,l]
+                end
+                apply!(op1, src1)
+                for i in eachindex(src1)
+                    coef_srcdest[i,j,k,l] = src1[i]
+                end
+            end
+        end
+    end
+    for l in eachindex(src4)
+        for k in eachindex(src3)
+            for i in eachindex(dest1)
+                for j in eachindex(src2)
+                    src2[j] = coef_srcdest[i,j,k,l]
+                end
+                apply!(op2, src2)
+                for j in eachindex(src2)
+                    coef_srcdest[i,j,k,l] = src2[j]
+                end
+            end
+        end
+    end
+    for l in eachindex(src4)
+        for i in eachindex(dest1)
+            for j in eachindex(dest2)
+                for k in eachindex(src3)
+                    src3[k] = coef_srcdest[i,j,k,l]
+                end
+                apply!(op3, src3)
+                for k in eachindex(src3)
+                    coef_srcdest[i,j,k,l] = src3[k]
+                end
+            end
+        end
+    end
+    for i in eachindex(dest1)
+        for j in eachindex(dest2)
+            for k in eachindex(dest3)
+                for l in eachindex(src4)
+                    src4[l] = coef_srcdest[i,j,k,l]
+                end
+                apply!(op4, src4)
+                for l in eachindex(src4)
+                    coef_srcdest[i,j,k,l] = src4[l]
+                end
             end
         end
     end
