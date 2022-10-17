@@ -40,8 +40,12 @@ include("recurrence.jl")
 unsafe_eval_element(b::OPS, idx::PolynomialDegree, x) =
     recurrence_eval(b, idx, x)
 function unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x, order)
-	@assert order == 1
-    recurrence_eval_derivative(b, idx, x)
+	if orderiszero(order)
+		unsafe_eval_element(b, idx, x)
+	else
+		@assert order == 1
+		recurrence_eval_derivative(b, idx, x)
+	end
 end
 
 
