@@ -311,7 +311,6 @@ Base.size(A::IndexMatrix) = isextensionmatrix(A) ?
     (prod(_original_size(A)),_linear_size(A)) :
     (_linear_size(A),prod(_original_size(A)))
 
-similar(A::IndexMatrix{S,EXTENSION}, ::Type{T}) where {S,T,EXTENSION} = IndexMatrix{T,EXTENSION}(_original_size(A), subindices(A))
 # The method below is moved to SparseArrays for now
 similar(A::IndexMatrix, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
 
