@@ -299,7 +299,7 @@ export plotgrid, postprocess
 
 # from bases/poly/orthopoly.jl and friends
 export Legendre, Jacobi, Laguerre, Hermite,
-    Monomials, RationalBasis, GenericOPS,
+    Monomials, GenericOPS,
     recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval,
     monic_recurrence_coefficients,
     symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment,
@@ -414,7 +414,6 @@ include("bases/poly/ops/laguerre.jl")
 include("bases/poly/ops/hermite.jl")
 include("bases/poly/ops/generic_op.jl")
 include("bases/poly/ops/specialOPS.jl")
-include("bases/poly/rational.jl")
 
 include("util/display/recipes.jl")
 include("util/display/pgfplots.jl")

@@ -42,8 +42,7 @@ test_dictionaries = [Fourier,
     SineSeries,
     PeriodicSincFunctions,
     TrigSeries,
-    Monomials,
-    RationalFunctions]
+    Monomials]
 
 for T in domaintypes
     delimit("1D dictionaries ($(T))")

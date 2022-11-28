@@ -9,9 +9,8 @@ supports_approximation(::Subdictionary) = false
 supports_approximation(::OperatedDict) = false
 supports_approximation(dict::TensorProductDict) =
     mapreduce(supports_approximation, &, components(dict))
-# Monomials and rationals have no associated domain
+# Monomials have no associated domain
 supports_approximation(::Monomials) = false
-supports_approximation(::RationalFunctions) = false
 
 # Make a simple periodic function for Fourier and other periodic sets
 suitable_function(::BasisFunctions.FourierLike) =  x -> 1/(10+cos(2*pi*x))
