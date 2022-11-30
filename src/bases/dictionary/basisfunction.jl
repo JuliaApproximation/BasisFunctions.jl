@@ -69,6 +69,8 @@ innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; opti
 
 norm(φ::AbstractBasisFunction, μ = measure(φ); options...) = sqrt(innerproduct(φ, φ, μ; options...))
 
+norm(φ::AbstractBasisFunction, p::Real) = dict_norm(dictionary(φ), index(φ), p)
+
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
 innerproduct(φ::AbstractBasisFunction, g, measure; options...) =

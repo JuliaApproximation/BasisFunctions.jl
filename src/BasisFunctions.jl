@@ -102,8 +102,7 @@ import GridArrays: subindices, resize, name,
     apply_map, mapping, covering,
     →, rescale
 
-using GridArrays: SubGrid, MaskedGrid, IndexSubGrid,
-    ChebyshevPoints2
+using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
 
 
 ## Exports
@@ -111,7 +110,7 @@ using GridArrays: SubGrid, MaskedGrid, IndexSubGrid,
 # Re-exports
 export component, components, ncomponents, iscomposite,
     factors, factor, nfactors,
-    ChebyshevNodes, ChebyshevPoints, ChebyshevPoints2, ChebyshevExtremae,
+    ChebyshevNodes, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
     ×,

@@ -74,7 +74,7 @@ ChebyshevTSpace() = ChebyshevTSpace{Float64}()
 ChebyshevTSpace{T}() where {T} = MeasureSpace(ChebyshevTWeight{T}())
 
 
-
+"The space of Lebesgue integrable functions."
 struct L2{S,T} <: FunctionSpace{S,T}
     domain  ::  Domain{S}
 end
@@ -98,7 +98,7 @@ ChebyshevSpace{T}() where {T} = ChebyshevSpace{T,T}()
 
 domain(space::ChebyshevSpace{S,T}) where {S,T} = ChebyshevInterval{S}()
 
-
+"A product function space."
 struct ProductSpace{S,T} <: FunctionSpace{S,T}
     spaces
 end

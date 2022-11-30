@@ -22,7 +22,9 @@ unsafe_moment(dict::Dictionary, idx; options...) = default_moment(dict, idx; opt
 default_moment(dict::Dictionary, idx; measure = lebesguemeasure(support(dict)), options...) =
     innerproduct(dict[idx], x->1, measure; options...)
 
-function dict_norm(dict, idx, μ = measure(dict))
+dict_norm(dict, idx) = dict_norm(dict, idx, measure(dict))
+
+function dict_norm(dict, idx, μ::Measure)
     @boundscheck checkbounds(dict, idx)
     sqrt(innerproduct(dict, idx, dict, idx, μ))
 end
