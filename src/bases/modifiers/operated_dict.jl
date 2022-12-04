@@ -290,6 +290,9 @@ dest(d::ScaledDict) = src(d)
 normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
 normalize(d::Dictionary, μ) = ScaledDict(d, [1/norm(bf, μ) for bf in d])
 
+orthogonalize(Φ::Dictionary) = sqrt(inv(gram(Φ))) * Φ
+orthogonalize(Φ::Dictionary, μ) = sqrt(inv(gram(Φ, μ))) * Φ
+
 unsafe_eval_element(dict::ScaledDict, i, x) =
 	dict.diag[i] * unsafe_eval_element(superdict(dict), i, x)
 
