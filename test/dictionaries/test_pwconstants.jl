@@ -11,8 +11,8 @@ using BasisFunctions, GridArrays
     @test isorthogonal(H,FourierWeight())
     @test isorthogonal(H,discretemeasure(MidpointEquispacedGrid(10,0,1)))
 
-    @test support(H) ≈ 0.0..1.0
-    @test support(H,1) ≈ 0.0..0.1
+    @test support(H) == Interval{:closed,:open}(0,1)
+    @test support(H,1) == Interval{:closed,:open}(0,0.1)
 
     @test 0 ∈ support(H)
     @test 1 ∉ support(H)
