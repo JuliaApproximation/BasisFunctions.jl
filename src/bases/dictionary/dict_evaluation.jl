@@ -214,6 +214,7 @@ unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
 default_eval_expansion(dict::Dictionary, coefficients, x) =
     sum(coefficients[idx]*val for (idx,val) in pointvalues(dict, x))
 
+# TODO: deprecate and remove evaluation in a grid
 function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
     @assert dimension(dict) == GridArrays.dimension(grid)
     @assert size(coefficients) == size(dict)
