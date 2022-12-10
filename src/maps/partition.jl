@@ -29,7 +29,7 @@ right(piece::PartitionPiece) = right(partition(piece), index(piece))
 
 Base.in(x, piece::PartitionPiece) = in_partition(partition(piece), index(piece), x)
 
-
+support(part::PartitionPiece) = support(partition(part), index(part))
 
 function checkbounds(part::Partition, i::Int)
     1 <= i <= length(part) || throw(BoundsError())
@@ -41,7 +41,6 @@ function getindex(part::Partition, i)
 end
 
 eachindex(part::Partition) = 1:length(part)
-
 
 """
 A PiecewiseInterval is a subdivision of an interval into a number of subintervals.

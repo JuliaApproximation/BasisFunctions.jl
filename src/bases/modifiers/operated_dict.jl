@@ -85,10 +85,14 @@ for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src(s))
 end
 
-# We don't know in general what the support of a specific basis functions is.
-# The safe option is to return the support of the set itself for each element.
-for op in (:support,)
-    @eval $op(s::OperatedDict, idx) = $op(src(s))
+function support(Φ::OperatedDict, idx)
+	if isdiag(operator(Φ))
+		support(src(Φ), idx)
+	else
+		# We don't know in general what the support of a specific basis functions is.
+		# The safe option is to return the support of the set itself for each element.
+		support(src(Φ))
+	end
 end
 
 dict_in_support(set::OperatedDict, i, x) = in_support(superdict(set), x)
