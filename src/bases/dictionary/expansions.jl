@@ -82,6 +82,11 @@ components(e::Expansion) = iscomposite(e.dictionary) && iscomposite(e.coefficien
 call_expansion(e::Expansion, dict::Dictionary, coefficients, x; options...) =
     eval_expansion(dict, coefficients, x; options...)
 
+eval_expansion(e::Expansion, x) =
+    eval_expansion(dictionary(e), coefficients(e), x)
+unsafe_eval_expansion(e::Expansion, x) =
+    unsafe_eval_expansion(dictionary(e), coefficients(e), x)
+
 function differentiate(e::Expansion, order = difforder(dictionary(e)); options...)
     op = differentiation(codomaintype(e), dictionary(e), order; options...)
     Expansion(dest(op), apply(op,e.coefficients))
@@ -183,6 +188,7 @@ for op in (:+, :-, :*)
     @eval Base.$op(a::Number, e::Expansion) = Expansion(dictionary(e), $op(a, coefficients(e)))
     @eval Base.$op(e::Expansion, a::Number) = Expansion(dictionary(e), $op(coefficients(e), a))
 end
+Base.:/(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)/a)
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 

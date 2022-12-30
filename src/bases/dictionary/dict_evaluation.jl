@@ -209,10 +209,13 @@ function eval_expansion(dict::Dictionary, coefficients, x; options...)
 end
 
 unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
-    default_eval_expansion(dict, coefficients, x)
+    default_unsafe_eval_expansion(dict, coefficients, x)
 
 default_eval_expansion(dict::Dictionary, coefficients, x) =
     sum(coefficients[idx]*val for (idx,val) in pointvalues(dict, x))
+
+default_unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
+    sum(coefficients[idx]*val for (idx,val) in unsafe_pointvalues(dict, x))
 
 # TODO: deprecate and remove evaluation in a grid
 function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
@@ -241,18 +244,14 @@ function dict_eval!(result, dict, x)
     result
 end
 
-# evaluation of the dictionary is "unsafe" because the routine can assume that the
-# support of x has already been checked
+# unsafe because we don't check for x to be in the support of the dictionary
 function unsafe_dict_eval(dict::Dictionary, x)
-    # We allocate the zeros ourselves, in order to make sure that the output has
-    # the same array structure as the dictionary itself. For example, it will be
-    # a BlockArray for a composite dictionary, rather than a flat array.
     result = zeros(dict)
     unsafe_dict_eval!(result, dict, x)
 end
 
 function unsafe_dict_eval!(result, dict, x)
-    for (idx, z) in pointvalues(dict, x)
+    for (idx, z) in unsafe_pointvalues(dict, x)
         result[idx] = z
     end
     result
@@ -296,10 +295,14 @@ GenericDictValueIterator(Φ::Dictionary, x, I) =
     GenericDictValueIterator{typeof(x),typeof(Φ),typeof(I),codomaintype(Φ)}(Φ, x, I)
 
 function pointvalues(Φ::Dictionary, x)
-    # Let's discourage the use of the iterator for points outside the support.
+    # We discourage the use of the iterator for points outside the support,
+    # so that the iterator itself can invoke unsafe_eval_element.
     @assert in_support(Φ, x)
     GenericDictValueIterator(Φ, x)
 end
+
+# omit the check on the point being inside the domain
+unsafe_pointvalues(Φ::Dictionary, x) = GenericDictValueIterator(Φ, x)
 
 indexiterator(iter::GenericDictValueIterator) = iter.idxiter
 
