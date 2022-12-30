@@ -206,36 +206,28 @@ struct ProductIndexList{N} <: IndexList{ProductIndex{N}}
     size    ::  NTuple{N,Int}
 end
 
-# There is something dodgy about defining the index list to be an abstract vector,
-# yet having its size be that of a tensor. What matters is that the length of
-# the list is correct, and that the list can be indexed with integers.
-# All code which assumes that length(list) == size(list)[1] will be fooled...
-size(list::ProductIndexList) = list.size
+size(list::ProductIndexList) = (prod(list.size),)
+productsize(list::ProductIndexList) = list.size
 
 # We use Cartesian indexing, because that is more efficient than linear indexing
 # when iterating over product sets: we have to convert int's to cartesian indices
 # anyway
 Base.IndexStyle(list::ProductIndexList) = Base.IndexCartesian()
 
-# We have to override eachindex, because the default eachindex in Base returns
-# a linear index for a vector (because any IndexList is an AbstractVector), and
-# the most efficient iteration over product dictionaries is using cartesian indices.
-eachindex(list::ProductIndexList) = CartesianIndices(axes(list))
-
-product_native_index(size, idx::Int) = ProductIndex(CartesianIndices(size)[idx])
+product_native_index(size::NTuple{N,Int}, idx::Int) where {N} = ProductIndex(CartesianIndices(size)[idx])
 product_native_index(size::NTuple{N,Int}, idx::NTuple{N,Int}) where {N} = ProductIndex(idx)
 product_native_index(size::NTuple{N,Int}, idx::ProductIndex{N}) where {N} = idx
 product_native_index(size::NTuple, idx1::Int, idx2::Int, indices::Int...) =
 	product_native_index(size, (idx1,idx2,indices...))
 
-getindex(list::ProductIndexList, idx...) = product_native_index(size(list), idx...)
+getindex(list::ProductIndexList, idx::Int) = product_native_index(productsize(list), idx)
 
 product_linear_index(size, idx::ProductIndex) = LinearIndices(size)[indextuple(idx)...]
 product_linear_index(list::ProductIndexList, idx::Int) = idx
 product_linear_index(list::ProductIndexList, I...) =
 	product_linear_index(list, product_native_index(I...))
 
-linear_index(list::ProductIndexList, I...) = product_linear_index(size(list), I...)
+linear_index(list::ProductIndexList, I...) = product_linear_index(productsize(list), I...)
 
 
 
