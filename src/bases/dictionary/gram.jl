@@ -83,7 +83,7 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
 	catch e
 		# Intersection or integration failed, use safe evaluation
 		@warn "Error thrown, trying to recover"
-		# qs = quadstrategy(prectype(Φ1, Φ2); options...)
+		qs = quadstrategy(prectype(Φ1, Φ2); options...)
 		safe_default_dict_innerproduct(Φ1, i, Φ2, j, measure, qs)
 	end
 end

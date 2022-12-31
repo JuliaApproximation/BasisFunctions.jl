@@ -182,6 +182,10 @@ gram(::Type{T}, dict::TensorProductDict, measure::Union{ProductWeight,DiscretePr
 mixedgram(::Type{T}, dict1::TensorProductDict, dict2::TensorProductDict, measure::Union{ProductWeight,DiscreteProductWeight}; options...) where {T} =
     TensorProductOperator(map((x,y,z)->mixedgram(T, x,y,z; options...), components(dict1), components(dict2), components(measure))...)
 
+normalize(d::TensorProductDict) = TensorProductDict(map(normalize, components(d))...)
+orthogonalize(d::TensorProductDict) = TensorProductDict(map(orthogonalize, components(d))...)
+orthogonalize(d::TensorProductDict, μ::ProductWeight) =
+    TensorProductDict(map(orthogonalize, components(d), components(μ))...)
 
 Display.combinationsymbol(d::TensorProductDict) = Display.Symbol('⊗')
 Display.displaystencil(d::TensorProductDict) = composite_displaystencil(d)

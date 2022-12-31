@@ -183,16 +183,15 @@ end
 differentiation(::Type{T}, dsrc::OperatedDict, ddest::Dictionary, order; options...) where {T} =
 	differentiation(T, dest(dsrc), ddest, order; options...) * operator(dsrc)
 
-function unsafe_eval_element_derivative(dict::OperatedDict, i, x, order)
-	@assert order == 1
+unsafe_eval_element_derivative(dict::OperatedDict, i, x, order) =
     _unsafe_eval_element_derivative(dict, i, x, order, operator(dict), dict.scratch_src, dict.scratch_dest)
-end
 
 function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order, op, scratch_src, scratch_dest)
     idx = linear_index(dict, idxn)
     if isdiag(op)
         diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x, order)
     else
+		@assert order == 1
 		if hasderivative(superdict(dict))
 		    scratch_src[idx] = 1
 		    apply!(op, scratch_dest, scratch_src)
@@ -253,6 +252,10 @@ function mixedgram2(T, dict1, dict2::OperatedDict, measure; options...)
 	wrap_operator(dict2, dict1, G *  operator(dict2))
 end
 
+orthogonalize(Φ::Dictionary) = ArrayOperator(sqrt(inv(matrix(gram(Φ)))), Φ) * Φ
+orthogonalize(Φ::Dictionary, μ) = ArrayOperator(sqrt(inv(matrix(gram(Φ, μ)))), Φ) * Φ
+
+
 #################
 # Special cases
 #################
@@ -293,9 +296,6 @@ dest(d::ScaledDict) = src(d)
 
 normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
 normalize(d::Dictionary, μ) = ScaledDict(d, [1/norm(bf, μ) for bf in d])
-
-orthogonalize(Φ::Dictionary) = sqrt(inv(gram(Φ))) * Φ
-orthogonalize(Φ::Dictionary, μ) = sqrt(inv(gram(Φ, μ))) * Φ
 
 unsafe_eval_element(dict::ScaledDict, i, x) =
 	dict.diag[i] * unsafe_eval_element(superdict(dict), i, x)
