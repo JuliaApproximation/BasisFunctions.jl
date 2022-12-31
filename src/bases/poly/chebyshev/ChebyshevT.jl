@@ -171,6 +171,24 @@ end
 transform_from_grid(T, src::GridBasis, dest::ChebyshevT, grid; options...) =
 	inv(transform_to_grid(T, dest, src, grid; options...))
 
+function roots(dict::ChebyshevT, coefficients::AbstractVector)
+	T = eltype(coefficients)
+	n = length(dict)-1
+	# construct the colleague matrix (according to ATAP)
+	C = zeros(T, n, n)
+	C[1,2] = 1
+	for i in 1:n-1
+		C[i+1,i] = one(T)/2
+		if i < n-1
+			C[i+1,i+2] = one(T)/2
+		end
+	end
+	for i in 1:n
+		C[n,i] -= coefficients[i]/(2coefficients[end])
+	end
+	eigvals(C)
+end
+
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 
 function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
