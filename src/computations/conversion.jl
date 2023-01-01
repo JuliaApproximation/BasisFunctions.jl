@@ -146,6 +146,9 @@ end
 # Generic conversion
 ###############################
 
+change_basis(F1::Expansion; dest::Dictionary) =
+    conversion(dictionary(F1), dest) * F1
+
 conversion(::Type{T}, src, dest; options...) where {T} =
     conversion1(T, src, dest; options...)
 conversion1(T, src::Dictionary, dest; options...) =
