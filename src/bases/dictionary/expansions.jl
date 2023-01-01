@@ -178,7 +178,7 @@ end
 
 function (*)(s1::Expansion, s2::Expansion)
     @assert iscompatible(dictionary(s1),dictionary(s2))
-    (mset,mcoefficients) = (*)(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
+    (mset,mcoefficients) = dict_multiply(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
     Expansion(mset,mcoefficients)
 end
 

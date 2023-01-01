@@ -191,10 +191,10 @@ end
 
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 
-function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
+function dict_multiply(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     @assert domaintype(src1) == domaintype(src2)
     T = promote_type(eltype(coef_src1), eltype(coef_src2))
-    dest = ChebyshevT{T}(length(src1)+length(src2))
+    dest = ChebyshevT{T}(length(src1)+length(src2)-1)
     coef_dest = zeros(dest)
     for i = 1:length(src1)
         for j = 1:length(src2)
@@ -202,7 +202,7 @@ function (*)(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
             coef_dest[abs(i-j)+1] += one(T)/2*coef_src1[i]*coef_src2[j]
         end
     end
-    (dest,coef_dest)
+    dest, coef_dest
 end
 
 "A Chebyshev polynomial of the first kind."

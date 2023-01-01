@@ -555,20 +555,20 @@ _pseudodifferential_operator(::Type{T}, src, dest, symbol::Function; options...)
 
 
 # Multiplication of Fourier Series
-function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
+function dict_multiply(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
 	T = promote_type(eltype(coef_src1), eltype(coef_src2))
 	if oddlength(src1) && evenlength(src2)
 	    dsrc2 = resize(src2, length(src2)+1)
-	    (*)(src1, dsrc2, coef_src1, extension(T, src2, dsrc2)*coef_src2)
+	    dict_multiply(src1, dsrc2, coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	elseif evenlength(src1) && oddlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
-	    (*)(dsrc1, src2, extension(T, src1,dsrc1)*coef_src1,coef_src2)
+	    dict_multiply(dsrc1, src2, extension(T, src1,dsrc1)*coef_src1,coef_src2)
 	elseif evenlength(src1) && evenlength(src2)
 		dsrc1 = resize(src1, length(src1)+1)
 	    dsrc2 = resize(src2, length(src2)+1)
 		T1 = eltype(coef_src1)
 		T2 = eltype(coef_src2)
-	    (*)(dsrc1,dsrc2,extension(T, src1, dsrc1)*coef_src1, extension(T, src2, dsrc2)*coef_src2)
+	    dict_multiply(dsrc1,dsrc2,extension(T, src1, dsrc1)*coef_src1, extension(T, src2, dsrc2)*coef_src2)
 	else # they are both odd
 		@assert domaintype(src1) == domaintype(src2)
 	    dest = Fourier{domaintype(src1)}(length(src1)+length(src2)-1)
@@ -576,7 +576,7 @@ function (*)(src1::Fourier, src2::Fourier, coef_src1, coef_src2)
 	    coef_src2 = [coef_src2[(nhalf(src2))+2:end]; coef_src2[1:nhalf(src2)+1]]
 	    coef_dest = conv(coef_src1,coef_src2)
 	    coef_dest = [coef_dest[(nhalf(dest)+1):end]; coef_dest[1:(nhalf(dest))]]
-	    (dest,coef_dest)
+	    dest, coef_dest
 	end
 end
 
