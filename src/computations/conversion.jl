@@ -7,7 +7,8 @@ export conversion,
     restriction,
     restrictionsize,
     evaluation,
-    approximation
+    approximation,
+    change_basis
 
 """
 ```

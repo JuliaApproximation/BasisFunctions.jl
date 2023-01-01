@@ -276,6 +276,8 @@ function (*)(op::DictionaryOperator, dict::OperatedDict)
     OperatedDict(op*operator(dict))
 end
 
+roots(dict::OperatedDict, coef) = roots(superdict(dict), operator(dict)*coef)
+
 
 ## A simple scaling
 

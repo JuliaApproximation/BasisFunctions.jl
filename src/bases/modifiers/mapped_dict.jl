@@ -206,6 +206,11 @@ function transform_to_grid(::Type{T}, s1::MappedDict, s2::GridBasis, grid; optio
     wrap_operator(s1, s2, op)
 end
 
+function conversion(::Type{T}, src::MappedDict, dest::MappedDict) where {T}
+    @assert iscompatible(forward_map(src), forward_map(dest))
+    wrap_operator(src, dest, conversion(T, superdict(src), superdict(dest)))
+end
+
 
 
 ###################
@@ -313,11 +318,15 @@ plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), forward_map(S))
 #################
 
 function dict_multiply(dict1::MappedDict, dict2::MappedDict, coef_src1, coef_src2)
-    @assert iscompatible(superdict(dict1),superdict(dict2))
+    @assert iscompatible(dict1, dict2)
     mset,mcoef = dict_multiply(superdict(dict1),superdict(dict2),coef_src1,coef_src2)
     mapped_dict(mset, forward_map(dict1)), mcoef
 end
 
+function roots(dict::MappedDict, coef)
+    r = roots(superdict(dict), coef)
+    forward_map(dict).(r)
+end
 
 ## Printing
 

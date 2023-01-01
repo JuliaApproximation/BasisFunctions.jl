@@ -83,6 +83,11 @@ function dict_innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j
 	end
 end
 
+function roots(dict::Jacobi, coefficients::AbstractVector)
+	cheb = ChebyshevT(length(dict))
+	roots(cheb, conversion(dict, cheb)*coefficients)
+end
+
 ## Printing
 function show(io::IO, b::Jacobi{Float64})
 	if jacobi_α(b) == 0 && jacobi_β(b) == 0

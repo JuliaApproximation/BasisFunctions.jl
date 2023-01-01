@@ -44,3 +44,8 @@ rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
 
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")
+
+function roots(dict::Legendre, coefficients::AbstractVector)
+	cheb = ChebyshevT(length(dict))
+	roots(cheb, conversion(dict, cheb)*coefficients)
+end
