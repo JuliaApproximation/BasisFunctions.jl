@@ -221,10 +221,6 @@ show(io::IO, p::ChebyshevTPolynomial{Float64}) = print(io, "ChebyshevTPolynomial
 
 convert(::Type{TypedFunction{T,T}}, p::ChebyshevTPolynomial) where {T} = ChebyshevTPolynomial{T}(p.degree)
 
-support(::ChebyshevTPolynomial{T}) where {T} = ChebyshevInterval{T}()
-
-(p::ChebyshevTPolynomial{T})(x) where {T} = eval_element(ChebyshevT{T}(degree(p)+1), degree(p)+1, x)
-
 basisfunction(dict::ChebyshevT, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::ChebyshevT{T}, idx::PolynomialDegree) where {T} = ChebyshevTPolynomial{T}(degree(idx))
 

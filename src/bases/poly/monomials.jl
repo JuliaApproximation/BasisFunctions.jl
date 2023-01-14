@@ -30,6 +30,35 @@ function unsafe_eval_element_derivative(b::Monomials{T}, idxn::PolynomialDegree,
     end
 end
 
+hasderivative(b::Monomials) = true
+
+function derivative_dict(Φ::Monomials, order::Int; options...)
+	n = length(Φ)
+	@assert n-order >= 0
+	similar(Φ, n-order)
+end
+
+function differentiation(::Type{T}, src::Monomials, dest::Monomials, order::Int; options...) where {T}
+	n = length(src)
+	m = length(dest)
+	@assert m >= n-order
+	if orderiszero(order)
+		@assert src == dest
+		IdentityOperator{T}(src)
+	else
+		A = zeros(T, m, n)
+		for i in 1:n-order
+			A[i,i+1] = i
+		end
+		op = ArrayOperator(A, src, dest)
+		if order == 1
+			op
+		else
+			differentiation(T, src, dest, order-1; options...) * op
+		end
+	end
+end
+
 similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)
 
 extension(::Type{T}, src::Monomials, dest::Monomials; options...) where {T} =
@@ -48,20 +77,23 @@ Monomial{T}(p::Monomial) where {T} = Monomial{T}(p.degree)
 Monomial(args...) = Monomial{Float64}(args...)
 Monomial{T}(i::PolynomialDegree) where {T} = Monomial{T}(value(i))
 
-show(io::IO, p::Monomial) = print(io, "x^$(degree(p)) (monomial)")
+function show(io::IO, p::Monomial)
+	if degree(p) == 0
+		print(io, "1 (monomial)")
+	elseif degree(p) == 1
+		print(io, "x (monomial)")
+	else
+		print(io, "x^$(degree(p)) (monomial)")
+	end
+end
 
 convert(::Type{TypedFunction{T,T}}, p::Monomial) where {T} = Monomial{T}(p.degree)
 
-support(::Monomial{T}) where {T} = DomainSets.FullSpace{T}()
-
-(m::Monomial)(x) = x^degree(m)
-
 (*)(p1::Monomial, p2::Monomial) = (*)(promote(p1,p2)...)
-
 (*)(p1::Monomial{T}, p2::Monomial{T}) where {T} = Monomial{T}(degree(p1)+degree(p2))
-
 
 basisfunction(dict::Monomials, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::Monomials{T}, idx::PolynomialDegree) where {T} = Monomial{T}(degree(idx))
 
 dictionary(p::Monomial{T}) where {T} = Monomials{T}(degree(p)+1)
+index(p::Monomial) = degree(p)+1

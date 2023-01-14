@@ -17,7 +17,12 @@ approx_length(b::OPS, n::Int) = n
 # the degree is maintained (resulting in a square differentiation matrix).
 function derivative_dict(dict::OPS, order::Int; reducedegree = true, options...)
 	@assert order >= 0
-	reducedegree ? resize(dict, length(dict)-order) : dict
+	if reducedegree
+		@assert length(dict)-order >= 0
+		resize(dict, length(dict)-order)
+	else
+		dict
+	end
 end
 
 function antiderivative_dict(s::OPS, order::Int; options...)

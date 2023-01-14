@@ -65,12 +65,10 @@ show(io::IO, p::ChebyshevUPolynomial) = print(io, "U_$(degree(p))(x) (Chebyshev 
 
 convert(::Type{TypedFunction{T,T}}, p::ChebyshevUPolynomial) where {T} = ChebyshevUPolynomial{T}(p.degree)
 
-support(::ChebyshevUPolynomial{T}) where {T} = ChebyshevInterval{T}()
+dictionary(p::ChebyshevUPolynomial{T}) where {T} = ChebyshevU{T}(degree(p)+1)
+index(p::ChebyshevUPolynomial) = degree(p)+1
 
 (p::ChebyshevUPolynomial{T})(x) where {T} = eval_element(ChebyshevU{T}(degree(p)+1), degree(p)+1, x)
 
 basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))
-
-dictionary(p::ChebyshevUPolynomial{T}) where {T} = ChebyshevU{T}(degree(p)+1)
-index(p::ChebyshevUPolynomial) = degree(p)+1

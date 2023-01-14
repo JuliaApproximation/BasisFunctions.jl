@@ -45,3 +45,7 @@ end
 abstract type Polynomial{T} <: AbstractBasisFunction{T,T} end
 
 degree(p::Polynomial) = p.degree
+(p::Polynomial)(x) = eval_element(dictionary(p), index(p), x)
+
+support(p::Polynomial) = support(dictionary(p))
+measure(p::Polynomial) = measure(dictionary(p))
