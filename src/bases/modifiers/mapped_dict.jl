@@ -208,7 +208,8 @@ end
 
 function conversion(::Type{T}, src::MappedDict, dest::MappedDict) where {T}
     @assert iscompatible(forward_map(src), forward_map(dest))
-    wrap_operator(src, dest, conversion(T, superdict(src), superdict(dest)))
+    op = conversion(T, superdict(src), superdict(dest))
+    wrap_operator(src, dest, op)
 end
 
 

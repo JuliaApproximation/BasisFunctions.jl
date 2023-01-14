@@ -53,7 +53,8 @@ span_issubset2(d1, d2::ComplexifiedDict) = span_issubset(d1, superdict(d2))
 
 function conversion2(T, d1, d2::ComplexifiedDict; options...)
     @assert !isreal(T)
-    conversion2(T, d1, superdict(d2); options...)
+    op = conversion(T, d1, superdict(d2); options...)
+    wrap_operator(d1, d2, op)
 end
 
 ## Printing

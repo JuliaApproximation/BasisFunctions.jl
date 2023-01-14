@@ -255,10 +255,14 @@ end
 orthogonalize(Φ::Dictionary) = ArrayOperator(sqrt(inv(matrix(gram(Φ)))), Φ) * Φ
 orthogonalize(Φ::Dictionary, μ) = ArrayOperator(sqrt(inv(matrix(gram(Φ, μ)))), Φ) * Φ
 
-conversion1(::Type{T}, src::OperatedDict, dest; options...) where {T} =
-	conversion(T, superdict(src), dest; options...) * operator(src)
-conversion2(::Type{T}, src, dest::OperatedDict; options...) where {T} =
-	inv(operator(dest)) * conversion(T, src, superdict(dest); options...)
+function conversion1(::Type{T}, src::OperatedDict, dest; options...) where {T}
+	op = conversion(T, superdict(src), dest; options...) * operator(src)
+	wrap_operator(src, dest, op)
+end
+function conversion2(::Type{T}, src, dest::OperatedDict; options...) where {T}
+	op = inv(operator(dest)) * conversion(T, src, superdict(dest); options...)
+	wrap_operator(src, dest, op)
+end
 
 #################
 # Special cases
