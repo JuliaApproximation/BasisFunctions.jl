@@ -176,9 +176,17 @@ end
 
 (-)(e::Expansion) = similar(e, -coefficients(e))
 
+@deprecate dict_multiply expansion_multiply
+expansion_multiply(dict1, dict2, coef1, coef2) =
+    expansion_multiply1(dict1, dict2, coef1, coef2)
+expansion_multiply1(dict1, dict2, coef1, coef2) =
+    expansion_multiply2(dict1, dict2, coef1, coef2)
+expansion_multiply2(dict1, dict2, coef1, coef2) =
+    error("Multiplication of expansions in these dictionaries is not implemented.")
+
 function (*)(s1::Expansion, s2::Expansion)
     @assert iscompatible(dictionary(s1),dictionary(s2))
-    (mset,mcoefficients) = dict_multiply(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
+    (mset,mcoefficients) = expansion_multiply(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
     Expansion(mset,mcoefficients)
 end
 

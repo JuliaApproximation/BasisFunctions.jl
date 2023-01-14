@@ -278,6 +278,10 @@ end
 
 roots(dict::OperatedDict, coef) = roots(superdict(dict), operator(dict)*coef)
 
+expansion_multiply1(dict1::OperatedDict, dict2, coef1, coef2) =
+	expansion_multiply(superdict(dict1), dict2, operator(dict1)*coef1, coef2)
+expansion_multiply2(dict1, dict2::OperatedDict, coef1, coef2) =
+	expansion_multiply(dict1, superdict(dict2), coef1, operator(dict2)*coef2)
 
 ## A simple scaling
 

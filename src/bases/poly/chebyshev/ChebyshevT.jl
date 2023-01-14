@@ -191,7 +191,7 @@ end
 
 iscompatible(src1::ChebyshevT, src2::ChebyshevT) = true
 
-function dict_multiply(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
+function expansion_multiply(src1::ChebyshevT, src2::ChebyshevT, coef_src1, coef_src2)
     @assert domaintype(src1) == domaintype(src2)
     T = promote_type(eltype(coef_src1), eltype(coef_src2))
     dest = ChebyshevT{T}(length(src1)+length(src2)-1)

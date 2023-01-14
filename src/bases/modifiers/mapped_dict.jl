@@ -317,9 +317,9 @@ plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), forward_map(S))
 # Arithmetic
 #################
 
-function dict_multiply(dict1::MappedDict, dict2::MappedDict, coef_src1, coef_src2)
+function expansion_multiply(dict1::MappedDict, dict2::MappedDict, coef_src1, coef_src2)
     @assert iscompatible(dict1, dict2)
-    mset,mcoef = dict_multiply(superdict(dict1),superdict(dict2),coef_src1,coef_src2)
+    mset,mcoef = expansion_multiply(superdict(dict1),superdict(dict2),coef_src1,coef_src2)
     mapped_dict(mset, forward_map(dict1)), mcoef
 end
 
