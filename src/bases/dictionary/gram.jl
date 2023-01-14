@@ -5,22 +5,6 @@
 # associated with a measure.
 hasmeasure(Φ::Dictionary) = false
 
-# Determine a measure to use when two dictionaries are given
-defaultmeasure(Φ1::Dictionary, Φ2::Dictionary) =
-    _defaultmeasure(Φ1, Φ2, measure(Φ1), measure(Φ2))
-
-function _defaultmeasure(Φ1, Φ2, m1, m2)
-    if iscompatible(m1, m2)
-        m1
-    else
-        if iscompatible(support(Φ1),support(Φ2))
-            lebesguemeasure(support(Φ1))
-        else
-            error("Please specify which measure to use for the combination of $(Φ1) and $(Φ2).")
-        end
-    end
-end
-
 # Shortcut: Dictionaries of the same type have just one measure
 defaultmeasure(Φ1::D, Φ2::D) where {D <: Dictionary} = measure(Φ1)
 
