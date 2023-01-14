@@ -72,7 +72,7 @@ postprocess(φ::AbstractBasisFunction, grid, vals) = postprocess(dictionary(φ),
 
 ## Plotting grids
 # Always plot on equispaced grids for the best plotting resolution
-plotgrid(S::Dictionary1d, n) = PeriodicEquispacedGrid(n, support(S))
+plotgrid(S::Dictionary1d, n) = EquispacedGrid(n, support(S))
 # look at first element by default
 plotgrid(S::MultiDict, n) = plotgrid(component(S,1), n)
 plotgrid(S::DerivedDict, n) = plotgrid(superdict(S),n)
