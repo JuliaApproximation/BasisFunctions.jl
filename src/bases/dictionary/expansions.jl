@@ -98,8 +98,6 @@ function antidifferentiate(e::Expansion, order = 1; options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
-Base.broadcast(e::Expansion, grid::AbstractGrid) = eval_expansion(dictionary(e), coefficients(e), grid)
-
 # Shorthands for partial derivatives
 ∂x(f::Expansion) = differentiate(f, 1, 1)
 ∂y(f::Expansion) = differentiate(f, 2, 1)
@@ -124,21 +122,7 @@ adjoint(f::Expansion) = differentiate(f)
 
 roots(f::Expansion) = roots(dictionary(f), coefficients(f))
 
-# Delegate generic operators
-for op in (:extension, :restriction, :evaluation, :approximation, :transform)
-    @eval $op(src::Expansion, dest::Expansion) = $op(promote_type(codomaintype(src),codomaintype(dest)), dictionary(src), dictionary(dest))
-end
-
-for op in (:interpolation, :approximation)
-    @eval $op(s::Expansion) = $op(dictionary(s))
-end
-
-differentiation(e::Expansion; options...) = differentiation(codomaintype(e), dictionary(e); options...)
-differentiation(e::Expansion, order; options...) = differentiation(codomaintype(e), dictionary(e), order; options...)
-
-
 show(io::IO, mime::MIME"text/plain", fun::Expansion) = composite_show(io, mime, fun)
-
 Display.displaystencil(fun::Expansion) = ["Expansion(", dictionary(fun), ", ", coefficients(fun), ")"]
 
 # Invoke split_interval on the set and compute the coefficients such that
@@ -157,23 +141,17 @@ function promote_length(e1::Expansion, e2::Expansion)
     if length(e1) == length(e2)
         e1, e2
     elseif length(e1) < length(e2)
-        extension(e1, e2) * e1, e2
+        extension(dictionary(e1), dictionary(e2)) * e1, e2
     else
-        e1, extension(e2, e1) * e2
+        e1, extension(dictionary(e2), dictionary(e1)) * e2
     end
 end
 
-function (+)(e1::Expansion, e2::Expansion)
-    @assert iscompatible(dictionary(e1),dictionary(e2))
-    f1, f2 = promote_length(e1, e2)
-    Expansion(dictionary(f1), coefficients(f1)+coefficients(f2))
+function (+)(f::Expansion, g::Expansion)
+    dict, coef = expansion_sum(dictionary(f),dictionary(g),coefficients(f),coefficients(g))
+    Expansion(dict, coef)
 end
-
-function (-)(e1::Expansion, e2::Expansion)
-    @assert iscompatible(dictionary(e1),dictionary(e2))
-    f1, f2 = promote_length(e1, e2)
-    Expansion(dictionary(f1), coefficients(f1)-coefficients(f2))
-end
+(-)(e1::Expansion, e2::Expansion) = e1 + similar(e2, -coefficients(e2))
 
 (-)(e::Expansion) = similar(e, -coefficients(e))
 
@@ -185,10 +163,27 @@ expansion_multiply1(dict1, dict2, coef1, coef2) =
 expansion_multiply2(dict1, dict2, coef1, coef2) =
     error("Multiplication of expansions in these dictionaries is not implemented.")
 
-function (*)(s1::Expansion, s2::Expansion)
-    @assert iscompatible(dictionary(s1),dictionary(s2))
-    (mset,mcoefficients) = expansion_multiply(dictionary(s1),dictionary(s2),coefficients(s1),coefficients(s2))
-    Expansion(mset,mcoefficients)
+expansion_sum(dict1, dict2, coef1, coef2) =
+    expansion_sum1(dict1, dict2, coef1, coef2)
+expansion_sum1(dict1, dict2, coef1, coef2) =
+    expansion_sum2(dict1, dict2, coef1, coef2)
+function expansion_sum2(dict1, dict2, coef1, coef2)
+    if iscompatible(dict1, dict2)
+        default_expansion_sum(dict1, dict2, coef1, coef2)
+    else
+        error("Multiplication of expansions in these dictionaries is not implemented.")
+    end
+end
+
+function default_expansion_sum(dict1, dict2, coef1, coef2)
+    @assert iscompatible(dict1, dict2)
+    e1, e2 = promote_length(Expansion(dict1, coef1), Expansion(dict2, coef2))
+    dictionary(e1), coefficients(e1)+coefficients(e2)
+end
+
+function (*)(f::Expansion, g::Expansion)
+    dict, coef = expansion_multiply(dictionary(f),dictionary(g),coefficients(f),coefficients(g))
+    Expansion(dict, coef)
 end
 
 (*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
@@ -201,14 +196,10 @@ Base.:/(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)/a)
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 
+# TODO: we may not want to identify an Expansion with its array of coefficients
 iterate(e::Expansion) = iterate(coefficients(e))
-
 iterate(e::Expansion, state) = iterate(coefficients(e), state)
 
 Base.collect(e::Expansion) = coefficients(e)
 
 Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-
-
-+(f1::Function, f2::Expansion) = (x->f1(x)+f2(x))
-+(f1::Expansion, f2::Function) = (x->f1(x)+f2(x))
