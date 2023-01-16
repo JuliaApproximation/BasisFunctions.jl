@@ -13,6 +13,10 @@ const ComplexifiedDict1d{D,S<:Number,T<:Number} = ComplexifiedDict{D,S,T}
 ComplexifiedDict(d::Dictionary{S,T}) where {S,T<:Real} = ComplexifiedDict{typeof(d),S,T}(d)
 
 Base.complex(dict::Dictionary) = ensure_coefficienttype(complex(coefficienttype(dict)), dict)
+function Base.real(dict::Dictionary)
+    @assert isreal(dict)
+    dict
+end
 Base.real(dict::ComplexifiedDict) = superdict(dict)
 
 similardictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
@@ -51,6 +55,9 @@ span_issubset(d1::ComplexifiedDict, d2::ComplexifiedDict) =
     span_issubset(superdict(d1), superdict(d2))
 span_issubset2(d1, d2::ComplexifiedDict) = span_issubset(d1, superdict(d2))
 
+iscompatible(d1::Dictionary, d2::ComplexifiedDict) = iscompatible(d1, superdict(d2))
+iscompatible(d1::ComplexifiedDict, d2::Dictionary) = iscompatible(superdict(d1), d2)
+iscompatible(d1::ComplexifiedDict, d2::ComplexifiedDict) = iscompatible(superdict(d1), superdict(d2))
 function conversion2(T, d1, d2::ComplexifiedDict; options...)
     @assert !isreal(T)
     op = conversion(T, d1, superdict(d2); options...)

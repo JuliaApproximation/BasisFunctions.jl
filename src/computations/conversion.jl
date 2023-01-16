@@ -16,8 +16,11 @@ conversion(::Type{T}, src::Dictionary, dest::Dictionary; options...)
 ```
 
 Construct an operator with element type `T` that converts coefficients from the
-source dictionary to coefficients of the destination dictionary. The conversion
-should be exact - otherwise use a projection.
+source dictionary to coefficients of the destination dictionary.
+
+The conversion is often exact, but this can not always be achieved with
+certainty. For example, it is hard to know in advance whether converting to
+evaluations in a grid is invertible.
 """
 conversion
 
@@ -38,8 +41,13 @@ end
 ############################
 
 # Conversion between dictionaries of the same type: decide between extension and restriction.
-conversion(::Type{T}, src::D, dest::D; options...) where {T,D <: Dictionary} =
-    extension_restriction(T, src, dest; options...)
+function conversion(::Type{T}, src::D, dest::D; options...) where {T,D <: Dictionary}
+    if src == dest
+        IdentityOperator{T}(src)
+    else
+        extension(T, src, dest; options...)
+    end
+end
 
 function extension_restriction(T, src::Dictionary, dest::Dictionary; options...)
     if dimensions(src) == dimensions(dest)
@@ -169,6 +177,7 @@ default_conversion(T, src, dest; options...) =
 # Convert to and from grids.
 # To grid: we invoke `evaluation`
 # From grid: we invoke `interpolation`.
+# Problem is that we don't know in general whether these would be exact.
 conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest; options...)
 
@@ -177,4 +186,4 @@ conversion(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
 
 # Resolve ambiguity by the above methods
 conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
-    extension_restriction(T, src, dest; options...)
+    extension(T, src, dest; options...)

@@ -94,8 +94,7 @@ import DomainIntegrals:
     isnormalized, isuniform,
     jacobi_α, jacobi_β, laguerre_α
 using DomainIntegrals: ProductWeight
-
-export .., numtype, integral
+export integral
 
 @reexport using GridArrays
 import GridArrays: subindices, resize, name,
@@ -110,6 +109,7 @@ using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
 # Re-exports
 export component, components, ncomponents, iscomposite,
     factors, factor, nfactors,
+    prectype, numtype,
     ChebyshevNodes, ChebyshevExtremae,
     Point,
     leftendpoint, rightendpoint, range,
@@ -117,7 +117,9 @@ export component, components, ncomponents, iscomposite,
     points, weights, discrete_weight,
     support,
     Measure, Weight, DiscreteWeight,
-    dimension
+    dimension,
+    ..,
+    integral
 
 # from bases/dictionary/indexing.jl
 export LinearIndex, value

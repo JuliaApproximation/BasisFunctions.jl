@@ -3,7 +3,6 @@
 compatible_coefficients(dict::Dictionary, coefficients) =
     length(dict) == length(coefficients)
 
-export Expansion
 """
 An `Expansion` describes a function using its expansion coefficients in a certain
 dictionary.
@@ -45,14 +44,16 @@ const Expansion4d{S <: Number,T,D,C} = Expansion{SVector{4,S},T,D,C}
 codomaintype(e::Expansion) = promote_type(codomaintype(dictionary(e)), eltype(coefficients(e)))
 isreal(e::Expansion) = isreal(e.dictionary) && isreal(eltype(coefficients(e)))
 
-export expansion
 """
     expansion(dict::Dictionary, coefficients)
 
 An expansion of a dictionary with given coefficients.
 """
-expansion(dict::Dictionary, coefficients) =
-    Expansion(dict, native_coefficients(dict, coefficients))
+function expansion(dict::Dictionary, coefficients)
+    coef = native_coefficients(dict, coefficients)
+    T = promote_type(coefficienttype(dict), eltype(coef))
+    Expansion(ensure_coefficienttype(T, dict), coef)
+end
 
 similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 
@@ -141,17 +142,47 @@ split_interval(s::Expansion, x) = Expansion(split_interval_expansion(dictionary(
 iscompatible(d1::D, d2::D) where {D<:Dictionary} = true
 iscompatible(d1::Dictionary, d2::Dictionary) = false
 
-function promote_length(e1::Expansion, e2::Expansion)
-    if length(e1) == length(e2)
-        e1, e2
-    elseif length(e1) < length(e2)
-        extension(dictionary(e1), dictionary(e2)) * e1, e2
+iscompatible(e1::Expansion, e2::Expansion) = iscompatible(dictionary(e1),dictionary(e2))
+
+function compatible_dictionary(d1::Dictionary, d2::Dictionary)
+    if d1 == d2
+        d1
     else
-        e1, extension(dictionary(e2), dictionary(e1)) * e2
+        # coefficient type and size may differ
+        T = promote_type(domaintype(d1), domaintype(d2))
+        newsize = map(max, size(d1), size(d2))
+        common_dict = similar(d1, T, newsize)
+        if isreal(coefficienttype(d1)) && isreal(coefficienttype(d2))
+            common_dict
+        else
+            complex(common_dict)
+        end
+    end
+end
+
+"""
+If two dictionaries are compatible, then they have to be convertible to a
+common dictionary.
+"""
+function conversion_to_compatible_dicts(d1::Dictionary, d2::Dictionary)
+    if d1 == d2
+        return IdentityOperator(d1), IdentityOperator(d2)
+    end
+    common_dict = compatible_dictionary(d1, d2)
+    conversion(d1, common_dict), conversion(d2, common_dict)
+end
+
+function to_compatible_expansions(e1::Expansion, e2::Expansion)
+    if dictionary(e1) == dictionary(e2)
+        e1, e2
+    else
+        E1, E2 = conversion_to_compatible_dicts(dictionary(e1), dictionary(e2))
+        E1*e1, E2*e2
     end
 end
 
 function (+)(f::Expansion, g::Expansion)
+    @assert iscompatible(f, g)
     dict, coef = expansion_sum(dictionary(f),dictionary(g),coefficients(f),coefficients(g))
     Expansion(dict, coef)
 end
@@ -181,7 +212,7 @@ end
 
 function default_expansion_sum(dict1, dict2, coef1, coef2)
     @assert iscompatible(dict1, dict2)
-    e1, e2 = promote_length(Expansion(dict1, coef1), Expansion(dict2, coef2))
+    e1, e2 = to_compatible_expansions(Expansion(dict1, coef1), Expansion(dict2, coef2))
     dictionary(e1), coefficients(e1)+coefficients(e2)
 end
 
@@ -193,6 +224,23 @@ end
 (*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
 
 Base.complex(e::Expansion) = Expansion(complex(dictionary(e)), complex(coefficients(e)))
+function Base.real(e::Expansion)
+    dict, coef = expansion_real(dictionary(e), coefficients(e))
+    Expansion(dict, coef)
+end
+function Base.imag(e::Expansion)
+    dict, coef = expansion_imag(dictionary(e), coefficients(e))
+    Expansion(dict, coef)
+end
+function expansion_real(dict::Dictionary, coefficients)
+    @assert isreal(dict)
+    real(dict), real(coefficients)
+end
+function expansion_imag(dict::Dictionary, coefficients)
+    @assert isreal(dict)
+    real(dict), imag(coefficients)
+end
+
 Base.one(e::Expansion) = similar(e, coefficients_of_one(dictionary(e)))
 
 expansion_of_one(dict::Dictionary) = Expansion(dict, coefficients_of_one(dict))
@@ -202,9 +250,9 @@ for op in (:+, :-)
     @eval Base.$op(a::Number, e::Expansion) = $op(a*one(e), e)
     @eval Base.$op(e::Expansion, a::Number) = $op(e, a*one(e))
 end
-Base.:*(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)*a)
-Base.:*(a::Number, e::Expansion) = Expansion(dictionary(e), a*coefficients(e))
-Base.:/(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)/a)
+Base.:*(e::Expansion, a::Number) = expansion(dictionary(e), coefficients(e)*a)
+Base.:*(a::Number, e::Expansion) = expansion(dictionary(e), a*coefficients(e))
+Base.:/(e::Expansion, a::Number) = expansion(dictionary(e), coefficients(e)/a)
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 

@@ -15,10 +15,10 @@ convert(::Type{TrigSeries{T}}, d::TrigSeries) where {T} = TrigSeries{T}(d.n)
 
 size(d::TrigSeries) = (d.n,)
 
-sinhalf(d::TrigSeries) = sinhalf(length(d))
 coshalf(d::TrigSeries) = coshalf(length(d))
-sinhalf(n::Int) = nhalf(n)
-coshalf(n::Int) = n-nhalf(n)
+sinhalf(d::TrigSeries) = sinhalf(length(d))
+coshalf(n::Int) = 1+nhalf(n)
+sinhalf(n::Int) = n-coshalf(n)
 
 similar(d::TrigSeries, ::Type{T}, n::Int) where {T} = TrigSeries{T}(n)
 
@@ -64,3 +64,55 @@ tocoefficientformat(a, d::TrigSeries) = BlockVector(a, [coshalf(d),sinhalf(d)])
 
 hasconstant(b::TrigSeries) = true
 coefficients_of_one(b::TrigSeries) = (c=zeros(b); c[1]=1; c)
+
+function expansion_real(dict::Fourier, coef)
+	n = length(dict)
+	@assert length(coef) == n
+	m = iseven(n) ? n+1 : n
+	coef2 = zeros(real(eltype(coef)), m)
+	nh = coshalf(m)
+	coef2[1] = real(coef[1])
+	for i in 2:nh
+		coef2[i] = real(coef[i]) + real(coef[end-i+2])
+	end
+	for i in 1:nh-1
+		coef2[nh+i] = -imag(coef[1+i]) + imag(coef[end-i+1])
+	end
+	TrigSeries{eltype(coef2)}(m), coef2
+end
+
+function expansion_imag(dict::Fourier, coef)
+	n = length(dict)
+	@assert length(coef) == n
+	m = iseven(n) ? n+1 : n
+	coef2 = zeros(real(eltype(coef)), m)
+	nh = coshalf(m)
+	coef2[1] = imag(coef[1])
+	for i in 2:nh
+		coef2[i] = imag(coef[i]) + imag(coef[end-i+2])
+	end
+	for i in 1:nh-1
+		coef2[nh+i] = real(coef[1+i]) - real(coef[end-i+1])
+	end
+	TrigSeries{eltype(coef2)}(m), coef2
+end
+
+# converting trigonometric series to Fourier series
+function conversion(::Type{T}, src::TrigSeries, dest::Fourier) where {T}
+	@assert !isreal(T)
+	n = length(src)
+	m = length(dest)
+	@assert (m >= n)
+	A = zeros(T, m, n)
+	A[1,1] = 1
+	nh = coshalf(n)
+	for i in 2:nh
+		A[i,i] += one(T)/2
+		A[end-i+2,i] += one(T)/2
+	end
+	for i in 1:sinhalf(n)
+		A[1+i,nh+i] = -im*one(T)/2
+		A[end-i+1,nh+i] = im*one(T)/2
+	end
+	ArrayOperator(A, src, dest)
+end

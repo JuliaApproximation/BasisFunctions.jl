@@ -2,14 +2,6 @@
 "Supertype of tensor product dictionaries."
 abstract type TensorProductDict{S,T} <: Dictionary{S,T} end
 
-
-# component(dict::TensorProductDict, range::AbstractRange) = tensorproduct(dict.dicts[range]...)
-function component(dict::TensorProductDict, range::AbstractRange)
-    # TODO: remove this method in the future
-    error("Range selection of product dictionaries now simply returns the components")
-    # [component(dict,i) for i in range]
-end
-
 factors(dict::TensorProductDict) = components(dict)
 
 product_domaintype(dicts::Dictionary...) = Tuple{map(domaintype, dicts)...}
@@ -62,6 +54,8 @@ for op in (:isorthogonal, :iscompatiblegrid)
     @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, components(s), components(m))
 end
 
+iscompatible(d1::TensorProductDict, d2::TensorProductDict) =
+    mapreduce(iscompatible, &, factors(d1), factors(d2))
 
 ## Feature methods
 
@@ -193,6 +187,8 @@ function coefficients_of_one(d::TensorProductDict)
     collect(OuterProductArray(coefs...))
 end
 
+Base.real(dict::TensorProductDict) = TensorProductDict(map(real, factors(dict))...)
+
 Display.combinationsymbol(d::TensorProductDict) = Display.Symbol('⊗')
 Display.displaystencil(d::TensorProductDict) = composite_displaystencil(d)
 show(io::IO, mime::MIME"text/plain", d::TensorProductDict) = composite_show(io, mime, d)
@@ -210,6 +206,8 @@ const TensorProductDict3{DT,S,T} = FlatTensorProductDict{3,S,T}
 const TensorProductDict4{DT,S,T} = FlatTensorProductDict{4,S,T}
 
 
+similar(dict::FlatTensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {N,S,T<:SVector{N,S}} =
+    TensorProductDict(map((d,n)->similar(d, S, n), components(dict), size)...)
 similar(dict::FlatTensorProductDict{N}, ::Type{T}, size::Vararg{Int,N}) where {T,N} =
     TensorProductDict(map(similar, components(dict), T.parameters, size)...)
 
