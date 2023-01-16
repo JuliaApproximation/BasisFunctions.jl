@@ -94,6 +94,9 @@ function unsafe_moment(dict::ChebyshevT{T}, idx, ::LegendreWeight; options...) w
     end
 end
 
+hasx(b::ChebyshevT) = length(b) >= 2
+coefficients_of_x(b::ChebyshevT) = (c=zeros(b); c[2]=1; c)
+
 ## Inner products
 
 hasmeasure(dict::ChebyshevT) = true

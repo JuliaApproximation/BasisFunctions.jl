@@ -33,6 +33,8 @@ end
 size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
+hasconstand(b::OPS) = true
+coefficients_of_one(b::OPS) = (c=zeros(b); c[1]=1; c)
 
 hasextension(b::OPS) = true
 

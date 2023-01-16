@@ -68,6 +68,8 @@ ScalarMappedDict{S,T}(dict::Dictionary, map) where {S,T} =
 forward_map(dict::MappedDict) = dict.map
 inverse_map(dict::MappedDict) = inverse(forward_map(dict))
 
+has_affine_map(dict::MappedDict) = isaffine(forward_map(dict))
+
 similardictionary(dict::MappedDict, dict2::Dictionary) = mapped_dict(dict2, forward_map(dict))
 
 hasderivative(dict::MappedDict) = false
@@ -133,6 +135,23 @@ function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(
         in_support(superdict(set), idx, x)
     else
         false
+    end
+end
+
+hasconstant(d::MappedDict) = hasconstant(superdict(d))
+coefficients_of_one(d::MappedDict) = coefficients_of_one(superdict(d))
+
+hasx(d::MappedDict) = has_affine_map(d) && hasx(superdict(d))
+function coefficients_of_x(d::MappedDict)
+    if has_affine_map(d)
+        m = forward_map(d)
+        A = matrix(m)
+        b = vector(m)
+        c_1 = coefficients_of_one(superdict(d))
+        c_x = coefficients_of_x(superdict(d))
+        A*c_x+b*c_1
+    else
+        error("Can't compute an expansion of x.")
     end
 end
 

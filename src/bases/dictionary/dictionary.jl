@@ -150,6 +150,10 @@ function rand(dict::Dictionary)
     c
 end
 
+"Does the span of the dictionary contain the constant function?"
+hasconstant(dict::Dictionary) = false
+"Does the span of the dictionary contain the function `f(x)=x` on its support?"
+hasx(dict::Dictionary) = false
 
 ###########
 # Indexing

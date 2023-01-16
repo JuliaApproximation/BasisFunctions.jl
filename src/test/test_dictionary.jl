@@ -153,6 +153,18 @@ function test_generic_dict_evaluation(basis)
     # Test dictionary evaluation
     x = random_point_in_domain(basis)
     @test norm(basis(x) - [eval_element(basis, i, x) for i in eachindex(basis)]) < test_tolerance(ELT)
+
+    # special expansions
+    if BasisFunctions.hasconstant(basis)
+        e = BasisFunctions.expansion_of_one(basis)
+        x = random_point_in_domain(basis)
+        @test e(x) ≈ 1
+    end
+    if BasisFunctions.hasx(basis)
+        e = BasisFunctions.expansion_of_x(basis)
+        x = random_point_in_domain(basis)
+        @test e(x) ≈ x
+    end
 end
 
 function test_generic_dict_coefficient_linearization(basis)
@@ -240,6 +252,7 @@ function test_gram_projection(basis)
             @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
             e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)
             x = random_point_in_domain(basis)
+            @show x
             @test abs(e(x)-f(x...)) < 2e-3
         end
     end

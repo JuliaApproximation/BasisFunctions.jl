@@ -49,3 +49,6 @@ function roots(dict::Legendre, coefficients::AbstractVector)
 	cheb = ChebyshevT(length(dict))
 	roots(cheb, conversion(dict, cheb)*coefficients)
 end
+
+hasx(b::Legendre) = length(b) >= 2
+coefficients_of_x(b::Legendre) = (c=zeros(b); c[2]=1; c)

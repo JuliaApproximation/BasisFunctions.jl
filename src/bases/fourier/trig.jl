@@ -61,3 +61,6 @@ function zeros(::Type{T}, d::TrigSeries) where {T}
     Z
 end
 tocoefficientformat(a, d::TrigSeries) = BlockVector(a, [coshalf(d),sinhalf(d)])
+
+hasconstant(b::TrigSeries) = true
+coefficients_of_one(b::TrigSeries) = (c=zeros(b); c[1]=1; c)

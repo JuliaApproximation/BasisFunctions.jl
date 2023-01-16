@@ -38,6 +38,9 @@ period(b::CosineSeries{T}, idx) where {T} = T(2)
 interpolation_grid(b::CosineSeries{T}) where {T} =
 	MidpointEquispacedGrid(b.n, zero(T), one(T))
 
+hasconstant(b::CosineSeries) = true
+coefficients_of_one(b::CosineSeries) = (c=zeros(b); c[1]=1; c)
+
 
 ##################
 # Native indices

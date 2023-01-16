@@ -101,6 +101,8 @@ isorthonormal(b::Fourier, μ::DiscreteWeight) =
 
 hasextension(b::Fourier) = isodd(length(b))
 
+hasconstant(b::Fourier) = true
+coefficients_of_one(b::Fourier) = (c=zeros(b); c[1]=1; c)
 
 "Specific type for affinely mapped Fourier functions."
 struct MappedFourier{T} <: MappedDict{T,Complex{T}}

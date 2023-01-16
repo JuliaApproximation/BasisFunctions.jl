@@ -72,3 +72,6 @@ index(p::ChebyshevUPolynomial) = degree(p)+1
 
 basisfunction(dict::ChebyshevU, idx) = basisfunction(dict, native_index(dict, idx))
 basisfunction(dict::ChebyshevU{T}, idx::PolynomialDegree) where {T} = ChebyshevUPolynomial{T}(degree(idx))
+
+hasx(b::ChebyshevU) = length(b) >= 2
+coefficients_of_x(b::ChebyshevU) = (c=zeros(b); c[2]=one(eltype(c))/2; c)

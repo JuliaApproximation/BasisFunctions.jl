@@ -36,8 +36,8 @@ for (Tp,fun) in zip((:NormalizedArray,), (:normalizedarray_fun,))
 
 
         @inline $Tp{T, 0}(sz::Tuple{}) where {T} = $Tp{T,0,Tuple{}}(sz)
-        @inline $Tp{T, N}(sz::Tuple{Vararg{<:Integer, N}}) where {T, N} = $Tp{T,N}(Base.OneTo.(sz))
-        @inline $Tp{T, N}(sz::Vararg{<:Integer, N}) where {T, N} = $Tp{T,N}(sz)
+        @inline $Tp{T, N}(sz::Tuple{Vararg{Integer, N}}) where {T, N} = $Tp{T,N}(Base.OneTo.(sz))
+        @inline $Tp{T, N}(sz::Vararg{Integer, N}) where {T, N} = $Tp{T,N}(sz)
         @inline $Tp{T}(sz::Vararg{Integer,N}) where {T, N} = $Tp{T, N}(sz)
         @inline $Tp{T}(sz::SZ) where SZ<:Tuple{Vararg{Any,N}} where {T, N} = $Tp{T, N}(sz)
         @inline $Tp(sz::Vararg{Any,N}) where N = $Tp{Float64,N}(sz)

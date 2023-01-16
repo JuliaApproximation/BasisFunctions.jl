@@ -187,6 +187,12 @@ orthogonalize(d::TensorProductDict) = TensorProductDict(map(orthogonalize, compo
 orthogonalize(d::TensorProductDict, μ::ProductWeight) =
     TensorProductDict(map(orthogonalize, components(d), components(μ))...)
 
+hasconstant(d::TensorProductDict) = mapreduce(hasconstant, &, components(d))
+function coefficients_of_one(d::TensorProductDict)
+    coefs = map(coefficients_of_one, factors(d))
+    collect(OuterProductArray(coefs...))
+end
+
 Display.combinationsymbol(d::TensorProductDict) = Display.Symbol('⊗')
 Display.displaystencil(d::TensorProductDict) = composite_displaystencil(d)
 show(io::IO, mime::MIME"text/plain", d::TensorProductDict) = composite_show(io, mime, d)

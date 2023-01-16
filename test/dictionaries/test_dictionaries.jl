@@ -77,7 +77,7 @@ for T in domaintypes
                   ChebyshevT{T}(5) ⊗ ChebyshevT{T}(6), # Two Chebyshev sets
                   (Fourier{T}(5) → 2..3) ⊗ (Fourier{T}(7) → 4..5), # Two mapped Fourier series
                   (ChebyshevT{T}(5) → 2..3) ⊗ (ChebyshevT{T}(6) → 4..5), # Two mapped Chebyshev series
-                  Fourier{T}(2)^2 ∘ AffineMap(rand(T,2,2),rand(T,2))) # A 2d-mapped dict
+                  Fourier{T}(3)^2 ∘ AffineMap(SA{T}[1.0 0.5; 0.3 0.2],SA{T}[1.0,2.0])) # A 2d-mapped dict
         test_generic_dict_interface(basis)
     end
 

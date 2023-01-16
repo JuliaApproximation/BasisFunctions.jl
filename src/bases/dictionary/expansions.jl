@@ -59,6 +59,10 @@ similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 dictionary(e::Expansion) = e.dictionary
 coefficients(e::Expansion) = e.coefficients
 
+"Map the expansion using the given map."
+mapped_expansion(e::Expansion, m) =
+    Expansion(mapped_dict(dictionary(e), m), coefficients(e))
+
 export random_expansion
 random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
 
@@ -188,10 +192,18 @@ end
 
 (*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
 
-for op in (:+, :-, :*)
-    @eval Base.$op(a::Number, e::Expansion) = Expansion(dictionary(e), $op(a, coefficients(e)))
-    @eval Base.$op(e::Expansion, a::Number) = Expansion(dictionary(e), $op(coefficients(e), a))
+Base.complex(e::Expansion) = Expansion(complex(dictionary(e)), complex(coefficients(e)))
+Base.one(e::Expansion) = similar(e, coefficients_of_one(dictionary(e)))
+
+expansion_of_one(dict::Dictionary) = Expansion(dict, coefficients_of_one(dict))
+expansion_of_x(dict::Dictionary) = Expansion(dict, coefficients_of_x(dict))
+
+for op in (:+, :-)
+    @eval Base.$op(a::Number, e::Expansion) = $op(a*one(e), e)
+    @eval Base.$op(e::Expansion, a::Number) = $op(e, a*one(e))
 end
+Base.:*(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)*a)
+Base.:*(a::Number, e::Expansion) = Expansion(dictionary(e), a*coefficients(e))
 Base.:/(e::Expansion, a::Number) = Expansion(dictionary(e), coefficients(e)/a)
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))

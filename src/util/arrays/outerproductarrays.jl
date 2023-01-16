@@ -19,7 +19,7 @@ axes(A::AbstractOuterProductArray) = map(x->axes(x,1), components(A))
     unsafe_array_getindex(F, (k,))
 end
 
-@propagate_inbounds function Base.getindex(F::AbstractOuterProductArray{T, N}, kj::Vararg{<:Integer, N}) where {T, N}
+@propagate_inbounds function Base.getindex(F::AbstractOuterProductArray{T, N}, kj::Vararg{Integer, N}) where {T, N}
     @boundscheck checkbounds(F, kj...)
     unsafe_array_getindex(F, kj)
 end

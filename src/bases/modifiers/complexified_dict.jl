@@ -57,6 +57,14 @@ function conversion2(T, d1, d2::ComplexifiedDict; options...)
     wrap_operator(d1, d2, op)
 end
 
+hasconstant(d::ComplexifiedDict) = hasconstant(superdict(d))
+coefficients_of_one(dict::ComplexifiedDict) =
+    complex(coefficients_of_one(superdict(dict)))
+
+hasx(d::ComplexifiedDict) = hasx(superdict(d))
+coefficients_of_x(dict::ComplexifiedDict) =
+    complex(coefficients_of_x(superdict(dict)))
+
 ## Printing
 
 show(io::IO, d::ComplexifiedDict) = print(io, "complex($(repr(superdict(d))))")
