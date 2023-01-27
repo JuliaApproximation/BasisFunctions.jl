@@ -25,7 +25,7 @@ checkbounds(::Type{Bool}, dict::Dictionary, i::AbstractShiftedIndex) =
 checkbounds(::Type{Bool}, dict::Dictionary, i::MultilinearIndex) =
     checkbounds(Bool, dict, linear_index(dict, i))
 checkbounds(::Type{Bool}, dict::Dictionary, idx::NTuple{N,Int}) where {N} =
-    checkbounds(Bool, d, CartesianIndex(idx))
+    checkbounds(Bool, dict, CartesianIndex(idx))
 
 
 # And here we call checkbounds_indices with indices(dict)

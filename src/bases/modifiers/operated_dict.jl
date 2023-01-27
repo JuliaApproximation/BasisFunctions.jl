@@ -311,13 +311,16 @@ dest(d::ScaledDict) = src(d)
 normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
 normalize(d::Dictionary, μ) = ScaledDict(d, [1/norm(bf, μ) for bf in d])
 
+diag_element(d::ScaledDict, i::Int) = d.diag[i]
+diag_element(d::ScaledDict, i) = d.diag[linear_index(d, i)]
+
 unsafe_eval_element(dict::ScaledDict, i, x) =
-	dict.diag[i] * unsafe_eval_element(superdict(dict), i, x)
+	diag_element(dict, i) * unsafe_eval_element(superdict(dict), i, x)
 
 unsafe_eval_element_derivative(dict::ScaledDict, i, x, order) =
-	dict.diag[i] * unsafe_eval_element_derivative(superdict(dict), i, x, order)
+	diag_element(dict, i) * unsafe_eval_element_derivative(superdict(dict), i, x, order)
 
 dict_innerproduct1(d1::ScaledDict, i, d2, j, measure; options...) =
-	conj(d1.diag[i]) * dict_innerproduct(superdict(d1), i, d2, j, measure; options...)
+	conj(diag_element(d1, i)) * dict_innerproduct(superdict(d1), i, d2, j, measure; options...)
 dict_innerproduct2(d1, i, d2::ScaledDict, j, measure; options...) =
-	d2.diag[j] * dict_innerproduct(d1, i, superdict(d2), j, measure; options...)
+	diag_element(d2, j) * dict_innerproduct(d1, i, superdict(d2), j, measure; options...)
