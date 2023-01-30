@@ -27,12 +27,12 @@ for plot in (:Plot, :PlotInc)
         function $(plot)(options::Options, F::Expansion; n=200, plot_complex=false, opts...)
             grid = plotgrid(dictionary(F), n)
             if plot_complex
-                vals = F(grid)
+                vals = F.(grid)
                 options = @pgf {options..., no_markers}
                 $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, real.(vals))])),
                     $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, imag.(vals))]))
             else
-                vals = real.(F(grid))
+                vals = real.(F.(grid))
                 options = @pgf {options..., no_markers}
                 $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, vals)]))
             end

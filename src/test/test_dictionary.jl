@@ -181,7 +181,7 @@ function test_generic_dict_grid(basis)
     grid1 = interpolation_grid(basis)
     @test length(grid1) == length(basis)
     e = random_expansion(basis)
-    z1 = e(grid1)
+    z1 = e.(grid1)
     z2 = [ e(grid1[i]) for i in eachindex(grid1) ]
     @test z1 ≈ z2
     E = evaluation(basis, GridBasis(basis))
@@ -264,7 +264,7 @@ function test_generic_dict_interpolation(basis)
     I = interpolation(basis, g)
     x = rand(GridBasis{coefficienttype(basis)}(g))
     e = Expansion(basis, I*x)
-    @test maximum(abs.(e(g)-x)) < 100test_tolerance(ELT)
+    @test maximum(abs.(e.(g)-x)) < 100test_tolerance(ELT)
 end
 
 function test_generic_dict_domaintype(basis)
@@ -301,7 +301,7 @@ function test_generic_dict_evaluation_different_grid(basis)
     end
 
     grid2 = EquispacedGrid(n+3, T(a)+test_tolerance(ELT), T(b)-test_tolerance(ELT))
-    z = e(grid2)
+    z = e.(grid2)
     @test z ≈ ELT[ e(grid2[i]) for i in eachindex(grid2) ]
 end
 
@@ -321,7 +321,7 @@ function test_generic_dict_transform(basis, grid = interpolation_grid(basis))
     x = random_expansion(tbasis)
     e = t*x
     @test abs(e(grid[1]) - x.coefficients[1]) < EPS
-    @test maximum(abs.(e(grid)-x.coefficients)) < EPS
+    @test maximum(abs.(e.(grid)-x.coefficients)) < EPS
     # - transform to grid
     e = random_expansion(basis)
     x = it*e

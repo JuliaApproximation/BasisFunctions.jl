@@ -117,10 +117,9 @@ struct DenseSubdict{SET,IDX,S,T} <: Subdictionary{S,T}
     superdict       ::  SET
     superindices    ::  IDX
 
-    function DenseSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, idx::IDX) where {SET,IDX,S,T}
-        # TODO: do component-wise bounds checking?
-        # checkbounds(dict, idx)
-        new(dict, idx)
+    function DenseSubdict{SET,IDX,S,T}(dict::Dictionary{S,T}, indices::IDX) where {SET,IDX,S,T}
+        checkbounds(dict, indices)
+        new(dict, indices)
     end
 end
 

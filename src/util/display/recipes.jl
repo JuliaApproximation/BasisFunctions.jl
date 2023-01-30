@@ -18,7 +18,7 @@ end
     grid = plotgrid(dictionary(S), n)
     # Determine the return type so we know where to sample
     origvals = sample(grid, target, codomaintype(S))
-    vals = abs.(origvals - S(grid))
+    vals = abs.(origvals - S.(grid))
     dictionary(S), grid, postprocess(dictionary(S), grid, vals)
 end
 # 1D error plot

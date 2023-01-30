@@ -119,7 +119,7 @@ function test_fourier_series(T)
     @test e(x) ≈ coef[1]*one(T) + coef[2]*exp(2*T(pi)*im*y) + coef[3]*exp(-2*T(pi)*im*y)
     # evaluate on a grid
     g = interpolation_grid(dictionary(e))
-    result = e(g)
+    result = e.(g)
     # Don't compare to zero with isapprox because the default absolute tolerance is zero.
     # So: add 1 and compare to 1
     @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) + 1 ≈ 1
