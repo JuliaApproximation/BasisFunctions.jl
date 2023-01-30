@@ -117,7 +117,7 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op, scratch_src, scra
     scratch_src[idx] = 1
     apply!(op, scratch_dest, scratch_src)
     scratch_src[idx] = 0
-    eval_expansion(dest(dict), scratch_dest, x)
+    unsafe_eval_expansion(dest(dict), scratch_dest, x)
 end
 
 function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, scratch_src, scratch_dest)
@@ -191,8 +191,7 @@ function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order, op,
     if isdiag(op)
         diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x, order)
     else
-		@assert order == 1
-		if hasderivative(superdict(dict))
+		if order == 1 && hasderivative(superdict(dict))
 		    scratch_src[idx] = 1
 		    apply!(op, scratch_dest, scratch_src)
 		    scratch_src[idx] = 0
@@ -205,6 +204,29 @@ function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order, op,
 		end
     end
 end
+
+# function _unsafe_eval_element_derivative(dict::OperatedDict, idxn, x, order::Tuple{Int,Int}, op, scratch_src, scratch_dest)
+#     idx = linear_index(dict, idxn)
+#     if isdiag(op)
+#         diag(op, idx) * unsafe_eval_element_derivative(src(dict), idxn, x, order)
+#     else
+# 		@assert sum(order) == 1
+# 		if hasderivative(superdict(dict))
+# 		    scratch_src[idx] = 1
+# 		    apply!(op, scratch_dest, scratch_src)
+# 		    scratch_src[idx] = 0
+# 			D = differentiation(superdict(dict))
+# 		    eval_expansion(dest(D), D*scratch_dest, x)
+# 		else
+# 			A = matrix(op)
+# 			w = [SVector(unsafe_eval_element_derivative(src(dict), native_index(src(dict),k), x, (1,0)),unsafe_eval_element_derivative(src(dict), native_index(src(dict),k), x, (0,1))) for k in eachindex(src(dict))]
+# 			w = [unsafe_eval_element_derivative(src(dict), native_index(src(dict),k), x, order) for k in eachindex(src(dict))]
+# 			@show w
+# 			sum(A[k,idx] * w[k] for k in eachindex(dict))
+# 		end
+#     end
+# end
+
 
 #################
 # Projections

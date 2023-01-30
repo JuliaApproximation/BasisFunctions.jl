@@ -153,8 +153,10 @@ _unsafe_eval_element(dict::TensorProductDict, dicts, i::CartesianIndex, x) =
 unsafe_eval_element_derivative(dict::TensorProductDict, idx::ProductIndex, x, order) =
     _unsafe_eval_element_derivative(dict, components(dict), idx, x, order)
 
-_unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i, x, order) =
+function _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i, x, order)
+    @show order
     mapreduce(unsafe_eval_element_derivative, *, dicts, i, x, order)
+end
 _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i::CartesianIndex, x, order) =
     mapreduce(unsafe_eval_element_derivative, *, dicts, Tuple(i), x, order)
 

@@ -64,7 +64,12 @@ end
 
 #
 # For regular Expansions, no postprocessing is needed
-postprocess(S::Dictionary, grid, vals) = vals
+function postprocess(S::Dictionary, grid, vals)
+    D = support(S)
+    I = grid .∉ Ref(D)
+    vals[I] .= Inf
+    vals
+end
 
 # For function subsets, revert to the underlying Dictionary for postprocessing
 postprocess(S::Subdictionary, grid, vals) = postprocess(superdict(S), grid, vals)

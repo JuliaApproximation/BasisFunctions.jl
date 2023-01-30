@@ -217,17 +217,22 @@ default_eval_expansion(dict::Dictionary, coefficients, x) =
 default_unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
     sum(coefficients[idx]*val for (idx,val) in unsafe_pointvalues(dict, x))
 
-# TODO: deprecate and remove evaluation in a grid
-function eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...)
-    @assert dimension(dict) == GridArrays.dimension(grid)
-    @assert size(coefficients) == size(dict)
-    # TODO: reenable test once product grids and product sets have compatible types again
-    # @assert eltype(grid) == domaintype(dict)
+@deprecate eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...) eval_expansion.(Ref(dict), Ref(coefficients), grid; options...)
 
-    T = coefficienttype(dict)
-    E = evaluation(T, dict, grid; options...)
-    E * coefficients
+function eval_expansion_derivative(dict::Dictionary, coefficients, x, order; options...)
+    @assert size(coefficients) == size(dict)
+    in_support(dict, x) ? unsafe_eval_expansion_derivative(dict, coefficients, x, order) : zero(span_codomaintype(dict, coefficients))
 end
+
+unsafe_eval_expansion_derivative(dict::Dictionary, coefficients, x, order) =
+    default_unsafe_eval_expansion_derivative(dict, coefficients, x, order)
+
+default_eval_expansion_derivative(dict::Dictionary, coefficients, x, order) =
+    sum(coefficients[idx]*eval_element_derivative(dict, idx, x, order) for idx in eachindex(dict))
+
+default_unsafe_eval_expansion_derivative(dict::Dictionary, coefficients, x, order) =
+    sum(coefficients[idx]*unsafe_eval_element_derivative(dict, idx, x, order) for idx in eachindex(dict))
+
 
 # Evaluation of a dictionary means evaluation of all elements.
 (dict::Dictionary)(x) = dict_eval(dict, x)
