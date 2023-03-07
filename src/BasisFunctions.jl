@@ -92,6 +92,7 @@ import DomainIntegrals:
     points, weights,
     iscontinuous, isdiscrete,
     isnormalized, isuniform,
+    ismappedmeasure,
     jacobi_α, jacobi_β, laguerre_α
 using DomainIntegrals: ProductWeight
 export integral

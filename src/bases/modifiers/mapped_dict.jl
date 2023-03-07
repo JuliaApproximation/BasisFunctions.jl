@@ -173,9 +173,13 @@ end
 
 
 
-function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::MappedWeight; options...)
-    if iscompatible(d1,d2) && iscompatible(forward_map(d1),forward_map(measure))
-        dict_innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
+function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure; options...)
+    if ismappedmeasure(measure)
+        if iscompatible(d1,d2) && iscompatible(forward_map(d1),forward_map(measure))
+            dict_innerproduct(superdict(d1), i, superdict(d2), j, supermeasure(measure); options...)
+        else
+            dict_innerproduct1(d1, i, d2, j, measure; options...)
+        end
     else
         dict_innerproduct1(d1, i, d2, j, measure; options...)
     end
