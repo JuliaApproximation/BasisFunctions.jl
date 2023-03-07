@@ -106,7 +106,7 @@ Evaluate the derivative of an orthogonal polynomial, based on taking the
 derivative of the three-term recurrence relation (see `recurrence_eval`).
 """
 function recurrence_eval_derivative(b::OPS, idx::PolynomialDegree, x)
-	T = codomaintype(b)
+	T = promote_type(codomaintype(b),typeof(x))
     z0 = one(p0(b))
     z1 = convert(T, rec_An(b, 0) * x + rec_Bn(b, 0))*z0
     z0_d = zero(T)

@@ -60,16 +60,16 @@ function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measu
 	# support, because numerical integration over the whole domain might miss the
 	# part where the integrand is non-zero. However, the intersection of three domains
 	# below might fail.
-	try
+	# try
     	domain = intersectdomain(domain1, domain2, domain3)
 		qs = quadstrategy(prectype(Φ1, Φ2); options...)
     	unsafe_default_dict_innerproduct1(Φ1, i, Φ2, j, measure, domain1, domain2, domain3, domain, qs)
-	catch e
+	# catch e
 		# Intersection or integration failed, use safe evaluation
-		@warn "Error thrown, trying to recover"
-		qs = quadstrategy(prectype(Φ1, Φ2); options...)
-		safe_default_dict_innerproduct(Φ1, i, Φ2, j, measure, qs)
-	end
+		# @warn "Error thrown, trying to recover"
+		# qs = quadstrategy(prectype(Φ1, Φ2); options...)
+		# safe_default_dict_innerproduct(Φ1, i, Φ2, j, measure, qs)
+	# end
 end
 
 # Routine below is safe because it uses eval_element, and not unsafe_eval_element

@@ -274,8 +274,23 @@ function mixedgram2(T, dict1, dict2::OperatedDict, measure; options...)
 	wrap_operator(dict2, dict1, G *  operator(dict2))
 end
 
-orthogonalize(Φ::Dictionary) = ArrayOperator(sqrt(inv(matrix(gram(Φ)))), Φ) * Φ
-orthogonalize(Φ::Dictionary, μ) = ArrayOperator(sqrt(inv(matrix(gram(Φ, μ)))), Φ) * Φ
+"Compute the square root of a symmetric and positive definite matrix."
+spd_matrix_sqrt(A::AbstractArray{T}) where {T<:Base.IEEEFloat}= sqrt(A)
+function spd_matrix_sqrt(A::AbstractArray)
+	# at the time of writing sqrt(A) is not supported for generic numbers
+	# but svd is (in the GenericLinearAlgebra package)
+	u,s,v = svd(A)
+	u * sqrt(Diagonal(s)) * u'
+end
+
+function orthogonalize(Φ::Dictionary)
+	A = inv(matrix(gram(Φ)))
+	ArrayOperator(spd_matrix_sqrt(A), Φ) * Φ
+end
+function orthogonalize(Φ::Dictionary, μ)
+	A = inv(matrix(gram(Φ, μ)))
+	ArrayOperator(spd_matrix_sqrt(A), Φ) * Φ
+end
 
 function conversion1(::Type{T}, src::OperatedDict, dest; options...) where {T}
 	op = conversion(T, superdict(src), dest; options...) * operator(src)
