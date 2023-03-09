@@ -165,7 +165,7 @@ gram2(T, Φ, μ::Measure; options...) =
 gram2(T, Φ, μ::DiscreteWeight; options...) =
     gram(T, Φ, μ, points(μ), weights(μ); options...)
 
-gram(::Type{T}, Φ, μ::DiscreteWeight, grid::AbstractGrid, weights; options...) where {T} =
+gram(::Type{T}, Φ, μ::DiscreteWeight, grid, weights; options...) where {T} =
     default_mixedgram_discretemeasure(T, Φ, Φ, μ, grid, weights; options...)
 
 default_gram(Φ::Dictionary, args...; options...) =
