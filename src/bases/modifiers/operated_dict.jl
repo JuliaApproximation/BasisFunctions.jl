@@ -145,7 +145,7 @@ end
 #################
 
 hastransform(dict::OperatedDict) = isdiag(operator(dict)) && hastransform(src(dict))
-hastransform(dict::OperatedDict, dgs::GridBasis) = isdiag(operator(dict)) && hastransform(src(dict), dgs)
+hastransform(dict::OperatedDict, gb::GridBasis) = isdiag(operator(dict)) && hastransform(src(dict), gb)
 
 transform_dict(dict::OperatedDict; options...) = transform_dict(superdict(dict); options...)
 

@@ -36,6 +36,11 @@ function BlockOperator(operators::AbstractArray{OP,2},
     BlockOperator{T}(operators, op_src, op_dest)
 end
 
+Asrc(A::BlockArray, ::Type{T}) where T =
+    multidict([DiscreteVectorDictionary{T}(k) for k in blocksizes(A)[2]]...)
+Adest(A::BlockArray, ::Type{T}) where T =
+    multidict([DiscreteVectorDictionary{T}(k) for k in blocksizes(A)[1]]...)
+
 function ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T}
     components_src = iscomposite(src) ? components(src) : (src,)
     components_dest = iscomposite(dest) ? components(dest) : (dest,)

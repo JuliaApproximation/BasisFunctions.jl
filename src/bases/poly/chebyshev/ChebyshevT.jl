@@ -69,8 +69,11 @@ support(b::ChebyshevT{T}) where {T} = ChebyshevInterval{T}()
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype
 function unsafe_eval_element(b::ChebyshevT, idx::PolynomialDegree, x::Real)
-    abs(x) <= 1 ? cos(degree(idx)*acos(x)) : recurrence_eval(b, idx, x)
+    abs(x) <= 1 ? chebyshev_eval(degree(idx), x) : recurrence_eval(b, idx, x)
 end
+
+"Evaluate the Chebyshev polynomial of degree `k` in the point `x ∈ [-1,1]`."
+chebyshev_eval(k, x) = cos(k*acos(x))
 
 # The version below is safe for points outside [-1,1] too.
 # If we don't define anything, evaluation will default to using the three-term

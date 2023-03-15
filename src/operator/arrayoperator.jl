@@ -12,9 +12,15 @@ abstract type ArrayOperator{T} <: DictionaryOperator{T} end
 verify_size(src, dest, A) = size(A) == (length(dest),length(src))
 
 "Suggest a suitable src dictionary for a given matrix."
-Asrc(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,2))
+Asrc(A::AbstractMatrix) = Asrc(A, eltype(A))
+Asrc(A::AbstractMatrix, ::Type{T}) where T = DiscreteVectorDictionary{T}(size(A,2))
+
 "Suggest a suitable dest dictionary for a given matrix."
-Adest(A::AbstractMatrix{T}) where {T} = DiscreteVectorDictionary{T}(size(A,1))
+Adest(A::AbstractMatrix) = Adest(A, eltype(A))
+Adest(A::AbstractMatrix, ::Type{T}) where T = DiscreteVectorDictionary{T}(size(A,1))
+
+Asrc(A::Adjoint, ::Type{T}) where T = Adest(parent(A), T)
+Adest(A::Adjoint, ::Type{T}) where T = Asrc(parent(A), T)
 
 getindex(op::ArrayOperator, i::Int, j::Int) = op.A[i,j]
 
@@ -93,7 +99,7 @@ deduce_eltype(src::Dictionary, dest::Dictionary, z::Number, args...) = promote_t
 
 MatrixOperator(args...) = MatrixOperator{deduce_eltype(args...)}(args...)
 
-MatrixOperator{T}(A::AbstractArray) where {T} = MatrixOperator{T}(A, Asrc(A))
+MatrixOperator{T}(A::AbstractArray) where {T} = MatrixOperator{T}(A, Asrc(A, T))
 MatrixOperator{T}(A::AbstractArray, src::Dictionary) where {T} = MatrixOperator{T}(A, src, src)
 
 MatrixOperator{T}(A::AbstractArray{T}, src::Dictionary, dest::Dictionary) where {T} =
@@ -203,7 +209,7 @@ to_diag(::Type{T}, A::Diagonal{S}) where {S,T} = to_diag(T, convert(Diagonal{T},
 
 DiagonalOperator(args...) = DiagonalOperator{deduce_eltype(args...)}(args...)
 
-DiagonalOperator{T}(A::AbstractMatrix) where {T} = DiagonalOperator{T}(A, Asrc(A), Adest(A))
+DiagonalOperator{T}(A::AbstractMatrix) where {T} = DiagonalOperator{T}(A, Asrc(A, T), Adest(A, T))
 DiagonalOperator{T}(A::AbstractMatrix, src::Dictionary) where {T} = DiagonalOperator{T}(A, src, src)
 
 DiagonalOperator{T}(A::Diagonal{T,D}, src::Dictionary, dest::Dictionary) where {T,D} =
@@ -311,7 +317,7 @@ to_circulant(::Type{T}, A::Circulant{T}) where {T} = A
 CirculantOperator{T}(v::AbstractVector) where {T} = CirculantOperator{T}(to_circulant(T, v))
 CirculantOperator{T}(A::AbstractMatrix) where {T} =
     CirculantOperator{T}(to_circulant(T, A))
-CirculantOperator{T}(A::Circulant{T}) where {T} = CirculantOperator{T}(A, Asrc(A), Adest(A))
+CirculantOperator{T}(A::Circulant{T}) where {T} = CirculantOperator{T}(A, Asrc(A, T), Adest(A, T))
 CirculantOperator{T}(A::AbstractArray, src::Dictionary) where {T} =
     CirculantOperator{T}(A, src, src)
 CirculantOperator{T}(A::AbstractVector, src::Dictionary, dest::Dictionary) where {T} =
@@ -342,7 +348,7 @@ const DenseMatrixOperator{T} = MatrixOperator{T,Array{T,2}}
 
 DenseMatrixOperator(args...) = DenseMatrixOperator{deduce_eltype(args...)}(args...)
 
-DenseMatrixOperator{T}(A::AbstractMatrix) where {T} = DenseMatrixOperator{T}(A, Asrc(A), Adest(A))
+DenseMatrixOperator{T}(A::AbstractMatrix) where {T} = DenseMatrixOperator{T}(A, Asrc(A, T), Adest(A, T))
 DenseMatrixOperator{T}(A::AbstractMatrix, src::Dictionary) where {T} = DenseMatrixOperator{T}(A, src, src)
 
 
@@ -352,6 +358,13 @@ ArrayOperator(A::AbstractArray, src::Dictionary) =
     ArrayOperator(A, src, src)
 ArrayOperator(A::UniformScaling, src::Dictionary) =
     ArrayOperator(A, src, src)
+
+ArrayOperator{T}(A::AbstractArray) where T =
+    ArrayOperator{T}(A, Asrc(A, T), Adest(A, T))
+ArrayOperator{T}(A::AbstractArray, src::Dictionary) where T =
+    ArrayOperator{T}(A, src, src)
+ArrayOperator{T}(A::UniformScaling, src::Dictionary) where T =
+    ArrayOperator{T}(A, src, src)
 
 ArrayOperator(args...) = ArrayOperator{deduce_eltype(args...)}(args...)
 
