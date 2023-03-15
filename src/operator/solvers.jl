@@ -98,7 +98,7 @@ end
 #         coef_dest[:] = ldiv!(solver, coef_dest)
 #     end
 
-adjoint(op::GenericSolverOperator) = @warn("not implemented")
+adjoint(op::GenericSolverOperator) = error("adjoint not implemented for $(op)")
 
 if VERSION ≥ v"1.7-"
     qr_factorization(op::DictionaryOperator) = qr(matrix(op), ColumnNorm())

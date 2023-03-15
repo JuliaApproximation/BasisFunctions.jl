@@ -176,7 +176,7 @@ end
 # adjoint and inv.
 const DCTII_PLAN{T} = FFTW.DCTPlan{T,5,true} where {T}
 const INV_DCTII_PLAN{T} = FFTW.DCTPlan{T,4,true} where {T}
-const DCTI_PLAN{T} = FFTW.r2rFFTWPlan{T,(3,),true,1} where {T}
+const DCTI_PLAN{T} = FFTW.r2rFFTWPlan{T,K,true,1} where {T,K}
 
 const DCTPLANS = Union{DCTII_PLAN,INV_DCTII_PLAN,DCTI_PLAN}
 
