@@ -265,6 +265,8 @@ isdiag(op::LinearizationOperator) = true
 
 Base.adjoint(op::LinearizationOperator{T}) where {T} =
     DelinearizationOperator{T}(dest(op), src(op))
+Base.inv(op::LinearizationOperator{T}) where {T} =
+    DelinearizationOperator{T}(dest(op), src(op))
 
 
 "The inverse of a LinearizationOperator."
@@ -288,6 +290,8 @@ apply!(op::DelinearizationOperator, coef_dest, coef_src) =
 isdiag(op::DelinearizationOperator) = true
 
 Base.adjoint(op::DelinearizationOperator{T}) where {T} =
+    LinearizationOperator{T}(dest(op), src(op))
+Base.inv(op::DelinearizationOperator{T}) where {T} =
     LinearizationOperator{T}(dest(op), src(op))
 
 

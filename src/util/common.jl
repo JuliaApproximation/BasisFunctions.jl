@@ -33,10 +33,10 @@ linspace(a, b, n=100) = range(a, stop=b, length=n)
 # linearize_coefficients!(dest::AbstractVector, src::BlockVector) =
 #     dest[:] .= src[:]
 
-delinearize_coefficients!(dest::AbstractArray{T,N}, src::AbstractVector{T}) where {T,N} =
+delinearize_coefficients!(dest::AbstractArray{T,N}, src::AbstractVector{S}) where {S,T,N} =
     dest[:] .= src[:]
 
-linearize_coefficients!(dest::AbstractVector{T}, src::AbstractArray{T,N}) where {T,N} =
+linearize_coefficients!(dest::AbstractVector{T}, src::AbstractArray{S,N}) where {S,T,N} =
     dest[:] .= src[:]
 
 components(bv::BlockVector) = [view(bv, Block(i)) for i in 1:blocklength(bv)]

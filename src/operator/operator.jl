@@ -82,10 +82,8 @@ function apply(op::DictionaryOperator, coef_src)
 	coef_dest
 end
 
-# Catch applications of an operator, and do:
-# - call inline implementation of operator if available
-# - call apply!(op, dest(op), src(op), coef_dest, coef_src), which can be
-#   implemented by operators whose action depends on src and/or dest.
+# Catch applications of an operator, and call in-place implementation of
+# operator if available. Throw error if not.
 function apply!(op::DictionaryOperator, coef_dest, coef_src)
 	if isinplace(op)
 		copyto!(coef_dest, coef_src)

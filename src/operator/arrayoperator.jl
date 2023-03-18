@@ -49,7 +49,7 @@ apply!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) =
 mul!(op::ArrayOperator, coef_dest::AbstractVector, coef_src::AbstractVector) = mul!(coef_dest, op.A, coef_src)
 
 # Be forgiving for matrices: if the coefficients are multi-dimensional, reshape to a linear array first.
-apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{T,N2}) where {T,N1,N2} =
+apply!(op::ArrayOperator{T}, coef_dest::AbstractArray{T,N1}, coef_src::AbstractArray{S,N2}) where {S,T,N1,N2} =
     apply!(op, reshape(coef_dest, length(coef_dest)), reshape(coef_src, length(coef_src)))
 
 apply_inplace!(op::ArrayOperator{T}, coef_srcdest::AbstractArray{T,N}) where {T,N} =
