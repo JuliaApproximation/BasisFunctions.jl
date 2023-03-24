@@ -21,6 +21,11 @@ end
 ParamDict(dict::Dictionary{S,T}, map::Map{S}, image::Domain) where {S,T} =
     ParamDict{typeof(dict),typeof(map),S,T}(dict, map, image)
 
+function ParamDict(dict::Dictionary, map)
+    image = DomainSets.parametric_domain(map, support(dict))
+    ParamDict(dict, map, image)
+end
+
 param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
 
 forward_map(dict::ParamDict) = dict.map
