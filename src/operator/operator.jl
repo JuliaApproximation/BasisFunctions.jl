@@ -58,6 +58,9 @@ dest_space(op::DictionaryOperator) = Span(dest(op))
 
 isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
 
+# default definition for now
+LinearAlgebra.ishermitian(op::DictionaryOperator) = false
+
 """
 True if the action of the operator has a better computational complexity than
 the corresponding matrix-vector product.

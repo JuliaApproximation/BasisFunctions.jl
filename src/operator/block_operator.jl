@@ -23,8 +23,8 @@ struct BlockOperator{T} <: DictionaryOperator{T}
     function BlockOperator{T}(operators, src, dest) where {T}
         # Avoid 1x1 block operators
         @assert size(operators,1) + size(operators,2) > 2
-        scratch_src = zeros(src)
-        scratch_dest = zeros(dest)
+        scratch_src = zeros(T, src)
+        scratch_dest = zeros(T, dest)
         new(operators, src, dest, scratch_src, scratch_dest)
     end
 end
@@ -42,6 +42,11 @@ Adest(A::BlockArray, ::Type{T}) where T =
     multidict([DiscreteVectorDictionary{T}(k) for k in blocksizes(A)[1]]...)
 
 function ArrayOperator(A::BlockArray{T}, src::Dictionary, dest::Dictionary) where {T}
+    components_src = iscomposite(src) ? components(src) : (src,)
+    components_dest = iscomposite(dest) ? components(dest) : (dest,)
+    BlockOperator{T}([ArrayOperator(view(A, Block(i, j)), srcj, desti) for (i,desti) in enumerate(components_dest), (j,srcj) in enumerate(components_src)], src, dest)
+end
+function ArrayOperator{T}(A::BlockArray, src::Dictionary, dest::Dictionary) where {T}
     components_src = iscomposite(src) ? components(src) : (src,)
     components_dest = iscomposite(dest) ? components(dest) : (dest,)
     BlockOperator{T}([ArrayOperator(view(A, Block(i, j)), srcj, desti) for (i,desti) in enumerate(components_dest), (j,srcj) in enumerate(components_src)], src, dest)
