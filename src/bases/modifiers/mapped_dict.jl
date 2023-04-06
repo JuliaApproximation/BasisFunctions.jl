@@ -185,6 +185,17 @@ function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure;
     end
 end
 
+# a special case for similarly (affinely) mapped dicts with the lebesgue measure
+function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Lebesgue{T}; options...) where {T<:AbstractFloat}
+    if iscompatible(d1,d2) && isaffine(forward_map(d1))
+        A = diffvolume(forward_map(d1), zero(T))
+        A * dict_innerproduct(superdict(d1), i, superdict(d2), j, measure; options...)
+    else
+        dict_innerproduct1(d1, i, d2, j, measure; options...)
+    end
+end
+
+
 function gram(::Type{T}, dict::MappedDict, m::MappedWeight; options...) where {T}
     if iscompatible(forward_map(dict), forward_map(m))
         wrap_operator(dict, dict, gram(T, superdict(dict), supermeasure(m); options...))

@@ -88,7 +88,7 @@ unsafe_moment(dict::ChebyshevT, idx; measure = lebesguemeasure(support(dict)), o
 unsafe_moment(dict::ChebyshevT, idx, measure; options...) =
 	dict_innerproduct(dict, idx, dict, PolynomialDegree(0), measure; options...)
 
-function unsafe_moment(dict::ChebyshevT{T}, idx, ::LegendreWeight; options...) where {T}
+function unsafe_moment(dict::ChebyshevT{T}, idx, ::Union{LegendreWeight,Lebesgue}; options...) where {T}
     n = degree(idx)
     if n == 0
         T(2)
@@ -122,7 +122,8 @@ function innerproduct_chebyshev_full(i, j, T)
 	end
 end
 
-function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, measure::LegendreWeight; options...)
+function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree,
+		b2::ChebyshevT, j::PolynomialDegree, measure::Union{LegendreWeight,Lebesgue}; options...)
 	n1 = degree(i)
 	n2 = degree(j)
 	(unsafe_moment(b1, PolynomialDegree(n1+n2), measure) + unsafe_moment(b1, PolynomialDegree(abs(n1-n2)), measure))/2
