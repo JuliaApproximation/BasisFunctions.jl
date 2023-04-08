@@ -65,21 +65,6 @@ function test_fourier_series(T)
         @test typeof(BasisFunctions.unsafe_eval_element(fb, i, 1//2)) == Complex{T}
     end
 
-    # Try an extension
-    n = 12
-    coef = rand(complex(T), n)
-    b1 = rescale(Fourier{T}(n), a, b)
-    b2 = rescale(Fourier{T}(n+1), a, b)
-    b3 = rescale(Fourier{T}(n+15), a, b)
-    E2 = extension(b1, b2)
-    E3 = extension(b1, b3)
-    e1 = Expansion(b1, coef)
-    e2 = Expansion(b2, E2*coef)
-    e3 = Expansion(b3, E3*coef)
-    x = T(2//10)
-    @test e1(x) ≈ e2(x)
-    @test e1(x) ≈ e3(x)
-
 
     # Differentiation test
     coef = rand(complex(T), size(fb))
@@ -93,10 +78,8 @@ function test_fourier_series(T)
     @test abs( (e1(x+delta)-e1(x))/delta - e2(x) ) / abs(e2(x)) < 100delta
 
 
-
     ## Odd length
     fbo = rescale(Fourier{T}(13), a, b)
-
     @test ~isreal(fbo)
 
     # Is the 0-index basis function the constant 1?
@@ -123,6 +106,11 @@ function test_fourier_series(T)
     # Don't compare to zero with isapprox because the default absolute tolerance is zero.
     # So: add 1 and compare to 1
     @test sum([abs(result[i] - e(g[i])) for i in 1:length(g)]) + 1 ≈ 1
+
+    e = Expansion(Fourier{T}(3))
+    @test dictionary(real(e)) isa TrigSeries
+    @test dictionary(imag(e)) isa TrigSeries
+    @test real(e)(0.4)+1im*imag(e)(0.4) ≈ e(0.4)
 
     # Try an extension
     n = 13
@@ -174,7 +162,6 @@ function test_fourier_series(T)
     @test abs(e(T(x0))-f(x0)) < sqrt(eps(T))
 
     # Arithmetic
-
     b2 = Fourier{T}(162)
     f2 = x -> 1/(2+cos(2*T(pi)*x))
     e2 = approximate(b2, f2)
@@ -212,7 +199,7 @@ for T in fourier_types
         test_fourier_series(T)
     end
 end
-using LinearAlgebra
+
 @testset "Fourier orthogonality, gram functionality" begin
     test_fourier_orthogonality()
     F = Fourier(10)
@@ -229,4 +216,26 @@ using LinearAlgebra
         G1 = Zt*A
         @test Matrix(G1) ≈ Matrix(I,size(G1))
     end
+
+    # a few scenarios
+    F = Fourier(3) → -1..1
+    S = SynthesisOperator(F)
+    G = GridSampling(PeriodicEquispacedGrid(3,-1,1))
+    @test Matrix(G*S)≈Matrix(G*F)
+    # @test_throws MethodError SynthesisOperator(F,nothing)''
+
+    g = interpolation_grid(Fourier(3) → -1..1)
+    g1 = gram(Fourier(3) → -1..1,discretemeasure(map_grid(forward_map(g),FourierGrid(6))))
+    g2 = gram(Fourier(3),discretemeasure(FourierGrid(6)))
+    g3 = BasisFunctions.default_gram(Fourier(3),discretemeasure(FourierGrid(6)))
+
+    @test g1≈g2≈g3
+
+    g1 = gram(Fourier(3) → -1..1)
+    g2 = gram(Fourier(3))
+    g3 = BasisFunctions.default_gram(Fourier(3))
+
+    @test g1≈g2≈g3
+
+    @test weights(discretemeasure(subgrid(PeriodicEquispacedGrid(10,0,1)^2,(0.0..0.5)^2))) isa BasisFunctions.OuterProductArray
 end

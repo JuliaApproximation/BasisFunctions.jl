@@ -24,6 +24,7 @@ include("test_dictionaries_derived.jl")
 include("test_dictionaries_discrete.jl")
 include("test_dictionaries_tensor.jl")
 include("test_dictionaries_mapped.jl")
+include("test_dictionaries_functionality.jl")
 
 @testset "test custom dictionary" begin
     mydict = BasisFunctions.MyDictionary()
@@ -59,7 +60,9 @@ for T in domaintypes
         end
     end
     # also try a Fourier series with an even length
-    @testset begin test_generic_dict_interface(Fourier{T}(8)) end
+    @testset "even-length Fourier" begin
+        test_generic_dict_interface(Fourier{T}(8))
+    end
 
     delimit("derived dictionaries ($(T))")
     test_derived_dicts(T)
@@ -88,4 +91,11 @@ for T in domaintypes
 end
 
 delimit("Mapped dictionaries")
-test_mapped_dicts()
+@testset "mapped dictionaries" begin
+    test_mapped_dicts()
+end
+
+delimit("Dictionary conversions")
+@testset "dictionary conversions" begin
+    test_dictionary_conversions()
+end

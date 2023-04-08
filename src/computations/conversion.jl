@@ -171,8 +171,23 @@ function conversion2(T, src, dest::Dictionary; verbose=false, options...)
     end
 end
 
-default_conversion(T, src, dest; options...) =
-    projection(T, src, dest; options...)
+function default_conversion(T, src, dest; options...)
+    if hasmeasure(dest)
+        projection(T, src, dest, measure(dest); options...)
+    elseif hasinterpolationgrid(dest)
+        pts = interpolation_grid(dest)
+        I = interpolation(T, dest; options...)
+        A = evaluation(T, src, pts; options...)
+        I*A
+    elseif hasinterpolationgrid(src)
+        pts = interpolation_grid(src)
+        I = interpolation(T, dest, pts; options...)
+        A = evaluation(T, src, pts; options...)
+        I*A
+    else
+        error("Don't know how to reliably convert from $(src) to $(dest).")
+    end
+end
 
 # Convert to and from grids.
 # To grid: we invoke `evaluation`
@@ -187,3 +202,46 @@ conversion(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
 # Resolve ambiguity by the above methods
 conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     extension(T, src, dest; options...)
+
+
+## Normalization
+
+function isnormalized(Φ::Dictionary, μ = measure(Φ))
+	for i in eachindex(Φ)
+		if !(norm(Φ[i], μ) ≈ 1)
+			return false
+		end
+	end
+	return true
+end
+
+normalize(Φ::Dictionary, μ = measure(Φ)) =
+	isnormalized(Φ, μ) ? Φ : Diagonal([inv(norm(φ, μ)) for φ in Φ]) * Φ
+
+## Orthogonalization
+
+"Compute the square root of a symmetric and positive definite matrix."
+spd_matrix_sqrt(A::AbstractArray{T}) where {T<:Base.IEEEFloat}= sqrt(A)
+function spd_matrix_sqrt(A::AbstractArray)
+	# at the time of writing sqrt(A) is not supported for generic numbers
+	# but svd is (in the GenericLinearAlgebra package)
+	u,s,v = svd(A)
+	u * sqrt(Diagonal(s)) * u'
+end
+
+orthogonalize(Φ::Dictionary, μ = measure(Φ)) = orthogonalize1(Φ, μ)
+# enable dispatch on the first argument without ambiguity
+orthogonalize1(Φ::Dictionary, μ) = orthogonalize2(Φ, μ)
+# enable dispatch on the second argument without ambiguity
+function orthogonalize2(Φ, μ)
+	if isorthonormal(Φ, μ)
+		Φ
+	else
+		default_orthogonalize(Φ, μ)
+	end
+end
+
+function default_orthogonalize(Φ::Dictionary, μ = measure(Φ))
+	A = inv(matrix(gram(Φ, μ)))
+	spd_matrix_sqrt(A) * Φ
+end

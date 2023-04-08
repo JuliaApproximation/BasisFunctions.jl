@@ -3,7 +3,7 @@ using Test
 using LinearAlgebra, DomainSets, GridArrays, StaticArrays
 using BasisFunctions
 
-@testset begin
+@testset "a few scenarios" begin
     F = Fourier(3) → -1..1
     S = SynthesisOperator(F)
     G = GridSampling(PeriodicEquispacedGrid(3,-1,1))
@@ -17,7 +17,6 @@ using BasisFunctions
 
     @test g1≈g2≈g3
 
-
     g1 = gram(Fourier(3) → -1..1)
     g2 = gram(Fourier(3))
     g3 = BasisFunctions.default_gram(Fourier(3))
@@ -25,5 +24,4 @@ using BasisFunctions
     @test g1≈g2≈g3
 
     @test weights(discretemeasure(subgrid(PeriodicEquispacedGrid(10,0,1)^2,(0.0..0.5)^2))) isa BasisFunctions.OuterProductArray
-
 end

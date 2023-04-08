@@ -459,7 +459,7 @@ end
 
 
 
-function test_generic_dict_interface(basis)
+function test_generic_dict_interface(@nospecialize basis)
     ELT = coefficienttype(basis)
     T = domaintype(basis)
     FT = prectype(T)

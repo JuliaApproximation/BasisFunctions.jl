@@ -66,7 +66,9 @@ end
 
 # Special case for log, since it is not precise at 0.
 diff(::typeof(log)) = x->1/x
-diff(::typeof(log), x::T) where T<:Number= convert(T,1)/x
+diff(::typeof(log), x::T) where T<:Number= one(T)/x
+diff(::typeof(cos)) = x -> -sin(x)
+diff(::typeof(cos), x) = -sin(x)
 
 # Evaluate an expansion: same story
 eval_expansion(dict::WeightedDict, coefficients, x) = _eval_expansion(dict, weightfunction(dict), coefficients, x)

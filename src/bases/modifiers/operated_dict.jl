@@ -21,6 +21,13 @@ function OperatedDict(op::DictionaryOperator{T}) where {T}
     OperatedDict{S,T}(op)
 end
 
+function operated_dict(A::AbstractArray, Φ::Dictionary)
+	T = promote_type(eltype(A), coefficienttype(Φ))
+	op = ArrayOperator(convert(AbstractArray{T}, A), ensure_coefficienttype(T, Φ))
+	OperatedDict(op)
+end
+
+*(A::AbstractArray, d::Dictionary) = operated_dict(A, d)
 
 ## Concrete subtypes
 
@@ -89,7 +96,7 @@ function support(Φ::OperatedDict, idx)
 	if isdiag(operator(Φ))
 		support(src(Φ), idx)
 	else
-		# We don't know in general what the support of a specific basis functions is.
+		# We don't know in general what the support of a specific basis function is.
 		# The safe option is to return the support of the set itself for each element.
 		support(src(Φ))
 	end
@@ -236,10 +243,10 @@ hasmeasure(dict::OperatedDict) = hasmeasure(superdict(dict))
 
 measure(dict::OperatedDict) = measure(superdict(dict))
 
-for f in (:isorthogonal, :isorthonormal, :isbiorthogonal)
-    @eval $f(dict::OperatedDict, measure::Measure) =
-        $f(superdict(dict), measure) && $f(operator(dict))
-end
+isorthogonal(dict::OperatedDict, μ) =
+	isorthogonal(superdict(dict)) && isorthogonal(operator(dict))
+isorthonormal(dict::OperatedDict, μ) =
+	isorthonormal(superdict(dict)) && isorthogonal(operator(dict))
 
 gram1(T, dict::OperatedDict, measure; options...) =
 	adjoint(operator(dict)) * gram(T, dest(operator(dict)), measure; options...) * operator(dict)
@@ -272,24 +279,6 @@ end
 function mixedgram2(T, dict1, dict2::OperatedDict, measure; options...)
 	G = mixedgram(T, dict1, superdict(dict2), measure; options...)
 	wrap_operator(dict2, dict1, G *  operator(dict2))
-end
-
-"Compute the square root of a symmetric and positive definite matrix."
-spd_matrix_sqrt(A::AbstractArray{T}) where {T<:Base.IEEEFloat}= sqrt(A)
-function spd_matrix_sqrt(A::AbstractArray)
-	# at the time of writing sqrt(A) is not supported for generic numbers
-	# but svd is (in the GenericLinearAlgebra package)
-	u,s,v = svd(A)
-	u * sqrt(Diagonal(s)) * u'
-end
-
-function orthogonalize(Φ::Dictionary)
-	A = inv(matrix(gram(Φ)))
-	ArrayOperator(spd_matrix_sqrt(A), Φ) * Φ
-end
-function orthogonalize(Φ::Dictionary, μ)
-	A = inv(matrix(gram(Φ, μ)))
-	ArrayOperator(spd_matrix_sqrt(A), Φ) * Φ
 end
 
 function conversion1(::Type{T}, src::OperatedDict, dest; options...) where {T}
@@ -345,8 +334,14 @@ operator(d::ScaledDict) = DiagonalOperator(d.diag, d.dict, d.dict)
 src(d::ScaledDict) = d.dict
 dest(d::ScaledDict) = src(d)
 
-normalize(d::Dictionary) = ScaledDict(d, [1/norm(bf) for bf in d])
-normalize(d::Dictionary, μ) = ScaledDict(d, [1/norm(bf, μ) for bf in d])
+function isorthonormal(d::ScaledDict, μ)
+	for i in eachindex(d.diag)
+		if !(d.diag[i] ≈ inv(norm(d.dict[i], μ)))
+			return false
+		end
+	end
+	true
+end
 
 diag_element(d::ScaledDict, i::Int) = d.diag[i]
 diag_element(d::ScaledDict, i) = d.diag[linear_index(d, i)]

@@ -38,24 +38,34 @@ similar(dict::TensorProductDict, ::Type{T}, size::Int) where {T} =
 
 ## Properties
 
-for op in (:isreal, :isbasis, :isframe)
+for op in (:isreal, :isbasis, :isframe, :isperiodic)
     @eval $op(s::TensorProductDict) = mapreduce($op, &, components(s))
 end
 
-for op in (:isorthogonal, :isorthonormal)
-    @eval $op(s::TensorProductDict, m::ProductWeight) = mapreduce($op, &, components(s), components(m))
+for op in (:isorthogonal, :isorthonormal, :isnormalized)
+    @eval function $op(s::TensorProductDict, m::ProductWeight)
+        @assert ncomponents(s) == ncomponents(m)
+        mapreduce($op, &, components(s), components(m))
+    end
 end
 
-for op in (:isorthogonal, :isorthonormal)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.DiscreteProductWeight) = mapreduce($op, &, components(s), components(m))
+for op in (:isorthogonal, :isorthonormal, :isnormalized)
+    @eval function $op(s::TensorProductDict, m::DiscreteProductWeight)
+        @assert ncomponents(s) == ncomponents(m)
+        mapreduce($op, &, components(s), components(m))
+    end
 end
 
 for op in (:isorthogonal, :iscompatiblegrid)
-    @eval BasisFunctions.$op(s::TensorProductDict, m::BasisFunctions.ProductGrid) = mapreduce($op, &, components(s), components(m))
+    @eval function $op(s::TensorProductDict, g::ProductGrid)
+        @assert ncomponents(s) == ncomponents(g)
+        mapreduce($op, &, components(s), components(g))
+    end
 end
 
 iscompatible(d1::TensorProductDict, d2::TensorProductDict) =
-    mapreduce(iscompatible, &, factors(d1), factors(d2))
+    ncomponents(d1) == ncomponents(d2) &&
+        mapreduce(iscompatible, &, factors(d1), factors(d2))
 
 ## Feature methods
 
@@ -68,7 +78,8 @@ hasantiderivative(Φ::TensorProductDict, order) =
     mapreduce(hasantiderivative, &, components(Φ), order)
 
 hasgrid_transform(s::TensorProductDict, gb, grid::ProductGrid) =
-    mapreduce(hastransform, &, components(s), components(grid))
+    ncomponents(s) == ncomponents(grid) &&
+        mapreduce(hastransform, &, components(s), components(grid))
 
 hasgrid_transform(s::TensorProductDict, gb, grid::AbstractGrid) = false
 
@@ -154,7 +165,6 @@ unsafe_eval_element_derivative(dict::TensorProductDict, idx::ProductIndex, x, or
     _unsafe_eval_element_derivative(dict, components(dict), idx, x, order)
 
 function _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i, x, order)
-    @show order
     mapreduce(unsafe_eval_element_derivative, *, dicts, i, x, order)
 end
 _unsafe_eval_element_derivative(dict::TensorProductDict, dicts, i::CartesianIndex, x, order) =

@@ -1,7 +1,4 @@
 
-import BasisFunctions: diff
-using Calculus: derivative
-diff(f::typeof(cos),args...) = derivative(f,args...)
 function test_derived_dicts(T)
     b1 = Fourier{T}(11)
     b2 = ChebyshevT{T}(12)
@@ -36,6 +33,15 @@ function test_derived_dicts(T)
         test_generic_dict_interface(D2*b1)
         D3 = differentiation(b2)
         test_generic_dict_interface(D3*b2)
+
+        # test some promotions when creating operated dicts
+        d = Diagonal(1:length(b2))
+        op1 = d*b2
+        @test op1 isa BasisFunctions.ScaledDict{T,T}
+        @test eltype(operator(op1)) == T
+        op2 = (d .+ 0im) *b2
+        @test op2 isa BasisFunctions.ScaledDict{T,Complex{T}}
+        @test src(op2) == complex(b2)
     end
 
 

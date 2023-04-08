@@ -35,7 +35,6 @@ const LargeFloat = BigFloat
 # Testing
 ##########
 ENV["JULIA_DEBUG"]="all"
-include("test_scenariolist.jl")
 
 Delimit("Utilities")
 include("util/test_utilities.jl")

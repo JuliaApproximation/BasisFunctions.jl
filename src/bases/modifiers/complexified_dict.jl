@@ -11,6 +11,7 @@ end
 const ComplexifiedDict1d{D,S<:Number,T<:Number} = ComplexifiedDict{D,S,T}
 
 ComplexifiedDict(d::Dictionary{S,T}) where {S,T<:Real} = ComplexifiedDict{typeof(d),S,T}(d)
+ComplexifiedDict(d::ComplexifiedDict) = d
 
 Base.complex(dict::Dictionary) = ensure_coefficienttype(complex(coefficienttype(dict)), dict)
 function Base.real(dict::Dictionary)
@@ -37,7 +38,6 @@ evaluation(::Type{T}, dict::ComplexifiedDict, gb::GridBasis, grid::AbstractGrid;
 
 
 hasmeasure(dict::ComplexifiedDict) = hasmeasure(superdict(dict))
-
 measure(dict::ComplexifiedDict) = measure(superdict(dict))
 
 gram1(T, dict::BasisFunctions.ComplexifiedDict, measure; options...) =
@@ -65,10 +65,9 @@ function conversion2(T, d1, d2::ComplexifiedDict; options...)
 end
 
 hasconstant(d::ComplexifiedDict) = hasconstant(superdict(d))
+hasx(d::ComplexifiedDict) = hasx(superdict(d))
 coefficients_of_one(dict::ComplexifiedDict) =
     complex(coefficients_of_one(superdict(dict)))
-
-hasx(d::ComplexifiedDict) = hasx(superdict(d))
 coefficients_of_x(dict::ComplexifiedDict) =
     complex(coefficients_of_x(superdict(dict)))
 

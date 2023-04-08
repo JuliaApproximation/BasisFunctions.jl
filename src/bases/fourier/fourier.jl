@@ -2,7 +2,12 @@
 "Supertype of various Fourier-like basis functions."
 abstract type FourierLike{S,T} <: Dictionary{S,T} end
 
+# FourierLike has at least two concrete subtypes:
+# - Fourier
+# - TrigSeries
+
 support(d::FourierLike{T}) where T = UnitInterval{T}()
+isperiodic(::FourierLike) = true
 period(d::FourierLike{T}) where {T} = T(1)
 
 oddlength(d::FourierLike) = isodd(length(d))
@@ -98,6 +103,8 @@ isorthonormal(b::Fourier, μ::FourierWeight) = oddlength(b)
 isorthonormal(b::Fourier, μ::Weight) = isorthogonal(b, μ) && oddlength(b)
 isorthonormal(b::Fourier, μ::DiscreteWeight) =
 	isorthogonal(b, μ) && isnormalized(μ) && (length(b)==length(μ) || oddlength(b))
+
+isnormalized(b::Fourier, μ) = isorthonormal(b)
 
 hasextension(b::Fourier) = isodd(length(b))
 

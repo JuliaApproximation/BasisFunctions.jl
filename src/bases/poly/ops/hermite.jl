@@ -31,6 +31,8 @@ rec_An(b::Hermite, n::Int) = 2
 rec_Bn(b::Hermite, n::Int) = 0
 rec_Cn(b::Hermite, n::Int) = 2*n
 
+coefficients_of_x(b::Hermite{T}) where {T} = (c=zeros(b); c[2]=one(T)/2; c)
+
 function dict_innerproduct_native(d1::Hermite, i::PolynomialDegree, d2::Hermite, j::PolynomialDegree, measure::HermiteWeight; options...)
 	T = coefficienttype(d1)
 	if i == j

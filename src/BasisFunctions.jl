@@ -100,7 +100,8 @@ export integral
 @reexport using GridArrays
 import GridArrays: subindices, resize, name,
     apply_map, mapping, covering,
-    →, rescale
+    →, rescale,
+    isperiodic
 
 using GridArrays: SubGrid, MaskedGrid, IndexSubGrid
 
@@ -255,7 +256,8 @@ export PiecewiseDict, dictionaries
 export VectorvaluedDict
 
 # from bases/modifiers/operated_dict.jl
-export OperatedDict
+export OperatedDict,
+    orthogonalize
 
 # from bases/dictionary/discrete_sets.jl
 export DiscreteDictionary, DiscreteVectorDictionary, DiscreteArrayDictionary,

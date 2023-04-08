@@ -16,7 +16,7 @@ function test_chebyshev_expansions(T)
     # restrict to BlasFloat for now, see GenericLinearAlgebra issue #98
     # (https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/issues/98)
     if T isa LinearAlgebra.BlasFloat
-        b_orth = BasisFunctions.orthogonalize(b, LegendreWeight{T}())
+        b_orth = orthogonalize(b, LegendreWeight{T}())
         @test innerproduct(b_orth[1], b_orth[1], LegendreWeight{T}()) ≈ 1
         @test innerproduct(b_orth[1], b_orth[2], LegendreWeight{T}())+1 ≈ 1
     end

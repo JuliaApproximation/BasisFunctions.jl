@@ -27,9 +27,6 @@ span_codomaintype(::Type{A}, ::Type{Z}) where {Z,A} = typeof(zero(A) * zero(Z))
 
 coefficienttype(span::Span) = coefficienttype(dictionary(span))
 
-# Convenient shorthand
-coefficienttype = coefficienttype
-
 dictionary(s::Span) = s.dictionary
 
 similar(s::Span, ::Type{T}, dims) where {T} = Span(similar(dictionary(s), T, dims))

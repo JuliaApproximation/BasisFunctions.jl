@@ -52,11 +52,10 @@ end
 # See DLMF, Table 18.9.1
 # http://dlmf.nist.gov/18.9#i
 rec_An(b::Laguerre{T}, n::Int) where {T} = -T(1) / T(n+1)
-
 rec_Bn(b::Laguerre{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
-
 rec_Cn(b::Laguerre{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
 
+coefficients_of_x(b::Laguerre) = (c=zeros(b); c[1]=1; c[2]=-1; c)
 
 ## Printing
 

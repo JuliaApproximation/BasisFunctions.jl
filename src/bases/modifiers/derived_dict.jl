@@ -47,7 +47,7 @@ for op in (:isreal, :isbasis, :isframe, :isdiscrete, :measure)
 end
 
 for op in (:isorthogonal, :isbiorthogonal, :isorthonormal)
-    @eval $op(d::DerivedDict, μ::Measure) = $op(superdict(d), μ)
+    @eval $op(d::DerivedDict, μ) = $op(superdict(d), μ)
 end
 
 

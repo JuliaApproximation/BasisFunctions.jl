@@ -33,8 +33,19 @@ end
 size(o::OrthogonalPolynomials) = (o.n,)
 
 p0(::OPS{T}) where {T} = one(T)
-hasconstand(b::OPS) = true
+
+hasconstant(b::OPS) = true
 coefficients_of_one(b::OPS) = (c=zeros(b); c[1]=1; c)
+
+hasx(b::OPS) = length(b) > 1
+function coefficients_of_x(b::OPS)
+	b2 = similar(b, 2)
+	E = matrix(conversion(Monomials{domaintype(b)}(2), b2))
+	c = zeros(b)
+	c[1] = E[1,2]
+	c[2] = E[2,2]
+	c
+end
 
 hasextension(b::OPS) = true
 
