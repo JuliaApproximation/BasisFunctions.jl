@@ -29,7 +29,7 @@ iscompatiblegrid(dict::FourierLike, grid::AbstractEquispacedGrid) =
 # - Fourier grids are of course okay
 iscompatiblegrid(dict::FourierLike, grid::FourierGrid) = length(dict)==length(grid)
 # - Any non-periodic grid is not compatible
-iscompatiblegrid(dict::FourierLike, grid::AbstractGrid) = false
+iscompatiblegrid(dict::FourierLike, grid::AbstractArray) = false
 # - We have a transform if the grid is compatible
 hasgrid_transform(dict::FourierLike, gb, grid) = iscompatiblegrid(dict, grid)
 
@@ -37,7 +37,7 @@ compatible_domains(dict::FourierLike, grid) = false
 compatible_domains(dict::FourierLike, grid::AbstractEquispacedGrid) =
 	isperiodic(grid) && support(dict) ≈ coverdomain(grid)
 
-to_periodic_grid(dict::FourierLike, grid::AbstractGrid) = nothing
+to_periodic_grid(dict::FourierLike, grid::AbstractArray) = error("Grid not Fourier compatible")
 to_periodic_grid(dict::FourierLike, grid::PeriodicEquispacedGrid{T}) where {T} =
 	iscompatiblegrid(dict, grid) ? FourierGrid{T}(length(grid)) : error("Grid not Fourier compatible")
 
@@ -293,8 +293,8 @@ function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid::PeriodicEquis
 end
 
 function evaluation(::Type{T}, dict::Fourier, gb::GridBasis, grid; verbose=false, options...) where {T}
-	grid2 = to_periodic_grid(dict, grid)
-	if grid2 != nothing
+	if iscompatiblegrid(dict, grid)
+		grid2 = to_periodic_grid(dict, grid)
 		gb2 = GridBasis{T}(grid2)
 		evaluation(T, dict, gb2, grid2; verbose, options...) *
 			gridconversion(gb, gb2; verbose, options...)

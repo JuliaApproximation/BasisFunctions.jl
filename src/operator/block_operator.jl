@@ -298,37 +298,6 @@ conj(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(conj, operators(op))
 inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(map(inv, operators(op)), dest(op), src(op))
 # inv(op::BlockDiagonalOperator) = BlockDiagonalOperator(DictionaryOperator{eltype(op)}[inv(o) for o in BasisFunctions.operators(op)])
 
-function stencilarray(op::BlockOperator)
-    A = Any[]
-    push!(A,"[")
-    for i=1:size(components(op),1)
-        i!=1 && push!(A,";\t")
-        push!(A,component(op,i,1))
-        for j=2:size(components(op),2)
-            push!(A,", \t")
-            push!(A,component(op,i,j))
-        end
-    end
-    push!(A,"]")
-    A
-end
-
-function stencilarray(op::BlockDiagonalOperator)
-    A = Any[]
-    push!(A,"[")
-    for i=1:composite_size(op)[1]
-        i!=1 && push!(A,";\t 0")
-        i==1 && push!(A,component(op,1,1))
-        for j=2:composite_size(op)[2]
-            push!(A,", \t")
-            i==j && push!(A,component(op,i,j))
-            i!=j && push!(A,"0")
-        end
-    end
-    push!(A,"]")
-    A
-end
-
 Matrix(op::Union{BlockOperator,BlockDiagonalOperator}) =
     Matrix(matrix(op))
 

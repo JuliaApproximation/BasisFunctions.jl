@@ -95,7 +95,7 @@ default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(
 #################################################
 
 "Is the grid compatible with the dictionary for efficient use?"
-iscompatiblegrid(d::Dictionary, g::AbstractGrid) = false
+iscompatiblegrid(d::Dictionary, g::AbstractArray) = false
 
 """
 A member function of a dictionary is evaluated using the `eval_element` routine.

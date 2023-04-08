@@ -98,8 +98,10 @@ using DomainIntegrals: ProductWeight
 export integral
 
 @reexport using GridArrays
-import GridArrays: subindices, resize, name,
-    apply_map, mapping, covering,
+import GridArrays:
+    subindices,
+    resize,
+    covering,
     →, rescale,
     isperiodic
 
@@ -138,9 +140,8 @@ export ishomogeneous, basetype
 
 # from GridArrays
 export ProductGrid
-export SubGrid, IndexSubGrid, subindices, supergrid, issubindex,
+export SubGrid, subindices, supergrid, issubindex,
     similar_subgrid
-export MappedGrid, map_grid, apply_map
 
 # from spaces/measure.jl
 export innerproduct,
@@ -160,7 +161,6 @@ export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, domain, codomain,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative, eval_gradient,
-    name,
     resize,
     ordering,
     native_index, linear_index, multilinear_index, native_size, linear_size, native_coefficients,

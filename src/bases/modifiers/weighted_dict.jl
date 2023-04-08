@@ -23,8 +23,6 @@ weightfunction(dict::WeightedDict) = dict.weightfun
 
 similardictionary(dict1::WeightedDict, dict2::Dictionary) = WeightedDict(dict2, weightfunction(dict1))
 
-name(dict::WeightedDict) = "Weighted " * name(superdict(dict))
-
 isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict))
 _isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
 
@@ -40,9 +38,9 @@ mapped_dict(d::WeightedDict, map) = MappedDict(d, map)
 
 # We have to distinguish between 1d and higher-dimensional grids, since we
 # have to splat the arguments to the weightfunction
-eval_weight_on_grid(w, grid::AbstractGrid1d) = [w(x) for x in grid]
+eval_weight_on_grid(w, grid::GridArrays.Grid1dLike) = [w(x) for x in grid]
 
-function eval_weight_on_grid(w, grid::AbstractGrid)
+function eval_weight_on_grid(w, grid)
     # Perhaps the implementation here could be simpler, but [w(x...) for x in grid]
     # does not seem to respect the size of the grid, only its length
     a = zeros(prectype(grid), size(grid))
@@ -72,14 +70,8 @@ diff(::typeof(cos), x) = -sin(x)
 
 # Evaluate an expansion: same story
 eval_expansion(dict::WeightedDict, coefficients, x) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
-# temporary, to remove an ambiguity
-eval_expansion(dict::WeightedDict, coefficients, x::AbstractGrid) = _eval_expansion(dict, weightfunction(dict), coefficients, x)
-
 _eval_expansion(dict::WeightedDict1d, w, coefficients, x::Number) = w(x) * eval_expansion(superdict(dict), coefficients, x)
 _eval_expansion(dict::WeightedDict, w, coefficients, x) = w(x...) * eval_expansion(superdict(dict), coefficients, x)
-
-_eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
-    eval_weight_on_grid(w, grid) .* eval_expansion(superdict(dict), coefficients, grid)
 
 
 # You can create a WeightedDict by multiplying a function with a dict, using
@@ -89,10 +81,10 @@ _eval_expansion(dict::WeightedDict, w, coefficients, grid::AbstractGrid) =
 weightfun_scaling_operator(::Type{T}, gb::GridBasis, weightfunction) where {T} =
 	weightfun_scaling_operator(T, gb, weightfunction, grid(gb))
 
-weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::AbstractGrid1d) where {T} =
+weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::GridArrays.Grid1dLike) where {T} =
     DiagonalOperator(gb, gb, map(T,map(weightfunction, grid)))
 
-function weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid::AbstractGrid) where {T}
+function weightfun_scaling_operator(::Type{T}, gb, weightfunction, grid) where {T}
 	A = map(T,map(x->weightfunction(x...), grid))
     DiagonalOperator(gb, gb, A[:])
 end
@@ -153,7 +145,7 @@ function differentiation(::Type{T}, src::WeightedDict, dest::MultiDict, order; o
     end
 end
 
-function evaluation(::Type{T}, dict::WeightedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T}
+function evaluation(::Type{T}, dict::WeightedDict, gb::GridBasis, grid; options...) where {T}
     A = evaluation(T, superdict(dict), gb, grid; options...)
     D = weightfun_scaling_operator(T, gb, weightfunction(dict))
     D * wrap_operator(dict, gb, A)

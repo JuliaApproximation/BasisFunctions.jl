@@ -284,4 +284,5 @@ function wrap_operator(w_src::Dictionary, w_dest::Dictionary, op::DictionaryOper
     unsafe_wrap_operator(w_src, w_dest, op)
 end
 
-show(io::IO, mime::MIME"text/plain", op::DictionaryOperator) = composite_show(io, mime, op)
+show(io::IO, mime::MIME"text/plain", op::DictionaryOperator) =
+	composite_show(io, mime, op)

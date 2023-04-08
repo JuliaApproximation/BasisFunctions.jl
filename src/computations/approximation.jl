@@ -64,10 +64,7 @@ interpolation(Φ::Dictionary, args...; options...) =
 interpolation(::Type{T}, Φ::Dictionary; options...) where {T} =
     interpolation(T, Φ, interpolation_grid(Φ); options...)
 
-interpolation(::Type{T}, Φ::Dictionary, points::AbstractArray; options...) where {T} =
-    interpolation(T, Φ, ScatteredGrid(points); options...)
-
-interpolation(::Type{T}, Φ::Dictionary, grid::AbstractGrid; options...) where {T} =
+interpolation(::Type{T}, Φ::Dictionary, grid::AbstractArray; options...) where {T} =
     interpolation(T, Φ, GridBasis{T}(grid); options...)
 
 function interpolation(::Type{T}, Φ::Dictionary, gb::GridBasis; options...) where {T}
@@ -111,7 +108,7 @@ function leastsquares(::Type{T}, Φ::Dictionary; samplingfactor = 2, options...)
     leastsquares(T, Φ, ls_grid; options...)
 end
 
-leastsquares(::Type{T}, Φ::Dictionary, grid::AbstractGrid; options...) where {T} =
+leastsquares(::Type{T}, Φ::Dictionary, grid::AbstractArray; options...) where {T} =
     leastsquares(T, Φ, GridBasis{T}(grid); options...)
 
 function leastsquares(T, Φ::Dictionary, gb::GridBasis; options...)

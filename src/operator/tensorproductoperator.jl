@@ -409,15 +409,7 @@ function apply_inplace_tensor!(op, coef_srcdest, operators::Tuple{A,B,C,D}, src_
     coef_srcdest
 end
 
-function stencilarray(op::TensorProductOperator)
-    A = Any[]
-    push!(A, component(op,1))
-    for i in 2:ncomponents(op)
-        push!(A, " ⊗ ")
-        push!(A, component(op,i))
-    end
-    A
-end
 
-stencil_parentheses(op::TensorProductOperator) = true
-object_parentheses(op::TensorProductOperator) = true
+# Pretty printing
+Display.combinationsymbol(op::TensorProductOperator) = Display.Symbol('⊗')
+Display.displaystencil(op::TensorProductOperator) = composite_displaystencil(op)

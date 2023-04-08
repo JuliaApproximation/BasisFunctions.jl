@@ -27,10 +27,10 @@ function default_evaluation(::Type{T}, Φ::Dictionary, gb::GridBasis; options...
 end
 
 
-evaluation(Φ::Dictionary, grid::AbstractGrid; options...) =
+evaluation(Φ::Dictionary, grid::AbstractArray; options...) =
     evaluation(coefficienttype(Φ), Φ, grid; options...)
 
-evaluation(::Type{T}, Φ::Dictionary, grid::AbstractGrid; options...) where {T} =
+evaluation(::Type{T}, Φ::Dictionary, grid::AbstractArray; options...) where {T} =
     evaluation(T, Φ, GridBasis{T}(grid); options...)
 
 evaluation(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =

@@ -132,7 +132,7 @@ function _unsafe_eval_element(dict::OperatedDict, idxn, x, op::ScalingOperator, 
     diag(op, idx) * unsafe_eval_element(src(dict), idxn, x)
 end
 
-evaluation(::Type{T}, dict::OperatedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+evaluation(::Type{T}, dict::OperatedDict, gb::GridBasis, grid; options...) where {T} =
     wrap_operator(dict, gb, evaluation(T, dest(dict), gb, grid; options...) * operator(dict))
 
 ## Properties
@@ -293,8 +293,8 @@ end
 #################
 # Special cases
 #################
-(*)(a::Number, s::Dictionary) = ScalingOperator(s, a) * s
-(*)(a::Number, s::OperatedDict) = (ScalingOperator(dest(s), a) * operator(s)) * superdict(s)
+(*)(a::Number, s::Dictionary) = ScalingOperator(a, s) * s
+(*)(a::Number, s::OperatedDict) = (ScalingOperator(a, dest(s)) * operator(s)) * superdict(s)
 
 function (*)(op::DictionaryOperator, dict::Dictionary)
     @assert src(op) == dict
@@ -316,16 +316,16 @@ expansion_multiply2(dict1, dict2::OperatedDict, coef1, coef2) =
 ## A simple scaling
 
 "A scaled dictionary (by a diagonal operator)."
-struct ScaledDict{S,T,D} <: OperatedDict{S,T}
+struct ScaledDict{S,T,D,V} <: OperatedDict{S,T}
 	dict		::	D
-	diag		::	Vector{T}
+	diag		::	V
 end
 
 ScaledDict(dict::Dictionary{S,T}, diag) where {S,T} = ScaledDict{S,T}(dict, diag)
-ScaledDict{S,T}(dict::Dictionary, diagop::DiagonalOperator) where {S,T} =
- 	ScaledDict{S,T}(dict, diag(matrix(diagop)))
-ScaledDict{S,T}(dict::D, diag::AbstractVector) where {D,S,T} =
- 	ScaledDict{S,T,D}(dict, diag)
+ScaledDict{S,T}(dict::Dictionary, op::DiagonalOperator) where {S,T} =
+ 	ScaledDict{S,T}(dict, diagonal(op))
+ScaledDict{S,T}(dict::D, diag::V) where {D,S,T,V<:AbstractVector} =
+ 	ScaledDict{S,T,D,V}(dict, diag)
 
 OperatedDict{S,T}(op::DiagonalOperator) where {S,T} = ScaledDict{S,T}(src(op),op)
 

@@ -156,7 +156,7 @@ for op in (:differentiation, :antidifferentiation)
     end
 end
 
-evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+evaluation(::Type{T}, dict::MultiDict, gb::GridBasis, grid; options...) where {T} =
     block_row_operator( DictionaryOperator{T}[evaluation(T, el, gb, grid; options...) for el in components(dict)], dict, gb)
 
 

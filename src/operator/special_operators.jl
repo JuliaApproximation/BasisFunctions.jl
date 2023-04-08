@@ -87,8 +87,11 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 inv_multiplication(op::MultiplicationOperator{T,A,INPLACE}, object) where {T,A,INPLACE} =
     MultiplicationOperator(dest(op), src(op), inv(object); inplace=INPLACE)
 
-# Use QR for matrices by default
-# inv_multiplication(op::MatrixOperator, matrix) = QR_solver(op)
+Display.displaysymbol(op::MultiplicationOperator) = _symbol(op, object(op))
+_symbol(op::MultiplicationOperator, object) = "M"
+_symbol(op::MultiplicationOperator, object::FFTW.Plan) = "FFT"
+
+
 
 
 
@@ -215,27 +218,8 @@ components(op::OperatorSum) = (op.op1,op.op2)
 (-)(op1::DictionaryOperator, I2::UniformScaling) = (-)(op1, ScalingOperator(I2.λ, src(op1), dest(op1)))
 
 
-function stencilarray(op::OperatorSum)
-    local s1, s2
-    if op.val1 == -1
-        s1 = "-"
-    elseif op.val1 == 1
-        s1 = ""
-    else
-        s1 = op1.val1
-    end
-    if op.val2 == -1
-        s2 = " - "
-    elseif op.val2 == 1
-        s2 = " + "
-    else
-        s2 = " + " * string(op.val2) * " "
-    end
-    [s1, op.op1, s2, op.op2]
-end
-
-stencil_parentheses(op::OperatorSum) = true
-object_parentheses(op::OperatorSum) = true
+Display.combinationsymbol(op::OperatorSum) = Display.Symbol('+')
+Display.displaystencil(op::OperatorSum) = composite_displaystencil(op)
 
 
 """
@@ -304,8 +288,6 @@ function AlternatingSignOperator{T}(src::Dictionary) where {T}
     DiagonalOperator{T}(diag, src, src)
 end
 
-strings(op::AlternatingSignOperator) = tuple("Alternating sign operator of length $(size(op,1))")
-
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
 
@@ -316,6 +298,3 @@ function CoefficientScalingOperator{T}(src::Dictionary, index::Int, scalar) wher
     diag = Diagonal(ScaledEntry{T}(length(src), index, scalar))
 	DiagonalOperator{T}(diag, src, src)
 end
-
-strings(op::CoefficientScalingOperator) =
-    tuple("Diagonal operator of length $(size(op,1)) that scales coefficient $(op.A.diag.index) by $(op.A.diag.scalar)")

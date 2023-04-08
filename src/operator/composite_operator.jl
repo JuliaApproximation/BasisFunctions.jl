@@ -237,15 +237,7 @@ sparse(op::CompositeOperator; options...) = *([sparse(opi; options...) for opi i
 
 CompositeOperators = Union{CompositeOperator,GenericCompositeOperator}
 
-function stencilarray(op::CompositeOperators)
-    A = Any[]
-    push!(A,component(op,ncomponents(op)))
-    for i in ncomponents(op)-1:-1:1
-        push!(A, " * ")
-        push!(A, component(op,i))
-    end
-    A
-end
-
-stencil_parentheses(op::CompositeOperators) = true
-object_parentheses(op::CompositeOperators) = true
+# Pretty printing
+Display.combinationsymbol(op::CompositeOperator) = Display.Symbol('∘')
+Display.displaystencil(op::CompositeOperator) =
+    composite_displaystencil(op; reversecomponents=true)

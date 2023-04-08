@@ -19,7 +19,7 @@ struct GridSampling <: SamplingOperator
     dest    ::  GridBasis
 end
 
-GridSampling(grid::AbstractGrid{S}, ::Type{T} = subeltype(S)) where {S,T} =
+GridSampling(grid::AbstractArray{S}, ::Type{T} = subeltype(S)) where {S,T} =
     GridSampling(GenericFunctionSpace{S,T}(), GridBasis{T}(grid))
 
 GridSampling(gridbasis::GridBasis{S,T}) where {S,T} =
@@ -38,9 +38,7 @@ src_space(op::GridSampling) = op.src
 apply!(result, op::GridSampling, f; options...) = sample!(result, grid(op), f; options...)
 
 "Sample the function f on the given grid."
-sample(g::AbstractGrid, f, T = numtype(g)) = sample!(zeros(T, size(g)), g, f)
-
-broadcast(f::Function, grid::AbstractGrid) = sample(grid, f)
+sample(g::AbstractArray, f, T = numtype(g)) = sample!(zeros(T, size(g)), g, f)
 
 component(op::GridSampling, i) = GridSampling(component(dest(op),i))
 components(op::GridSampling) = map( s -> GridSampling(s), components(dest(op)))

@@ -19,17 +19,6 @@ _supermeasure(points::AbstractGrid, weights) = discretemeasure(supergrid(points)
 _supermeasure(points::ProductGrid, weights::AbstractOuterProductArray) =
     productmeasure(map(_supermeasure, components(points), components(weights))...)
 
-name(μ::GridWeight) = _name(μ, points(μ), weights(μ))
-_name(μ::GridWeight, points, weights) = "Weighted discrete measure on grid $(typeof(points))"
-
-_name(μ::GridWeight, points::AbstractEquispacedGrid, weights::Ones) = "Uniform Dirac comb measure"
-_name(μ::GridWeight, points::AbstractEquispacedGrid, weights::NormalizedArray) = "Dirac comb measure with normalized weights"
-_name(μ::GridWeight, points::AbstractEquispacedGrid, weights) = "Weighted Dirac comb measure"
-_name(μ::GridWeight, points::ProductGrid, weights) = "Discrete product measure"
-_name(μ::GridWeight, points::MappedGrid, weights) = "Mapping of a $(name(supermeasure(μ)))"
-
-strings(μ::GridWeight) = (name(μ), (string(points(μ)),), (string(string(weights(μ))),))
-
 support(μ::GridWeight) = _support(μ, points(μ))
 _support(μ::GridWeight, points::MappedGrid) = forward_map(points) * support(supermeasure(μ))
 _support(μ::GridWeight, points) = support(points)
@@ -108,8 +97,6 @@ uniformdiscretemeasure(grid::AbstractGrid) = UniformGridWeight(grid)
 
 discretemeasure(grid::AbstractGrid, weights) = GenericGridWeight(grid, weights)
 
-
-name(m::DiracWeight) = "Dirac measure at x = $(m.point)"
 points(m::DiracWeight) = ScatteredGrid([m.point])
 weights(::DiracWeight{T}) where T = Ones{T}(1)
 
@@ -124,7 +111,7 @@ mappedmeasure(map, measure::DiscreteWeight) =
     discretemeasure(MappedGrid(weighhts(measure), points(measure), map))
 forward_map(μ::GridWeight) = forward_map(points(μ))
 apply_map(measure::DiscreteWeight, map) =
-    discretemeasure(apply_map(points(measure),map), weights(measure))
+    discretemeasure(map_grid(map, points(measure)), weights(measure))
 
 ismappedmeasure(μ::GridWeight) = points(μ) isa MappedGrid
 
@@ -138,5 +125,3 @@ QuadratureMeasure(points::AbstractArray{T}, weights) where {T} =
     QuadratureMeasure{T}(points, weights)
 QuadratureMeasure{T}(points::P, weights::W) where {T,P,W} =
     QuadratureMeasure{T,P,W}(points, weights)
-
-name(m::QuadratureMeasure) = "Quadrature measure"

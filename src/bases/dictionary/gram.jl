@@ -191,10 +191,10 @@ function default_diagonal_gram(::Type{T}, Φ::Dictionary, μ::Measure; options..
 end
 
 function default_mixedgram_discretemeasure(::Type{T}, Φ1::Dictionary, Φ2::Dictionary,
-			μ::DiscreteWeight, grid::AbstractGrid, weights; options...) where {T}
+			μ::DiscreteWeight, grid, weights; options...) where {T}
     E1 = evaluation(T, Φ1, grid; options...)
     E2 = evaluation(T, Φ2, grid; options...)
-    W = DiagonalOperator{T}(dest(E2),dest(E1), weights)
+    W = DiagonalOperator{T}(dest(E2), dest(E1), weights)
     E1'*W*E2
 end
 
@@ -248,7 +248,7 @@ mixedgram3(T, Φ1, Φ2, μ::Measure; options...) =
 mixedgram3(T, Φ1, Φ2, μ::DiscreteWeight; options...) =
     mixedgram(T, Φ1, Φ2, μ, points(μ), weights(μ); options...)
 
-mixedgram(T, Φ1, Φ2, μ::DiscreteWeight, grid::AbstractGrid, weights; options...) =
+mixedgram(T, Φ1, Φ2, μ::DiscreteWeight, grid, weights; options...) =
     default_mixedgram_discretemeasure(T, Φ1, Φ2, μ, grid, weights; options...)
 
 function mixedgram(::Type{T}, Φ1::D, Φ2::D, μ::Measure; options...) where {T,D<:Dictionary}

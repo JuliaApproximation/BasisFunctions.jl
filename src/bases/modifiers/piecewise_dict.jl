@@ -50,25 +50,9 @@ function PiecewiseDict(set::Dictionary, partition::Partition)
     PiecewiseDict(dicts, partition)
 end
 
-name(dict::PiecewiseDict) = "Piecewise dictionary"
-
 dictionaries(set::PiecewiseDict) = set.dicts
 
 partition(set::PiecewiseDict) = set.partition
-
-function stencilarray(dict::PiecewiseDict)
-    A = Any[]
-    push!(A, "(")
-    i = 1
-    for s in dictionaries(dict)
-        i != 1 && push!(A, ", ")
-        push!(A, s)
-        i += 1
-    end
-    push!(A, ")")
-    A
-end
-
 
 
 similardictionary(set::PiecewiseDict, dicts) = PiecewiseDict(dicts, partition(set))
@@ -114,7 +98,7 @@ function eval_expansion(set::PiecewiseDict, x)
 end
 
 # TODO: improve, by subdividing the given grid according to the subregions of the piecewise set
-evaluation(::Type{T}, dict::PiecewiseDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+evaluation(::Type{T}, dict::PiecewiseDict, gb::GridBasis, grid; options...) where {T} =
     ArrayOperator(evaluation_matrix(T, dict, grid), dict, gb) * LinearizationOperator{T}(dict)
 
 

@@ -126,8 +126,6 @@ end
 DenseSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     DenseSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
 
-name(dict::DenseSubdict) = "Dense subdictionary"
-
 similar_subdict(d::DenseSubdict, dict, superindices) = DenseSubdict(dict, superindices)
 
 interpolation_grid(d::DenseSubdict) = interpolation_grid(superdict(d))
@@ -205,8 +203,6 @@ end
 
 SparseSubdict(dict::Dictionary{S,T}, superindices) where {S,T} =
     SparseSubdict{typeof(dict),typeof(superindices),S,T}(dict, superindices)
-
-name(dict::SparseSubdict) = "Sparse subdictionary"
 
 similar_subdict(d::SparseSubdict, dict, superindices) = SparseSubdict(dict, superindices)
 

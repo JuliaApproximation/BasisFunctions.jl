@@ -92,7 +92,7 @@ function unmap_grid(dict::MappedDict, grid::MappedGrid)
     end
 end
 
-unmap_grid(dict::MappedDict, grid::AbstractGrid) = apply_map(grid, inverse_map(dict))
+unmap_grid(dict::MappedDict, grid) = map_grid(inverse_map(dict), grid)
 
 
 isreal(s::MappedDict) = isreal(superdict(s)) && isreal(forward_map(s))
@@ -349,7 +349,7 @@ function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}
     tensorproduct(scaled_sets...)
 end
 
-plotgrid(S::MappedDict, n) = apply_map(plotgrid(superdict(S),n), forward_map(S))
+plotgrid(S::MappedDict, n) = map_grid(forward_map(S), plotgrid(superdict(S),n))
 
 
 #################

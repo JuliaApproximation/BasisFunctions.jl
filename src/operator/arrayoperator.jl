@@ -226,14 +226,12 @@ DiagonalOperator{T}(src::Dictionary, dest::Dictionary, A::AbstractArray) where {
 DiagonalOperator(src::Dictionary, dest::Dictionary, A::AbstractOuterProductArray) =
     tensorproduct(map(DiagonalOperator, components(src), components(dest), components(A))...)
 
+diagonal(op::DiagonalOperator) = op.A.diag
 
 isinplace(op::DiagonalOperator) = true
 
 _apply_inplace!(op::ArrayOperator, A::Diagonal, x) = mul!(x, A, x)
 _apply!(op::ArrayOperator, A::Diagonal, coef_dest, coef_src) = mul!(coef_dest, A, coef_src)
-
-# show(io::IO, ::MIME"text/plain", op::DiagonalOperator) = print(io, "DiagonalOperator with element type $(eltype(op))")
-Display.displaystencil(op::DiagonalOperator) = ["DiagonalOperator(", diag(op.A), ')']
 
 
 "The identity operator"
@@ -253,9 +251,6 @@ broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Ones{S,N}) wher
     Ones{T}(axes(a))
 broadcasted(::Base.Broadcast.DefaultArrayStyle{N}, ::Type{T}, a::Zeros{S,N}) where {T<:Number,S,N} =
     Zeros{T}(axes(a))
-
-strings(op::IdentityOperator) = ("Identity operator of size $(size(op)) (T=$(eltype(op)))", strings(src(op)))
-symbol(op::IdentityOperator) = "I"
 
 
 "Scaling by a scalar value"
@@ -283,8 +278,7 @@ function ScalingOperator{T}(z::UniformScaling, src::Dictionary, dest::Dictionary
 end
 
 scalar(op::ScalingOperator) = op.A.diag.value
-strings(op::ScalingOperator) = ("Scaling by $(scalar(op))",)
-symbol(op::ScalingOperator) = "α"
+Display.displaysymbol(op::ScalingOperator) = "α"
 
 
 "The zero operator maps everything to zero."
@@ -298,8 +292,7 @@ function ZeroOperator{T}(src::Dictionary, dest::Dictionary = src) where {T}
     MatrixOperator{T}(A, src, dest)
 end
 
-strings(op::ZeroOperator) = ("Zero operator of size $(size(op)) (T=$(eltype(op)))", strings(src(op)))
-symbol(op::ZeroOperator) = "0"
+Display.displaysymbol(op::ZeroOperator) = "0"
 
 
 
@@ -397,3 +390,22 @@ function SparseMatrixOperator(op; options...)
 end
 
 sparse(A::SparseMatrixOperator) = A.A
+
+
+# Pretty printing
+
+Base.show(io::IO, mime::MIME"text/plain", op::ArrayOperator) =
+    composite_show(io, mime, op)
+Base.show(io::IO, op::ArrayOperator) = composite_show_compact(io, op)
+
+Display.displaysymbol(op::DiagonalOperator) = 'D'
+Display.displaysymbol(op::IdentityOperator) = 'I'
+
+Display.displaystencil(op::ArrayOperator) = ["ArrayOperator(", matrix(op), ')']
+
+# show(io::IO, ::MIME"text/plain", op::DiagonalOperator) = print(io, "DiagonalOperator with element type $(eltype(op))")
+Display.displaystencil(op::DiagonalOperator) = ["DiagonalOperator(", diag(op.A), ')']
+Display.displaystencil(op::IdentityOperator) = ["Identity(", src(op), ')']
+Display.displaystencil(op::ScalingOperator) = ["ScalingOperator(", scalar(op), ')']
+
+Display.object_parentheses(op::ScalingOperator) = true

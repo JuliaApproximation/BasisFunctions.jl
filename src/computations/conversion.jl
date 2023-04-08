@@ -68,14 +68,14 @@ hastransform(src::D, dest::D) where {D <: Dictionary} = true
 
 
 extension(::Type{T}, src::D, dest::D; options...) where {T,D} =
-    error("Don't know how to extend dictionary $(name(src)) from size $(size(src)) to size $(size(dest))")
+    error("Don't know how to extend dictionary $(src) from size $(size(src)) to size $(size(dest))")
 
 extension(::Type{T}, src::Dictionary, dest::Dictionary; options...) where {T} =
     error("Can't do extension between dictionaries of different type")
 
 
 restriction(::Type{T}, src::D, dest::D; options...) where {T,D} =
-        error("Don't know how to extend dictionary $(name(src)) from size $(size(src)) to size $(size(dest))")
+        error("Don't know how to extend dictionary $(src) from size $(size(src)) to size $(size(dest))")
 
 restriction(::Type{T}, src::Dictionary, dest::Dictionary; options...) where {T} =
     error("Can't do restriction between dictionaries of different type")
@@ -112,7 +112,7 @@ extension(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
 restriction(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
     gridrestriction(T, src, dest, grid(src), grid(dest); options...)
 
-function gridrestriction(::Type{T}, src::Dictionary, dest::Dictionary, src_grid::G, dest_grid::GridArrays.MaskedGrid{G,M,I,S}; options...) where {T,G<:AbstractGrid,M,I,S}
+function gridrestriction(::Type{T}, src::Dictionary, dest::Dictionary, src_grid, dest_grid::GridArrays.MaskedGrid; options...) where {T}
     @assert supergrid(dest_grid) == src_grid
     IndexRestriction{T}(src, dest, subindices(dest_grid))
 end

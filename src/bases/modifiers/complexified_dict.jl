@@ -33,7 +33,7 @@ coefficienttype(dict::ComplexifiedDict) = complex(coefficienttype(superdict(dict
 
 transform_dict(dict::ComplexifiedDict) = complex(transform_dict(superdict(dict)))
 
-evaluation(::Type{T}, dict::ComplexifiedDict, gb::GridBasis, grid::AbstractGrid; options...) where {T} =
+evaluation(::Type{T}, dict::ComplexifiedDict, gb::GridBasis, grid; options...) where {T} =
     evaluation(T, superdict(dict), gb, grid; options...)
 
 
