@@ -64,3 +64,10 @@ end
 
 ignore_mul_message(a, b, c) = false
 ignore_sum_message(a, b, c) = false
+
+## Linear algebra routines
+
+LinearAlgebra.eigvals(op::DictionaryOperator; options...) = eigvals(matrix(op); options...)
+LinearAlgebra.svd(op::DictionaryOperator; options...) = svd(matrix(op); options...)
+LinearAlgebra.qr(op::DictionaryOperator; options...) = qr(matrix(op); options...)
+LinearAlgebra.eigen(op::DictionaryOperator; options...) = eigen(matrix(op); options...)
