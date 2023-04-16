@@ -24,7 +24,7 @@ function unsafe_eval_element_derivative(b::Monomials{T}, idxn::PolynomialDegree,
     if order > i
         zero(T)
     elseif order == 1
-        i*x^(i-1)
+        one(T)*i*x^(i-1)
     else
         factorial(i) / T(factorial(i-order)) * x^(i-order)
     end
@@ -60,6 +60,8 @@ function differentiation(::Type{T}, src::Monomials, dest::Monomials, order::Int;
 end
 
 similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)
+
+complex(d::Monomials{T}) where {T} = similar(d, complex(T))
 
 extension(::Type{T}, src::Monomials, dest::Monomials; options...) where {T} =
     IndexExtension{T}(src, dest, 1:length(src))
