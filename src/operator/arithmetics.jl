@@ -71,3 +71,7 @@ LinearAlgebra.eigvals(op::DictionaryOperator; options...) = eigvals(matrix(op); 
 LinearAlgebra.svd(op::DictionaryOperator; options...) = svd(matrix(op); options...)
 LinearAlgebra.qr(op::DictionaryOperator; options...) = qr(matrix(op); options...)
 LinearAlgebra.eigen(op::DictionaryOperator; options...) = eigen(matrix(op); options...)
+LinearAlgebra.norm(op::DictionaryOperator; options...) = norm(matrix(op); options...)
+LinearAlgebra.rank(op::DictionaryOperator; options...) = rank(matrix(op); options...)
+# specialize \ only when the operator has an underlying array type
+Base.:\(op::ArrayOperator, rhs::AbstractVector) = matrix(op) \ rhs

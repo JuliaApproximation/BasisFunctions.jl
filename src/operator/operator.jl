@@ -258,10 +258,6 @@ function pinv(op::DictionaryOperator, tolerance=eps(real(eltype(op))))
     DiagonalOperator(dest(op),src(op), newdiag)
 end
 
-for f in (:eigvals, :svdvals, :norm, :rank)
-    @eval $f(op::DictionaryOperator) = $f(Matrix(op))
-end
-
 function ≈(op1::DictionaryOperator, op2::DictionaryOperator)
     r = rand(src(op1))
     if isapprox(op1*r,op2*r)

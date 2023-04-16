@@ -252,9 +252,6 @@ export MultiDict, multidict, ⊕
 # from bases/modifiers/piecewise_dict.jl
 export PiecewiseDict, dictionaries
 
-# from bases/modifiers/vector_dict.jl
-export VectorvaluedDict
-
 # from bases/modifiers/operated_dict.jl
 export OperatedDict,
     orthogonalize
@@ -375,7 +372,6 @@ include("bases/modifiers/multiple_dict.jl")
 include("bases/modifiers/piecewise_dict.jl")
 include("bases/modifiers/operated_dict.jl")
 include("bases/modifiers/weighted_dict.jl")
-include("bases/modifiers/vector_dict.jl")
 include("bases/modifiers/logic.jl")
 
 include("bases/dictionary/custom_dictionary.jl")

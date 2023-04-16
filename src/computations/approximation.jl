@@ -23,9 +23,8 @@ end
 continuous_approximation(Φ::Dictionary; options...) = inv(gram(Φ; options...))
 
 # Automatically sample a function if an operator is applied to it
-function (*)(op::DictionaryOperator, f::Function)
-    op * project(src(op), f)
-end
+(*)(op::DictionaryOperator, f::Function) = op * project(src(op), f)
+Base.:\(op::DictionaryOperator, f::Function) = op \ project(dest(op), f)
 
 project(Φ::GridBasis, f::Function; options...) = sample(Φ, f)
 
