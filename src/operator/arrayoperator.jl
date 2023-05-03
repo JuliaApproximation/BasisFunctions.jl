@@ -107,7 +107,13 @@ MatrixOperator{T}(A::AbstractArray{T}, src::Dictionary, dest::Dictionary) where 
 MatrixOperator{T}(A::AbstractArray{S}, src::Dictionary, dest::Dictionary) where {S,T} =
     MatrixOperator{T}(convert(AbstractArray{T}, A), src, dest)
 
-
+# avoid composing with dense matrices
+compose(A2::ArrayOperator, A1::MatrixOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
+compose(A2::MatrixOperator, A1::ArrayOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
+compose(A2::MatrixOperator, A1::MatrixOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
 
 ## Banded operators
 

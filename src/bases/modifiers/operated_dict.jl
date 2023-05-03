@@ -27,6 +27,8 @@ function operated_dict(A::AbstractArray, Φ::Dictionary)
 	OperatedDict(op)
 end
 
+operated_dict(A::AbstractArray, Φ::OperatedDict) = OperatedDict(A*operator(Φ))
+
 *(A::AbstractArray, d::Dictionary) = operated_dict(A, d)
 
 ## Concrete subtypes

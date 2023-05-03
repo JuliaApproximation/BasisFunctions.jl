@@ -11,3 +11,5 @@ modifiersymbol(Φ::DomainSupportDict) = "supported"
 
 hasmeasure(Φ::DomainSupportDict) = true
 measure(Φ::DomainSupportDict) = lebesguemeasure(support(Φ))
+
+plotgrid(Φ::DomainSupportDict, n) = plotgrid_domain(n, support(Φ))
