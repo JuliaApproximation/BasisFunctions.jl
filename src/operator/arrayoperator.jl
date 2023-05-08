@@ -86,6 +86,8 @@ struct MatrixOperator{T,ARRAY} <: ArrayOperator{T}
     end
 end
 
+const DenseMatrixOperator{T} = MatrixOperator{T,Matrix{T}}
+
 "Find a suitable element type for a dictionary operator with the given construct arguments."
 deduce_eltype(A::AbstractArray{T}, args...) where {T} = T
 deduce_eltype(A::AbstractArray, src::Dictionary, args...) = promote_type(eltype(A), operatoreltype(src))
@@ -108,12 +110,12 @@ MatrixOperator{T}(A::AbstractArray{S}, src::Dictionary, dest::Dictionary) where 
     MatrixOperator{T}(convert(AbstractArray{T}, A), src, dest)
 
 # avoid composing with dense matrices
-compose(A2::ArrayOperator, A1::MatrixOperator) =
-    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
-compose(A2::MatrixOperator, A1::ArrayOperator) =
-    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
-compose(A2::MatrixOperator, A1::MatrixOperator) =
-    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A1), dest(A2))
+compose(A2::MatrixOperator, A1::DenseMatrixOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A2), dest(A1))
+compose(A2::DenseMatrixOperator, A1::MatrixOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A2), dest(A1))
+compose(A2::DenseMatrixOperator, A1::DenseMatrixOperator) =
+    ArrayOperator(unsafe_matrix(A1)*unsafe_matrix(A2), src(A2), dest(A1))
 
 ## Banded operators
 
