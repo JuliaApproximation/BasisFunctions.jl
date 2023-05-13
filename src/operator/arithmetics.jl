@@ -7,7 +7,8 @@
 (*)(op1::AbstractOperator, op2::AbstractOperator) = compose(op2, op1)
 (∘)(op1::AbstractOperator, op2::AbstractOperator) = (*)(op1, op2)
 
-(*)(op1::AbstractMatrix, op2::AbstractOperator) = compose(op2, ArrayOperator(op1, dest(op2)))
+(∘)(op1::AbstractMatrix, op2::AbstractOperator) = compose(op2, ArrayOperator(op1, dest(op2)))
+(∘)(op1::AbstractOperator, op2::AbstractMatrix) = compose(ArrayOperator(op2, src(op1)), op1)
 
 # make times (*) a synonym for applying the operator
 (*)(op::AbstractOperator, object) = apply(op, object)

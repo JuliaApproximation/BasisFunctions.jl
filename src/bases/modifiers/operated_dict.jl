@@ -27,7 +27,7 @@ function operated_dict(A::AbstractArray, Φ::Dictionary)
 	OperatedDict(op)
 end
 
-operated_dict(A::AbstractArray, Φ::OperatedDict) = OperatedDict(A*operator(Φ))
+operated_dict(A::AbstractArray, Φ::OperatedDict) = OperatedDict(operator(Φ) ∘ A)
 
 *(A::AbstractArray, d::Dictionary) = operated_dict(A, d)
 
@@ -305,7 +305,7 @@ end
 
 function (*)(op::DictionaryOperator, dict::OperatedDict)
     @assert src(op) == dest(dict)
-    OperatedDict(op*operator(dict))
+    OperatedDict(operator(dict) ∘ op)
 end
 
 roots(dict::OperatedDict, coef) = roots(superdict(dict), operator(dict)*coef)
