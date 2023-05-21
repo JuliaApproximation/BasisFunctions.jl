@@ -96,7 +96,7 @@ end
 function test_diagonal_operators(T)
     for SRC in (Fourier{T}(10), ChebyshevT{T}(11))
         operators = (BF.CoefficientScalingOperator(SRC, 3, rand(coefficienttype(SRC))),
-            BF.AlternatingSignOperator(SRC), IdentityOperator(SRC),
+            IdentityOperator(SRC),
             ScalingOperator(SRC, rand(coefficienttype(SRC))), ScalingOperator(SRC,3),
             DiagonalOperator(SRC, rand(coefficienttype(SRC), size(SRC))))
            # PseudoDiagonalOperator(SRC, map(coefficienttype(SRC), rand(size(SRC)))))
@@ -143,7 +143,7 @@ end
 function test_multidiagonal_operators(T)
     MSet = Fourier{T}(10)⊕ChebyshevT{T}(11)
     operators = (BF.CoefficientScalingOperator(MSet, 3, rand(coefficienttype(MSet))),
-        BF.AlternatingSignOperator(MSet), IdentityOperator(MSet),
+        IdentityOperator(MSet),
         ScalingOperator(MSet,2.0+2.0im), ScalingOperator(MSet, 3),
         DiagonalOperator(MSet, rand(coefficienttype(MSet),length(MSet))))
     for Op in operators

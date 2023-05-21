@@ -279,15 +279,6 @@ Base.inv(op::DelinearizationOperator{T}) where {T} =
     LinearizationOperator{T}(dest(op), src(op))
 
 
-const AlternatingSignOperator{T} = DiagonalOperator{T,AlternatingSigns{T}}
-
-AlternatingSignOperator(src::Dictionary) = AlternatingSignOperator{operatoreltype(src)}(src)
-
-function AlternatingSignOperator{T}(src::Dictionary) where {T}
-    diag = Diagonal(AlternatingSigns{T}(length(src)))
-    DiagonalOperator{T}(diag, src, src)
-end
-
 
 const CoefficientScalingOperator{T} = DiagonalOperator{T,ScaledEntry{T}}
 

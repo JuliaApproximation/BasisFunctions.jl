@@ -1,21 +1,4 @@
 
-"""
-Shell for something that implements size, eltype and *
-"""
-struct ArrayShell{T,D} <: AbstractArray{T,D}
-    A
-    ArrayShell(A) = new{eltype(A),length(size(A))}(A)
-end
-
-Base.getindex(::ArrayShell) = error("AbstractArrayShell does not support getindex")
-
-Base.size(A::ArrayShell) = size(A.A)
-
-Base.eltype(A::ArrayShell) = eltype(A.A)
-
-Base.print_array(io::IO,A::ArrayShell) = Base.print(io, A.A)
-
-Base.show(io::IO,A::ArrayShell) = Base.show(io, A.A)
 
 abstract type MyAbstractMatrix{T} <: AbstractArray{T,2} end
 
@@ -78,21 +61,6 @@ for (Tp,fun) in zip((:NormalizedArray,), (:normalizedarray_fun,))
 end
 
 normalizedarray_fun(Z::NormalizedArray{T}) where T = one(T) / convert(T,length(Z))
-
-
-"A vector of the form `[1,-1,1,-1,...]`."
-struct AlternatingSigns{T} <: AbstractArray{T,1}
-    n   ::  Int
-end
-
-AlternatingSigns(n::Int) = AlternatingSigns{Float64}(n)
-
-size(A::AlternatingSigns) = (A.n,)
-getindex(A::AlternatingSigns{T}, i::Int) where {T} = iseven(i) ? -one(T) : one(T)
-
-inv(D::Diagonal{T,AlternatingSigns{T}}) where {T} = D
-
-adjoint(D::Diagonal{T,AlternatingSigns{T}}) where {T} = D
 
 
 "A vector of the form `[1,1,...,1,V1,1,...1]`."

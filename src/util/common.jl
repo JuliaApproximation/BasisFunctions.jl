@@ -91,14 +91,16 @@ isdyadic(n::Int) = n == 1<<round(Int, log2(n))
 dimension_tuple(::Val{N}, dim::Int) where N = ntuple(k -> ((k==dim) ? 1 : 0), Val(N))
 dimension_tuple(N::Int, dim::Int) = ntuple(k -> ((k==dim) ? 1 : 0), N)
 
-function matrix_by_mul(A::AbstractMatrix{T}) where T
+"Obtain a dense matrix copy of `A` using matrix-vector products."
+function matrix_by_mul(A)
+    T = eltype(A)
     Z = zeros(T, size(A))
     matrix_by_mul!(Z,A)
     Z
 end
 
-function matrix_by_mul!(Z::Matrix{T}, A::AbstractMatrix{T}) where T
-    e = zeros(T,size(Z,2))
+function matrix_by_mul!(Z::Matrix, A)
+    e = zeros(eltype(Z),size(Z,2))
     for i in 1:size(Z,2)
         e[i] = 1
         mul!(view(Z, :, i), A, e)
