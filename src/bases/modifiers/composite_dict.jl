@@ -87,7 +87,7 @@ end
 tocoefficientformat(a, d::CompositeDict) = BlockVector(a, [length(e) for e in components(set)])
 
 for op in (:isreal, )
-    @eval $op(set::CompositeDict) = reduce($op, components(set))
+    @eval $op(set::CompositeDict) = mapreduce($op, &, components(set))
 end
 
 for op in (:hasderivative, :hasantiderivative, :hasextension)
