@@ -107,8 +107,8 @@ DiracComb(grid::AbstractEquispacedGrid) = UniformGridWeight(grid)
 NormalizedDiracComb(grid::AbstractEquispacedGrid) =
     discretemeasure(grid, NormalizedArray{prectype(grid)}(size(grid)))
 
-mappedmeasure(map, measure::DiscreteWeight) =
-    discretemeasure(MappedGrid(weighhts(measure), points(measure), map))
+# mappedmeasure(map, measure::DiscreteWeight) =
+#     discretemeasure(MappedGrid(weights(measure), points(measure), map))
 forward_map(μ::GridWeight) = forward_map(points(μ))
 apply_map(measure::DiscreteWeight, map) =
     discretemeasure(map_grid(map, points(measure)), weights(measure))
