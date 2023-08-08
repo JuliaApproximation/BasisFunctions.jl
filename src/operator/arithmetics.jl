@@ -40,6 +40,8 @@ end
 (*)(a::Number, op::DictionaryOperator) = ScalingOperator(dest(op), a) * op
 (*)(op::DictionaryOperator, a::Number) = op * ScalingOperator(src(op), a)
 
+(/)(op::DictionaryOperator, a::Number) = op * inv(a)
+
 
 for op in (:unchecked_mul,:unchecked_sum, :∘)
     # copied from base such that is is sufficient to implement the two argument problem

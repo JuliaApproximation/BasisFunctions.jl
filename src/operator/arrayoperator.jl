@@ -195,7 +195,7 @@ subindices(op::IndexExtension) = subindices(op.A)
 show(io::IO, mime::MIME"text/plain", op::IndexExtension) = composite_show(io, mime, op)
 Display.object_parentheses(op::IndexExtension) = false
 Display.stencil_parentheses(op::IndexExtension) = false
-Display.displaystencil(op::IndexExtension) = ["Extend[", subindices(op.A), " → 𝕀]"]
+Display.displaystencil(op::IndexExtension) = ["Extend[", subindices(op.A), " → ", axes(op.A,1), "]"]
 
 
 

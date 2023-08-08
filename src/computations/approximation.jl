@@ -113,7 +113,7 @@ leastsquares(::Type{T}, Φ::Dictionary, grid::AbstractArray; options...) where {
 function leastsquares(T, Φ::Dictionary, gb::GridBasis; options...)
     if hasinterpolationgrid(Φ)
         larger_Φ = resize(Φ, size(gb))
-        if interpolation_grid(larger_Φ) == grid(gb) && hastransform(larger_Φ, gb)
+        if hastransform(larger_Φ, gb)
             R = restriction(T, larger_Φ, Φ; options...)
             E = transform(T, gb, larger_Φ; options...)
             R * E

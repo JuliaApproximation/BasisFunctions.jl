@@ -151,6 +151,12 @@ function gauss_rule(b::OPS{T}) where {T <: Complex}
     x,w
 end
 
+function gauss_rule(b::GenericMappedDict{T,T,<:OPS{T},ScalarAffineMap{T}}) where T
+	x,w = gauss_rule(superdict(b))
+	m = forward_map(b)
+	discretemeasure(map_grid(m, x), w*matrix(m))
+end
+
 import FastGaussQuadrature: gaussjacobi
 using GaussQuadrature: jacobi
 gaussjacobi(n::Integer,α::T,β::T) where T<:AbstractFloat =

@@ -99,3 +99,15 @@ basisfunction(dict::Monomials{T}, idx::PolynomialDegree) where {T} = Monomial{T}
 
 dictionary(p::Monomial{T}) where {T} = Monomials{T}(degree(p)+1)
 index(p::Monomial) = degree(p)+1
+
+
+# Integrals and moments
+
+function integral(f::Monomial{T}, w::LegendreWeight) where T
+	d = degree(f)
+	(one(T)^(d+1) - (-one(T))^(d+1))/(d+1)
+end
+
+# line below could be more general, but we have to be careful about complex conjugation
+dict_innerproduct_native(b1::Monomial, i, b2::Monomial, j, μ::LegendreWeight; options...) =
+	integral(b1[i]*b2[j], μ)
