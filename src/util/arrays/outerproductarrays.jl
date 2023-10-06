@@ -43,7 +43,7 @@ Base.copyto!(dest::OuterProductArray, bc::Broadcast.Broadcasted{<:OPArrayStyle})
     OuterProductArray(map(argsi->broadcast(bc.f, argsi...), zip(map(components, bc.args)...))...)
 Base.copy(a::OuterProductArray) = OuterProductArray(map(copy, components(a))...)
 Base.similar(a::OuterProductArray) = OuterProductArray(map(similar, components(a))...)
-Base.similar(::Type{OuterProductArray{T}}, shape::Tuple{Union{Integer, Base.OneTo},Vararg{Union{Integer,Base.OneTo},N} where N}) where T =
+Base.similar(::Type{OuterProductArray{T}}, shape::Tuple{Union{Integer, Base.OneTo},Vararg{Union{Integer,Base.OneTo},N}}) where {T,N} =
     OuterProductArray(map(x->Base.similar(Vector{T}, x), shape)...)
 Base.similar(bc::Broadcast.Broadcasted{OPArrayStyle{N}},::Type{ElType}) where {N,ElType} =
     Base.similar(OuterProductArray{ElType}, axes(bc))

@@ -58,8 +58,7 @@ coefficienttype(dict::Dictionary) = coefficienttype(typeof(dict))
 prectype(D::Type{<:Dictionary}) = prectype(domaintype(D), codomaintype(D))
 numtype(D::Type{<:Dictionary}) = numtype(domaintype(D), codomaintype(D))
 
-# The dimension of a function set is the dimension of its domain type
-dimension(dict::Dictionary) = dimension(domaintype(dict))
+DomainSets.domaineltype(dict::Dictionary) = domaintype(dict)
 
 dimension(dict::Dictionary, i) = dimension(component(dict, i))
 
