@@ -1,7 +1,7 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
 authors = ["Daan Huybrechs <daan.huybrechs@kuleuven.be>"]
-version = "0.6.2"
+version = "0.6.3"
 
 [deps]
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
@@ -33,15 +33,15 @@ ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 [compat]
 BlockArrays = "0.16"
 CompositeTypes = "0.1.3"
-DomainIntegrals = "0.4.2"
-DomainSets = "0.6.2,0.7"
+DomainIntegrals = "0.4.5"
+DomainSets = "0.7"
 FFTW = "1.6"
 FastGaussQuadrature = "0.4,0.5"
 FillArrays = "0.12,0.13"
 GaussQuadrature = "0.5.7"
 GenericFFT = "0.1.3"
 GenericLinearAlgebra = "0.3"
-GridArrays = "0.2.0"
+GridArrays = "0.2.1"
 IterativeSolvers = "0.9"
 MacroTools = "0.5"
 OrderedCollections = "1.2"

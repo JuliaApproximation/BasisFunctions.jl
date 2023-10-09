@@ -67,7 +67,7 @@ import CompositeTypes:
     iscomposite, component, components, ncomponents
 
 import DomainSets:
-    domaintype, codomaintype, dimension,
+    domain, domaintype, codomaintype, dimension,
     indomain, approx_indomain,
     # intervals
     leftendpoint, rightendpoint, endpoints,
