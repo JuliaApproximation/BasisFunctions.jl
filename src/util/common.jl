@@ -122,12 +122,7 @@ subeltype(::Type{T}) where {T} = eltype(eltype(T))
 # Dimension
 ###############
 
-dimension(x) = dimension(typeof(x))
-dimension(::Type{T}) where {T <: Number} = 1
-dimension(::Type{SVector{N,T}}) where {N,T} = N
-dimension(::Type{<:NTuple{N,Any}}) where {N} = N
-dimension(::Type{CartesianIndex{N}}) where {N} = N
-dimension(::Type{T}) where {T} = 1
+DomainSets.euclideandimension(::Type{CartesianIndex{N}}) where {N} = N
 
 
 const Domain1d{T <: Number} = Domain{T}
