@@ -45,6 +45,26 @@ rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")
 
+hasderivative(b::Legendre) = true
+function differentiation(::Type{T}, src::Legendre, dest::Legendre, order::Int; options...) where {T}
+	@assert order >= 0
+	if order == 0
+		IdentityOperator{T}(src, dest)
+	elseif order == 1
+		A = zeros(T, length(dest), length(src))
+		n = length(src)
+		for i in 0:n-1
+			for j in i-1:-2:0
+				A[j+1,i+1] = 2*(i-1-2*((i-j)>>1))+1
+			end
+		end
+		ArrayOperator{T}(A, src, dest)
+	else
+		error("Higher order differentiation of Legendre not implemented.")
+	end
+end
+
+
 function roots(dict::Legendre{T}, coefficients::AbstractVector) where T
 	cheb = ChebyshevT{T}(length(dict))
 	roots(cheb, conversion(dict, cheb)*coefficients)
