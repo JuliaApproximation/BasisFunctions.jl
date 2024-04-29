@@ -103,6 +103,8 @@ function antidifferentiate(e::Expansion, order = 1; options...)
     Expansion(dest(op), apply(op,e.coefficients))
 end
 
+integral(f::Expansion) = integral(f, measure(f))
+
 # Shorthands for partial derivatives
 ∂x(f::Expansion) = differentiate(f, 1, 1)
 ∂y(f::Expansion) = differentiate(f, 2, 1)

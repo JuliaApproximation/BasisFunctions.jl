@@ -3,7 +3,6 @@ using BasisFunctions, FastGaussQuadrature, DomainSets, DoubleFloats
 ⊕ = BasisFunctions.:⊕
 
 using Test
-linspace(a,b,c) = range(a, stop=b, length=c)
 
 
 function test_half_range_chebyshev()

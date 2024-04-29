@@ -20,7 +20,7 @@ import BasisFunctions.Test:
 
 ⊕ = BasisFunctions.:⊕
 
-linspace(a,b,c) = range(a, stop=b, length=c)
+linspace(a, b, n=100) = range(a, stop=b, length=n)
 
 my_rand = rand
 Random.seed!(1234)
