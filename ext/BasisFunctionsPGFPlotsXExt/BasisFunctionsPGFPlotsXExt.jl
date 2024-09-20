@@ -1,6 +1,11 @@
+module BasisFunctionsPGFPlotsXExt
 
-using PGFPlotsX
+using BasisFunctions, PGFPlotsX
+
 import PGFPlotsX: Plot, PlotInc, Options, Axis
+
+using BasisFunctions:
+    plotgrid
 
 for F in (:Expansion,)
     @eval begin
@@ -29,12 +34,12 @@ for plot in (:Plot, :PlotInc)
             if plot_complex
                 vals = F.(grid)
                 options = @pgf {options..., no_markers}
-                $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, real.(vals))])),
-                    $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, imag.(vals))]))
+                $(plot)(options, Table([grid, BasisFunctions.plot_postprocess(dictionary(F), grid, real.(vals))])),
+                    $(plot)(options, Table([grid, BasisFunctions.plot_postprocess(dictionary(F), grid, imag.(vals))]))
             else
                 vals = real.(F.(grid))
                 options = @pgf {options..., no_markers}
-                $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, vals)]))
+                $(plot)(options, Table([grid, BasisFunctions.plot_postprocess(dictionary(F), grid, vals)]))
             end
         end
 
@@ -51,7 +56,9 @@ for plot in (:Plot, :PlotInc)
             grid = plotgrid(dictionary(F), n)
             vals = abs.(f.(grid) - F.(grid))
             options = @pgf {options..., no_markers}
-            $(plot)(options, Table([grid, BasisFunctions.postprocess(dictionary(F), grid, vals)]))
+            $(plot)(options, Table([grid, BasisFunctions.plot_postprocess(dictionary(F), grid, vals)]))
         end
     end
+end
+
 end

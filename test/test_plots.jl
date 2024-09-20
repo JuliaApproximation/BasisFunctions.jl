@@ -1,6 +1,6 @@
 using BasisFunctions, BasisFunctions.Test, DomainSets, GridArrays
 
-using Test, LinearAlgebra, Plots
+using Test, LinearAlgebra, PGFPlotsX, Plots
 
 delimit("Plots")
 @testset begin

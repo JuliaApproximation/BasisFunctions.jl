@@ -11,7 +11,6 @@ using DomainSets, DomainIntegrals
 using CompositeTypes, CompositeTypes.Display
 
 using QuadGK, Base.Cartesian
-using RecipesBase
 
 using Reexport
 
@@ -295,9 +294,6 @@ export ChebyshevT, ChebyshevU,
     FastChebyshevTransform, InverseFastChebyshevTransform,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
-# from util/recipes.jl
-export plotgrid, postprocess
-
 # from bases/poly/orthopoly.jl and friends
 export Legendre, Jacobi, Laguerre, Hermite,
     Monomials, GenericOPS,
@@ -416,8 +412,7 @@ include("bases/poly/ops/hermite.jl")
 include("bases/poly/ops/generic_op.jl")
 include("bases/poly/ops/specialOPS.jl")
 
-include("util/display/recipes.jl")
-include("util/display/pgfplots.jl")
+include("util/plot.jl")
 
 include("test/Test.jl")
 
