@@ -300,7 +300,8 @@ export Legendre, Jacobi, Laguerre, Hermite,
     recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval,
     monic_recurrence_coefficients,
     symmetric_jacobi_matrix, roots, gauss_rule, sorted_gauss_rule, first_moment,
-    leading_order_coefficient
+    leading_order_coefficient,
+    ops_roots
 
 # from specialOPS.jl
 export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS,

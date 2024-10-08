@@ -6,7 +6,7 @@ These polynomials are orthogonal with respect to the weight function
 w(x) = (1-x)^α (1+x)^β.
 ```
 """
-struct Jacobi{T} <: OPS{T}
+struct Jacobi{T} <: IntervalOPS{T}
     n       ::  Int
     α       ::  T
     β       ::  T
@@ -19,9 +19,14 @@ Jacobi(n::Int, α, β) = Jacobi(n, promote(α, β)...)
 Jacobi(n::Int, α::T, β::T) where {T <: AbstractFloat} = Jacobi{T}(n, α, β)
 Jacobi(n::Int, α::S, β::S) where {S} = Jacobi(n, float(α), float(β))
 
-similar(b::Jacobi, ::Type{T}, n::Int) where {T} = Jacobi{T}(n, b.α, b.β)
+Jacobi(d::PolynomialDegree, args...; options...) =
+	Jacobi(value(d)+1, args...; options...)
+Jacobi{T}(d::PolynomialDegree, args...; options...) where T =
+	Jacobi{T}(value(d)+1, args...; options...)
 
-support(b::Jacobi{T}) where {T} = ChebyshevInterval{T}()
+const JacobiExpansion{T,C} = Expansion{T,T,Jacobi{T},C}
+
+similar(b::Jacobi, ::Type{T}, n::Int) where {T} = Jacobi{T}(n, b.α, b.β)
 
 first_moment(b::Jacobi{T}) where {T} = (b.α+b.β+1≈0) ?
     T(2).^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1) :
@@ -83,9 +88,20 @@ function dict_innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j
 	end
 end
 
-function roots(dict::Jacobi, coefficients::AbstractVector)
-	cheb = ChebyshevT(length(dict))
-	roots(cheb, conversion(dict, cheb)*coefficients)
+function expansion_sum(src1::Jacobi, src2::Jacobi, coef1, coef2)
+	if iscompatible(src1, src2)
+		default_expansion_sum(src1, src2, coef1, coef2)
+	else
+		to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
+	end
+end
+
+function expansion_multiply(src1::Jacobi, src2::Jacobi, coef1, coef2)
+	if iscompatible(src1, src2)
+		default_poly_expansion_multiply(src1, src2, coef1, coef2)
+	else
+		to_chebyshev_expansion_multiply(src1, src2, coef1, coef2)
+	end
 end
 
 ## Printing

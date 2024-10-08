@@ -3,15 +3,22 @@
 A basis of Legendre polynomials on the interval `[-1,1]`. These classical
 polynomials are orthogonal with respect to the weight function `w(x) = 1`.
 """
-struct Legendre{T} <: OPS{T}
+struct Legendre{T} <: IntervalOPS{T}
     n   ::  Int
 end
 
 Legendre(n::Int) = Legendre{Float64}(n)
 
+Legendre(d::PolynomialDegree) = Legendre(value(d)+1)
+Legendre{T}(d::PolynomialDegree) where T = Legendre{T}(value(d)+1)
+
 similar(b::Legendre, ::Type{T}, n::Int) where {T} = Legendre{T}(n)
 
-support(b::Legendre{T}) where {T} = ChebyshevInterval{T}()
+to_legendre_dict(dict::IntervalOPS{T}) where T = Legendre{T}(length(dict))
+to_legendre(f) = to_legendre(expansion(f))
+to_legendre(f::Expansion) = to_legendre(dictionary(f), coefficients(f))
+to_legendre(dict::Dictionary, coef) =
+	conversion(dict, to_legendre_dict(dict)) * expansion(dict, coef)
 
 first_moment(b::Legendre{T}) where {T} = T(2)
 
@@ -64,11 +71,6 @@ function differentiation(::Type{T}, src::Legendre, dest::Legendre, order::Int; o
 	end
 end
 
-
-function roots(dict::Legendre{T}, coefficients::AbstractVector) where T
-	cheb = ChebyshevT{T}(length(dict))
-	roots(cheb, conversion(dict, cheb)*coefficients)
-end
 
 hasx(b::Legendre) = length(b) >= 2
 coefficients_of_x(b::Legendre) = (c=zeros(b); c[2]=1; c)

@@ -12,6 +12,11 @@ Monomials(n) = Monomials{Float64}(n)
 show(io::IO, b::Monomials{Float64}) = print(io, "Monomials($(length(b)))")
 show(io::IO, b::Monomials{T}) where T = print(io, "Monomials{$(T)}($(length(b)))")
 
+to_monomials_dict(dict::PolynomialBasis{T}) where T = Monomials{T}(length(dict))
+to_monomials(f) = to_monomials(expansion(f))
+to_monomials(f::Expansion) = to_monomials(dictionary(f), coefficients(f))
+to_monomials(dict::Dictionary, coef) = conversion(dict, to_monomials_dict(dict)) * expansion(dict, coef)
+
 support(dict::Monomials{T}) where {T} = DomainSets.FullSpace{T}()
 
 size(dict::Monomials) = (dict.n,)

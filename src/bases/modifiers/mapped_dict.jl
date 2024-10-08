@@ -362,8 +362,8 @@ function expansion_multiply(dict1::MappedDict, dict2::MappedDict, coef_src1, coe
     mapped_dict(mset, forward_map(dict1)), mcoef
 end
 
-function roots(dict::MappedDict, coef)
-    r = roots(superdict(dict), coef)
+function expansion_roots(dict::MappedDict, coef)
+    r = expansion_roots(superdict(dict), coef)
     forward_map(dict).(r)
 end
 

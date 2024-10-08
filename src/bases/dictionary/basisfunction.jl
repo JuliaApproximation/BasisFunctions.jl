@@ -23,6 +23,25 @@ promote_rule(::Type{<:TypedFunction{S1,T1}}, ::Type{<:TypedFunction{S2,T2}}) whe
 "The supertype of functions that can be associated with a dictionary or a family of basis functions."
 abstract type AbstractBasisFunction{S,T} <: TypedFunction{S,T} end
 
+function expansion(φ::AbstractBasisFunction)
+    coef = zeros(dictionary(φ))
+    coef[index(φ)] = 1
+    expansion(dictionary(φ), coef)
+end
+
+roots(φ::AbstractBasisFunction) = roots(expansion(φ))
+
+function Base.:^(φ::AbstractBasisFunction, i::Int)
+    @assert i >= 0
+    if i == 1
+        φ
+    elseif i == 2
+        φ * φ
+    else
+        φ^(i-1) * φ
+    end
+end
+
 "A `BasisFunction` is one element of a dictionary."
 struct BasisFunction{S,T,D<:Dictionary{S,T},I} <: AbstractBasisFunction{S,T}
     dictionary  ::  D

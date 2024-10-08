@@ -6,7 +6,13 @@ polynomials.
 abstract type OrthogonalPolynomials{T} <: PolynomialBasis{T}
 end
 
+"Supertype of orthogonal polynomials on the interval `[-1,1]`."
+abstract type IntervalOrthogonalPolynomials{T} <: OrthogonalPolynomials{T} end
+
+support(b::IntervalOrthogonalPolynomials{T}) where {T} = ChebyshevInterval{T}()
+
 const OPS{T} = OrthogonalPolynomials{T}
+const IntervalOPS{T} = IntervalOrthogonalPolynomials{T}
 
 abstract type OrthogonalPolynomial{T} <: Polynomial{T} end
 
@@ -66,6 +72,29 @@ function unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x, order)
 	end
 end
 
+## Some routines for OPS on [-1,1] are implemented for Chebyshev polynomials
+expansion_roots(dict::IntervalOPS, coef) = roots(to_chebyshev(dict, coef))
+
+expansion_multiply(src1::IntervalOPS, src2::IntervalOPS, coef1, coef2) =
+    to_chebyshev_expansion_multiply(src1, src2, coef1, coef2)
+function to_chebyshev_expansion_multiply(src1::IntervalOPS, src2::IntervalOPS, coef1, coef2)
+    result = to_chebyshev(src1, coef1) * to_chebyshev(src2, coef2)
+    dictionary(result), coefficients(result)
+end
+function expansion_multiply(src1::I, src2::I, coef1, coef2) where {I <: IntervalOPS}
+    result1 = to_chebyshev(src1, coef1) * to_chebyshev(src2, coef2)
+    result2 = conversion(dictionary(result1), resize(src1, length(result1))) * result1
+    dictionary(result2), coefficients(result2)
+end
+
+expansion_sum(src1::IntervalOPS, src2::IntervalOPS, coef1, coef2) =
+    to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
+function to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
+    result = to_chebyshev(src1, coef1) + to_chebyshev(src2, coef2)
+    dictionary(result), coefficients(result)
+end
+expansion_sum(src1::I, src2::I, coef1, coef2) where {I <: IntervalOPS} =
+    default_expansion_sum(src1, src2, coef1, coef2)
 
 
 hasmeasure(dict::OPS) = true
@@ -105,18 +134,21 @@ function symmetric_jacobi_matrix(b::OPS)
     SymTridiagonal(J)
 end
 
-function roots(b::OPS{T}) where {T<:Number}
+Base.@deprecate roots(b::OPS) ops_roots(b)
+
+"Return the roots of the (N+1)st orthogonal polynomial."
+function ops_roots(b::OPS{T}) where {T<:Number}
     J = symmetric_jacobi_matrix(b)
     eigen(J).values
 end
 
-function roots(b::OPS{T}) where {T<:BigFloat}
+function ops_roots(b::OPS{T}) where {T<:BigFloat}
     J = symmetric_jacobi_matrix(b)
     # assuming the user has imported GenericLinearAlgebra.jl
     sort(real(eigvals!(J)))
 end
 
-interpolation_grid(b::OPS) = roots(b)
+interpolation_grid(b::OPS) = ops_roots(b)
 hasinterpolationgrid(dict::OPS) = true
 opsorthogonal(dict, measure) = length(dict) -issymmetric(dict) <= length(points(measure))
 

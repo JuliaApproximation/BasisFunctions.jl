@@ -308,7 +308,7 @@ function (*)(op::DictionaryOperator, dict::OperatedDict)
     OperatedDict(operator(dict) ∘ op)
 end
 
-roots(dict::OperatedDict, coef) = roots(superdict(dict), operator(dict)*coef)
+expansion_roots(dict::OperatedDict, coef) = expansion_roots(superdict(dict), operator(dict)*coef)
 
 expansion_multiply1(dict1::OperatedDict, dict2, coef1, coef2) =
 	expansion_multiply(superdict(dict1), dict2, operator(dict1)*coef1, coef2)

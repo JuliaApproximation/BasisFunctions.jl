@@ -10,6 +10,9 @@ end
 
 Hermite(n::Int) = Hermite{Float64}(n)
 
+Hermite(d::PolynomialDegree) = Hermite(value(d)+1)
+Hermite{T}(d::PolynomialDegree) where T = Hermite{T}(value(d)+1)
+
 similar(b::Hermite, ::Type{T}, n::Int) where {T} = Hermite{T}(n)
 
 support(b::Hermite{T}) where {T} = DomainSets.FullSpace(T)

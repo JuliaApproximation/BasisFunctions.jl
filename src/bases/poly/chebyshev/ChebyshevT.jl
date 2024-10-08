@@ -2,7 +2,7 @@
 """
 A basis of Chebyshev polynomials of the first kind on the interval `[-1,1]`.
 """
-struct ChebyshevT{T} <: OPS{T}
+struct ChebyshevT{T} <: IntervalOPS{T}
     n			::	Int
 end
 
@@ -11,7 +11,16 @@ show(io::IO, d::ChebyshevT{T}) where T = print(io, "ChebyshevT{$(T)}($(length(d)
 
 ChebyshevT(n::Int) = ChebyshevT{Float64}(n)
 
+ChebyshevT(d::PolynomialDegree) = ChebyshevT(value(d)+1)
+ChebyshevT{T}(d::PolynomialDegree) where T = ChebyshevT{T}(value(d)+1)
+
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
+
+to_chebyshev_dict(dict::IntervalOPS{T}) where T = ChebyshevT{T}(length(dict))
+to_chebyshev(f) = to_chebyshev(expansion(f))
+to_chebyshev(f::Expansion) = to_chebyshev(dictionary(f), coefficients(f))
+to_chebyshev(dict::Dictionary, coef) =
+	conversion(dict, to_chebyshev_dict(dict)) * expansion(dict, coef)
 
 convert(::Type{ChebyshevT{T}}, d::ChebyshevT) where {T} = ChebyshevT{T}(d.n)
 
@@ -62,8 +71,6 @@ jacobi_β(b::ChebyshevT{T}) where {T} = -one(T)/2
 rec_An(b::ChebyshevT{T}, n::Int) where {T} = n==0 ? one(T) : 2one(T)
 rec_Bn(b::ChebyshevT{T}, n::Int) where {T} = zero(T)
 rec_Cn(b::ChebyshevT{T}, n::Int) where {T} = one(T)
-
-support(b::ChebyshevT{T}) where {T} = ChebyshevInterval{T}()
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
@@ -178,7 +185,8 @@ end
 transform_from_grid(T, src::GridBasis, dest::ChebyshevT, grid; options...) =
 	inv(transform_to_grid(T, dest, src, grid; options...))
 
-function roots(dict::ChebyshevT, coefficients::AbstractVector)
+function expansion_roots(dict::ChebyshevT, coefficients::AbstractVector)
+	@assert length(dict) == length(coefficients)
 	T = eltype(coefficients)
 	n = length(dict)-1
 	# construct the colleague matrix (according to ATAP)

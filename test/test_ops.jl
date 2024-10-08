@@ -126,7 +126,7 @@ function test_ops_generic(ops)
 
     # if prectype(ops) == Float64
         # We only do these tests for Float64 because eig currently does not support BigFloat
-        r = roots(ops)
+        r = ops_roots(ops)
         @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
 
         m = gauss_rule(ops)

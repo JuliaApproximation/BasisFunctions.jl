@@ -6,7 +6,10 @@ end
 span_isequal(d1::PolynomialBasis, d2::PolynomialBasis) = length(d1) == length(d2)
 span_issubset(d1::PolynomialBasis, d2::PolynomialBasis) = length(d1) <= length(d2)
 
-function expansion_multiply(dict1::P, dict2::P, coef1, coef2) where {P <: PolynomialBasis}
+expansion_multiply(dict1::P, dict2::P, coef1, coef2) where {P <: PolynomialBasis} =
+    default_poly_expansion_multiply(dict1, dict2, coef1, coef2)
+
+function default_poly_expansion_multiply(dict1::P, dict2::P, coef1, coef2) where {P <: PolynomialBasis}
 	basis = similar(dict1, length(dict1)+length(dict2)-1)
 	basis, interpolation(basis) * (t -> unsafe_eval_expansion(dict1, coef1, t) * unsafe_eval_expansion(dict2, coef2, t))
 end

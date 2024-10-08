@@ -1,10 +1,13 @@
 
 "A basis of Chebyshev polynomials of the second kind on the interval `[-1,1]`."
-struct ChebyshevU{T} <: OPS{T}
+struct ChebyshevU{T} <: IntervalOPS{T}
     n			::	Int
 end
 
 ChebyshevU(n::Int) = ChebyshevU{Float64}(n)
+
+ChebyshevU(d::PolynomialDegree) = ChebyshevU(value(d)+1)
+ChebyshevU{T}(d::PolynomialDegree) where T = ChebyshevU{T}(value(d)+1)
 
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
 
@@ -48,8 +51,6 @@ rec_An(b::ChebyshevU{T}, n::Int) where {T} = convert(T, 2)
 rec_Bn(b::ChebyshevU{T}, n::Int) where {T} = zero(T)
 
 rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
-
-support(b::ChebyshevU{T}) where {T} = ChebyshevInterval{T}()
 
 
 "A Chebyshev polynomial of the second kind"

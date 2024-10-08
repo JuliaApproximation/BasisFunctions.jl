@@ -15,6 +15,10 @@ Laguerre(n::Int; α = 0) = Laguerre(n, α)
 Laguerre(n::Int, α::T) where {T <: AbstractFloat} = Laguerre{T}(n, α)
 Laguerre(n::Int, α::S) where {S} = Laguerre(n, float(α))
 
+Laguerre(d::PolynomialDegree, args...; options...) =
+	Laguerre(value(d)+1, args...; options...)
+Laguerre{T}(d::PolynomialDegree, args...; options...) where T =
+	Laguerre{T}(value(d)+1, args...; options...)
 
 similar(b::Laguerre, ::Type{T}, n::Int) where {T} = Laguerre{T}(n, b.α)
 

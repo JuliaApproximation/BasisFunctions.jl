@@ -82,7 +82,14 @@ default_interpolation(::Type{T}, Φ::Dictionary, gb::GridBasis; options...) wher
 
 interpolate(Φ::Dictionary, pts, f, T=coefficienttype(s)) = Expansion(interpolation(T, Φ, pts) * f)
 
-
+"""
+Compute the weights of an interpolatory quadrature rule.
+"""
+function quadrature_weights(Φ::Dictionary, pts)
+    A = interpolation_matrix(Φ, pts)
+    C = inv(A)
+    [integral(Expansion(Φ, C[:,k])) for k in 1:length(Φ)]
+end
 
 ########################
 # Generic least squares
