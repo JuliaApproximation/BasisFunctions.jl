@@ -303,9 +303,6 @@ export Legendre, Jacobi, Laguerre, Hermite,
     leading_order_coefficient,
     ops_roots
 
-# from specialOPS.jl
-export HalfRangeChebyshevIkind, HalfRangeChebyshevIIkind, WaveOPS,
-    diagonal, isdiagonal
 
 ## Includes
 
@@ -361,7 +358,7 @@ include("computations/evaluation.jl")
 include("computations/approximation.jl")
 include("computations/differentiation.jl")
 include("computations/conversion.jl")
-include("computations/generic_operators.jl")
+include("computations/product.jl")
 include("computations/fun.jl")
 
 ################################################################

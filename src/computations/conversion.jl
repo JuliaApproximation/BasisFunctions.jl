@@ -152,9 +152,6 @@ end
 # Generic conversion
 ###############################
 
-change_basis(F1::Expansion; dest::Dictionary) =
-    conversion(dictionary(F1), dest) * F1
-
 noconversion(src, dest) = error("No known exact conversion from $(src) to $(dest).")
 
 conversion(::Type{T}, src, dest; options...) where T =
