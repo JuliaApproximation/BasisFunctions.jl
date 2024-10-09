@@ -7,8 +7,7 @@ export conversion,
     restriction,
     restrictionsize,
     evaluation,
-    approximation,
-    change_basis
+    approximation
 
 """
 ```
@@ -191,21 +190,6 @@ function explicit_conversion(::Type{T}, src, dest; options...) where T
         noconversion(src, dest)
     end
 end
-
-# Convert to and from grids.
-# To grid: we invoke `evaluation`
-# From grid: we invoke `interpolation`.
-# Problem is that we don't know in general whether these would be exact.
-# TODO: these should be removed (breaking change)
-conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
-    evaluation(T, src, dest; options...)
-
-conversion(::Type{T}, src::GridBasis, dest::Dictionary; options...) where {T} =
-    interpolation(T, src, dest; options...)
-
-# Resolve ambiguity by the above methods
-conversion(::Type{T}, src::GridBasis, dest::GridBasis; options...) where {T} =
-    extension(T, src, dest; options...)
 
 
 ## Normalization
