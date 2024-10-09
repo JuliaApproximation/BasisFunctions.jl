@@ -73,6 +73,10 @@ function unsafe_eval_element_derivative(b::OPS, idx::PolynomialDegree, x, order)
 end
 
 ## Some routines for OPS on [-1,1] are implemented for Chebyshev polynomials
+
+promote_convertible(d1::IntervalOPS, d2::IntervalOPS) =
+    iscompatible(d1,d2) ? (d1, d2) : (to_chebyshev_dict(d1), to_chebyshev_dict(d2))
+
 expansion_roots(dict::IntervalOPS, coef) = roots(to_chebyshev(dict, coef))
 
 expansion_multiply(src1::IntervalOPS, src2::IntervalOPS, coef1, coef2) =
@@ -86,15 +90,6 @@ function expansion_multiply(src1::I, src2::I, coef1, coef2) where {I <: Interval
     result2 = conversion(dictionary(result1), resize(src1, length(result1))) * result1
     dictionary(result2), coefficients(result2)
 end
-
-expansion_sum(src1::IntervalOPS, src2::IntervalOPS, coef1, coef2) =
-    to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
-function to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
-    result = to_chebyshev(src1, coef1) + to_chebyshev(src2, coef2)
-    dictionary(result), coefficients(result)
-end
-expansion_sum(src1::I, src2::I, coef1, coef2) where {I <: IntervalOPS} =
-    default_expansion_sum(src1, src2, coef1, coef2)
 
 
 hasmeasure(dict::OPS) = true
@@ -133,8 +128,6 @@ function symmetric_jacobi_matrix(b::OPS)
     end
     SymTridiagonal(J)
 end
-
-Base.@deprecate roots(b::OPS) ops_roots(b)
 
 "Return the roots of the (N+1)st orthogonal polynomial."
 function ops_roots(b::OPS{T}) where {T<:Number}

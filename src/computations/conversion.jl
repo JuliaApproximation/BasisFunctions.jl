@@ -12,15 +12,13 @@ export conversion,
 
 """
 ```
-conversion(::Type{T}, src::Dictionary, dest::Dictionary; options...)
+conversion([::Type{T}, ]src::Dictionary, dest::Dictionary; options...)
 ```
 
-Construct an operator with element type `T` that converts coefficients from the
-source dictionary to coefficients of the destination dictionary.
+Construct an operator that converts coefficients from the source dictionary to
+coefficients of the destination dictionary.
 
-The conversion is often exact, but this can not always be achieved with
-certainty. For example, it is hard to know in advance whether converting to
-evaluations in a grid is invertible.
+The conversion is exact, up to side-effects of finite-precision calculations.
 """
 conversion
 
@@ -158,20 +156,25 @@ end
 change_basis(F1::Expansion; dest::Dictionary) =
     conversion(dictionary(F1), dest) * F1
 
-conversion(::Type{T}, src, dest; options...) where {T} =
+noconversion(src, dest) = error("No known exact conversion from $(src) to $(dest).")
+
+conversion(::Type{T}, src, dest; options...) where T =
     conversion1(T, src, dest; options...)
-conversion1(T, src::Dictionary, dest; options...) =
-    conversion2(T, src, dest; options...)
-function conversion2(T, src, dest::Dictionary; verbose=false, options...)
-    if issubset(Span(src), Span(dest))
+conversion1(T, src, dest; options...) = conversion2(T, src, dest; options...)
+conversion2(T, src, dest; options...) = default_conversion(T, src, dest; options...)
+
+function default_conversion(::Type{T}, src, dest; verbose=false, options...) where T
+    if isequaldict(src, dest)
+        IdentityOperator{T}(src, dest)
+    elseif issubset(Span(src), Span(dest))
         verbose && println("WARN: using default conversion from $(src) to $(dest)")
-        default_conversion(T, src, dest; verbose, options...)
+        explicit_conversion(T, src, dest; verbose, options...)
     else
-        error("No known exact conversion from $(src) to $(dest)")
+        noconversion(src, dest)
     end
 end
 
-function default_conversion(T, src, dest; options...)
+function explicit_conversion(::Type{T}, src, dest; options...) where T
     if hasmeasure(dest)
         projection(T, src, dest, measure(dest); options...)
     elseif hasinterpolationgrid(dest)
@@ -185,7 +188,7 @@ function default_conversion(T, src, dest; options...)
         A = evaluation(T, src, pts; options...)
         I*A
     else
-        error("Don't know how to reliably convert from $(src) to $(dest).")
+        noconversion(src, dest)
     end
 end
 
@@ -193,6 +196,7 @@ end
 # To grid: we invoke `evaluation`
 # From grid: we invoke `interpolation`.
 # Problem is that we don't know in general whether these would be exact.
+# TODO: these should be removed (breaking change)
 conversion(::Type{T}, src::Dictionary, dest::GridBasis; options...) where {T} =
     evaluation(T, src, dest; options...)
 

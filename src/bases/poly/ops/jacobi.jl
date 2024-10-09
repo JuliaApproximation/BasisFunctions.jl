@@ -28,6 +28,9 @@ const JacobiExpansion{T,C} = Expansion{T,T,Jacobi{T},C}
 
 similar(b::Jacobi, ::Type{T}, n::Int) where {T} = Jacobi{T}(n, b.α, b.β)
 
+iscompatible(d1::Jacobi, d2::Jacobi) = d1.α == d2.α && d1.β == d2.β
+isequaldict(b1::Jacobi, b2::Jacobi) = length(b1)==length(b2) && iscompatible(b1,b2)
+
 first_moment(b::Jacobi{T}) where {T} = (b.α+b.β+1≈0) ?
     T(2).^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1) :
     T(2).^(b.α+b.β+1)*gamma(b.α+1)*gamma(b.β+1)/(b.α+b.β+1)/gamma(b.α+b.β+1)
@@ -38,7 +41,6 @@ jacobi_β(b::Jacobi) = b.β
 
 measure(b::Jacobi) = JacobiWeight(b.α, b.β)
 
-iscompatible(d1::Jacobi, d2::Jacobi) = d1.α == d2.α && d1.β == d2.β
 
 isorthogonal(dict::Jacobi, measure::JacobiWeight) =
 	dict.α == measure.α && dict.β == measure.β
@@ -88,21 +90,21 @@ function dict_innerproduct_native(d1::Jacobi, i::PolynomialDegree, d2::Jacobi, j
 	end
 end
 
-function expansion_sum(src1::Jacobi, src2::Jacobi, coef1, coef2)
-	if iscompatible(src1, src2)
-		default_expansion_sum(src1, src2, coef1, coef2)
-	else
-		to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
-	end
-end
+# function expansion_sum(src1::Jacobi, src2::Jacobi, coef1, coef2)
+# 	if iscompatible(src1, src2)
+# 		default_expansion_sum(src1, src2, coef1, coef2)
+# 	else
+# 		to_chebyshev_expansion_sum(src1, src2, coef1, coef2)
+# 	end
+# end
 
-function expansion_multiply(src1::Jacobi, src2::Jacobi, coef1, coef2)
-	if iscompatible(src1, src2)
-		default_poly_expansion_multiply(src1, src2, coef1, coef2)
-	else
-		to_chebyshev_expansion_multiply(src1, src2, coef1, coef2)
-	end
-end
+# function expansion_multiply(src1::Jacobi, src2::Jacobi, coef1, coef2)
+# 	if iscompatible(src1, src2)
+# 		default_poly_expansion_multiply(src1, src2, coef1, coef2)
+# 	else
+# 		to_chebyshev_expansion_multiply(src1, src2, coef1, coef2)
+# 	end
+# end
 
 ## Printing
 function show(io::IO, b::Jacobi{Float64})

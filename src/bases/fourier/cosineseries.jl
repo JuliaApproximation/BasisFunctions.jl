@@ -17,6 +17,7 @@ show(io::IO, b::CosineSeries{Float64}) = print(io, "CosineSeries($(length(b)))")
 show(io::IO, b::CosineSeries{T}) where T = print(io, "CosineSeries{$(T)}($(length(b)))")
 
 similar(b::CosineSeries, ::Type{T}, n::Int) where {T} = CosineSeries{T}(n)
+isequaldict(b1::CosineSeries, b2::CosineSeries) = length(b1)==length(b2)
 
 isbasis(b::CosineSeries) = true
 isorthogonal(b::CosineSeries, ::FourierWeight) = true

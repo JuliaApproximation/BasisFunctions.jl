@@ -25,9 +25,6 @@ mapped_dict2(dict, map) = MappedDict(dict, map)
 mapped_dict1(dict::MappedDict, map) = mapped_dict(superdict(dict), map ∘ forward_map(dict))
 mapped_dict2(dict, map::IdentityMap) = dict
 
-# Convenience function, similar to apply_map for grids etcetera
-@deprecate apply_map(dict::Dictionary, map) mapped_dict(dict, map)
-
 components(dict::MappedDict) = map(d->mapped_dict(d, forward_map(dict)), components(superdict(dict)))
 
 # In the constructor we check the domain and codomain types.

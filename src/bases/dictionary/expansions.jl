@@ -54,6 +54,7 @@ function expansion(dict::Dictionary, coefficients)
     T = promote_type(coefficienttype(dict), eltype(coef))
     Expansion(ensure_coefficienttype(T, dict), coef)
 end
+expansion(e::Expansion) = e
 
 similar(e::Expansion, coefficients) = Expansion(dictionary(e), coefficients)
 
@@ -64,7 +65,6 @@ coefficients(e::Expansion) = e.coefficients
 mapped_expansion(e::Expansion, m) =
     Expansion(mapped_dict(dictionary(e), m), coefficients(e))
 
-export random_expansion
 random_expansion(dict::Dictionary) = Expansion(dict, rand(dict))
 
 # For expansions of composite types, return a Expansion of a subdict
@@ -119,17 +119,6 @@ ei(dim,i, coefficients) = tuple((coefficients*Matrix{Int}(I, dim, dim)[:,i])...)
 differentiate(f::Expansion, var, order) = differentiate(f, ei(dimension(f), var, order))
 antidifferentiate(f::Expansion, var, order) = antidifferentiate(f, ei(dimension(f), var, order))
 
-function Base.:^(f::Expansion, i::Int)
-    @assert i >= 0
-    if i == 1
-        f
-    elseif i == 2
-        f * f
-    else
-        f^(i-1) * f
-    end
-end
-
 # To be implemented: Laplacian (needs multiplying functions)
 ## Δ(f::Expansion)
 
@@ -139,8 +128,6 @@ adjoint(f::Expansion) = differentiate(f)
 ∫(f::Expansion) = antidifferentiate(f)
 
 roots(f::Expansion) = expansion_roots(dictionary(f), coefficients(f))
-
-Base.@deprecate roots(dict::Dictionary, coef::AbstractVector) expansion_roots(dict, coef)
 
 show(io::IO, mime::MIME"text/plain", fun::Expansion) = composite_show(io, mime, fun)
 Display.displaystencil(fun::Expansion) = ["Expansion(", dictionary(fun), ", ", coefficients(fun), ")"]
@@ -199,56 +186,12 @@ function to_compatible_expansions(e1::Expansion, e2::Expansion)
     end
 end
 
-function (+)(f::Expansion, g::Expansion)
-    dict, coef = expansion_sum(dictionary(f),dictionary(g),coefficients(f),coefficients(g))
-    Expansion(dict, coef)
-end
-(-)(e1::Expansion, e2::Expansion) = e1 + similar(e2, -coefficients(e2))
-
-(-)(e::Expansion) = similar(e, -coefficients(e))
-
-@deprecate dict_multiply expansion_multiply
-expansion_multiply(dict1, dict2, coef1, coef2) =
-    expansion_multiply1(dict1, dict2, coef1, coef2)
-expansion_multiply1(dict1, dict2, coef1, coef2) =
-    expansion_multiply2(dict1, dict2, coef1, coef2)
-expansion_multiply2(dict1, dict2, coef1, coef2) =
-    error("Multiplication of expansions in these dictionaries is not implemented.")
-
-expansion_sum(dict1, dict2, coef1, coef2) =
-    expansion_sum1(dict1, dict2, coef1, coef2)
-expansion_sum1(dict1, dict2, coef1, coef2) =
-    expansion_sum2(dict1, dict2, coef1, coef2)
-function expansion_sum2(dict1, dict2, coef1, coef2)
-    if iscompatible(dict1, dict2)
-        default_expansion_sum(dict1, dict2, coef1, coef2)
-    else
-        error("Summation of expansions in these dictionaries is not implemented.")
-    end
-end
-
-function default_expansion_sum(dict1, dict2, coef1, coef2)
-    @assert iscompatible(dict1, dict2)
-    e1, e2 = to_compatible_expansions(Expansion(dict1, coef1), Expansion(dict2, coef2))
-    dictionary(e1), coefficients(e1)+coefficients(e2)
-end
-
-function (*)(f::Expansion, g::Expansion)
-    dict, coef = expansion_multiply(dictionary(f),dictionary(g),coefficients(f),coefficients(g))
-    Expansion(dict, coef)
-end
-
 (*)(op::DictionaryOperator, e::Expansion) = apply(op, e)
 
 Base.complex(e::Expansion) = Expansion(complex(dictionary(e)), complex(coefficients(e)))
-function Base.real(e::Expansion)
-    dict, coef = expansion_real(dictionary(e), coefficients(e))
-    Expansion(dict, coef)
-end
-function Base.imag(e::Expansion)
-    dict, coef = expansion_imag(dictionary(e), coefficients(e))
-    Expansion(dict, coef)
-end
+Base.real(e::Expansion) = Expansion(expansion_real(dictionary(e), coefficients(e))...)
+Base.imag(e::Expansion) = Expansion(expansion_imag(dictionary(e), coefficients(e))...)
+
 function expansion_real(dict::Dictionary, coefficients)
     @assert isreal(dict)
     real(dict), real(coefficients)
@@ -263,14 +206,6 @@ Base.one(e::Expansion) = similar(e, coefficients_of_one(dictionary(e)))
 expansion_of_one(dict::Dictionary) = Expansion(dict, coefficients_of_one(dict))
 expansion_of_x(dict::Dictionary) = Expansion(dict, coefficients_of_x(dict))
 
-for op in (:+, :-)
-    @eval Base.$op(a::Number, e::Expansion) = $op(a*one(e), e)
-    @eval Base.$op(e::Expansion, a::Number) = $op(e, a*one(e))
-end
-Base.:*(e::Expansion, a::Number) = expansion(dictionary(e), coefficients(e)*a)
-Base.:*(a::Number, e::Expansion) = expansion(dictionary(e), a*coefficients(e))
-Base.:/(e::Expansion, a::Number) = expansion(dictionary(e), coefficients(e)/a)
-
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
 
 # TODO: we may not want to identify an Expansion with its array of coefficients
@@ -280,23 +215,4 @@ iterate(e::Expansion, state) = iterate(coefficients(e), state)
 Base.collect(e::Expansion) = coefficients(e)
 
 Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-
-# Interoperate with basis functions.
-# TODO: implement cleaner using promotion mechanism
-
-Base.:*(φ1::AbstractBasisFunction, φ2::AbstractBasisFunction) = expansion(φ1) * expansion(φ2)
-Base.:*(f::Expansion, φ2::AbstractBasisFunction) = f * expansion(φ2)
-Base.:*(φ1::AbstractBasisFunction, f::Expansion) = expansion(φ1) * f
-
-Base.:*(A::Number, φ::AbstractBasisFunction) = A * expansion(φ)
-Base.:*(φ::AbstractBasisFunction, A::Number) = A * expansion(φ)
-
-Base.:+(φ1::AbstractBasisFunction, φ2::AbstractBasisFunction) = expansion(φ1) + expansion(φ2)
-Base.:+(f::Expansion, φ2::AbstractBasisFunction) = f + expansion(φ2)
-Base.:+(φ1::AbstractBasisFunction, f::Expansion) = expansion(φ1) + f
-
-Base.:-(φ1::AbstractBasisFunction, φ2::AbstractBasisFunction) = expansion(φ1) - expansion(φ2)
-Base.:-(f::Expansion, φ2::AbstractBasisFunction) = f - expansion(φ2)
-Base.:-(φ1::AbstractBasisFunction, f::Expansion) = expansion(φ1) - f
-
 

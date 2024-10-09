@@ -9,14 +9,6 @@ function (*)(op::FunOperator, args...)
     Expansion(dest(op.op), coef)
 end
 
-# In this file we define the interface for a number of generic functions:
-# See the individual files for details on the interfaces.
-
-include("transform.jl")
-include("evaluation.jl")
-include("approximation.jl")
-include("differentiation.jl")
-
 
 
 #####################################

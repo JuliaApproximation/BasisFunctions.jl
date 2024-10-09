@@ -14,6 +14,7 @@ Hermite(d::PolynomialDegree) = Hermite(value(d)+1)
 Hermite{T}(d::PolynomialDegree) where T = Hermite{T}(value(d)+1)
 
 similar(b::Hermite, ::Type{T}, n::Int) where {T} = Hermite{T}(n)
+isequaldict(b1::Hermite, b2::Hermite) = length(b1)==length(b2)
 
 support(b::Hermite{T}) where {T} = DomainSets.FullSpace(T)
 

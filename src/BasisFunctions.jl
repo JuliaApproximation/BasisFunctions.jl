@@ -56,7 +56,6 @@ import LinearAlgebra:
     norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank,
     diag, isdiag, eigvals, issymmetric, svdvals
 import SparseArrays: sparse
-@deprecate sparse_matrix sparse
 
 
 import BlockArrays.BlockVector
@@ -158,6 +157,7 @@ export GenericFunctionSpace, space, MeasureSpace, FourierSpace, ChebyshevTSpace,
 # from bases/dictionary/dictionary.jl
 export Dictionary, Dictionary1d, Dictionary2d, Dictionary3d,
     interpolation_grid, left, right, domain, codomain,
+    domaintype, codomaintype, coefficienttype,
     measure, hasmeasure,
     eval_expansion, eval_element, eval_element_derivative, eval_gradient,
     resize,
@@ -356,8 +356,13 @@ include("bases/dictionary/expansions.jl")
 
 include("util/products.jl")
 
-include("computations/generic_operators.jl")
+include("computations/transform.jl")
+include("computations/evaluation.jl")
+include("computations/approximation.jl")
+include("computations/differentiation.jl")
 include("computations/conversion.jl")
+include("computations/generic_operators.jl")
+include("computations/fun.jl")
 
 ################################################################
 # Generic dictionaries
@@ -418,4 +423,7 @@ include("util/plot.jl")
 include("test/Test.jl")
 
 include("examples/pwconstants.jl")
+
+include("deprecated.jl")
+
 end # module

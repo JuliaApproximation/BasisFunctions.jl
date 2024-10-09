@@ -22,6 +22,9 @@ Base.real(dict::ComplexifiedDict) = superdict(dict)
 
 similardictionary(s::ComplexifiedDict, s2::Dictionary) = ComplexifiedDict(s2)
 
+isequaldict1(d1::ComplexifiedDict, d2) = isequaldict(superdict(d1), d2)
+isequaldict2(d1, d2::ComplexifiedDict) = isequaldict(d1, superdict(d2))
+
 components(dict::ComplexifiedDict) = map(ComplexifiedDict, components(superdict(dict)))
 component(dict::ComplexifiedDict, i) = ComplexifiedDict(component(superdict(dict), i))
 
@@ -58,6 +61,25 @@ span_issubset2(d1, d2::ComplexifiedDict) = span_issubset(d1, superdict(d2))
 iscompatible(d1::Dictionary, d2::ComplexifiedDict) = iscompatible(d1, superdict(d2))
 iscompatible(d1::ComplexifiedDict, d2::Dictionary) = iscompatible(superdict(d1), d2)
 iscompatible(d1::ComplexifiedDict, d2::ComplexifiedDict) = iscompatible(superdict(d1), superdict(d2))
+
+function promote_convertible1(d1::ComplexifiedDict, d2::ComplexifiedDict)
+    reald1, reald2 = promote_convertible(superdict(d1), superdict(d2))
+    complex(reald1), complex(reald2)
+end
+function promote_convertible1(d1::ComplexifiedDict, d2)
+    reald1, reald2 = promote_convertible(superdict(d1), d2)
+    complex(reald1), complex(reald2)
+end
+function promote_convertible2(d1, d2::ComplexifiedDict)
+    reald1, reald2 = promote_convertible(d1, superdict(d2))
+    complex(reald1), complex(reald2)
+end
+
+function conversion1(T, d1::ComplexifiedDict, d2; options...)
+    @assert !isreal(T)
+    op = conversion(T, superdict(d1), d2; options...)
+    wrap_operator(d1, d2, op)
+end
 function conversion2(T, d1, d2::ComplexifiedDict; options...)
     @assert !isreal(T)
     op = conversion(T, d1, superdict(d2); options...)

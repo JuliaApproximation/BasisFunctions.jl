@@ -16,6 +16,7 @@ show(io::IO, b::PeriodicSincFunctions{T}) where T =
     print(io, "PeriodicSincFunctions{$(T)}($(length(b)))")
 
 similar(b::PeriodicSincFunctions, ::Type{T}, n::Int) where {T} = PeriodicSincFunctions{T}(n)
+isequaldict(b1::PeriodicSincFunctions, b2::PeriodicSincFunctions) = length(b1)==length(b2)
 
 size(b::PeriodicSincFunctions) = (b.n,)
 

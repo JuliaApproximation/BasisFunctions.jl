@@ -99,6 +99,20 @@ dict_innerproduct1(d1::Subdictionary, i, d2, j, measure; options...) =
 dict_innerproduct2(d1, i, d2::Subdictionary, j, measure; options...) =
     dict_innerproduct(d1, i, superdict(d2), superindices(d2, j), measure; options...)
 
+promote_convertible1(d1::Subdictionary, d2) =
+    d1 == d2 ? (d1, d2) : promote_convertible(superdict(d1), d2)
+promote_convertible2(d1, d2::Subdictionary) =
+    d1 == d2 ? (d1, d2) : promote_convertible(d1, superdict(d2))
+
+function conversion1(::Type{T}, d1::Subdictionary, d2) where T
+    if d1 == d2
+        IdentityOperator{T}(d1, d1)
+    else
+        E = extension(T, d1, superdict(d1))
+        op = conversion(superdict(d1), d2)
+        op * E
+    end
+end
 
 
 #####################

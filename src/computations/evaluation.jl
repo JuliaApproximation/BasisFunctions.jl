@@ -19,8 +19,6 @@ function evaluation_matrix!(A::AbstractMatrix, Φ::Dictionary, pts)
     A
 end
 
-@deprecate dense_evaluation default_evaluation
-
 function default_evaluation(::Type{T}, Φ::Dictionary, gb::GridBasis; options...) where {T}
     A = evaluation_matrix(Φ, grid(gb), T)
     ArrayOperator(A, Φ, gb)

@@ -8,12 +8,6 @@ hasmeasure(Φ::Dictionary) = false
 # Shortcut: Dictionaries of the same type have just one measure
 defaultmeasure(Φ1::D, Φ2::D) where {D <: Dictionary} = measure(Φ1)
 
-@deprecate innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) dict_innerproduct(Φ1, i, Φ2, j; options...)
-@deprecate innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct(Φ1, i, Φ2, j, measure; options...)
-@deprecate innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct_native(Φ1, i, Φ2, j, measure; options...)
-@deprecate innerproduct1(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct1(Φ1, i, Φ2, j, measure; options...)
-@deprecate innerproduct2(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
-
 dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j; options...) =
     dict_innerproduct(Φ1, i, Φ2, j, defaultmeasure(Φ1, Φ2); options...)
 

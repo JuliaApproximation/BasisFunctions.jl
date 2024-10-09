@@ -283,6 +283,9 @@ function mixedgram2(T, dict1, dict2::OperatedDict, measure; options...)
 	wrap_operator(dict2, dict1, G *  operator(dict2))
 end
 
+promote_convertible1(d1::OperatedDict, d2) = promote_convertible(superdict(d1), d2)
+promote_convertible2(d1, d2::OperatedDict) = promote_convertible(d1, superdict(d2))
+
 function conversion1(::Type{T}, src::OperatedDict, dest; options...) where {T}
 	op = conversion(T, superdict(src), dest; options...) * operator(src)
 	wrap_operator(src, dest, op)

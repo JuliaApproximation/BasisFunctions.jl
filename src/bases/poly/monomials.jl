@@ -65,6 +65,7 @@ function differentiation(::Type{T}, src::Monomials, dest::Monomials, order::Int;
 end
 
 similar(b::Monomials, ::Type{T}, n::Int) where {T} = Monomials{T}(n)
+isequaldict(b1::Monomials, b2::Monomials) = length(b1)==length(b2)
 
 complex(d::Monomials{T}) where {T} = similar(d, complex(T))
 

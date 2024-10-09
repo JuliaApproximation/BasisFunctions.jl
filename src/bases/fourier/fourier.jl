@@ -93,6 +93,7 @@ tofourier(d::FourierLike{T}) where {T} = convert(Fourier{T}, d)
 size(b::Fourier) = (b.n,)
 
 similar(b::Fourier, ::Type{T}, n::Int) where {T} = Fourier{T}(n)
+isequaldict(b1::Fourier, b2::Fourier) = length(b1)==length(b2)
 
 show(io::IO, b::Fourier{Float64}) = print(io, "Fourier($(length(b)))")
 show(io::IO, b::Fourier{T}) where T = print(io, "Fourier{$(T)}($(length(b)))")

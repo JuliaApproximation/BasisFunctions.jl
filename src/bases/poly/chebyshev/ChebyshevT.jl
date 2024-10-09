@@ -15,8 +15,9 @@ ChebyshevT(d::PolynomialDegree) = ChebyshevT(value(d)+1)
 ChebyshevT{T}(d::PolynomialDegree) where T = ChebyshevT{T}(value(d)+1)
 
 similar(b::ChebyshevT, ::Type{T}, n::Int) where {T} = ChebyshevT{T}(n)
+isequaldict(b1::ChebyshevT, b2::ChebyshevT) = length(b1)==length(b2)
 
-to_chebyshev_dict(dict::IntervalOPS{T}) where T = ChebyshevT{T}(length(dict))
+to_chebyshev_dict(dict::Dictionary{T,T}) where T = ChebyshevT{T}(length(dict))
 to_chebyshev(f) = to_chebyshev(expansion(f))
 to_chebyshev(f::Expansion) = to_chebyshev(dictionary(f), coefficients(f))
 to_chebyshev(dict::Dictionary, coef) =

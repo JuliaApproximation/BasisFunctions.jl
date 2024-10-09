@@ -10,6 +10,7 @@ ChebyshevU(d::PolynomialDegree) = ChebyshevU(value(d)+1)
 ChebyshevU{T}(d::PolynomialDegree) where T = ChebyshevU{T}(value(d)+1)
 
 similar(b::ChebyshevU, ::Type{T}, n::Int) where {T} = ChebyshevU{T}(n)
+isequaldict(b1::ChebyshevU, b2::ChebyshevU) = length(b1)==length(b2)
 
 show(io::IO, d::ChebyshevU{Float64}) = print(io, "ChebyshevU($(length(d)))")
 show(io::IO, d::ChebyshevU{T}) where T = print(io, "ChebyshevU{$(T)}($(length(d)))")

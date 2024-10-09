@@ -13,8 +13,9 @@ Legendre(d::PolynomialDegree) = Legendre(value(d)+1)
 Legendre{T}(d::PolynomialDegree) where T = Legendre{T}(value(d)+1)
 
 similar(b::Legendre, ::Type{T}, n::Int) where {T} = Legendre{T}(n)
+isequaldict(b1::Legendre, b2::Legendre) = length(b1)==length(b2)
 
-to_legendre_dict(dict::IntervalOPS{T}) where T = Legendre{T}(length(dict))
+to_legendre_dict(dict::Dictionary{T,T}) where T = Legendre{T}(length(dict))
 to_legendre(f) = to_legendre(expansion(f))
 to_legendre(f::Expansion) = to_legendre(dictionary(f), coefficients(f))
 to_legendre(dict::Dictionary, coef) =

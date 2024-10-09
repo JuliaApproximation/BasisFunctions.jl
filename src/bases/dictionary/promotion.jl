@@ -90,3 +90,20 @@ widen_prectype(::Type{Tuple{A,B}}, ::Type{U}) where {A,B,U} =
     Tuple{widen_prectype(A,U),widen_prectype(B,U)}
 widen_prectype(::Type{Tuple{A,B,C}}, ::Type{U}) where {A,B,C,U} =
     Tuple{widen_prectype(A,U),widen_prectype(B,U),widen_prectype(C,U)}
+
+
+## Promotion with conversion
+
+"""
+Promote two dictionaries to a common family, in such a way that expansions in both given
+dictionaries can be converted to expansions in the promoted dictionaries.
+"""
+promote_convertible(d1, d2) = promote_convertible1(promote_domaintype(d1, d2)...)
+promote_convertible1(d1, d2) = promote_convertible2(d1, d2)
+promote_convertible2(d1, d2) = default_promote_convertible(d1, d2)
+
+nopromotion(d1,d2) = error("Don't know how to promote and convert between dictionaries $(d1) and $(d2).")
+
+default_promote_convertible(d1::D, d2::D) where D = d1, d2
+default_promote_convertible(d1, d2) =
+    isequaldict(d1,d2) ? d1 : nopromotion(d1,d2)

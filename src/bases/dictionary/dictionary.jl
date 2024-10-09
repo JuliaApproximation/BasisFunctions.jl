@@ -1,10 +1,4 @@
 
-export domaintype,
-    codomaintype,
-    coefficienttype,
-    prectype
-
-
 """
 A `Dictionary{S,T}` is an ordered family of functions, in which each function
 maps a variable of type `S` to a variable of type `T`. The dictionary can be
@@ -100,6 +94,11 @@ firstindex(d::Dictionary) = first(eachindex(d))
 lastindex(d::Dictionary) = last(eachindex(d))
 
 ≈(d1::Dictionary, d2::Dictionary) = d1==d2
+
+isequaldict(d1, d2) = isequaldict1(d1, d2)
+isequaldict1(d1, d2) = isequaldict2(d1, d2)
+isequaldict2(d1, d2) = default_isequaldict(d1, d2)
+default_isequaldict(d1, d2) = d1 == d2
 
 #############################
 # Domain and codomain type

@@ -14,6 +14,7 @@ show(io::IO, b::SineSeries{T}) where T = print(io, "SineSeries{$(T)}($(length(b)
 SineSeries(n::Int) = SineSeries{Float64}(n)
 
 similar(b::SineSeries, ::Type{T}, n::Int) where {T} = SineSeries{T}(n)
+isequaldict(b1::SineSeries, b2::SineSeries) = length(b1)==length(b2)
 
 isbasis(b::SineSeries) = true
 isorthogonal(b::SineSeries, ::FourierWeight) = true

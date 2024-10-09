@@ -21,6 +21,7 @@ coshalf(n::Int) = 1+nhalf(n)
 sinhalf(n::Int) = n-coshalf(n)
 
 similar(d::TrigSeries, ::Type{T}, n::Int) where {T} = TrigSeries{T}(n)
+isequaldict(b1::TrigSeries, b2::TrigSeries) = length(b1)==length(b2)
 
 show(io::IO, d::TrigSeries{Float64}) = print(io, "TrigSeries($(length(d)))")
 show(io::IO, d::TrigSeries{T}) where T = print(io, "TrigSeries{$(T)}($(length(d)))")

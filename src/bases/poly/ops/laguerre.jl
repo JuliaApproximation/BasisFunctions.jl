@@ -21,6 +21,8 @@ Laguerre{T}(d::PolynomialDegree, args...; options...) where T =
 	Laguerre{T}(value(d)+1, args...; options...)
 
 similar(b::Laguerre, ::Type{T}, n::Int) where {T} = Laguerre{T}(n, b.α)
+isequaldict(b1::Laguerre, b2::Laguerre) = length(b1)==length(b2) &&
+	b1.α == b2.α
 
 support(b::Laguerre{T}) where {T} = HalfLine{T}()
 

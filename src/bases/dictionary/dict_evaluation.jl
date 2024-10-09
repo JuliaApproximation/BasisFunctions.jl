@@ -217,8 +217,6 @@ default_eval_expansion(dict::Dictionary, coefficients, x) =
 default_unsafe_eval_expansion(dict::Dictionary, coefficients, x) =
     sum(coefficients[idx]*val for (idx,val) in unsafe_pointvalues(dict, x))
 
-@deprecate eval_expansion(dict::Dictionary, coefficients, grid::AbstractGrid; options...) eval_expansion.(Ref(dict), Ref(coefficients), grid; options...)
-
 function eval_expansion_derivative(dict::Dictionary, coefficients, x, order; options...)
     @assert size(coefficients) == size(dict)
     in_support(dict, x) ? unsafe_eval_expansion_derivative(dict, coefficients, x, order) : zero(span_codomaintype(dict, coefficients))
