@@ -1,16 +1,4 @@
 
-"Wrap an operator and return an expansion rather than coefficients."
-struct FunOperator
-    op
-end
-
-function (*)(op::FunOperator, args...)
-    coef = (*)(op.op, args...)
-    Expansion(dest(op.op), coef)
-end
-
-
-
 #####################################
 # Operators for tensor product dictionaries
 #####################################

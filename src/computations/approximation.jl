@@ -55,8 +55,6 @@ function interpolation_matrix(Φ::Dictionary, pts, T=coefficienttype(Φ))
     evaluation_matrix(Φ, pts, T)
 end
 
-interpolation_fun(args...; options...) = FunOperator(interpolation(args...; options...))
-
 interpolation(Φ::Dictionary, args...; options...) =
     interpolation(operatoreltype(Φ), Φ, args...; options...)
 
