@@ -83,7 +83,7 @@ import DomainSets:
 
 import DomainIntegrals:
     integral, integrate,
-    support,
+    support, moment,
     weightfun, weightfunction,
     unsafe_weightfun, unsafe_weightfunction,
     weight, unsafe_weight,
@@ -92,7 +92,7 @@ import DomainIntegrals:
     isnormalized, isuniform,
     ismappedmeasure,
     jacobi_α, jacobi_β, laguerre_α
-using DomainIntegrals: ProductWeight
+using DomainIntegrals: ProductWeight, AbstractJacobiWeight
 export integral
 
 @reexport using GridArrays
@@ -414,6 +414,7 @@ include("bases/poly/ops/laguerre.jl")
 include("bases/poly/ops/hermite.jl")
 include("bases/poly/ops/generic_op.jl")
 include("bases/poly/ops/specialOPS.jl")
+include("bases/poly/ops/connections.jl")
 
 include("util/plot.jl")
 

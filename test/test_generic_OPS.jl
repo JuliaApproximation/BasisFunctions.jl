@@ -8,8 +8,8 @@ using Test
 function test_half_range_chebyshev()
     n = 60
     T = 2.
-    b1 = HalfRangeChebyshevIkind(n,T)
-    b2 = HalfRangeChebyshevIIkind(n,T)
+    b1 = BasisFunctions.HalfRangeChebyshevIkind(n,T)
+    b2 = BasisFunctions.HalfRangeChebyshevIIkind(n,T)
 
     α = -.5
     nodes, weights = gaussjacobi(100, α, 0)
@@ -142,7 +142,7 @@ end
 
 function test_roots_of_legendre_halfrangechebyshev()
     N = 10
-    B = HalfRangeChebyshevIkind(N,2.)
+    B = BasisFunctions.HalfRangeChebyshevIkind(N,2.)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
     B = Legendre(N)
     @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
