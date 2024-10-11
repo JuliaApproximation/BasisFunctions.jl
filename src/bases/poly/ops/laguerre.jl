@@ -33,33 +33,33 @@ laguerre_α(b::Laguerre) = b.α
 
 measure(b::Laguerre) = LaguerreWeight(b.α)
 
-iscompatible(d1::Laguerre, d2::Laguerre) = d1.α == d2.α
-interpolation_grid(dict::Laguerre) = LaguerreNodes(length(dict), dict.α)
-iscompatiblegrid(dict::Laguerre, grid::LaguerreNodes) = length(dict) == length(grid) && dict.α ≈ grid.α
-isorthogonal(dict::Laguerre, measure::GaussLaguerre) = laguerre_α(dict) ≈ laguerre_α(measure) && opsorthogonal(dict, measure)
+iscompatible(b1::Laguerre, b2::Laguerre) = b1.α == b2.α
+interpolation_grid(b::Laguerre) = LaguerreNodes(length(b), laguerre_α(b))
+iscompatiblegrid(b::Laguerre, grid::LaguerreNodes) = length(b) == length(grid) && laguerre_α(b) ≈ laguerre_α(grid)
+isorthogonal(b::Laguerre, μ::GaussLaguerre) = laguerre_α(b) ≈ laguerre_α(μ) && opsorthogonal(b, μ)
 
-isorthonormal(dict::Laguerre, measure::LaguerreWeight) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
-isorthonormal(dict::Laguerre, measure::GaussLaguerre) = isorthogonal(dict, measure) && laguerre_α(dict) == 0
+isorthonormal(b::Laguerre, μ::LaguerreWeight) = isorthogonal(b, μ) && laguerre_α(b) == 0
+isorthonormal(b::Laguerre, μ::GaussLaguerre) = isorthogonal(b, μ) && laguerre_α(b) == 0
 issymmetric(::Laguerre) = false
 
-isorthogonal(dict::Laguerre, measure::LaguerreWeight) = dict.α == measure.α
+isorthogonal(b::Laguerre, μ::LaguerreWeight) = laguerre_α(b) == laguerre_α(μ)
 
 gauss_rule(dict::Laguerre) = GaussLaguerre(length(dict), dict.α)
 
-function dict_innerproduct_native(d1::Laguerre{T}, i::PolynomialDegree, d2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...) where {T}
-	if i == j
-		gamma(value(i)+1+laguerre_α(d1)) / gamma(one(T)+value(i))
+function dict_innerproduct_native(b1::Laguerre, i::PolynomialDegree,
+		b2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...)
+	T = promote_type(domaintype(b1), domaintype(b2))
+	if iscompatible(b1, b2) && isorthogonal(b1, measure)
+		i == j ? laguerre_hn(laguerre_α(b1), value(i)) : zero(T)
 	else
-		zero(T)
+		dict_innerproduct1(b1, i, b2, j, measure; options...)
 	end
 end
 
-
-# See DLMF, Table 18.9.1
-# http://dlmf.nist.gov/18.9#i
-rec_An(b::Laguerre{T}, n::Int) where {T} = -T(1) / T(n+1)
-rec_Bn(b::Laguerre{T}, n::Int) where {T} = T(2*n + b.α + 1) / T(n+1)
-rec_Cn(b::Laguerre{T}, n::Int) where {T} = T(n + b.α) / T(n+1)
+# recurrence relation
+rec_An(b::Laguerre, n::Int) = laguerre_rec_An(b.α, n)
+rec_Bn(b::Laguerre, n::Int) = laguerre_rec_Bn(b.α, n)
+rec_Cn(b::Laguerre, n::Int) = laguerre_rec_Cn(b.α, n)
 
 coefficients_of_x(b::Laguerre) = (c=zeros(b); c[1]=1; c[2]=-1; c)
 

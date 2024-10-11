@@ -62,16 +62,13 @@ function transform_dict(s::ChebyshevT{T}; chebyshevpoints=:nodes, options...) wh
 end
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevT{T}) where {T} = -one(T)/2
-jacobi_β(b::ChebyshevT{T}) where {T} = -one(T)/2
+jacobi_α(b::ChebyshevT{T}) where T = -one(T)/2
+jacobi_β(b::ChebyshevT{T}) where T = -one(T)/2
 
-
-
-# See DLMF, Table 18.9.1
-# http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevT{T}, n::Int) where {T} = n==0 ? one(T) : 2one(T)
-rec_Bn(b::ChebyshevT{T}, n::Int) where {T} = zero(T)
-rec_Cn(b::ChebyshevT{T}, n::Int) where {T} = one(T)
+# Recurrence relation
+rec_An(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_An(T, n)
+rec_Bn(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_Bn(T, n)
+rec_Cn(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_Cn(T, n)
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
@@ -114,21 +111,14 @@ hasmeasure(dict::ChebyshevT) = true
 measure(dict::ChebyshevT{T}) where T = ChebyshevTWeight{T}()
 issymmetric(::ChebyshevT) = true
 
-dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree, b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTWeight;
-			T = coefficienttype(b1), options...) =
+function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree,
+		b2::ChebyshevT, j::PolynomialDegree, m::ChebyshevTWeight; options...)
+	T = promote_type(domaintype(b1),domaintype(b2))
 	innerproduct_chebyshev_full(i, j, T)
-
-function innerproduct_chebyshev_full(i, j, T)
-	if i == j
-		if i == PolynomialDegree(0)
-			convert(T, pi)
-		else
-			convert(T, pi)/2
-		end
-	else
-		zero(T)
-	end
 end
+
+innerproduct_chebyshev_full(i, j, T) =
+	i == j ? chebyshev_1st_hn(T, value(i)) : zero(T)
 
 function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree,
 		b2::ChebyshevT, j::PolynomialDegree, measure::Union{LegendreWeight,Lebesgue}; options...)

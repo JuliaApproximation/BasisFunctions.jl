@@ -82,8 +82,8 @@ end
 
 function test_hermite(T)
     println("- Hermite polynomials ($T)")
-    bh = Hermite{T}(10)
-    test_ops_generic(bh)
+    bh = Hermite{T}(6)
+    test_ops_generic(bh, tol = T == Float64 ? 1e-5 : T(1e-17)) # larger tolerance because the polynomials grow large
     x1 = T(4//10)
     @test abs(bh[6](x1) - 38.08768) < 1e-5
 
@@ -106,11 +106,26 @@ function test_jacobi(T)
     test_orthogonality_orthonormality(bj, true, false, gauss_rule(resize(bj,length(bj)+1)))
 end
 
+function test_ultraspherical(T)
+    println("- Ultraspherical polynomials ($T)")
+    λ = T(2//3)
+    α = λ - T(1/2)
+    bj = Ultraspherical(10, λ)
+    jac = Jacobi(10, α, α)
+    test_ops_generic(bj)
+    x1 = T(4//10)
+    factor = BasisFunctions.pochhammer(2λ, 5) / BasisFunctions.pochhammer(λ+T(1)/2, 5)
+    @test abs(bj[6](x1) - factor*jac[6](x1)) < 1e-5
+    @test BasisFunctions.jacobi_α(bj) ≈ α
+    @test BasisFunctions.jacobi_β(bj) ≈ α
 
-function test_ops_generic(ops)
-    T = codomaintype(ops)
-    tol = test_tolerance(T)
+    test_orthogonality_orthonormality(bj, true, false, BasisFunctions.UltrasphericalWeight(λ))
+    test_orthogonality_orthonormality(bj, true, false, gauss_rule(bj))
+    test_orthogonality_orthonormality(bj, true, false, gauss_rule(resize(bj,length(bj)+1)))
+end
 
+
+function test_ops_generic(ops; T = codomaintype(ops), tol = test_tolerance(T))
     x = fixed_point_in_domain(ops)
     z1 = BasisFunctions.unsafe_eval_element(ops, length(ops), x)
     z2 = recurrence_eval(ops, length(ops), x)
@@ -124,16 +139,23 @@ function test_ops_generic(ops)
     d2 = recurrence_eval_derivative(ops, length(ops), x)
     @test abs(d1-d2) < tol
 
-    # if prectype(ops) == Float64
-        # We only do these tests for Float64 because eig currently does not support BigFloat
-        r = ops_roots(ops)
-        @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
+    r = ops_roots(ops)
+    @test maximum(abs.(BasisFunctions.unsafe_eval_element.(Ref(ops), length(ops)+1, r))) < 100tol
 
-        m = gauss_rule(ops)
-        x = points(m)
-        w = BasisFunctions.weights(m)
-        @test abs(sum(w) - first_moment(ops)) < tol
-    # end
+    m = gauss_rule(ops)
+    x = points(m)
+    w = BasisFunctions.weights(m)
+    @test abs(sum(w) - first_moment(ops)) < tol
+
+    n = length(ops)
+    if n > 1
+        # larger tolerances due to numerical integration tests involved
+        @test abs(integral(ops[n], measure(ops))) < sqrt(tol)
+        @test abs(integral(x->ops[n](x), measure(ops))) < sqrt(tol)
+        @test abs(innerproduct(ops[n], ops[n-1])) < sqrt(tol)
+    end
+    @test abs(innerproduct(ops[1], ops[1]) - BasisFunctions.default_dict_innerproduct(ops, 1, ops, 1, measure(ops))) < sqrt(tol)
+    @test abs(innerproduct(ops[n], ops[n]) - BasisFunctions.default_dict_innerproduct(ops, n, ops, n, measure(ops))) < sqrt(tol)
 end
 
 # for T in types
@@ -146,6 +168,7 @@ for T in (Float64, LargeFloat)
         test_laguerre(T)
         test_hermite(T)
         test_jacobi(T)
+        test_ultraspherical(T)
     end
     println()
 end

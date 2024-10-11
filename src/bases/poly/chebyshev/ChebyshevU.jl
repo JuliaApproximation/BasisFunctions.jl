@@ -30,28 +30,22 @@ issymmetric(::ChebyshevU) = true
 measure(dict::ChebyshevU{T}) where {T} = ChebyshevUWeight{T}()
 hasmeasure(::ChebyshevU) = true
 
-function dict_innerproduct_native(b1::ChebyshevU, i::PolynomialDegree, b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight;
-			T = coefficienttype(b1), options...)
-	if i == j
-		convert(T, pi)/2
-	else
-		zero(T)
-	end
+function dict_innerproduct_native(b1::ChebyshevU, i::PolynomialDegree,
+            b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight; options...)
+    T = promote_type(domaintype(b1), domaintype(b2))
+	i == j ? chebyshev_2nd_hn(T, value(i)) : zero(T)
 end
 
 
 # Parameters alpha and beta of the corresponding Jacobi polynomial
-jacobi_α(b::ChebyshevU{T}) where {T} = one(T)/2
-jacobi_β(b::ChebyshevU{T}) where {T} = one(T)/2
+jacobi_α(b::ChebyshevU{T}) where T = one(T)/2
+jacobi_β(b::ChebyshevU{T}) where T = one(T)/2
 
 
-# See DLMF, Table 18.9.1
-# http://dlmf.nist.gov/18.9#i
-rec_An(b::ChebyshevU{T}, n::Int) where {T} = convert(T, 2)
-
-rec_Bn(b::ChebyshevU{T}, n::Int) where {T} = zero(T)
-
-rec_Cn(b::ChebyshevU{T}, n::Int) where {T} = one(T)
+# Recurrence relation
+rec_An(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_An(T, n)
+rec_Bn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Bn(T, n)
+rec_Cn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Cn(T, n)
 
 
 "A Chebyshev polynomial of the second kind"

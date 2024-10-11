@@ -1,35 +1,4 @@
 
-# Supporting functions
-
-# See DLMF (18.9.2)
-# http://dlmf.nist.gov/18.9#i
-function jacobi_rec_An(α::T, β::T, n::Int) where T
-    if (n == 0) && (α + β + 1 == 0)
-        one(T)/2*(α+β)+1
-    else
-        T(2*n + α + β + 1) * (2n + α + β + 2) / T(2 * (n+1) * (n + α + β + 1))
-    end
-end
-function jacobi_rec_Bn(α::T, β::T, n::Int) where T
-    if (n == 0) && ((α + β + 1 == 0) || (α+β == 0))
-        one(T)/2*(α-β)
-    else
-        T(α^2 - β^2) * (2*n + α + β + 1) / T(2 * (n+1) * (n + α + β + 1) * (2*n + α + β))
-    end
-end
-function jacobi_rec_Cn(α::T, β::T, n::Int) where T
-    T(n + α) * (n + β) * (2*n + α + β + 2) / T((n+1) * (n + α + β + 1) * (2*n + α + β))
-end
-
-# TODO: move these elsewhere. But where?
-# The packages GridArrays (which defines the nodes) and DomainIntegrals (which define the
-# jacobi_x functions) do not depend on each other.
-jacobi_α(x::GridArrays.JacobiNodes) = x.α
-jacobi_β(x::GridArrays.JacobiNodes) = x.β
-jacobi_α(w::GridArrays.JacobiWeights) = w.α
-jacobi_β(w::GridArrays.JacobiWeights) = w.β
-
-
 "Abstract supertype of Jacobi polynomials."
 abstract type AbstractJacobi{T} <: IntervalOPS{T} end
 
@@ -43,10 +12,6 @@ isorthogonal(b::AbstractJacobi, μ::DomainIntegrals.AbstractJacobiWeight) =
 
 issymmetric(dict::AbstractJacobi) = jacobi_α(dict)≈jacobi_β(dict)
 
-rec_An(b::AbstractJacobi, n::Int) = jacobi_rec_An(jacobi_α(b), jacobi_β(b), n)
-rec_Bn(b::AbstractJacobi, n::Int) = jacobi_rec_Bn(jacobi_α(b), jacobi_β(b), n)
-rec_Cn(b::AbstractJacobi, n::Int) = jacobi_rec_Cn(jacobi_α(b), jacobi_β(b), n)
-
 interpolation_grid(b::AbstractJacobi) = JacobiNodes(length(b), jacobi_α(b), jacobi_β(b))
 iscompatiblegrid(b::AbstractJacobi, grid::JacobiNodes) = 
 	length(b) == length(grid) &&
@@ -57,22 +22,6 @@ isorthogonal(b::AbstractJacobi, μ::GaussJacobi) =
 gauss_rule(b::AbstractJacobi) = GaussJacobi(length(b), jacobi_α(b), jacobi_β(b))
 
 first_moment(b::AbstractJacobi) = moment(measure(b))
-
-function dict_innerproduct_native(d1::AbstractJacobi, i::PolynomialDegree, d2::AbstractJacobi, j::PolynomialDegree, measure::AbstractJacobiWeight; options...)
-	T = coefficienttype(d1)
-	if iscompatible(d1, d2) && isorthogonal(d1, measure)
-		if i == j
-			a = jacobi_α(d1)
-			b = jacobi_β(d1)
-			n = value(i)
-			2^(a+b+1)/(2n+a+b+1) * gamma(n+a+1)*gamma(n+b+1)/factorial(n)/gamma(n+a+b+1)
-		else
-			zero(T)
-		end
-	else
-		dict_innerproduct1(d1, i, d2, j, measure; options...)
-	end
-end
 
 
 
@@ -113,15 +62,36 @@ jacobi_β(b::Jacobi) = b.β
 
 measure(b::Jacobi) = JacobiWeight(b.α, b.β)
 
+rec_An(b::Jacobi, n::Int) = jacobi_rec_An(jacobi_α(b), jacobi_β(b), n)
+rec_Bn(b::Jacobi, n::Int) = jacobi_rec_Bn(jacobi_α(b), jacobi_β(b), n)
+rec_Cn(b::Jacobi, n::Int) = jacobi_rec_Cn(jacobi_α(b), jacobi_β(b), n)
+
+
+function dict_innerproduct_native(b1::Jacobi, i::PolynomialDegree,
+		b2::Jacobi, j::PolynomialDegree, μ::JacobiWeight; options...)
+	T = promote_type(domaintype(b1), domaintype(b2))
+	if iscompatible(b1, b2) && isorthogonal(b1, μ)
+		if i == j
+			jacobi_hn(jacobi_α(b1), jacobi_β(b1), value(i))
+		else
+			zero(T)
+		end
+	else
+		dict_innerproduct1(b1, i, b2, j, μ; options...)
+	end
+end
+
 
 
 """
-The basis of ultraspherical orthogonal polynomials on `[-1,1]`.
+The basis of ultraspherical (or Gegenbauer) orthogonal polynomials on `[-1,1]`.
 
 They are orthogonal with respect to the weight function
 ```
 w(x) = (1-x^2)^(λ-1/2).
 ```
+This is a Jacobi weight, but ultraspherical polynomials are normalized
+differently.
 """
 struct Ultraspherical{T} <: AbstractJacobi{T}
 	n		::	Int
@@ -133,7 +103,13 @@ const Gegenbauer = Ultraspherical
 jacobi_α(b::Ultraspherical{T}) where T = b.λ - one(T)/2
 jacobi_β(b::Ultraspherical{T}) where T = b.λ - one(T)/2
 
-measure(b::Ultraspherical{T}) where T = DomainIntegrals.UltrasphericalWeight(b.λ)
+similar(b::Ultraspherical, ::Type{T}, n::Int) where T = Ultraspherical{T}(n, b.λ)
+
+measure(b::Ultraspherical{T}) where T = UltrasphericalWeight(b.λ)
+
+rec_An(b::Ultraspherical, n::Int) = ultraspherical_rec_An(b.λ, n)
+rec_Bn(b::Ultraspherical, n::Int) = ultraspherical_rec_Bn(b.λ, n)
+rec_Cn(b::Ultraspherical, n::Int) = ultraspherical_rec_Cn(b.λ, n)
 
 
 ## Printing

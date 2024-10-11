@@ -92,7 +92,10 @@ import DomainIntegrals:
     isnormalized, isuniform,
     ismappedmeasure,
     jacobi_α, jacobi_β, laguerre_α
-using DomainIntegrals: ProductWeight, AbstractJacobiWeight
+using DomainIntegrals:
+    ProductWeight,
+    AbstractJacobiWeight,
+    UltrasphericalWeight
 export integral
 
 @reexport using GridArrays
@@ -295,7 +298,7 @@ export ChebyshevT, ChebyshevU,
     FastChebyshevTransformFFTW, InverseFastChebyshevTransformFFTW
 
 # from bases/poly/orthopoly.jl and friends
-export Legendre, Jacobi, Laguerre, Hermite,
+export Legendre, Jacobi, Laguerre, Hermite, Ultraspherical,
     Monomials, GenericOPS,
     recurrence_eval, recurrence_eval_derivative, monic_recurrence_eval,
     monic_recurrence_coefficients,
@@ -406,6 +409,7 @@ include("bases/fourier/trig.jl")
 include("bases/poly/polynomials.jl")
 include("bases/poly/monomials.jl")
 include("bases/poly/quadrature.jl")
+include("bases/poly/ops/dlmf.jl")
 include("bases/poly/ops/orthopoly.jl")
 include("bases/poly/chebyshev/chebyshev.jl")
 include("bases/poly/ops/legendre.jl")

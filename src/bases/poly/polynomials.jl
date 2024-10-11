@@ -25,6 +25,11 @@ than from 1.
 """
 struct PolynomialDegree <: AbstractShiftedIndex{1}
 	value	::	Int
+
+    function PolynomialDegree(value::Int)
+        value >= 0 || BoundsError("Polynomial degree has to be positive.")
+        new(value)
+    end
 end
 
 degree(idx::PolynomialDegree) = value(idx)

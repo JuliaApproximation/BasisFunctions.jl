@@ -21,7 +21,7 @@ dict_innerproduct(Φ1::Dictionary, i::Int, Φ2::Dictionary, j, measure; options.
 dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
     dict_innerproduct_native(Φ1, i, Φ2, j, measure; options...)
 
-# - innerproduct_native: if not specialized, called innerproduct1
+# - innerproduct_native: if not specialized, calls innerproduct1
 dict_innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; options...) =
     dict_innerproduct1(Φ1, i, Φ2, j, measure; options...)
 # - innerproduct1: possibility to dispatch on the first dictionary without ambiguity.
@@ -29,6 +29,7 @@ dict_innerproduct_native(Φ1::Dictionary, i, Φ2::Dictionary, j, measure; option
 dict_innerproduct1(Φ1::Dictionary, i, Φ2, j, measure; options...) =
     dict_innerproduct2(Φ1, i, Φ2, j, measure; options...)
 # - innerproduct2: possibility to dispatch on the second dictionary without ambiguity
+#   the warning might indicate that an expensive numerical integration takes place
 function dict_innerproduct2(Φ1, i, Φ2::Dictionary, j, measure; verbose=false, options...)
 	verbose && println("Invoking default inner product")
     default_dict_innerproduct(Φ1, i, Φ2, j, measure; options...)

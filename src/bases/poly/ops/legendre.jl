@@ -35,20 +35,15 @@ isorthogonal(dict::Legendre, measure::GaussLegendre) = opsorthogonal(dict, measu
 
 gauss_rule(dict::Legendre{T}) where T = GaussLegendre{T}(length(dict))
 
-function dict_innerproduct_native(d1::Legendre, i::PolynomialDegree, d2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
-	T = coefficienttype(d1)
-	if i == j
-		2 / convert(T, 2*value(i)+1)
-	else
-		zero(T)
-	end
+function dict_innerproduct_native(b1::Legendre, i::PolynomialDegree,
+		b2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
+	T = promote_type(domaintype(b1), domaintype(b2))
+	i == j ? legendre_hn(T, value(i)) : zero(T)
 end
 
-# See DLMF, Table 18.9.1
-# http://dlmf.nist.gov/18.9#i
-rec_An(b::Legendre{T}, n::Int) where {T} = T(2*n+1)/T(n+1)
-rec_Bn(b::Legendre{T}, n::Int) where {T} = zero(T)
-rec_Cn(b::Legendre{T}, n::Int) where {T} = T(n)/T(n+1)
+rec_An(b::Legendre{T}, n::Int) where T = legendre_rec_An(T, n)
+rec_Bn(b::Legendre{T}, n::Int) where T = legendre_rec_Bn(T, n)
+rec_Cn(b::Legendre{T}, n::Int) where T = legendre_rec_Cn(T, n)
 
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")
