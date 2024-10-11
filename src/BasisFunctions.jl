@@ -222,7 +222,7 @@ export GenericIdentityOperator
 # from computations/transform.jl
 export transform, transform_dict, transform_to_grid, transform_from_grid
 
-# from bases/dictionary/gram.jl
+# from bases/dictionary/orthog.jl
 export gramelement, gram, dual, mixedgram, gramdual
 
 # from computations/evaluation.jl
@@ -324,7 +324,7 @@ include("bases/dictionary/indexing.jl")
 include("bases/dictionary/dictionary.jl")
 include("bases/dictionary/promotion.jl")
 include("bases/dictionary/span.jl")
-include("bases/dictionary/gram.jl")
+include("bases/dictionary/orthog.jl")
 include("bases/dictionary/duality.jl")
 include("bases/dictionary/discrete_sets.jl")
 include("bases/dictionary/gridbasis.jl")

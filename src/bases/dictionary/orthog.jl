@@ -1,7 +1,7 @@
 
-# Methods for the computation of Gram matrices and continuous projections in general
+# Methods for the computation of inner products, projections and Gram matrices
 
-# By convention Gram functionality is only implemented for dictionaries that are
+# By convention this functionality is only implemented for dictionaries that are
 # associated with a measure.
 hasmeasure(Φ::Dictionary) = false
 
