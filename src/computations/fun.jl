@@ -7,8 +7,6 @@ Promote the given two functions such that they have compatible type, suitable fo
 operations such as addition and multiplication.
 
 In most cases the results are two expansions with a dictionary of the same family.
-
-See also: [`funpromote_samelength`](@ref)
 """
 funpromote(f, g) = funpromote(expansion(f), expansion(g))
 
