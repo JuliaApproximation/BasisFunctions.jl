@@ -30,14 +30,14 @@ issymmetric(::Hermite) = true
 gauss_rule(dict::Hermite{T}) where T = GaussHermite{T}(length(dict))
 
 # recurrence relation
-rec_An(b::Hermite{T}, n::Int) where T = hermite_rec_An(T, n)
-rec_Bn(b::Hermite{T}, n::Int) where T = hermite_rec_Bn(T, n)
-rec_Cn(b::Hermite{T}, n::Int) where T = hermite_rec_Cn(T, n)
+rec_An(b::Hermite{T}, n::Int) where T = hermite_rec_An(n, T)
+rec_Bn(b::Hermite{T}, n::Int) where T = hermite_rec_Bn(n, T)
+rec_Cn(b::Hermite{T}, n::Int) where T = hermite_rec_Cn(n, T)
 
 coefficients_of_x(b::Hermite{T}) where {T} = (c=zeros(b); c[2]=one(T)/2; c)
 
 dict_innerproduct_native(d1::Hermite{T}, i::PolynomialDegree, d2::Hermite, j::PolynomialDegree, measure::HermiteWeight; options...) where T =
-	i == j ? hermite_hn(T, value(i)) : zero(T)
+	i == j ? hermite_hn(value(i), T) : zero(T)
 
 show(io::IO, b::Hermite{Float64}) = print(io, "Hermite($(length(b)))")
 show(io::IO, b::Hermite{T}) where T = print(io, "Hermite{$(T)}($(length(b)))")

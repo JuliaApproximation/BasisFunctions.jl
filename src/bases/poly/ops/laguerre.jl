@@ -50,16 +50,16 @@ function dict_innerproduct_native(b1::Laguerre, i::PolynomialDegree,
 		b2::Laguerre, j::PolynomialDegree, measure::LaguerreWeight; options...)
 	T = promote_type(domaintype(b1), domaintype(b2))
 	if iscompatible(b1, b2) && isorthogonal(b1, measure)
-		i == j ? laguerre_hn(laguerre_α(b1), value(i)) : zero(T)
+		i == j ? laguerre_hn(value(i), laguerre_α(b1)) : zero(T)
 	else
 		dict_innerproduct1(b1, i, b2, j, measure; options...)
 	end
 end
 
 # recurrence relation
-rec_An(b::Laguerre, n::Int) = laguerre_rec_An(b.α, n)
-rec_Bn(b::Laguerre, n::Int) = laguerre_rec_Bn(b.α, n)
-rec_Cn(b::Laguerre, n::Int) = laguerre_rec_Cn(b.α, n)
+rec_An(b::Laguerre, n::Int) = laguerre_rec_An(n, b.α)
+rec_Bn(b::Laguerre, n::Int) = laguerre_rec_Bn(n, b.α)
+rec_Cn(b::Laguerre, n::Int) = laguerre_rec_Cn(n, b.α)
 
 coefficients_of_x(b::Laguerre) = (c=zeros(b); c[1]=1; c[2]=-1; c)
 

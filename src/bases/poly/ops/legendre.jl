@@ -38,12 +38,12 @@ gauss_rule(dict::Legendre{T}) where T = GaussLegendre{T}(length(dict))
 function dict_innerproduct_native(b1::Legendre, i::PolynomialDegree,
 		b2::Legendre, j::PolynomialDegree, m::LegendreWeight; options...)
 	T = promote_type(domaintype(b1), domaintype(b2))
-	i == j ? legendre_hn(T, value(i)) : zero(T)
+	i == j ? legendre_hn(value(i), T) : zero(T)
 end
 
-rec_An(b::Legendre{T}, n::Int) where T = legendre_rec_An(T, n)
-rec_Bn(b::Legendre{T}, n::Int) where T = legendre_rec_Bn(T, n)
-rec_Cn(b::Legendre{T}, n::Int) where T = legendre_rec_Cn(T, n)
+rec_An(b::Legendre{T}, n::Int) where T = legendre_rec_An(n, T)
+rec_Bn(b::Legendre{T}, n::Int) where T = legendre_rec_Bn(n, T)
+rec_Cn(b::Legendre{T}, n::Int) where T = legendre_rec_Cn(n, T)
 
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")

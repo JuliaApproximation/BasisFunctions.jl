@@ -33,7 +33,7 @@ hasmeasure(::ChebyshevU) = true
 function dict_innerproduct_native(b1::ChebyshevU, i::PolynomialDegree,
             b2::ChebyshevU, j::PolynomialDegree, m::ChebyshevUWeight; options...)
     T = promote_type(domaintype(b1), domaintype(b2))
-	i == j ? chebyshev_2nd_hn(T, value(i)) : zero(T)
+	i == j ? chebyshev_2nd_hn(value(i), T) : zero(T)
 end
 
 
@@ -43,9 +43,9 @@ jacobi_β(b::ChebyshevU{T}) where T = one(T)/2
 
 
 # Recurrence relation
-rec_An(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_An(T, n)
-rec_Bn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Bn(T, n)
-rec_Cn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Cn(T, n)
+rec_An(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_An(n, T)
+rec_Bn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Bn(n, T)
+rec_Cn(b::ChebyshevU{T}, n::Int) where T = chebyshev_2nd_rec_Cn(n, T)
 
 
 "A Chebyshev polynomial of the second kind"

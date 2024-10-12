@@ -62,9 +62,9 @@ jacobi_β(b::Jacobi) = b.β
 
 measure(b::Jacobi) = JacobiWeight(b.α, b.β)
 
-rec_An(b::Jacobi, n::Int) = jacobi_rec_An(jacobi_α(b), jacobi_β(b), n)
-rec_Bn(b::Jacobi, n::Int) = jacobi_rec_Bn(jacobi_α(b), jacobi_β(b), n)
-rec_Cn(b::Jacobi, n::Int) = jacobi_rec_Cn(jacobi_α(b), jacobi_β(b), n)
+rec_An(b::Jacobi, n::Int) = jacobi_rec_An(n, jacobi_α(b), jacobi_β(b))
+rec_Bn(b::Jacobi, n::Int) = jacobi_rec_Bn(n, jacobi_α(b), jacobi_β(b))
+rec_Cn(b::Jacobi, n::Int) = jacobi_rec_Cn(n, jacobi_α(b), jacobi_β(b))
 
 
 function dict_innerproduct_native(b1::Jacobi, i::PolynomialDegree,
@@ -72,7 +72,7 @@ function dict_innerproduct_native(b1::Jacobi, i::PolynomialDegree,
 	T = promote_type(domaintype(b1), domaintype(b2))
 	if iscompatible(b1, b2) && isorthogonal(b1, μ)
 		if i == j
-			jacobi_hn(jacobi_α(b1), jacobi_β(b1), value(i))
+			jacobi_hn(value(i), jacobi_α(b1), jacobi_β(b1))
 		else
 			zero(T)
 		end
@@ -107,9 +107,9 @@ similar(b::Ultraspherical, ::Type{T}, n::Int) where T = Ultraspherical{T}(n, b.�
 
 measure(b::Ultraspherical{T}) where T = UltrasphericalWeight(b.λ)
 
-rec_An(b::Ultraspherical, n::Int) = ultraspherical_rec_An(b.λ, n)
-rec_Bn(b::Ultraspherical, n::Int) = ultraspherical_rec_Bn(b.λ, n)
-rec_Cn(b::Ultraspherical, n::Int) = ultraspherical_rec_Cn(b.λ, n)
+rec_An(b::Ultraspherical, n::Int) = ultraspherical_rec_An(n, b.λ)
+rec_Bn(b::Ultraspherical, n::Int) = ultraspherical_rec_Bn(n, b.λ)
+rec_Cn(b::Ultraspherical, n::Int) = ultraspherical_rec_Cn(n, b.λ)
 
 
 ## Printing
