@@ -24,17 +24,17 @@ jacobi_kn(n::Int, α, β) = pochhammer(n+α+β+1, n) / (2^n * factorial(n))
 ultraspherical_hn(n::Int, λ::T) where T = 2^(1-2λ)*T(π)*gamma(n+2λ) / ((n+λ)*gamma(λ)^2*factorial(n))
 ultraspherical_kn(n::Int, λ) = 2^n*pochhammer(λ, n) / factorial(n)
 
-chebyshev_1st_hn(n::Int, ::Type{T} = Float64) where T = n == 0 ? T(π) : T(π)/2
-chebyshev_1st_kn(n::Int, ::Type{T} = Float64) where T = n == 0 ? one(T) : T(2)^(n-1)
+chebyshevt_hn(n::Int, ::Type{T} = Float64) where T = n == 0 ? T(π) : T(π)/2
+chebyshevt_kn(n::Int, ::Type{T} = Float64) where T = n == 0 ? one(T) : T(2)^(n-1)
 
-chebyshev_2nd_hn(n::Int, ::Type{T} = Float64) where T = T(π)/2
-chebyshev_2nd_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
+chebyshevu_hn(n::Int, ::Type{T} = Float64) where T = T(π)/2
+chebyshevu_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
 
-chebyshev_3rd_hn(n::Int, ::Type{T} = Float64) where T = T(π)
-chebyshev_3rd_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
+chebyshevv_hn(n::Int, ::Type{T} = Float64) where T = T(π)
+chebyshevv_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
 
-chebyshev_4rd_hn(n::Int, ::Type{T} = Float64) where T = T(π)
-chebyshev_4rd_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
+chebyshevw_hn(n::Int, ::Type{T} = Float64) where T = T(π)
+chebyshevw_kn(n::Int, ::Type{T} = Float64) where T = T(2)^n
 
 legendre_hn(n::Int, ::Type{T} = Float64) where T = 2 / T(2n+1)
 legendre_kn(n::Int, ::Type{T} = Float64) where T = 2^n*pochhammer(one(T)/2, n) / factorial(n)
@@ -106,12 +106,12 @@ ultraspherical_rec_Bn(n::Int, λ) = zero(λ)
 ultraspherical_rec_Cn(n::Int, λ) = (n+2λ-1) / (n+1)
 
 # Chebyshev
-chebyshev_1st_rec_An(n::Int, ::Type{T} = Float64) where T = n == 0 ? one(T) : T(2)
-chebyshev_1st_rec_Bn(n::Int, ::Type{T} = Float64) where T = zero(T)
-chebyshev_1st_rec_Cn(n::Int, ::Type{T} = Float64) where T = one(T)
-chebyshev_2nd_rec_An(n::Int, ::Type{T} = Float64) where T = T(2)
-chebyshev_2nd_rec_Bn(n::Int, ::Type{T} = Float64) where T = zero(T)
-chebyshev_2nd_rec_Cn(n::Int, ::Type{T} = Float64) where T = one(T)
+chebyshevt_rec_An(n::Int, ::Type{T} = Float64) where T = n == 0 ? one(T) : T(2)
+chebyshevt_rec_Bn(n::Int, ::Type{T} = Float64) where T = zero(T)
+chebyshevt_rec_Cn(n::Int, ::Type{T} = Float64) where T = one(T)
+chebyshevu_rec_An(n::Int, ::Type{T} = Float64) where T = T(2)
+chebyshevu_rec_Bn(n::Int, ::Type{T} = Float64) where T = zero(T)
+chebyshevu_rec_Cn(n::Int, ::Type{T} = Float64) where T = one(T)
 
 # Laguerre
 laguerre_rec_An(n::Int, α::T) where T = -one(T)/(n+1)
@@ -131,15 +131,15 @@ hermite_rec_Cn(n::Int, ::Type{T} = Float64) where T = T(2n)
 # https://dlmf.nist.gov/18.7
 ##############################
 
-"DLMF formula (18.7.1)."
+"DLMF equation 18.7.1 (https://dlmf.nist.gov/18.7#E1)"
 ultraspherical_to_jacobi(n::Int, λ) = pochhammer(2λ, n) / pochhammer(λ+one(λ)/2, n)
-"DLMF formula (18.7.2)."
+"DLMF equation 18.7.2 (https://dlmf.nist.gov/18.7#E2)"
 jacobi_to_ultraspherical_(n::Int, α) = pochhammer(α+1, n) / pochhammer(2α+1, n)
 
-"DLMF formula (18.7.3)."
+"DLMF equation 18.7.3 (https://dlmf.nist.gov/18.7#E3)"
 chebyshevt_to_jacobi(n::Int, ::Type{T} = Float64) where T =
     1 / jacobi_eval(n, one(T), -one(T)/2, -one(T)/2)
 
-"DLMF formula (18.7.4)."
+"DLMF equation 18.7.4 (https://dlmf.nist.gov/18.7#E4)"
 chebyshevu_to_jacobi(n::Int, ::Type{T} = Float64) where T =
     (n+1_) / jacobi_eval(n, one(T), one(T)/2, one(T)/2)

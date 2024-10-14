@@ -66,9 +66,9 @@ jacobi_α(b::ChebyshevT{T}) where T = -one(T)/2
 jacobi_β(b::ChebyshevT{T}) where T = -one(T)/2
 
 # Recurrence relation
-rec_An(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_An(n, T)
-rec_Bn(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_Bn(n, T)
-rec_Cn(b::ChebyshevT{T}, n::Int) where T = chebyshev_1st_rec_Cn(n, T)
+rec_An(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_An(n, T)
+rec_Bn(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_Bn(n, T)
+rec_Cn(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_Cn(n, T)
 
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
@@ -118,7 +118,7 @@ function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree,
 end
 
 innerproduct_chebyshev_full(i, j, T) =
-	i == j ? chebyshev_1st_hn(value(i), T) : zero(T)
+	i == j ? chebyshevt_hn(value(i), T) : zero(T)
 
 function dict_innerproduct_native(b1::ChebyshevT, i::PolynomialDegree,
 		b2::ChebyshevT, j::PolynomialDegree, measure::Union{LegendreWeight,Lebesgue}; options...)
