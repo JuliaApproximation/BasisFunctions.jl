@@ -142,4 +142,4 @@ chebyshevt_to_jacobi(n::Int, ::Type{T} = Float64) where T =
 
 "DLMF equation 18.7.4 (https://dlmf.nist.gov/18.7#E4)"
 chebyshevu_to_jacobi(n::Int, ::Type{T} = Float64) where T =
-    (n+1_) / jacobi_eval(n, one(T), one(T)/2, one(T)/2)
+    (n+1) / jacobi_eval(n, one(T), one(T)/2, one(T)/2)
