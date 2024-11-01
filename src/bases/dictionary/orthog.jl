@@ -47,8 +47,8 @@ end
 function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::Measure; options...)
 	@boundscheck checkbounds(Φ1, i)
 	@boundscheck checkbounds(Φ2, j)
-    domain1 = support(Φ1, i)
-    domain2 = support(Φ2, j)
+    domain1 = dict_support(Φ1, i)
+    domain2 = dict_support(Φ2, j)
     domain3 = support(measure)
 
 	# This code is delicate: it is necessary when using basis functions with compact
@@ -74,8 +74,8 @@ safe_default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::
 function default_dict_innerproduct(Φ1::Dictionary, i, Φ2::Dictionary, j, measure::DiscreteWeight; options...)
 	@boundscheck checkbounds(Φ1, i)
 	@boundscheck checkbounds(Φ2, j)
-    domain1 = support(Φ1, i)
-    domain2 = support(Φ2, j)
+    domain1 = dict_support(Φ1, i)
+    domain2 = dict_support(Φ2, j)
     unsafe_default_dict_innerproduct2(Φ1, i, Φ2, j, measure, domain1 ∩ domain2)
 end
 

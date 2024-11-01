@@ -18,7 +18,7 @@ end
 
 # Make a PiecewiseDict by scaling one set to each of the elements of the partition
 function PiecewiseDict(set::Dictionary1d, partition::Partition, n = ones(Int,length(partition))*length(set))
-    dicts = [rescale(resize(set, n[i]), support(partition, i)) for i in 1:length(partition)]
+    dicts = [rescale(resize(set, n[i]), partition_support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end
 
@@ -46,7 +46,7 @@ function PiecewiseDict(dicts::Array{S}) where {S <: Dictionary1d}
 end
 
 function PiecewiseDict(set::Dictionary, partition::Partition)
-     dicts = [rescale(set, support(partition, i)) for i in 1:length(partition)]
+    dicts = [rescale(set, dict_support(partition, i)) for i in 1:length(partition)]
     PiecewiseDict(dicts, partition)
 end
 
@@ -127,7 +127,7 @@ split_interval(set::PiecewiseDict, x) = split_interval(set, partition_index(part
 
 function split_interval(set::PiecewiseDict, i::Int, x)
     part = partition(set)
-    @assert infimum(support(part, i)) < x < supremum(support(part, i))
+    @assert infimum(partition_support(part, i)) < x < supremum(partition_support(part, i))
 
     part2 = split_interval(part, i, x)
     two_sets = split_interval(component(set, i), x)

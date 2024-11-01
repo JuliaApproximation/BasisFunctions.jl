@@ -32,60 +32,22 @@ checkbounds(::Type{Bool}, dict::Dictionary, idx::NTuple{N,Int}) where {N} =
 @inline checkbounds(::Type{Bool}, dict::Dictionary, I...) = checkbounds_indices(Bool, axes(dict), I)
 
 "Return the support of the idx-th basis function. Default is support of the dictionary."
-function support(dict::Dictionary, idx)
+function dict_support(dict, idx)
+    checkdictionary(dict)
     checkbounds(dict, idx)
     support(dict)
 end
-# Warning: the functions above and below may be wrong for certain concrete
-# dictionaries, for example for univariate functions with non-connected support.
-# Make sure to override, and make sure that the overridden version is called.
-
 "Does the given point lie inside the support of the given function or dictionary?"
 in_support(dict::Dictionary, x) = dict_in_support(dict, x)
-in_support(dict::Dictionary, idx, x) = dict_in_support(dict, idx, x)
+in_support(dict::Dictionary, idx, x) = dict_in_support(dict, native_index(dict, idx), x)
 
-# in_support(dict::Dictionary, x) =
-#     dict_in_support(dict, element_type_check(x, domaintype(dict)))
-# in_support(dict::Dictionary, idx, x) =
-#     dict_in_support(dict, idx, element_type_check(x, domaintype(dict)))
-#
-# element_type_check(x, T) = _element_type_check(x, T, typeof(x))
-# _element_type_check(x, T, S) = _element_type_check(x, T, S, promote_type(S,T))
-# _element_type_check(x, T, S, V) = x
-# _element_type_check(x, T, S, V) = x
-# function _element_type_check(x, T, S, ::Type{Any})
-#     @warn "Dictionary with domain type $(T) may not support evaluation with type $(S)."
-#     x
-# end
-#
-# # Some special cases
-# _element_type_check(x, ::NTuple{N,T}, ::SVector{N,T}) where {T,N} = x
-# _element_type_check(x, ::SVector{N,T}, ::NTuple{N,T}) where {T,N} = x
+# Concrete types can override this if there is a more efficient implementation
+dict_in_support(dict, x) = default_in_support(dict, x)
+dict_in_support(dict, idx, x) = default_in_support(dict, idx, x)
 
-
-# The mechanism is as follows:
-# - in_support(dict::Dictionary, ...) calls dict_in_support
-# - any linear index is converted to a native index
-# - concrete dictionary should implement dict_in_support
-# The reasoning is that concrete dictionaries need not all worry about handling
-# linear indices. Yet, they are free to implement other types of indices.
-# If a more efficient algorithm is available for linear indices, then the concrete
-# dictionary can still intercept the call to in_support.
-# The delegation to a method with a different name (dict_in_support) makes it
-# substantially easier to deal with ambiguity errors.
-
-# This is the standard conversion to a native_index for an index of type
-# Int. This calls a different function, hence it is fine if the native
-# index happens to be a linear index (Int).
-in_support(dict::Dictionary, idx::Int, x) =
-    dict_in_support(dict, native_index(dict, idx), x)
-
-# The default fallback is implemented below in terms of the support of the dictionary:
-dict_in_support(dict::Dictionary, idx, x) = default_in_support(dict, idx, x)
-dict_in_support(dict::Dictionary, x) = default_in_support(dict, x)
-
-default_in_support(dict::Dictionary, idx, x) = approx_in(x, support(dict, idx), tolerance(dict))
-default_in_support(dict::Dictionary, x) = approx_in(x, support(dict), tolerance(dict))
+# by default we invoke the support of the dictionary
+default_in_support(dict, x) = approx_in(x, support(dict), tolerance(dict))
+default_in_support(dict, idx, x) = approx_in(x, dict_support(dict, idx), tolerance(dict))
 
 
 

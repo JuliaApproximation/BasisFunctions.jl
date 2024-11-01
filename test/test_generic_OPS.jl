@@ -79,7 +79,7 @@ function test_generic_ops_from_quadrature()
 end
 
 function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment, constant)
-    t = linspace(left_point,right_point,20)
+    t = range(left_point, stop=right_point, length=20)
     s = zeros(N)
     for k in 1:N
         y1 = c1[k].(t)
@@ -92,7 +92,7 @@ function compare_OPS(N, c1::GenericOPS, c2, left_point, right_point, firstmoment
         @test maximum(y) < 1e-10
     end
 
-    @test support(c1,1) == Interval(left_point,right_point)
+    @test dict_support(c1,1) == Interval(left_point,right_point)
     @test length(c1) == N
 
     @test first_moment(c1) ≈ firstmoment

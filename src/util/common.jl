@@ -24,8 +24,6 @@ iswidertype(::Type{S}, ::Type{Complex{T}}) where {S<:AbstractFloat,T<:AbstractFl
     iswidertype(S,T)
 
 
-linspace(a, b, n=100) = range(a, stop=b, length=n)
-
 
 # delinearize_coefficients!(dest::BlockVector, src::AbstractVector) =
 #     dest[:] .= src[:]

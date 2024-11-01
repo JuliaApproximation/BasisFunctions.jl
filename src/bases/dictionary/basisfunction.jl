@@ -51,7 +51,7 @@ end
 dictionary(φ::BasisFunction) = φ.dictionary
 index(φ::BasisFunction) = φ.index
 
-support(φ::BasisFunction) = support(dictionary(φ), index(φ))
+support(φ::BasisFunction) = dict_support(dictionary(φ), index(φ))
 measure(φ::BasisFunction) = measure(dictionary(φ))
 
 show(io::IO, mime::MIME"text/plain", φ::BasisFunction) = composite_show(io, mime, φ)
@@ -104,7 +104,7 @@ innerproduct(f, ψ::AbstractBasisFunction, measure; options...) =
 # that leads to incomputable integrals.
 function analysis_integral(dict::Dictionary, idx, g, measure::Measure; options...)
     @boundscheck checkbounds(dict, idx)
-    domain1 = support(dict, idx)
+    domain1 = dict_support(dict, idx)
     domain2 = support(measure)
     qs = quadstrategy(promote_type(prectype(dict), prectype(measure)); options...)
     unsafe_analysis_integral1(dict, idx, g, measure, domain1, domain2, domain1 ∩ domain2, qs)
@@ -112,7 +112,7 @@ end
 
 function analysis_integral(dict::Dictionary, idx, g, measure::DiscreteWeight; options...)
     @boundscheck checkbounds(dict, idx)
-    unsafe_analysis_integral2(dict, idx, g, measure, support(dict, idx))
+    unsafe_analysis_integral2(dict, idx, g, measure, dict_support(dict, idx))
 end
 
 # unsafe for indexing

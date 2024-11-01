@@ -11,6 +11,9 @@ import BasisFunctions.Test:
     suitable_interpolation_grid,
     dimension_tuple
 
+using BasisFunctions:
+    dict_support
+
 BF = BasisFunctions
 
 domaintypes = (Float64, LargeFloat)

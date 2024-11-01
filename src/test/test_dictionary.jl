@@ -247,7 +247,7 @@ function test_gram_projection(basis)
             f = suitable_function(basis)
             μ = measure(basis)
             # Do we compute the projection integrals accurately?
-            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weightfun(μ,t), truncate(support(basis, 1)))
+            Z = integral(t->f(t...)*BasisFunctions.unsafe_eval_element(basis, 1, t)*DomainIntegrals.unsafe_weightfun(μ,t), truncate(dict_support(basis, 1)))
             @test abs(innerproduct(t->f(t...), basis[1]) - Z)/abs(Z) < 1e-1
             @test abs(innerproduct(basis[1], t->f(t...)) - Z)/abs(Z) < 1e-1
             e = approximate(basis, t->f(t...); discrete=false, rtol=1e-6, atol=1e-6)
@@ -338,7 +338,7 @@ function test_generic_dict_evaluation_operator(basis)
     g = suitable_interpolation_grid(basis)
     E = evaluation(basis, g)
     e = random_expansion(basis)
-    y = E*e
+    y = coefficients(E*e)
     @test maximum([abs.(e(g[i])-y[i]) for i in eachindex(g)]) < test_tolerance(ELT)
 end
 
@@ -430,17 +430,17 @@ function test_generic_dict_derivative(basis)
         i3 = (i1+i2) >> 1
 
         c1 = Expansion(basis,zeros(basis))
-        c1[i1] = 1
+        coefficients(c1)[i1] = 1
         u1 = D*c1
         @test abs(u1(x) - eval_element_derivative(basis, i1, x)) < test_tolerance(ELT)
 
         c2 = Expansion(basis,zeros(basis))
-        c2[i2] = 1
+        coefficients(c2)[i2] = 1
         u2 = D*c2
         @test abs(u2(x) - eval_element_derivative(basis, i2, x)) < test_tolerance(ELT)
 
         c3 = Expansion(basis,zeros(basis))
-        c3[i3] = 1
+        coefficients(c3)[i3] = 1
         u3 = D*c3
         @test abs(u3(x) - eval_element_derivative(basis, i3, x)) < test_tolerance(ELT)
     end
@@ -537,7 +537,7 @@ function test_generic_dict_interface(@nospecialize basis)
         z = L*e
         L2 = evaluation(basisext, grid_ext) * extension(basis, basisext)
         z2 = L2*e
-        @test maximum(abs.(z-z2)) < 20test_tolerance(ELT)
+        @test maximum(abs.(coefficients(z-z2))) < 20test_tolerance(ELT)
         # In the future, when we can test for 'fastness' of operators
         # @test isfast(L2) == isfast(L)
     end

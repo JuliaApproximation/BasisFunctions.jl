@@ -146,8 +146,8 @@ gauss_rule(s::TensorProductDict) =
 
 
 support(s::TensorProductDict) = productdomain(map(support, components(s))...)
-support(s::TensorProductDict, idx::LinearIndex) = support(s, native_index(s,idx))
-support(s::TensorProductDict, idx::ProductIndex) = productdomain(map(support, components(s), indextuple(idx))...)
+dict_support(s::TensorProductDict, idx::LinearIndex) = dict_support(s, native_index(s,idx))
+dict_support(s::TensorProductDict, idx::ProductIndex) = productdomain(map(dict_support, components(s), indextuple(idx))...)
 
 
 # We pass on the elements of s as an extra argument in order to avoid

@@ -38,7 +38,7 @@ Display.displaystencil(d::Subdictionary) = [superdict(d), "[", superindices(d), 
 
 support(s::Subdictionary) = support(superdict(s))
 
-support(s::Subdictionary, i) = support(superdict(s),superindices(s,i))
+dict_support(s::Subdictionary, i) = dict_support(superdict(s),superindices(s,i))
 
 size(s::Subdictionary) = size(superindices(s))
 

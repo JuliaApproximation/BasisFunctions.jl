@@ -32,7 +32,7 @@ support(h::PiecewiseConstants{T}) where {T} = Interval{:closed,:open,T}(0,1)
 
 # We also implement the support of each basis function. By default, this would
 # be the default of the dictionary itself.
-support(h::PiecewiseConstants{T}, idx::Int) where {T} =
+dict_support(h::PiecewiseConstants{T}, idx::Int) where {T} =
     Interval{:closed,:open,T}(0,one(T)/h.n) .+ (one(T)/h.n*(idx-1))
 
 
@@ -48,7 +48,7 @@ isorthogonal(h::PiecewiseConstants, measure::FourierWeight) = true
 # Is our dictionary orthogonal with respect to a discrete measure? We check all points.
 function isorthogonal(h::PiecewiseConstants, μ::DiscreteWeight)
     for (i,xi) in zip(ordering(h),points(μ))
-        if xi ∉ support(h, i)
+        if xi ∉ dict_support(h, i)
             return false
         end
     end

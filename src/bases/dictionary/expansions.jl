@@ -40,7 +40,7 @@ const Expansion4d{S <: Number,T,D,C} = Expansion{SVector{4,S},T,D,C}
                                 ncomponents,
                                 measure
 
-@forward Expansion.coefficients length, eachindex, getindex, setindex!
+@forward Expansion.coefficients length, eachindex
 codomaintype(e::Expansion) = promote_type(codomaintype(dictionary(e)), eltype(coefficients(e)))
 isreal(e::Expansion) = isreal(e.dictionary) && isreal(eltype(coefficients(e)))
 
@@ -207,12 +207,3 @@ expansion_of_one(dict::Dictionary) = Expansion(dict, coefficients_of_one(dict))
 expansion_of_x(dict::Dictionary) = Expansion(dict, coefficients_of_x(dict))
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
-
-# TODO: we may not want to identify an Expansion with its array of coefficients
-iterate(e::Expansion) = iterate(coefficients(e))
-iterate(e::Expansion, state) = iterate(coefficients(e), state)
-
-Base.collect(e::Expansion) = coefficients(e)
-
-Base.BroadcastStyle(e::Expansion) = Base.Broadcast.DefaultArrayStyle{dimension(e)}()
-

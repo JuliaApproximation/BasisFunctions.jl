@@ -29,6 +29,13 @@ of the features for a description of that interface and the syntax.
 abstract type Dictionary{S,T}
 end
 
+"Does the given argument implement the dictionary interface?"
+isdictionary(d::Dictionary) = true
+isdictionary(d) = false
+
+"Throws an error if the given argument does not implement the dictionary interface."
+checkdictionary(d) = isdictionary(d) || throw(ArgumentError("Not a dictionary: $(d)"))
+
 # Useful abstraction for special cases
 const Dictionary1d{S <: Number,T} = Dictionary{S,T}
 # Warning: these are shaky definitions of multivariate functions

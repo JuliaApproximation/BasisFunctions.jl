@@ -48,7 +48,6 @@ end
 
 
 support(b::GenericOPS) = b.support
-support(b::GenericOPS, idx) = support(b)
 
 size(b::GenericOPS) = (length(b.rec_a),)
 

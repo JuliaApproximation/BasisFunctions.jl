@@ -127,7 +127,7 @@ end
 
 support(dict::MappedDict) = DomainSets.map_domain(forward_map(dict), support(superdict(dict)))
 
-support(dict::MappedDict, idx) = forward_map(dict).(support(superdict(dict), idx))
+dict_support(dict::MappedDict, idx) = forward_map(dict).(dict_support(superdict(dict), idx))
 
 function dict_in_support(set::MappedDict, idx, y, threshold = default_threshold(y))
     x = leftinverse(forward_map(set), y)

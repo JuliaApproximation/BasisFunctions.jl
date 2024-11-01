@@ -29,7 +29,7 @@ right(piece::PartitionPiece) = right(partition(piece), index(piece))
 
 Base.in(x, piece::PartitionPiece) = in_partition(partition(piece), index(piece), x)
 
-support(part::PartitionPiece) = support(partition(part), index(part))
+support(part::PartitionPiece) = partition_support(partition(part), index(part))
 
 function checkbounds(part::Partition, i::Int)
     1 <= i <= length(part) || throw(BoundsError())
@@ -54,7 +54,7 @@ struct PiecewiseInterval{T} <: Partition
 end
 
 # n partitions of equal size on the interval [a,b]
-PiecewiseInterval(a, b, n::Int) = PiecewiseInterval(collect(linspace(a,b,n+1)))
+PiecewiseInterval(a, b, n::Int) = PiecewiseInterval(collect(range(a,stop=b,length=n+1)))
 
 length(part::PiecewiseInterval) = length(part.points)-1
 
@@ -62,7 +62,7 @@ support(part::PiecewiseInterval) = Interval(part.points[1],part.points[end])
 
 # Not sure this is a good idea, but let's respect the convention that the
     # interval does not contain the left endpoint, unless it is the first interval.
-support(part::PiecewiseInterval, i::Int) = i==1 ? Interval(part.points[1],part.points[2]) : Interval{:open,:closed}(part.points[i],part.points[i+1])
+partition_support(part::PiecewiseInterval, i::Int) = i==1 ? Interval(part.points[1],part.points[2]) : Interval{:open,:closed}(part.points[i],part.points[i+1])
 left(part::PiecewiseInterval) = part.points[1]
 
 left(part::PiecewiseInterval, i::Int) = part.points[i]
@@ -82,7 +82,7 @@ function partition_index(part::PiecewiseInterval, x)
     idx
 end
 
-in_partition(part::PiecewiseInterval, i, x) = in(x,support(part,i))
+in_partition(part::PiecewiseInterval, i, x) = in(x, partition_support(part, i))
 
 # TODO: applying partition_index repeatedly, say for all points in a grid, could
 # be done more efficiently if we can exploit ordering of the points in the grid.

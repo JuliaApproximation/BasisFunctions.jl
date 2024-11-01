@@ -94,9 +94,9 @@ for op in (:support, :length)
     @eval $op(s::OperatedDict) = $op(src(s))
 end
 
-function support(Φ::OperatedDict, idx)
+function dict_support(Φ::OperatedDict, idx)
 	if isdiag(operator(Φ))
-		support(src(Φ), idx)
+		dict_support(src(Φ), idx)
 	else
 		# We don't know in general what the support of a specific basis function is.
 		# The safe option is to return the support of the set itself for each element.
