@@ -137,7 +137,10 @@ ones(s::Dictionary) = ones(coefficienttype(s), s)
 # By default we assume that the native format corresponds to an array of the
 # same size as the set. This is not true, e.g., for multidicts.
 zeros(::Type{T}, s::Dictionary) where {T} = zeros(T, size(s))
-ones(::Type{T}, s::Dictionary) where {T} = ones(T, size(s))
+function ones(::Type{T}, s::Dictionary) where T
+    z = zeros(T, s)
+    z .= 1
+end
 
 "What is the type of the coefficient vector of the dictionary?"
 containertype(d::Dictionary) = typeof(zeros(d))

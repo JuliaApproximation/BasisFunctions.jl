@@ -31,6 +31,6 @@ with respect to the given measure.
 function dict_norm(dict, idx, μ::Measure)
     checkdictionary(dict)
     @boundscheck checkbounds(dict, idx)
-    sqrt(innerproduct(dict, idx, dict, idx, μ))
+    sqrt(dict_innerproduct(dict, idx, dict, idx, μ))
 end
 dict_norm(dict, idx) = dict_norm(dict, idx, measure(dict))

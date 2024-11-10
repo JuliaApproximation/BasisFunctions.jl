@@ -24,7 +24,7 @@ hasderivative(b::PeriodicSincFunctions) = false #for now
 hasantiderivative(b::PeriodicSincFunctions) = false #for now
 
 hasconstant(b::PeriodicSincFunctions) = true
-coefficients_of_one(b) = ones(numtype(b), size(b))
+coefficients_of_one(b::PeriodicSincFunctions) = ones(numtype(b), size(b))
 
 "Indices of translated sinc functions start at 0."
 struct SincIndex <: AbstractShiftedIndex{1}

@@ -86,9 +86,8 @@ innerproduct(ϕ::AbstractBasisFunction, ψ::AbstractBasisFunction; options...) =
 innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; options...) =
     dict_innerproduct(dictionary(φ), index(φ), dictionary(ψ), index(ψ), measure; options...)
 
-norm(φ::AbstractBasisFunction, μ = measure(φ); options...) = sqrt(innerproduct(φ, φ, μ; options...))
-
-norm(φ::AbstractBasisFunction, p::Real) = dict_norm(dictionary(φ), index(φ), p)
+norm(φ::AbstractBasisFunction; options...) = norm(φ, measure(φ); options...)
+norm(φ::AbstractBasisFunction, p; options...) = dict_norm(dictionary(φ), index(φ), p; options...)
 
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
