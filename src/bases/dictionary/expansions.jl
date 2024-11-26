@@ -35,8 +35,11 @@ const Expansion2d{S <: Number,T,D,C} = Expansion{SVector{2,S},T,D,C}
 const Expansion3d{S <: Number,T,D,C} = Expansion{SVector{3,S},T,D,C}
 const Expansion4d{S <: Number,T,D,C} = Expansion{SVector{4,S},T,D,C}
 
-@forward Expansion.dictionary domaintype, prectype, dimension,
-                                size, Span, support, interpolation_grid, numtype,
+prectype(F::Type{<:Expansion{S,T}}) where {S,T} = prectype(S,T)
+numtype(F::Type{<:Expansion{S,T}}) where {S,T} = numtype(S,T)
+
+@forward Expansion.dictionary domaintype, dimension,
+                                size, Span, support, interpolation_grid,
                                 ncomponents,
                                 measure
 
@@ -127,7 +130,14 @@ adjoint(f::Expansion) = differentiate(f)
 
 ∫(f::Expansion) = antidifferentiate(f)
 
-roots(f::Expansion) = expansion_roots(dictionary(f), coefficients(f))
+function roots(f::Expansion; all = true)
+    r = expansion_roots(dictionary(f), coefficients(f))
+    if all
+        r
+    else
+        restrict_to_domain(r, support(f))
+    end
+end
 
 show(io::IO, mime::MIME"text/plain", fun::Expansion) = composite_show(io, mime, fun)
 Display.displaystencil(fun::Expansion) = ["Expansion(", dictionary(fun), ", ", coefficients(fun), ")"]

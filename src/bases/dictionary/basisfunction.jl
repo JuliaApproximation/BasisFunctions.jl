@@ -89,6 +89,8 @@ innerproduct(φ::AbstractBasisFunction, ψ::AbstractBasisFunction, measure; opti
 norm(φ::AbstractBasisFunction; options...) = norm(φ, measure(φ); options...)
 norm(φ::AbstractBasisFunction, p; options...) = dict_norm(dictionary(φ), index(φ), p; options...)
 
+moment(φ::AbstractBasisFunction; options...) = dict_moment(dictionary(φ), index(φ); options...)
+
 # The inner product of a basis function with another function: this is an analysis integral
 # We introduce a separate function name for this for easier dispatch.
 innerproduct(φ::AbstractBasisFunction, g, measure; options...) =

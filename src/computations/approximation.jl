@@ -132,3 +132,38 @@ end
 
 default_leastsquares(Φ::Dictionary, gb::GridBasis, T=operatoreltype(Φ,gb); options...) =
     QR_solver(ArrayOperator(leastsquares_matrix(Φ, grid(gb), T), Φ, gb))
+
+
+########################
+# Inverse of a function
+########################
+
+"""
+    inversefunction(F[, domain; n])
+
+Compute an approximation to the inverse of `F`, using an appropriate basis with `n` degrees of freedom.
+"""
+inversefunction(F::Expansion; args...) = inversefunction(F, support(F); args...)
+
+function inversefunction(F, domain::AbstractInterval; n = 2*length(F))
+    Fd = differentiate(F)
+    if length(roots(Fd; all=false)) > 0
+        throw(ArgumentError("Function is not invertible on its domain."))
+    end
+    
+    # compute the value t such that F(t)=z.
+    function inversevalue(z)
+        r = roots(F - z; all=false)
+        if length(r) != 1
+            throw(ArgumentError("No unique inverse value."))
+        end
+        r[1]
+    end
+    
+    a = leftendpoint(domain)
+    b = rightendpoint(domain)
+    A = F(a)
+    B = F(b)
+    G = ChebyshevT(n) → (A..B)
+    Expansion(G, approximation(G) * inversevalue)
+end

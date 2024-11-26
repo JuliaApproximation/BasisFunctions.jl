@@ -132,3 +132,14 @@ export Domain1d, Domain2d, Domain3d, Domain4d
 iscompatible(map1::AbstractMap, map2::AbstractMap) = map1==map2
 iscompatible(map1::AffineMap, map2::AffineMap) = (map1.A ≈ map2.A) && (map1.b ≈ map2.b)
 iscompatible(domain1::Domain, domain2::Domain) = domain1 == domain2
+
+"Filter the given points by leaving out all points that are not an element of the given domain."
+function restrict_to_domain(x::AbstractVector, d; tol = DomainSets.domain_tolerance(d))
+    checkdomain(d)
+    filter(t->approx_in(t, d, tol), x)
+end
+
+function restrict_to_domain(x::AbstractVector{Complex{T}}, d::AbstractInterval{T}; tol = DomainSets.domain_tolerance(d)) where {T}
+    x1 = real(filter(t->abs(imag(t))<tol, x))
+    restrict_to_domain(x1, d; tol)
+end
