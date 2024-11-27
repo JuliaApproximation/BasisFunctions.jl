@@ -327,8 +327,3 @@ function iterate(d::Dictionary, state)
         (d[next_item], (iter,next_tuple))
     end
 end
-
-
-
-include("dict_evaluation.jl")
-include("dict_moments.jl")

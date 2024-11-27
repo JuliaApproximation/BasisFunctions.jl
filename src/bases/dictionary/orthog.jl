@@ -278,3 +278,28 @@ function mixedgrammatrix!(G, Φ1::Dictionary, Φ2::Dictionary, μ; options...)
     end
     G
 end
+
+
+#################################
+# Gram-Schmidt orthogonalization
+#################################
+
+
+function gram_schmidt(U::Dictionary, μ = measure(U))
+    N = length(U)
+    V = [Expansion(U, zeros(U)) for k in 1:N]
+    V[1].coefficients[1] = 1 / norm(U[1], μ)
+    for k in 2:N
+        V[k].coefficients[k] = 1
+        for j in 1:k-1
+            V[k] = V[k] - innerproduct(V[k], V[j], μ) * V[j]
+        end
+        V[k] = V[k] / norm(V[k], μ)
+    end
+
+    A = UpperTriangular(zeros(coefficienttype(U), N, N))
+    for k in 1:N
+        A[1:k,k] = V[k].coefficients[1:k]
+    end
+    A*U
+end

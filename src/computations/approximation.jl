@@ -3,6 +3,8 @@
 # Generic approximation
 ########################
 
+const ANYFUNCTION = Union{Function,Expansion,TypedFunction}
+
 """
 The `approximation` function returns an operator that can be used to approximate
 a function in the function set. This operator maps a grid to a set of coefficients.
@@ -23,27 +25,14 @@ end
 continuous_approximation(Φ::Dictionary; options...) = inv(gram(Φ; options...))
 
 # Automatically sample a function if an operator is applied to it
-(*)(op::DictionaryOperator, f::Function) = op * project(src(op), f)
-Base.:\(op::DictionaryOperator, f::Function) = op \ project(dest(op), f)
+(*)(op::DictionaryOperator, f::ANYFUNCTION) = op * project(src(op), f)
+Base.:\(op::DictionaryOperator, f::ANYFUNCTION) = op \ project(dest(op), f)
 
-project(Φ::GridBasis, f::Function; options...) = sample(Φ, f)
+project(Φ::GridBasis, f::ANYFUNCTION; options...) = sample(Φ, f)
 
 approximate(Φ::Dictionary, f::Function; options...) =
     Expansion(Φ, approximation(Φ; options...) * f)
 
-"""
-The 2-argument approximation exists to allow you to transform any
-Dictionary coefficients to any other Dictionary coefficients, including
-Discrete Grid Spaces.
-If a transform exists, the transform is used.
-"""
-function approximation(A::Dictionary, B::Dictionary, options...)
-    if hastransform(A, B)
-        return transform(A, B; options...)
-    else
-        error("Don't know a transform from ", A, " to ", B)
-    end
-end
 
 
 #################
@@ -78,7 +67,7 @@ default_interpolation(Φ::Dictionary, gb::GridBasis; options...) =
 default_interpolation(::Type{T}, Φ::Dictionary, gb::GridBasis; options...) where {T} =
     QR_solver(evaluation(T, Φ, grid(gb)))
 
-interpolate(Φ::Dictionary, pts, f, T=coefficienttype(s)) = Expansion(interpolation(T, Φ, pts) * f)
+interpolate(Φ::Dictionary, pts, f, T=coefficienttype(Φ)) = Expansion(Φ,interpolation(T, Φ, pts) * f)
 
 """
 Compute the weights of an interpolatory quadrature rule.

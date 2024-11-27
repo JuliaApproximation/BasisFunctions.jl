@@ -217,3 +217,6 @@ expansion_of_one(dict::Dictionary) = Expansion(dict, coefficients_of_one(dict))
 expansion_of_x(dict::Dictionary) = Expansion(dict, coefficients_of_x(dict))
 
 apply(op::DictionaryOperator, e::Expansion) = Expansion(dest(op), op * coefficients(e))
+
+norm(f::Expansion) = norm(f, measure(f))
+norm(f::Expansion, μ) = sqrt(innerproduct(f, f, μ))

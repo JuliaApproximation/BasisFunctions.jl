@@ -322,6 +322,8 @@ include("sampling/quadweights.jl")
 
 include("bases/dictionary/indexing.jl")
 include("bases/dictionary/dictionary.jl")
+include("bases/dictionary/dict_evaluation.jl")
+include("bases/dictionary/dict_moments.jl")
 include("bases/dictionary/promotion.jl")
 include("bases/dictionary/span.jl")
 include("bases/dictionary/orthog.jl")

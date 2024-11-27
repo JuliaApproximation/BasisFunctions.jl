@@ -57,3 +57,20 @@ degree(p::Polynomial) = p.degree
 
 support(p::Polynomial) = support(dictionary(p))
 measure(p::Polynomial) = measure(dictionary(p))
+
+########################
+# Polynomial expansions
+########################
+
+"""
+    polynomialdegree(f::Expansion)
+
+If `f` is an expansion in a polynomial basis, return the degree of the polynomial function (not taking
+into account possible leading zero coefficients).
+"""
+polynomialdegree(f::Expansion) = maxpolynomialdegree(dictionary(f))
+
+"The maximal polynomial degree of any expansion in the given basis."
+maxpolynomialdegree(b::PolynomialBasis) = PolynomialDegree(length(b)-1)
+
+maxpolynomialdegree(b::OperatedDict) = maxpolynomialdegree(superdict(b))
