@@ -54,6 +54,7 @@ function coefficients_of_x(b::OPS)
 end
 
 hasextension(b::OPS) = true
+extensible_dictionaries(b1::D, b2::D) where {D <: OPS} = same_ops_family(b1, b2) && (length(b2) >= length(b1))
 
 extension(::Type{T}, src::O, dest::O; options...) where {T,O <: OPS} = IndexExtension{T}(src, dest, 1:length(src))
 restriction(::Type{T}, src::O, dest::O; options...) where {T,O <: OPS} = IndexRestriction{T}(src, dest, 1:length(dest))

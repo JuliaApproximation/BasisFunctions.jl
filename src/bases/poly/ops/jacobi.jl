@@ -81,7 +81,7 @@ function dict_innerproduct_native(b1::Jacobi, i::PolynomialDegree,
 	end
 end
 
-
+same_ops_family(b1::Jacobi, b2::Jacobi) = jacobi_α(b1) == jacobi_α(b2) && jacobi_β(b1) == jacobi_β(b2)
 
 """
 The basis of ultraspherical (or Gegenbauer) orthogonal polynomials on `[-1,1]`.
@@ -111,6 +111,7 @@ rec_An(b::Ultraspherical, n::Int) = ultraspherical_rec_An(n, b.λ)
 rec_Bn(b::Ultraspherical, n::Int) = ultraspherical_rec_Bn(n, b.λ)
 rec_Cn(b::Ultraspherical, n::Int) = ultraspherical_rec_Cn(n, b.λ)
 
+same_ops_family(b1::Ultraspherical, b2::Ultraspherical) = b1.λ == b2.λ
 
 ## Printing
 function show(io::IO, b::Jacobi{Float64})

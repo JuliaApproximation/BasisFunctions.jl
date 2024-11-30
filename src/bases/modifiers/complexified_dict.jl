@@ -75,12 +75,12 @@ function promote_convertible2(d1, d2::ComplexifiedDict)
     complex(reald1), complex(reald2)
 end
 
-function conversion1(T, d1::ComplexifiedDict, d2; options...)
+function conversion1(::Type{T}, d1::ComplexifiedDict, d2; options...) where T
     @assert !isreal(T)
     op = conversion(T, superdict(d1), d2; options...)
     wrap_operator(d1, d2, op)
 end
-function conversion2(T, d1, d2::ComplexifiedDict; options...)
+function conversion2(::Type{T}, d1, d2::ComplexifiedDict; options...) where T
     @assert !isreal(T)
     op = conversion(T, d1, superdict(d2); options...)
     wrap_operator(d1, d2, op)

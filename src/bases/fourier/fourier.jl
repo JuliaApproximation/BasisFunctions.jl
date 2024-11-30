@@ -108,6 +108,7 @@ isorthonormal(b::Fourier, μ::DiscreteWeight) =
 isnormalized(b::Fourier, μ) = isorthonormal(b)
 
 hasextension(b::Fourier) = isodd(length(b))
+extensible_dictionaries(b1::Fourier, b2::Fourier) = length(b2) >= length(b1)
 
 hasconstant(b::Fourier) = true
 coefficients_of_one(b::Fourier) = (c=zeros(b); c[1]=1; c)

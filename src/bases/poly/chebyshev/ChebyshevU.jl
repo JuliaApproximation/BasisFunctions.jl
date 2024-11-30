@@ -47,6 +47,7 @@ rec_An(b::ChebyshevU{T}, n::Int) where T = chebyshevu_rec_An(n, T)
 rec_Bn(b::ChebyshevU{T}, n::Int) where T = chebyshevu_rec_Bn(n, T)
 rec_Cn(b::ChebyshevU{T}, n::Int) where T = chebyshevu_rec_Cn(n, T)
 
+same_ops_family(b1::ChebyshevU, b2::ChebyshevU) = true
 
 "A Chebyshev polynomial of the second kind"
 struct ChebyshevUPolynomial{T} <: OrthogonalPolynomial{T}

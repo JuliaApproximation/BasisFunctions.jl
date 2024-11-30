@@ -63,6 +63,8 @@ rec_Cn(b::Laguerre, n::Int) = laguerre_rec_Cn(n, b.α)
 
 coefficients_of_x(b::Laguerre) = (c=zeros(b); c[1]=1; c[2]=-1; c)
 
+same_ops_family(b1::Laguerre, b2::Laguerre) = laguerre_α(b1) == laguerre_α(b2)
+
 ## Printing
 
 function show(io::IO, b::Laguerre{Float64})

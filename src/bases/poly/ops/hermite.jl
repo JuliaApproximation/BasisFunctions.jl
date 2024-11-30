@@ -36,6 +36,8 @@ rec_Cn(b::Hermite{T}, n::Int) where T = hermite_rec_Cn(n, T)
 
 coefficients_of_x(b::Hermite{T}) where {T} = (c=zeros(b); c[2]=one(T)/2; c)
 
+same_ops_family(b1::Hermite, b2::Hermite) = true
+
 dict_innerproduct_native(d1::Hermite{T}, i::PolynomialDegree, d2::Hermite, j::PolynomialDegree, measure::HermiteWeight; options...) where T =
 	i == j ? hermite_hn(value(i), T) : zero(T)
 

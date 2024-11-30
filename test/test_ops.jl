@@ -173,6 +173,21 @@ for T in (Float64, LargeFloat)
     println()
 end
 
+@testset "Conversions of expansions" begin
+    for T in types
+        N = 5
+        b1 = Jacobi{T}(N, 1.4, 0.3)
+        b2 = Jacobi{T}(N+1, 1.4, 0.3)
+        test_generic_conversion(b1, Legendre{T}(N))
+        test_generic_conversion(b1, ChebyshevT{T}(N))
+        test_generic_conversion(b1, Monomials{T}(N))
+        test_generic_conversion(b1, b2)
+        test_generic_conversion(b1, Jacobi{T}(N, 0.2, 0.4))
+        test_generic_conversion(b1, Laguerre{T}(N))
+        @test_throws ArgumentError conversion(b2, b1)
+    end
+end
+
 @testset "Orthogonality of orthogonal polynomials" begin
     OPSs = [ChebyshevT, ChebyshevU, Legendre, Hermite, Jacobi, Laguerre]
     for ops in OPSs, n in (5,6), T in (Float64,LargeFloat)

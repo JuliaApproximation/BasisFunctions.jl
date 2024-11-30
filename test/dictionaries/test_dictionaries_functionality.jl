@@ -1,30 +1,34 @@
 
+function test_generic_conversion(b1, b2)
+    f = random_expansion(b1)
+    x = fixed_point_in_domain(b1)
+    C = conversion(b1, b2)
+    tolerance = sqrt(eps(prectype(b1)))
+    @test src(C) == b1
+    @test dest(C) == b2
+    g = C*f
+    @test g(x) ≈ f(x)
+    if length(b1) == length(b2)
+        Cinv = conversion(b2, b1)
+        f2 = Cinv * (C*f)
+        @test norm(coefficients(f2-f2)) < tolerance
+    end
+end
+
+
 function test_dictionary_conversions()
-    b_cheb = ChebyshevT(10)
-    b_leg = Legendre(10)
-    b_mono = Monomials(10)
+    # OPS are tested separately in test_ops
 
-    e_cheb = random_expansion(b_cheb)
-    e_leg = random_expansion(b_leg)
-    e_mono = random_expansion(b_mono)
+    @test_throws ErrorException conversion(Fourier(5), Fourier(4))
+    test_generic_conversion(Fourier(5), Fourier(6))
+    test_generic_conversion(Fourier(5), Fourier(7))
+    test_generic_conversion(Fourier(6), Fourier(7))
+    test_generic_conversion(Fourier(6), Fourier(8))
 
-    C_cheb2leg = conversion(b_cheb, b_leg)
-    e1 = C_cheb2leg * e_cheb
-    @test dictionary(e1) == b_leg
-    @test e_cheb(0.4) ≈ e1(0.4)
+    test_generic_conversion(Fourier(4) → (-1..1), Fourier(5) → (-1..1))
 
-    C_leg2cheb = conversion(b_leg, b_cheb)
-    e2 = C_leg2cheb * e_leg
-    @test dictionary(e2) == b_cheb
-    @test e_leg(0.4) ≈ e2(0.4)
-
-    C_leg2mono = conversion(b_leg, b_mono)
-    e3 = C_leg2mono * e_leg
-    @test dictionary(e3) == b_mono
-    @test e3(0.4) ≈ e_leg(0.4)
-
-    C_mono2leg = conversion(b_mono, b_leg)
-    e4 = C_mono2leg * e_mono
-    @test dictionary(e4) == b_leg
-    @test e4(0.4) ≈ e_mono(0.4)
+    test_generic_conversion(ChebyshevT(3), complex(ChebyshevT(4)))
+    test_generic_conversion(complex(ChebyshevT(3)), ChebyshevT(4))
+    test_generic_conversion(complex(ChebyshevT(3)), complex(ChebyshevT(4)))
+    test_generic_conversion(complex(ChebyshevT(3)) → -2..2, ChebyshevT(4) → -2..2)
 end

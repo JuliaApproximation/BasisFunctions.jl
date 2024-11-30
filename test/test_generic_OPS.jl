@@ -143,13 +143,13 @@ end
 function test_roots_of_legendre_halfrangechebyshev()
     N = 10
     B = BasisFunctions.HalfRangeChebyshevIkind(N,2.)
-    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    @test 1+maximum(abs.(B[N].(real(ops_roots(resize(B,N-1))))))≈1
     B = Legendre(N)
-    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    @test 1+maximum(abs.(B[N].(real(ops_roots(resize(B,N-1))))))≈1
     B = Legendre{LargeFloat}(N)
-    @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    @test 1+maximum(abs.(B[N].(real(ops_roots(resize(B,N-1))))))≈1
     # B = HalfRangeChebyshevIkind(N,LargeFloat(2))
-    # @test 1+maximum(abs.(B[N].(real(roots(resize(B,N-1))))))≈1
+    # @test 1+maximum(abs.(B[N].(real(ops_roots(resize(B,N-1))))))≈1
 end
 
 @testset "Generic OPS" begin

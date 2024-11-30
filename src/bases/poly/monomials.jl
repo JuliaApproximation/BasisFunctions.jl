@@ -21,6 +21,15 @@ support(dict::Monomials{T}) where {T} = DomainSets.FullSpace{T}()
 
 size(dict::Monomials) = (dict.n,)
 
+# We define recurrence coefficients of a three-term recurrence relation similarly
+# to the case of orthogonal polynomials. Here, the general case
+# p_{n+1}(x) = (A_n x + B_n) p_n(x) - C_n p_{n-1}(x)
+# reduces to A_n = 1 and B_n = C_n = 0.
+rec_An(b::Monomials{T}, n::Int) where T = one(T)
+rec_Bn(b::Monomials{T}, n::Int) where T = zero(T)
+rec_Cn(b::Monomials{T}, n::Int) where T = zero(T)
+
+
 unsafe_eval_element(b::Monomials, idxn::PolynomialDegree, x) = x^degree(idxn)
 
 function unsafe_eval_element_derivative(b::Monomials{T}, idxn::PolynomialDegree, x, order) where {T}

@@ -37,15 +37,6 @@ end
 # Extension and restriction
 ############################
 
-# Conversion between dictionaries of the same type: decide between extension and restriction.
-function conversion(::Type{T}, src::D, dest::D; options...) where {T,D <: Dictionary}
-    if src == dest
-        IdentityOperator{T}(src)
-    else
-        extension(T, src, dest; options...)
-    end
-end
-
 function extension_restriction(T, src::Dictionary, dest::Dictionary; options...)
     if dimensions(src) == dimensions(dest)
         IdentityOperator{T}(src, dest)
@@ -63,6 +54,8 @@ end
 # Transforming between dictionaries with the same type is the same as restricting
 hastransform(src::D, dest::D) where {D <: Dictionary} = true
 
+"Can an expansion in the first dictionary be extended to an expansion in the second?"
+extensible_dictionaries(src, dest) = false
 
 extension(::Type{T}, src::D, dest::D; options...) where {T,D} =
     error("Don't know how to extend dictionary $(src) from size $(size(src)) to size $(size(dest))")
@@ -123,6 +116,18 @@ hasextension(dg::GridBasis{T,G}) where {T,G <: GridArrays.ProductSubGrid} = true
 # Projection
 ###############
 
+"""
+```
+projection([::Type{T}, ]src::Dictionary, dest::Dictionary[, measure]; options...)
+```
+
+Construct an operator that projections expansions from the source dictionary to
+expansions of the destination dictionary.
+
+The projection uses the given measure or, if omitted, the measure of the destination.
+"""
+projection
+
 projection(src::Dictionary, dest::Dictionary, args...; options...) =
     projection(operatoreltype(src,dest), src, dest, args...; options...)
 
@@ -159,6 +164,19 @@ conversion(::Type{T}, src, dest; options...) where T =
 conversion1(T, src, dest; options...) = conversion2(T, src, dest; options...)
 conversion2(T, src, dest; options...) = default_conversion(T, src, dest; options...)
 
+conversion(::Type{T}, src::D, dest::D; options...) where {T,D} =
+    conversion_same_type(T, src, dest; options...)
+
+function conversion_same_type(::Type{T}, src, dest; options...) where {T}
+    if src == dest
+        IdentityOperator{T}(src)
+    elseif extensible_dictionaries(src, dest)
+        extension(T, src, dest; options...)
+    else
+        conversion1(T, src, dest; options...)
+    end
+end
+
 function default_conversion(::Type{T}, src, dest; verbose=false, options...) where T
     if isequaldict(src, dest)
         IdentityOperator{T}(src, dest)
@@ -172,13 +190,17 @@ end
 
 function explicit_conversion(::Type{T}, src, dest; options...) where T
     if hasmeasure(dest)
-        projection(T, src, dest, measure(dest); options...)
-    elseif hasinterpolationgrid(dest)
+        μ = measure(dest)
+        if issubset(support(μ), support(src))
+            return projection(T, src, dest, measure(dest); options...)
+        end
+    end
+    if hasinterpolationgrid(dest) && issubset(support(dest), support(src))
         pts = interpolation_grid(dest)
         I = interpolation(T, dest; options...)
         A = evaluation(T, src, pts; options...)
         I*A
-    elseif hasinterpolationgrid(src)
+    elseif hasinterpolationgrid(src) && issubset(support(src), support(dest))
         pts = interpolation_grid(src)
         I = interpolation(T, dest, pts; options...)
         A = evaluation(T, src, pts; options...)

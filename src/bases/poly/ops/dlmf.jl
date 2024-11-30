@@ -134,7 +134,7 @@ hermite_rec_Cn(n::Int, ::Type{T} = Float64) where T = T(2n)
 "DLMF equation 18.7.1 (https://dlmf.nist.gov/18.7#E1)"
 ultraspherical_to_jacobi(n::Int, λ) = pochhammer(2λ, n) / pochhammer(λ+one(λ)/2, n)
 "DLMF equation 18.7.2 (https://dlmf.nist.gov/18.7#E2)"
-jacobi_to_ultraspherical_(n::Int, α) = pochhammer(α+1, n) / pochhammer(2α+1, n)
+jacobi_to_ultraspherical(n::Int, α) = pochhammer(α+1, n) / pochhammer(2α+1, n)
 
 "DLMF equation 18.7.3 (https://dlmf.nist.gov/18.7#E3)"
 chebyshevt_to_jacobi(n::Int, ::Type{T} = Float64) where T =

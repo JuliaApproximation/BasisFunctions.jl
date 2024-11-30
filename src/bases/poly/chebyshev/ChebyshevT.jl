@@ -70,6 +70,8 @@ rec_An(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_An(n, T)
 rec_Bn(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_Bn(n, T)
 rec_Cn(b::ChebyshevT{T}, n::Int) where T = chebyshevt_rec_Cn(n, T)
 
+same_ops_family(b1::ChebyshevT, b2::ChebyshevT) = true
+
 # We can define this O(1) evaluation method, but only for points that are
 # real and lie in [-1,1]
 # Note that if x is not Real, recurrence_eval will be called by the OPS supertype

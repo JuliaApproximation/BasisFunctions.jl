@@ -45,6 +45,8 @@ rec_An(b::Legendre{T}, n::Int) where T = legendre_rec_An(n, T)
 rec_Bn(b::Legendre{T}, n::Int) where T = legendre_rec_Bn(n, T)
 rec_Cn(b::Legendre{T}, n::Int) where T = legendre_rec_Cn(n, T)
 
+same_ops_family(b1::Legendre, b2::Legendre) = true
+
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")
 

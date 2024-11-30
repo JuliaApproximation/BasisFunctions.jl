@@ -17,8 +17,8 @@ using BasisFunctions, GridArrays
     @test 0 ∈ support(H)
     @test 1 ∉ support(H)
 
-    @test 0 ∈ BasisFunctions.support(H,1)
-    @test .1 ∉ BasisFunctions.support(H,1)
+    @test 0 ∈ BasisFunctions.dict_support(H,1)
+    @test .1 ∉ BasisFunctions.dict_support(H,1)
 
     @test gram(H,discretemeasure(g)) ≈ IdentityOperator(H)
     @test evaluation(H,g)≈IdentityOperator(H)

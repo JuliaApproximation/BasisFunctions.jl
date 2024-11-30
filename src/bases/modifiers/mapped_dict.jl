@@ -241,10 +241,13 @@ function transform_to_grid(::Type{T}, s1::MappedDict, s2::GridBasis, grid; optio
     wrap_operator(s1, s2, op)
 end
 
-function conversion(::Type{T}, src::MappedDict, dest::MappedDict) where {T}
-    @assert iscompatible(forward_map(src), forward_map(dest))
-    op = conversion(T, superdict(src), superdict(dest))
-    wrap_operator(src, dest, op)
+function conversion1(::Type{T}, src::MappedDict, dest::MappedDict; options...) where {T}
+    if iscompatible(forward_map(src), forward_map(dest))
+        op = conversion(T, superdict(src), superdict(dest))
+        wrap_operator(src, dest, op)
+    else
+        conversion2(T, src, dest; options...)
+    end
 end
 
 
