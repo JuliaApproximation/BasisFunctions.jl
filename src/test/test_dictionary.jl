@@ -469,7 +469,7 @@ function test_generic_conversion(b1, b2)
     if length(b1) == length(b2)
         Cinv = conversion(b2, b1)
         f2 = Cinv * (C*f)
-        @test norm(coefficients(f2-f2)) < tolerance
+        @test norm(coefficients(f-f2)) < tolerance
     end
 end
 

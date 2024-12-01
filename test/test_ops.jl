@@ -218,11 +218,11 @@ using BasisFunctions: isequaldict
     @test matrix(conversion(Jacobi(3, 1/2, 1/2), ChebyshevU(3))) isa Diagonal
     @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), ChebyshevU(3))) isa Diagonal)
 
-    test_generic_conversion(Ultraspherical(3, 2), Jacobi(3, 3/2, 3/2))
-    @test matrix(conversion(Ultraspherical(3, 2), Jacobi(3, 3/2, 3/2))) isa Diagonal
-    @test !(matrix(conversion(Ultraspherical(3, 2), Jacobi(3, -1/2, 1/2))) isa Diagonal)
-    @test matrix(conversion(Jacobi(3, 3/2, 3/2), Ultraspherical(3, 2))) isa Diagonal
-    @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), Ultraspherical(3, 2))) isa Diagonal)
+    test_generic_conversion(Ultraspherical(3, 2.0), Jacobi(3, 3/2, 3/2))
+    @test matrix(conversion(Ultraspherical(3, 2.0), Jacobi(3, 3/2, 3/2))) isa Diagonal
+    @test !(matrix(conversion(Ultraspherical(3, 2.0), Jacobi(3, -1/2, 1/2))) isa Diagonal)
+    @test matrix(conversion(Jacobi(3, 3/2, 3/2), Ultraspherical(3, 2.0))) isa Diagonal
+    @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), Ultraspherical(3, 2.0))) isa Diagonal)
 end
 
 @testset "Orthogonality of orthogonal polynomials" begin
