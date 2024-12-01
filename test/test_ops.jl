@@ -173,19 +173,56 @@ for T in (Float64, LargeFloat)
     println()
 end
 
+using BasisFunctions: isequaldict
 @testset "Conversions of expansions" begin
+    @test isequaldict(Legendre(5), Jacobi(5, 0, 0))
+    @test isequaldict(Jacobi(5, 0, 0), Legendre(5))
+    @test isequaldict(Legendre(5), Ultraspherical(5, 1/2))
+    @test isequaldict(Ultraspherical(5, 1/2), Legendre(5))
+    @test isequaldict(Jacobi(5, 0, 0), Ultraspherical(5, 1/2))
+    @test isequaldict(Ultraspherical(5, 1/2), Jacobi(5, 0, 0))
+    @test !isequaldict(Jacobi(6, 0, 0), Ultraspherical(5, 1/2))
+    @test !isequaldict(Jacobi(5, 0.1, 0), Ultraspherical(5, 1/2))
+    @test !isequaldict(Jacobi(5, 0, 0), Ultraspherical(5, 1))
+    @test isequaldict(ChebyshevU(5), Ultraspherical(5, 1))
+    @test isequaldict(Ultraspherical(5, 1), ChebyshevU(5))
     for T in types
         N = 5
         b1 = Jacobi{T}(N, 1.4, 0.3)
-        b2 = Jacobi{T}(N+1, 1.4, 0.3)
         test_generic_conversion(b1, Legendre{T}(N))
         test_generic_conversion(b1, ChebyshevT{T}(N))
         test_generic_conversion(b1, Monomials{T}(N))
-        test_generic_conversion(b1, b2)
         test_generic_conversion(b1, Jacobi{T}(N, 0.2, 0.4))
         test_generic_conversion(b1, Laguerre{T}(N))
+        b2 = Jacobi{T}(N+1, 1.4, 0.3)
+        @test conversion(b1, b2) isa BasisFunctions.IndexExtension
         @test_throws ArgumentError conversion(b2, b1)
     end
+    @test conversion(Legendre(5), Jacobi(5, 0, 0)) isa IdentityOperator
+
+    test_generic_conversion(Ultraspherical(5, 0.2), Ultraspherical(5, 1.2))
+    @test matrix(conversion(Ultraspherical(5, 0.2), Ultraspherical(5, 1.2))) isa BandedMatrices.BandedMatrix
+
+    test_generic_conversion(ChebyshevT(5), Ultraspherical(5, 1))
+    @test matrix(conversion(ChebyshevT(5), Ultraspherical(5, 1))) isa BandedMatrices.BandedMatrix
+
+    test_generic_conversion(ChebyshevT(3), Jacobi(3, -1/2, -1/2))
+    @test matrix(conversion(ChebyshevT(3), Jacobi(3, -1/2, -1/2))) isa Diagonal
+    @test !(matrix(conversion(ChebyshevT(3), Jacobi(3, -1/2, 1/2))) isa Diagonal)
+    @test matrix(conversion(Jacobi(3, -1/2, -1/2), ChebyshevT(3))) isa Diagonal
+    @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), ChebyshevT(3))) isa Diagonal)
+
+    test_generic_conversion(ChebyshevU(3), Jacobi(3, 1/2, 1/2))
+    @test matrix(conversion(ChebyshevU(3), Jacobi(3, 1/2, 1/2))) isa Diagonal
+    @test !(matrix(conversion(ChebyshevU(3), Jacobi(3, -1/2, 1/2))) isa Diagonal)
+    @test matrix(conversion(Jacobi(3, 1/2, 1/2), ChebyshevU(3))) isa Diagonal
+    @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), ChebyshevU(3))) isa Diagonal)
+
+    test_generic_conversion(Ultraspherical(3, 2), Jacobi(3, 3/2, 3/2))
+    @test matrix(conversion(Ultraspherical(3, 2), Jacobi(3, 3/2, 3/2))) isa Diagonal
+    @test !(matrix(conversion(Ultraspherical(3, 2), Jacobi(3, -1/2, 1/2))) isa Diagonal)
+    @test matrix(conversion(Jacobi(3, 3/2, 3/2), Ultraspherical(3, 2))) isa Diagonal
+    @test !(matrix(conversion(Jacobi(3, -1/2, 1/2), Ultraspherical(3, 2))) isa Diagonal)
 end
 
 @testset "Orthogonality of orthogonal polynomials" begin
@@ -196,4 +233,7 @@ end
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,2n)))
         test_orthogonality_orthonormality(B, gauss_rule(resize(B,n-1)))
     end
+end
+
+@testset "OPS differentiation matrices" begin
 end

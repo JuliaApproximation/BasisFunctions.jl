@@ -4,7 +4,7 @@ module BasisFunctions
 
 ## Dependencies
 
-using StaticArrays, BlockArrays, SparseArrays, FillArrays
+using StaticArrays, BandedMatrices, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
 using FFTW, GenericFFT
 using DomainSets, DomainIntegrals

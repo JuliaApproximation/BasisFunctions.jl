@@ -143,7 +143,7 @@ projection3(T, src, dest, μ::Measure; options...) =
 default_projection(src::Dictionary, dest::Dictionary, μ = measure(dest); options...) =
     default_projection(operatoreltype(src,dest), src, dest, μ; options...)
 function default_projection(T, src, dest, μ = measure(dest); options...)
-    if src == dest
+    if isequaldict(src, dest)
         IdentityOperator{T}(src, dest)
     else
         G = mixedgram(T, dest, src, μ; options...)
@@ -168,7 +168,7 @@ conversion(::Type{T}, src::D, dest::D; options...) where {T,D} =
     conversion_same_type(T, src, dest; options...)
 
 function conversion_same_type(::Type{T}, src, dest; options...) where {T}
-    if src == dest
+    if isequaldict(src, dest)
         IdentityOperator{T}(src)
     elseif extensible_dictionaries(src, dest)
         extension(T, src, dest; options...)

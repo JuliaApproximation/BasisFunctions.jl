@@ -15,7 +15,7 @@ export random_index
 export test_tolerance
 include("test_util_functions.jl")
 
-export test_generic_dict_interface
+export test_generic_dict_interface, test_generic_conversion
 export supports_approximation, supports_interpolation
 export suitable_interpolation_grid, suitable_function
 include("test_dictionary.jl")

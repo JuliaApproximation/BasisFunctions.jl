@@ -9,6 +9,7 @@ using DoubleFloats,
     LinearAlgebra,
     Random,
     StaticArrays,
+    BandedMatrices,
     DomainSets,
     DomainIntegrals
 

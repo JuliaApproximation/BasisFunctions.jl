@@ -4,6 +4,7 @@ authors = ["Daan Huybrechs <daan.huybrechs@kuleuven.be>"]
 version = "0.7.2"
 
 [deps]
+BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 CompositeTypes = "b152e2b5-7a66-4b01-a709-34e65c35f657"
 DomainIntegrals = "cc6bae93-f070-4015-88fd-838f9505a86c"
@@ -33,10 +34,11 @@ PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
 [extensions]
-BasisFunctionsRecipesBaseExt = "RecipesBase"
 BasisFunctionsPGFPlotsXExt = "PGFPlotsX"
+BasisFunctionsRecipesBaseExt = "RecipesBase"
 
 [compat]
+BandedMatrices = "1.7.6"
 BlockArrays = "1"
 Calculus = "0.5"
 CompositeTypes = "0.1.3"

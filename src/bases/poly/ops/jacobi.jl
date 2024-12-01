@@ -2,11 +2,6 @@
 "Abstract supertype of Jacobi polynomials."
 abstract type AbstractJacobi{T} <: IntervalOPS{T} end
 
-iscompatible(b1::AbstractJacobi, b2::AbstractJacobi) =
-	jacobi_α(b1) == jacobi_α(b2) && jacobi_β(b1) == jacobi_β(b2)
-isequaldict(b1::AbstractJacobi, b2::AbstractJacobi) =
-	length(b1)==length(b2) && iscompatible(b1,b2)
-
 isorthogonal(b::AbstractJacobi, μ::DomainIntegrals.AbstractJacobiWeight) =
 	jacobi_α(b) == jacobi_α(μ) && jacobi_β(b) == jacobi_β(μ)
 
@@ -62,6 +57,9 @@ jacobi_β(b::Jacobi) = b.β
 
 measure(b::Jacobi) = JacobiWeight(b.α, b.β)
 
+iscompatible(b1::Jacobi, b2::Jacobi) = jacobi_α(b1) == jacobi_α(b2) && jacobi_β(b1) == jacobi_β(b2)
+
+
 rec_An(b::Jacobi, n::Int) = jacobi_rec_An(n, jacobi_α(b), jacobi_β(b))
 rec_Bn(b::Jacobi, n::Int) = jacobi_rec_Bn(n, jacobi_α(b), jacobi_β(b))
 rec_Cn(b::Jacobi, n::Int) = jacobi_rec_Cn(n, jacobi_α(b), jacobi_β(b))
@@ -103,6 +101,10 @@ const Gegenbauer = Ultraspherical
 jacobi_α(b::Ultraspherical{T}) where T = b.λ - one(T)/2
 jacobi_β(b::Ultraspherical{T}) where T = b.λ - one(T)/2
 
+ultraspherical_λ(b::Ultraspherical) = b.λ
+ultraspherical_λ(b::Jacobi{T}) where T =
+	jacobi_α(b) == jacobi_β(b) ? jacobi_α(b)+one(T)/2 : throw(ArgumentError("Jacobi polynomial is not ultraspherical."))
+
 similar(b::Ultraspherical, ::Type{T}, n::Int) where T = Ultraspherical{T}(n, b.λ)
 
 measure(b::Ultraspherical{T}) where T = UltrasphericalWeight(b.λ)
@@ -112,6 +114,9 @@ rec_Bn(b::Ultraspherical, n::Int) = ultraspherical_rec_Bn(n, b.λ)
 rec_Cn(b::Ultraspherical, n::Int) = ultraspherical_rec_Cn(n, b.λ)
 
 same_ops_family(b1::Ultraspherical, b2::Ultraspherical) = b1.λ == b2.λ
+
+iscompatible(b1::Ultraspherical, b2::Ultraspherical) = ultraspherical_λ(b1) == ultraspherical_λ(b2)
+
 
 ## Printing
 function show(io::IO, b::Jacobi{Float64})
@@ -132,4 +137,4 @@ end
 
 show(io::IO, b::Ultraspherical{Float64}) = print(io, "Ultraspherical($(length(b)), $(b.λ))")
 show(io::IO, b::Ultraspherical{T}) where T =
-	print(io, "Ultraspherical{$(T)}($(length(b)), $(b.λ))")
+	print(io, "Ultraspherical{$(T)}($(length(b)), $(ultraspherical_λ(b)))")

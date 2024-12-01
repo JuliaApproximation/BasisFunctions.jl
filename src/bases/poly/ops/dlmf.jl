@@ -87,7 +87,7 @@ function jacobi_eval(n::Int, x, α, β)
     end
     z = z1
     for i in 2:n
-        z = (jacobi_rec_An(i, α, β)*x + jacobi_rec_Bn(i, α, β))*z1 - jacobi_rec_Cn(i, α, β)*z0
+        z = (jacobi_rec_An(i-1, α, β)*x + jacobi_rec_Bn(i-1, α, β))*z1 - jacobi_rec_Cn(i-1, α, β)*z0
         z0 = z1
         z1 = z
     end
