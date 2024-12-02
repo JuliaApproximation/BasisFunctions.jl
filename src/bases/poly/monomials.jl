@@ -60,7 +60,8 @@ function differentiation(::Type{T}, src::Monomials, dest::Monomials, order::Int;
 		@assert src == dest
 		IdentityOperator{T}(src)
 	else
-		A = zeros(T, m, n)
+		A = BandedMatrix{T}(undef, (m,n), (0,1))
+		fill!(A, 0)
 		for i in 1:n-order
 			A[i,i+1] = i
 		end

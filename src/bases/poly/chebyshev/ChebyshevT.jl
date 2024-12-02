@@ -35,7 +35,6 @@ mapped_dict(dict::ChebyshevT{T}, map::ScalarAffineMap{S}) where {S,T} =
 	MappedChebyshev{promote_type(S,T)}(dict, map)
 
 hasinterpolationgrid(b::ChebyshevT) = true
-hasderivative(b::ChebyshevT) = true
 hasderivative(b::ChebyshevT, order::Int) = true
 hasantiderivative(b::ChebyshevT) = true
 

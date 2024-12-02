@@ -50,23 +50,16 @@ same_ops_family(b1::Legendre, b2::Legendre) = true
 show(io::IO, b::Legendre{Float64}) = print(io, "Legendre($(length(b)))")
 show(io::IO, b::Legendre{T}) where T = print(io, "Legendre{$(T)}($(length(b)))")
 
-hasderivative(b::Legendre) = true
-function differentiation(::Type{T}, src::Legendre, dest::Legendre, order::Int; options...) where {T}
-	@assert order >= 0
-	if order == 0
-		IdentityOperator{T}(src, dest)
-	elseif order == 1
-		A = zeros(T, length(dest), length(src))
-		n = length(src)
-		for i in 0:n-1
-			for j in i-1:-2:0
-				A[j+1,i+1] = 2*(i-1-2*((i-j)>>1))+1
-			end
+# hasderivative(b::Legendre) = true
+function differentiation_using_recurrences(::Type{T}, src::Legendre; options...) where {T}
+	n = length(src)
+	A = zeros(T, n, n)
+	for i in 0:n-1
+		for j in i-1:-2:0
+			A[j+1,i+1] = 2*(i-1-2*((i-j)>>1))+1
 		end
-		ArrayOperator{T}(A, src, dest)
-	else
-		error("Higher order differentiation of Legendre not implemented.")
 	end
+	UpperTriangular(A)
 end
 
 

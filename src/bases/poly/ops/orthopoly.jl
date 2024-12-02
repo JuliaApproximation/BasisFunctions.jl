@@ -18,6 +18,8 @@ abstract type OrthogonalPolynomial{T} <: Polynomial{T} end
 
 approx_length(b::OPS, n::Int) = n
 
+hasderivative(dict::OPS) = true
+
 # Taking the derivative of a polynomial lowers its degree. This results in a
 # rectangular differentiation matrix. With the reducedegree option set to false,
 # the degree is maintained (resulting in a square differentiation matrix).

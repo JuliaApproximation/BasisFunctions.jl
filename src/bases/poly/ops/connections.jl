@@ -12,6 +12,10 @@ isequaldict2(b1::Jacobi, b2::Ultraspherical) = isequaldict1(b2, b1)
 
 const RECURRENCEBASIS = Union{Monomials,OrthogonalPolynomials}
 
+###########################
+# Polynomial conversions
+###########################
+
 function conversion1(::Type{T}, src::RECURRENCEBASIS, dest::RECURRENCEBASIS; options...) where T
     if length(dest) < length(src)
         throw(ArgumentError("Cannot convert to a smaller basis."))
@@ -31,11 +35,11 @@ function conversion1(::Type{T}, src::RECURRENCEBASIS, dest::RECURRENCEBASIS; opt
 end
 
 conversion_using_recurrences(::Type{T}, src::RECURRENCEBASIS, dest::RECURRENCEBASIS; options...) where T =
-    generic_conversion_using_recurrences(T, src, dest; options...)
+    generic_conversion_using_recurrences(T, src, dest)
 
 # For two bases satisfying a recurrence relation we use that relation to compute the connection
 # coefficients to transform between them.
-function generic_conversion_using_recurrences(::Type{T}, src::RECURRENCEBASIS, dest::RECURRENCEBASIS; options...) where T
+function generic_conversion_using_recurrences(::Type{T}, src::RECURRENCEBASIS, dest::RECURRENCEBASIS) where T
     @assert length(dest) == length(src)
     n = length(dest)
     A = zeros(T, n, n)
@@ -206,5 +210,125 @@ function conversion_using_recurrences(::Type{T}, src::Jacobi, dest::ChebyshevU; 
         inv(conversion_using_recurrences(T, dest, src; options...))
     else
         generic_conversion_using_recurrences(T, src, dest; options...)
+    end
+end
+
+###########################
+# Differentiation matrices
+###########################
+
+differentiation(::Type{T}, src::B, dest::B, order::Int; options...) where {T,B<:OrthogonalPolynomials} =
+    differentiation_for_ops(T, src, dest, order; options...)
+
+function differentiation_for_ops(::Type{T}, src::B, dest::B, order::Int; options...) where {T,B<:OrthogonalPolynomials}
+	@assert order == 1
+    if length(src) == length(dest)
+        A = differentiation_using_recurrences(T, src; options...)
+        ArrayOperator(A, src, dest)
+    elseif length(src) == length(dest)+1
+        A = differentiation_using_recurrences(T, src; options...)
+        restriction(T, src, dest) ∘ ArrayOperator(A, src, src)
+    else
+        throw(ArgumentError("Incompatible sizes of src and dest dictionaries for differentiation."))
+    end
+end
+
+
+differentiation_using_recurrences(::Type{T}, src::RECURRENCEBASIS; options...) where T =
+    generic_differentiation_using_recurrences(T, src)
+
+function generic_differentiation_using_recurrences(::Type{T}, src::RECURRENCEBASIS) where T
+    n = length(src)
+    M = zeros(T, n, n)
+    if n >= 2
+        A0 = rec_An(src, 0)
+        M[1,2] = A0
+    end
+    if n >= 3
+        B0 = rec_Bn(src, 0)
+        A1 = rec_An(src, 1)
+        B1 = rec_Bn(src, 1)
+        M[1,3] = B1*A0 - A1*B0
+        M[2,3] = 2A1
+    end
+    for k in 2:n-2
+        C1 = rec_Cn(src, 1)
+        Ak = rec_An(src, k)
+        Bk = rec_Bn(src, k)
+        Ck = rec_Cn(src, k)
+        Akm1 = rec_An(src, k-1)
+        Bkm1 = rec_Bn(src, k-1)
+        Akm2 = rec_An(src, k-2)
+        M[1,k+2] = Bk * M[1,k+1] - Ck*M[1,k] - M[1,k+1]*Ak*B0/A0 + M[2,k+1]*Ak*C1/A1
+        for j in 1:k-2
+            Aj = rec_An(src, j)
+            Bj = rec_Bn(src, j)
+            Cj = rec_Bn(src, j)
+            Ajm1 = rec_An(src, j-1)
+            Ajp1 = rec_An(src, j+1)
+            Cjp1 = rec_Cn(src, j+1)
+            M[j+1,k+2] = Bk * M[j+1,k+1] - Ck*M[j+1,k] + M[j,k+1]*Ak/Ajm1 - M[j+1,k+1]*Ak*Bj/Aj + M[j+2,k+1]*Ak*Cjp1/Ajp1
+        end
+        M[k,k+2] = Bk*M[k,k+1] + M[k-1,k+1]*Ak/Akm2 - M[k,k+1]*Ak*Bkm1/Akm1
+        M[k+1,k+2] = Ak+M[k,k+1]*Ak/Akm1
+    end
+    UpperTriangular(M)
+end
+
+# Some special cases
+
+function chebyshevt_to_chebyshevu_differentiation(::Type{T}, n, m) where T
+    @assert n-1 <= m <= n
+    A = BandedMatrix{T}(undef, (m,n), (0,1))
+    for k in 1:n-1
+        A[k,k] = 0
+        A[k,k+1] = k 
+    end
+    if m == n
+        A[n,n] = 0
+    end
+    A
+end
+
+function differentiation(::Type{T}, src::ChebyshevT, dest::ChebyshevU, order::Int; options...) where T
+    @assert order == 1
+    n = length(src)
+    m = length(dest)
+    if n-1 <= m <= n
+        A = chebyshevt_to_chebyshevu_differentiation(T, n, m)
+        ArrayOperator(A, src, dest)
+    else
+        throw(ArgumentError("Incompatible length of dictionaries for differentiation."))
+    end
+end
+
+function ultraspherical_differentiation(λ::T, n, m) where T
+    @assert n-1 <= m <= n
+    A = BandedMatrix{T}(undef, (m,n), (0,1))
+    for k in 1:n-1
+        A[k,k] = 0
+        A[k,k+1] = 2λ
+    end
+    if m == n
+        A[n,n] = 0
+    end
+    A
+end
+
+function differentiation(::Type{T}, src::Ultraspherical, dest::Ultraspherical, order::Int; options...) where T
+    @assert order == 1
+    if ultraspherical_λ(dest) == ultraspherical_λ(src) + 1
+        n = length(src)
+        m = length(dest)
+        if n-1 <= m <= n
+            A = ultraspherical_differentiation(ultraspherical_λ(src), n, m)
+            ArrayOperator(A, src, dest)
+        else
+            throw(ArgumentError("Incompatible length of dictionaries for differentiation."))
+        end
+    elseif ultraspherical_λ(dest) == ultraspherical_λ(src)
+        differentiation_for_ops(T, src, dest, order; options...)
+    else
+        throw(ArgumentError("Incompatible dictionaries for differentiation."))
     end
 end
