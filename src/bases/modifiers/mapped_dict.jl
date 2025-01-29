@@ -65,7 +65,7 @@ ScalarMappedDict{S,T}(dict::Dictionary, map) where {S,T} =
 forward_map(dict::MappedDict) = dict.map
 inverse_map(dict::MappedDict) = inverse(forward_map(dict))
 
-has_affine_map(dict::MappedDict) = isaffine(forward_map(dict))
+has_affine_map(dict::MappedDict) = isaffinemap(forward_map(dict))
 
 similardictionary(dict::MappedDict, dict2::Dictionary) = mapped_dict(dict2, forward_map(dict))
 
@@ -73,9 +73,9 @@ hasderivative(dict::MappedDict) = false
 hasantiderivative(dict::MappedDict) = false
 
 hasderivative(dict::MappedDict1d) =
-    hasderivative(superdict(dict)) && isaffine(forward_map(dict))
+    hasderivative(superdict(dict)) && isaffinemap(forward_map(dict))
 hasantiderivative(dict::MappedDict1d) =
-    hasantiderivative(superdict(dict)) && isaffine(forward_map(dict))
+    hasantiderivative(superdict(dict)) && isaffinemap(forward_map(dict))
 
 interpolation_grid(dict::MappedDict) = _grid(dict, superdict(dict), forward_map(dict))
 _grid(dict::MappedDict, sdict, map) = map_grid(map, interpolation_grid(sdict))
@@ -92,7 +92,7 @@ end
 unmap_grid(dict::MappedDict, grid) = map_grid(inverse_map(dict), grid)
 
 
-isreal(s::MappedDict) = isreal(superdict(s)) && isreal(forward_map(s))
+isreal(s::MappedDict) = isreal(superdict(s)) && isrealmap(forward_map(s))
 
 unsafe_eval_element(s::MappedDict, idx, y) =
     unsafe_eval_element(superdict(s), idx, leftinverse(forward_map(s), y))
@@ -146,8 +146,8 @@ hasx(d::MappedDict) = has_affine_map(d) && hasx(superdict(d))
 function coefficients_of_x(d::MappedDict)
     if has_affine_map(d)
         m = forward_map(d)
-        A = matrix(m)
-        b = vector(m)
+        A = affinematrix(m)
+        b = affinevector(m)
         c_1 = coefficients_of_one(superdict(d))
         c_x = coefficients_of_x(superdict(d))
         A*c_x+b*c_1
@@ -184,7 +184,7 @@ end
 
 # a special case for similarly (affinely) mapped dicts with the lebesgue measure
 function dict_innerproduct_native(d1::MappedDict, i, d2::MappedDict, j, measure::Lebesgue{T}; options...) where {T<:AbstractFloat}
-    if iscompatible(d1,d2) && isaffine(forward_map(d1))
+    if iscompatible(d1,d2) && isaffinemap(forward_map(d1))
         A = diffvolume(forward_map(d1), zero(T))
         A * dict_innerproduct(superdict(d1), i, superdict(d2), j, measure; options...)
     else
@@ -271,7 +271,7 @@ end
 function derivative_dict(Φ::MappedDict, order; options...)
     map = forward_map(Φ)
     superdiff = similardictionary(Φ, derivative_dict(superdict(Φ), order; options...))
-    if isaffine(map)
+    if isaffinemap(map)
         superdiff
     elseif jacobian(map) isa ConstantMap
         superdiff
@@ -285,7 +285,7 @@ end
 
 function antiderivative_dict(Φ::MappedDict, order; options...)
     map = forward_map(Φ)
-    if isaffine(map)
+    if isaffinemap(map)
         similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
     elseif jacobian(map) isa ConstantMap
         similardictionary(Φ, antiderivative_dict(superdict(Φ), order; options...))
@@ -296,7 +296,7 @@ end
 
 # TODO: generalize to other orders
 function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert isaffine(forward_map(dsrc))
+    @assert isaffinemap(forward_map(dsrc))
     D = differentiation(T, superdict(dsrc), superdict(ddest), order; options...)
     S = ScalingOperator{T}(dest(D), jacobian(forward_map(dsrc),1)^(-order))
     wrap_operator(dsrc, ddest, S*D)
@@ -311,7 +311,7 @@ function differentiation(::Type{T}, dsrc::MappedDict1d, ddest::DerivedDict, orde
 end
 
 function antidifferentiation(::Type{T}, dsrc::MappedDict1d, ddest::MappedDict1d, order::Int; options...) where {T}
-    @assert isaffine(forward_map(dsrc))
+    @assert isaffinemap(forward_map(dsrc))
     D = antidifferentiation(T, superdict(dsrc), superdict(ddest), order; options...)
     S = ScalingOperator{T}(dest(D), jacobian(forward_map(dsrc),1)^(order))
     wrap_operator(dsrc, ddest, S*D)
@@ -341,7 +341,7 @@ rescale(s::Dictionary, d::AbstractInterval) = rescale(s, infimum(d), supremum(d)
 (→)(Φ::Dictionary, domain::Domain) = rescale(Φ, domain)
 # The symbol is \to
 
-(∘)(Φ::Dictionary, map::AbstractMap) = mapped_dict(Φ, map)
+(∘)(Φ::Dictionary, map::Map) = mapped_dict(Φ, map)
 
 # "Preserve Tensor Product Structure"
 function rescale(s::TensorProductDict, a::SVector{N}, b::SVector{N}) where {N}

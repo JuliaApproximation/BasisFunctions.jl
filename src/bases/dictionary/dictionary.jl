@@ -64,7 +64,7 @@ DomainSets.domaineltype(dict::Dictionary) = domaintype(dict)
 dimension(dict::Dictionary, i) = dimension(component(dict, i))
 
 "Are the functions in the dictionary real-valued?"
-isreal(d::Dictionary) = isreal(codomaintype(d))
+isreal(d::Dictionary) = isrealtype(codomaintype(d))
 
 
 "Is the dictionary a (truncation of a) basis?"

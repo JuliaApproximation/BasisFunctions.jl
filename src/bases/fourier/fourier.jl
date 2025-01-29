@@ -16,7 +16,7 @@ nhalf(d::FourierLike) = nhalf(length(d))
 nhalf(n::Int) = n>>1
 
 isbasis(d::FourierLike) = true
-isreal(d::FourierLike{S,T}) where {S,T} = isreal(S) && isreal(T)
+isreal(d::FourierLike{S,T}) where {S,T} = isrealtype(S) && isrealtype(T)
 
 ## Grids
 

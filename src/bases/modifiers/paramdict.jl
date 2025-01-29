@@ -26,7 +26,7 @@ function ParamDict(dict::Dictionary, map)
     ParamDict(dict, map, image)
 end
 
-param_dict(dict::Dictionary, map::AbstractMap) = ParamDict(dict, map)
+param_dict(dict::Dictionary, map::Map) = ParamDict(dict, map)
 
 forward_map(dict::ParamDict) = dict.map
 image(dict::ParamDict) = dict.image

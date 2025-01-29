@@ -29,9 +29,12 @@ for f in (:size, :isefficient)
     @eval $f(op::ArrayOperator) = $f(op.A)
 end#object related features
 
-for f in (:isdiag, :diag, :eigvals, :Matrix, :svdvals, :norm, :rank, :sparse)
+for f in (:isdiag, :diag, :Matrix, :norm, :sparse)
     @eval $f(op::ArrayOperator) = $f(unsafe_matrix(op))
 end#matrix related features
+LinearAlgebra.eigvals(op::ArrayOperator) = eigvals(unsafe_matrix(op))
+LinearAlgebra.svdvals(op::ArrayOperator) = eigvals(unsafe_matrix(op))
+LinearAlgebra.rank(op::ArrayOperator) = rank(unsafe_matrix(op))
 
 for f in (:inv, :conj, :adjoint, :sqrt)
     @eval $f(op::ArrayOperator) = ArrayOperator($f(op.A), dest(op), src(op))

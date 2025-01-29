@@ -181,6 +181,12 @@ function expansion_roots(dict::ChebyshevT, coefficients::AbstractVector)
 	@assert length(dict) == length(coefficients)
 	T = eltype(coefficients)
 	n = length(dict)-1
+	if n == 0
+		return T[]
+	end
+	if n == 1
+		return [-coefficients[1] / coefficients[2]]
+	end
 	# construct the colleague matrix (according to ATAP)
 	C = zeros(T, n, n)
 	C[1,2] = 1

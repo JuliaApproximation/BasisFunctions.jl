@@ -228,7 +228,7 @@ function test_circulant_operator(ELT)
             @test m[:,i] ≈ circshift(c,i-1)
         end
         invC = inv(C)
-        @test BasisFunctions.eigvals(invC).*BasisFunctions.eigvals(C) ≈ ones(T,n)
+        @test eigvals(invC).*eigvals(C) ≈ ones(T,n)
         @test m'*e1 ≈ C'*e1
 
         sumC = invC+C

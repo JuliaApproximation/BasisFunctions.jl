@@ -56,7 +56,7 @@ dest(op::DictionaryOperator) = op.dest
 src_space(op::DictionaryOperator) = Span(src(op))
 dest_space(op::DictionaryOperator) = Span(dest(op))
 
-isreal(op::DictionaryOperator) = isreal(eltype(op)) && isreal(src(op)) && isreal(dest(op))
+isreal(op::DictionaryOperator) = isrealtype(eltype(op)) && isreal(src(op)) && isreal(dest(op))
 
 # default definition for now
 LinearAlgebra.ishermitian(op::DictionaryOperator) = false

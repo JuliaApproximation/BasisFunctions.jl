@@ -11,7 +11,8 @@ using DoubleFloats,
     StaticArrays,
     BandedMatrices,
     DomainSets,
-    DomainIntegrals
+    DomainIntegrals,
+    FunctionMaps
 
 import BasisFunctions.Test:
     supports_approximation,
@@ -20,6 +21,8 @@ import BasisFunctions.Test:
     suitable_interpolation_grid
 
 ⊕ = BasisFunctions.:⊕
+
+using DomainSets: ×
 
 my_rand = rand
 Random.seed!(1234)

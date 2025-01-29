@@ -7,7 +7,7 @@ module BasisFunctions
 using StaticArrays, BandedMatrices, BlockArrays, SparseArrays, FillArrays
 using ToeplitzMatrices, LinearAlgebra, GenericLinearAlgebra
 using FFTW, GenericFFT
-using DomainSets, DomainIntegrals
+using DomainSets, DomainIntegrals, FunctionMaps
 using CompositeTypes, CompositeTypes.Display
 
 using QuadGK, Base.Cartesian
@@ -53,8 +53,8 @@ import Base.Broadcast: broadcasted, DefaultArrayStyle, broadcast_shape
 
 
 import LinearAlgebra:
-    norm, pinv, normalize, cross, ×, dot, adjoint, mul!, rank,
-    diag, isdiag, eigvals, issymmetric, svdvals
+    norm, pinv, normalize, dot, adjoint, mul!,
+    diag, isdiag, issymmetric
 import SparseArrays: sparse
 
 
@@ -65,21 +65,28 @@ import CompositeTypes:
     iscomposite, component, components, ncomponents
 
 import DomainSets:
-    domain, domaintype, codomaintype, dimension,
+    domain, dimension,
     indomain, approx_indomain,
     # intervals
     leftendpoint, rightendpoint, endpoints,
     # maps
-    matrix, vector,
+    affinematrix, affinevector,
     forward_map, inverse_map,
-    applymap, jacobian,
-    ScalarAffineMap,
     # composite types
     factors, factor, nfactors,
     # products
     ×,
     # utils
     prectype, numtype
+
+using FunctionMaps:
+    ScalarAffineMap,
+    isrealtype
+
+import FunctionMaps:
+    inverse,
+    domaintype,
+    codomaintype
 
 import DomainIntegrals:
     integral, integrate,
