@@ -1,7 +1,7 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
 authors = ["Daan Huybrechs <daan.huybrechs@kuleuven.be>"]
-version = "0.7.3"
+version = "0.7.4"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
@@ -46,7 +46,7 @@ DomainIntegrals = "0.5.1"
 DomainSets = "0.7"
 DoubleFloats = "1"
 FFTW = "1.6"
-FastGaussQuadrature = "0.4,0.5"
+FastGaussQuadrature = "0.4,0.5,1"
 FillArrays = "1"
 GaussQuadrature = "0.5.7"
 GenericFFT = "0.1.3"
