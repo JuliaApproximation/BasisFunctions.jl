@@ -95,7 +95,8 @@ import DomainIntegrals:
 using DomainIntegrals:
     ProductWeight,
     AbstractJacobiWeight,
-    UltrasphericalWeight
+    UltrasphericalWeight,
+    islebesguemeasure
 export integral
 
 @reexport using GridArrays
