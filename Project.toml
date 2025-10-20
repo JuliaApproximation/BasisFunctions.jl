@@ -1,7 +1,7 @@
 name = "BasisFunctions"
 uuid = "4343a256-5453-507d-8aad-01a9d7189916"
 authors = ["Daan Huybrechs <daan.huybrechs@kuleuven.be>"]
-version = "0.7.6"
+version = "0.7.5"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
