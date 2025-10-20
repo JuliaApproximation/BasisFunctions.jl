@@ -33,6 +33,7 @@ import Base:
 import Base:
     promote, promote_rule, convert, promote_eltype, widen, convert,
     # array methods
+    Matrix, Array,
     length, size, eachindex, iterate, firstindex, lastindex, range, collect,
     issubset,
     first, last, copyto!, tail,
