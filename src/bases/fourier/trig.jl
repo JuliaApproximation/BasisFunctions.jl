@@ -100,7 +100,7 @@ end
 
 # converting trigonometric series to Fourier series
 function conversion(::Type{T}, src::TrigSeries, dest::Fourier) where {T}
-	@assert !isreal(T)
+	@assert !isrealtype(T)
 	n = length(src)
 	m = length(dest)
 	@assert (m >= n)

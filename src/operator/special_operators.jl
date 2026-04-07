@@ -85,7 +85,7 @@ inv(op::MultiplicationOperator) = inv_multiplication(op, object(op))
 
 # This can be overriden for types of objects that do not support inv
 inv_multiplication(op::MultiplicationOperator{T,A,INPLACE}, object) where {T,A,INPLACE} =
-    MultiplicationOperator(dest(op), src(op), inv(object); inplace=INPLACE)
+    MultiplicationOperator(dest(op), src(op), inverse(object); inplace=INPLACE)
 
 Display.displaysymbol(op::MultiplicationOperator) = _symbol(op, object(op))
 _symbol(op::MultiplicationOperator, object) = "M"
@@ -132,7 +132,7 @@ adjoint_function(op::FunctionOperator, fun) =
 inv(op::FunctionOperator) = inv_function(op, op.fun)
 
 # This can be overriden for types of functions that do not support inv
-inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inv(fun))
+inv_function(op::FunctionOperator, fun) = FunctionOperator(dest(op), src(op), inverse(fun))
 
 string(op::FunctionOperator) = "Function " * string(op.fun)
 

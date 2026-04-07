@@ -94,8 +94,8 @@ adjoint_function(op::FunctionOperator, fun::typeof(ifft)) =
 
 # The two functions below are used when computing the inv of a
 # FunctionOperator that uses fft/ifft:
-inv(fun::typeof(fft)) = ifft
-inv(fun::typeof(ifft)) = fft
+inverse(fun::typeof(fft)) = ifft
+inverse(fun::typeof(ifft)) = fft
 
 
 
@@ -208,8 +208,8 @@ end
 
 # The four functions below are used when computing the adjoint or inv of a
 # FunctionOperator that uses dct/idct:
-inv(fun::typeof(dct)) = idct
-inv(fun::typeof(idct)) = dct
+inverse(fun::typeof(dct)) = idct
+inverse(fun::typeof(idct)) = dct
 
 adjoint(fun::typeof(dct)) = idct
 adjoint(fun::typeof(idct)) = dct

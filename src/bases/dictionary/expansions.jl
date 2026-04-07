@@ -45,7 +45,7 @@ numtype(F::Type{<:Expansion{S,T}}) where {S,T} = numtype(S,T)
 
 @forward Expansion.coefficients length, eachindex
 codomaintype(e::Expansion) = promote_type(codomaintype(dictionary(e)), eltype(coefficients(e)))
-isreal(e::Expansion) = isreal(e.dictionary) && isreal(eltype(coefficients(e)))
+isreal(e::Expansion) = isreal(e.dictionary) && isrealtype(eltype(coefficients(e)))
 
 """
     expansion(dict::Dictionary, coefficients)
@@ -167,7 +167,7 @@ function default_compatible_dictionary(d1::Dictionary, d2::Dictionary)
         T = promote_type(domaintype(d1), domaintype(d2))
         newsize = map(max, size(d1), size(d2))
         common_dict = similar(d1, T, newsize)
-        if isreal(coefficienttype(d1)) && isreal(coefficienttype(d2))
+        if isrealtype(coefficienttype(d1)) && isrealtype(coefficienttype(d2))
             common_dict
         else
             complex(common_dict)
