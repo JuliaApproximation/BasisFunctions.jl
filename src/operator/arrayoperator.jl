@@ -33,7 +33,7 @@ for f in (:isdiag, :diag, :Matrix, :norm, :sparse)
     @eval $f(op::ArrayOperator) = $f(unsafe_matrix(op))
 end#matrix related features
 LinearAlgebra.eigvals(op::ArrayOperator) = eigvals(unsafe_matrix(op))
-LinearAlgebra.svdvals(op::ArrayOperator) = eigvals(unsafe_matrix(op))
+LinearAlgebra.svdvals(op::ArrayOperator) = svdvals(unsafe_matrix(op))
 LinearAlgebra.rank(op::ArrayOperator) = rank(unsafe_matrix(op))
 
 for f in (:inv, :conj, :adjoint, :sqrt)
