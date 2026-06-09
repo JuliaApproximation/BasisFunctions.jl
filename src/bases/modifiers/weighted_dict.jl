@@ -27,8 +27,9 @@ isreal(dict::WeightedDict) = _isreal(dict, superdict(dict), weightfunction(dict)
 _isreal(dict::WeightedDict, superdict, fun::Function) = isreal(superdict)
 
 hasderivative(dict::WeightedDict) = hasderivative(superdict(dict))
-isorthonormal(dict::WeightedDict) = false
-isorthogonal(dict::WeightedDict) = false
+isorthonormal(dict::WeightedDict, args...) = false
+isorthogonal(dict::WeightedDict, args...) = false
+isbiorthogonal(dict::WeightedDict, args...) = false
 # We can not compute antiderivatives in general.
 hasantiderivative(dict::WeightedDict) = false
 
